@@ -26,8 +26,8 @@ export const buttonVariants = cva(
           'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
         warning: 'intent-warning',
         none: 'border-none bg-transparent',
-        // A list row in a DrawerRowGroup, as in a native action sheet: pressing fills it, and a hairline from the label's edge parts it from the next
-        row: 'relative w-full justify-start gap-3 rounded-none font-normal text-md after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border active:bg-accent',
+        // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it; only a DrawerRowSeparator between groups draws a line
+        row: 'relative w-full justify-start gap-3 font-normal text-md active:bg-accent',
       },
       soft: { true: '', false: '' },
       // Feedback while held (the press utility); input-styled buttons stay put like the fields they sit among, rows show a fill
@@ -93,8 +93,8 @@ export function Button({ className, variant, soft, size, press, render, loading,
     defaultTagName: 'button',
     render,
     props: {
-      // A `render` element such as a Link keeps its own semantics, so only the native button gets a type.
-      ...(render ? {} : { type: 'button' }),
+      // A `render` element such as a Link keeps its own semantics, so only the native button gets a type; a link styled as a button never drags.
+      ...(render ? { draggable: false } : { type: 'button' }),
       'data-slot': 'button',
       className: cn(buttonVariants({ variant, soft, size, press: press ?? (variant !== 'input' && variant !== 'row'), className })),
       disabled: disabled || loading,

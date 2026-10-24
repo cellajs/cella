@@ -48,7 +48,7 @@ export function Chip({ className, children, start, end, onRemove, removeLabel, .
           onClick={onRemove}
           className="focus-inset pointer-events-auto ml-0.5 size-5 shrink-0 rounded-full p-0 opacity-70 hover:opacity-100"
         >
-          <XIcon strokeWidth={3} />
+          <XIcon />
         </Button>
       )}
     </span>

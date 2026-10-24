@@ -151,7 +151,7 @@ A limiter either counts every request and refuses a spent key until its window e
 
 | Limiter | Counts | Budget |
 | --- | --- | --- |
-| `magicLinkLimiter` | Magic links per address | 2 per 30 minutes |
+| `magicLinkLimiter` | Magic links per address, asked for by browsers that never signed in to its account | 3 per 30 minutes |
 | `emailEnumLimiter` | Address lookups per IP, hits included | 30 per hour |
 | `spamLimiter` | Mails sent per user, per IP when anonymous | 10 per hour |
 | `tokenLimiter` | Failed link, callback and passkey sign-ins per IP; a success ends the series | 10, then 30 minutes blocked |

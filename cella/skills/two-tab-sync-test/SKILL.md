@@ -19,7 +19,7 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 ## Auth: a minted session
 
-No UI login, and no cookie built by hand: the app signs every cookie. The driver runs `pnpm --filter backend session:mint <EMAIL>` (development and test mode only), which prints `<cookie name>=<signed value>` and a curl line with the API URL. Cookie name, cookie version and port all come from the checkout's config, so none of them is written down here.
+No UI login, and no cookie built by hand: the app signs every cookie. The driver runs `pnpm --filter backend session:mint <EMAIL>` (development and test mode only), which prints `<cookie name>=<signed value>` and a curl line with the API URL, and signs that session out when it ends. Cookie name, cookie version and port all come from the checkout's config, so none of them is written down here.
 
 - **Default, the bench user** (needs `pnpm --filter bench db:seed` once): `xbench-user-0000@xbench.local` is admin of `xbench/xbench-org`. The seed sets that tenant's attachment quota to unlimited, so every experiment runs there, creates included.
 - **Any other seeded org**: pick an admin and pass `EMAIL` and `ORG_PATH`.

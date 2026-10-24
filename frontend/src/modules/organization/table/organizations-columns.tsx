@@ -51,7 +51,6 @@ export const useColumns = () => {
           render={
             <Link
               to="/$tenantId/$organizationSlug/organization/members"
-              draggable={false}
               tabIndex={tabIndex}
               params={{ tenantId: row.tenantId, organizationSlug: row.slug }}
             />
@@ -74,6 +73,7 @@ export const useColumns = () => {
       {
         label: t('c:delete'),
         icon: TrashIcon,
+        variant: 'destructive',
         onSelect: (row) => {
           const callback = () => dropdowner.getState().remove();
           openPopConfirm(

@@ -1,7 +1,7 @@
 import { onlineManager, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { BuildingIcon, TrashIcon } from 'lucide-react';
-import { type ReactNode, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
@@ -10,13 +10,14 @@ import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { HelpText } from '~/modules/common/help-text';
+import { useOpenTile } from '~/modules/common/expandable-tile';
 import { NamedText } from '~/modules/common/named-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
+import { AuthSectionTitle } from '~/modules/me/auth-section-title';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
-import { ConnectedStatus } from '~/modules/me/connected-status';
 import { DeleteSelf } from '~/modules/me/delete-self';
+import { IdentityTile } from '~/modules/me/identity-tile';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
 import { meAuthQueryOptions } from '~/modules/me/query';
@@ -58,35 +59,21 @@ export function AccountConnectedAppsCard() {
   );
 }
 
-interface AuthSectionTitleProps {
-  title: string;
-  help: string;
-  /** Follows the title, before the help toggle. */
-  children?: ReactNode;
-}
-
-function AuthSectionTitle({ title, help, children }: AuthSectionTitleProps) {
-  return (
-    <HelpText content={help}>
-      <h3 className="font-semibold">{title}</h3>
-      {children}
-    </HelpText>
-  );
-}
-
 export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const { enabledOAuth } = authData;
+  const { oauthIdentities } = authData;
+  // One tile open at a time, across the card's sections
+  const { openId, toggle } = useOpenTile();
 
   // An SSO recovery link names a connection (`connect`), offered beside the user's own institutions even before they join its organization.
   const { connect } = useSearch({ from: '/_app/account' });
   const listed = authData.institutions.find((institution) => institution.connectionId === connect);
   const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect), enabled: !!connect && !listed });
-  const offered = entry?.status === 'active' ? { connectionId: entry.id, displayName: entry.institution.displayName, connected: false } : undefined;
+  const offered = entry?.status === 'active' ? { connectionId: entry.id, displayName: entry.institution.displayName, identity: null } : undefined;
   const institutions = offered ? [...authData.institutions, offered] : authData.institutions;
-  const toConnect = [listed, offered].find((institution) => institution && !institution.connected);
+  const toConnect = [listed, offered].find((institution) => institution && !institution.identity);
 
   // A provider or connection id. State, so the spinner outlasts the mutation until the browser has left.
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -120,41 +107,43 @@ export function AccountAuthenticationCard() {
           </>
         )}
 
-        {isStrategyEnabled('passkey') && (
-          <>
-            <AuthSectionTitle title={t('c:passkeys')} help={t('c:passkey.text')} />
-            <PasskeysList />
-          </>
-        )}
+        {isStrategyEnabled('passkey') && <PasskeysList openId={openId} onToggle={toggle} />}
 
         {isStrategyEnabled('totp') && (
           <>
             <AuthSectionTitle title={t('c:totp')} help={t('c:totp.text')} />
-            <Totp />
+            <Totp expanded={openId === 'totp'} onToggle={() => toggle('totp')} />
           </>
         )}
 
         {isStrategyEnabled('oauth') && (
           <>
             <AuthSectionTitle title={t('c:oauth')} help={t('c:oauth.text')} />
-            <div className="mb-6 flex flex-col gap-3 sm:items-start">
-              {enabledOAuthProviders.map(({ id, name }) =>
-                enabledOAuth.includes(id) ? (
-                  <ConnectedStatus key={id} icon={<OAuthProviderIcon id={id} />}>
-                    {t('c:connected_to_provider', { provider: name })}
-                  </ConnectedStatus>
+            <div className="mb-6 flex flex-col gap-2">
+              {enabledOAuthProviders.map(({ id, name }) => {
+                const identity = oauthIdentities.find(({ provider }) => provider === id);
+                return identity ? (
+                  <IdentityTile
+                    key={id}
+                    icon={<OAuthProviderIcon id={id} />}
+                    title={name}
+                    identity={identity}
+                    expanded={openId === id}
+                    onToggle={() => toggle(id)}
+                  />
                 ) : (
                   <Button
                     key={id}
                     variant="plain"
+                    className="sm:self-start"
                     loading={connecting === id}
                     onClick={() => connectTo(id, (search) => `${appConfig.backendAuthUrl}/${id}?${new URLSearchParams(search)}`)}
                   >
                     <OAuthProviderIcon id={id} />
                     {t('c:add_provider_account', { provider: name })}
                   </Button>
-                ),
-              )}
+                );
+              })}
             </div>
           </>
         )}
@@ -167,24 +156,32 @@ export function AccountAuthenticationCard() {
                 <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
               </Alert>
             )}
-            <div className="mb-6 flex flex-col gap-3 sm:items-start">
-              {institutions.map(({ connectionId, displayName, connected }) =>
-                connected ? (
-                  <ConnectedStatus key={connectionId} icon={<BuildingIcon />}>
-                    {t('c:connected_to_institution', { institution: displayName })}
-                  </ConnectedStatus>
+            <div className="mb-6 flex flex-col gap-2">
+              {institutions.map((institution) => {
+                const { connectionId, displayName, identity } = institution;
+                return identity ? (
+                  <IdentityTile
+                    key={connectionId}
+                    icon={<BuildingIcon />}
+                    title={displayName}
+                    identity={identity}
+                    via={'federation' in institution ? institution.federation.label : undefined}
+                    expanded={openId === connectionId}
+                    onToggle={() => toggle(connectionId)}
+                  />
                 ) : (
                   <Button
                     key={connectionId}
                     variant={connectionId === toConnect?.connectionId ? 'default' : 'plain'}
+                    className="sm:self-start"
                     loading={connecting === connectionId}
                     onClick={() => connectTo(connectionId, (search) => ssoStartUrl({ connectionId }, search))}
                   >
                     <BuildingIcon />
                     {t('c:connect_institution', { institution: displayName })}
                   </Button>
-                ),
-              )}
+                );
+              })}
             </div>
           </>
         )}

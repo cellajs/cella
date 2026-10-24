@@ -8,6 +8,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { arrangePlacements } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
+import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
@@ -43,7 +44,7 @@ const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-r
 const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
-  return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
+  return <RowDragPreview name={row.name} />;
 }
 
 interface TabsArrangementCardProps {
@@ -123,7 +124,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       wrapText: true,
       cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
       renderCell: ({ row }) => {
-        const name = <span className="text-sm leading-tight">{row.name}</span>;
+        const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
         if (!row.description) return name;
 
         // A narrow column wraps a description over many lines, so there it unfolds from a help toggle

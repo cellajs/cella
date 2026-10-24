@@ -2,9 +2,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TKey } from '~/lib/i18n-locales';
 import { collapseMotion } from '~/modules/common/collapse-motion';
-import { CountBadge } from '~/modules/common/count-badge';
 import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps<T> {
@@ -12,10 +10,9 @@ interface ExpandableListProps<T> {
   renderItem: (item: T, index: number) => ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
-  expandText: TKey;
 }
 
-export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) {
+export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false }: ExpandableListProps<T>) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
   const hasExpandedOnceRef = useRef(false);
@@ -47,8 +44,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
             setExpanded(true);
           }}
         >
-          <CountBadge count={items.length - initialDisplayCount} />
-          {t(expandText)}
+          {t('c:show_more', { count: items.length - initialDisplayCount })}
           <ChevronDownIcon className="opacity-50 transition-opacity group-hover/expandable-list:opacity-100" />
         </Button>
       )}

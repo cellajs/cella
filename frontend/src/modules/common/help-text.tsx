@@ -6,9 +6,11 @@ interface HelpTextProps {
   children: ReactNode;
   content: ReactNode;
   className?: string;
+  /** At the end of the title row, such as an add button. */
+  action?: ReactNode;
 }
 
-export function HelpText({ content, children, className }: HelpTextProps) {
+export function HelpText({ content, children, className, action }: HelpTextProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,6 +18,7 @@ export function HelpText({ content, children, className }: HelpTextProps) {
       <div className="flex items-center gap-2">
         {children}
         <HelpToggle open={open} onToggle={() => setOpen((prev) => !prev)} />
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       <HelpCollapse open={open}>{content}</HelpCollapse>
     </div>

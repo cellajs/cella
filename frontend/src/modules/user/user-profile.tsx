@@ -37,7 +37,7 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
         panel={
           isSelf && (
             <div className="flex items-center p-2 max-xs:hidden">
-              <Button size="sm" render={<Link to="/account" draggable={false} />}>
+              <Button size="sm" render={<Link to="/account" />}>
                 <UserRoundCogIcon />
                 <span className="max-sm:sr-only">{t('c:settings')}</span>
               </Button>

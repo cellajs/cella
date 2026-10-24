@@ -1,8 +1,9 @@
 import type { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
+import { appConfig } from 'shared';
 import type { DbContext, Env } from '#/core/context';
 import { findNewDevices } from '#/modules/auth/devices/devices-queries';
-import { findSsoIdentityConnectionIds, findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
+import { findSsoIdentities, findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
 import { findPasskeysByUser } from '#/modules/auth/passkeys/passkeys-queries';
 import { findUserSessions } from '#/modules/auth/sessions/sessions-queries';
 import { findTotp } from '#/modules/auth/totps/totps-queries';
@@ -15,15 +16,22 @@ const newDeviceWindow = new TimeSpan(1, 'w');
 /** How long a revoked session stays in the list; the sweep drops a row 30 days after its expiry, so nothing lingers longer. */
 const revokedSessionWindow = new TimeSpan(30, 'd');
 
-/** Fetches passkeys (minus the sensitive credentialId/publicKey), whether TOTP is set, verified OAuth providers and the connections the SSO identities came through. */
+/**
+ * Fetches passkeys (minus the sensitive credentialId/publicKey), the TOTP's dates, verified OAuth identities and the SSO
+ * identities. TOTP keeps the time step of its newest accepted code: the start of that step stands for its last use.
+ */
 export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }) => {
-  const [passkeys, totp, oauth, ssoConnectionIds] = await Promise.all([
+  const [passkeys, totpRow, oauth, ssoIdentities] = await Promise.all([
     findPasskeysByUser(ctx, { userId }),
     findTotp(ctx, { userId }),
     findVerifiedOAuthIdentities(ctx, { userId }),
-    findSsoIdentityConnectionIds(ctx, { userId }),
+    findSsoIdentities(ctx, { userId }),
   ]);
-  return { passkeys, hasTotp: !!totp, oauth, ssoConnectionIds };
+  const stepMs = appConfig.totp.intervalInSeconds * 1000;
+  const totp = totpRow
+    ? { createdAt: totpRow.createdAt, lastUsedAt: totpRow.lastUsedStep === null ? null : new Date(totpRow.lastUsedStep * stepMs).toISOString() }
+    : null;
+  return { passkeys, totp, oauth, ssoIdentities };
 };
 
 /**

@@ -61,7 +61,6 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
             to="."
             hash={id}
             replace
-            draggable={false}
             onClick={(event) => {
               if (event.metaKey || event.ctrlKey) return;
               event.preventDefault();

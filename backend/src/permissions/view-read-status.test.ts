@@ -1,5 +1,12 @@
-import type { PolicyCellInput, ProductEntityType } from 'shared';
-import { type DeepChannelType, deepHierarchy, deepOverrides, deepReadPolicies as policies } from 'shared/testing/deep-fixture';
+import { createEntityHierarchy, type HierarchyOverrides, type PolicyCellInput, type ProductEntityType } from 'shared';
+import {
+  type DeepChannelType,
+  deepChannelRoles,
+  deepHierarchy,
+  deepOverrides,
+  deepRoles,
+  deepReadPolicies as policies,
+} from 'shared/testing/deep-fixture';
 import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
 
@@ -35,17 +42,18 @@ const statusFor = (
     elevatedGrants?: ReadonlySet<string>;
     depth?: 'self' | 'subtree';
     truePath?: string | null;
+    overrides?: HierarchyOverrides;
   } = {},
 ) =>
   resolveViewReadStatusForPolicies(
     {
-      policies: policies(opts.read ?? (() => 0)),
+      policies: policies(opts.read ?? (() => 0), opts.overrides),
       memberships: opts.memberships ?? [],
       entityType: item,
       organizationId: rootId,
       actor: { actorId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null },
       elevatedGrants: opts.elevatedGrants,
-      ...deepOverrides,
+      ...(opts.overrides ?? deepOverrides),
     },
     prefix,
     opts.depth,
@@ -97,6 +105,22 @@ describe('resolveViewReadStatus', () => {
     const opts = { read: projectOwnerRead, memberships: [membership('project', 'p1', 'owner')] };
     expect(statusFor(`${rootId}/c1/s1/p1`, opts)).toBe('ok');
     expect(statusFor(`${rootId}/c1`, opts)).toBe('opaque');
+  });
+
+  it("a non-elevated grant at the product's parent answers the subtree, the organization included", () => {
+    const flatHierarchy = createEntityHierarchy(deepRoles)
+      .user()
+      .organization({ roles: deepChannelRoles.organization, elevated: ['admin'] })
+      .product('item', { parent: 'organization' })
+      .build();
+    const orgMemberRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'organization' && role === 'member' ? 1 : 0);
+    const opts = {
+      read: orgMemberRead,
+      memberships: [membership('organization', rootId, 'member')],
+      elevatedGrants: flatHierarchy.elevatedGrants,
+      overrides: { hierarchy: flatHierarchy },
+    };
+    expect(statusFor(rootId, opts)).toBe('ok');
   });
 
   it('conditional-only readers (read: own) are opaque everywhere in the org', () => {

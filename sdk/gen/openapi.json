@@ -98,7 +98,7 @@
           },
           "magicLinkLimiter": {
             "name": "magicLink",
-            "description": "Magic link emails per address: 2 per 30 minutes"
+            "description": "Magic link emails per address from browsers that never signed in to it: 3 per 30 minutes"
           },
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
@@ -931,6 +931,9 @@
           "requestId": {
             "type": "string"
           },
+          "version": {
+            "type": "string"
+          },
           "path": {
             "type": "string"
           },
@@ -1373,11 +1376,40 @@
       "MeAuthData": {
         "type": "object",
         "properties": {
-          "enabledOAuth": {
+          "oauthIdentities": {
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": ["github"]
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "enum": ["github"]
+                },
+                "email": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["provider", "email", "createdAt", "lastUsedAt"]
             }
           },
           "institutions": {
@@ -1403,16 +1435,73 @@
                   },
                   "required": ["key", "label"]
                 },
-                "connected": {
-                  "type": "boolean",
-                  "description": "Whether the account already holds an identity through this connection"
+                "identity": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "lastUsedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["email", "createdAt", "lastUsedAt"]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The identity the account holds through this connection; null when not connected"
                 }
               },
-              "required": ["connectionId", "displayName", "federation", "connected"]
+              "required": ["connectionId", "displayName", "federation", "identity"]
             }
           },
-          "hasTotp": {
-            "type": "boolean"
+          "totp": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "lastUsedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["createdAt", "lastUsedAt"]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null without TOTP. Its last use is the start of the time step of the newest code it accepted."
           },
           "sessions": {
             "type": "array",
@@ -1581,22 +1670,29 @@
             }
           }
         },
-        "required": ["enabledOAuth", "institutions", "hasTotp", "sessions", "passkeys"],
-        "description": "How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
+        "required": ["oauthIdentities", "institutions", "totp", "sessions", "passkeys"],
+        "description": "How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.",
         "example": {
-          "enabledOAuth": ["github"],
+          "oauthIdentities": [
+            {
+              "provider": "github",
+              "email": "Lonie.Littel11@gmail.com",
+              "createdAt": "2024-05-28T17:45:48.607Z",
+              "lastUsedAt": "2024-05-28T17:45:48.607Z"
+            }
+          ],
           "institutions": [],
-          "hasTotp": false,
+          "totp": null,
           "sessions": [
             {
-              "id": "0ff9d780-10bf-4531-b073-c93c225553bc",
-              "userId": "3fdbee2a-ceb3-401e-b7af-e58710cdd4a5",
+              "id": "bf531073-c93c-4225-b553-bcd3fdbee2ac",
+              "userId": "b301e7af-e587-410c-8dd4-a5c678f6be37",
               "type": "regular",
               "createdAt": "2024-05-28T17:45:48.607Z",
               "expiresAt": "2024-06-27T17:45:48.607Z",
               "deviceName": "Firefox on Windows",
               "deviceType": "desktop",
-              "deviceOs": "iOS",
+              "deviceOs": "macOS",
               "browser": "Edge",
               "authStrategy": "passkey",
               "connectionId": null,
@@ -1604,7 +1700,7 @@
               "ipSubnetHash": null,
               "ipCountry": null,
               "ipAsn": null,
-              "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
+              "deviceIdHash": "e73e1e9b96a7acab442bcbafafbc1c5f",
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,

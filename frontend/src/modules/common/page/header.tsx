@@ -50,7 +50,7 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="max-sm:hidden">
-                    <BreadcrumbLink className="focus-inset -m-1 flex items-center p-1" render={<Link to="/home" />}>
+                    <BreadcrumbLink className="focus-inset -m-1 flex items-center p-1" render={<Link to="/home" draggable={false} />}>
                       <HouseIcon className="size-3.5" />
                       <span className="sr-only">{t('c:home')}</span>
                     </BreadcrumbLink>
@@ -63,7 +63,7 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
                         <BreadcrumbItem className="max-sm:hidden">
                           <BreadcrumbLink
                             className="flex items-center"
-                            render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} />}
+                            render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} draggable={false} />}
                           >
                             <span className="truncate">{crumb.name}</span>
                           </BreadcrumbLink>

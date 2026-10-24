@@ -82,10 +82,10 @@ const resolveScopes = (
 ): ScopeAccumulator => {
   const homeChannelType = ancestors.find((channel) => channel !== 'organization') ?? null;
 
-  // With elevatedGrants configured, a non-elevated grant speaks only for rows HOMED at its
-  // level; deepest-level grants are home-exact already, so only higher levels carry the mark.
+  // With elevatedGrants configured, a non-elevated grant speaks only for rows HOMED at its level; a
+  // grant at the product's parent (the organization included) is home-exact already and carries no mark.
   const isHomeScopedGrant = (channelType: ChannelEntityType, role: EntityRole): boolean =>
-    elevatedGrants !== undefined && !elevatedGrants.has(`${channelType}:${role}`) && channelType !== homeChannelType;
+    elevatedGrants !== undefined && !elevatedGrants.has(`${channelType}:${role}`) && channelType !== ancestors[0];
 
   const acc: ScopeAccumulator = {
     unconditionalOrgWide: false,

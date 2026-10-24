@@ -172,7 +172,9 @@ export const useCreateTotpMutation = () =>
       queryClient.removeQueries({ queryKey: meKeys.totpKey });
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
-        return { ...oldData, hasTotp: true };
+        // The setup confirmed the key with a code, which counts as its first use
+        const now = new Date().toISOString();
+        return { ...oldData, totp: { createdAt: now, lastUsedAt: now } };
       });
       toaster.success(t('c:success.totp_added'));
     },
@@ -186,7 +188,7 @@ export const useDeleteTotpMutation = () =>
       toaster.success(t('c:success.delete_resource', { resource: t('c:totp') }));
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
-        return { ...oldData, hasTotp: false };
+        return { ...oldData, totp: null };
       });
     },
   });

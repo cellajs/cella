@@ -26,7 +26,7 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
 
   return (
     <li>
-      <Button size="xs" variant="ghost" render={<Link to={href} draggable={false} />}>
+      <Button size="xs" variant="ghost" render={<Link to={href} />}>
         {t(`c:${id}` as TKey)}
       </Button>
     </li>

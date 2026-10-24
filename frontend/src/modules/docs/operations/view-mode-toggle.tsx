@@ -10,10 +10,10 @@ export function ViewModeToggle() {
 
   return (
     <ToggleGroup type="single" variant="outline" value={viewMode}>
-      <ToggleGroupItem value="list" aria-label={t('c:list_view')} render={<Link to="/docs/operations" />}>
+      <ToggleGroupItem value="list" aria-label={t('c:list_view')} render={<Link to="/docs/operations" draggable={false} />}>
         <ListIcon className="size-4" />
       </ToggleGroupItem>
-      <ToggleGroupItem value="table" aria-label={t('c:table_view')} render={<Link to="/docs/operations/table" />}>
+      <ToggleGroupItem value="table" aria-label={t('c:table_view')} render={<Link to="/docs/operations/table" draggable={false} />}>
         <TableIcon className="size-4" />
       </ToggleGroupItem>
     </ToggleGroup>

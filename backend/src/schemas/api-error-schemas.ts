@@ -25,6 +25,8 @@ export const apiErrorSchema = z
     entityType: entityTypeSchema.optional(),
     /** Request id, also sent as the `X-Request-Id` response header and logged with the request; quote it when reporting a failure. */
     requestId: z.string().optional(),
+    /** Release (git SHA) of the server that answered; during a rollout it can differ from the page's own. */
+    version: z.string().optional(),
     path: z.string().optional(),
     method: z.string().optional(),
     timestamp: z.string().optional(),

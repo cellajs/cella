@@ -1,6 +1,7 @@
 import type { Context, MiddlewareHandler } from 'hono';
 import type { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
+import type { ErrorKey } from '#/core/error';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
 export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'actorId' | 'tenantId';
@@ -47,6 +48,10 @@ export interface RateLimiterOpts {
   functionName?: string;
   /** Short human-readable label for OpenAPI documentation */
   name?: string;
+  /** The error type a refusal answers with, so a client can say what to do meanwhile. Default: `too_many_requests`. */
+  refusalType?: ErrorKey;
+  /** True for a request the budget does not guard against: it passes, neither counted nor refused. */
+  exempt?: (ctx: Context<Env>, identifiers: Identifiers) => boolean | Promise<boolean>;
   /** Description for OpenAPI documentation */
   description?: string;
   /** Dynamic points to consume per request (for points-weighted limiters). Called at request time. */

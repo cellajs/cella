@@ -23,6 +23,16 @@ export function mintSession(email) {
   return { base, api: apiMatch[1], cookie: { name: cookieMatch[1], value: cookieMatch[2], url: base, httpOnly: true, sameSite: 'Strict' } };
 }
 
+/**
+ * Signs a minted session out, so a finished run leaves no live session in the user's sessions list. A JSON content type
+ * passes the CSRF check without an Origin header. A stack that is already down leaves the session to expire.
+ */
+export async function endSession(session) {
+  if (!session) return;
+  const headers = { cookie: `${session.cookie.name}=${session.cookie.value}`, 'content-type': 'application/json' };
+  await fetch(`${session.api}/auth/sign-out`, { method: 'POST', headers }).catch(() => {});
+}
+
 // Exact name: bench rows are numbered, so "… 2" is also the start of "… 20" and "… 201".
 export const exactText = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
 export const rowByName = (page, name) => page.locator('.rdg-row').filter({ has: page.locator('span.truncate.font-medium', { hasText: exactText(name) }) });

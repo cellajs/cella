@@ -17,13 +17,17 @@ export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts)
 
   const authInfo = await getAuthInfo({ var: { db } }, { userId: user.id });
 
-  const { oauth, ssoConnectionIds, ...restInfo } = authInfo;
-  const enabledOAuth = oauth
-    .map(({ provider }) => provider)
-    .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
+  const { oauth, ssoIdentities, ...restInfo } = authInfo;
+  const isEnabledProvider = (provider: string): provider is EnabledOAuthProvider =>
+    appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider);
+  const oauthIdentities = oauth.flatMap(({ provider, ...identity }) => (isEnabledProvider(provider) ? [{ provider, ...identity }] : []));
 
-  // The institutions of the tenants the user belongs to, flagged with whether the account is connected to each.
+  // The institutions of the tenants the user belongs to, each with the identity the account holds through it, if any.
   const tenantIds = [...new Set(ctx.var.memberships.map(({ tenantId }) => tenantId))];
+  const identityAt = (connectionId: string) => {
+    const identity = ssoIdentities.find((sso) => sso.connectionId === connectionId);
+    return identity ? { email: identity.email, createdAt: identity.createdAt, lastUsedAt: identity.lastUsedAt } : null;
+  };
   const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants({ var: { db } }, { tenantIds }) : [];
   const institutions = connections
     .filter((connection) => isFederationKey(connection.issuer) && isFederationConfigured(connection.issuer))
@@ -31,8 +35,8 @@ export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts)
       connectionId: connection.id,
       displayName: connection.displayName,
       federation: { key: connection.issuer, label: appConfig.federations[connection.issuer as keyof typeof appConfig.federations].label },
-      connected: ssoConnectionIds.includes(connection.id),
+      identity: identityAt(connection.id),
     }));
 
-  return { ...restInfo, enabledOAuth, institutions, sessions };
+  return { ...restInfo, oauthIdentities, institutions, sessions };
 }

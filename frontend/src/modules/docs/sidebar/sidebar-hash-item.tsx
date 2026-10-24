@@ -31,7 +31,6 @@ export function SidebarHashItem({ to, hash, isActive, children }: SidebarHashIte
           to={to}
           hash={hash}
           replace
-          draggable={false}
           data-active={isActive}
           onClick={(event) => {
             if (isModifiedClick(event)) return;

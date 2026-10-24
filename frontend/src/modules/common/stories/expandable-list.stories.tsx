@@ -18,7 +18,6 @@ export const Default: Story = {
     items: sampleItems,
     renderItem: (item) => <div className="border-b p-2">{item}</div>,
     initialDisplayCount: 3,
-    expandText: 'c:more',
   },
   decorators: [
     (Story) => (
@@ -34,7 +33,6 @@ export const AllVisible: Story = {
     items: sampleItems.slice(0, 3),
     renderItem: (item) => <div className="border-b p-2">{item}</div>,
     initialDisplayCount: 3,
-    expandText: 'c:more',
   },
   decorators: [
     (Story) => (
@@ -51,7 +49,6 @@ export const AlwaysShowAll: Story = {
     renderItem: (item) => <div className="border-b p-2">{item}</div>,
     initialDisplayCount: 3,
     alwaysShowAll: true,
-    expandText: 'c:more',
   },
   decorators: [
     (Story) => (

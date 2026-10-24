@@ -163,11 +163,11 @@ describe('what the sign-in surfaces read', async () => {
 
     const before = await call(getMyAuth, { headers });
     expect((before.data as { institutions: unknown[] }).institutions).toEqual([
-      { connectionId: connection.id, displayName: 'Hogeschool Utrecht', federation: { key: 'surfconext', label: 'SURFconext' }, connected: false },
+      { connectionId: connection.id, displayName: 'Hogeschool Utrecht', federation: { key: 'surfconext', label: 'SURFconext' }, identity: null },
     ]);
 
     await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
     const after = await call(getMyAuth, { headers });
-    expect((after.data as { institutions: { connected: boolean }[] }).institutions[0].connected).toBe(true);
+    expect((after.data as { institutions: { identity: unknown }[] }).institutions[0].identity).not.toBeNull();
   });
 });

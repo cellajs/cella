@@ -7,6 +7,7 @@ import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
+import { env } from '#/env';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -209,6 +210,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     {
       ...body,
       requestId: ctx.get('requestId'),
+      version: env.RELEASE_SHA,
       path: safePath,
       method: ctx.req.method,
       timestamp: getIsoDate(),

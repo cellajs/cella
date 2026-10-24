@@ -9,7 +9,7 @@ import { EvidenceSet, type Finding } from './findings.ts';
 import { ledgerPath, writeLedger } from './ledger.ts';
 import { acrossStates } from './probes/page-structure.ts';
 import { scope } from './scope.ts';
-import { baseUrl, repoRoot, startSession } from './session.ts';
+import { baseUrl, endSession, repoRoot, startSession } from './session.ts';
 import { visitState } from './visit.ts';
 
 /**
@@ -70,7 +70,7 @@ const worker = async () => {
 try {
   await Promise.all(Array.from({ length: Number(values.workers) }, worker));
 } finally {
-  await session.browser.close();
+  await endSession(session);
 }
 
 // Visits finish in any order; scope order keeps the ledger stable between runs

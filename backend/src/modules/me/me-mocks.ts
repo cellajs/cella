@@ -18,9 +18,16 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
     const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later
 
     return {
-      enabledOAuth: ['github'] as const,
+      oauthIdentities: [
+        {
+          provider: 'github' as const,
+          email: faker.internet.email(),
+          createdAt: sessionCreatedAt.toISOString(),
+          lastUsedAt: sessionCreatedAt.toISOString(),
+        },
+      ],
       institutions: [],
-      hasTotp: false,
+      totp: null,
       sessions: [
         {
           id: mockUuid(),

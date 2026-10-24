@@ -21,6 +21,7 @@ export function CountryFlag({ countryCode, className, imgType = 'svg', width = 1
   return (
     <img
       className={cn('inline overflow-hidden shadow-xs', className)}
+      draggable={false}
       {...props}
       src={flagUrl}
       alt={t('c:country_flag', { country: code.toUpperCase() })}

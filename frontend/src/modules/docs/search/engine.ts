@@ -1,4 +1,4 @@
-import { create, insertMultiple, search } from '@orama/orama';
+import { components, create, insertMultiple, search, type Tokenizer } from '@orama/orama';
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
 import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
@@ -44,6 +44,23 @@ type SearchDoc = {
 
 const maxHits = 60;
 const maxChildRows = 5;
+
+/**
+ * Orama's English splitter keeps `-` inside a word and matches word prefixes, so "tenancy" missed "multi-tenancy".
+ * Only the parts are kept: with the whole word as well, "multi" matches two words of one page, and the all-terms
+ * check, which counts matched words, drops the page for the query "multi-tenancy".
+ */
+function createHyphenSplittingTokenizer(): Tokenizer {
+  const base = components.tokenizer.createTokenizer();
+  return {
+    ...base,
+    tokenize: (raw, language, prop, withCache) => {
+      const tokens = base.tokenize(raw, language, prop, withCache);
+      if (!tokens.some((token) => token.includes('-'))) return tokens;
+      return [...new Set(tokens.flatMap((token) => token.split('-')).filter(Boolean))];
+    },
+  };
+}
 
 function pageDocs(page: EnginePage): SearchDoc[] {
   const base = {
@@ -135,7 +152,7 @@ export function createEngine(
   schemas: GenComponentSchema[] | null = null,
   labels: EngineLabels = defaultLabels,
 ) {
-  const db = create({ schema: searchSchema });
+  const db = create({ schema: searchSchema, components: { tokenizer: createHyphenSplittingTokenizer() } });
   const docsById = new Map<string, SearchDoc>();
 
   const insert = (docs: SearchDoc[]) => {

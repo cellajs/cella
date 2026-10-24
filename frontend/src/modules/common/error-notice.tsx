@@ -13,6 +13,7 @@ import { askForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
+import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
 import { getErrorInfo } from '~/utils/get-error-info';
 
@@ -37,6 +38,9 @@ function errorDetailRows(error: ApiError) {
     ['c:severity', error.severity],
     ['c:user_id', error.userId],
     ['c:organization_id', error.organizationId],
+    // The server's full SHA cut to the page's short one, so a rollout mismatch reads at a glance
+    ['c:server_version', error.version?.slice(0, __APP_VERSION__.length)],
+    ['c:app_version', __APP_VERSION__],
   ] as const;
 }
 
@@ -66,10 +70,8 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   // Reset before a route change so the error state is not retained
   useEffect(() => router.subscribe('onBeforeRouteMount', () => resetErrorBoundary?.()), [router, resetErrorBoundary]);
 
-  const handleReload = () => {
-    resetErrorBoundary?.();
-    window.location.reload();
-  };
+  // No boundary reset: the reload can wait on a worker handover, and a reset would rerun the failed route meanwhile
+  const handleReload = () => void reloadApp();
 
   const handleGoToHome = () => {
     resetErrorBoundary?.();

@@ -27,9 +27,11 @@ export function CheckEmailStep() {
 
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email: '' } });
 
-  // A browser that never signed in to the address gets the step that does not say whether it has an account.
+  // A browser that never signed in to the address gets the step that does not say whether it has an account, as does
+  // one past its lookup budget: that step is the whole answer to a 429, so no toast follows it.
   const { mutate: submitEmail, isPending } = useMutation({
     mutationFn: (body: CheckEmailData['body']) => checkEmail({ body }),
+    meta: { suppressGlobalErrorToast: (error) => error.status === 429 },
     onSuccess: ({ recognized }) => {
       if (!recognized) setRestrictedMode(true);
       setStep('signIn', form.getValues('email'));

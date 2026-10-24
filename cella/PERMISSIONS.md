@@ -106,7 +106,7 @@ export const roles = createRoleRegistry(["admin", "member"] as const);
 
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .organization({ roles: roles.all, elevated: roles.all })
+  .organization({ roles: roles.all, elevated: ["admin"] })
   .product("attachment", { parent: "organization" })
   .build();
 ```
