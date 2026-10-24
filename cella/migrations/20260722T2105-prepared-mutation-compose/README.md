@@ -14,7 +14,7 @@ rewrite + inline prepare input annotation).
 ## What & why
 
 `usePreparedMutation` is removed from
-[`frontend/src/query/offline/prepared-mutation.ts`](../../../frontend/src/query/offline/prepared-mutation.ts);
+[frontend/src/query/offline/prepared-mutation.ts](../../../frontend/src/query/offline/prepared-mutation.ts);
 it hid `useMutation` behind five explicit generics. `buildPreparedHandlers(mutation, prepare)`
 stays; hooks call `useMutation` and spread the handlers:
 

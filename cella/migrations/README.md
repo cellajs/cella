@@ -10,7 +10,7 @@ the notes with `pnpm cella migrate`.
 
 - **One folder per migration**, named `<YYYYMMDDThhmm>-<slug>` (UTC, minute precision). The
   timestamp is the stable id and sort key; a date alone collides under high merge activity. Each
-  folder holds a `README.md` (from [`_TEMPLATE.md`](./_TEMPLATE.md)) and whatever the sweep needs
+  folder holds a `README.md` (from [_TEMPLATE.md](./_TEMPLATE.md)) and whatever the sweep needs
   (codemod script, data files, SQL).
 - **The README describes the migration.** Its frontmatter carries `syncBreaking`,
   `clientCacheBump` and, beside a codemod, the codemod's `roots`; the title and the paragraph under
@@ -35,7 +35,7 @@ pnpm cella migrate --mark <id>        # record it as handled
 
 For each note: run its codemod or work its manual steps, run the follow-ups in its **Verify**
 section (`pnpm generate`, `pnpm sdk`, ...), gate on `pnpm check`, then mark it. The
-[`migrate` skill](../skills/migrate/SKILL.md) drives this loop with an agent.
+[migrate skill](../skills/migrate/SKILL.md) drives this loop with an agent.
 
 Several notes that change the schema make one migration: work them all, then generate once with
 their `hints.json` arrays joined, and place each note's `data.sql` statements where their comments
@@ -45,7 +45,7 @@ say. A second generate reports no changes.
 
 Ship the migration in the same PR as the breaking change:
 
-1. Create `cella/migrations/<YYYYMMDDThhmm>-<slug>/README.md` from [`_TEMPLATE.md`](./_TEMPLATE.md)
+1. Create `cella/migrations/<YYYYMMDDThhmm>-<slug>/README.md` from [_TEMPLATE.md](./_TEMPLATE.md)
    (`date -u +%Y%m%dT%H%M` for the prefix) plus the codemod / SQL / data files it needs. Nothing
    else to register.
 2. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
