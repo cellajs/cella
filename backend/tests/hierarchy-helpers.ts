@@ -5,7 +5,9 @@ import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan, toStrictHom
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { getAdminDb } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 
@@ -59,6 +61,41 @@ export async function seedAttachmentHome(org: { id: string; tenantId: string }, 
   );
   await seedEntityHierarchy(getAdminDb('test setup'), plan, { tenantId: org.tenantId, createdBy, slugPrefix: `home-${nanoid(6)}` });
   return plan;
+}
+
+/**
+ * Makes `userId` a `role` member of every channel the plan seeded, on the admin connection: an organization role that
+ * is not elevated reaches no row homed below the organization, so a member acts there through these memberships.
+ * None in the template, whose plans seed no channel.
+ */
+export async function joinAttachmentHome(
+  org: { id: string; tenantId: string },
+  plan: TestEntityHierarchyPlan,
+  userId: string,
+  role: string = hierarchy.getLeastPrivilegedRole('organization'),
+) {
+  if (plan.seedChannelRows.length === 0) return;
+  const rows = plan.seedChannelRows.map((row) => ({
+    ...Object.fromEntries([
+      ...row.ancestorColumns.map((column) => [column.idKey, column.id]),
+      [appConfig.entityIdColumnKeys[row.channelType], row.id],
+    ]),
+    id: generateId(),
+    tenantId: org.tenantId,
+    organizationId: org.id,
+    channelType: row.channelType,
+    channelId: row.id,
+    userId,
+    role,
+    displayOrder: 1,
+    createdBy: userId,
+  }));
+  // The channel id columns come from the hierarchy, so the insert type needs a cast.
+  await getAdminDb('test setup')
+    .insert(membershipsTable)
+    .values(rows as (typeof membershipsTable.$inferInsert)[]);
+  // A session cached before the join holds the bindings version the insert moved past
+  invalidateCache.user(userId);
 }
 
 /** The id column a create body names its home by: the deepest channel in the plan's columns, none when that is the organization. */

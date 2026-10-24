@@ -181,6 +181,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       organizationId: tenant.organization.id,
       createdBy: createdBy ?? tenant.user.id,
       description: '',
+      members: tenant === owner ? [member.id] : [],
     });
     await adminDb.update(attachmentsTable).set({ description }).where(eq(attachmentsTable.id, attachment.id));
     removals.push(async () => {
