@@ -19,7 +19,7 @@ alone also gates the image builds, the service boot and the infra preflight.
 ## Blast radius
 
 Every app that requires status checks on `main`; an app without a ruleset or branch protection has nothing to do.
-No code, database or cache change. `build-services` takes about 20 seconds longer on every PR.
+No code, database or cache change. The sign-in suites add a few seconds to `build-services` on every PR.
 
 ## Run
 
