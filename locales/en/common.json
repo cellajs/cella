@@ -899,7 +899,7 @@
   "view": "View",
   "view_resource": "View {{resource}}",
   "views": "Views",
-  "views_retention_hint": "Views are only tracked for items from the last 90 days.",
+  "views_retention_hint": "Views are only tracked for items from the last {{days}} days.",
   "visible": "Visible",
   "visit": "Visit",
   "waitlist": "Waitlist",

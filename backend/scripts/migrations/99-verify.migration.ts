@@ -11,7 +11,7 @@ import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { cdcPublicationName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
-import { MAINTENANCE_PROCEDURE, partitionConfigs } from './10-partitions.migration';
+import { partitionConfigs, retentionProcedure } from './10-retention.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { loggedAgainTables, unloggedTables } from './10-unlogged.migration';
 
@@ -178,8 +178,8 @@ ${partitionChecks}
     SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
     WHERE c.relnamespace = 'public'::regnamespace AND c.relname NOT IN (${partitionConfigs.map((c) => `'${c.name}'`).join(', ')})
   ) THEN missing := array_append(missing, 'unexpected-partitioned-table'); END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${MAINTENANCE_PROCEDURE}' AND pronamespace = 'public'::regnamespace) THEN
-    missing := array_append(missing, 'procedure:${MAINTENANCE_PROCEDURE}'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${retentionProcedure}' AND pronamespace = 'public'::regnamespace) THEN
+    missing := array_append(missing, 'procedure:${retentionProcedure}'); END IF;
 
   -- CDC publication (${publicationTableCount} tracked tables)
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${cdcPublicationName}') THEN

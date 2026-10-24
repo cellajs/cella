@@ -98,6 +98,24 @@ export interface LocalBlobStorageConfig {
   uploadRetryDelays: readonly number[];
 }
 
+/** Periods in days. A tenant cannot change them: they bound what the operator keeps for every organization. */
+export interface RetentionConfig {
+  /** Activity history, notifications and seen marks; also how long a device may stay away before it starts over. */
+  activityDays: number;
+  sessionDaysAfterExpiry: number;
+  tokenDaysAfterExpiry: number;
+  deviceDaysUnseen: number;
+  /** Known devices kept per user, the most recently seen. */
+  devicesPerUser: number;
+  oidcPayloadDaysAfterUse: number;
+  /** Contact messages and waitlist entries; a newsletter subscription stays until the unsubscribe. */
+  requestDays: number;
+  /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
+  invitationDays: number;
+  rateLimitDaysAfterWindow: number;
+  pushSubscriptionDaysUnseen: number;
+}
+
 export interface ThemeNavigationConfig {
   hasSidebarTextLabels: boolean;
   sidebarWidthExpanded: string;
@@ -206,6 +224,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
     rateLimits: { apiPointsPerHour: number };
   };
+  retention: RetentionConfig;
 
   systemRoles: T['systemRoles'];
 

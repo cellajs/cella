@@ -82,6 +82,20 @@ export const config = {
     rateLimits: { apiPointsPerHour: 1000 },
   } as const,
 
+  /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
+  retention: {
+    activityDays: 90,
+    sessionDaysAfterExpiry: 30,
+    tokenDaysAfterExpiry: 30,
+    deviceDaysUnseen: 400,
+    devicesPerUser: 50,
+    oidcPayloadDaysAfterUse: 30,
+    requestDays: 365,
+    invitationDays: 120,
+    rateLimitDaysAfterWindow: 1,
+    pushSubscriptionDaysUnseen: 400,
+  },
+
   // System roles
 
   systemRoles: ['admin'] as const,

@@ -42,7 +42,7 @@ export type StepUpProof = (typeof stepUpProofs)[number];
 /**
  * Authenticated session data. `secret` holds the hash of the random token in the session's cookie, never the token. A
  * revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows what ended and why; expiry needs
- * no stamp. Rows expired for over 30 days are swept nightly by maintain_partitions().
+ * no stamp. Expired rows are swept nightly by apply_retention() (`appConfig.retention`).
  */
 export const sessionsTable = snakeCase.table(
   'sessions',

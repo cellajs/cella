@@ -5,7 +5,7 @@ import { appPartitionConfigs } from '#/db/product-tables';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
-import { partitionConfigs } from '../scripts/migrations/10-partitions.migration';
+import { partitionConfigs } from '../scripts/migrations/10-retention.migration';
 
 // App entries carry their Drizzle table, so the map extends itself from product-tables.ts.
 const drizzleTables: Record<string, PgTable> = {

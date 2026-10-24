@@ -1,15 +1,21 @@
 import { getTableName } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { appPartitionConfigs } from '#/db/product-tables';
 import type { PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
+const { retention } = appConfig;
+
+/** A period of `appConfig.retention` as a SQL interval literal. */
+const days = (count: number) => `interval '${count} days'`;
+
 // Catalog cloning avoids a duplicate schema definition. The parity test verifies each table,
 // partition-column PK, and required non-null control column against Drizzle metadata.
 const cellaPartitionConfigs: PartitionConfig[] = [
-  { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
-  { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
+  { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: `${retention.activityDays} days` },
+  { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: `${retention.activityDays} days` },
   // Per-user notification inbox, aligned with seen_by so retention needs no sweep job.
-  { name: 'notifications', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
+  { name: 'notifications', partitionColumn: 'created_at', interval: '1 week', retention: `${retention.activityDays} days` },
 ];
 
 /** Cella's entries followed by the app's (`appPartitionConfigs` in product-tables.ts); the verify block and parity test read this list. */
@@ -19,22 +25,39 @@ export const partitionConfigs: PartitionConfig[] = [
 ];
 
 /**
- * Small tables swept row by row by the same procedure: too small to justify partitions, and a plain
- * `id` primary key keeps them referenceable. Retention counts from the named column.
+ * Plain tables swept row by row by the same procedure: too small to justify partitions, and a plain `id` primary key
+ * keeps them referenceable. `aged` is the condition under which a row goes.
  */
-const sweepConfigs: { name: string; column: string; retention: string }[] = [
-  { name: 'sessions', column: 'expires_at', retention: '30 days' },
-  { name: 'tokens', column: 'expires_at', retention: '30 days' },
+const sweepRules: { table: string; aged: string }[] = [
+  { table: 'sessions', aged: `expires_at < now() - ${days(retention.sessionDaysAfterExpiry)}` },
+  { table: 'tokens', aged: `expires_at < now() - ${days(retention.tokenDaysAfterExpiry)}` },
+  { table: 'devices', aged: `last_seen_at < now() - ${days(retention.deviceDaysUnseen)}` },
+  {
+    table: 'devices',
+    aged: `(user_id, device_id_hash) IN (SELECT user_id, device_id_hash FROM (SELECT user_id, device_id_hash,
+      row_number() OVER (PARTITION BY user_id ORDER BY last_seen_at DESC) AS position FROM devices) ranked
+      WHERE position > ${retention.devicesPerUser})`,
+  },
+  { table: 'oidc_payloads', aged: `expires_at < now() OR consumed_at < now() - ${days(retention.oidcPayloadDaysAfterUse)}` },
+  // Newsletter rows are a standing subscription: they go with an unsubscribe, never with age.
+  { table: 'requests', aged: `type IN ('contact', 'waitlist') AND created_at < now() - ${days(retention.requestDays)}` },
+  // A held invitation (a draft channel's, never mailed) has no reminded_at and goes with its channel.
+  {
+    table: 'inactive_memberships',
+    aged: `rejected_at < now() - ${days(retention.invitationDays)} OR (rejected_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
+  },
+  { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
+  { table: 'push_subscriptions', aged: `coalesce(last_seen_at, created_at) < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
 ];
 
-/** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-partition-maintenance.ts). */
-export const MAINTENANCE_PROCEDURE = 'maintain_partitions';
+/** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-retention.ts). */
+export const retentionProcedure = 'apply_retention';
 
 /**
  * Generates an idempotent, catalog-driven conversion of a table to native range partitions.
  * Constraints, indexes, and triggers are captured and replayed after the source table is
  * dropped because their schema-wide names would otherwise collide. A DEFAULT partition catches
- * rows outside every range; `maintain_partitions()` moves them into place.
+ * rows outside every range; `apply_retention()` moves them into place.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
   return `  -- ==========================================================================
@@ -90,7 +113,7 @@ function generateTablePartitionSql(config: PartitionConfig): string {
     EXECUTE 'CREATE TABLE ${config.name}_default PARTITION OF ${config.name} DEFAULT';
 
     -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
-    --    maintain_partitions() below creates the current ranges and moves rows over
+    --    apply_retention() below creates the current ranges and moves rows over
     EXECUTE 'INSERT INTO ${config.name} SELECT * FROM ${config.name}_old';
 
     -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
@@ -111,16 +134,15 @@ const configRow = (c: PartitionConfig): string =>
   `('${c.name}', '${c.partitionColumn}', interval '${c.interval}', ${c.retention ? `interval '${c.retention}'` : 'NULL::interval'})`;
 
 /**
- * The maintenance procedure: drops partitions older than the retention window, trims the DEFAULT
+ * The retention procedure: drops partitions older than the retention window, trims the DEFAULT
  * partition, then creates partitions from the newest upper bound through two intervals ahead.
  * Rows that landed in DEFAULT for a new range are moved out first, because Postgres refuses a
  * partition whose range the DEFAULT partition already holds rows for. Ends with the row sweeps.
  */
-function generateMaintenanceProcedureSql(): string {
-  return `CREATE OR REPLACE PROCEDURE public.${MAINTENANCE_PROCEDURE}() LANGUAGE plpgsql AS $proc$
+function generateRetentionProcedureSql(): string {
+  return `CREATE OR REPLACE PROCEDURE public.${retentionProcedure}() LANGUAGE plpgsql AS $proc$
 DECLARE
   cfg record;
-  sw record;
   child record;
   lo timestamptz;
   hi timestamptz;
@@ -169,13 +191,7 @@ BEGIN
   END LOOP;
 
   -- Plain tables: retention by DELETE
-  FOR sw IN
-    SELECT * FROM (VALUES
-      ${sweepConfigs.map((c) => `('${c.name}', '${c.column}', interval '${c.retention}')`).join(',\n      ')}
-    ) AS t(tbl, col, keep)
-  LOOP
-    EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', sw.tbl, sw.col) USING sw.keep;
-  END LOOP;
+  ${sweepRules.map(({ table, aged }) => `DELETE FROM ${table} WHERE ${aged};`).join('\n  ')}
 END $proc$;`;
 }
 
@@ -183,12 +199,12 @@ async function run(): Promise<SideEffectBlock> {
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
   const migrationSql = `-- =============================================================================
--- Migration: Time-partitioned tables with in-database retention
+-- Migration: Time-partitioned tables and in-database retention
 -- =============================================================================
 -- Converts the tables below to native range partitions and installs
--- maintain_partitions(), which pg_cron runs nightly (see
--- scripts/db/schedule-partition-maintenance.ts) to create partitions ahead
--- and drop those past retention. No extension is needed in this database.
+-- apply_retention(), which pg_cron runs nightly (see
+-- scripts/db/schedule-retention.ts) to create partitions ahead, drop those
+-- past retention and sweep the plain tables. No extension is needed here.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -209,7 +225,10 @@ ${partitionConfigs
 DROP EXTENSION IF EXISTS pg_partman CASCADE;
 DROP SCHEMA IF EXISTS partman CASCADE;
 
-${generateMaintenanceProcedureSql()}
+-- The procedure's earlier name; the schedule script moves the pg_cron job over.
+DROP PROCEDURE IF EXISTS public.maintain_partitions();
+
+${generateRetentionProcedureSql()}
 
 DO $$
 DECLARE
@@ -221,22 +240,23 @@ DECLARE
   trg_defs text[];
 BEGIN
 ${tableSetupSql}
-  CALL public.${MAINTENANCE_PROCEDURE}();
-  RAISE NOTICE 'Partition setup complete.';
+  CALL public.${retentionProcedure}();
+  RAISE NOTICE 'Retention setup complete.';
 END $$;
 `;
 
   return {
-    tag: 'partition_setup',
-    title: 'Partitioned tables and maintain_partitions()',
+    tag: 'retention_setup',
+    title: 'Partitioned tables and apply_retention()',
     sql: migrationSql,
-    notes: partitionConfigs.map(
-      (config) => `${config.name}: ${config.interval} partitions, ${config.retention ?? 'indefinite'} retention`,
-    ),
+    notes: [
+      ...partitionConfigs.map((config) => `${config.name}: ${config.interval} partitions, ${config.retention ?? 'indefinite'} retention`),
+      ...sweepRules.map(({ table, aged }) => `${table}: swept where ${aged.replace(/\s+/g, ' ')}`),
+    ],
   };
 }
 
 export const sideEffect: SideEffectProducer = {
-  name: 'Partitions',
+  name: 'Retention',
   produce: run,
 };
