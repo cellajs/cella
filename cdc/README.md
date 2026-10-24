@@ -63,7 +63,7 @@ The worker holds a source transaction until its commit. That lets it drop the no
 
 ### Record
 
-A flush is recorded in one transaction of the worker: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete and a restore count as a delete and a create, for a row's own count and for the uses of the rows it embeds.
+A flush is recorded in one transaction of the worker: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete and a restore count as a delete and a create, for a row's own count and for the uses of the rows it embeds. The later removal of a tombstone by the retention procedure is no activity: every client learned of the delete when the tombstone came ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
 
 Recording happens once per change, however often the change arrives. An activity's id comes from the commit position of its source transaction and the place of the change in it, so a second delivery inserts nothing, and only an inserted activity gets a sequence value and counts.
 

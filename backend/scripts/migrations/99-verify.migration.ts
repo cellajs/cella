@@ -11,6 +11,7 @@ import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { cdcPublicationName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
+import { deletionQueueTriggers } from './10-deletion-queue.migration';
 import { partitionConfigs, retentionProcedure } from './10-retention.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { loggedAgainTables, unloggedTables } from './10-unlogged.migration';
@@ -31,10 +32,12 @@ async function run(): Promise<SideEffectBlock> {
     ...allImmutabilityTables.map(({ tableName }) => ({ tableName, triggerName: immutableKeysTriggerName(tableName) })),
     ...allAdminOnlyWriteTables.map(({ tableName }) => ({ tableName, triggerName: adminOnlyWriteTriggerName(tableName) })),
     ...membershipRuleTriggers,
+    ...deletionQueueTriggers,
   ];
   const functionNames = [
     ...new Set([...allImmutabilityTables, ...allAdminOnlyWriteTables].map((t) => t.functionName)),
     ...membershipRuleTriggers.map((t) => t.functionName),
+    ...deletionQueueTriggers.map((t) => t.functionName),
     'apply_count_deltas',
     'fold_search',
   ];

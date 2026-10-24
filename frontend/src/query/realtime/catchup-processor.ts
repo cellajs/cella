@@ -15,6 +15,8 @@ import { syncStore } from '~/query/realtime/sync-store';
 /** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
 const generationRefetchSpreadMs = 10_000;
 
+const dayMs = 24 * 60 * 60 * 1000;
+
 /** Refetches what is on screen of every synced type and marks the rest stale, after this client's share of the spread. */
 function refetchSyncedQueries(): void {
   setTimeout(() => {
@@ -30,7 +32,12 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   const { changes, views } = response;
   const syncState = syncStore.getState();
 
-  if (syncState.adoptGeneration(response.generation)) refetchSyncedQueries();
+  const newGeneration = syncState.adoptGeneration(response.generation);
+  // Away longer than the activity window, this device may hold rows whose tombstones the server has since removed.
+  const awayTooLong = syncState.startOverIfAway(appConfig.retention.activityDays * dayMs);
+  if (awayTooLong) console.debug('[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched');
+  if (newGeneration || awayTooLong) refetchSyncedQueries();
+  syncState.markCaughtUp();
   let hadGap = false;
 
   if (views?.length) {

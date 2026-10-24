@@ -85,6 +85,7 @@ export const config = {
   /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
   retention: {
     activityDays: 90,
+    deletedItemsDays: 120,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
     deviceDaysUnseen: 400,

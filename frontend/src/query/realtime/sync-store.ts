@@ -36,6 +36,8 @@ interface SyncStoreState {
   cursor: string | null;
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
   generation: number | null;
+  /** When this device last processed a catchup, on its own clock in epoch ms; null before the first. */
+  caughtUpAt: number | null;
   orgs: Record<string, OrgSyncState>;
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
@@ -47,6 +49,13 @@ interface SyncStoreState {
    * @returns true when the client held another generation and its synced data needs a refetch.
    */
   adoptGeneration: (generation: number | undefined) => boolean;
+  /**
+   * Starts over when this device last caught up longer than `awayMs` ago: the server may have removed tombstones it
+   * never read, so every cursor goes back to 0, as for a new generation.
+   * @returns true when the cursors were reset and the synced data needs a refetch.
+   */
+  startOverIfAway: (awayMs: number) => boolean;
+  markCaughtUp: () => void;
   /** Creates the org entry the next catchup declares views for; a non-empty tenant id replaces the stored one. */
   trackOrg: (organizationId: string, tenantId?: string) => void;
   getOrgTenantId: (organizationId: string) => string | null;
@@ -69,7 +78,13 @@ interface SyncStoreState {
   reset: () => void;
 }
 
-const initStore: Pick<SyncStoreState, 'cursor' | 'generation' | 'orgs' | 'views'> = { cursor: null, generation: null, orgs: {}, views: {} };
+const initStore: Pick<SyncStoreState, 'cursor' | 'generation' | 'caughtUpAt' | 'orgs' | 'views'> = {
+  cursor: null,
+  generation: null,
+  caughtUpAt: null,
+  orgs: {},
+  views: {},
+};
 
 /** The server's cap on catchup views (`streamCatchupBodySchema`): a longer body fails the SDK's validation, and with it the whole catchup. */
 const maxCatchupViews = 256;
@@ -77,6 +92,15 @@ const maxCatchupViews = 256;
 /** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
 function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
   return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
+}
+
+/** Puts every org, channel and view cursor back at 0, so the next catchup stores the frontiers as baselines. */
+function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'views'>): void {
+  for (const org of Object.values(state.orgs)) {
+    for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
+    org.channels = {};
+  }
+  for (const view of Object.values(state.views)) view.cursor = 0;
 }
 
 function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string, tenantId?: string): OrgSyncState {
@@ -106,15 +130,20 @@ export const syncStore = createStore<SyncStoreState>()(
           if (generation === undefined || generation === held) return false;
           set((state) => {
             state.generation = generation;
-            if (held === null) return;
-            for (const org of Object.values(state.orgs)) {
-              for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
-              org.channels = {};
-            }
-            for (const view of Object.values(state.views)) view.cursor = 0;
+            if (held !== null) resetCursors(state);
           });
           return held !== null;
         },
+        startOverIfAway: (awayMs) => {
+          const { caughtUpAt } = get();
+          if (caughtUpAt === null || Date.now() - caughtUpAt <= awayMs) return false;
+          set((state) => resetCursors(state));
+          return true;
+        },
+        markCaughtUp: () =>
+          set((state) => {
+            state.caughtUpAt = Date.now();
+          }),
 
         trackOrg: (organizationId, tenantId) =>
           set((state) => {
@@ -207,6 +236,7 @@ export const syncStore = createStore<SyncStoreState>()(
         partialize: (state) => ({
           cursor: state.cursor,
           generation: state.generation,
+          caughtUpAt: state.caughtUpAt,
           orgs: state.orgs,
           views: state.views,
         }),
