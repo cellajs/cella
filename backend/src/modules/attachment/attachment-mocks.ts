@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'shared';
+import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
 import { hashSourceId } from 'shared/utils/hash-source-id';
 import {
   generateMockEntityChannelIdColumns,
@@ -59,8 +59,12 @@ export const mockPresignedUrlsResponse = (count = 2) => mockBatchResponse(mockPr
 
 export const mockCreateAttachmentsBody = () =>
   withFakerSeed('attachment:create-body', () => {
-    const { id, name, filename, contentType, size, keys } = mockAttachment();
-    return [{ id, name, filename, contentType, size, keys, stx: mockStx() }];
+    const attachment = mockAttachment();
+    const { id, name, filename, contentType, size, keys } = attachment;
+    // Where the hierarchy homes attachments below the organization, the body names that channel (the deepest home).
+    const home = hierarchy.possibleHomeChannels('attachment').find((type) => type !== 'organization');
+    const placement = home && { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] };
+    return [{ id, name, filename, contentType, size, keys, ...placement, stx: mockStx() }];
   });
 
 /** Each changed field carries its HLC timestamp, `millis:counter:sourceHash`. */
