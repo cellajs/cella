@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.22.0](https://github.com/cellajs/cella/compare/0.21.0...0.22.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* tuning bundle: confirmations open inside their menu, phone search fills to the keyboard, dependency updates ([#1504](https://github.com/cellajs/cella/issues/1504))
+* every request array and record has a size limit, so a body of failing elements costs one validation issue ([#1503](https://github.com/cellajs/cella/issues/1503))
+* replaced images leave storage, a deleted account keeps no activity times, and compaction stores no deleted text ([#1498](https://github.com/cellajs/cella/issues/1498))
+* tuning bundle: sign-in methods as dated tiles, magic links for known browsers, only org admins elevated ([#1497](https://github.com/cellajs/cella/issues/1497))
+* **frontend:** an app's own styles live in app.css, so tailwind.css syncs, and marketing routes stay app-owned ([#1496](https://github.com/cellajs/cella/issues/1496))
+* **docs:** a Markdown link label holds no inline code, and pnpm style fails on one ([#1495](https://github.com/cellajs/cella/issues/1495))
+* uploads stay in the uploader's folder, deleted files leave storage, and devices choose their offline files ([#1493](https://github.com/cellajs/cella/issues/1493))
+
+### 🎉 New features
+
+* uploads stay in the uploader's folder, deleted files leave storage, and devices choose their offline files ([#1493](https://github.com/cellajs/cella/issues/1493)) ([79cd742](https://github.com/cellajs/cella/commit/79cd7422e69d3bd3987ee7f9257de4e121733d3b))
+
+
+### 🐞 Bug fixes
+
+* every request array and record has a size limit, so a body of failing elements costs one validation issue ([#1503](https://github.com/cellajs/cella/issues/1503)) ([b08f11d](https://github.com/cellajs/cella/commit/b08f11df2b50ffad583af37ea9c19fcc50f50aa6))
+* replaced images leave storage, a deleted account keeps no activity times, and compaction stores no deleted text ([#1498](https://github.com/cellajs/cella/issues/1498)) ([9bebd4c](https://github.com/cellajs/cella/commit/9bebd4cc4405ce92991f2818795ac55c0e865d95))
+* the MFA page finds its account by the challenge cookie, and an error page keeps its title while navigating away ([#1502](https://github.com/cellajs/cella/issues/1502)) ([7ef9fcf](https://github.com/cellajs/cella/commit/7ef9fcf071b565e975955d58f86e4483bd7ea33d))
+
+
+### 🔧 Small improvements
+
+* **frontend:** an app's own styles live in app.css, so tailwind.css syncs, and marketing routes stay app-owned ([#1496](https://github.com/cellajs/cella/issues/1496)) ([5fe30ec](https://github.com/cellajs/cella/commit/5fe30ec2b44852f369e565d0d25b532cc10a7848))
+
+
+### 🧹 Chores
+
+* **docs:** a Markdown link label holds no inline code, and pnpm style fails on one ([#1495](https://github.com/cellajs/cella/issues/1495)) ([1175c3b](https://github.com/cellajs/cella/commit/1175c3bc7a900f48c96a2260220daf99519c1a17))
+* tuning bundle: confirmations open inside their menu, phone search fills to the keyboard, dependency updates ([#1504](https://github.com/cellajs/cella/issues/1504)) ([11239ac](https://github.com/cellajs/cella/commit/11239ac8cafc66a02385bfe09e0fd8fd5e20d6fb))
+* tuning bundle: sign-in methods as dated tiles, magic links for known browsers, only org admins elevated ([#1497](https://github.com/cellajs/cella/issues/1497)) ([5e4c7a9](https://github.com/cellajs/cella/commit/5e4c7a9967a3551cb0551f578de49ee93fd25c7a))
+
 ## [0.21.0](https://github.com/cellajs/cella/compare/0.20.0...0.21.0) (2026-10-23)
 
 
