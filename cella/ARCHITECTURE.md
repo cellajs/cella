@@ -71,16 +71,16 @@ The permission engine lives in `shared/`, so the API and the optional Yjs relay 
 
 ## Data lifecycle
 
-A row is live, then deleted, then gone, and each step has one meaning:
+What a delete does depends on what is deleted:
 
-- **Deleted.** The row becomes a tombstone: hidden everywhere, and dropped by every device through sync. Its files and its collaborative document stay with it, so a system admin can still restore it with a script. The app has no restore.
-- **Gone.** After the deleted-items period, the nightly retention procedure (`apply_retention()`, run by pg_cron) removes the row. However a row leaves the database (that removal, a cascade from a deleted channel or organization, a hand-written `DELETE`), its delete trigger queues what it stored outside its table, and a job deletes those files and retires the collaborative document.
+- **Product**: becomes a tombstone, hidden everywhere and dropped by every device through sync, and is removed after the deleted-items period. Until then a system admin can restore it; the app has no restore.
+- **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, and after the archived period it goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
+- **Channel below the organization**: removed at once, with the channels and products in it.
+- **Resource** (session, token, device, invitation): swept nightly after its own period.
 
-The activity window bounds everything time-limited in sync: activity history, notifications, seen marks, and how long a device may stay away. A device that has not caught up within it starts over, dropping what it holds and reading it again. A tombstone lives longer than that window, so a device that kept up never misses a deletion.
+Whichever way a row leaves, the files and collaborative document it stored go after it. Sync keeps activity for the activity window, and a device away longer starts over. A tombstone outlives that window, so a device that keeps up never misses a deletion.
 
-Deleting an organization archives its tenant, and so does the end of a contract: everyone loses access at once, a system admin can still restore it, and after the archived period the organization goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
-
-Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Tables that only collect rows (sessions, tokens, devices, requests, invitations) get a sweep rule in the same procedure. Backups and the buckets' object versions expire on their own schedule, so a removed row or file leaves them within their window as well.
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Backups and bucket object versions expire on their own schedule.
 
 ## Contracts and operations
 
@@ -93,8 +93,6 @@ Tests cover generated contracts, permission parity, cross-scope access, database
 ## Scaling
 
 Cella runs one API process per deployment and scales up and apart, not out. Up: a bigger VM for the API and a bigger managed database. Apart: each worker (CDC, Yjs, OAuth, MCP, jobs) moves to a VM of its own when the API's VM gets busy, and each is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler. The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
-
-A second API process is not part of the design. The CDC worker hands every change to one API process over one socket, and that process holds every SSE stream, drops its caches on each change and ends the streams when the sync books move to a new generation. A second process would hear none of it: its clients would learn of changes only at reconnect, and its caches would go stale. Running the API on more than one process would need a bus between them for the worker's changes, and the infra has no option for it. A deploy overlap is the one moment two API processes exist; [Deployment](./DEPLOYMENT.md#rollout-strategies) says what that costs.
 
 ## Repository map
 
