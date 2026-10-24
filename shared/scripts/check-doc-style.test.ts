@@ -42,6 +42,21 @@ describe('docFindings', () => {
     ]);
   });
 
+  it('finds inline code in a link label, outside fenced code, double-backtick examples and image alt text', () => {
+    const source = [
+      'See [`define.ts`](./define.ts) and the [`migrate` skill][skills].',
+      'Write [define.ts](./define.ts), never ``[`define.ts`](./define.ts)``. ![`logo`](./logo.svg)',
+      '```md',
+      '[`define.ts`](./define.ts)',
+      '```',
+    ].join('\n');
+
+    expect(found('guide.md', source).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
+      { line: 1, column: 5, term: '[`define.ts`]' },
+      { line: 1, column: 40, term: '[`migrate` skill]' },
+    ]);
+  });
+
   it('skips changelogs, non-doc files, and agent wording in migration notes and infra', () => {
     expect(found('CHANGELOG.md', `${dash} ${singular}`)).toEqual([]);
     expect(found('guide.txt', `${dash} ${singular}`)).toEqual([]);

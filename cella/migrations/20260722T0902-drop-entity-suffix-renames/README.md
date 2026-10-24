@@ -22,7 +22,7 @@ siblings (`getValidProduct`, `ProductView`, `productColumns`), bare `channelEnti
 `channelEntityId`/`Ids`/`Key` -> `channelId`/`Ids`/`Key`, `ChannelScope` -> `AncestorChannelIds`.
 Type-string unions (`ChannelEntityType`, `productEntityTypes`, `entityType`/`entityId`) keep
 `entity`. Full map: `RENAMES` (48 ids) and `FILE_STEMS` (9 files) in
-[`drop-entity-suffix-renames.ts`](./drop-entity-suffix-renames.ts), allow-listed and word-boundary
+[drop-entity-suffix-renames.ts](./drop-entity-suffix-renames.ts), allow-listed and word-boundary
 matched.
 
 ## Blast radius

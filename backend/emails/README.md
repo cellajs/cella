@@ -1,6 +1,6 @@
 # Emails
 
-Transactional email templates, authored as React components and rendered to static HTML on the server. There is **no runtime dependency on [`jsx-email`](https://jsx.email/)**: a small subset of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and [components/primitives/](components/primitives/).
+Transactional email templates, authored as React components and rendered to static HTML on the server. There is **no runtime dependency on [jsx-email](https://jsx.email/)**: a small subset of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and [components/primitives/](components/primitives/).
 
 ## Authoring a template
 
