@@ -49,7 +49,7 @@ export function ContactPage() {
                 <p>
                   <a
                     href={method.link}
-                    className="group/external-link focus-effect link-decoration active:link-decoration-strong rounded-md p-0.5 text-sm hover:underline sm:text-base"
+                    className="group/external-link focus-effect link-inline rounded-md p-0.5 text-sm sm:text-base"
                     target={isWebPage ? '_blank' : undefined}
                     rel={isWebPage ? 'noreferrer' : undefined}
                   >

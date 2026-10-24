@@ -449,7 +449,7 @@
   "mfa.text": "Enforce a second authentication method for increased security of your account.",
   "mfa_disable_confirmation.text": "Are you sure you want to disable multifactor authentication? Your account will be less secure.",
   "mfa_disabled": "Multifactor authentication disabled.",
-  "mfa_disabled.text": "MFA require time-based password.",
+  "mfa_disabled.text": "MFA requires a passkey and a time-based password.",
   "mfa_enable_confirmation.text": "Enabling Multi-Factor Authentication adds an extra layer of security to your account.",
   "mfa_enabled": "Multifactor authentication enabled.",
   "mfa_header": "Multifactor authentication",

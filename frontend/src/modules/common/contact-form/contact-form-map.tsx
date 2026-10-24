@@ -78,6 +78,8 @@ function CompanyMap({ styleUrl }: CompanyMapProps) {
       attributionControl: { compact: true },
     });
     instance.touchZoomRotate.disableRotation();
+    // Draws the center 40px below the middle, so the address card above the marker fits inside the map
+    instance.setPadding({ top: 80 });
     new Marker({ element: markerNode }).setLngLat(coordinates).addTo(instance);
     setMap(instance);
     return () => instance.remove();

@@ -28,13 +28,19 @@ export const devices = {
  * `call` is a signed-in fetch of the app's own API, the same helper shape `a11y/scope-config.ts` resolvers get.
  */
 export const placeholders = {
-  /** Path prefix of an organization the shot user administers, the first in their menu: the one their menu opens on. */
+  /**
+   * Path prefix of the first published organization in the shot user's menu that they administer. The seed makes the
+   * first one a draft, whose page opens under a "Publish" banner.
+   */
   org: async (call) => {
     const [{ items: organizations }, { items: memberships }] = await Promise.all([call('/organizations?limit=50'), call('/me/memberships')]);
-    const [administered] = memberships
-      .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)
-      .sort((a, b) => a.displayOrder - b.displayOrder);
-    const organization = organizations.find(({ id }) => id === administered?.channelId) ?? organizations[0];
+    const published = organizations.filter(({ publishedAt }) => publishedAt);
+    const organization =
+      memberships
+        .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((membership) => published.find(({ id }) => id === membership.channelId))
+        .find(Boolean) ?? published[0];
     return organization ? `/${organization.tenantId}/${organization.slug}` : null;
   },
 };
@@ -91,7 +97,7 @@ export const shots = [
   {
     id: 'system-page',
     device: 'pcWide',
-    path: '/system/users',
+    path: '/system/organizations',
     out: 'frontend/public/static/marketing/screenshots/system-page',
     open: openMenu,
   },
