@@ -5,11 +5,12 @@ import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/el
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
@@ -221,14 +222,11 @@ function PanelDragWrapper({
 
   const registerHandle = useCallback((el: HTMLElement | null) => setHandleEl(el), []);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      e.preventDefault();
-
+  const handleMove = useCallback(
+    (step: -1 | 1) => {
       const currentOrder = panelIdsRef.current;
       const currentIdx = currentOrder.indexOf(panelId);
-      const targetIdx = e.key === 'ArrowLeft' ? currentIdx - 1 : currentIdx + 1;
+      const targetIdx = currentIdx + step;
       if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
 
       const newOrder = [...currentOrder];
@@ -243,8 +241,8 @@ function PanelDragWrapper({
   }, [onPanelToggle, panelId]);
 
   const ctxValue = useMemo(
-    () => ({ registerHandle, onKeyDown: handleKeyDown, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
-    [registerHandle, handleKeyDown, handleToggleCollapsed, previewContainer, index, total],
+    () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
+    [panelId, registerHandle, handleMove, handleToggleCollapsed, previewContainer, index, total],
   );
 
   useEffect(() => {
@@ -281,6 +279,7 @@ function PanelDragWrapper({
           element: wrapper,
           dragHandle: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
+          onDrop: () => followReorderFocus(panelId),
           // In autoHeight boards the wrapper is as tall as its content, and the native preview would snapshot the entire panel.
           onGenerateDragPreview: ({ nativeSetDragImage }) => {
             setCustomNativeDragPreview({

@@ -1,7 +1,7 @@
 /**
  * Enforces frontend conventions Biome cannot express reliably: named function components, `ComponentType<Props>` values,
  * stores and route context read through a selector, `press={false}` on a Button, `formResolver` and `noValidate` on a
- * form. Each check below states its rule.
+ * form, a drag grip through the reorder handle. Each check below states its rule.
  */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -153,6 +153,33 @@ function checkFormResolver(file: string, node: ts.Node, report: Report): void {
 }
 
 /**
+ * A drag grip renders through `ReorderHandle` or `reorderColumn`, which give it the arrow keys and the move menu. A drag
+ * preview (`*-preview.tsx`) only pictures the grip, and the editor's block handle moves blocks from its own menu.
+ */
+function checkReorderGrip(file: string, sourceFile: ts.SourceFile, report: Report): void {
+  if (file.endsWith('-preview.tsx') || file === 'frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx') return;
+  let grip: ts.Node | undefined;
+  let hasHandle = false;
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings || !ts.isNamedImports(bindings)) continue;
+    for (const element of bindings.elements) {
+      const imported = (element.propertyName ?? element.name).text;
+      if (statement.moduleSpecifier.text === 'lucide-react' && /^Grip(Vertical|Horizontal)Icon$/.test(imported)) grip = element;
+      if (imported === 'ReorderHandle' || imported === 'reorderColumn') hasHandle = true;
+    }
+  }
+  if (grip && !hasHandle) {
+    report(
+      grip,
+      'reorder-grip',
+      'render a drag grip through ReorderHandle or reorderColumn, so the keyboard and a pointer that cannot drag move it too',
+    );
+  }
+}
+
+/**
  * A memo whose dependency array names a value its callback never reads. The React Compiler memoizes on what the callback
  * reads, so that value stops triggering a recompute and the result goes stale; derive the result from the value itself.
  */
@@ -206,6 +233,7 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   for (const statement of sourceFile.statements) {
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement, report);
   }
+  checkReorderGrip(file, sourceFile, report);
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);

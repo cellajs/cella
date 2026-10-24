@@ -1,7 +1,8 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { type CSSProperties, useState } from 'react';
+import { type CSSProperties, type Dispatch, type SetStateAction, useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
+import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { cn } from '~/utils/cn';
 import {
   type CellSelectionMode,
@@ -875,15 +876,7 @@ interface DraggablePerson extends Person {
 
 const draggableData: DraggablePerson[] = sampleData.map((p, i) => ({ ...p, displayOrder: (i + 1) * 10 }));
 
-const draggableColumns: Column<DraggablePerson>[] = [
-  {
-    key: '__drag',
-    name: '',
-    width: 28,
-    rowDragHandle: true,
-    cellClass: 'cursor-grab',
-    renderCell: () => <span aria-hidden>⋮⋮</span>,
-  },
+const personColumns: Column<DraggablePerson>[] = [
   { key: 'displayOrder', name: '#', width: 50, renderCell: ({ row }) => row.displayOrder },
   { key: 'firstName', name: 'First Name', width: 120 },
   { key: 'lastName', name: 'Last Name', width: 120 },
@@ -900,6 +893,17 @@ function reorderRows<R extends DraggablePerson>(prev: R[], fromIndex: number, to
   return next.map((r, i) => ({ ...r, displayOrder: (i + 1) * 10 }));
 }
 
+/** The row-DnD stories' columns: the reorder grip, which drags, moves with the arrow keys, and opens a move menu with increased contrast. */
+function draggableColumns(rows: DraggablePerson[], setRows: Dispatch<SetStateAction<DraggablePerson[]>>) {
+  const grip = reorderColumn<DraggablePerson>({
+    getId: (row) => String(row.id),
+    getName: (row) => row.firstName,
+    rowCount: rows.length,
+    onMove: (rowIdx, step) => setRows((prev) => reorderRows(prev, rowIdx, rowIdx + step, step < 0 ? 'top' : 'bottom')),
+  });
+  return [grip, ...personColumns];
+}
+
 /** Drag rows to reorder them. Uses @atlaskit/pragmatic-drag-and-drop with closest-edge drop indicators. */
 export const RowDragDrop: Story = {
   render: function Render() {
@@ -912,12 +916,12 @@ export const RowDragDrop: Story = {
     return (
       <div className="space-y-4">
         <div className="text-muted-foreground text-sm">
-          Drag the handle (⋮⋮) of any row to reorder. A blue drop indicator shows the target position.
+          Drag the grip of any row to reorder, or focus it and press ↑/↓. A blue drop indicator shows the target position.
         </div>
         <div style={{ height: 400 }}>
           <DataGrid
             rows={rows}
-            columns={draggableColumns}
+            columns={draggableColumns(rows, setRows)}
             rowKeyGetter={(row) => row.id}
             rowHeight={35}
             headerRowHeight={35}
@@ -947,7 +951,7 @@ export const ShouldReorderRowOnDragDrop: Story = {
       <div style={{ height: 400 }}>
         <DataGrid
           rows={rows}
-          columns={draggableColumns}
+          columns={draggableColumns(rows, setRows)}
           rowKeyGetter={(row) => row.id}
           rowHeight={35}
           headerRowHeight={35}
@@ -1005,7 +1009,7 @@ export const RowDragDropAutoScroll: Story = {
         <div style={{ height: 300, overflowY: 'auto' }} className="rounded border">
           <DataGrid
             rows={rows}
-            columns={draggableColumns}
+            columns={draggableColumns(rows, setRows)}
             rowKeyGetter={(row) => row.id}
             rowHeight={35}
             headerRowHeight={35}

@@ -1,7 +1,7 @@
 import { Toast, type ToastManager, type ToastManagerAddOptions } from '@base-ui/react/toast';
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
-import { uiStore } from '~/modules/ui/ui-store';
+import { prefersMoreContrast } from '~/hooks/use-more-contrast';
 
 /** Toast variants with their own icon. */
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
@@ -47,17 +47,12 @@ function close(id?: string) {
 }
 
 /**
- * Increased contrast, set on the user or asked for by the device, also keeps toasts open: a reader who needs stronger
- * edges likely needs more than a few seconds as well. The device setting covers signed-out pages, which have no switch.
- */
-const keepsMessages = () => uiStore.getState().contrast === 'more' || !!globalThis.matchMedia?.('(prefers-contrast: more)').matches;
-
-/**
- * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout. A toast that
- * asks for a decision passes `timeout: 0` itself; the rest close by themselves.
+ * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout: a reader who
+ * needs stronger edges likely needs more than a few seconds as well. A toast that asks for a decision passes
+ * `timeout: 0` itself; the rest close by themselves.
  */
 function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
-  if (keepsMessages()) return 0;
+  if (prefersMoreContrast()) return 0;
   return options.timeout ?? (type === 'error' || options.description ? longTimeout : timeout);
 }
 

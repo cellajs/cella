@@ -1,5 +1,4 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import type { KeyboardEvent } from 'react';
 import { createContext, useContext } from 'react';
 
 export type PanelReorderDragData = { dragItem: true; type: 'panelReorder'; panelId: string };
@@ -24,9 +23,10 @@ export function reorderPanels(currentOrder: string[], sourceId: string, targetId
 }
 
 interface PanelDragContext {
+  panelId: string;
   registerHandle: (el: HTMLElement | null) => void;
-  /** Arrow-key reordering; attach to the handle's onKeyDown. */
-  onKeyDown: (e: KeyboardEvent) => void;
+  /** Moves the panel one place, from the handle's arrow keys or its menu. */
+  onMove: (step: -1 | 1) => void;
   onToggleCollapsed: () => void;
   /** Set while the browser draws the drag preview; the mounted handle portals its chip into it. */
   previewContainer: HTMLElement | null;
@@ -37,7 +37,7 @@ interface PanelDragContext {
 export const PanelDragHandleContext = createContext<PanelDragContext | null>(null);
 
 /**
- * Returns drag handle registration and keyboard handler. Returns null if the panel is not reorderable.
+ * Returns drag handle registration and the move handler. Returns null if the panel is not reorderable.
  * @public
  */
 export const usePanelDragHandle = () => useContext(PanelDragHandleContext);

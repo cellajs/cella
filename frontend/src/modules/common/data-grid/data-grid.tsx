@@ -430,6 +430,23 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     mode: 'SELECT',
   }));
 
+  // A selected row that moves, as a reorder grip steps it, takes the selection along, so Tab and the arrows continue from it
+  const selectedRowRef = useRef<{ key: K; rows: readonly R[]; position: typeof selectedPosition } | null>(null);
+  useLayoutEffect(() => {
+    const getKey = typeof rowKeyGetter === 'function' ? rowKeyGetter : null;
+    const row = rows[selectedPosition.rowIdx];
+    const previous = selectedRowRef.current;
+    const rowsChangedAlone = previous !== null && previous.rows !== rows && previous.position === selectedPosition;
+    if (getKey && previous && rowsChangedAlone && selectedPosition.mode === 'SELECT' && (row === undefined || getKey(row) !== previous.key)) {
+      const movedTo = rows.findIndex((candidate) => getKey(candidate) === previous.key);
+      if (movedTo !== -1) {
+        setSelectedPosition({ ...selectedPosition, rowIdx: movedTo });
+        return;
+      }
+    }
+    selectedRowRef.current = getKey && row !== undefined ? { key: getKey(row), rows, position: selectedPosition } : null;
+  }, [rows, selectedPosition, rowKeyGetter]);
+
   // Blocks a double commit when both commitEditorChanges and the EditCell outside-click handler fire for one edit session.
   const editCommittedRef = useRef(false);
 

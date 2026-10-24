@@ -100,21 +100,25 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
     reorder(ids);
   };
 
-  // The same reorder one step at a time, from the grip's menu, for the keyboard and for a pointer that cannot drag
-  const [moveStatus, setMoveStatus] = useState('');
+  // The same reorder one place at a time, from the grip's arrow keys or its menu
   const moveRow = (fromIdx: number, step: -1 | 1) => {
-    const toIdx = fromIdx + step;
-    if (toIdx < 0 || toIdx >= rows.length) return;
     const ids = rows.map((row) => row.id);
-    [ids[fromIdx], ids[toIdx]] = [ids[toIdx], ids[fromIdx]];
+    [ids[fromIdx], ids[fromIdx + step]] = [ids[fromIdx + step], ids[fromIdx]];
     reorder(ids);
-    setMoveStatus(t('c:success.move_position', { name: rows[fromIdx].name, position: toIdx + 1, total: rows.length }));
   };
 
   const columns: ColumnOrColumnGroup<TabRow>[] = [
-    // A single tab has no order to change, so its grip would open a menu of two dead items
+    // A single tab has no order to change
     ...(rows.length > 1
-      ? [reorderColumn<TabRow>({ getName: (row) => row.name, onMove: moveRow, rowCount: rows.length, cellClass: firstLineCellClass })]
+      ? [
+          reorderColumn<TabRow>({
+            getId: rowKeyGetter,
+            getName: (row) => row.name,
+            onMove: moveRow,
+            rowCount: rows.length,
+            cellClass: firstLineCellClass,
+          }),
+        ]
       : []),
     {
       key: 'label',
@@ -172,9 +176,6 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
         onRowReorder={onRowReorder}
         renderRowDragPreview={renderRowDragPreview}
       />
-      <span className="sr-only" role="status">
-        {moveStatus}
-      </span>
     </ToolCard>
   );
 }
