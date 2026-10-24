@@ -110,7 +110,12 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       </ComboboxPrimitive.Trigger>
 
       <ComboboxContent>
-        <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })} />
+        <ComboboxSearchInput
+          value={searchQuery}
+          onClear={() => setSearchQuery('')}
+          isSearching={isFetching}
+          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+        />
         <ComboboxList>
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (

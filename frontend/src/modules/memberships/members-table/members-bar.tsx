@@ -63,7 +63,6 @@ export function MembersTableBar({
         organizationId={organizationId}
         entityId={channel.id}
         entityType={channel.entityType}
-        dialog
         members={selected}
         callback={clearSelection}
       />,

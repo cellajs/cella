@@ -1,12 +1,16 @@
-import { createContext, useContext } from 'react';
+import { useRef } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { DropdownerContent, useDropdownerSurface } from '~/modules/common/dropdowner/surface';
+import { type MorphAnchor, type MorphTiming, useSwapMorph } from '~/modules/common/dropdowner/swap-morph';
 import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerRowGroup, DrawerTitle, DrawerVirtualKeyboardProvider } from '~/modules/ui/drawer';
 
-const InDrawerContext = createContext(false);
-
 /** Whether this content renders in the mobile drawer, where actions are action-sheet rows (`Button variant="row"`). */
-export const useInDropdownerDrawer = () => useContext(InDrawerContext);
+export const useInDropdownerDrawer = () => useDropdownerSurface() === 'drawer';
+
+// The rows stay at the bottom while the sheet's top edge glides, so what the finger just pressed is replaced in place
+const drawerAnchor: MorphAnchor = { x: 'stretch', y: 'bottom' };
+const drawerMorph: MorphTiming = { duration: 380, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' };
 
 interface DropdownerDrawerProps {
   dropdown: InternalDropdown;
@@ -14,6 +18,10 @@ interface DropdownerDrawerProps {
 
 export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
   const { id, content, triggerLabel, kind } = dropdown;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useSwapMorph({ dropdownKey: dropdown.key, content, containerRef, contentRef, anchor: () => drawerAnchor, timing: drawerMorph });
 
   const closeDropdown = () => {
     dropdowner.getState().remove();
@@ -27,12 +35,14 @@ export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
         {/* While typing, the sheet fills the space above the keyboard: sized by a filtering list, it would shrink and move its search field. */}
         <DrawerContent id={String(id)} data-overlay="dropdown" className="max-h-[70dvh] group-[.keyboard-open]/body:h-[calc(100%-1.25rem)]">
           {triggerLabel && <DrawerTitle className="sr-only">{triggerLabel}</DrawerTitle>}
-          <InDrawerContext.Provider value={true}>
-            {/* A menu's items are one group of rows; a panel (a confirmation, a form) lays out its own. Read on every render: openPopConfirm swaps the kind in place. */}
-            <div className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
-              {kind === 'menu' ? <DrawerRowGroup>{content}</DrawerRowGroup> : content}
+          <DropdownerContent dropdown={dropdown} surface="drawer">
+            <div ref={containerRef}>
+              {/* A menu's items are one group of rows; a panel (a form) lays out its own. */}
+              <div ref={contentRef} className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
+                {kind === 'menu' ? <DrawerRowGroup>{content}</DrawerRowGroup> : content}
+              </div>
             </div>
-          </InDrawerContext.Provider>
+          </DropdownerContent>
         </DrawerContent>
       </DrawerVirtualKeyboardProvider>
     </Drawer>

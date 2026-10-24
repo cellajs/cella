@@ -5,8 +5,7 @@ import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-t
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { NamedText } from '~/modules/common/named-text';
-import { openPopConfirm } from '~/modules/common/popconfirm';
+import { DeleteQuestion } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteUsers } from '~/modules/user/delete-users';
@@ -58,11 +57,10 @@ export const useColumns = () => {
         label: t('c:delete'),
         icon: TrashIcon,
         variant: 'destructive',
-        onSelect: (row) =>
-          openPopConfirm(
-            <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,
-            <DeleteUsers users={[row]} callback={() => dropdowner.getState().remove()} />,
-          ),
+        confirm: (row) => ({
+          title: <DeleteQuestion resource="c:user" name={row.name} />,
+          content: <DeleteUsers users={[row]} />,
+        }),
       },
     ]),
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),

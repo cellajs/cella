@@ -77,7 +77,9 @@
         "src/lib/sw.ts"
       ],
       // The `virtual:serwist` module of @serwist/vite imports it at runtime, and knip does not read virtual modules.
-      "ignoreDependencies": ["@serwist/window"]
+      "ignoreDependencies": ["@serwist/window"],
+      // vite.config.ts aliases it to react-pdf's own pdfjs-dist, a folder no tsconfig path can name.
+      "ignoreUnresolved": ["^#pdfjs/"]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]

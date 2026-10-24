@@ -71,7 +71,7 @@ export function OAuthProviders({ authStep }: OAuthProvidersProps) {
   return (
     <div className="flex flex-col gap-2">
       {enabledOAuthProviders.map(({ id, name }) => (
-        <Button loading={loadingProvider === id} key={id} variant="plain" onClick={() => authenticateWithProvider(id)}>
+        <Button loading={loadingProvider === id} key={id} variant="outline" onClick={() => authenticateWithProvider(id)}>
           <OAuthProviderIcon id={id} />
           <span>{t(labelKey, { provider: name })}</span>
         </Button>

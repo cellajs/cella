@@ -2,9 +2,8 @@ import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
-import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { NamedText } from '~/modules/common/named-text';
-import { PopConfirm } from '~/modules/common/popconfirm';
+import { openConfirm } from '~/modules/common/open-confirm';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
 import type { LeaveChannelProps } from '~/modules/memberships/use-leave-channel';
 import { Button, type ButtonProps } from '~/modules/ui/button';
@@ -22,22 +21,12 @@ export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedB
   const { t } = useTranslation();
   const { channel } = props;
 
-  const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = dropdowner.getState();
-    create(
-      <PopConfirm title={<NamedText i18nKey="c:confirm.leave_channel" name={channel.name} />}>
-        <LeaveChannelForm
-          {...props}
-          callback={(args) => {
-            remove();
-            props.callback?.(args);
-          }}
-          onCancel={remove}
-        />
-      </PopConfirm>,
-      { id: 'leave-channel', triggerId: `leave-channel-${channel.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
-    );
-  };
+  const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) =>
+    openConfirm(event.currentTarget, {
+      id: `leave-channel-${channel.id}`,
+      title: <NamedText i18nKey="c:confirm.leave_channel" name={channel.name} />,
+      content: <LeaveChannelForm {...props} />,
+    });
 
   return (
     <Button size={size} variant="success" className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>

@@ -25,6 +25,8 @@ export type DropdownData = {
 export type InternalDropdown = DropdownData & {
   key: number;
   content: ReactNode;
+  /** The contents `push` stepped away from, newest last; `back` returns to it. */
+  history: ReactNode[];
   /** The trigger's accessible name at open time; names the mobile drawer that stands in for the dropdown. */
   triggerLabel?: string;
   align: 'start' | 'center' | 'end';
@@ -43,6 +45,10 @@ interface DropdownStoreState {
 
   create: (content: ReactNode, data: DropdownData) => string | number;
   update: (updates: Partial<InternalDropdown>) => void;
+  /** Shows `content` in the open dropdown, e.g. a confirmation in place of its menu; `back` returns to what it replaced. */
+  push: (content: ReactNode) => void;
+  /** Returns to what the last `push` replaced, or closes the dropdown when nothing was. */
+  back: () => void;
   remove: () => void;
   /** Closes the dropdown after the action picked from it worked: its trigger shows a check and a `label` tip for a moment. */
   complete: (label: string) => void;
@@ -102,7 +108,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     const defaults: Pick<InternalDropdown, 'align' | 'kind'> = { align: 'start', kind: 'panel' };
     const trigger = data.triggerRef.current;
     const triggerLabel = trigger?.getAttribute('aria-label') || trigger?.textContent?.trim() || undefined;
-    set({ dropdown: { ...withDefaults(defaults, data), content, triggerLabel, key: Date.now() } });
+    set({ dropdown: { ...withDefaults(defaults, data), content, history: [], triggerLabel, key: Date.now() } });
     current?.onClose?.();
 
     return data.id;
@@ -113,6 +119,20 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     if (!current) return;
 
     set({ dropdown: { ...current, ...updates } });
+  },
+
+  push: (content) => {
+    const current = get().dropdown;
+    if (!current) return;
+
+    set({ dropdown: { ...current, content, history: [...current.history, current.content] } });
+  },
+
+  back: () => {
+    const current = get().dropdown;
+    if (!current?.history.length) return get().remove();
+
+    set({ dropdown: { ...current, content: current.history.at(-1), history: current.history.slice(0, -1) } });
   },
 
   remove: () => {
@@ -134,6 +154,11 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 /** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
 export function removeIfCurrent(key: number) {
   if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
+}
+
+/** Steps back in the dropdown unless it was already swapped for another. */
+export function backIfCurrent(key: number) {
+  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().back();
 }
 
 /** Whether a dropdown is open: an overlay under it then ignores outside presses, which belong to the dropdown. */

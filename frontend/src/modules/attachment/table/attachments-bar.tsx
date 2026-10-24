@@ -12,8 +12,7 @@ import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { NamedText } from '~/modules/common/named-text';
+import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
@@ -32,7 +31,6 @@ export function AttachmentsTableBar({
   queryKey,
 }: AttachmentsTableBarProps) {
   const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
   // A sub-organization channel homes its uploads on itself; the organization row is the
   // org. Public read is row-local, so the channel's `public` flag is only the value a new row starts with.
   const isOrganization = channel.entityType === 'organization';
@@ -51,23 +49,14 @@ export function AttachmentsTableBar({
   // Bulk delete acts only on rows this user may delete; the badge shows that count when it differs from the selection.
   const deletable = selected.filter(canDelete);
 
-  const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments dialog attachments={deletable} callback={clearSelection} />, {
+  const confirmDelete = () =>
+    openDeleteDialog({
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('c:remove_resource', { resource: t('c:attachment_other').toLowerCase() }),
-      description: (
-        <NamedText
-          i18nKey="c:confirm.delete_counted_resource"
-          values={{
-            count: deletable.length,
-            resource: t('c:attachment', { count: deletable.length }).toLowerCase(),
-          }}
-        />
-      ),
+      resource: 'c:attachment',
+      count: deletable.length,
+      content: <DeleteAttachments attachments={deletable} callback={clearSelection} />,
     });
-  };
 
   return (
     <TableBarShell
@@ -85,7 +74,7 @@ export function AttachmentsTableBar({
           <TableBarButton
             ref={deleteButtonRef}
             variant="destructive"
-            onClick={openDeleteDialog}
+            onClick={confirmDelete}
             badge={deletable.length < selected.length ? deletable.length : undefined}
             icon={TrashIcon}
             label="c:delete"

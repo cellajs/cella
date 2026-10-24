@@ -7,6 +7,8 @@ const defaultIgnoredTags = ['INPUT', 'TEXTAREA', 'SELECT'];
 export function useHotkeys(hotkeys: HotkeyItem[], tagsToIgnore: string[] = defaultIgnoredTags, triggerOnContentEditable = false) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A key the focused control already handled, e.g. Enter or an arrow in a menu, is not a shortcut
+      if (event.defaultPrevented) return;
       const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));
       if (isFormElement) return;
 

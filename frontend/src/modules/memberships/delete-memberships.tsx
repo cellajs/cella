@@ -3,7 +3,7 @@ import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-item
 import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutations';
 import type { DeleteMembership, Member } from '~/modules/memberships/types';
 
-interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembership>, 'dialog' | 'callback'> {
+interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembership>, 'callback'> {
   entityId: string;
   tenantId: string;
   organizationId: string;

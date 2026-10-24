@@ -1,6 +1,5 @@
 import { type ReactNode, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
+import { SearchCloseButton } from '~/modules/common/search-clear-button';
 import { DialogClose } from '~/modules/ui/dialog';
 
 interface SearchDialogBarProps {
@@ -9,12 +8,11 @@ interface SearchDialogBarProps {
 }
 
 /**
- * The top bar of a search dialog (dialoger `searchLayout`): the field, and below `sm` a Cancel beside it, as iOS
- * places it. It also writes the visual viewport's height on the dialog popup, so the dialog ends at the keyboard's
- * edge; kept off :root, a keyboard opening restyles only that subtree.
+ * The top bar of a search dialog (dialoger `searchLayout`): the field, and below `sm` a close X beside it, shown with
+ * an empty field too, so one tap ends the search and its keyboard. It also writes the visual viewport's height on the
+ * dialog popup, so the dialog ends at the keyboard's edge; kept off :root, a keyboard opening restyles only that subtree.
  */
 export function SearchDialogBar({ children }: SearchDialogBarProps) {
-  const { t } = useTranslation();
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +29,10 @@ export function SearchDialogBar({ children }: SearchDialogBarProps) {
   return (
     <div ref={barRef} className="flex shrink-0 items-center border-b">
       {children}
-      <DialogClose render={<Button variant="ghost" className="h-12 shrink-0 rounded-none px-3 font-normal sm:hidden" />}>{t('c:cancel')}</DialogClose>
+      {/* border-l parts the close from the field's own clear X */}
+      <div className="flex h-12 shrink-0 items-center border-l px-1.5 sm:hidden">
+        <DialogClose render={<SearchCloseButton />} />
+      </div>
     </div>
   );
 }

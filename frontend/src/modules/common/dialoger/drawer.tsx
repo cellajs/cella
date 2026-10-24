@@ -1,5 +1,6 @@
 import { dialoger, type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
@@ -32,7 +33,9 @@ export function DialogerDrawer({ dialog }: DialogerDrawerProps) {
             {description && <DrawerDescription>{description}</DrawerDescription>}
           </DrawerHeader>
         )}
-        <div className="px-3 pb-3">{content}</div>
+        <div className="px-3 pb-3">
+          <OverlayCloseContext.Provider value={{ close: closeDialog, back: closeDialog }}>{content}</OverlayCloseContext.Provider>
+        </div>
       </DrawerContent>
     </Drawer>
   );

@@ -1,14 +1,11 @@
 import { PartyPopperIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
-import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
-import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { NamedText } from '~/modules/common/named-text';
-import { toaster } from '~/modules/common/toaster/toaster';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { fetchRequestsForExport, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
@@ -17,8 +14,6 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
 export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) {
-  const { t } = useTranslation();
-
   const total = useListQueryTotal(queryKey);
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -29,37 +24,14 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
 
   const { mutate: invite } = useSendApprovalInviteMutation();
 
-  const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<Request[]>) => {
-      if (args.status === 'success') {
-        const message =
-          args.data.length === 1
-            ? t('c:success.delete_resource', { resource: t('c:request') })
-            : t('c:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('c:request_other').toLowerCase(),
-              });
-        toaster.success(message);
-      }
-      clearSelection();
-    };
-
-    dialoger.getState().create(<DeleteRequests requests={selected} callback={callback} dialog />, {
+  const confirmDelete = () =>
+    openDeleteDialog({
       id: 'delete-requests',
       triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('c:delete'),
-      description: (
-        <NamedText
-          i18nKey="c:confirm.delete_counted_resource"
-          values={{
-            count: selected.length,
-            resource: t('c:request', { count: selected.length }).toLowerCase(),
-          }}
-        />
-      ),
+      resource: 'c:request',
+      count: selected.length,
+      content: <DeleteRequests requests={selected} callback={clearSelection} />,
     });
-  };
 
   const inviteSelected = () => invite(uninvited, { onSuccess: clearSelection });
 
@@ -84,7 +56,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
                 onClick={inviteSelected}
               />
             )}
-            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:delete" onClick={openDeleteDialog} />
+            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:delete" onClick={confirmDelete} />
           </>
         ),
       }}

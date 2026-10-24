@@ -12,8 +12,8 @@ export type DialogData = {
   description?: ReactNode;
   drawerOnMobile?: boolean;
   /**
-   * A search dialog: below `sm` it sits at the top, inset on every side so the page shows around it, and grows down
-   * from its field to the keyboard's edge. Its content renders a `SearchDialogBar`, whose Cancel closes it.
+   * A search dialog: below `sm` it sits at the top, inset on every side so the page shows around it, and reaches down
+   * to the keyboard's edge, also while its results are empty. Its content renders a `SearchDialogBar`, whose close X ends it.
    */
   searchLayout?: boolean;
   outsideScroll?: boolean;

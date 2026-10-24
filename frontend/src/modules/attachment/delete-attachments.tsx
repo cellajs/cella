@@ -2,7 +2,7 @@ import type { Attachment } from 'sdk';
 import { useAttachmentDeleteMutation } from '~/modules/attachment/query';
 import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
 
-interface DeleteAttachmentsProps extends Pick<DeleteItemsProps<Attachment, Attachment[]>, 'dialog' | 'callback' | 'onCancel'> {
+interface DeleteAttachmentsProps extends Pick<DeleteItemsProps<Attachment, Attachment[]>, 'callback'> {
   attachments: Attachment[];
 }
 

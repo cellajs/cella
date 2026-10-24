@@ -20,7 +20,7 @@ export const AppSearchHistory: Story = {
     navigationStore.setState({ recentSearches: [...history] });
     return () => navigationStore.setState({ recentSearches: [] });
   },
-  // The search bar's Cancel is a dialog part, so the search renders inside a dialog root, as the dialoger renders it.
+  // The search bar's close X is a dialog part, so the search renders inside a dialog root, as the dialoger renders it.
   render: () => (
     <Dialog>
       <div className="w-[36rem]">
