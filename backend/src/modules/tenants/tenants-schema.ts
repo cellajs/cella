@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
+import { quotaKeys } from '#/modules/tenants/tenant-restrictions';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
@@ -50,7 +51,7 @@ export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, { nam
 
 const partialRestrictionsSchema = z
   .object({
-    quotas: quotasSchema.optional(),
+    quotas: z.partialRecord(z.enum(quotaKeys), z.number().int().min(0)).optional().describe('Entity quotas (0 = unlimited)'),
     allowUnregisteredClients: z.boolean().optional(),
     rateLimits: z.object({ apiPointsPerHour: z.number().int().min(0).optional() }).optional(),
   })
@@ -61,7 +62,7 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   status: tenantStatusSchema,
   subscriptionStatus: subscriptionStatusSchema,
   // Allowed sign-in strategies for the tenant's members (empty = all enabled); tenantGuard enforcement waits on the SSO build.
-  authStrategies: z.array(z.enum(authStrategiesEnum)),
+  authStrategies: z.array(z.enum(authStrategiesEnum)).max(authStrategiesEnum.length),
 })
   .pick({ name: true, status: true, subscriptionId: true, subscriptionStatus: true, subscriptionPlan: true, authStrategies: true })
   .partial()

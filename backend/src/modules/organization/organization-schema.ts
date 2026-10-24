@@ -75,7 +75,7 @@ export const organizationContract = evolutionContract.channel('organization', {
     slug: validSlugSchema,
     name: validNameSchema,
     shortName: validNameSchema.nullable(),
-    languages: z.array(languageSchema).min(1),
+    languages: z.array(languageSchema).min(1).max(64),
     defaultLanguage: languageSchema.optional(),
     websiteUrl: validUrlSchema.nullable(),
     thumbnailUrl: validCDNUrlSchema.nullable(),

@@ -6,6 +6,8 @@ import { AppError, type ErrorKey } from '#/core/error';
 /**
  * Custom error types come from Zod refinements via `params.type`, so i18n keys resolve. A failed validation
  * is a malformed request, not a permission verdict, so it answers 400; 403 is reserved for authorization.
+ * Only the first issue travels: a ZodError's message and stack spell out every issue, and the error log
+ * records the stack.
  */
 export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
@@ -17,6 +19,6 @@ export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
     const customType = code === 'custom' && 'params' in issue ? (issue.params?.type as ErrorKey | undefined) : undefined;
     const type = customType ?? (`form.${code}` as ErrorKey);
 
-    throw new AppError(400, type, 'error', { message: customType ? undefined : message, originalError: result.error });
+    throw new AppError(400, type, 'error', { message: customType ? undefined : message, meta: { path: issue.path.join('.') } });
   }
 };

@@ -4329,7 +4329,11 @@ export type UpdateTenantData = {
        * Entity quotas (0 = unlimited)
        */
       quotas?: {
-        [key: string]: number;
+        user?: number;
+        organization?: number;
+        attachment?: number;
+        serviceAccount?: number;
+        apiKey?: number;
       };
       allowUnregisteredClients?: boolean;
       rateLimits?: {

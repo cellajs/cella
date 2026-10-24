@@ -58,7 +58,7 @@ const catchupViewSchema = z.object({
     .min(1)
     .max(64)
     .openapi({ description: 'Materialized id-path prefixes this view covers (root-first ids, slash-joined)' }),
-  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1),
+  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1).max(64),
   depth: z.enum(['self', 'subtree']).optional().openapi({
     description:
       'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.',

@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { isValidHLC } from '#/core/stx/hlc';
+import { boundedRecord } from './common-schemas';
 import { mockStxBase } from './sync-transaction-mocks';
 
 /** Used for both storage and request validation. */
@@ -8,9 +9,10 @@ export const stxBaseSchema = z
   .object({
     mutationId: z.string().max(36).describe('Unique mutation ID'),
     sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
-    fieldTimestamps: z
-      .record(z.string(), z.string().refine(isValidHLC, 'Invalid HLC timestamp'))
-      .describe('Per-field HLC timestamps for scalar fields being changed'),
+    // More keys than any product has scalar fields.
+    fieldTimestamps: boundedRecord(z.string().refine(isValidHLC, 'Invalid HLC timestamp'), 100).describe(
+      'Per-field HLC timestamps for scalar fields being changed',
+    ),
     replayed: z.boolean().optional().describe('Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time'),
   })
   .openapi('StxBase', {

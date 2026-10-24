@@ -715,6 +715,7 @@
             "additionalProperties": {
               "type": "string"
             },
+            "maxProperties": 100,
             "description": "Per-field HLC timestamps for scalar fields being changed"
           },
           "replayed": {
@@ -2351,13 +2352,15 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "maxItems": 100
                   },
                   "hidden": {
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "maxItems": 100
                   }
                 }
               },
@@ -2368,13 +2371,15 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "maxItems": 100
                   },
                   "hidden": {
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "maxItems": 100
                   }
                 }
               }
@@ -4069,7 +4074,8 @@
                             "type": "array",
                             "items": {
                               "type": "string"
-                            }
+                            },
+                            "maxItems": 10
                           },
                           "publicKeyAlgorithm": {
                             "type": "number"
@@ -5711,7 +5717,8 @@
                             "type": "string",
                             "enum": ["attachment"]
                           },
-                          "minItems": 1
+                          "minItems": 1,
+                          "maxItems": 64
                         },
                         "depth": {
                           "type": "string",
@@ -8622,16 +8629,35 @@
                     "items": {
                       "type": "string",
                       "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
-                    }
+                    },
+                    "maxItems": 8
                   },
                   "restrictions": {
                     "type": "object",
                     "properties": {
                       "quotas": {
                         "type": "object",
-                        "additionalProperties": {
-                          "type": "integer",
-                          "minimum": 0
+                        "properties": {
+                          "user": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "organization": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "attachment": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "serviceAccount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "apiKey": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
                         },
                         "description": "Entity quotas (0 = unlimited)"
                       },
@@ -10473,7 +10499,8 @@
                       "type": "string",
                       "enum": ["en", "nl"]
                     },
-                    "minItems": 1
+                    "minItems": 1,
+                    "maxItems": 64
                   },
                   "notificationEmail": {
                     "type": ["string", "null"],
@@ -10524,13 +10551,15 @@
                             "type": "array",
                             "items": {
                               "type": "string"
-                            }
+                            },
+                            "maxItems": 100
                           },
                           "hidden": {
                             "type": "array",
                             "items": {
                               "type": "string"
-                            }
+                            },
+                            "maxItems": 100
                           }
                         }
                       },
@@ -10541,13 +10570,15 @@
                             "type": "array",
                             "items": {
                               "type": "string"
-                            }
+                            },
+                            "maxItems": 100
                           },
                           "hidden": {
                             "type": "array",
                             "items": {
                               "type": "string"
-                            }
+                            },
+                            "maxItems": 100
                           }
                         }
                       }
@@ -13773,7 +13804,8 @@
                           "type": "string",
                           "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                         },
-                        "minItems": 1
+                        "minItems": 1,
+                        "maxItems": 4
                       },
                       "expiresAt": {
                         "type": "string",
@@ -14325,7 +14357,8 @@
                       "type": "string",
                       "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
                     },
-                    "minItems": 1
+                    "minItems": 1,
+                    "maxItems": 4
                   },
                   "expiresAt": {
                     "type": "string",
