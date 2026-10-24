@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
 import type { DocScope } from '../../constants';
 import { authorizeDoc } from '../../data/permissions';
-import { cleanupSeed, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
+import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
 const tenantA = 'yjs-authz-tenant-a';
 const tenantB = 'yjs-authz-tenant-b';
@@ -63,6 +63,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
     await seedMembership(admin, tenantA, orgA, memberA, hierarchy.getLeastPrivilegedRole('organization'));
+    await joinAttachmentHome(admin, tenantA, orgA, hierarchyA, memberA);
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
     await seedAttachment(admin, attachmentM, tenantA, hierarchyA, memberA);
