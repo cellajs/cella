@@ -20,7 +20,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
-import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
+import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -81,6 +81,7 @@ describe('Member escalation over HTTP', async () => {
     const admin = await createOrgUser(call, org.tenantId, org.id, `${label}-admin`, adminRole);
     const member = await createOrgUser(call, org.tenantId, org.id, `${label}-member`, memberRole);
     const plan = await seedAttachmentHome(org, admin.id);
+    await joinAttachmentHome(org, plan, member.id);
     const attachmentOf = async (user: User) => {
       const id = generateId();
       const { response } = await call(createAttachments, {

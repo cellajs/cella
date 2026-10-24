@@ -31,7 +31,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
-import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
+import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -92,6 +92,7 @@ describe('Cross-organization API isolation', async () => {
     planB = await seedAttachmentHome(orgB, userB.id);
 
     insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both', memberRole);
+    await joinAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, plan, insider.id);
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId: insider.id,
