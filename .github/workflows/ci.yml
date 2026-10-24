@@ -176,7 +176,7 @@ jobs:
     # repo, so a PR from another repository (whose branch name its author fully controls)
     # cannot spoof a prefix to trigger the heavy suites. head_ref is set only for
     # pull_request events.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/') || github.head_ref == 'ci/release-pr-checks')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -247,7 +247,7 @@ jobs:
         id: scope
         env:
           BASE_REF: ${{ github.base_ref || 'main' }}
-          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/')) }}
+          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/') || github.head_ref == 'ci/release-pr-checks') }}
         run: |
           set -euo pipefail
           if [ "$ALL_TARGETS" = true ]; then
@@ -326,7 +326,7 @@ jobs:
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's sync PR,
   # so a story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
   storybook-test:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/') || github.head_ref == 'ci/release-pr-checks')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
