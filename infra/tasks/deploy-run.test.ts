@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { RunRecord } from '../lib/deploy/run-record';
 import { ExitCodeError } from '../lib/utils/errors';
+import type { AllowedKey } from './deploy-env';
 import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
-import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -34,7 +34,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
       },
     ]),
     enabled_services_json: JSON.stringify([
-      // health_url mirrors print-deploy-env: set for LB-exposed services
+      // health_url mirrors deploy-env: set for LB-exposed services
       // (including co-hosted followers), '' for internal-only ones. The
       // version-verification step reads THESE rows, not the rollout matrices.
       { service: 'backend', public_url: 'https://www.cellajs.com/api', health_url: 'https://www.cellajs.com/api' },
@@ -117,7 +117,6 @@ describe('parseDeployArgs', () => {
     expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({
       mode: 'staging',
       sha: 'abc',
-      gitRef: undefined,
       run: undefined,
       deferReap: false,
     });
@@ -282,17 +281,6 @@ describe('runDeploy sequencing', () => {
     const without = makeFake();
     await runDeploy(baseOpts, without.fx, fakeDeployEnv);
     expect(without.rolloutArgs[0]).not.toContain('--skip-reap');
-  });
-
-  it('rejects production deploys from untrusted refs before touching anything', async () => {
-    const { fx, ops } = makeFake();
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(/only allowed/);
-    expect(ops).toHaveLength(0);
-  });
-
-  it('accepts production deploys from release tags', async () => {
-    const { fx } = makeFake();
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/tags/1.2.3' }, fx, fakeDeployEnv)).resolves.toBeUndefined();
   });
 });
 

@@ -19,6 +19,7 @@ import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
 import { runSetup } from './setup';
 import { runStartDeploy } from './start-deploy';
+import { runStatePrune } from './state-prune';
 import { runTeardown } from './teardown';
 import { runUnlock } from './unlock';
 
@@ -48,6 +49,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   unlock: runUnlock,
   resume: (context) => runSetup(context, 'resume'),
   'geoip-refresh': runGeoipRefresh,
+  'state-prune': runStatePrune,
   teardown: runTeardown,
 };
 

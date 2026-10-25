@@ -299,9 +299,9 @@ export function adoptStateBackendEnv(region?: string, env: NodeJS.ProcessEnv = p
   }
 }
 
-/** Identifies the writer in `updatedBy`: CI run or local operator. */
+/** Identifies the writer in `updatedBy`: a main job run (its target) or a local operator. */
 export function controlActor(): string {
-  if (process.env.GITHUB_RUN_NUMBER) return `ci:run-${process.env.GITHUB_RUN_NUMBER}`;
+  if (process.env.TARGET_SHA) return `job:${process.env.TARGET_SHA.slice(0, 10)}`;
   return `operator:${process.env.USER ?? process.env.LOGNAME ?? 'unknown'}`;
 }
 

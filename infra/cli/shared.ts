@@ -121,15 +121,11 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   }
 }
 
-/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, is unrecoverable if lost, and GitHub Actions secrets are write-only. */
+/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state and is unrecoverable if lost. */
 export async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
   console.info(`\n→ ${heading}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
-  console.info(
-    `  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost,\n` +
-      '  and once synced to GitHub it can never be viewed again (Actions secrets are write-only).' +
-      (note ? `\n  ${pc.dim(note)}` : ''),
-  );
+  console.info(`  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost.${note ? `\n  ${pc.dim(note)}` : ''}`);
   while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
     console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
   }

@@ -171,12 +171,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   if (!outcome.ok) {
     if (outcome.failReason) {
-      console.error(`::error::Reconciler failed to roll ${args.sha}: ${outcome.failReason}`);
+      console.error(`✗ Failed to roll ${args.sha}: ${outcome.failReason}`);
       process.exit(1);
     }
     const budget = Math.round((args.attempts * args.intervalMs) / 1000);
     console.error(
-      `::error::Did not roll to ${args.sha} within ~${budget}s (last served: ${outcome.lastVersion ?? '<unknown>'}, status: ${outcome.lastStatus ?? '<none>'})`,
+      `✗ Did not roll to ${args.sha} within ~${budget}s (last served: ${outcome.lastVersion ?? '<unknown>'}, status: ${outcome.lastStatus ?? '<none>'})`,
     );
     process.exit(1);
   }

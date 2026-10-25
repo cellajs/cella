@@ -273,7 +273,7 @@ if (isMain(import.meta.url)) {
 
   if (!result.ok) {
     process.stderr.write(
-      `::error::Cutover of ${service} to ${sha} aborted (${result.aborted}). ` +
+      `✗ Cutover of ${service} to ${sha} aborted (${result.aborted}). ` +
         'The previous generation is still serving: no outage. See the new generation logs (serial console) for the cause.\n',
     );
     process.exit(1);

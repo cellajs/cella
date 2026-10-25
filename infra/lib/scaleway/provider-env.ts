@@ -15,7 +15,7 @@ export function resolveProjectId(): string | undefined {
 }
 
 /**
- * Resolve the repository (`SCW_ORGANIZATION_ID`, the name backend/.env and the GitHub Environment use) and Scaleway-native
+ * Resolve the repository (`SCW_ORGANIZATION_ID`, the name backend/.env uses) and Scaleway-native
  * (`SCW_DEFAULT_ORGANIZATION_ID`, the name the provider and the Pulumi program read) organization id variables to one value. Both present must match.
  */
 export function resolveOrganizationIdFromEnv(env: NodeJS.ProcessEnv = process.env): string | undefined {

@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
-import { syncGithubEnvironment } from '../../lib/github-sync';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
@@ -204,16 +203,12 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 
 /**
  * Offer to run the first deploy here, so a fresh setup ends with a live app.
- * Runs the same one-command deploy CI runs, whose builder machine builds the release, authenticated with the freshly minted CI deploy key so it also proves the CI key path.
- * Skipped when docker or a git HEAD is unavailable.
+ * Runs the same one-command deploy the main job runs, whose builder machine builds the release, authenticated with the freshly minted deploy key so it also proves that key's rights.
+ * Skipped when git HEAD is unavailable.
  */
 async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorSecrets: OperatorSecretValues): Promise<void> {
   const mode = ctx.context.environment;
   const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha}`;
-  if (spawnSync('docker', ['buildx', 'version'], { stdio: 'ignore' }).status !== 0) {
-    console.info(`\n${pc.dim('docker (with buildx) not found; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
-    return;
-  }
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: infraDir, encoding: 'utf8' }).stdout?.trim();
   if (!sha) {
     console.info(`\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
@@ -233,14 +228,16 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
         default: hasAdminEmail,
       });
   if (!deployNow) {
-    console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`);
-    // CI reads the committed stack file, whose encryption salt the setup just wrote: without it the passphrase is "incorrect".
     console.info(
-      `  ${pc.bold('Before a CI deploy')}: commit and push ${pc.cyan(`infra/Pulumi.${mode}.yaml`)} (its encryption salt and bootstrap marker are new).`,
+      `  ${pc.dim('Deploy later: the runner starts it once this environment is on its list, or')} ${pc.cyan(`${actionCommand('start-deploy')} --mode ${mode}`)}`,
+    );
+    // A deploy runs on its target's committed stack file, whose encryption salt the setup just wrote: without it the passphrase is "incorrect".
+    console.info(
+      `  ${pc.bold('Before the first deploy')}: commit and push ${pc.cyan(`infra/Pulumi.${mode}.yaml`)} (its encryption salt and bootstrap marker are new).`,
     );
     return;
   }
-  // The exact env the GitHub Environment holds: the CI deploy key as both the provider key and the state-backend key, plus the passphrase and project ids from childEnv.
+  // The env the main job runs with: the deploy key as both the provider key and the state-backend key, plus the passphrase and project ids from childEnv.
   const deployEnv: NodeJS.ProcessEnv = {
     ...ctx.childEnv,
     SCW_ACCESS_KEY: ciKey.accessKey,
@@ -280,7 +277,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   const firstSetup = context.state === 'fresh';
 
   // After the key: an unlocked session fetches the passphrase, so nobody types it.
-  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
+  const { passphrase: pulumiPassphrase } = await resolveOrCreatePassphrase(context.stackYaml);
   const operatorSecrets: OperatorSecretValues = { adminEmail: '', brevoApiKey: '' };
   if (firstSetup) {
     operatorSecrets.adminEmail = await inputOrDefault({
@@ -355,26 +352,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     );
   }
 
-  // The passphrase is verified against the stack above and re-synced every run, which repairs a missing or drifted PULUMI_CONFIG_PASSPHRASE environment secret.
-  const synced = await syncGithubEnvironment({
-    repoRoot: new URL('..', `file://${infraDir}/`).pathname,
-    environment,
-    passphrase: pulumiPassphrase,
-  });
-  if (!synced) {
-    console.warn(
-      `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote).\n` +
-        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''}.`,
-    );
-  }
-
   // Base infrastructure provisioning
   console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
-  if (!firstSetup) {
-    console.info(
-      `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
-    );
-  }
   const runNow = await confirmOrDefault({
     message: firstSetup ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
     default: firstSetup,

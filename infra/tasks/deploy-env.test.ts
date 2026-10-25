@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { principalSecretCondition } from '../lib/runtime-secrets';
-import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
+import { ALLOWED_KEYS, buildDeployEnv } from './deploy-env';
 
 const fakeAppConfig = {
   slug: 'cella',
@@ -126,21 +126,5 @@ describe('buildDeployEnv', () => {
     const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[];
     expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://service-front.example');
     expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example');
-  });
-});
-
-describe('isAllowedProductionRef', () => {
-  it('allows main', () => {
-    expect(isAllowedProductionRef('refs/heads/main')).toBe(true);
-  });
-
-  it('allows release tags (release-triggered deploys run on the tag ref)', () => {
-    expect(isAllowedProductionRef('refs/tags/0.0.2')).toBe(true);
-    expect(isAllowedProductionRef('refs/tags/1.2.3')).toBe(true);
-  });
-
-  it('rejects feature branches', () => {
-    expect(isAllowedProductionRef('refs/heads/feat/foo')).toBe(false);
-    expect(isAllowedProductionRef('refs/heads/develop')).toBe(false);
   });
 });

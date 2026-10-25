@@ -1,7 +1,6 @@
 import { componentsProvider } from './providers/components';
 import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
-import { githubProvider } from './providers/github';
 import { inventoryProvider } from './providers/inventory';
 import { liveProvider } from './providers/live';
 import { secretsProvider } from './providers/secrets';
@@ -19,7 +18,6 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   stackProvider,
   identityProvider,
   inventoryProvider,
-  githubProvider,
   stateProvider,
   secretsProvider,
   liveProvider,
@@ -36,7 +34,6 @@ const NEXT_ACTION_PRIORITY = [
   'inventory.',
   'config.stackState',
   'stores.',
-  'github.environment',
   'state.bucket',
   'secrets.required',
   'config.computeDeferred',

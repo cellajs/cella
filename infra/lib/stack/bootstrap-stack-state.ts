@@ -6,7 +6,7 @@ export interface StackProbe {
   yamlText?: string;
 }
 
-/** Any of these keys in the stack yaml means a CI deploy key has been minted, so the stack counts as bootstrapped. */
+/** Any of these keys in the stack yaml means the deploy key has been minted, so the stack counts as bootstrapped. */
 const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const;
 
 export function detectStackState(probe: StackProbe): StackState {

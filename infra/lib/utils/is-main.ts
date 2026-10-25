@@ -13,14 +13,13 @@ export function isMain(importMetaUrl: string): boolean {
 }
 
 /**
- * Run `main` when the module is the process entry point: a rejection prints its message (as a GitHub annotation under Actions, so the
- * failing step shows in the run summary) and exits with an `ExitCodeError`'s code, else 1. `runIfMain(import.meta.url, main)` is the
+ * Run `main` when the module is the process entry point: a rejection prints its message and exits with an `ExitCodeError`'s code, else 1. `runIfMain(import.meta.url, main)` is the
  * whole entry block of a task file.
  */
 export function runIfMain(importMetaUrl: string, main: () => Promise<void>): void {
   if (!isMain(importMetaUrl)) return;
   main().catch((err) => {
-    console.error(`${process.env.GITHUB_ACTIONS ? '::error::' : ''}${errorMessage(err)}`);
+    console.error(errorMessage(err));
     process.exit(err instanceof ExitCodeError ? err.exitCode : 1);
   });
 }

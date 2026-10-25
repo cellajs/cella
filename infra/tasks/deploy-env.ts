@@ -2,8 +2,6 @@ import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { buildGrantRows } from '../lib/scaleway/grant-rows';
 import { appStorageNeeds, deployedServices, enabledServices, serviceEndpoints } from '../lib/services';
-import { isMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 
 type Cfg = EngineConfig;
 
@@ -25,17 +23,6 @@ export const ALLOWED_KEYS = [
   'roll_rest_matrix',
 ] as const;
 export type AllowedKey = (typeof ALLOWED_KEYS)[number];
-
-/**
- * Production may only deploy from a trusted ref. The deploy workflow triggers on
- * `release: published` (which runs on the release tag, e.g. `refs/tags/0.0.2`)
- * or manual `workflow_dispatch` from `main`. Both are allowed; anything else
- * (feature branches, arbitrary tags pushed by hand are still gated by the
- * workflow triggers) is rejected.
- */
-export function isAllowedProductionRef(gitRef: string): boolean {
-  return gitRef === 'refs/heads/main' || gitRef.startsWith('refs/tags/');
-}
 
 /** Pure builder that produces the deploy env table from an appConfig. */
 export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
@@ -94,29 +81,3 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     roll_rest_matrix: JSON.stringify(restRollout),
   };
 }
-
-export async function main(): Promise<void> {
-  const mode = process.argv[2];
-  if (!mode) {
-    console.error('Usage: print-deploy-env.ts <staging|production> [--git-ref refs/heads/main] [--git-sha <sha>]');
-    process.exit(1);
-  }
-  const gitRef = getFlag(process.argv, '--git-ref');
-  const gitSha = getFlag(process.argv, '--git-sha');
-  if (mode === 'production' && gitRef && !isAllowedProductionRef(gitRef)) {
-    console.error(`::error::Production deploys are only allowed from the main branch or a release tag (got ${gitRef})`);
-    process.exit(1);
-  }
-  process.env.APP_MODE = mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
-  if (appConfig.mode !== mode) {
-    console.error(`Mode mismatch: requested "${mode}" but loaded config is "${appConfig.mode}"`);
-    process.exit(1);
-  }
-  for (const [k, v] of Object.entries(buildDeployEnv(appConfig, { imageTag: gitSha }))) {
-    console.info(`${k}=${v}`);
-  }
-}
-
-if (isMain(import.meta.url)) await main();

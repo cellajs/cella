@@ -51,7 +51,7 @@ export interface HttpResponse {
 /** Performs a single HTTP GET. Injectable so the runner can be unit-tested. */
 export type HttpGet = (url: string) => Promise<HttpResponse>;
 
-/** One enabled rollout service as emitted by print-deploy-env's enabled_services_json. */
+/** One enabled rollout service as deploy-env's enabled_services_json lists it. */
 export interface SmokeService {
   service: string;
   health_url: string;
@@ -269,7 +269,7 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   }
   const expectedAsset = extractEntryAsset(html);
   if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`);
-  else console.warn(`::warning::No hashed entry asset found in ${dist}; falling back to "references some hashed asset"`);
+  else console.warn(`! No hashed entry asset found in ${dist}; falling back to "references some hashed asset"`);
   return expectedAsset;
 }
 
@@ -288,11 +288,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   for (const r of results) {
     const line = `${r.name}${r.detail ? `: ${r.detail}` : ''}`;
     if (r.status === 'ok') console.info(`✓ ${r.name}`);
-    else if (r.status === 'warn') console.warn(`::warning::${line}`);
-    else console.error(`::error::${line}`);
+    else if (r.status === 'warn') console.warn(`! ${line}`);
+    else console.error(`✗ ${line}`);
   }
 
-  // GitHub has no yellow job outcome: a warning is a green job carrying an annotation, so only failures throw.
+  // A run has no yellow outcome: a warning is a deployed run carrying a line in its log, so only failures throw.
   const warned = results.filter((r) => r.status === 'warn');
   if (warned.length > 0) console.warn(`${warned.length} smoke check(s) warned (degraded components); deploy is not blocked`);
   const failed = results.filter((r) => r.status === 'fail');

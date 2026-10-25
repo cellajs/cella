@@ -37,7 +37,7 @@ describe('frontend Caddyfile', () => {
   });
 
   it('exposes X-App-Version bound to {$RELEASE_SHA} env', () => {
-    // The rollout verifier asserts X-App-Version == GITHUB_SHA; breaking it hangs every deploy for 5 minutes before failing.
+    // The rollout verifier asserts X-App-Version == the target commit; breaking it hangs every deploy for 5 minutes before failing.
     expect(caddyfile).toMatch(/X-App-Version\s+"\{\$RELEASE_SHA\}"/);
   });
 
