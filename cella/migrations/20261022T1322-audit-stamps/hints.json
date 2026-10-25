@@ -1,7 +1,0 @@
-[
-  { "type": "create", "kind": "column", "entity": ["public", "attachments", "public"] },
-  { "type": "create", "kind": "column", "entity": ["public", "organizations", "public"] },
-  { "type": "create", "kind": "foreign key", "entity": ["public", "tenants", "tenants_created_by_actors_id_fkey"] },
-  { "type": "create", "kind": "foreign key", "entity": ["public", "tenants", "tenants_updated_by_actors_id_fkey"] },
-  { "type": "create", "kind": "foreign key", "entity": ["public", "users", "users_updated_by_actors_id_fkey"] }
-]

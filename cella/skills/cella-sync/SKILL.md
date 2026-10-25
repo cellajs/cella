@@ -1,6 +1,6 @@
 ---
 name: cella-sync
-description: Drive a pnpm cella sync or analyze for an app forked from the cella template. Covers conflict triage (pinned, both-added tests, fork markers), migration bookkeeping, silent auto-merge damage checks, and the drift decision matrix that keeps fork friction shrinking instead of growing.
+description: Drive a pnpm cella sync or analyze for an app forked from the cella template. Covers conflict triage (pinned, both-added tests, fork markers), alignment bookkeeping, silent auto-merge damage checks, and the drift decision matrix that keeps fork friction shrinking instead of growing.
 ---
 
 # Cella sync for a forked app
@@ -36,9 +36,10 @@ advances one stage (steps 6 and 7).
    `upstream.commit` in `cella/cella.manifest.json`) and copy the `ignored`, `pinned` and
    `packageJsonSync` entries that fit the app, then commit. A path upstream newly ignores arrives
    as ordinary synced files otherwise.
-3. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
-   (the merge already recorded them, conflicts or not). Read each one (`--show <id>`) BEFORE
-   resolving conflicts; conflicts usually belong to one of them.
+3. Once the first run has merged, `pnpm cella align` lists the alignments that arrived (the merge
+   already recorded them, conflicts or not). Read each one (`--show <id>`, which also reads an id
+   from the fetched upstream before the merge) BEFORE resolving conflicts; conflicts usually belong
+   to one of them.
 4. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
    contributions come back as conflicts where ours = theirs + app payload.
 
@@ -79,7 +80,9 @@ upstream changed since the last sync, as a range: `git diff <last sync commit>..
 (`MERGE_HEAD` or `$upstream`, as above; the run prints this command for some paths). The form
 `git diff HEAD <upstream>` shows the app's whole copy against the template's, which hides the change.
 Do the same for every pinned path and every app-owned module folder (`owner: 'app'`) that started as
-an upstream module. A changed export there shows up as type errors in synced files.
+an upstream module. A changed export there shows up as type errors in synced files. The reference
+modules (`backend/src/modules/attachment`, `organization` and their `frontend/src/modules` twins)
+get the same range diff: app modules copied their patterns, and an alignment names only what breaks.
 
 ## 4. Regenerate and gate
 
@@ -88,25 +91,29 @@ an upstream module. A changed export there shows up as type errors in synced fil
 2. `pnpm generate:routes` if the sync added, moved or removed a route file: `routeTree.gen.ts` is
    app-owned and only regenerates from Vite or this script.
 3. Before trusting typecheck, delete stale caches: `find . -name "*.tsbuildinfo" -not -path "*/node_modules/*" -delete`.
-4. `pnpm check` until clean, then the test files touched by the merge plus the module suites of
-   every area the sync altered.
+4. `pnpm check` until clean, then the root `pnpm test` (full mode, what CI runs: a package's own
+   `pnpm test` runs core mode and skips integration suites such as yjs), `pnpm test:storybook`,
+   `pnpm unused` and `pnpm --filter frontend build`.
 
-## 5. Migration bookkeeping
+## 5. Alignment bookkeeping
 
-Run the `migrate` skill; entries whose change originated here or arrived by an earlier sync are
-verified (README "Verify" steps) and marked, not re-applied. Handle the open notes in the sync PR
-when you can; one left for later stays listed by `pnpm cella migrate` until it is marked.
+Run the `align` skill; entries whose change originated here or arrived by an earlier sync are
+verified (README "Verify" steps) and marked, not re-applied. Handle the open alignments in the
+sync PR when you can; one left for later stays listed by `pnpm cella align` until it is marked.
+The skill ends with an outcome table in the sync PR description.
 
 ## 6. Commit, then drift triage
 
-Step 1's run committed a clean merge; after conflict resolution, rerun `pnpm cella sync` to
-commit. Never `git commit` the staged merge: a two-parent merge commit makes the squash-merged PR
-list the entire upstream history. The CLI squash-commits the staged delta as a single-parent
-commit and stops without pushing.
+The CLI runs `pnpm install` and `pnpm check` before it commits the merge. A run whose check fails
+stops with the merge staged, so sync-breaking alignments that break the check are worked before the
+first commit; after fixing (and after conflict resolution), rerun `pnpm cella sync` to commit.
+Never `git commit` the staged merge: a two-parent merge commit makes the squash-merged PR list the
+entire upstream history. The CLI squash-commits the staged delta as a single-parent commit and
+stops without pushing.
 
 Then `pnpm cella analyze` (diffs committed HEAD in a worktree; content reverts only show after
-commit). Follow-up triage commits may use plain `git commit`; only the staged merge needs the
-rerun. Per `drifted` file:
+commit; `--json` lists `{ path, status }` per file). Follow-up triage commits may use plain
+`git commit`; only the staged merge needs the rerun. Per `drifted` file:
 
 | Finding | Action |
 |---|---|
@@ -127,5 +134,5 @@ opens the PR). Never ship with plain `git push` + `gh pr create`: that skips the
 net. The same rerun repairs an existing bloated sync PR: it rewrites the branch to a single
 commit with identical content and force-pushes with lease.
 
-PR description: upstream range, conflicts and resolution shape, migrations marked, drift delta
-(before/after analyze counts).
+PR description: upstream range, conflicts and resolution shape, the align skill's outcome table,
+drift delta (before/after analyze counts).

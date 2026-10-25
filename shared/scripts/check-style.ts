@@ -1,16 +1,16 @@
 /**
  * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose, comment placement, frontend
- * conventions, Tailwind class names, token contrast and migration notes in one pass. Exits non-zero on any finding.
+ * conventions, Tailwind class names, token contrast and alignments in one pass. Exits non-zero on any finding.
  * `--audit` also prints review markers, which never fail; path arguments limit the files checked.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { alignmentFindings, owedAlignmentFindings } from './check-alignments.ts';
 import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
 import { commentFindings } from './check-comment-style.ts';
 import { docFindings } from './check-doc-style.ts';
 import { frontendFindings, frontendStores } from './check-frontend-style.ts';
-import { migrationNoteFindings, owedNoteFindings } from './check-migration-notes.ts';
 import { stampFindings } from './check-stamps.ts';
 import { tailwindContext, tailwindFindings } from './check-tailwind-classes.ts';
 import { tokenContrastFindings } from './check-token-contrast.ts';
@@ -36,11 +36,11 @@ function branchChanges(): { files: string[]; messages: string } {
 }
 
 const requested = files.filter((file) => isRequested(file, roots));
-const findings: Finding[] = migrationNoteFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8'));
-// Notes are written where they live: an app has no cella/migrations folder, and its own changes to its own paths owe none.
-if (roots.length === 0 && files.includes('cella/migrations/_TEMPLATE.md')) {
+const findings: Finding[] = alignmentFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8'));
+// Alignments are written where they live: an app has no cella/alignments folder, and its own changes to its own paths owe none.
+if (roots.length === 0 && files.includes('cella/alignments/_TEMPLATE.md')) {
   const { files: changed, messages } = branchChanges();
-  findings.push(...owedNoteFindings(changed, messages, readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
+  findings.push(...owedAlignmentFindings(changed, messages, readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
 }
 for (const file of requested) {
   const content = readFileSync(join(repoRoot, file));

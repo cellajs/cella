@@ -65,7 +65,7 @@
   "features.cdc_batching": "CDC batching",
   "features.cdc_batching.text": "A burst of row changes collapses into one live update per entity type, action and location instead of one per row, keeping traffic light.",
   "features.cella_cli": "Cella CLI",
-  "features.cella_cli.text": "Pull bug fixes and new features from upstream Cella into your app with minimal merge friction. A change that needs work in your app comes with a migration note, often with a codemod.",
+  "features.cella_cli.text": "Pull bug fixes and new features from upstream Cella into your app with minimal merge friction. A change that needs work in your app comes with an alignment that says what to change and how to find it, sometimes with a codemod.",
   "features.one_failure_path": "One failure path",
   "features.one_failure_path.text": "Whatever fails in the CDC worker, it confirms nothing and reads the change again from the replication slot, with growing pauses. Nothing is retried in place and nothing is skipped to keep going.",
   "features.create_edit_coalescing": "Create + edit coalescing",

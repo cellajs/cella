@@ -51,8 +51,8 @@ const templateAllowlist: VocabularyAllowlist = {
     'shared/scripts/check-app-vocabulary.test.ts',
     'shared/scripts/check-app-vocabulary.ts',
   ],
-  // Migration READMEs address app maintainers pulling template changes, an audience the CLI's source-control term describes precisely.
-  prefixes: ['cella/migrations/'],
+  // Alignment READMEs address app maintainers pulling template changes, an audience the CLI's source-control term describes precisely.
+  prefixes: ['cella/alignments/'],
 };
 
 /** Relative to the repo root; `shared/config` never syncs, so the file is the app's to fill. */
