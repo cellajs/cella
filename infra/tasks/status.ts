@@ -91,7 +91,12 @@ export function buildSession(ctx: StatusContext): ProbeSession {
         try {
           const { state } = await readControlState(s3, bucket, controlKey(ctx.mode));
           out.stateBucketExists = true;
-          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({ slug, activeSha: r.active?.sha, pendingSha: r.pendingSha }));
+          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
+            slug,
+            activeSha: r.active?.sha,
+            activeGeneration: r.active?.id,
+            pendingSha: r.pendingSha,
+          }));
         } catch (err) {
           if (isNoSuchBucket(err)) out.stateBucketExists = false;
         }
