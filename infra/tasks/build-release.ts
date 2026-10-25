@@ -154,10 +154,13 @@ export async function removeBuilderMachines(opts: { secretKey: string; projectId
   const removed: string[] = [];
   for (const server of servers.filter((candidate) => candidate.name.startsWith(opts.prefix))) {
     if (server.state !== 'stopped') {
-      await scwSend(auth, 'POST', `${instance}/servers/${server.id}/action`, { action: 'poweroff' }).catch(() => undefined);
+      const powerOff = () => scwSend(auth, 'POST', `${instance}/servers/${server.id}/action`, { action: 'poweroff' }).catch(() => undefined);
+      await powerOff();
       for (let tries = 0; tries < 40; tries++) {
         const { server: now } = await scwFetch<{ server: ScwServer }>(auth, 'GET', `${instance}/servers/${server.id}`);
         if (now.state === 'stopped') break;
+        // A builder halts itself when it is done, into 'stopped in place', where a poweroff sent during that shutdown leaves it: send it again.
+        if (now.state === 'stopped in place') await powerOff();
         await sleep(5_000);
       }
     }
