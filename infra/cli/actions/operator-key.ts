@@ -4,13 +4,15 @@ import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { ipAllowed } from '../../lib/scaleway/ip-lock';
 import { classifyPrincipal, describeKey, type KeyPair } from '../../lib/scaleway/operator-identity';
+import { readPolicy } from '../../lib/scaleway/policy-reach';
 import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import type { ScopedKeyResult } from '../../lib/scaleway/scaleway-iam';
 import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { pollUntil } from '../../lib/utils/retry';
-import { extendOperatorReach, setupOperatorApp } from '../../tasks/setup-operator-app';
+import { setObserverAddresses } from '../../tasks/setup-observer-app';
+import { extendOperatorReach, operatorPolicyReach, setupOperatorApp } from '../../tasks/setup-operator-app';
 import { forgetOperatorLock } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { keyAccepted, publicAddress } from './operator-unlock';
@@ -100,13 +102,17 @@ async function createOperator(
     endAction(1);
   }
 
+  // A project the operator reaches today stays in its reach, such as the runner's, which no environment file on this machine names.
+  const today = await readPolicy({ secretKey: ownerKey.secretKey }, ownerKey.organizationId, `${names.operator}-policy`);
+  const projectIds = [...new Set([...reach.map((entry) => entry.projectId), ...(today ? operatorPolicyReach(today.rules).projectIds : [])])];
+
   let key: ScopedKeyResult;
   try {
     key = await setupOperatorApp({
       callerSecretKey: ownerKey.secretKey,
       organizationId: ownerKey.organizationId,
       projectId,
-      projectIds: reach.map((entry) => entry.projectId),
+      projectIds,
       slug: appConfig.appSlug,
       dnsZone: deriveInfra(appConfig).dnsZone,
       cidrs,
@@ -118,6 +124,16 @@ async function createOperator(
 
   forgetOperatorLock();
   await confirmKeyStored(names.operator, key);
+  const observer = await setObserverAddresses({
+    auth: { secretKey: ownerKey.secretKey },
+    organizationId: ownerKey.organizationId,
+    slug: appConfig.appSlug,
+    cidrs,
+  }).catch((error) => {
+    console.warn(`${warningMark} '${names.observer}' keeps its earlier addresses (${errorMessage(error)}): set them in its policy in the console.`);
+    return undefined;
+  });
+  if (observer === 'set') console.info(`  ${changeMark} '${names.observer}' works from the same addresses; its key is unchanged.`);
 
   const accepted =
     addressInList === false

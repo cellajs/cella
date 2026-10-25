@@ -1,8 +1,9 @@
-import type { IamAuth } from '../lib/scaleway/iam-client';
+import { IAM_BASE, type IamAuth } from '../lib/scaleway/iam-client';
 import { ipCondition } from '../lib/scaleway/ip-lock';
 import { OBSERVER_ORG_PERMISSION_SETS, OBSERVER_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { extendPolicyReach, type PolicyReach, policyReach, readPolicy } from '../lib/scaleway/policy-reach';
 import { type PolicyRule, type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
+import { scwSend } from '../lib/scaleway/scw-fetch';
 
 export interface SetupObserverAppOptions extends Omit<ProvisionScopedKeyOptions, 'mode'> {
   /** The app's own slug (`appSlug`): the observer application is one per app. */
@@ -60,4 +61,24 @@ export function extendObserverReach(opts: {
     projectIds: opts.projectIds,
     rules: ({ projectIds, cidrs }) => observerRules({ projectIds, organizationId: opts.organizationId, cidrs }),
   });
+}
+
+/**
+ * Give the app's observer this address list in place, keeping its reach, so its key keeps working: the operator's new addresses take the
+ * observer along. Needs IAM write: an Owner key. `absent` when the app has no observer; `unchanged` when it has this list already.
+ */
+export async function setObserverAddresses(opts: {
+  auth: IamAuth;
+  organizationId: string;
+  /** The app's own slug (`appSlug`). */
+  slug: string;
+  cidrs: readonly string[];
+}): Promise<'set' | 'unchanged' | 'absent'> {
+  const policy = await readPolicy(opts.auth, opts.organizationId, `${opts.slug}-observer-policy`);
+  if (!policy) return 'absent';
+  const reach = policyReach(policy.rules, OBSERVER_PROJECT_PERMISSION_SETS);
+  if (reach.cidrs.length === opts.cidrs.length && opts.cidrs.every((cidr) => reach.cidrs.includes(cidr))) return 'unchanged';
+  const rules = observerRules({ projectIds: reach.projectIds, organizationId: opts.organizationId, cidrs: opts.cidrs });
+  await scwSend(opts.auth, 'PUT', `${IAM_BASE}/rules`, { policy_id: policy.id, rules });
+  return 'set';
 }
