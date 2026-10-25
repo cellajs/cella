@@ -209,7 +209,7 @@ export type CollectionReadWhere =
 
 ### Guards
 
-Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, or `actorGuard` in place of `userGuard` where an API key or access token may call too; the user's own account runs behind `[userGuard]` alone.
+Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. A guard that reads what an earlier one sets (the actor, the session, the tenant) declares it, so a route that lists them out of order fails when its module loads. Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, or `actorGuard` in place of `userGuard` where an API key or access token may call too; the user's own account runs behind `[userGuard]` alone.
 
 | Guard | Admits |
 | --- | --- |
@@ -243,6 +243,7 @@ Unexpected server errors include internal details in client responses only in de
 | A link or invitation of another account: opened while signed in as someone else, bound to another user, or the race that binds it lost | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
 | An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
+| A tenant quota that is full | 403: `restrict_by_app` with `meta.resource` and `meta.quota` from `assertTenantQuota` (service accounts, API keys); `restrict_by_org` for members, invitations and attachments | The tenant's policy, not a rate: waiting does not lift it, so it is never a 429, which tells the client to retry after `Retry-After` |
 | An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Authentication](./AUTHENTICATION.md#step-up) |
 | An action on the account itself while impersonating: stepping up, revoking the user's sessions, every `stepUpGuard` route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in `stepUpGuard` and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
 

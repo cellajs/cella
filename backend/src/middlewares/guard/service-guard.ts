@@ -116,6 +116,7 @@ export const serviceGuard = xMiddleware(
     functionName: 'serviceGuard',
     type: 'x-guard',
     security: [{ apiKey: [] }, { oauth2: [] }],
+    provides: ['actor'],
     name: 'service',
     description: 'Requires a secret API key or an access token; acts as its service account or consenting user, limited to its scopes',
   },

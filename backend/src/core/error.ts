@@ -1,9 +1,14 @@
 import type { z } from '@hono/zod-openapi';
 import { i18n } from '#/lib/i18n';
 import type { locales } from '#/lib/i18n-locales';
-import type { apiErrorSchema } from '#/schemas';
+import type { apiErrorSchema, ErrorCode } from '#/schemas';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
+/**
+ * The statuses an `AppError` carries: a documented error code, 410 (the Yjs relay's internal route: the entity is gone),
+ * 413 or a server error.
+ */
+export type AppErrorStatus = ErrorCode | 410 | 413 | 500 | 503;
 type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & {
   errorPagePath?: string;
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
@@ -27,14 +32,14 @@ export type AppErrorOpts = {
 /** Custom error class for structured API errors with i18n support. */
 export class AppError extends Error {
   override name: Error['name'];
-  status: ErrorSchemaType['status'];
+  status: AppErrorStatus;
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];
   willRedirect: boolean;
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
 
-  constructor(status: ErrorSchemaType['status'], type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
+  constructor(status: AppErrorStatus, type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
     super(opts?.message ?? i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: i18n.t(type, i18nOpts) }));
 

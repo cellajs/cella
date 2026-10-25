@@ -3,9 +3,9 @@ import { appConfig } from 'shared';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { xMiddleware } from '#/core/x-middleware';
+import { type XMiddlewareHandler, xMiddleware } from '#/core/x-middleware';
 import { createXRoute, createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { actorGuard, publicGuard, userGuard } from '#/middlewares/guard';
+import { actorGuard, orgGuard, publicGuard, stepUpGuard, tenantGuard, tokenGuard, userGuard } from '#/middlewares/guard';
 import { errorResponseRefs } from '#/schemas';
 
 const itemSchema = z.object({ id: z.string() });
@@ -72,6 +72,47 @@ describe('route helpers', () => {
       responses: { 204: { description: 'Done' }, ...errorResponseRefs },
     });
     expect(Object.keys(route.responses)).toEqual(['204', ...Object.keys(errorResponseRefs)]);
+  });
+
+  it('keeps the response a route declares for an error status, and adds the shared one for the others', () => {
+    const forbidden = json('Refused with a body of its own', z.object({ reason: z.string() }));
+    const route = createXRoute({
+      operationId: 'ownError',
+      method: 'get',
+      path: '/own-error',
+      xGuard: [publicGuard],
+      tags: ['things'],
+      summary: 'Own error',
+      responses: { 204: { description: 'Done' }, 403: forbidden },
+    });
+    expect(route.responses[403]).toBe(forbidden);
+    expect(route.responses[404]).toBe(errorResponseRefs[404]);
+  });
+
+  it('refuses a route at load whose guard reads what no guard before it sets, and names the route', () => {
+    const guarded = (xGuard: XMiddlewareHandler[]) => () =>
+      createXRoute({
+        operationId: 'getOrg',
+        method: 'get',
+        path: '/{tenantId}/{organizationId}',
+        xGuard,
+        tags: ['things'],
+        summary: 'Get org',
+        responses: { 204: { description: 'Done' } },
+      });
+
+    expect(guarded([userGuard, orgGuard, tenantGuard])).toThrow(/getOrg \(get \/\{tenantId\}\/\{organizationId\}\): orgGuard reads the tenant/);
+    expect(guarded([tenantGuard, orgGuard])).toThrow(/tenantGuard reads the actor/);
+    expect(guarded([actorGuard, stepUpGuard])).toThrow(/stepUpGuard reads the session/);
+
+    // Positive controls: the chains routes use.
+    for (const chain of [
+      [userGuard, tenantGuard, orgGuard, stepUpGuard],
+      [actorGuard, tenantGuard, orgGuard],
+      [tokenGuard, tenantGuard, orgGuard],
+    ]) {
+      expect(guarded(chain)).not.toThrow();
+    }
   });
 
   it('refuses a route whose config switch is off before its guards, and documents the switch as x-enabled-by', async () => {

@@ -51,6 +51,7 @@ const combinedMiddleware: MiddlewareHandler = every(
 export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
   functionName: 'sysAdminGuard',
   type: 'x-guard',
+  requires: ['session'],
   name: 'sysAdmin',
   description: 'Requires the system admin role and an allowed IP address; refuses impersonation',
 });

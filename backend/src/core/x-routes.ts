@@ -7,11 +7,12 @@ import {
   createMetadataExtensions,
   createSpecificationExtensions,
   type ExtensionPropId,
+  type GuardContext,
   getExtensionPropIds,
   type SecurityRequirement,
   toolAction,
   type XMiddlewareHandler,
-  type XMiddlewareOptions,
+  type XRouteProps,
 } from '#/core/openapi-extensions';
 import { checksAuthoringRules } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
@@ -27,27 +28,41 @@ const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   await next();
 };
 
-type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
+type RouteOptions = Parameters<typeof createRoute>[0] & XRouteProps & { operationId: string };
 
 /** A session is never narrowed, so of a route's security schemes only the key and the token carry its scope. */
 const scopedSchemes = new Set(['apiKey', 'oauth2']);
 const withScope = (requirement: SecurityRequirement, scope: AccessScope): SecurityRequirement =>
   Object.fromEntries(Object.entries(requirement).map(([scheme, scopes]) => [scheme, scopedSchemes.has(scheme) ? [scope] : scopes]));
 
-/** The route `createXRoute` returns: its own responses plus the error `$ref`s every route answers with. */
-type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
-  typeof createRoute<P, Omit<R, ExtensionPropId> & { responses: typeof errorResponseRefs }>
+/** The route `createXRoute` makes of a config: its own responses plus the error `$ref`s for the statuses it leaves out. */
+type XRoute<R extends Draft> = ReturnType<
+  typeof createRoute<R['path'], Omit<R, ExtensionPropId> & { responses: Omit<typeof errorResponseRefs, keyof R['responses']> }>
 >;
+
+/** Refuses a route at load where a guard reads context (`requires`) that no guard before it provides. */
+const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => {
+  const provided = new Set<GuardContext>();
+  for (const mw of xMiddlewares) {
+    const missing = mw.__requires?.filter((key) => !provided.has(key)) ?? [];
+    if (missing.length) {
+      throw new Error(
+        `[routes] ${route}: ${mw.name} reads the ${missing.join(' and ')} that an earlier guard sets. Put that guard before it in xGuard.`,
+      );
+    }
+    for (const key of mw.__provides ?? []) provided.add(key);
+  }
+};
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
  * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, `xCache`, the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
- * The error responses (`errorResponseRefs`) are appended to every route's own.
+ * Every route gets the error responses (`errorResponseRefs`); a status the route declares keeps the route's own response.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
-export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): Route<P, R> => {
+export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = [config.middleware ?? []].flat();
 
@@ -59,6 +74,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',
   );
+  assertGuardOrder(`${config.operationId} (${config.method} ${config.path})`, xMiddlewares);
   const specificationExtensions = createSpecificationExtensions((key) =>
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
@@ -79,13 +95,13 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   }
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
-  const extensionPropIds = [...getExtensionPropIds(), 'xScope'];
+  const extensionPropIds = getExtensionPropIds();
   const cleanConfig = {
     ...Object.fromEntries(Object.entries(config).filter(([key]) => !extensionPropIds.includes(key))),
     ...createMetadataExtensions(config),
   } as Omit<R, ExtensionPropId>;
 
-  return createRoute({ security, ...cleanConfig, responses: { ...config.responses, ...errorResponseRefs }, middleware, ...specificationExtensions });
+  return createRoute({ security, ...cleanConfig, responses: { ...errorResponseRefs, ...config.responses }, middleware, ...specificationExtensions });
 };
 
 /**
@@ -117,9 +133,6 @@ export const jsonBody = <S extends z.ZodType>(schema: S, example?: z.input<S>): 
 type DraftOptions = Omit<RouteOptions, 'path' | 'operationId' | 'tags'> & { operationId?: string; tags?: string[] };
 
 type Draft = DraftOptions & { path: string };
-
-/** The route `createXRoutes` makes of a draft: what `createXRoute` returns for it. */
-type XRoute<D extends Draft> = ReturnType<typeof createRoute<D['path'], Omit<D, ExtensionPropId> & { responses: typeof errorResponseRefs }>>;
 
 /** One route of a `createXRoutes` module: keeps its literal types. */
 export const xRoute = <P extends string, R extends DraftOptions & { path: P }>(config: R) => config;

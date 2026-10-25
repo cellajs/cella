@@ -26,7 +26,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
 
   if (attachmentRestrictions !== 0 && input.length > attachmentRestrictions) {
-    throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
+    throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
   // Rows an earlier attempt of this create wrote come back as they are; only the other items are created.
@@ -43,7 +43,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
 
   if (attachmentRestrictions !== 0 && currentAttachments + fresh.length > attachmentRestrictions) {
-    throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
+    throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
   const now = getIsoDate();

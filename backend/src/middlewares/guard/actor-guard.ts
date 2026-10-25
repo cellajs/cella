@@ -14,6 +14,7 @@ export const actorGuard = xMiddleware(
     functionName: 'actorGuard',
     type: 'x-guard',
     security: [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }],
+    provides: ['actor'],
     name: 'actor',
     description: 'Requires a session cookie, a secret API key or an access token; acts as the user or service account it proves',
   },
