@@ -4,6 +4,7 @@ import { builderCloudConfig, builderReportPrefix, containerScript } from '../lib
 import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand } from '../lib/operator-actions';
+import { removeMachines, type ScwServer } from '../lib/scaleway/machines';
 import { resolveImageDigest } from '../lib/scaleway/registry-digest';
 import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
@@ -126,59 +127,9 @@ async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: 
   );
 }
 
-interface ScwServer {
-  id: string;
-  name: string;
-  state: string;
-  volumes?: Record<string, { id: string; volume_type?: string }>;
-}
-
 /** The name every builder machine of an environment starts with. */
 export function builderPrefix(resource: (suffix: string) => string): string {
   return `${resource('builder')}-`;
-}
-
-/**
- * Delete every builder machine of an environment, and the Block Storage root volume each leaves behind: a deploy does it before and after its
- * build, and a teardown before its destroy, as the program does not know them. Returns the names deleted.
- */
-export async function removeBuilderMachines(opts: { secretKey: string; projectId: string; zone: string; prefix: string }): Promise<string[]> {
-  const auth = { secretKey: opts.secretKey };
-  const instance = `https://api.scaleway.com/instance/v1/zones/${opts.zone}`;
-  const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
-  const { servers } = await scwFetch<{ servers: ScwServer[] }>(
-    auth,
-    'GET',
-    `${instance}/servers?project=${opts.projectId}&name=${encodeURIComponent(opts.prefix)}&per_page=50`,
-  );
-  const removed: string[] = [];
-  for (const server of servers.filter((candidate) => candidate.name.startsWith(opts.prefix))) {
-    if (server.state !== 'stopped') {
-      const powerOff = () => scwSend(auth, 'POST', `${instance}/servers/${server.id}/action`, { action: 'poweroff' }).catch(() => undefined);
-      await powerOff();
-      for (let tries = 0; tries < 40; tries++) {
-        const { server: now } = await scwFetch<{ server: ScwServer }>(auth, 'GET', `${instance}/servers/${server.id}`);
-        if (now.state === 'stopped') break;
-        // A builder halts itself when it is done, into 'stopped in place', where a poweroff sent during that shutdown leaves it: send it again.
-        if (now.state === 'stopped in place') await powerOff();
-        await sleep(5_000);
-      }
-    }
-    await scwSend(auth, 'DELETE', `${instance}/servers/${server.id}`);
-    // Its Block Storage root volume outlives the server; it is deleted once it is detached.
-    for (const volume of Object.values(server.volumes ?? {})) {
-      for (let tries = 0; tries < 12; tries++) {
-        const done = await scwSend(auth, 'DELETE', `https://api.scaleway.com/block/v1/zones/${opts.zone}/volumes/${volume.id}`).then(
-          () => true,
-          () => false,
-        );
-        if (done) break;
-        await sleep(5_000);
-      }
-    }
-    removed.push(server.name);
-  }
-  return removed;
 }
 
 /** The builder's effects on Scaleway, with the deploy key. */
@@ -227,8 +178,7 @@ function liveEffects(opts: {
       });
       return { bundleId, boot };
     },
-    removeBuilders: () =>
-      removeBuilderMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zone: opts.zone, prefix: opts.builderPrefix }),
+    removeBuilders: () => removeMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zone: opts.zone, prefix: opts.builderPrefix }),
     startBuilder: async (name, cloudConfig) => {
       const { security_groups } = await scwFetch<{ security_groups: Array<{ id: string; name: string }> }>(
         auth,

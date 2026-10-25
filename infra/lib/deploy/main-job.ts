@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { engineSecretPath } from '../scaleway/secret-paths';
+import { infraDir } from '../utils/paths';
 
 /**
  * The main job (plan §3.5): one Serverless Jobs definition per environment, made by the operator's apply, that runs one deploy of a target
@@ -40,6 +43,11 @@ export function mainJobOutcome(run: { state: string; exit_code?: number | null }
  */
 export function mainJobImage(nodeVersion: string): string {
   return `docker.io/library/node:${nodeVersion}-bookworm`;
+}
+
+/** The root `package.json`'s `engines.node`: the Node every run of the engine and the runner starts on. */
+export function rootNodeVersion(root = join(infraDir, '..')): string {
+  return (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { engines: { node: string } }).engines.node;
 }
 
 /**

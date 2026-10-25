@@ -13,6 +13,7 @@ import { runRepositoryKey } from './repository-key';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
 import { runRotateSecrets } from './rotate-secrets';
+import { runRunnerIdentity, runRunnerReplace } from './runner';
 import { runRuns } from './runs';
 import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
@@ -36,6 +37,8 @@ export const ACTION_RUNNERS: ActionRunners = {
   'operator-key': runOperatorKey,
   identity: runIdentity,
   'start-deploy': runStartDeploy,
+  'runner-identity': runRunnerIdentity,
+  'runner-replace': runRunnerReplace,
   'repository-key': runRepositoryKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
