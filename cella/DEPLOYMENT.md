@@ -6,7 +6,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 
 Publishing a release starts an automatic deployment. It creates new servers for that exact version,
 checks them, moves traffic without downtime, and removes the old servers.
-[Pulumi](https://www.pulumi.com/) manages the cloud resources and GitHub Actions triggers the deploy command.
+[Pulumi](https://www.pulumi.com/) manages the cloud resources, and a runner inside the Scaleway organization starts each deploy as a job: GitHub holds the code and no key.
 Separate API keys are used for setup, automated deployment, and running servers, so
 each stage has only the permissions it needs.
 
@@ -57,7 +57,9 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
 ## Deploy flow
 
 ```
-Release published, push to main (staging), or manual dispatch
+The runner sees a new target (a release, a new commit on a
+followed branch, a line in infra/environments) and starts a
+run of the environment's main job
         ↓
 `infra deploy` (one command): preflights + stack lock
         ↓
@@ -73,10 +75,10 @@ Wave 2: ONE stack update provisions every remaining generation;
 Verify every public service serves the expected SHA
         ↓
 Publish frontend entry files (atomic flip) + smoke checks
-(degraded components warn with an annotation, unhealthy ones fail the run)
+(degraded components warn in the log, unhealthy ones fail the run)
         ↓
 One final stack update reaps every displaced generation
-(CI passes `--defer-reap` and runs that update as a follow-up `reap` job)
+(the main job runs it as its reap, once the deploy is live)
 ```
 
 The primary service owns migrations. Its boot runner gives the migrate companion 180 seconds, and the companion's database sessions carry a 30-second `lock_timeout` and a 120-second `statement_timeout`, so a migration blocked by another session fails the boot inside the deploy's 6-minute health gate and uploads diagnostics that name the wait and the open transactions. A migration that needs longer runs outside the deploy. `cdc` has no public health endpoint. Its replacement is confirmed by the primary public service coming up healthy.
@@ -91,33 +93,33 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 
 | Key | Permissions | Lifetime | Where stored |
 | --- | --- | --- | --- |
-| **Owner API key** (your own key as organization Owner) | Everything, from every address: Scaleway holds an Owner to no policy condition. The one key that writes IAM. The CLI asks for one where identities are made or removed: a first setup, **Rotate keys**, **Set up operator key**, **Tear down stack** (its second part), minting a managed key, and **Update identities**. Nothing else runs on it: the buckets admit no person. | Create one for the occasion in the console and revoke it afterwards; the setup offers to revoke it as its last call. Keep the Owner account for recovery, with MFA. | Nowhere on the machine. The CLI takes it at the prompt and never reads `SCW_OWNER_*` from a file or the environment. |
+| **Owner API key** (your own key as organization Owner) | Everything, from every address: Scaleway holds an Owner to no policy condition. The one key that writes IAM. The CLI asks for one where identities are made or removed: a first setup, **Rotate keys**, **Set up operator key**, **Set up the runner**, **Tear down stack** (its second part), minting a managed key, and **Update identities**. Nothing else runs on it: the buckets admit no person. | Create one for the occasion in the console and revoke it afterwards; the setup offers to revoke it as its last call. Keep the Owner account for recovery, with MFA. | Nowhere on the machine. The CLI takes it at the prompt and never reads `SCW_OWNER_*` from a file or the environment. |
 | **Operator application key** (`<app>-operator`, one per app) | Every product in the projects of the app's environments, plus IAM read. It writes no IAM: a key that does cannot be held to its own app. Scaleway accepts it **from your dedicated IP address only**: every rule of its policy carries that condition. The key for day-to-day privileged work, the same one in every environment. | Long-lived. Created and replaced by `pnpm infra operator-key` with your Owner API key ([Operator key](#operator-key)). | Your password manager only: shown once, stored nowhere by the CLI. You paste it, access key and secret key, once per run of the CLI, which keeps it in memory until you quit. |
-| **CI deploy application key** (`<slug>-<mode>-ci-deploy`) | In the stack's project: machines set by set (servers, IPs, private NICs, volumes; a builder machine among them), block storage, IPAM, load balancers, private networks and object storage; **read-only** on the registry (the builder pushes the images), VPC, RDB and jobs (privileged resources). Secret Manager by folder ([deploy-policy.ts](../infra/lib/scaleway/deploy-policy.ts)): it sees every container's metadata in the project (Scaleway refuses a list call under any condition); it writes versions in the services' folders (values a store supplies, such as the database CA) and the hand-over folder; it reads values in the deploy folder only, so it reads no secret of the app's. IAM read. No IAM write and no DNS write: the records follow the load balancer's address, which the setup's first apply makes. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the Scaleway provider reads. |
+| **Deploy application key** (`<slug>-<mode>-ci-deploy`) | In the stack's project: machines set by set (servers, IPs, private NICs, volumes; a builder machine among them), block storage, IPAM, load balancers, private networks and object storage; **read-only** on the registry (the builder pushes the images), VPC, RDB and jobs (privileged resources). Secret Manager by folder ([deploy-policy.ts](../infra/lib/scaleway/deploy-policy.ts)): it sees every container's metadata in the project (Scaleway refuses a list call under any condition); it writes versions in the services' folders (values a store supplies, such as the database CA) and the hand-over folder; it reads values in the deploy folder only, so it reads no secret of the app's. IAM read. No IAM write and no DNS write: the records follow the load balancer's address, which the setup's first apply makes. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | Its copy `deploy-key` in the engine folder (`/<slug>-<mode>/engine/`), which the main job's definition references; on no machine and in no file. |
 | **Observer application key** (`<app>-observer`, one per app) | Read-only, set by set, in the projects of the app's environments: instances, load balancers, databases, networks, registry, DNS, secret metadata (no value), jobs, object storage reads; plus IAM read. Of the buckets, only the state bucket and the boot-diagnostics bucket admit it, to read. Scaleway accepts it from your dedicated address only, as the operator key. The key for `status`, the plan of an identity update, and an agent that reads for you. | Long-lived. Made at an Owner moment: a first setup, or **Update identities** on a machine without one; **Rotate keys** replaces it. | `infra/.env.<mode>` as `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` (0600, never committed). One key serves every environment: an Owner moment writes it into each env file on the machine that holds one. |
 | **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read of its own folder, which holds a copy of every secret the service consumes. The backend additionally gets granular S3 object sets. | One standing key per identity, made at an Owner moment (a first setup, **Update identities** when one is missing, **Rotate keys** for all of them). A deploy hands it over and writes no IAM; it stops when an identity holds any other key. | `/<slug>-<mode>/deploy/machine-key-<service>` in Secret Manager, which the deploy key reads. The boot key is baked into machine cloud-init; each service key reaches its machine through a single-access handoff bundle, one per service the machine carries. Not in stack config. |
+| **Runner application key** (`<app>-runner`, one per organization) | Serverless Jobs in the projects of the environments it serves: it starts and reads the main job's runs. Scaleway accepts it from the runner's reserved address only. | Long-lived. Made by **Set up the runner** with your Owner API key. | `/runner/runner-key` in the runner's project, which **Replace the runner** puts into the runner machine's user data. |
 | **Builder application key** (`<slug>-<mode>-builder`) | Registry push and object writes in the project; of the buckets, only the frontend bucket admits it, to list and write the release's files (it deletes none). | One standing key, made at the Owner moments that make the machine keys. | `/<slug>-<mode>/deploy/machine-key-builder`, handed over read-once to a builder machine. |
 
-The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). Nobody types it: it is stored in Secret Manager at `/<slug>-<mode>/engine/pulumi-passphrase`, outside every VM's reach, and the CLI reads it with the operator key your session is unlocked with. CI keeps its own copy as a GitHub Environment secret. A stack set up before this copy existed asks for the passphrase once, at the first unlocked action, and stores it.
+The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). Nobody types it: it is stored in Secret Manager at `/<slug>-<mode>/engine/pulumi-passphrase`, outside every VM's reach, and the CLI reads it with the operator key your session is unlocked with, and the main job's definition references it. A stack set up before this copy existed asks for the passphrase once, at the first unlocked action, and stores it.
 
-On an operator machine `infra/.env.<mode>` therefore holds the observer key and nothing a change needs: the CLI reads neither a privileged key nor the passphrase from a file or the environment, as a reference or as a value, and names what it found there. That is deliberate. A value on disk would let a script on the machine change infrastructure with nobody at the terminal ([env-files.ts](../infra/lib/utils/env-files.ts)). The admin application key is retired: `SCW_ADMIN_*`, and the `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` / `SCW_STATE_*` names it had in the file before, are not read, and the CLI says to remove them; in the process environment `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI runner). On start the CLI prints which principal the observer key belongs to, whether the stack is locked, what is live, and whether Scaleway takes the operator key from this machine's address.
+On an operator machine `infra/.env.<mode>` therefore holds the observer key and nothing a change needs: the CLI reads neither a privileged key nor the passphrase from a file or the environment, as a reference or as a value, and names what it found there. That is deliberate. A value on disk would let a script on the machine change infrastructure with nobody at the terminal ([env-files.ts](../infra/lib/utils/env-files.ts)). The admin application key is retired: `SCW_ADMIN_*`, and the `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` / `SCW_STATE_*` names it had in the file before, are not read, and the CLI says to remove them; in the process environment `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (the main job's deploy key). On start the CLI prints which principal the observer key belongs to, whether the stack is locked, what is live, and whether Scaleway takes the operator key from this machine's address.
 
 Every action that reads or writes the Pulumi state, a lock included, takes the operator key, asked once per run of the CLI and kept in memory until you quit. The observer key changes nothing. Each action still verifies the passphrase against the stack.
 
-## CI deploys
+## Deploys
 
-[.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` finds the target ([What a deploy deploys](#what-a-deploy-deploys)) and derives names from config, and one `deploy` job, on a checkout of the target, runs a single command:
+Nobody starts a deploy. The [runner](#the-runner) watches each environment's target and starts a run of the environment's [main job](#the-main-job) when it moves; the run deploys with one command, on a checkout of the target:
 
 ```
-pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
+pnpm --filter infra run deploy --mode <staging|production> --sha <sha>
 ```
 
-- Pushes to main auto-deploy **staging**. Create a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main. Until `Pulumi.staging.yaml` carries the `infra:bootstrapComplete` marker, the deploy job is skipped. The newest push cancels a superseded in-flight staging run (`cancel-in-progress`). Production rollouts never cancel. Manual: Actions → Deploy → Run workflow → `staging`.
-- **Production** deploys only on a published release or a manual dispatch. For a manual promote, give the `production` GitHub Environment required reviewers. The run then pauses for approval.
+GitHub holds the code, the pull request checks and the releases, and no Scaleway key. A pull request's `privileged-changes` check says without a key whether merging it owes an apply or an Owner moment ([Changing infrastructure](#changing-infrastructure)).
 
 ### What a deploy deploys
 
-Without further instructions a push to main deploys main's newest commit to staging, a published release deploys the newest release (the highest `x.y.z` tag) to production, and a manual run deploys the commit it was started on. An optional file in the repository, `infra/environments`, changes that with one line per environment:
+Without further instructions staging follows main's newest commit and production the newest release (the highest `x.y.z` tag). An optional file in the repository, `infra/environments`, changes that with one line per environment:
 
 ```
 # <environment> <target> [retry <n>]
@@ -125,13 +127,13 @@ production 0.18.0 retry 1    # held at 0.18.0, deployed once more
 staging    branch:my-branch  # staging follows my-branch
 ```
 
-A target is `branch:<name>`, `releases`, a release tag, or a full commit id. A line pins an environment until it is removed, also when a newer release is published: that is how production is held or rolled back. The retry counter asks for the same target once more; the runner that replaces these workflows starts a run when it rises. The file is read from the commit that started the run, so a pin or a rollback of production takes a merge and then a manual run of production on main. A file the deploy cannot read stops it, as a deploy must never guess; `pnpm --filter infra target --mode <environment>` prints what it would deploy.
+A target is `branch:<name>`, `releases`, a release tag, or a full commit id. A line pins an environment until it is removed, also when a newer release is published: that is how production is held or rolled back. The retry counter asks for the same target once more: the runner starts a run when it rises. The runner reads the file at the head of the default branch, so a pin or a rollback takes effect about a minute after it is merged. A file the runner cannot read starts nothing, as a deploy must never guess; `pnpm infra start-deploy` names the target it would start before it asks.
 
 The deploy runs the engine of its target, so a rolled-back release is deployed the way it was made. A release made before a planned break of the engine's state cannot be deployed after it: roll forward instead.
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-<mode>-main`, that runs one deploy of a target per run: the deploy that will replace these workflows. An apply makes it, as it decides which secrets its runs read. Its runs read two of them by reference, the deploy key's copy (`deploy-key`) and the passphrase, both in the engine folder (`/<slug>-<mode>/engine/`); a start carries only the target and the retry counter, which anyone who reads job runs can see. A run starts from the public `node` image at the root `engines.node` (so a Node bump changes the definition and owes an apply), fetches the target commit (a private repository's with its [read key](#repository-read-key)), installs the `infra` and `shared` workspaces and the Pulumi CLI at the SDK's version, and runs the target's own deploy and reap. Its exit code is its outcome: `0` deployed, `2` blocked (a privileged change is owed: the apply that makes it starts the target again at its end), anything else failed. A run that stops before the deploy, in the fetch or the install, ends failed with `1`.
+Each environment has a Serverless Jobs definition, `<slug>-<mode>-main`, that runs one deploy of a target per run. An apply makes it, as it decides which secrets its runs read. Its runs read two of them by reference, the deploy key's copy (`deploy-key`) and the passphrase, both in the engine folder (`/<slug>-<mode>/engine/`); a start carries only the target and the retry counter, which anyone who reads job runs can see. A run starts from the public `node` image at the root `engines.node` (so a Node bump changes the definition and owes an apply), fetches the target commit (a private repository's with its [read key](#repository-read-key)), installs the `infra` and `shared` workspaces and the Pulumi CLI at the SDK's version, and runs the target's own deploy and reap. Its exit code is its outcome: `0` deployed, `2` blocked (a privileged change is owed: the apply that makes it starts the target again at its end), anything else failed. A run that stops before the deploy, in the fetch or the install, ends failed with `1`.
 
 `pnpm infra start-deploy` starts a run by hand, on your operator key, for the environment's target, and follows it until it ends; its log is in Cockpit under Serverless Jobs. A stack set up before the main job gets its definition from the first apply after a **Rotate keys**, which writes the deploy key's copy; until then the plan warns that the definition waits for it.
 
@@ -145,12 +147,9 @@ One small machine per organization starts the deploys. Once a minute, for every 
 
 Every deploy is one run with one record, written at its end whatever the outcome, in the environment's diagnostics bucket: `runs/<run>/record.json` (environment, target, each step with its duration, the step that failed, the error, and `deployed`, `blocked` or `failed`) and `runs/<run>/log`, the deploy's own lines. A run's id is when it started and what it deploys (`20261015T002005Z-21bae33f7c`), so ids sort by time. Every line goes through the same scrub as a machine's boot log first. A rollout that failed also names each new machine's boot account, or says that machine never uploaded one. `pnpm infra` → **Show runs** (`pnpm infra runs`) lists the last ten on the observer key, beside the main job's runs that left no record (one that ended before the engine was installed shows by Scaleway's state, exit code and message), and shows one in full: a failed machine's boot error, then the end of the run's log. A record that cannot be written does not fail the deploy; the deploy says so in its own output. Records expire after 60 days, as Scaleway's job runs do.
 
-### Bring your own CI
+### The builder
 
-1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, git and the pulumi CLI: the deploy needs no Docker.
-2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha>` for a commit pushed to the repository that the root `package.json` names. Safe to re-run. The stack lock serializes concurrent attempts.
-
-The deploy builds nothing itself. When the registry lacks one of the release's images or the frontend bucket its entry files, it makes a builder machine (`<slug>-<mode>-builder-<sha>`, a `POP2-HC-8C-16G` from Scaleway's `docker` image, in the stack's closed security group) that fetches the commit (a private repository's with its [read key](#repository-read-key)), installs the workspace and builds the boot bundle and the frontend (its docs page with this environment's OpenAPI spec) in a `node` container that holds no key, pushes every image (the services' while the frontend builds, with a layer cache in the registry under `buildcache-r<rotation counter>` that only the builder key writes, so a rotation starts a clean one) and writes the frontend's files with the builder key, and reports each step to the boot-diagnostics bucket (`boot-diag/builder/<sha>/`). The deploy deletes it when the build ends, or when it stops waiting after 30 minutes; one left by a dead deploy is deleted by the next deploy and by a teardown. The release's entry files wait under `releases/<sha>/` in the frontend bucket until the deploy publishes them. Jobs that hold deploy secrets install only the `infra` and `shared` workspaces and do not use the shared pnpm cache. `--git-ref`, when provided, gates production deploys to main/release refs.
+The deploy builds nothing itself. When the registry lacks one of the release's images or the frontend bucket its entry files, it makes a builder machine (`<slug>-<mode>-builder-<sha>`, a `POP2-HC-8C-16G` from Scaleway's `docker` image, in the stack's closed security group) that fetches the commit (a private repository's with its [read key](#repository-read-key)), installs the workspace and builds the boot bundle and the frontend (its docs page with this environment's OpenAPI spec) in a `node` container that holds no key, pushes every image (the services' while the frontend builds, with a layer cache in the registry under `buildcache-r<rotation counter>` that only the builder key writes, so a rotation starts a clean one) and writes the frontend's files with the builder key, and reports each step to the boot-diagnostics bucket (`boot-diag/builder/<sha>/`). The deploy deletes it when the build ends, or when it stops waiting after 30 minutes; one left by a dead deploy is deleted by the next deploy and by a teardown. The release's entry files wait under `releases/<sha>/` in the frontend bucket until the deploy publishes them. The main job installs only the `infra` and `shared` workspaces.
 
 ## Rollout strategies
 
@@ -184,13 +183,13 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per-service VM size (`instanceType`, required), replacement strategy, drain policy, LB routing, env. Which services exist comes from `appConfig.services.<name>.enabled` | routine CI deploy |
+| [config/services.config.ts](../infra/config/services.config.ts) | Per-service VM size (`instanceType`, required), replacement strategy, drain policy, LB routing, env. Which services exist comes from `appConfig.services.<name>.enabled` | routine deploy |
 | [config/general.config.ts](../infra/config/general.config.ts) | DB node type & volume, asset retention | CLI **Review & apply changes** (the database and the buckets' lifecycle rules are privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | CLI **Review & apply changes** (secret containers and values are privileged) |
 
 ## Changing infrastructure
 
-Most config changes ship through a normal CI deploy, including toggling `appConfig.services.<slug>.enabled` for a service without a load balancer route (a routed one takes an apply first). **Privileged** resources (database, VPC, private network, buckets and their policies, secret containers, DNS records, the load balancer but its pools' servers, the main job's definition) are changed with your operator key: `pnpm infra` → **Review & apply changes** (or `pnpm infra apply`). The machines' IAM applications and policies are no part of it: they are written at Owner moments ([Machine policies](#machine-policies)). The apply:
+Most config changes ship through a normal deploy, including toggling `appConfig.services.<slug>.enabled` for a service without a load balancer route (a routed one takes an apply first). **Privileged** resources (database, VPC, private network, buckets and their policies, secret containers, DNS records, the load balancer but its pools' servers, the main job's definition) are changed with your operator key: `pnpm infra` → **Review & apply changes** (or `pnpm infra apply`). The machines' IAM applications and policies are no part of it: they are written at Owner moments ([Machine policies](#machine-policies)). The apply:
 
 1. Asks for the operator key, unless this run already has it, and fetches the passphrase with it. A stack whose bucket policies were written before the operator was admitted lets it in first ([The retired admin application](#the-retired-admin-application)). Resources the program no longer declares but that stay live (machine policies, database roles, generated secret values) are taken out of the Pulumi state under the stack lock, a state-only edit, so the plan never shows them as deleted. Then shows the plan (`pulumi preview --diff --refresh`) with the operator key and asks once whether to apply it. Nothing is locked or changed up to here, so answering no is a read-only look. The plan reads live state first, so drift made outside Pulumi shows up; a deploy stops while any privileged change in it is pending. A registry service whose IAM application does not exist yet is planned with an application id that is known after the apply, under a warning that names the application.
 2. On a yes, runs on the operator key ([Operator key](#operator-key)): it reaches the Scaleway provider via `SCW_*` env and the state side (login, lock, `up`) as `<access key>@<project id>`, and is never written to stack config. The operator key writes no IAM: an identity that differs from the declared ones (an application the service registry needs, a machine or deploy policy, a standing machine key) stops the apply before its `up`, with the list, and points at **Update identities**. An app without an operator application stops here and names **Set up operator key**.
@@ -217,15 +216,13 @@ The machines' IAM applications and their policies follow the **service registry*
 ### 1. Prerequisites
 
 1. A domain, set as `appConfig.domain`, registered as external at https://console.scaleway.com/domains/external.
-2. The Pulumi CLI, at least at the version of the `@pulumi/pulumi` package in `infra/package.json` (CI installs exactly that version, and `pnpm infra` warns when yours is older):
+2. The Pulumi CLI, at least at the version of the `@pulumi/pulumi` package in `infra/package.json` (the main job installs exactly that version, and `pnpm infra` warns when yours is older):
 
    ```bash
    brew install pulumi/tap/pulumi
    ```
 
-3. GitHub CLI (recommended), authenticated with `gh auth login`, so the wizard can set the GitHub Environment secrets.
-4. Docker with buildx (recommended), so the wizard can run the first deploy locally.
-5. A Scaleway project per environment (optional): without `SCW_PROJECT_ID` in `infra/.env.<mode>`, the wizard picks or creates one (named after that environment's slug) and writes the id there. Every environment has a project of its own; the wizard does not offer the project of another environment.
+3. A Scaleway project per environment (optional): without `SCW_PROJECT_ID` in `infra/.env.<mode>`, the wizard picks or creates one (named after that environment's slug) and writes the id there. Every environment has a project of its own; the wizard does not offer the project of another environment.
 
 <a id="2-generate-a-bootstrap-api-key"></a>
 
@@ -243,9 +240,9 @@ pnpm infra
 
 The first setup has two parts. The **Owner moment** writes IAM and nothing else, with the Owner API key you paste:
 
-1. Picks or creates the Scaleway project (prerequisite 5).
+1. Picks or creates the Scaleway project (prerequisite 3).
 2. Creates the machine identities (one application per registry service, the boot fetcher and the builder) and writes their policies ([Machine policies](#machine-policies)).
-3. Creates the CI deploy application with its key, and sets it on the GitHub Environment (if `gh` is authenticated).
+3. Creates the deploy application with its key, whose copy the operator part stores for the main job.
 4. Makes sure the app's operator reaches this environment: an app without an operator gets it created (you give the dedicated address, and the key is shown once: store it); an app that has one gets this environment's project added to its policy, and its key keeps working ([Operator key](#operator-key)).
 5. Does the same for the app's observer, with the operator's address list, and writes its key to `infra/.env.<mode>` (`SCW_OBSERVER_*`) on this machine.
 6. Offers to **revoke the Owner API key you pasted**. Nothing after this needs it.
@@ -255,24 +252,16 @@ The **operator part** runs on the operator key: the one just created, or the one
 1. Generates the Pulumi passphrase and stores it in Secret Manager, so later runs fetch it with the operator key (set `PULUMI_CONFIG_PASSPHRASE` beforehand to supply your own).
 2. Asks for the admin email and, with it, the mail key.
 3. Creates state storage and initializes Pulumi.
-4. Sets the passphrase on the GitHub Environment.
-5. Optionally runs the first `pulumi up` (registry, database, network, and the load balancer with its DNS records and certificates and empty pools, but no machine yet) and seeds the admin email.
-6. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app. Declining leaves it to CI (step 4).
+4. Optionally runs the first `pulumi up` (registry, database, network, the main job's definition, and the load balancer with its DNS records and certificates and empty pools, but no machine yet) and seeds the admin email.
+5. Offers the **first deploy**, the same command the main job runs, with the new deploy key. Accepting ends with a live app. Declining leaves it to the runner (step 4).
 
 A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operator's reach, and its operator part asks for the operator key you stored.
 
-### 4. Commit and push
+### 4. Commit, and let the runner deploy
 
-1. Commit `infra/Pulumi.<mode>.yaml` and push.
-2. CI needs the GitHub Environment secrets (the local wizard does not). If `gh` was authenticated, setup already set them on the stack's Environment. Otherwise add them under **Settings → Environments → `<mode>` → Environment secrets** (environment-scoped, not repo-level):
-
-| Secret | Value |
-| --- | --- |
-| `SCW_ACCESS_KEY` | CI deploy key access key |
-| `SCW_SECRET_KEY` | CI deploy key secret key |
-| `PULUMI_CONFIG_PASSPHRASE` | Pulumi passphrase (generated at setup) |
-| `SCW_PROJECT_ID` | Scaleway project ID |
-| `SCW_ORGANIZATION_ID` | Scaleway organization ID |
+1. Commit `infra/Pulumi.<mode>.yaml` and push: a deploy runs on its target's stack file, whose encryption salt the setup just wrote.
+2. **Set up the runner** for this environment (`pnpm infra runner-identity --mode <mode>`, your Owner API key): the organization's first one also makes the runner's project, its address and its key. Commit the `infra/runner.json` it writes.
+3. **Replace the runner** (`pnpm infra runner-replace`, operator key). From then on the runner deploys the environment's target by itself; `pnpm infra runs` shows each run.
 
 <a id="5-revoke-the-bootstrap-key"></a>
 
@@ -302,7 +291,7 @@ Resource modules, layer order, and the infra file layout: [infra/README.md](../i
 
 Sign-ins resolve the client IP to a country and network (DB-IP Lite, CC BY 4.0) for the sessions list and the new sign-in notice. The image ships no data: each API process downloads both databases from the `geoip/` prefix of the public bucket at boot and re-checks daily with a conditional GET, so a refresh never needs a release. In development the prefix is the shared template bucket, so local sign-ins show a country out of the box (a sample public address stands in for loopback, `GEOIP_DEV_SAMPLE_IP`).
 
-Three things publish to the prefix, all the same task ([infra/tasks/geoip-refresh.ts](../infra/tasks/geoip-refresh.ts)): the deploy pipeline when the data is missing or older than 35 days, the monthly [GeoIP refresh](../.github/workflows/geoip-refresh.yml) workflow, and by hand:
+Two things publish to the prefix, both the same task ([infra/tasks/geoip-refresh.ts](../infra/tasks/geoip-refresh.ts)): every deploy when the data is missing or older than 35 days, and by hand:
 
 ```bash
 pnpm infra geoip-refresh
@@ -385,7 +374,7 @@ Two acts, each recorded in the control object with when and by whom, and `pnpm i
 ### Key rotation
 
 1. Have your operator key at hand.
-2. `pnpm infra` → **Rotate keys & secrets** → **Rotate keys**: mints a fresh `<slug>-<mode>-ci-deploy` key, copies it into the engine folder for the [main job](#the-main-job), and, if `gh` is authenticated, pushes it to the stack's GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also replaces the observer key (rewritten in every `infra/.env.<mode>` on this machine that holds it; a copy on another machine stops working) and every standing machine key, deleting the old ones. No key is written to stack config.
+2. `pnpm infra` → **Rotate keys & secrets** → **Rotate keys**: mints a fresh `<slug>-<mode>-ci-deploy` key, copies it into the engine folder for the [main job](#the-main-job). It also replaces the observer key (rewritten in every `infra/.env.<mode>` on this machine that holds it; a copy on another machine stops working) and every standing machine key, deleting the old ones. No key is written to stack config.
 3. The rotation is recorded with your operator key. Deploy. The running machines booted with the old machine keys, which are deleted now: a reboot before the next deploy cannot hydrate, and the backend's presigned URLs stop working until then. No commit is needed.
 4. Revoke a pasted key in the Scaleway console.
 
@@ -423,14 +412,14 @@ The builder fetches a release's commit from the repository the root `package.jso
 
 1. Verifies the current passphrase and generates a new one, shown once. Store it first.
 2. Re-encrypts the stack (`pulumi stack change-secrets-provider passphrase` rewrites the state object and `Pulumi.<stack>.yaml` with a fresh `encryptionsalt`) under the stack lock, and verifies the rewritten file decrypts with the new passphrase.
-3. Syncs the new `PULUMI_CONFIG_PASSPHRASE` to the GitHub Environment (when `gh` is authenticated).
-4. Reminds you to commit `infra/Pulumi.<stack>.yaml`.
+3. Stores the new passphrase in Secret Manager, where the operator key and the main job read it.
+4. Reminds you to commit `infra/Pulumi.<stack>.yaml`: a deploy runs on its target's stack file, so a target without that commit cannot read the state.
 
-> Losing the current passphrase means existing secret outputs cannot be decrypted. There is no recovery. Actions secrets are write-only, so the GitHub copy keeps CI working but can never be viewed. Keep your password-manager copy current.
+> Losing the current passphrase means existing secret outputs cannot be decrypted. There is no recovery. Keep your password-manager copy current.
 
 ### Teardown
 
-`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock with your operator key, then optionally deletes the stack's IAM principals, for which it asks for an Owner API key ([API keys](#credentials)). The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
+`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock with your operator key, then optionally deletes the stack's IAM principals, for which it asks for an Owner API key ([API keys](#credentials)). The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 
@@ -442,5 +431,4 @@ The builder fetches a release's commit from the repository the root `package.jso
 2. (optional) Scaleway console → Object Storage → delete bucket `<slug>-pulumi-state` (names stay reserved for several hours).
 3. (optional) Revoke a pasted setup key in the Scaleway console.
 4. (optional) Delete IAM application `<slug>-<mode>-ci-deploy` and its policy.
-5. (optional) Remove `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from the stack's GitHub Environment.
-6. Re-run: `pnpm infra`
+5. Re-run: `pnpm infra`
