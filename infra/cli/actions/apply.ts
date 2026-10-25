@@ -1,10 +1,12 @@
-import { actionLabel } from '../../lib/operator-actions';
-import { pc } from '../../lib/utils/cli-output';
+import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, reviewPlan } from './plan';
+import { startBlockedTarget } from './start-deploy';
 
 /**
  * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
@@ -44,4 +46,9 @@ export async function runApply(context: InfraContext): Promise<void> {
     debugProvider,
   });
   if (completed && verified === false) endAction(1);
+  if (completed) {
+    await startBlockedTarget(context, operator).catch((error) =>
+      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
+    );
+  }
 }

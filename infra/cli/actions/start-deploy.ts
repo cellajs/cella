@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listRemoteRefs } from '../../lib/deploy/git-remote';
-import { findJobDefinition, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
+import { findJobDefinition, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../../lib/deploy/target';
@@ -59,10 +59,31 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   const outcome = mainJobOutcome(run);
   if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
-    console.warn(`${warningMark} Blocked: a privileged change is owed. Apply it (\`${actionCommand('apply')}\`), then start the deploy again.`);
+    console.warn(
+      `${warningMark} Blocked: a privileged change is owed. Apply it (\`${actionCommand('apply')}\`): the apply starts this target again.`,
+    );
   else
     console.error(
       `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
     );
   if (outcome !== 'deployed') endAction(1);
+}
+
+/**
+ * Start the environment's main job again for the target whose last run ended blocked (D21), on the operator key: the apply that cleared the
+ * block does it at its end, as the runner holds rights over jobs only and cannot see an apply. Nothing when the last run ended otherwise or
+ * runs still; a target that moved on since is the runner's.
+ */
+export async function startBlockedTarget(context: InfraContext, key: { secretKey: string }): Promise<void> {
+  const auth = { secretKey: key.secretKey };
+  const { naming, region } = deriveInfra(context.appConfig);
+  const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
+  if (!definitionId) return;
+  const [last] = await listJobRuns(auth, { region, projectId: context.projectId, definitionId });
+  const sha = last?.environment_variables?.TARGET_SHA;
+  if (!last || !sha || !runEnded(last) || mainJobOutcome(last) !== 'blocked') return;
+  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: sha, RETRY: last.environment_variables?.RETRY ?? '0' } });
+  console.info(
+    `${checkMark} The last run was blocked: run ${run.id} deploys ${sha.slice(0, 10)} again (\`${actionCommand('runs')}\` shows how it ends).`,
+  );
 }

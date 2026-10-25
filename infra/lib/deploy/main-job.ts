@@ -14,13 +14,13 @@ export function mainJobSecretFolder(slug: string, mode: string): string {
   return engineSecretPath(slug, mode).replace(/\/$/, '');
 }
 
-/** How a run ends, as its exit code: the runner starts a target again only when its last run was blocked and the block is gone. */
+/** How a run ends, as its exit code. The runner starts a target once; a blocked one is started again by the apply that clears the block (D21). */
 export const MAIN_JOB_EXIT = {
   /** The target is live. */
   deployed: 0,
   /** The deploy failed; the running release is untouched or rolled back. A failed target is not started again by itself. */
   failed: 1,
-  /** A privileged change is owed (the preflight's exit code): an apply first, then the target is started again. */
+  /** A privileged change is owed (the preflight's exit code): the apply that makes it starts the target again at its end. */
   blocked: 2,
 } as const;
 
