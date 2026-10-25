@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { listRemoteRefs, repositoryUrl } from '../lib/deploy/repository-key';
+import { listRemoteRefs } from '../lib/deploy/git-remote';
+import { repositoryUrl } from '../lib/deploy/repository-key';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../lib/deploy/target';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';

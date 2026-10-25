@@ -2,7 +2,8 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { gitKeyOptions, readRepositoryKey, repositoryUrl } from './repository-key';
+import { gitKeyOptions } from './git-remote';
+import { readRepositoryKey, repositoryUrl } from './repository-key';
 
 const secrets = (stored?: { value: string; versions?: number }) => ({
   getSecretByName: async (name: string, path: string) =>

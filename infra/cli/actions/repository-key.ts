@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { gitKeyOptions, REPOSITORY_KEY_NAME, repositoryUrl } from '../../lib/deploy/repository-key';
+import { gitKeyOptions } from '../../lib/deploy/git-remote';
+import { REPOSITORY_KEY_NAME, repositoryUrl } from '../../lib/deploy/repository-key';
 import { actionLabel } from '../../lib/operator-actions';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { deployFolderPath } from '../../lib/scaleway/secret-paths';

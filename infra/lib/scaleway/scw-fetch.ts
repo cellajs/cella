@@ -1,6 +1,6 @@
-import { errorMessage } from '../utils/errors';
-import { type FetchLike, resolveFetch } from '../utils/fetch-like';
-import { retry } from '../utils/retry';
+import { errorMessage } from '../utils/errors.ts';
+import { type FetchLike, resolveFetch } from '../utils/fetch-like.ts';
+import { retry } from '../utils/retry.ts';
 
 // SCW_DEBUG only, never the generic DEBUG var: verbose mode prints API bodies into retained CI logs.
 const DEBUG = process.env.SCW_DEBUG === '1';

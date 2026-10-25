@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
-import { listRemoteRefs, repositoryUrl } from '../../lib/deploy/repository-key';
+import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
