@@ -126,9 +126,16 @@ describe('owedNoteFindings', () => {
     ]);
   });
 
-  it('leaves content, brand files, generated output and config alone', () => {
+  it('leaves content, brand files, generated output, config and Markdown alone', () => {
     expect(
-      rule(['README.md', 'shared/config/config.default.ts', 'locales/en/app.json', 'json/text-blocks.json', 'backend/src/modules/auth/x.ts']),
+      rule([
+        'README.md',
+        'shared/config/config.default.ts',
+        'locales/en/app.json',
+        'json/text-blocks.json',
+        'backend/drizzle/README.md',
+        'backend/src/modules/auth/x.ts',
+      ]),
     ).toEqual([]);
   });
 

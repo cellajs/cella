@@ -67,7 +67,7 @@ Authentication explains how people prove identity; [Interoperability](./INTEROPE
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 | **Secret columns** | A single registry keeps secrets out of API responses, backend and worker logs, and CDC row images. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend decides. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Data lifecycle
 

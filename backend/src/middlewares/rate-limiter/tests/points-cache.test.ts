@@ -107,7 +107,7 @@ describe('points-cache', () => {
   });
 
   describe('syncFromDb', () => {
-    it('should adopt the authoritative DB count and clear debt', () => {
+    it('should adopt the DB count and clear debt', () => {
       for (let i = 0; i < 10; i++) {
         tryFastConsume('tenant:user1', 1, 1000, hourMs);
       }

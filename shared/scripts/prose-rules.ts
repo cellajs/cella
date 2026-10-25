@@ -70,6 +70,13 @@ export const proseRules: ProseRule[] = [
     message: 'name the dependency, requirement, or failure consequence directly',
   },
   {
+    name: 'authoritative',
+    pattern: /\bauthoritative(?:ly)?\b/i,
+    ...agentWording,
+    level: 'required',
+    message: 'say who decides or which value counts: the backend decides, the stored row, the exact count',
+  },
+  {
     name: 'boundary-metaphor',
     pattern: /\bseams?\b/i,
     ...agentWording,

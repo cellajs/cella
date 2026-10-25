@@ -30,7 +30,7 @@ export const streamNotificationSchema = z
     channelId: z.string().nullable().describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: nullableStxBaseSchema,
     batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched notification: client should fetch range'),
-    count: z.number().int().nullable().describe('Authoritative row count for batches: sequence ranges of different paths may interleave'),
+    count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),
     spreadWindow: z
       .number()
       .int()

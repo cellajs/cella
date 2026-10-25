@@ -144,7 +144,8 @@ export function ownedPaths(configSource: string): string[] {
  */
 export function owedNoteFindings(changedFiles: string[], commitMessages: string, configSource: string): Finding[] {
   const owned = ownedPaths(configSource).filter((entry) => !noteExempt.some((exempt) => isUnder(entry, exempt) || entry.startsWith(exempt)));
-  const touched = changedFiles.filter((file) => owned.some((entry) => isUnder(file, entry)));
+  // A Markdown file inside an owned folder is read by people, never by synced code
+  const touched = changedFiles.filter((file) => !file.endsWith('.md') && owned.some((entry) => isUnder(file, entry)));
   if (touched.length === 0) return [];
   const hasNote = changedFiles.some((file) => noteIdPattern.test(file.slice(notesDir.length).split('/')[0]) && file.startsWith(notesDir));
   if (hasNote || /^Migration-Note: none\b.*\w/m.test(commitMessages)) return [];
