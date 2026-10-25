@@ -1,16 +1,14 @@
 import type { ComponentType } from 'react';
-
-/** Path to a value in the JSON tree */
-export type Path = (string | number)[];
+import type { JsonPath } from '~/modules/common/json-viewer/utils';
 
 export interface DataTypeProps<T = unknown> {
   value: T;
-  path: Path;
+  path: JsonPath;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Allows DataType<string> etc to be used in valueTypes array
 export interface DataType<T = any> {
-  is: (value: unknown, path: Path) => boolean;
+  is: (value: unknown, path: JsonPath) => boolean;
   Component: ComponentType<DataTypeProps<T>>;
 }
 
@@ -18,18 +16,19 @@ export interface DataType<T = any> {
 // biome-ignore lint/suspicious/noExplicitAny: Allows typed DataType definitions
 export const defineDataType = <T = any>(config: DataType<T>): DataType<T> => config;
 
-export interface JsonViewerProps<T = unknown> {
-  value: T;
+export interface JsonViewerProps {
+  value: unknown;
+  /** Levels expanded on first render (default: 3) */
   defaultInspectDepth?: number;
-  /** Root name to display (false to hide) */
+  /** Key shown for the root (default: 'root'); false hides it */
   rootName?: string | false;
-  displayDataTypes?: boolean;
+  /** A copy button on each object and array row (default: false) */
   enableClipboard?: boolean;
   /** Indent width in characters (default: 2) */
   indentWidth?: number;
+  /** Custom renderers; the first whose `is` matches renders the value */
   valueTypes?: DataType[];
-  className?: string;
-  /** Collapse strings after this length (default: 50, false to disable) */
+  /** Collapse strings after this length (default: 200, false to disable) */
   collapseStringsAfterLength?: number | false;
   /** OpenAPI mode: 'spec' enables $ref navigation, 'schema' hides required arrays and shows labels */
   openapiMode?: 'spec' | 'schema';
@@ -38,53 +37,7 @@ export interface JsonViewerProps<T = unknown> {
   /** When true, expand all nodes regardless of defaultInspectDepth */
   expandAll?: boolean;
   /** The current search match (one of `matchRowPaths`); nodes along it expand and its row scrolls into view */
-  searchMatchPath?: (string | number)[] | null;
+  searchMatchPath?: JsonPath | null;
   /** Whether to show quotes around keys (default: true) */
   showKeyQuotes?: boolean;
-  /** How many levels deep to expand when clicking a node (default: 1) */
-  expandChildrenDepth?: number;
-}
-
-/** Tailwind class mappings for JsonViewer theming */
-export interface JsonViewerTheme {
-  // Value type colors
-  string: string;
-  number: string;
-  boolean: string;
-  null: string;
-  // Structure colors
-  key: string;
-  bracket: string;
-  // Array index styling
-  index: string;
-  // Schema mode specific
-  schemaType: string;
-  /** Type keywords other than the primitive ones (array, object) */
-  structureType: string;
-  required: string;
-  /** Count of matches inside a collapsed node */
-  matchBadge: string;
-}
-
-export const defaultTheme: JsonViewerTheme = {
-  string: 'text-foreground',
-  number: 'text-amber-700 dark:text-amber-400',
-  boolean: 'text-rose-700 dark:text-rose-400',
-  null: 'text-muted-foreground',
-  key: 'text-emerald-700 dark:text-emerald-400',
-  bracket: 'text-gray-700 dark:text-gray-300',
-  index: 'text-muted-foreground text-xs',
-  schemaType: 'font-medium italic',
-  structureType: 'text-purple-600 dark:text-purple-400',
-  required: 'bg-amber-100/50 dark:bg-amber-900/10 text-amber-700/60 dark:text-amber-200/60',
-  matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',
-};
-
-/** Color class for a JSON Schema type keyword, shared by schema labels and schema-mode values. */
-export function getTypeColorClass(type: string, theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'structureType'>): string {
-  if (type === 'string') return theme.string;
-  if (type === 'number' || type === 'integer') return theme.number;
-  if (type === 'boolean') return theme.boolean;
-  if (type === 'null') return theme.null;
-  return theme.structureType;
 }

@@ -1,15 +1,12 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
-import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export function Slider({
-  className,
-  defaultValue,
-  value,
-  min = 0,
-  max = 100,
-  ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root> & { min?: number; max?: number }) {
+interface SliderProps extends SliderPrimitive.Root.Props {
+  /** Spread on every thumb, the element assistive technology reads: its label and spoken value. */
+  thumbProps?: SliderPrimitive.Thumb.Props;
+}
+
+export function Slider({ className, defaultValue, value, min = 0, max = 100, thumbProps, ...props }: SliderProps) {
   const _values = Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max];
 
   return (
@@ -20,28 +17,27 @@ export function Slider({
       min={min}
       max={max}
       className={cn(
-        'relative flex w-full touch-none select-none items-center data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col data-disabled:opacity-50',
+        'relative flex w-full touch-none select-none items-center data-vertical:h-full data-vertical:min-h-44 data-vertical:w-auto data-vertical:flex-col data-disabled:opacity-50',
         className,
       )}
       {...props}
     >
-      <SliderPrimitive.Control data-slot="slider-control">
+      <SliderPrimitive.Control
+        data-slot="slider-control"
+        className="relative flex w-full grow items-center data-vertical:h-full data-vertical:w-auto data-vertical:flex-col"
+      >
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className={cn(
-            'relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5',
-          )}
+          className="relative grow overflow-hidden rounded-full bg-muted data-horizontal:h-1.5 data-vertical:h-full data-horizontal:w-full data-vertical:w-1.5"
         >
-          <SliderPrimitive.Indicator
-            data-slot="slider-range"
-            className="absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
-          />
+          <SliderPrimitive.Indicator data-slot="slider-range" className="absolute bg-primary data-horizontal:h-full data-vertical:w-full" />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             // biome-ignore lint/suspicious/noArrayIndexKey: slider thumbs are positional and never reordered.
             key={index}
+            {...thumbProps}
             className="focus-effect block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 hover:ring-ring/30 data-disabled:pointer-events-none data-disabled:opacity-50"
           />
         ))}

@@ -1,17 +1,19 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit, { type AssemblyResponse } from '@uppy/transloadit';
-// biome-ignore lint/style/noRestrictedImports: runtime calls of a background service (token fetch inside the Uppy assembly callback, key link), not eligible for a React Query hook.
+// biome-ignore lint/style/noRestrictedImports: runtime calls of a background service (cloud availability check, key link), not eligible for a React Query hook.
 import { getUploadToken, linkAttachmentKeys } from 'sdk';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { reportCriticalError } from '~/lib/tracing';
 import { uploadedFileKeys } from '~/modules/attachment/helpers/parse-uploaded';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
+import { groupBy } from '~/modules/attachment/offline/group-by';
+import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candidate';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
-import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
 import { findAttachmentInCache } from '~/modules/attachment/query';
-import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
+import type { UploadResults } from '~/modules/common/uploader/types';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { getLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
@@ -19,6 +21,8 @@ import { getTenantIdForOrg } from '~/query/realtime/sync-priority';
 
 /** Attempts to link an uploaded blob's keys to its row; a 404 waits for a create still queued offline. */
 const linkAttemptLimit = 10;
+
+const uploadIntervalMs = 60_000;
 
 type CloudAvailability = 'available' | 'unconfigured' | 'unreachable';
 
@@ -29,26 +33,21 @@ type CloudAvailability = 'available' | 'unconfigured' | 'unreachable';
 class AttachmentUploadService {
   private processing = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;
-  private onlineHandler: (() => void) | null = null;
+  private onlineUnsubscribe: (() => void) | null = null;
 
   start(): void {
-    this.onlineHandler = () => this.processPendingUploads();
-    window.addEventListener('online', this.onlineHandler);
-
-    this.intervalId = setInterval(() => this.processPendingUploads(), 60000);
-
+    this.onlineUnsubscribe = onlineManager.subscribe((online) => {
+      if (online) this.processPendingUploads();
+    });
+    this.intervalId = setInterval(() => this.processPendingUploads(), uploadIntervalMs);
     this.processPendingUploads();
   }
 
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-    if (this.onlineHandler) {
-      window.removeEventListener('online', this.onlineHandler);
-      this.onlineHandler = null;
-    }
+    if (this.intervalId) clearInterval(this.intervalId);
+    this.intervalId = null;
+    this.onlineUnsubscribe?.();
+    this.onlineUnsubscribe = null;
   }
 
   async processPendingUploads(): Promise<void> {
@@ -64,14 +63,7 @@ class AttachmentUploadService {
       const pending = await this.selectUploadCandidates();
       if (pending.length === 0) return;
 
-      const byOrg = new Map<string, AttachmentBlob[]>();
-      for (const blob of pending) {
-        const existing = byOrg.get(blob.organizationId) || [];
-        existing.push(blob);
-        byOrg.set(blob.organizationId, existing);
-      }
-
-      for (const [organizationId, blobs] of byOrg) {
+      for (const [organizationId, blobs] of groupBy(pending, (blob) => blob.organizationId)) {
         await this.uploadOrganizationBlobs(organizationId, blobs);
       }
     } catch (error) {
@@ -84,7 +76,7 @@ class AttachmentUploadService {
 
   /** Blobs eligible for an upload attempt now (see isUploadCandidate). */
   private async selectUploadCandidates(): Promise<AttachmentBlob[]> {
-    const retryLimit = appConfig.localBlobStorage?.uploadRetryAttempts ?? 3;
+    const retryLimit = appConfig.localBlobStorage.uploadRetryAttempts;
     const now = Date.now();
     const candidates = await attachmentsDb.blobs.where('uploadStatus').anyOf('pending', 'failed').toArray();
     return candidates.filter((blob) => isUploadCandidate(blob, retryLimit, now));
@@ -99,7 +91,7 @@ class AttachmentUploadService {
     }
   }
 
-  /** Upload blobs for a specific organization. Each blob gets a fresh token via lazy assemblyOptions. */
+  /** Each blob gets a fresh token through the lazy `assemblyOptions`. */
   private async uploadOrganizationBlobs(organizationId: string, blobs: AttachmentBlob[]): Promise<void> {
     const availability = await this.checkCloudAvailability(organizationId);
     // An unreachable server says nothing about cloud storage: the blobs stay pending for the next run.
@@ -133,15 +125,7 @@ class AttachmentUploadService {
       uppy.use(Transloadit, {
         waitForEncoding: true,
         alwaysRunAssembly: true,
-        assemblyOptions: async () => {
-          const token = await getUploadToken({ query: { templateId, organizationId: blob.organizationId } });
-
-          if (!token?.params || !token?.signature) {
-            throw new Error('Failed to get upload token');
-          }
-
-          return { params: token.params, signature: token.signature };
-        },
+        assemblyOptions: () => freshAssemblyOptions({ templateId, organizationId: blob.organizationId }),
       });
       uppy.on('transloadit:complete', (assembly) => {
         completed.assembly = assembly;
@@ -157,7 +141,7 @@ class AttachmentUploadService {
       }
 
       if (result.successful && result.successful.length > 0) {
-        const results = completed.assembly?.results as UploadedUppyFile<'attachment'> | undefined;
+        const results = completed.assembly?.results as UploadResults<'attachment'> | undefined;
         const [original] = results?.[':original'] ?? [];
         // Only the attachment template has a row to link; other templates' files are referenced by their own forms.
         if (templateId !== 'attachment' || !results || !original) {
@@ -170,12 +154,12 @@ class AttachmentUploadService {
         await this.linkBlobKeys({ ...blob, cloudKeys: keys, cloudConvertedContentType: convertedContentType, linkAttempts: 0 });
       } else if (result.failed && result.failed.length > 0) {
         const file = result.failed[0];
-        const errorMsg = typeof file.error === 'string' ? file.error : 'Upload failed';
-        await attachmentStorage.markFailed(blob.id, errorMsg);
+        const errorMessage = typeof file.error === 'string' ? file.error : 'Upload failed';
+        await attachmentStorage.markFailed(blob.id, errorMessage);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      await attachmentStorage.markFailed(blob.id, errorMsg);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await attachmentStorage.markFailed(blob.id, errorMessage);
       console.error(`[UploadService] Blob ${blob.id} error:`, error);
     } finally {
       uppy.destroy();

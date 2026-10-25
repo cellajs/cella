@@ -16,17 +16,14 @@ function collectPages(dir: string): string[] {
 // Guards relative imports in docs wrappers with a fast, local check. The `frontend-build` CI job
 // catches the same breakage, but only after a full production build.
 describe('docs content wrapper imports', () => {
-  const pages = collectPages(contentRoot);
-
-  it('finds docs pages', () => {
-    expect(pages.length).toBeGreaterThan(0);
-  });
-
   it('every relative import in a docs page resolves to an existing file', () => {
-    const broken: string[] = [];
     // Only .mdx pages can have real imports (.md compiles as plain markdown), and
     // fenced code blocks may contain example import statements. Skip both.
-    for (const page of pages.filter((p) => p.endsWith('.mdx'))) {
+    const pages = collectPages(contentRoot).filter((p) => p.endsWith('.mdx'));
+    expect(pages.length).toBeGreaterThan(0);
+
+    const broken: string[] = [];
+    for (const page of pages) {
       const source = readFileSync(page, 'utf8').replace(/^```.*?^```/gms, '');
       for (const match of source.matchAll(/^import\s[^\n]*?from\s+['"]([^'"]+)['"]/gm)) {
         const specifier = match[1];

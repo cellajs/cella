@@ -4,19 +4,14 @@ import { getTools, resolvePlacementList } from '~/lib/placements';
 
 const slot = 'user.profile';
 
-interface Props {
+interface UserProfileContentProps {
   user: UserBase;
   organizationId?: string;
   isSheet?: boolean;
 }
 
-/**
- * Profile page body below the header: hosts the `user.profile` slot, so apps add or replace profile
- * surfaces from their module config without patching this file. Cella's organization module
- * contributes the organizations grid. The page does not wrap this: each tool owns its container
- * (so it can run full width) and its top padding.
- */
-export function UserProfileContent({ user, organizationId, isSheet = false }: Props) {
+/** Hosts the `user.profile` slot. */
+export function UserProfileContent({ user, organizationId, isSheet = false }: UserProfileContentProps) {
   const tools = resolvePlacementList(slot, getTools(slot));
 
   return (

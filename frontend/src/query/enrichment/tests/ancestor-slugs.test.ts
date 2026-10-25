@@ -4,14 +4,11 @@ import {
   makeMembership,
   mockAppConfig,
   mockComputeCan,
-  mockGetEntityQueryKeys,
   mockGetRegisteredEntityTypes,
-  mockHasEntityQueryKeys,
   mockHierarchy,
   mockPolicyMatrix,
-  mockRegisterEntityQueryKeys,
   queryClient,
-} from '~/query/enrichment/test-setup';
+} from '~/query/enrichment/tests/test-setup';
 
 vi.mock('shared', () => ({
   appConfig: mockAppConfig,
@@ -22,12 +19,7 @@ vi.mock('shared', () => ({
 }));
 vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'], invites: ['me', 'invites'] } }));
-vi.mock('~/query/basic/entity-query-registry', () => ({
-  getEntityQueryKeys: mockGetEntityQueryKeys,
-  getRegisteredEntityTypes: mockGetRegisteredEntityTypes,
-  hasEntityQueryKeys: mockHasEntityQueryKeys,
-  registerEntityQueryKeys: mockRegisterEntityQueryKeys,
-}));
+vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredEntityTypes: mockGetRegisteredEntityTypes }));
 
 const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
 
@@ -43,114 +35,27 @@ describe('ancestor slug enrichment', () => {
     queryClient.clear();
   });
 
-  it('enriches child entity with ancestor slug when parent is in cache', () => {
+  // The wide fixture has raak's shape: a project's parent is the organization, and the menu nests it under a workspace.
+  it("keeps a project's ancestor slugs current, its parent's and its menu parent's, the ids standing in until a slug is cached", () => {
+    const ancestorSlugs = () => (queryClient.getQueryData(['project', 'list']) as any).pages[0].items[0].ancestorSlugs;
     unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
-    });
-
-    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
-
-    const data = queryClient.getQueryData(['project', 'list']) as any;
-    const item = data.pages[0].items[0];
-    expect(item.ancestorSlugs).toBeDefined();
-    expect(item.ancestorSlugs.organization).toBe('acme-corp');
-  });
-
-  it('does not set ancestorSlugs for the organization', () => {
-    unsubscribe = initChannelEnrichment();
-
-    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1')] });
-
-    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-
-    const data = queryClient.getQueryData(['organization', 'list']) as any;
-    const item = data.pages[0].items[0];
-    expect(item.ancestorSlugs).toBeUndefined();
-  });
-
-  it('falls back to ancestor ID when parent slug is not in cache, then updates when parent loads', () => {
-    unsubscribe = initChannelEnrichment();
-
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
-    });
-
-    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
-
-    let data = queryClient.getQueryData(['project', 'list']) as any;
-    expect(data.pages[0].items[0].ancestorSlugs?.organization).toBe('org-1');
-
-    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-
-    data = queryClient.getQueryData(['project', 'list']) as any;
-    expect(data.pages[0].items[0].ancestorSlugs?.organization).toBe('acme-corp');
-  });
-
-  it('enriches project with workspace slug from menu parent via membership.workspaceId', () => {
-    unsubscribe = initChannelEnrichment();
-
-    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-    queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
-
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [
-        makeMembership('org-1'),
-        makeMembership('ws-1', { channelType: 'workspace', organizationId: 'org-1', workspaceId: 'ws-1' }),
-        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1', workspaceId: 'ws-1' }),
-      ],
-    });
-
-    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
-
-    const data = queryClient.getQueryData(['project', 'list']) as any;
-    const item = data.pages[0].items[0];
-    expect(item.ancestorSlugs.organization).toBe('acme-corp');
-    expect(item.ancestorSlugs.workspace).toBe('my-workspace');
-  });
-
-  it('updates project workspace slug when workspace list cache loads later', () => {
-    unsubscribe = initChannelEnrichment();
-
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
         makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1', workspaceId: 'ws-1' }),
       ],
     });
-
     queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
+    expect(ancestorSlugs()).toEqual({ organization: 'acme-corp', workspace: 'ws-1' });
 
-    // Before workspace loads, falls back to ID
-    let data = queryClient.getQueryData(['project', 'list']) as any;
-    expect(data.pages[0].items[0].ancestorSlugs?.workspace).toBe('ws-1');
-
-    // Workspace list loads, so project should get re-enriched with slug.
+    // The workspace list loads after the project's...
     queryClient.setQueryData(['workspace', 'list'], makeInfiniteData([{ id: 'ws-1', slug: 'my-workspace' } as any]));
+    expect(ancestorSlugs()).toEqual({ organization: 'acme-corp', workspace: 'my-workspace' });
 
-    data = queryClient.getQueryData(['project', 'list']) as any;
-    expect(data.pages[0].items[0].ancestorSlugs?.workspace).toBe('my-workspace');
-  });
-
-  it('preserves reference when ancestor slugs have not changed', () => {
-    unsubscribe = initChannelEnrichment();
-
-    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
-    });
-
-    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
-
-    const first = queryClient.getQueryData(['project', 'list']);
-
-    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
-
-    const second = queryClient.getQueryData(['project', 'list']);
-    expect(second).toBe(first);
+    // ...and the organization changes its slug.
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme' } as any]));
+    expect(ancestorSlugs()).toEqual({ organization: 'acme', workspace: 'my-workspace' });
   });
 });

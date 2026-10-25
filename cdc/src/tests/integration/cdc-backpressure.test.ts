@@ -8,7 +8,7 @@ import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { recalculateCounters } from '#/modules/entities/counters-queries';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
+import { cdcPublicationName, cdcSlotName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { ApiUnreachableError } from '../../services/failure';
@@ -16,27 +16,27 @@ import { replicationState } from '../../services/replication-state';
 import { replicationStatus } from '../../services/replication-status';
 import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
-const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
+const wsPort = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
 
 /** Probe whether the configured DB can support this suite. TEST_MODE gating lives in vitest.config.ts. */
 async function probeReady(): Promise<boolean> {
   try {
     const wal = await cdcDb.execute<{ wal_level: string }>(sql`SHOW wal_level`);
     if (wal.rows[0]?.wal_level !== 'logical') return false;
-    const pub = await cdcDb.execute<{ ok: number }>(sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
+    const pub = await cdcDb.execute<{ ok: number }>(sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${cdcPublicationName}`);
     return pub.rows.length > 0;
   } catch {
     return false;
   }
 }
 
-const READY = await probeReady();
+const ready = await probeReady();
 
 /** Current retained WAL for the CDC slot, in bytes. */
 async function slotLagBytes(): Promise<number> {
   const res = await cdcDb.execute<{ lag: string | null }>(
     sql`SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::text AS lag
-        FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+        FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}`,
   );
   return Number(res.rows[0]?.lag ?? 0);
 }
@@ -44,7 +44,7 @@ async function slotLagBytes(): Promise<number> {
 /** Whether the slot has acknowledged a position at or past `target`. */
 async function slotReached(target: string): Promise<boolean> {
   const slot = await cdcDb.execute<{ reached: boolean }>(sql`
-    SELECT confirmed_flush_lsn >= ${target}::pg_lsn AS reached FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}
+    SELECT confirmed_flush_lsn >= ${target}::pg_lsn AS reached FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}
   `);
   return slot.rows[0]?.reached === true;
 }
@@ -63,7 +63,7 @@ interface ReceivedMessage {
  * The worker's real subscription loop against a stub API: nothing is recorded while the API is away, and a flush that
  * fails is read again by the loop itself. Skipped unless the database runs with `wal_level = logical` and has `cdc_pub`.
  */
-describe.skipIf(!READY)('CDC backpressure (integration)', () => {
+describe.skipIf(!ready)('CDC backpressure (integration)', () => {
   let WebSocketServer: any;
   let wss: any = null;
   /** Messages for rows that the stub API received (health pushes left out). */
@@ -84,7 +84,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   /** Start (or restart) the stub WS receiver on the worker's configured port. */
   async function startStubWs(): Promise<void> {
     await new Promise<void>((resolve) => {
-      wss = new WebSocketServer({ port: WS_PORT });
+      wss = new WebSocketServer({ port: wsPort });
       wss.on('connection', (socket: any) => {
         socket.on('message', (data: any) => {
           try {
@@ -135,10 +135,8 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   };
 
   const counts = async () =>
-    ((await cdcDb.execute(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]?.counts ?? {}) as Record<
-      string,
-      number
-    >;
+    ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]
+      ?.counts ?? {}) as Record<string, number>;
 
   beforeAll(async () => {
     ({ WebSocketServer } = await import('ws'));

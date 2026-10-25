@@ -17,7 +17,7 @@ export interface BooksAnswer {
 }
 
 /** How often a waiting caller looks for the answer. */
-const ANSWER_POLL_MS = 500;
+const answerPollMs = 500;
 
 /**
  * Asks the CDC worker to verify its books or to rebuild them, by writing the request into `sync_state`. A worker that
@@ -97,7 +97,7 @@ export const awaitBooksAnswer = async (db: DbOrTx, request: BooksRequest, since:
     }
 
     if (Date.now() >= deadline) break;
-    await sleep(ANSWER_POLL_MS);
+    await sleep(answerPollMs);
   }
 
   await clearBooksRequest(db, request);

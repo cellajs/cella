@@ -1,59 +1,51 @@
 import { Link } from '@tanstack/react-router';
-import { type MouseEvent, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
+import { DocsSidebarSection } from '~/modules/docs/sidebar/docs-sidebar-section';
+import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { getDocPage } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '~/modules/ui/sidebar';
 import { tw } from '~/utils/tw';
 
 interface LinksSectionProps {
   label: string;
-  onNavigate: (e: MouseEvent<HTMLAnchorElement>) => void;
 }
 
-const rowClass = tw('w-full justify-start px-3 font-medium lowercase');
+const rowClass = tw('w-full justify-start lowercase');
 
-export function LinksSection({ label, onNavigate }: LinksSectionProps) {
+export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();
-  const contactRef = useRef<HTMLButtonElement | null>(null);
+  const contactRef = useRef<HTMLButtonElement>(null);
   const hasStatusPage = !!appConfig.statusUrl?.trim();
-  // Only link the llms page when the content file exists.
   const hasLlmsPage = !!getDocPage('llms');
 
   return (
-    <SidebarGroup>
-      <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
-      </div>
-      <SidebarGroupContent>
-        <SidebarGroup className="flex flex-col gap-1 p-1 pt-0">
-          {hasStatusPage && (
-            <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
-              {t('c:status')}
-            </Button>
-          )}
+    <DocsSidebarSection label={label}>
+      {hasStatusPage && (
+        <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
+          {t('c:status')}
+        </Button>
+      )}
 
-          <Button ref={contactRef} variant="ghost" className={rowClass} onClick={() => contactFormHandler(contactRef)}>
-            {t('c:contact_us')}
-          </Button>
+      <Button ref={contactRef} variant="ghost" className={rowClass} onClick={() => contactFormHandler(contactRef)}>
+        {t('c:contact_us')}
+      </Button>
 
-          <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={onNavigate} />}>
-            openapi.json
-          </Button>
+      <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" onClick={closeSidebarSheetAndNavigate} />}>
+        openapi.json
+      </Button>
 
-          {hasLlmsPage && (
-            <Button
-              variant="ghost"
-              className="w-full justify-start px-3 font-medium"
-              render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} draggable={false} onClick={onNavigate} />}
-            >
-              llms.txt
-            </Button>
-          )}
-        </SidebarGroup>
-      </SidebarGroupContent>
-    </SidebarGroup>
+      {hasLlmsPage && (
+        <Button
+          variant="ghost"
+          className={rowClass}
+          render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} onClick={closeSidebarSheetAndNavigate} />}
+        >
+          llms.txt
+        </Button>
+      )}
+    </DocsSidebarSection>
   );
 }

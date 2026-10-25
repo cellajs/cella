@@ -5,13 +5,13 @@
   "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
-      // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.
-      "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/migrations/*/*.ts"],
-      // Migration READMEs run their codemods with `pnpm exec tsx` from the root.
+      // `pnpm cella align --run` runs each alignment's codemod by path, so nothing imports them.
+      "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/alignments/*/*.ts"],
+      // `pnpm cella align --run` runs codemods with `pnpm exec tsx` from the root.
       "ignoreDependencies": ["tsx"],
-      // `pnpm -C a11y stack` runs the a11y workspace's script of that name. `cwebp` is the system WebP encoder the
-      // screenshots driver calls, installed with `brew install webp`.
-      "ignoreBinaries": ["stack", "cwebp"]
+      // `pnpm -C a11y stack` runs the a11y workspace's script of that name, and `pnpm -C backend exec drizzle-kit` the
+      // backend's drizzle-kit. `cwebp` is the system WebP encoder the screenshots driver calls, installed with `brew install webp`.
+      "ignoreBinaries": ["stack", "drizzle-kit", "cwebp"]
     },
     "a11y": {
       // `openState` is the starting point of a hand-written script that checks a fix in the running app; the audit never imports it.
@@ -59,21 +59,27 @@
         "src/modules/ui/chart.tsx",
         "src/modules/common/board/board-layout.tsx",
         "src/modules/common/board/board-panel.tsx",
+        "src/modules/common/board/panel-drag-handle-button.tsx",
         "src/modules/common/date-tooltip.tsx",
         "src/modules/common/dropdowner/dropdown-select-item.tsx",
         "src/modules/common/form-fields/select-combobox/parent.tsx",
         "src/modules/common/list-skeleton.tsx",
         "src/modules/common/page/local-tab-nav.tsx",
         "src/modules/marketing/about/faq.tsx",
+        "src/hooks/use-organization-layout-context.ts",
         "src/utils/clean-url.ts",
         "src/utils/date-full.ts",
-        "src/utils/in-numbers-array.ts",
+        "src/utils/is-in-range.ts",
         "src/utils/stable-array.ts",
         // vite.config.ts aliases jspdf's optional packages to it.
         "vite/jspdf-optional-stub.ts",
         // The service worker, which @serwist/vite builds from vite.config.ts.
         "src/lib/sw.ts"
-      ]
+      ],
+      // The `virtual:serwist` module of @serwist/vite imports it at runtime, and knip does not read virtual modules.
+      "ignoreDependencies": ["@serwist/window"],
+      // vite.config.ts aliases it to react-pdf's own pdfjs-dist, a folder no tsconfig path can name.
+      "ignoreUnresolved": ["^#pdfjs/"]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]

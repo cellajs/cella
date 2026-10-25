@@ -7,7 +7,6 @@ import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
-import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   health: xRoute({
@@ -51,6 +50,15 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     request: { body: jsonBody(emailBodySchema) },
     responses: { 200: json('Whether this browser is recognized for the address', z.object({ recognized: z.boolean() })) },
   }),
+  getPendingMfa: xRoute({
+    method: 'get',
+    path: '/mfa/pending',
+    xGuard: [publicGuard],
+    summary: 'Get pending MFA challenge',
+    description:
+      'For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.',
+    responses: { 200: json('The address of the account the held challenge signs in to', z.object({ email: z.string() })) },
+  }),
   invokeToken: xRoute({
     method: 'get',
     path: '/invoke-token/{type}/{token}',
@@ -84,7 +92,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.',
     request: {},
-    responses: { 200: json('Invitation was accepted', channelBaseSchema, mockChannelBase()) },
+    responses: { 200: json('Invitation was accepted', channelBaseSchema) },
   }),
   resendInvitationWithToken: xRoute({
     method: 'post',

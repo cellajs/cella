@@ -1,7 +1,7 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
-import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 interface GetPendingMembershipsInput {
@@ -33,7 +33,7 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
     limit,
   });
 
-  const items = await withAuditUsers(ctx, rawItems);
+  const items = await withActorRefs(ctx, rawItems);
 
   return { items, total };
 }

@@ -12,7 +12,7 @@ export const attachmentsTable = snakeCase.table(
   {
     ...productColumns('attachment'),
     // Storage placement only: bytes in the public S3 bucket, served from the CDN. Row
-    // readability for non-members is the separate `publicAt` grant.
+    // readability for non-members is the separate `public` flag.
     publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */
@@ -31,6 +31,8 @@ export const attachmentsTable = snakeCase.table(
   },
   (table) => [
     ...productIndexes('attachments', table),
+    // The list's default order, read backward: `.desc()` would emit NULLS LAST, which an `ORDER BY ... DESC` cannot use.
+    index('attachments_organization_id_created_at_index').on(table.organizationId, table.createdAt, table.id),
     index('attachments_group_id_index').on(table.groupId),
     // An index per sub-organization ancestor column; none for org-homed rows.
     ...channelRelationIndexes('attachments', table, 'attachment'),

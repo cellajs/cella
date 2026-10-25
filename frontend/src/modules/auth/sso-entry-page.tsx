@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
-import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { AuthHeader } from '~/modules/auth/auth-header';
+import { ssoEntryQueryOptions } from '~/modules/auth/query';
+import { ssoStartUrl } from '~/modules/auth/sso-providers';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
@@ -21,7 +22,7 @@ export function SsoEntryPage() {
 
   const { data, error, isPending } = useQuery(ssoEntryQueryOptions(connectionId));
 
-  if (error) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
+  if (error) return <ErrorNotice error={error} boundary="public" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
   const { institution, organization, federation, status } = data;
@@ -29,15 +30,16 @@ export function SsoEntryPage() {
   const image = organization?.thumbnailUrl ?? institution.logoUrl;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        {image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
-        <h1 className="text-2xl">{t('c:sso_entry', { organization: organizationName })}</h1>
+    <>
+      <AuthHeader
+        image={image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        title={t('c:sso_entry', { organization: organizationName })}
+      >
         <p className="text-muted-foreground text-sm">{t('c:sso_entry.text', { institution: institution.displayName, appName: appConfig.name })}</p>
-      </div>
+      </AuthHeader>
 
       {status === 'active' ? (
-        <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: safeRedirectPath(redirect) })} />}>
+        <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
           {t('c:continue_to_institution', { institution: institution.displayName })}
           <span className="opacity-70">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
         </Button>
@@ -55,6 +57,6 @@ export function SsoEntryPage() {
       <Button variant="link" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
         {t('c:sign_in_another_way')}
       </Button>
-    </div>
+    </>
   );
 }

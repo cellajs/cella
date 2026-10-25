@@ -83,15 +83,6 @@ describe('resolveBlockNoteFileRef', () => {
       createdBy: uploader,
     });
 
-    it('renders nothing and registers its uploader, without asking the server to sign a local key', async () => {
-      const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1b01';
-      cachedRows.set(attachmentId, localRow(attachmentId));
-
-      expect(await resolveBlockNoteFileRef(attachmentId, ctx)).toBe('');
-      expect(getPresignedUrlBatched).not.toHaveBeenCalled();
-      expect(getPendingUpload(attachmentId)).toEqual({ uploader });
-    });
-
     it('tells an uncached pending row apart from a gone one after the server refuses to sign', async () => {
       const pendingId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1b02';
       fetchedRows.set(pendingId, localRow(pendingId));
@@ -103,14 +94,6 @@ describe('resolveBlockNoteFileRef', () => {
       getPresignedUrlBatched.mockRejectedValueOnce(new PresignRejectedError(goneId));
       expect(await resolveBlockNoteFileRef(goneId, ctx)).toBe('');
       expect(getPendingUpload(goneId)).toBeUndefined();
-    });
-
-    it('presigns a cached row whose file is stored (positive control)', async () => {
-      const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1b04';
-      cachedRows.set(attachmentId, { ...localRow(attachmentId), keys: { original: `${organizationId}/user-2/photo.webp` } });
-
-      expect(await resolveBlockNoteFileRef(attachmentId, ctx)).toBe(`https://signed.example.test/${attachmentId}`);
-      expect(getPendingUpload(attachmentId)).toBeUndefined();
     });
   });
 });

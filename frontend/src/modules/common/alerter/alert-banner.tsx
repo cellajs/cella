@@ -1,28 +1,31 @@
 import type { VariantProps } from 'class-variance-authority';
 import { AnimatePresence, motion } from 'motion/react';
-import type React from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
-import type { alertVariants } from '~/modules/ui/alert';
-import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
+import { Alert, AlertDescription, AlertTitle, type alertVariants } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 export type AlertContextMode = 'public' | 'app';
 
-export type AlertBanner = {
+interface AlertBannerProps {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
   icon?: IconComponent;
-  children: React.ReactNode;
+  children: ReactNode;
   title?: TKey;
   variant?: VariantProps<typeof alertVariants>['variant'];
   animate?: boolean;
   contextMode?: AlertContextMode;
-};
+}
+
+/** An entry of the app's `alertsConfig` (`alert-config.tsx`). */
+export type AlertBanner = AlertBannerProps;
 
 export function AlertBanner({
   id,
@@ -33,7 +36,7 @@ export function AlertBanner({
   variant = 'default',
   animate = false,
   contextMode = 'app',
-}: AlertBanner) {
+}: AlertBannerProps) {
   const { t } = useTranslation();
   const alertsSeen = useAlertStore((state) => state.alertsSeen);
   const setAlertSeen = useAlertStore((state) => state.setAlertSeen);
@@ -50,10 +53,10 @@ export function AlertBanner({
   const showAlert = !downAlert && !seenAlerts.includes(id);
 
   const alertContent = (
-    <Alert variant={variant} onClose={setAsSeen} className={cn('relative', !animate && className)}>
+    <Alert variant={variant} onClose={setAsSeen} className={animate ? undefined : className}>
       {Icon && <Icon />}
-      {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
-      {children && <AlertDescription className="pr-8">{children}</AlertDescription>}
+      {title && <AlertTitle>{t(title)}</AlertTitle>}
+      {children && <AlertDescription>{children}</AlertDescription>}
     </Alert>
   );
 
@@ -61,13 +64,7 @@ export function AlertBanner({
     return (
       <AnimatePresence initial={false}>
         {showAlert && (
-          <motion.div
-            key={id}
-            className={className}
-            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-            animate={{ height: 'auto', opacity: 1, overflow: 'visible', transitionEnd: { overflow: 'visible' } }}
-            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-          >
+          <motion.div key={id} {...collapseMotion} className={cn('overflow-hidden', className)}>
             {alertContent}
           </motion.div>
         )}

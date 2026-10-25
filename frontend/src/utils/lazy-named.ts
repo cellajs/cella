@@ -1,12 +1,9 @@
 import { type ComponentType, type LazyExoticComponent, lazy } from 'react';
 
-// biome-ignore lint/suspicious/noExplicitAny: Supports lazy-loading components with any prop shape.
-export function lazyNamed<T extends ComponentType<any>, TModule extends Record<TKey, T>, TKey extends keyof TModule>(
+// biome-ignore lint/suspicious/noExplicitAny: the constraint only; each call keeps its component's own props.
+export function lazyNamed<TModule extends Record<TKey, ComponentType<any>>, TKey extends keyof TModule>(
   loader: () => Promise<TModule>,
   exportName: TKey,
-): LazyExoticComponent<T> {
-  return lazy(async () => {
-    const module = await loader();
-    return { default: module[exportName] };
-  });
+): LazyExoticComponent<TModule[TKey]> {
+  return lazy(async () => ({ default: (await loader())[exportName] }));
 }

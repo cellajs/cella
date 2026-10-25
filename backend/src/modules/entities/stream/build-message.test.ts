@@ -12,10 +12,10 @@ vi.mock('shared', async (importOriginal) => {
 
 const { buildStreamNotification } = await import('./build-message');
 
-const ORG = 'org-hint';
+const org = 'org-hint';
 
 /** A row as a message carries it: its permission fields and no content. */
-const row = (id: string, seq: number, deletedAt: string | null = null) => ({ rowData: { id, organizationId: ORG, deletedAt }, seq, movedFrom: null });
+const row = (id: string, seq: number, deletedAt: string | null = null) => ({ rowData: { id, organizationId: org, deletedAt }, seq, movedFrom: null });
 
 /** A product event of one audience. The cast covers the activity columns the builder passes through unread. */
 const event = (action: 'create' | 'update' | 'delete', rows: ReturnType<typeof row>[]) =>
@@ -26,7 +26,7 @@ const event = (action: 'create' | 'update' | 'delete', rows: ReturnType<typeof r
     entityType: 'attachment',
     resourceType: null,
     subjectId: rows[0].rowData.id,
-    organizationId: ORG,
+    organizationId: org,
     tenantId: 'tenant-1',
     stx: null,
     rowData: null,

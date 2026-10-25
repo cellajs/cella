@@ -7,15 +7,14 @@ import { zUpdateTenantBody } from 'sdk/zod.gen';
 import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import type { TKey } from '~/lib/i18n-locales';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -25,31 +24,27 @@ const formSchema = zUpdateTenantBody.pick({ name: true, status: true, authStrate
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface Props {
+interface UpdateTenantFormProps {
   tenant: Tenant;
   sheet?: boolean;
   callback?: (args: CallbackArgs<Tenant>) => void;
 }
 
-const statusOptions = ['active', 'suspended', 'archived'] as const;
+export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 
-/** The sign-in methods a tenant may require: the enabled first factors, each OAuth provider and each federation (labelled by config). */
-const signInMethods: { value: SignInMethod; labelKey?: TKey; label?: string }[] = [
-  ...(isStrategyEnabled('passkey') ? [{ value: 'passkey' as SignInMethod, labelKey: 'c:passkey' as TKey }] : []),
-  ...(isStrategyEnabled('magic') ? [{ value: 'magic' as SignInMethod, labelKey: 'c:magic' as TKey }] : []),
-  ...(isStrategyEnabled('oauth')
-    ? appConfig.enabledOAuthProviders.map((provider) => ({ value: provider as SignInMethod, labelKey: `c:${provider}` as TKey }))
-    : []),
-  ...(isStrategyEnabled('sso')
-    ? Object.entries(appConfig.federations).map(([key, federation]) => ({ value: key as SignInMethod, label: federation.label }))
-    : []),
-];
-
-export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
+export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: UpdateTenantFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
+
+  // The methods a tenant may require: the enabled first factors, each OAuth provider and each federation.
+  const signInMethods: { value: SignInMethod; label: string }[] = [
+    ...(isStrategyEnabled('passkey') ? [{ value: 'passkey' as const, label: t('c:passkey') }] : []),
+    ...(isStrategyEnabled('magic') ? [{ value: 'magic' as const, label: t('c:magic') }] : []),
+    ...(isStrategyEnabled('oauth') ? appConfig.enabledOAuthProviders.map((provider) => ({ value: provider, label: t(`c:${provider}`) })) : []),
+    ...(isStrategyEnabled('sso') ? Object.entries(appConfig.federations).map(([key, { label }]) => ({ value: key as SignInMethod, label })) : []),
+  ];
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -68,7 +63,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
       { path: { tenantId: tenant.id }, body },
       {
         onSuccess: (updatedTenant) => {
-          if (isSheet) useSheeter.getState().remove(sheetId);
+          if (isSheet) sheeter.getState().remove(sheetId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
           callback?.({ data: updatedTenant, status: 'success' });
@@ -113,19 +108,14 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
           render={({ field }) => (
             <FormItem name="authStrategies">
               <FormLabel help={t('c:allowed_sign_in_methods.text')}>{t('c:allowed_sign_in_methods')}</FormLabel>
-              {/* Choice cards, as the digest cadences in the account notifications. Each checkbox sits in a `Field.Item`, so
-                  it gets its own id and label instead of the field's. */}
-              <CheckboxGroup
-                value={field.value ?? []}
-                onValueChange={(value) => field.onChange(value as SignInMethod[])}
-                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-              >
+              {/* Each checkbox sits in a `Field.Item`, so it gets its own id and label. */}
+              <CheckboxGroup value={field.value ?? []} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {signInMethods.map((method) => (
                   <FieldLabel key={method.value} className="cursor-pointer">
                     <Field.Item render={<FieldLayout orientation="horizontal" />}>
                       <Checkbox value={method.value} />
                       <FieldContent>
-                        <FieldTitle>{method.label ?? t(method.labelKey as TKey)}</FieldTitle>
+                        <FieldTitle>{method.label}</FieldTitle>
                       </FieldContent>
                     </Field.Item>
                   </FieldLabel>
@@ -139,9 +129,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
         </div>
       </form>
     </Form>

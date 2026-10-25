@@ -4,19 +4,22 @@ import { vi } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { adminDb } from '../helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 
 /** A BlockNote document of one paragraph, as the relay materializes it. */
 export const paragraph = (text: string) =>
   JSON.stringify([{ id: generateId(), type: 'paragraph', props: {}, content: [{ type: 'text', text, styles: {} }], children: [] }]);
 
 /**
- * An attachment in an organization. Attachments sit under RLS, so the row is arranged and read back on the admin
- * connection: under runtime_role a check on the test's own connection would pass vacuously.
+ * An attachment in an organization, its creator and `members` members of its home. Attachments sit under RLS, so the
+ * row is arranged and read back on the admin connection: under runtime_role a check on the test's own connection would
+ * pass vacuously.
  */
-export async function seedAttachment(opts: { tenantId: string; organizationId: string; createdBy: string; description: string }) {
+export async function seedAttachment(opts: { tenantId: string; organizationId: string; createdBy: string; description: string; members?: string[] }) {
   const id = generateId();
-  const plan = await seedAttachmentHome({ id: opts.organizationId, tenantId: opts.tenantId }, opts.createdBy);
+  const org = { id: opts.organizationId, tenantId: opts.tenantId };
+  const plan = await seedAttachmentHome(org, opts.createdBy);
+  for (const userId of new Set([opts.createdBy, ...(opts.members ?? [])])) await joinAttachmentHome(org, plan, userId);
   const row = buildInsertableProduct(
     'attachment',
     {

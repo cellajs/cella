@@ -1,35 +1,32 @@
 import { useIsRestoring } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { useEffect, useRef, useState } from 'react';
-import type { Attachment } from 'sdk';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
-import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
+import { type AttachmentMeta, resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
-type AttachmentMetaFields = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'>;
-
-/** A carousel item that may already carry its own attachment metadata (group/single items do). */
-type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMetaFields> & { id: string };
+/** A carousel item that carries all of its attachment metadata (group and single items do) or none. */
+export type ResolvableItem = Partial<CarouselItemData> & { id: string } & (AttachmentMeta | { keys?: never });
 
 /** Transient failures (blob mid-download, cache mid-sync) get a few retries before "not found". */
-const RESOLVE_RETRY_LIMIT = 3;
-const RESOLVE_RETRY_DELAY_MS = 600;
+const resolveRetryLimit = 3;
+const resolveRetryDelayMs = 600;
 
 interface ResolvedAttachmentsResult {
   items: CarouselItemData[];
   isLoading: boolean;
-  hasErrors: boolean;
   errorIds: string[];
 }
 
-function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string, isLocal: boolean): CarouselItemData {
+function buildItemData(item: ResolvableItem, url: string, isLocal: boolean): CarouselItemData {
   const cached = findAttachmentInCache(item.id);
   return {
     id: item.id,
     url,
     isLocal,
-    name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
+    name: item.name ?? cached?.name ?? item.filename ?? i18n.t('c:attachment'),
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
     convertedContentType: item.convertedContentType || cached?.convertedContentType || null,
@@ -42,13 +39,16 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   const [resolvedItems, setResolvedItems] = useState<CarouselItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorIds, setErrorIds] = useState<string[]>([]);
+  // The items key the results belong to: a render with new items reads as loading, not as the old items' errors.
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
   const isRestoring = useIsRestoring();
   const blobUrlsRef = useRef<Map<string, string>>(new Map());
 
   // Bumped to re-run resolution after a transient failure; reset when the item set changes.
   const [retrySignal, setRetrySignal] = useState(0);
   const retryCountRef = useRef(0);
-  const itemsKey = items.map((i) => `${i.id}:${i.url ?? ''}:${i.name ?? ''}`).join(',');
+  // The original key counts: a fetched row bringing the keys an id-only item lacked resolves again.
+  const itemsKey = items.map((item) => `${item.id}:${item.url ?? ''}:${item.keys?.original ?? ''}`).join(',');
 
   useEffect(() => {
     retryCountRef.current = 0;
@@ -64,6 +64,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
       setResolvedItems([]);
       setIsLoading(false);
       setErrorIds([]);
+      setResolvedKey(itemsKey);
       return;
     }
 
@@ -91,7 +92,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
           try {
             // The list cache holds fresher metadata; group and single items carry full keys as fallback.
             const cachedMeta = findAttachmentInCache(item.id);
-            const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMetaFields) : null);
+            const meta = cachedMeta ?? (item.keys?.original ? item : null);
 
             const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
             if (result) {
@@ -104,11 +105,11 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
                 `cachedMeta=${!!cachedMeta}, itemKey=${!!item.keys?.original})`,
             );
             return { errorId: item.id, permanent: false };
-          } catch (err) {
-            if (err instanceof PendingUploadError) return { data: { ...buildItemData(item, '', false), pendingUpload: getPendingUpload(item.id) } };
-            console.error(`Failed to resolve URL for attachment ${item.id}:`, err);
+          } catch (error) {
+            if (error instanceof PendingUploadError) return { data: { ...buildItemData(item, '', false), pendingUpload: getPendingUpload(item.id) } };
+            console.error(`Failed to resolve URL for attachment ${item.id}:`, error);
             // A server-rejected id (denied or deleted) will not change on retry.
-            return { errorId: item.id, permanent: err instanceof PresignRejectedError };
+            return { errorId: item.id, permanent: error instanceof PresignRejectedError };
           }
         }),
       );
@@ -118,7 +119,6 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         const errors = outcomes.flatMap((outcome) => ('errorId' in outcome ? [outcome.errorId] : []));
         const hasTransientErrors = outcomes.some((outcome) => 'errorId' in outcome && !outcome.permanent);
 
-        // Revoke blob URLs absent from the active item set.
         for (const [id, url] of blobUrlsRef.current) {
           if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
         }
@@ -126,11 +126,12 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         setResolvedItems(resolved);
         setErrorIds(errors);
         setIsLoading(false);
+        setResolvedKey(itemsKey);
 
         // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
-        if (hasTransientErrors && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
+        if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
           retryCountRef.current += 1;
-          retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), RESOLVE_RETRY_DELAY_MS);
+          retryTimer = setTimeout(() => setRetrySignal((signal) => signal + 1), resolveRetryDelayMs);
         }
       }
     };
@@ -149,5 +150,11 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
     };
   }, []);
 
-  return { items: resolvedItems, isLoading, hasErrors: errorIds.length > 0, errorIds };
+  // Name and description follow the input items as they change; the items key covers only what resolves a URL.
+  const liveItems = resolvedItems.map((resolved) => {
+    const item = items.find(({ id }) => id === resolved.id);
+    return { ...resolved, name: item?.name ?? resolved.name, description: item?.description ?? resolved.description };
+  });
+
+  return { items: liveItems, isLoading: isLoading || resolvedKey !== itemsKey, errorIds };
 }

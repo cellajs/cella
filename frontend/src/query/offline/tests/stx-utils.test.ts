@@ -1,50 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from '../stx-utils';
+import { sourceId } from '~/query/offline/hlc';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 
-// Covers stx metadata shape for create, update and delete.
-describe('createStxForCreate', () => {
-  it('produces empty fieldTimestamps with unique mutationId', () => {
-    const stx = createStxForCreate();
+// The stamp shape the backend's stx schema validates (backend/src/schemas/sync-transaction-schemas.ts).
+describe('stx stamps', () => {
+  it("stamps each write with a fresh mutation id and this tab's source, and an update with a valid HLC per changed field", () => {
+    const create = createStxForCreate();
+    const update = createStxForUpdate(['name', 'status']);
+    const remove = createStxForDelete();
 
-    expect(stx.fieldTimestamps).toEqual({});
-    expect(stx.sourceId).toBe(sourceId);
-    expect(stx.mutationId).toBeTruthy();
-  });
-
-  it('generates unique mutationId per call', () => {
-    const stx1 = createStxForCreate();
-    const stx2 = createStxForCreate();
-
-    expect(stx1.mutationId).not.toBe(stx2.mutationId);
-  });
-});
-
-describe('createStxForUpdate', () => {
-  it('generates HLC timestamps for scalar fields', () => {
-    const stx = createStxForUpdate(['name', 'status']);
-
-    expect(stx.sourceId).toBe(sourceId);
-    expect(stx.mutationId).toBeTruthy();
-    expect(Object.keys(stx.fieldTimestamps)).toEqual(['name', 'status']);
-    // Each timestamp should be a non-empty HLC string
-    for (const ts of Object.values(stx.fieldTimestamps)) {
-      expect(typeof ts).toBe('string');
-      expect(ts.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('produces empty fieldTimestamps when no scalar fields given', () => {
-    const stx = createStxForUpdate([]);
-    expect(stx.fieldTimestamps).toEqual({});
-  });
-});
-
-describe('createStxForDelete', () => {
-  it('produces empty fieldTimestamps', () => {
-    const stx = createStxForDelete();
-
-    expect(stx.fieldTimestamps).toEqual({});
-    expect(stx.sourceId).toBe(sourceId);
-    expect(stx.mutationId).toBeTruthy();
+    // The mutation id is the server's idempotency key: two writes never share one.
+    expect(new Set([create, createStxForCreate(), update, remove].map(({ mutationId }) => mutationId)).size).toBe(4);
+    for (const stx of [create, update, remove]) expect(stx.sourceId).toBe(sourceId);
+    // Creates and deletes carry no field timestamps: the server assigns the initial values.
+    expect(create.fieldTimestamps).toEqual({});
+    expect(remove.fieldTimestamps).toEqual({});
+    // `millis:counter:sourceHash`, the pattern the backend's `isValidHLC` accepts.
+    expect(Object.keys(update.fieldTimestamps)).toEqual(['name', 'status']);
+    for (const timestamp of Object.values(update.fieldTimestamps)) expect(timestamp).toMatch(/^\d+:\d{4,}:[0-9a-z]{5}$/);
   });
 });

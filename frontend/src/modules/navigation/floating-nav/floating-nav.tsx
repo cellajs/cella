@@ -14,7 +14,7 @@ interface FloatingNavProps {
   resetTrigger?: unknown;
 }
 
-const LABEL_COLLAPSE_MS = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
+const labelCollapseMs = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
 
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
@@ -27,32 +27,28 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
 
   // Hold buttons on screen while an expanded label collapses, so the text animates out before the buttons drop away
   const hasExpandedLabel = items.some((item) => item.label && item.labelVisible);
-  const [labelHold, setLabelHold] = useState(false);
-  const prevExpanded = useRef(hasExpandedLabel);
+  const [isLabelCollapsing, setIsLabelCollapsing] = useState(false);
+  const wasExpandedRef = useRef(hasExpandedLabel);
   const showButtonsRef = useRef(showButtons);
   showButtonsRef.current = showButtons;
   useEffect(() => {
-    const wasExpanded = prevExpanded.current;
-    prevExpanded.current = hasExpandedLabel;
+    const wasExpanded = wasExpandedRef.current;
+    wasExpandedRef.current = hasExpandedLabel;
     if (hasExpandedLabel) {
-      setLabelHold(false);
+      setIsLabelCollapsing(false);
       return;
     }
     // Only hold when the collapse starts from a visible state; a label that expanded off-screen never flashes the buttons
     if (!wasExpanded || !showButtonsRef.current) return;
-    setLabelHold(true);
-    const timeout = setTimeout(() => setLabelHold(false), LABEL_COLLAPSE_MS);
+    setIsLabelCollapsing(true);
+    const timeout = setTimeout(() => setIsLabelCollapsing(false), labelCollapseMs);
     return () => clearTimeout(timeout);
   }, [hasExpandedLabel]);
 
-  // Count items that could be visible (for body class and empty check)
-  const visibleItems = items.filter((item) => item.visible !== false);
-  const isActive = isMobile && visibleItems.length > 0;
+  const isActive = isMobile && items.some((item) => item.visible !== false);
 
-  // Keep body class for CSS consumers (app-layout, menu-sheet header)
+  // The active flag reaches CSS through the body class (app-layout, menu sheet header) and React through the store (bottom bar)
   useBodyClass({ [bodyClass]: isActive });
-
-  // Sync to store for direct React consumers (bottom-bar-nav)
   useEffect(() => {
     setFloatingNavActive(isActive);
     return () => setFloatingNavActive(false);
@@ -61,10 +57,9 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   if (items.length === 0) return null;
 
   return (
-    <nav id="floating-nav">
+    <nav id="floating-nav" className="print:hidden">
       {items.map((item) => {
-        // Combine global showButtons (plus the label-collapse hold) with individual item visibility
-        const isItemVisible = (showButtons || labelHold) && item.visible !== false;
+        const isItemVisible = (showButtons || isLabelCollapsing) && item.visible !== false;
         return (
           <FloatingNavButton
             key={item.id}
@@ -73,7 +68,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
             icon={item.icon}
             onClick={item.onClick}
             ariaLabel={item.ariaLabel}
-            direction={item.direction ?? 'right'}
+            direction={item.direction}
             label={item.label}
             labelVisible={item.labelVisible}
           />

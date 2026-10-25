@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { appConfig, type Language } from 'shared';
+import type { Language } from 'shared';
 import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 
 interface SelectLanguageProps {
@@ -17,9 +17,9 @@ export function SelectLanguage({ value, options, onChange }: SelectLanguageProps
     <ResponsiveSelect
       options={selectOptions}
       value={value}
-      onChange={(val) => onChange(val as Language)}
+      onChange={(lang) => onChange(lang as Language)}
       placeholder={t('c:placeholder.select_language')}
-      disabled={appConfig.languages.length < 2}
+      disabled={options.length < 2}
       className="w-full"
     />
   );

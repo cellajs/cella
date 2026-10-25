@@ -6,7 +6,7 @@ import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { utcStamp } from '#/utils/iso-date';
+import { getIsoDate, utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -25,8 +25,8 @@ type SignInNotice = {
 const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
 
 /** New sign-in notices per user per window. Covers browsers that drop cookies on exit; only notices actually sent spend it. */
-const NOTICE_BUDGET = 3;
-const NOTICE_WINDOW = new TimeSpan(24, 'h');
+const noticeBudget = 3;
+const noticeWindow = new TimeSpan(24, 'h');
 
 /** Notices go out fire-and-forget, without a request, on the base pool. */
 const dbCtx = { var: { db: baseDb } };
@@ -44,7 +44,7 @@ const countryName = (code: string, language: string) => {
 export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice }: SignInNotice) => {
   // A system admin session goes to the security inbox. Skipped in development, where every local sign-in would mail it.
   if (isSystemAdmin && appConfig.mode !== 'development') {
-    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: new Date().toISOString() });
+    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: getIsoDate() });
   }
 
   if (newDevice) void notifyNewSignIn({ user, context, strategy, newDevice });
@@ -63,10 +63,10 @@ export const notifyNewSignIn = async ({
   if (!newDevice.previousSignInAt || inboxStrategies.includes(strategy)) return;
 
   try {
-    const since = new Date(Date.now() - NOTICE_WINDOW.milliseconds()).toISOString();
+    const since = new Date(Date.now() - noticeWindow.milliseconds()).toISOString();
     const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since });
 
-    if (sent >= NOTICE_BUDGET) {
+    if (sent >= noticeBudget) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });
       return;
     }

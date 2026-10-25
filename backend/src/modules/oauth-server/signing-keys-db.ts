@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, snakeCase, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 
 /** `next` is published before it signs anything; `current` signs; `retired` still verifies until its last token expires. */
 const signingKeyStatuses = ['next', 'current', 'retired'] as const;
@@ -21,7 +21,7 @@ export const signingKeysTable = snakeCase.table(
     privateJwk: text().notNull(),
     publicJwk: jsonb().$type<Record<string, unknown>>().notNull(),
     createdAt: timestampColumns.createdAt,
-    retiredAt: timestamp({ mode: 'string' }),
+    retiredAt: isoTimestamp(),
   },
   (table) => [
     index('signing_keys_status_idx').on(table.status),

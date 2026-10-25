@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { MOCK_REF_DATE, mockNanoid, mockPaginated, mockUuid, withFakerSeed } from '#/mocks';
+import { mockNanoid, mockPaginated, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
 import type { MeAuthResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -14,13 +14,20 @@ export const mockMeResponse = (key = 'me:default'): MeResponse => ({
 
 export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
   withFakerSeed(key, () => {
-    const sessionCreatedAt = faker.date.past({ refDate: MOCK_REF_DATE });
+    const sessionCreatedAt = faker.date.past({ refDate: mockRefDate });
     const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later
 
     return {
-      enabledOAuth: ['github'] as const,
+      oauthIdentities: [
+        {
+          provider: 'github' as const,
+          email: faker.internet.email(),
+          createdAt: sessionCreatedAt.toISOString(),
+          lastUsedAt: sessionCreatedAt.toISOString(),
+        },
+      ],
       institutions: [],
-      hasTotp: false,
+      totp: null,
       sessions: [
         {
           id: mockUuid(),
@@ -55,7 +62,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
 
 export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTokenResponse =>
   withFakerSeed(key, () => {
-    const expiresAt = faker.date.soon({ days: 1, refDate: MOCK_REF_DATE });
+    const expiresAt = faker.date.soon({ days: 1, refDate: mockRefDate });
 
     return {
       publicBucket: false,

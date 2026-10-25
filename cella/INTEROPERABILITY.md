@@ -23,6 +23,8 @@ Routes that accept a machine caller say so through their guard. `actorGuard` tak
 
 An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant: `tenantGuard` compares the two before loading the tenant row, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per actor) and, on routes that carry it, the tenant's hourly points budget, keyed on tenant and actor.
 
+A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again when it has not read for the activity window: a deleted row stays a tombstone only for the deleted-items period, and its removal sends nothing ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+
 ## Face: OAuth
 
 The app is its own authorization server, on the same origin under `/oauth`. A person is sent to a consent screen that names the client and the scopes it asks for; the resulting token acts as that person, masked by those scopes, in one tenant. Two kinds of client reach the consent screen: MCP clients identify themselves with a Client ID Metadata Document (an HTTPS URL, nothing pre-registered; a tenant can refuse them), and registered apps have a row in `oauth_clients` and are installed per tenant as a service account carrying the client id (consent refuses an app that is not installed; the installation route is not built yet). A service account is its own `client_credentials` client and needs neither a row nor consent. People see and revoke their consents under "Connected apps" in their account settings. Mechanics: [OAuth worker](../oauth/README.md).
@@ -51,15 +53,7 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_ki
 
 ### Guards
 
-| Guard | Accepts | Sets |
-| --- | --- | --- |
-| `userGuard` | Session cookie | The user, memberships, actor |
-| `serviceGuard` | API key or access token | The actor (service account, or the consenting user masked by the token) |
-| `tokenGuard` | Access token only | Same as above; answers 401 with the RFC 9728 challenge |
-| `actorGuard` | Any of the three | Whichever applies |
-| `stepUpGuard` | After `userGuard`: a session with a recent proof of its user's presence, never an impersonation | Nothing; refuses with 403 `step_up_required` and the methods the user can offer |
-
-`tenantGuard` and `orgGuard` follow and read the actor's bindings, whatever proved it. `stepUpGuard` guards the account-security routes, minting an API key among them, so no API key or access token reaches them; the routes, the proofs and the window: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
+Which proof each guard admits, and the tenant and organization guards that follow it: [Permissions, Guards](./PERMISSIONS.md#guards). `stepUpGuard` guards the account-security routes, minting an API key among them, so no API key or access token reaches them: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
 
 ### Quotas and limits
 

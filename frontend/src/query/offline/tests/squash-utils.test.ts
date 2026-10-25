@@ -1,7 +1,7 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '../squash-utils';
+import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 
 /** Build a minimal stx carrying the given field timestamps. */
 function stxWith(fieldTimestamps: Record<string, string> = {}): StxBase {
@@ -31,123 +31,9 @@ function queueInFlightMutation(queryClient: QueryClient, mutationKey: readonly u
 }
 
 // Only paused mutations participate in squashing and pending-create coalescing: in-flight requests are on the wire and must be left alone.
-describe('squashPendingMutation', () => {
+describe('offline coalescing', () => {
   let queryClient: QueryClient;
-  const mutationKey = ['task', 'update'] as const;
-  const cleanups: (() => void)[] = [];
-
-  beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { mutations: { retry: false } },
-    });
-  });
-
-  afterEach(() => {
-    for (const fn of cleanups) fn();
-    cleanups.length = 0;
-    onlineManager.setOnline(true);
-    queryClient.clear();
-  });
-
-  it('returns new fields when no paused mutation exists', () => {
-    onlineManager.setOnline(false);
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { name: 'New' }, stxWith({ name: 't1' }));
-    expect(result.ops).toEqual({ name: 'New' });
-    expect(result.stx.fieldTimestamps).toEqual({ name: 't1' });
-  });
-
-  it('is a no-op while online: returns the new ops and stx untouched, keeps the queued mutation', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old' } });
-    onlineManager.setOnline(true); // back online before coalescing
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { status: 'done' }, stxWith());
-
-    expect(result.ops).toEqual({ status: 'done' });
-    // The queued mutation is untouched: it will replay as its own scope-serialized request.
-    expect(queryClient.getMutationCache().findAll({ mutationKey })).toHaveLength(1);
-  });
-
-  it('merges ops from a paused mutation into the new one and removes it from the cache', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old', description: 'Desc' } });
-    const cache = queryClient.getMutationCache();
-    expect(cache.findAll({ mutationKey }).filter((m) => m.state.isPaused)).toHaveLength(1);
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { status: 'done' }, stxWith());
-
-    expect(result.ops).toEqual({ name: 'Old', description: 'Desc', status: 'done' });
-    expect(cache.findAll({ mutationKey })).toHaveLength(0);
-  });
-
-  it('new ops override old ops for same key', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'First' } });
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { name: 'Second' }, stxWith());
-
-    expect(result.ops).toEqual({ name: 'Second' });
-  });
-
-  it('preserves the inherited field timestamp for a field this edit does not touch (LWW by intent time)', () => {
-    // A queued edit set `name` at t1 and the new edit changes only `description` at t2: the merged request must keep name@t1, or an older name edit could beat a newer one.
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old name' }, stx: stxWith({ name: 't1' }) });
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { description: 'New desc' }, stxWith({ description: 't2' }));
-
-    expect(result.ops).toEqual({ name: 'Old name', description: 'New desc' });
-    expect(result.stx.fieldTimestamps).toEqual({ name: 't1', description: 't2' });
-  });
-
-  it('the incoming edit wins the timestamp for an overwritten field', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old name' }, stx: stxWith({ name: 't1' }) });
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { name: 'New name' }, stxWith({ name: 't2' }));
-
-    expect(result.ops).toEqual({ name: 'New name' });
-    expect(result.stx.fieldTimestamps).toEqual({ name: 't2' });
-  });
-
-  it('leaves IN-FLIGHT mutations alone: their ops are already on the wire', () => {
-    onlineManager.setOnline(false); // offline so the online gate does not mask the in-flight guard
-    cleanups.push(queueInFlightMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'InFlight' } }));
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { status: 'done' }, stxWith());
-
-    // Not merged, not removed: LWW/delta merge makes the overlap idempotent server-side.
-    expect(result.ops).toEqual({ status: 'done' });
-    expect(
-      queryClient
-        .getMutationCache()
-        .findAll({ mutationKey })
-        .filter((m) => m.state.status === 'pending'),
-    ).toHaveLength(1);
-  });
-
-  it('ignores mutations for different entities', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-2', ops: { name: 'Other' } });
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { status: 'done' }, stxWith());
-
-    expect(result.ops).toEqual({ status: 'done' });
-    expect(
-      queryClient
-        .getMutationCache()
-        .findAll({ mutationKey })
-        .filter((m) => m.state.isPaused),
-    ).toHaveLength(1);
-  });
-
-  it('accumulates fields from multiple paused mutations', () => {
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'A' } });
-    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { description: 'B' } });
-
-    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { status: 'C' }, stxWith());
-
-    expect(result.ops).toEqual({ name: 'A', description: 'B', status: 'C' });
-    expect(queryClient.getMutationCache().findAll({ mutationKey })).toHaveLength(0);
-  });
-});
-
-describe('squashIntoPendingCreate', () => {
-  let queryClient: QueryClient;
+  const updateKey = ['task', 'update'] as const;
   const createKey = ['task', 'create'] as const;
   /** The keys the create body of this entity takes. */
   const creatable = ['id', 'name', 'description', 'labels'];
@@ -166,24 +52,40 @@ describe('squashIntoPendingCreate', () => {
     queryClient.clear();
   });
 
-  it('returns false when no paused create exists', () => {
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Updated' }, creatable);
-    expect(result).toBe(false);
+  it('folds every queued update of the row into the new one, which replaces them, and leaves the updates of other rows', () => {
+    queuePausedMutation(queryClient, updateKey, { id: 'entity-1', ops: { name: 'A', description: 'Desc' } });
+    queuePausedMutation(queryClient, updateKey, { id: 'entity-1', ops: { name: 'B' } });
+    queuePausedMutation(queryClient, updateKey, { id: 'entity-2', ops: { name: 'Other' } });
+
+    const result = squashPendingMutation(queryClient, updateKey, 'entity-1', { status: 'done' }, stxWith());
+
+    // Newer queued values win over older ones, the incoming edit over all.
+    expect(result.ops).toEqual({ name: 'B', description: 'Desc', status: 'done' });
+    expect(
+      queryClient
+        .getMutationCache()
+        .findAll({ mutationKey: updateKey })
+        .map(({ state }) => state.variables),
+    ).toEqual([{ id: 'entity-2', ops: { name: 'Other' } }]);
   });
 
-  it('coalesces fields into a paused top-level-id create and returns true', () => {
-    const variables = { id: 'entity-1', name: 'Original' };
-    queuePausedMutation(queryClient, createKey, variables);
+  it('keeps the intent time of each field the new edit does not touch, and takes its own for the fields it changes (LWW by intent time)', () => {
+    // A queued edit set `name` and `description` at t1, the new one changes `description` at t2: the merged request must keep name@t1, or an older name edit could beat a newer one.
+    queuePausedMutation(queryClient, updateKey, {
+      id: 'entity-1',
+      ops: { name: 'Old name', description: 'Old' },
+      stx: stxWith({ name: 't1', description: 't1' }),
+    });
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' }, creatable);
+    const result = squashPendingMutation(queryClient, updateKey, 'entity-1', { description: 'New desc' }, stxWith({ description: 't2' }));
 
-    expect(result).toBe(true);
-    expect(variables).toEqual({ id: 'entity-1', name: 'Original', description: 'Added' });
+    expect(result.ops).toEqual({ name: 'Old name', description: 'New desc' });
+    expect(result.stx.fieldTimestamps).toEqual({ name: 't1', description: 't2' });
   });
 
-  it('coalesces fields into the matching ROW of a paused batch create (data[] shape)', () => {
+  it('folds an edit into the row of a queued create, in each shape a create holds its rows', () => {
     // Attachment-style variables: routing context + data rows, no top-level id.
-    const variables = {
+    const batch = {
       tenantId: 't1',
       organizationId: 'o1',
       data: [
@@ -191,102 +93,36 @@ describe('squashIntoPendingCreate', () => {
         { id: 'entity-2', name: 'Two' },
       ],
     };
-    queuePausedMutation(queryClient, createKey, variables);
+    const oneRow = { tenantId: 't1', organizationId: 'o1', data: { id: 'entity-3', name: 'Three' } };
+    const topLevel = { id: 'entity-4', name: 'Four' };
+    for (const variables of [batch, oneRow, topLevel]) queuePausedMutation(queryClient, createKey, variables);
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Renamed' }, creatable);
+    for (const id of ['entity-2', 'entity-3', 'entity-4'])
+      expect(squashIntoPendingCreate(queryClient, createKey, id, { name: 'Renamed' }, creatable)).toBe(true);
 
-    expect(result).toBe(true);
-    // Merged into the row, not the variables root.
-    expect(variables.data[1]).toEqual({ id: 'entity-2', name: 'Renamed' });
-    expect(variables.data[0]).toEqual({ id: 'entity-1', name: 'One' });
-    expect('name' in variables).toBe(false);
+    // Merged into the row, not the variables root, and only into that row.
+    expect(batch.data).toEqual([
+      { id: 'entity-1', name: 'One' },
+      { id: 'entity-2', name: 'Renamed' },
+    ]);
+    expect('name' in batch).toBe(false);
+    expect(oneRow.data).toEqual({ id: 'entity-3', name: 'Renamed' });
+    expect(topLevel).toEqual({ id: 'entity-4', name: 'Renamed' });
   });
 
-  it('coalesces fields into the row of a paused one-row create (data as one object)', () => {
-    const variables = { tenantId: 't1', organizationId: 'o1', data: { id: 'entity-1', name: 'One' } };
+  it('leaves an edit the create body cannot carry for a separate update: a field it does not take, or a relative array delta', () => {
+    const variables = { tenantId: 't1', organizationId: 'o1', data: [{ id: 'entity-1', name: 'One', labels: ['a'] }] };
     queuePausedMutation(queryClient, createKey, variables);
 
-    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' }, creatable)).toBe(true);
-    expect(variables.data).toEqual({ id: 'entity-1', name: 'Renamed' });
-    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Other' }, creatable)).toBe(false);
-  });
-
-  it('leaves an edit that names a field the create body does not take for a separate update: the server would drop it from the create', () => {
-    const variables = { tenantId: 't1', organizationId: 'o1', data: [{ id: 'entity-1', name: 'One' }] };
-    queuePausedMutation(queryClient, createKey, variables);
-
-    // `status` is an update-only field here; `name` alone would fold.
+    // `status` is an update-only field here: the server would drop it from the create and no request would carry it.
     expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed', status: 3 }, creatable)).toBe(false);
-    expect(variables.data[0]).toEqual({ id: 'entity-1', name: 'One' });
-    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' }, creatable)).toBe(true);
+    // A create carries full arrays, a delta is relative to the stored one.
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { labels: { add: ['b'], remove: [] } }, creatable)).toBe(false);
+    expect(variables.data[0]).toEqual({ id: 'entity-1', name: 'One', labels: ['a'] });
   });
 
-  it('falls through (false) for array-delta ops: creates carry full arrays, deltas are relative', () => {
-    const variables = { id: 'entity-1', labels: ['a'] };
-    queuePausedMutation(queryClient, createKey, variables);
-
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { labels: { add: ['b'], remove: [] } }, creatable);
-
-    expect(result).toBe(false);
-    expect(variables).toEqual({ id: 'entity-1', labels: ['a'] });
-  });
-
-  it('never touches an IN-FLIGHT create', () => {
-    onlineManager.setOnline(false); // offline so the online gate does not mask the in-flight guard
-    cleanups.push(queueInFlightMutation(queryClient, createKey, { id: 'entity-1', name: 'Original' }));
-
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' }, creatable);
-    expect(result).toBe(false);
-  });
-
-  it('is a no-op while online: returns false and leaves the queued create for a separate update', () => {
-    const variables = { id: 'entity-1', name: 'Original' };
-    queuePausedMutation(queryClient, createKey, variables);
-    onlineManager.setOnline(true);
-
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' }, creatable);
-
-    expect(result).toBe(false);
-    expect(variables).toEqual({ id: 'entity-1', name: 'Original' });
-  });
-
-  it('ignores creates for different entities', () => {
-    queuePausedMutation(queryClient, createKey, { id: 'entity-2', name: 'Other' });
-
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' }, creatable);
-    expect(result).toBe(false);
-  });
-});
-
-describe('removePausedCreates', () => {
-  let queryClient: QueryClient;
-  const createKey = ['task', 'create'] as const;
-  const cleanups: (() => void)[] = [];
-
-  beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { mutations: { retry: false } },
-    });
-  });
-
-  afterEach(() => {
-    for (const fn of cleanups) fn();
-    cleanups.length = 0;
-    onlineManager.setOnline(true);
-    queryClient.clear();
-  });
-
-  it('cancels a whole paused top-level-id create', () => {
-    queuePausedMutation(queryClient, createKey, { id: 'entity-1', name: 'Never sent' });
-
-    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1']);
-
-    expect(cancelled).toEqual(['entity-1']);
-    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
-  });
-
-  it('removes only the matching row from a paused batch create', () => {
-    const variables = {
+  it('cancels the deleted rows of a queued create, and the create itself once no row is left', () => {
+    const batch = {
       tenantId: 't1',
       organizationId: 'o1',
       data: [
@@ -294,55 +130,52 @@ describe('removePausedCreates', () => {
         { id: 'entity-2', name: 'Delete' },
       ],
     };
-    queuePausedMutation(queryClient, createKey, variables);
+    queuePausedMutation(queryClient, createKey, batch);
+    queuePausedMutation(queryClient, createKey, { organizationId: 'o1', data: { id: 'entity-3', name: 'One row' } });
+    queuePausedMutation(queryClient, createKey, { id: 'entity-4', name: 'Top level' });
 
-    const cancelled = removePausedCreates(queryClient, createKey, ['entity-2']);
-
-    expect(cancelled).toEqual(['entity-2']);
-    expect(variables.data).toEqual([{ id: 'entity-1', name: 'Keep' }]);
-    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(1);
-  });
-
-  it('cancels a paused one-row create (data as one object)', () => {
-    queuePausedMutation(queryClient, createKey, { organizationId: 'o1', data: { id: 'a', name: 'A' } });
-
-    expect(removePausedCreates(queryClient, createKey, ['a'])).toEqual(['a']);
-    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
-  });
-
-  it('drops the whole batch create when every row is cancelled', () => {
-    queuePausedMutation(queryClient, createKey, {
-      data: [{ id: 'entity-1' }, { id: 'entity-2' }],
-    });
-
-    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1', 'entity-2']);
-
-    expect(cancelled).toEqual(['entity-1', 'entity-2']);
-    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
-  });
-
-  it('leaves IN-FLIGHT creates alone: the row may reach the server, the delete must be sent', () => {
-    onlineManager.setOnline(false); // offline so the online gate does not mask the in-flight guard
-    cleanups.push(queueInFlightMutation(queryClient, createKey, { id: 'entity-1', name: 'Sending' }));
-
-    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1']);
-
-    expect(cancelled).toEqual([]);
+    expect(removePausedCreates(queryClient, createKey, ['entity-2', 'entity-3', 'entity-4'])).toEqual(['entity-2', 'entity-3', 'entity-4']);
+    expect(batch.data).toEqual([{ id: 'entity-1', name: 'Keep' }]);
     expect(
       queryClient
         .getMutationCache()
         .findAll({ mutationKey: createKey })
-        .filter((m) => m.state.status === 'pending'),
-    ).toHaveLength(1);
+        .map(({ state }) => state.variables),
+    ).toEqual([batch]);
+
+    expect(removePausedCreates(queryClient, createKey, ['entity-1'])).toEqual(['entity-1']);
+    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
   });
 
-  it('is a no-op while online: returns no cancellations and keeps the queued create', () => {
-    queuePausedMutation(queryClient, createKey, { id: 'entity-1', name: 'Maybe sent' });
-    onlineManager.setOnline(true);
+  it('changes nothing while online, where a queued mutation may already be on its way', () => {
+    const create = { id: 'entity-1', name: 'Original' };
+    queuePausedMutation(queryClient, createKey, create);
+    queuePausedMutation(queryClient, updateKey, { id: 'entity-2', ops: { name: 'Old' } });
+    onlineManager.setOnline(true); // back online before coalescing
 
-    const cancelled = removePausedCreates(queryClient, createKey, ['entity-1']);
+    // Each queued mutation replays as its own scope-serialized request.
+    expect(squashPendingMutation(queryClient, updateKey, 'entity-2', { status: 'done' }, stxWith()).ops).toEqual({ status: 'done' });
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' }, creatable)).toBe(false);
+    expect(removePausedCreates(queryClient, createKey, ['entity-1'])).toEqual([]);
+    expect(create).toEqual({ id: 'entity-1', name: 'Original' });
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(2);
+  });
 
-    expect(cancelled).toEqual([]);
-    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(1);
+  it('never merges into or cancels a mutation already on the wire', () => {
+    onlineManager.setOnline(false); // offline so the online gate does not mask the in-flight guard
+    cleanups.push(queueInFlightMutation(queryClient, updateKey, { id: 'entity-1', ops: { name: 'InFlight' } }));
+    cleanups.push(queueInFlightMutation(queryClient, createKey, { id: 'entity-2', name: 'Sending' }));
+
+    // Not merged, not removed: LWW/delta merge makes the overlap idempotent server-side.
+    expect(squashPendingMutation(queryClient, updateKey, 'entity-1', { status: 'done' }, stxWith()).ops).toEqual({ status: 'done' });
+    // The row may reach the server: an edit must follow as its own update, and a delete must be sent.
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'X' }, creatable)).toBe(false);
+    expect(removePausedCreates(queryClient, createKey, ['entity-2'])).toEqual([]);
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .filter((m) => m.state.status === 'pending'),
+    ).toHaveLength(2);
   });
 });

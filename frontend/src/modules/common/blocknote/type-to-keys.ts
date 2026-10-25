@@ -10,7 +10,8 @@ export const baseBlockNoteTypeToKeys = {
   bulletListItem: ['bullet_list'],
   numberedListItem: ['numbered_list'],
   checklistItem: ['checklistItem'],
-  checkListItem: ['checklistItem'],
+  // BlockNote's own check list offers no slash item.
+  checkListItem: [],
   file: ['file'],
   image: ['image'],
   video: ['video'],

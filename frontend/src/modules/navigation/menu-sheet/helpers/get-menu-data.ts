@@ -4,9 +4,9 @@ import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import { meKeys } from '~/modules/me/query';
+import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
 import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { buildMenuFromCache } from './build-menu-from-cache';
 
 const membershipsOptions = queryOptions({
   queryKey: meKeys.memberships,

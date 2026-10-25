@@ -1,22 +1,30 @@
 import { motion } from 'motion/react';
-import { forwardRef, type ReactNode } from 'react';
+import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
+import { formatCount } from '~/utils/format-count';
 
-type Props = { icon: IconComponent; label: TKey; badge?: ReactNode } & ButtonProps;
+interface TableBarButtonProps extends ButtonProps {
+  icon: IconComponent;
+  label: TKey;
+  badge?: number;
+  ref?: Ref<HTMLButtonElement>;
+}
 
-export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton({ icon: Icon, label, badge, className, ...props }, ref) {
+export function TableBarButton({ icon: Icon, label, badge, className, ref, ...props }: TableBarButtonProps) {
   const { t } = useTranslation();
   return (
     <Button
       {...props}
+      // The badge sits on the button's corner
+      className={cn('relative', className)}
       render={
         <motion.button
           ref={ref}
-          className={className}
           transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -24,10 +32,10 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function Tabl
         />
       }
     >
-      {Icon && <motion.span className="flex items-center">{<Icon />}</motion.span>}
-      {label && <span>{t(label)}</span>}
+      <Icon />
+      <span>{t(label)}</span>
 
-      {badge && <Badge context="button">{badge}</Badge>}
+      {!!badge && <Badge context="button">{formatCount(badge)}</Badge>}
     </Button>
   );
-});
+}

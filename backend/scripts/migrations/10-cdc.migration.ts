@@ -3,7 +3,7 @@ import { getTableName } from 'drizzle-orm';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { resourceTables } from '#/tables';
 import { entityTables } from '#/tables';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../../cdc/src/constants';
+import { cdcPublicationName, cdcSlotName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 interface TableSpec {
@@ -61,13 +61,13 @@ BEGIN
 
   -- 1. Create or update publication
   BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
-      CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
-      RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
+    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${cdcPublicationName}') THEN
+      CREATE PUBLICATION ${cdcPublicationName} FOR TABLE ${tableList};
+      RAISE NOTICE 'Created publication ${cdcPublicationName}';
     ELSE
       -- Publication exists: replace with current table list
-      RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists, syncing tables...';
-      ALTER PUBLICATION ${CDC_PUBLICATION_NAME} SET TABLE ${tableList};
+      RAISE NOTICE 'Publication ${cdcPublicationName} already exists, syncing tables...';
+      ALTER PUBLICATION ${cdcPublicationName} SET TABLE ${tableList};
       RAISE NOTICE 'Publication tables synced';
     END IF;
   EXCEPTION WHEN OTHERS THEN
@@ -82,7 +82,7 @@ ${trackedTableNames.map((table) => `    ALTER TABLE ${table} REPLICA IDENTITY FU
     RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
 
-  -- Replication slot ('${CDC_SLOT_NAME}') is NOT created here: the migrator applies all
+  -- Replication slot ('${cdcSlotName}') is NOT created here: the migrator applies all
   -- migrations in one transaction, and logical slot creation always fails in a transaction
   -- that has performed writes. The CDC worker creates the slot at startup
   -- (cdc/src/pipeline/replication.ts).

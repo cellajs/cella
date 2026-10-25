@@ -1,92 +1,39 @@
 import { PartyPopperIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { appConfig } from 'shared';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
-import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
-import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
+import { fetchRequestsForExport, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
-import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
 export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) {
-  const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
-
   const total = useListQueryTotal(queryKey);
 
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
-  const selectedToWaitlist = selected.filter((r) => r.type === 'waitlist' && !r.wasInvited);
+  const uninvited = selected.filter((request) => request.type === 'waitlist' && !request.wasInvited);
 
-  const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
-  const requestsListKey = requestsKeys.table.base;
+  const { mutate: invite } = useSendApprovalInviteMutation();
 
-  const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
-
-  const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<Request[]>) => {
-      cacheRemove(requestsListKey, selected);
-      if (args.status === 'success') {
-        const message =
-          args.data.length === 1
-            ? t('c:success.delete_resource', { resource: t('c:request') })
-            : t('c:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('c:request_other').toLowerCase(),
-              });
-        toaster.success(message);
-      }
-      clearSelection();
-    };
-
-    createDialog(<DeleteRequests requests={selected} callback={callback} dialog />, {
+  const confirmDelete = () =>
+    openDeleteDialog({
       id: 'delete-requests',
       triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('c:delete'),
-      description: (
-        <ConfirmText
-          i18nKey="c:confirm.delete_counted_resource"
-          values={{
-            count: selected.length,
-            resource: selected.length > 1 ? t('c:request_other').toLowerCase() : t('c:request').toLowerCase(),
-          }}
-        />
-      ),
+      resource: 'c:request',
+      count: selected.length,
+      content: <DeleteRequests requests={selected} callback={clearSelection} />,
     });
-  };
 
-  const approveSelectedRequests = () => {
-    const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
-    const emails = waitlistRequests.map(({ email }) => email);
-
-    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({ ...reqInfo, wasInvited: true }));
-
-    approveRequests(
-      { emails },
-      {
-        onSuccess: () => {
-          cacheUpdate(requestsListKey, updatedWaitLists);
-          clearSelection();
-        },
-      },
-    );
-  };
-
-  const fetchExport = async (limit: number, offset: number) => {
-    return fetchRequestsForExport({ limit, offset, q, sort, order });
-  };
+  const inviteSelected = () => invite(uninvited, { onSuccess: clearSelection });
 
   return (
     <TableBarShell
@@ -94,23 +41,22 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
       {...{ searchVars, total, columns, setColumns }}
       label="c:request"
       searchName="requestSearch"
-      export={{ filename: `${appConfig.slug}-requests`, fetchRows: fetchExport }}
+      export={{ filename: `${appConfig.slug}-requests`, fetchRows: (limit, offset) => fetchRequestsForExport({ ...searchVars, limit, offset }) }}
       selection={{
         count: selected.length,
         onClear: clearSelection,
         children: (
           <>
-            {selectedToWaitlist.length > 0 && (
+            {uninvited.length > 0 && (
               <TableBarButton
-                badge={selectedToWaitlist.length < selected.length ? selectedToWaitlist.length : undefined}
+                badge={uninvited.length < selected.length ? uninvited.length : undefined}
                 variant="success"
-                className="relative"
                 label="c:invite"
                 icon={PartyPopperIcon}
-                onClick={approveSelectedRequests}
+                onClick={inviteSelected}
               />
             )}
-            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:remove" onClick={openDeleteDialog} />
+            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:delete" onClick={confirmDelete} />
           </>
         ),
       }}

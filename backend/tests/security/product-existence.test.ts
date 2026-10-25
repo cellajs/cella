@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal, refusalOf } from '../helpers';
-import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
+import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -58,9 +58,11 @@ describe('Product existence (getValidProduct)', async () => {
     unscopedKey = await issueKey(['organization:read']);
     readOnlyKey = await issueKey(['attachment:read']);
 
+    const home = await seedAttachmentHome(organization, admin.id);
+    await joinAttachmentHome(organization, home, member.id);
     const { response } = await call(createAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: [attachmentBody(attachmentId, await seedAttachmentHome(organization, admin.id))],
+      body: [attachmentBody(attachmentId, home)],
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(response.status).toBe(201);

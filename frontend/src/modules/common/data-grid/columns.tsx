@@ -3,7 +3,7 @@ import { RenderCheckbox } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
 import type { Column, RenderCellProps, RenderHeaderCellProps } from './types';
 
-export const SELECT_COLUMN_KEY = 'rdg-select-column';
+export const selectColumnKey = 'rdg-select-column';
 
 function HeaderRenderer(props: RenderHeaderCellProps<unknown>) {
   const { isIndeterminate, isRowSelected, onRowSelectionChange } = useHeaderRowSelection();
@@ -39,7 +39,7 @@ function SelectFormatter(props: RenderCellProps<unknown>) {
 
 // biome-ignore lint/suspicious/noExplicitAny: SelectColumn is row-shape agnostic; consumers narrow via Column<Row, SR>.
 export const SelectColumn: Column<any, any> = {
-  key: SELECT_COLUMN_KEY,
+  key: selectColumnKey,
   name: '',
   width: 35,
   minWidth: 35,

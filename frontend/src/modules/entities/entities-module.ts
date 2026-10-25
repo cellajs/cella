@@ -4,5 +4,5 @@ defineFrontendModule({
   name: 'entities',
   owner: 'cella',
   scope: ['frontend', 'backend'],
-  description: 'UI for operations across multiple entity types such as users and organizations.',
+  description: 'UI shared across channel types, such as entity grids, tiles and settings pages.',
 });

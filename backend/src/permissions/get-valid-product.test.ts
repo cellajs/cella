@@ -13,12 +13,12 @@ vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
 vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})) }));
 vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
 
-const TENANT = 'tenant-a';
-const ORG = 'org-a';
+const tenant = 'tenant-a';
+const org = 'org-a';
 
 /** Scope check unit: the entity lookup, permission engine and RLS wrapper are mocked, so only the tenant/organization comparison is under test. */
 describe('getValidProduct request scope', () => {
-  const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: TENANT, organizationId: ORG }) =>
+  const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: tenant, organizationId: org }) =>
     ({
       var: {
         db: baseDb,
@@ -30,9 +30,9 @@ describe('getValidProduct request scope', () => {
   const row = (overrides: Record<string, unknown> = {}) => ({
     id: 'att-1',
     entityType: 'attachment',
-    tenantId: TENANT,
-    organizationId: ORG,
-    publicAt: null,
+    tenantId: tenant,
+    organizationId: org,
+    public: false,
     ...overrides,
   });
 
@@ -45,7 +45,7 @@ describe('getValidProduct request scope', () => {
   });
 
   it('throws 500 before any lookup when the route set no tenant or organization scope', async () => {
-    await expect(getValidProduct(ctx({ tenantId: TENANT }), 'att-1', 'attachment', 'read')).rejects.toMatchObject({
+    await expect(getValidProduct(ctx({ tenantId: tenant }), 'att-1', 'attachment', 'read')).rejects.toMatchObject({
       status: 500,
       type: 'server_error',
     });

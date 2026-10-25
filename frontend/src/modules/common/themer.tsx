@@ -7,19 +7,34 @@ const root = window.document.documentElement;
 function setModeClass(mode: Mode) {
   root.classList.remove('light', 'dark');
   root.classList.add(mode);
+  setThemeColor();
+}
+
+/**
+ * The browser chrome (Android's status bar, a PWA's title bar) takes the page background. The oklch token is painted
+ * as one canvas pixel and read back as hex, which every browser parses: a canvas keeps oklch in its fillStyle.
+ */
+function setThemeColor() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  const canvas = meta && document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!meta || !canvas) return;
+  canvas.fillStyle = getComputedStyle(document.body).backgroundColor;
+  canvas.fillRect(0, 0, 1, 1);
+  const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
+  meta.content = `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /**
  * Raises the edge tokens for a user who asked for more contrast. `system` writes nothing: tailwind.css answers
- * `prefers-contrast: more` on its own, so the OS setting still lands if this never runs.
+ * `prefers-contrast: more` on its own, so the OS setting still applies if this never runs.
  */
 function setContrastAttribute(contrast: Contrast) {
   if (contrast === 'more') root.dataset.contrast = 'more';
   else delete root.dataset.contrast;
 }
 
-function setBrandColor(passedTheme: Theme) {
-  const color = passedTheme === 'none' ? null : appConfig.theme.colors[passedTheme];
+function setBrandColor(theme: Theme) {
+  const color = theme === 'none' ? null : appConfig.theme.colors[theme];
 
   let brandStyleTag = document.getElementById('brand-style');
   if (!brandStyleTag) {
@@ -32,7 +47,7 @@ function setBrandColor(passedTheme: Theme) {
   brandStyleTag.innerHTML = color ? `:root { --brand: ${color}; }` : '';
 }
 
-export const Themer = () => {
+export function Themer() {
   // The listener fires on every uiStore write (overlay locks, focus view), so it acts only on the appearance changes.
   useEffect(
     () =>
@@ -49,4 +64,4 @@ export const Themer = () => {
   setContrastAttribute(uiStore.getState().contrast);
 
   return null;
-};
+}

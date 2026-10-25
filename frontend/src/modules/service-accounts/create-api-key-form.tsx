@@ -4,11 +4,11 @@ import type { CreateServiceAccountData, CreateServiceAccountResponse } from 'sdk
 import { zCreateServiceAccountBody } from 'sdk/zod.gen';
 import { hierarchy } from 'shared';
 import type { z } from 'zod';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useCreateServiceAccountMutation } from '~/modules/service-accounts/query';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import type { QueryOrgContext } from '~/query/types';
 import { formResolver } from '~/utils/form-resolver';
@@ -30,10 +30,7 @@ interface CreateApiKeyFormProps {
   onCreated: (apiKey: CreatedApiKey) => void;
 }
 
-/**
- * The one-step key experience (substrate D21): creating a key makes an implicit service account named after the key,
- * bound to this organization with its least privileged role. The dialog closes on success and hands the key over.
- */
+/** Creating a key makes a service account named after it, bound to this organization with its least privileged role. */
 export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   const { t } = useTranslation();
   const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();
@@ -41,7 +38,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { name: '' } });
   const { isDirty } = useFormState({ control: form.control });
 
-  const closeDialog = () => useDialoger.getState().remove(createApiKeyDialogId);
+  const closeDialog = () => dialoger.getState().remove(createApiKeyDialogId);
 
   const onSubmit = (values: FormValues) => {
     const name = values.name.trim();
@@ -69,9 +66,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton loading={isPending}>{t('c:create')}</SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={isDirty} onClick={() => form.reset()} />
         </div>
       </form>
     </Form>

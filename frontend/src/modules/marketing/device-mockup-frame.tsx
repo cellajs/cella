@@ -1,19 +1,15 @@
-type DeviceType = 'mobile' | 'tablet' | 'pc';
+import type { ReactElement } from 'react';
 
-interface DeviceFrameProps {
+export type DeviceType = 'mobile' | 'tablet' | 'pc';
+
+interface DeviceMockupFrameProps {
   type: DeviceType;
   inView: boolean;
-  renderCarousel: (className: string) => React.ReactElement;
+  renderCarousel: (containerClassName: string) => ReactElement;
 }
 
-/**
- * Draws the chassis around a carousel: a phone, a tablet or a desktop screen on a stand.
- *
- * Chassis neutrals are zinc, not Tailwind's blue-leaning gray. The theme tokens and the grain shadow the mockup
- * casts (device-mockup.tsx, `--grain-color: --foreground`) share zinc's hue, so gray reads as a blue cast on it.
- * Every surface is opaque: the grain sits behind the device, and a translucent one lets its dots through.
- */
-export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) {
+/** A phone, tablet or desktop chassis around a carousel, in zinc (the theme's and the grain's hue; gray reads blue) and opaque over the grain. */
+export function DeviceMockupFrame({ type, inView, renderCarousel }: DeviceMockupFrameProps) {
   switch (type) {
     case 'tablet':
       return (
@@ -29,7 +25,7 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
       return (
         <div className="w-full">
           <div className="relative mx-auto mb-[.05rem] aspect-video max-w-[85%] rounded-t-xl border-4 border-zinc-400 dark:border-zinc-700">
-            <div className="size-full cursor-pointer rounded-lg bg-background">{inView && renderCarousel('rounded-t-[.5rem]')}</div>
+            <div className="size-full cursor-pointer rounded-lg bg-background">{inView && renderCarousel('rounded-t-lg')}</div>
           </div>
           {/* Base takes the bezel's color, so the chassis reads as one piece */}
           <div className="relative mx-auto h-3 rounded-t-sm rounded-b-xl bg-zinc-400 md:h-4 dark:bg-zinc-700">

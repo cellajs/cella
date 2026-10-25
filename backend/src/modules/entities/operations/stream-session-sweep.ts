@@ -14,7 +14,7 @@ const dbCtx = { var: { db: baseDb } };
 /** App streams carry the session they authenticated with; a stream an app registers without one is not theirs. */
 
 /** How often the sweep re-checks the session behind every open stream. */
-const SWEEP_INTERVAL_MS = 60_000;
+const sweepIntervalMs = 60_000;
 
 let sweepTimer: ReturnType<typeof setInterval> | null = null;
 let sweeping = false;
@@ -92,7 +92,7 @@ export function ensureAppStreamSessionSweep(): void {
       .finally(() => {
         sweeping = false;
       });
-  }, SWEEP_INTERVAL_MS);
+  }, sweepIntervalMs);
   // A pending sweep never keeps the process alive at shutdown.
   sweepTimer.unref();
 }

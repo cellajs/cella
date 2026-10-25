@@ -1,57 +1,39 @@
-import type { VariantProps } from 'class-variance-authority';
 import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
-import { ConfirmText } from '~/modules/common/confirm-text';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { PopConfirm } from '~/modules/common/popconfirm';
-import type { LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
+import { NamedText } from '~/modules/common/named-text';
+import { openConfirm } from '~/modules/common/open-confirm';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
-import { Button, type buttonVariants } from '~/modules/ui/button';
+import type { LeaveChannelProps } from '~/modules/memberships/use-leave-channel';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type JoinedButtonProps = Omit<LeaveChannelButtonProps, 'buttonProps'> & {
-  /** Membership role shown on the trigger ("✓ Admin"). */
+interface JoinedButtonProps extends LeaveChannelProps {
+  /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */
   role?: MembershipBase['role'] | null;
-  size?: VariantProps<typeof buttonVariants>['size'];
+  size?: ButtonProps['size'];
   className?: string;
-};
+}
 
-/**
- * Joined-state membership button: a "✓ Role" trigger whose checkmark swaps to an X on hover/focus
- * to signal that clicking undoes the join. Clicking opens a leave popconfirm through the
- * dropdowner, so it renders as a drawer below the `sm` breakpoint.
- */
-function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
+/** The joined state: its check turns into an X on hover or focus, and a click asks to leave in a popconfirm (a drawer below `sm`). */
+export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
-  const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
-    create(
-      <PopConfirm title={<ConfirmText i18nKey="c:confirm.leave_channel" values={{ name: channel.name }} />}>
-        <LeaveChannelForm
-          {...props}
-          callback={(args) => {
-            remove();
-            props.callback?.(args);
-          }}
-          onCancel={remove}
-        />
-      </PopConfirm>,
-      { id: 'leave-channel', triggerId: `leave-channel-${channel.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
-    );
-  };
+  const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) =>
+    openConfirm(event.currentTarget, {
+      id: `leave-channel-${channel.id}`,
+      title: <NamedText i18nKey="c:confirm.leave_channel" name={channel.name} />,
+      content: <LeaveChannelForm {...props} />,
+    });
 
   return (
-    <Button size={size} variant="success" className={cn('group', className)} onClick={openLeaveConfirm}>
-      <CheckIcon className="group-hover:hidden group-focus-visible:hidden group-data-dropdowner-active:hidden" />
-      <XIcon className="hidden group-hover:block group-focus-visible:block group-data-dropdowner-active:block" />
+    <Button size={size} variant="success" className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
+      <CheckIcon className="group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden" />
+      <XIcon className="hidden group-hover/joined-button:block group-focus-visible/joined-button:block group-data-dropdowner-active/joined-button:block" />
       <span className="max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
       <span className="sr-only">{t('c:leave')}</span>
     </Button>
   );
 }
-
-export { JoinedButton };

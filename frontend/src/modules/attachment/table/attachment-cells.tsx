@@ -1,6 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
 import { CircleAlertIcon, CloudOffIcon, CloudUploadIcon, DownloadIcon, LoaderIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { useDownloader } from '~/hooks/use-downloader';
@@ -10,69 +9,63 @@ import { isPendingUpload, pendingUploadMessage } from '~/modules/attachment/help
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-status';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
-interface ThumbnailCellProps {
+interface AttachmentCellProps {
   row: Attachment;
   tabIndex: number;
 }
 
-export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
+export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
-  const cellRef = useRef<HTMLButtonElement | null>(null);
 
-  const wrapClass = tw('relative flex size-full items-center justify-center gap-2');
-
-  // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
+  // Table cells prefer the tiny thumbnail; a file without one falls back to a local preview, else the original.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
     navigate({ to: '.', replace: false, resetScroll: false, search: openAttachmentDialogSearch(id, groupId) });
   };
 
-  const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;
-  const badge = <SyncStatusBadge row={row} />;
-
   return (
-    <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
-      {preview}
-      {badge}
+    <Button variant="cell" size="cell" tabIndex={tabIndex} className="relative justify-center" aria-label={filename} onClick={handleClick}>
+      <MediaThumbnail name={filename} url={url} contentType={contentType} />
+      <UploadStatusBadge row={row} />
     </Button>
   );
 }
 
 /** What this device can tell about the file: its own upload's progress, or, without the file, that its uploader still holds it. */
-function SyncStatusBadge({ row }: { row: Attachment }) {
+function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
   const { t } = useTranslation();
   const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
 
   if (hasLocalBlob && isUploaded) return null;
 
-  let icon: React.ReactNode;
+  let Icon: IconComponent;
   let tooltip: string;
 
   if (!hasLocalBlob) {
     if (!isPendingUpload(row)) return null;
     const { key, params } = pendingUploadMessage({ uploader: row.createdBy });
-    icon = <CloudOffIcon className="size-2.5 text-background" />;
+    Icon = CloudOffIcon;
     tooltip = t(key, params);
   } else if (isUploading) {
-    icon = <LoaderIcon className="size-2.5 animate-spin text-background" />;
+    Icon = LoaderIcon;
     tooltip = t('c:uploading');
   } else if (isPending) {
-    icon = <CloudUploadIcon className="size-2.5 text-background" />;
+    Icon = CloudUploadIcon;
     tooltip = t('c:pending_upload');
   } else if (isFailed) {
-    icon = <CircleAlertIcon className="size-2.5 text-background" />;
+    Icon = CircleAlertIcon;
     tooltip = t('c:upload_failed');
   } else if (isLocalOnly) {
-    icon = <CloudOffIcon className="size-2.5 text-background" />;
+    Icon = CloudOffIcon;
     tooltip = t('c:local_only');
   } else {
     return null;
@@ -84,27 +77,17 @@ function SyncStatusBadge({ row }: { row: Attachment }) {
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >
-      {icon}
+      <Icon className={cn('size-2.5 text-background', isUploading && 'animate-spin')} />
     </div>
   );
 }
 
-interface DownloadCellProps {
-  row: Attachment;
-  tabIndex: number;
-}
-
-export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
+export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
   const { t } = useTranslation();
-  const { download, error, isInProgress } = useDownloader();
+  const { download, isInProgress } = useDownloader();
   const { hasLocalBlob } = useBlobUploadStatus(row.id);
   const pending = !hasLocalBlob && isPendingUpload(row) ? pendingUploadMessage({ uploader: row.createdBy }) : null;
   const tooltip = pending ? t(pending.key, pending.params) : t('c:download');
-
-  useEffect(() => {
-    if (!error) return;
-    toaster.error(t('error:download_failed'));
-  }, [error, t]);
 
   // Local-first: a stored blob saves without the network, and the cloud URL is the fallback.
   const handleDownload = async () => {
@@ -135,7 +118,7 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
       disabled={isInProgress}
       // Not `disabled`: the tooltip says why there is nothing to download, and a disabled button would not show it.
       aria-disabled={!!pending}
-      className={cn('justify-center', pending && 'opacity-50')}
+      className="justify-center aria-disabled:opacity-50"
       aria-label={tooltip}
       data-tooltip="true"
       data-tooltip-content={tooltip}

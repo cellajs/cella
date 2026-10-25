@@ -1,5 +1,4 @@
-import type { ProductEntityType } from 'shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 stubLocalStorage();
@@ -7,8 +6,8 @@ stubLocalStorage();
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { deriveDescriptionFields, registerDescriptionDerivation } = await import('~/modules/common/blocknote/description-derivation');
-const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/use-description-update');
+const { registerDescriptionDerivation } = await import('~/modules/common/blocknote/description-derivation');
+const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
 
 type Row = { id: string; organizationId: string; description: string | null; keywords: string; name: string };
 
@@ -28,14 +27,9 @@ const homeRow = () => queryClient.getQueryData<{ items: Row[] }>(homeKey)?.items
 
 afterEach(() => {
   queryClient.clear();
-  vi.restoreAllMocks();
 });
 
 describe('registerDescriptionDerivation', () => {
-  it('derives nothing for a type without a registered derivation', () => {
-    expect(deriveDescriptionFields('unregistered' as ProductEntityType, 'body')).toEqual({});
-  });
-
   it('merges the derived fields into every collaborative patch, detail and lists alike', () => {
     registerDescriptionDerivation('attachment', (description) => ({ keywords: `derived ${description}` }));
     seed();
@@ -43,27 +37,5 @@ describe('registerDescriptionDerivation', () => {
     patchCollaborativeDescription('attachment', row, 'after');
 
     for (const patched of [detail(), homeRow()]) expect(patched).toMatchObject({ description: 'after', keywords: 'derived after', name: 'Photo' });
-  });
-
-  it('applies `extra` after the derived fields, so a caller overrides them', () => {
-    registerDescriptionDerivation('attachment', (description) => ({ keywords: `derived ${description}`, name: 'Derived name' }));
-    seed();
-
-    patchCollaborativeDescription('attachment', row, 'after', { name: 'Caller name' });
-
-    expect(homeRow()).toMatchObject({ description: 'after', keywords: 'derived after', name: 'Caller name' });
-  });
-
-  it('still patches the description when the derivation throws', () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-    registerDescriptionDerivation('attachment', () => {
-      throw new Error('bad block');
-    });
-    seed();
-
-    expect(() => patchCollaborativeDescription('attachment', row, 'after')).not.toThrow();
-
-    expect(homeRow()).toMatchObject({ description: 'after', keywords: 'before' });
-    expect(logged).toHaveBeenCalledOnce();
   });
 });

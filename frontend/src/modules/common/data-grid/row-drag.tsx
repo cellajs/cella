@@ -1,6 +1,6 @@
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
+import { createContext, type Key, type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CellComponent } from './cell';
 import type { CellRendererProps, RenderRowProps } from './types';
@@ -10,12 +10,12 @@ import { cn } from './utils/grid-utils';
  * Internal drag type for data-grid row drag-and-drop.
  * @internal
  */
-const ROW_DRAG_TYPE = 'rdg-row';
-type RowDragData = { type: typeof ROW_DRAG_TYPE; rowIdx: number };
+const rowDragType = 'rdg-row';
+type RowDragData = { type: typeof rowDragType; rowIdx: number };
 type DropZone = 'top' | 'bottom' | 'center';
 
 function isRowDragData(data: Record<string, unknown>): data is RowDragData {
-  return data.type === ROW_DRAG_TYPE;
+  return data.type === rowDragType;
 }
 
 /** Resolve the cursor's nearest allowed drop zone, or null when the row blocks all zones. */
@@ -121,7 +121,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         if (!cached) refreshRect();
         const fromIdx = isRowDragData(source.data) ? source.data.rowIdx : -1;
         const zone = resolveDropZone(cached!.top, cached!.height, input.clientY, buildIsZoneAllowed(fromIdx));
-        return { type: ROW_DRAG_TYPE, rowIdx, dropZone: zone } as Record<string, unknown>;
+        return { type: rowDragType, rowIdx, dropZone: zone } as Record<string, unknown>;
       },
       onDragEnter: () => {
         refreshRect();
@@ -158,26 +158,24 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
   return renderRow(rowKey, { ...props, ref });
 }
 
-/**
- * Handle cells are the drag sources, or a `[data-drag-handle]` button inside one when the cell renders a control that
- * also works without a drag; the native drag preview is portaled into the browser's drag image.
- */
+/** Lets a control inside a handle cell register as the row's drag source, so the drag starts from that control alone. */
+export const RowDragHandleContext = createContext<((handle: HTMLElement | null) => void) | null>(null);
+
+/** Handle cells are the drag sources, or the control registered inside one; the native drag preview is portaled into the browser's drag image. */
 export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...props }: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
   const ref = useRef<HTMLDivElement>(null);
   // `isDragging` flips twice per drag, so React state stays off the per-mousemove path.
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<{ container: HTMLElement } | null>(null);
+  const [handle, setHandle] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    // A handle cell may render its own focusable button and mark it; the drag then starts from that button alone.
-    const handle = el.querySelector<HTMLElement>('[data-drag-handle]');
-
     return draggable({
       element: handle ?? el,
-      getInitialData: (): RowDragData => ({ type: ROW_DRAG_TYPE, rowIdx }),
+      getInitialData: (): RowDragData => ({ type: rowDragType, rowIdx }),
       onGenerateDragPreview: ({ nativeSetDragImage }) => {
         setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) });
       },
@@ -187,7 +185,7 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
         setPreview(null);
       },
     });
-  }, [rowIdx]);
+  }, [rowIdx, handle]);
 
   const dragPreview =
     preview &&
@@ -201,9 +199,9 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
     );
 
   return (
-    <>
+    <RowDragHandleContext value={setHandle}>
       <CellComponent ref={ref} rowIdx={rowIdx} row={row} column={column} className={cn(className, { 'opacity-40': isDragging })} {...props} />
       {dragPreview}
-    </>
+    </RowDragHandleContext>
   );
 }

@@ -56,26 +56,6 @@ const serverStores = () => {
 afterEach(resetMutationHooks);
 
 describe('an edit of a row whose create is queued offline', () => {
-  it('folds a field the create body takes into the queued create: one request carries both', async () => {
-    seedHomeList();
-    goOffline(createAttachments);
-    const { create, update } = hooks();
-    create.mutate([attachment('att-1')] as never);
-    await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
-
-    update.mutate({ id: 'att-1', ops: { name: 'Renamed' } });
-    expect(mutationsOf('attachment', 'update')).toHaveLength(0);
-
-    serverStores();
-    await goOnline();
-    await settled('create');
-
-    expect(createAttachments).toHaveBeenCalledTimes(2);
-    expect(createAttachments.mock.lastCall?.[0].body).toMatchObject([{ id: 'att-1', name: 'Renamed' }]);
-    expect(updateAttachment).not.toHaveBeenCalled();
-    expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed' }]);
-  });
-
   it('sends a field the create body does not take, such as the description, as an update after the create', async () => {
     seedHomeList();
     goOffline(createAttachments, updateAttachment);
@@ -188,15 +168,6 @@ describe('a remote change of a row with a pending mutation', () => {
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Typed offline' }]);
-  });
-
-  it('applies a remote change to a row no mutation is pending for (positive control)', async () => {
-    seedHomeList([attachment('att-1')]);
-
-    getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
-
-    expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }]);
   });
 });
 

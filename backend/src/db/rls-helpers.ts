@@ -1,18 +1,21 @@
 import { sql } from 'drizzle-orm';
 import { pgPolicy } from 'drizzle-orm/pg-core';
 
+/** A session variable as a scalar subquery, which Postgres reads once per statement (an InitPlan), not once per row. */
+const setting = (name: 'app.tenant_id' | 'app.include_deleted') => sql.raw(`(SELECT current_setting('${name}', true))`);
+
 /** Fail-closed check: tenant context is set. */
-const tenantContextSet = sql`COALESCE(current_setting('app.tenant_id', true), '') != ''`;
+const tenantContextSet = sql`COALESCE(${setting('app.tenant_id')}, '') != ''`;
 
 /** Row's tenant_id matches session context (fail-closed). */
 const tenantMatch = (t: { tenantId: unknown }) => sql`
   ${tenantContextSet}
-  AND ${t.tenantId} = current_setting('app.tenant_id', true)::text
+  AND ${t.tenantId} = ${setting('app.tenant_id')}
 `;
 
 /** Tenant-scoped read: matching tenant (fail-closed). */
 const tenantReadCondition = (t: { tenantId: unknown; deletedAt?: unknown }) => {
-  const includeDeleted = sql`current_setting('app.include_deleted', true) = 'true'`;
+  const includeDeleted = sql`${setting('app.include_deleted')} = 'true'`;
   const liveRow = t.deletedAt ? sql`AND (${t.deletedAt} IS NULL OR ${includeDeleted})` : sql``;
 
   return sql`

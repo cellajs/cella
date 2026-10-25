@@ -1,9 +1,9 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { createReactBlockSpec } from '@blocknote/react';
+import i18n from 'i18next';
 import { MessageCircleIcon } from 'lucide-react';
-import { useState } from 'react';
 import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
-import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
+import { notifyOptions } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import {
   DropdownMenu,
@@ -18,52 +18,45 @@ import { cn } from '~/utils/cn';
 
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
-    const [open, setOpen] = useState(false);
-    const notifyType = notifyTypes.find((a) => a.value === block.props.type)!;
-    const Icon = notifyType.icon;
+    const { icon: Icon } = notifyOptions.find((option) => option.value === block.props.type) ?? notifyOptions[0];
     return (
-      <div className={'notify'} data-notify-type={block.props.type}>
-        <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+      <div className="notify" data-notify-type={block.props.type}>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger disabled={!editor.isEditable}>
-            <div className={'notify-icon-wrapper'} contentEditable={false}>
-              <Icon className={cn('notify-icon size-8', !editor.isEditable && 'cursor-default')} data-notify-icon-type={block.props.type} />
+            <div className="notify-icon-wrapper" contentEditable={false}>
+              <Icon className={cn('notify-icon size-4.5', !editor.isEditable && 'cursor-default')} data-notify-icon-type={block.props.type} />
             </div>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Notify Type</DropdownMenuLabel>
+              <DropdownMenuLabel>{i18n.t('c:notify_type')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifyTypes.map(({ icon: Icon, title, value }) => {
-                return (
-                  <DropdownMenuItem
-                    key={value}
-                    className="flex min-h-8 flex-row gap-2 p-1"
-                    onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
-                  >
-                    {<Icon className={'notify-icon'} data-notify-icon-type={value} />}
-                    <span className="text-sm">{title}</span>
-                  </DropdownMenuItem>
-                );
-              })}
+              {notifyOptions.map(({ icon: OptionIcon, titleKey, value }) => (
+                <DropdownMenuItem
+                  key={value}
+                  className="min-h-8 p-1"
+                  onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
+                >
+                  <OptionIcon className="notify-icon" data-notify-icon-type={value} />
+                  {i18n.t(titleKey)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <div className={'inline-content'} ref={contentRef} />
+        <div className="inline-content" ref={contentRef} />
       </div>
     );
   },
 });
 
-const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
-  title: 'Notify',
+export const getNotifySlashItem = (editor: CustomBlockNoteEditor) => ({
+  title: i18n.t('c:notify'),
   key: 'notify',
   onItemClick: () => {
     insertOrUpdateBlockForSlashMenu(editor, { type: 'notify' });
   },
   aliases: ['notify', 'notification', 'emphasize', 'warning', 'error', 'info', 'success'],
-  group: 'Custom',
   icon: <MessageCircleIcon />,
 });
-
-export const getSlashNotifySlashItem = (editor: CustomBlockNoteEditor) => insertSlashNotifyItem(editor);

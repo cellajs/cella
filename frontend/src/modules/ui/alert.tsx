@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
 import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 
 export const alertVariants = cva(
@@ -18,7 +19,6 @@ export const alertVariants = cva(
       },
       soft: { true: '', false: '' },
     },
-    // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
     compoundVariants: [
       { variant: ['brand', 'destructive', 'success', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground' },
@@ -38,16 +38,18 @@ export function Alert({
   children,
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
+  const { t } = useTranslation();
+
   return (
-    <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), className)} {...props}>
+    <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), onClose && 'pr-12', className)} {...props}>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
           className="focus-effect absolute top-2 right-2 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 disabled:pointer-events-none"
         >
-          <XIcon className="size-5" strokeWidth={1.5} />
-          <span className="sr-only">Close</span>
+          <XIcon className="size-5" />
+          <span className="sr-only">{t('c:close')}</span>
         </button>
       )}
       {children}

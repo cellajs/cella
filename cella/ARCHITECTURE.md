@@ -67,7 +67,20 @@ Authentication explains how people prove identity; [Interoperability](./INTEROPE
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 | **Secret columns** | A single registry keeps secrets out of API responses, backend and worker logs, and CDC row images. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend decides. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+
+## Data lifecycle
+
+What a delete does depends on what is deleted:
+
+- **Product**: becomes a tombstone, hidden everywhere and dropped by every device through sync, and is removed after the deleted-items period. Until then a system admin can restore it; the app has no restore.
+- **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, and after the archived period it goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
+- **Channel below the organization**: removed at once, with the channels and products in it.
+- **Resource** (session, token, device, invitation): swept nightly after its own period.
+
+Whichever way a row leaves, the files and collaborative document it stored go after it. Sync keeps activity for the activity window, and a device away longer starts over. A tombstone outlives that window, so a device that keeps up never misses a deletion.
+
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Backups and bucket object versions expire on their own schedule.
 
 ## Contracts and operations
 
@@ -80,8 +93,6 @@ Tests cover generated contracts, permission parity, cross-scope access, database
 ## Scaling
 
 Cella runs one API process per deployment and scales up and apart, not out. Up: a bigger VM for the API and a bigger managed database. Apart: each worker (CDC, Yjs, OAuth, MCP, jobs) moves to a VM of its own when the API's VM gets busy, and each is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler. The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
-
-A second API process is not part of the design. The CDC worker hands every change to one API process over one socket, and that process holds every SSE stream, drops its caches on each change and ends the streams when the sync books move to a new generation. A second process would hear none of it: its clients would learn of changes only at reconnect, and its caches would go stale. Running the API on more than one process would need a bus between them for the worker's changes, and the infra has no option for it. A deploy overlap is the one moment two API processes exist; [Deployment](./DEPLOYMENT.md#rollout-strategies) says what that costs.
 
 ## Repository map
 

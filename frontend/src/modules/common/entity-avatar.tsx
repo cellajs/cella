@@ -15,14 +15,15 @@ export interface EntityAvatarProps extends AvatarProps {
   icon?: IconComponent;
 }
 
-function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
+export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
   if (Icon)
     return (
       <Avatar
         {...props}
-        className={cn('flex items-center justify-center overflow-hidden rounded-md bg-background data-[type=user]:rounded-full', className)}
+        data-type={type}
+        className={cn('items-center justify-center rounded-md bg-background data-[type=user]:rounded-full', className)}
       >
-        <Icon className="size-[70%] fill-accent opacity-70" strokeWidth={1.5} />
+        <Icon className="size-[70%] fill-accent opacity-70" />
       </Avatar>
     );
 
@@ -31,7 +32,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
   const isUser = type === 'user';
 
   return (
-    <Avatar {...props} data-type={type} className={cn('overflow-hidden rounded-md data-[type=user]:rounded-full', className)}>
+    <Avatar {...props} data-type={type} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} />}
       {/* The fallback is the container: the letter scales with the avatar. A user gets a second one, both smaller, when it is wider than size-6 */}
       <AvatarFallback className={cn('@container', avatarBackground)}>
@@ -49,6 +50,4 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
       </AvatarFallback>
     </Avatar>
   );
-}
-
-export const EntityAvatar = memo(EntityAvatarBase);
+});

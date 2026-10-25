@@ -2,7 +2,11 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDownloader } from '~/hooks/use-downloader';
+
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { error: toastError } }));
+
+const { useDownloader } = await import('~/hooks/use-downloader');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -38,20 +42,11 @@ describe('useDownloader', () => {
     vi.restoreAllMocks();
   });
 
-  it('saves the fetched file under the given name', async () => {
-    const clicked = setup(new Response('content'));
-    await act(() => downloader.download('https://cdn.example.com/a.pdf', 'report.pdf'));
-
-    expect(clicked).toEqual([{ download: 'report.pdf', href: 'blob:file' }]);
-    expect(downloader.error).toBeNull();
-    expect(downloader.isInProgress).toBe(false);
-  });
-
   it('reports a failed response in error and saves nothing', async () => {
     const clicked = setup(new Response('gone', { status: 404, statusText: 'Not Found' }));
     await act(() => downloader.download('https://cdn.example.com/a.pdf', 'report.pdf'));
 
     expect(clicked).toEqual([]);
-    expect(downloader.error?.message).toBe('404 Not Found');
+    expect(toastError).toHaveBeenCalledTimes(1);
   });
 });

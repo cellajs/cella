@@ -1,19 +1,19 @@
 import i18n from 'i18next';
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
-import { firstLineOf, YDOC_FRAGMENT, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
+import { firstLineOf, yDocFragment, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
-import type { HttpLinkScope } from '~/modules/common/blocknote/yjs-http';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord, type YjsDocScope } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
-const REASON_TEXTS: Record<UnsaveableReason, TKey> = {
+const reasonTexts: Record<UnsaveableReason, TKey> = {
   deleted: 'c:unsaveable_deleted.text',
   denied: 'c:unsaveable_denied.text',
   replaced: 'c:unsaveable_replaced.text',
@@ -25,12 +25,12 @@ type ParkSource = Pick<YjsConnection, 'yDoc' | 'writer' | 'unsynced' | 'generati
 
 /**
  * Takes a document out of sync for good: unsynced edits are parked through its writer and offered in a notice to copy,
- * and a clean document's stored copy goes silently. The document is read before this returns, so the caller may destroy
- * it right after. Without a writer, or when parking fails, the notice holds the state in memory.
+ * and a clean document's stored copy is deleted with no notice. The document is read before this returns, so the caller
+ * may destroy it right after. Without a writer, or when parking fails, the notice holds the state in memory.
  */
-export function parkUnsaveable(conn: ParkSource, scope: HttpLinkScope, reason: UnsaveableReason): void {
-  const { writer, yDoc } = conn;
-  if (!conn.unsynced) {
+export function parkUnsaveable(source: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
+  const { writer, yDoc } = source;
+  if (!source.unsynced) {
     writer?.drop().catch((error) => console.error('[yjs] Deleting a stored document failed:', error));
     return;
   }
@@ -40,17 +40,17 @@ export function parkUnsaveable(conn: ParkSource, scope: HttpLinkScope, reason: U
     entityId,
     tenantId,
     organizationId,
-    generation: conn.generation ?? '',
+    generation: source.generation ?? '',
     reason,
     state: Y.encodeStateAsUpdate(yDoc),
     at: Date.now(),
   };
-  noticeOnceParked(record, writer ? writer.park(reason, yDoc) : null).catch((error) =>
+  showNoticeOnceParked(record, writer ? writer.park(reason, yDoc) : null).catch((error) =>
     console.error('[yjs] Showing the notice for unsaveable edits failed:', error),
   );
 }
 
-async function noticeOnceParked(record: UnsaveableYDocRecord, parked: Promise<void> | null) {
+async function showNoticeOnceParked(record: UnsaveableYDocRecord, parked: Promise<void> | null) {
   let shown = record;
   if (parked) {
     try {
@@ -81,8 +81,8 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
   let firstLine: string | null = null;
   try {
     Y.applyUpdate(doc, record.state);
-    firstLine = firstLineOf(doc.getXmlFragment(YDOC_FRAGMENT));
-    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, YDOC_FRAGMENT));
+    firstLine = firstLineOf(doc.getXmlFragment(yDocFragment));
+    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, yDocFragment));
   } catch (error) {
     console.error('[yjs] Reading parked edits failed:', error);
   } finally {
@@ -91,10 +91,10 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
 
   const id = `unsaveable:${record.id ?? `${record.entityType}:${record.entityId}:${record.at}`}`;
   const name = yDocLabel({ entityId: record.entityId, entityType: record.entityType, firstLine });
-  toaster.warning(i18n.t(REASON_TEXTS[record.reason], { name }), {
+  toaster.warning(i18n.t(reasonTexts[record.reason], { name }), {
     id,
     timeout: 0,
-    description: <NoticeActions copy={blocks ? () => copyBlocksToClipboard(blocks) : null} discard={() => discardUnsaveable(record, id)} />,
+    description: <NoticeActions onCopy={blocks ? () => copyBlocksToClipboard(blocks) : null} onDiscard={() => discardUnsaveable(record, id)} />,
   });
 }
 
@@ -119,19 +119,25 @@ async function discardUnsaveable(record: UnsaveableYDocRecord, toastId: string) 
   ]);
 }
 
-function NoticeActions({ copy, discard }: { copy: (() => Promise<boolean>) | null; discard: () => Promise<void> }) {
+interface NoticeActionsProps {
+  /** Resolves whether the clipboard took the text; null when the parked edits could not be read. */
+  onCopy: (() => Promise<boolean>) | null;
+  onDiscard: () => void;
+}
+
+function NoticeActions({ onCopy, onDiscard }: NoticeActionsProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState<boolean | null>(null);
 
   return (
     <div className="flex flex-col gap-2">
       <p>{t('c:unsaveable_edits.text')}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="xs" className="text-foreground" disabled={!copy} onClick={() => copy?.().then(setCopied)}>
-          {copied ? <CheckIcon /> : <CopyIcon />}
+      <div className="flex flex-wrap gap-2 text-foreground">
+        <Button variant="outline" size="xs" disabled={!onCopy} onClick={() => onCopy?.().then(setCopied)}>
+          <CopiedIcon copied={!!copied} icon={CopyIcon} />
           {copied ? t('c:copied') : copied === false ? t('c:copy_failed') : t('c:copy_text')}
         </Button>
-        <Button variant="ghost" size="xs" className="text-foreground" onClick={() => void discard()}>
+        <Button variant="ghost" size="xs" onClick={onDiscard}>
           {t('c:discard')}
         </Button>
       </div>

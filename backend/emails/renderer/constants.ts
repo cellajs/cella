@@ -59,5 +59,8 @@ export const BooleanAttributes = new Set([
 
 export const EmptyObject = Object.freeze({});
 
+/** The element `Raw` renders; the renderer writes its HTML in place of the element. */
+export const RAW_TAG = 'jsx-email-raw';
+
 // https://www.w3.org/TR/html/syntax.html#void-elements
 export const VoidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);

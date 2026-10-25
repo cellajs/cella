@@ -16,7 +16,7 @@ const excludedRowDataKeys: Set<string> = (() => {
   const allTables = [...Object.values(entityTables), ...Object.values(resourceTables)];
   for (const table of allTables) {
     for (const [key, col] of Object.entries(getColumns(table))) {
-      const len = (col as unknown as { length: number | undefined }).length;
+      const len = col.length;
       if (len !== undefined && len >= cdcExcludeColumnLengthThreshold) keys.add(key);
     }
   }

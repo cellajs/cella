@@ -3,13 +3,13 @@ import pc from 'picocolors';
 import { getAdminDb, migrateConfig } from '#/db/db';
 import { createDbRoles } from './db/create-db-roles';
 import { installJobsSchema } from './db/install-jobs-schema';
-import { schedulePartitionMaintenance } from './db/schedule-partition-maintenance';
+import { scheduleRetention } from './db/schedule-retention';
 
 const migrationDb = getAdminDb('migrations');
 
 await createDbRoles();
 await migrate(migrationDb, migrateConfig);
-await schedulePartitionMaintenance();
+await scheduleRetention();
 await installJobsSchema();
 
 console.info(pc.green('✓ Migrations complete'));

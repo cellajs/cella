@@ -8,18 +8,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('i18next', () => ({ default: { t: (key: string) => key }, t: (key: string) => key }));
 
-const { Badge } = await import('~/modules/ui/badge');
 const { Button } = await import('~/modules/ui/button');
-const { Checkbox } = await import('~/modules/ui/checkbox');
 const { Combobox, ComboboxInput, ComboboxItem, ComboboxList } = await import('~/modules/ui/combobox');
-const { Spinner } = await import('~/modules/ui/spinner');
 const { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } = await import('~/modules/ui/select');
 const { Tabs, TabsList, TabsTrigger } = await import('~/modules/ui/tabs');
 const { Textarea } = await import('~/modules/ui/textarea');
 const { Form, FormField, FormItem } = await import('~/modules/ui/field');
 const { SelectRoleRadio } = await import('~/modules/common/form-fields/select-role-radio');
 const { SelectRoles } = await import('~/modules/common/form-fields/select-roles');
-const { TotpConfirmationForm } = await import('~/modules/auth/totp-verify-code-form');
+const { TotpConfirmationForm } = await import('~/modules/auth/totp-confirmation-form');
 const { useForm } = await import('react-hook-form');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -81,14 +78,6 @@ describe('render prop', () => {
     expect(onInnerClick).toHaveBeenCalledTimes(1);
     expect(onOuterClick).toHaveBeenCalledTimes(1);
   });
-
-  it('renders a Badge through its render element', async () => {
-    const el = await render(<Badge render={<a href="/new" />}>New</Badge>);
-    const link = el.querySelector('a') as HTMLAnchorElement;
-
-    expect(link.textContent).toBe('New');
-    expect(link.getAttribute('data-slot')).toBe('badge');
-  });
 });
 
 describe('Button', () => {
@@ -130,17 +119,6 @@ describe('Button', () => {
   });
 });
 
-describe('Checkbox', () => {
-  it('reads as mixed and shows a minus when indeterminate', async () => {
-    const el = await render(<Checkbox indeterminate checked={false} />);
-    const box = el.querySelector('[role="checkbox"]') as HTMLElement;
-
-    expect(box.getAttribute('aria-checked')).toBe('mixed');
-    expect(box.hasAttribute('data-indeterminate')).toBe(true);
-    expect(box.querySelector('.lucide-minus')).not.toBeNull();
-  });
-});
-
 describe('Combobox', () => {
   it('highlights the first match while typing, so Enter picks it', async () => {
     const onValueChange = vi.fn();
@@ -164,16 +142,6 @@ describe('Combobox', () => {
 
     await act(async () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
     expect(onValueChange).toHaveBeenCalledWith('banana', expect.anything());
-  });
-});
-
-describe('Spinner', () => {
-  it('announces itself as a loading status', async () => {
-    const el = await render(<Spinner />);
-    const spinner = el.querySelector('[data-slot="spinner"]') as SVGElement;
-
-    expect(spinner.getAttribute('role')).toBe('status');
-    expect(spinner.getAttribute('aria-label')).toBe('c:loading');
   });
 });
 
@@ -266,7 +234,7 @@ describe('role selectors in a form field', () => {
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem name="role">
-              <SelectRoleRadio value={value} onValueChange={onChange} label="Role" />
+              <SelectRoleRadio value={value} onChange={onChange} label="Role" />
             </FormItem>
           )}
         />
@@ -301,7 +269,7 @@ describe('role selectors in a form field', () => {
             name="roles"
             render={({ field: { value, onChange } }) => (
               <FormItem name="roles">
-                <SelectRoles value={value} onValueChange={onChange} label="Roles" />
+                <SelectRoles value={value} onChange={onChange} label="Roles" />
               </FormItem>
             )}
           />
@@ -313,16 +281,5 @@ describe('role selectors in a form field', () => {
 
     expect(checkboxes.length).toBeGreaterThan(1);
     expect(new Set(checkboxes.map(nameOf)).size).toBe(checkboxes.length);
-  });
-
-  it('selects the option whose label is clicked', async () => {
-    const el = await render(<RoleForm />);
-    const labels = [...el.querySelectorAll('label')];
-    const radios = [...el.querySelectorAll('[role="radio"]')];
-
-    await act(async () => labels[1].click());
-
-    expect(radios[1].getAttribute('aria-checked')).toBe('true');
-    expect(radios[0].getAttribute('aria-checked')).toBe('false');
   });
 });

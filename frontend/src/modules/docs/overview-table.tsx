@@ -28,7 +28,7 @@ export function OverviewTable() {
                 <th scope="row" className="w-50 py-3 pr-4 text-left align-top font-medium">
                   {label}
                 </th>
-                <td className="py-3 text-muted-foreground leading-5">{value}</td>
+                <td className="py-3 text-muted-foreground">{value}</td>
               </tr>
             ))}
           </tbody>

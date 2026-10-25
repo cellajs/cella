@@ -58,8 +58,10 @@ async function resolveEntityScope(tx: Tx, entityType: ChannelEntityType | Produc
   const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
 
   const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
-  const { rows } = await tx.execute(sql`SELECT ${sql.raw(projection)} FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${entityId} LIMIT 1`);
-  return (rows[0] as unknown as EntityScopeRow | undefined) ?? null;
+  const { rows } = await tx.execute<EntityScopeRow>(
+    sql`SELECT ${sql.raw(projection)} FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${entityId} LIMIT 1`,
+  );
+  return rows[0] ?? null;
 }
 
 /** The verdict on a socket: the document's scope, as its entity row states it; `denied` (4003); or `deleted` (4410). */

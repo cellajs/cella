@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useRef, useState } from 'react';
 import { foldText, matchesTerms, parseTerms } from 'shared/utils/text-match';
 import { expect, userEvent } from 'storybook/test';
-import { HighlightText, MatchScope, useMatchHighlight, useMatchSteps } from '~/modules/common/match-highlight';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+import { MatchScope } from '~/modules/common/match-highlight/match-scope';
+import { useMatchHighlight } from '~/modules/common/match-highlight/use-match-highlight';
+import { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 

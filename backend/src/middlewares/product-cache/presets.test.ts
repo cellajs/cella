@@ -22,7 +22,7 @@ const cachedAttachment = {
   tenantId: 'tenant-1',
   organizationId: 'org-1',
   createdBy: { id: 'user-1', name: 'Ann', entityType: 'user' },
-  publicAt: null,
+  public: false,
   name: 'file.png',
 };
 

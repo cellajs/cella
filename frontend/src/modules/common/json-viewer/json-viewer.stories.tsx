@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
-import { JsonViewer } from '../json-viewer';
+import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 
 // Sample data for stories
 const simpleObject = { name: 'John Doe', age: 30, email: 'john@example.com', active: true, role: null };
@@ -64,7 +64,6 @@ const meta = {
     value: { control: 'object', description: 'The JSON data to display' },
     defaultInspectDepth: { control: { type: 'number', min: 0, max: 10 }, description: 'Default depth to expand nodes' },
     rootName: { control: 'text', description: 'Root node name (false to hide)' },
-    displayDataTypes: { control: 'boolean', description: 'Show data type labels next to values' },
     enableClipboard: { control: 'boolean', description: 'Enable copy to clipboard button' },
     indentWidth: { control: { type: 'number', min: 1, max: 8 }, description: 'Indentation width in characters' },
     collapseStringsAfterLength: { control: { type: 'number', min: 10, max: 200 }, description: 'Truncate strings after this length' },
@@ -72,19 +71,16 @@ const meta = {
     searchText: { control: 'text', description: 'Text to search and highlight' },
     expandAll: { control: 'boolean', description: 'Expand all nodes' },
     showKeyQuotes: { control: 'boolean', description: 'Show quotes around object keys' },
-    expandChildrenDepth: { control: { type: 'number', min: 1, max: 5 }, description: 'Levels to expand when clicking a node' },
   },
   args: {
     value: simpleObject,
     defaultInspectDepth: 3,
     rootName: 'root',
-    displayDataTypes: false,
     enableClipboard: false,
     indentWidth: 2,
     collapseStringsAfterLength: 50,
     expandAll: false,
     showKeyQuotes: true,
-    expandChildrenDepth: 1,
   },
 } satisfies Meta<typeof JsonViewer>;
 
@@ -111,11 +107,6 @@ export const WithArrays: Story = { args: { value: arrayData, defaultInspectDepth
  * Single-line primitive arrays in schema mode.
  */
 export const SingleLineArrays: Story = { args: { value: arrayData, openapiMode: 'schema', defaultInspectDepth: 3 } };
-
-/**
- * Display with data type labels shown.
- */
-export const WithDataTypes: Story = { args: { value: simpleObject, displayDataTypes: true } };
 
 /**
  * Copy to clipboard enabled on hover.
@@ -169,7 +160,7 @@ export const WithSearch: Story = {
           type="text"
           placeholder="Search JSON..."
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={(event) => setSearchText(event.target.value)}
           className="w-64 rounded-md border px-3 py-2"
         />
         <div className="rounded-md border p-4">
@@ -185,11 +176,6 @@ export const WithSearch: Story = {
  * OpenAPI schema mode with type labels and required indicators.
  */
 export const OpenApiSchemaMode: Story = { args: { value: openApiSchemaData, openapiMode: 'schema', showKeyQuotes: false, defaultInspectDepth: 4 } };
-
-/**
- * Cascade expand multiple levels on click.
- */
-export const CascadeExpand: Story = { args: { value: nestedObject, defaultInspectDepth: 1, expandChildrenDepth: 3 } };
 
 /**
  * Complex real-world API response structure.
@@ -257,11 +243,11 @@ export const AllFeatures: Story = {
           type="text"
           placeholder="Search..."
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={(event) => setSearchText(event.target.value)}
           className="w-64 rounded-md border px-3 py-2"
         />
         <div className="max-h-[500px] overflow-auto rounded-md border p-4">
-          <JsonViewer {...args} searchText={searchText} displayDataTypes enableClipboard />
+          <JsonViewer {...args} searchText={searchText} enableClipboard />
         </div>
       </div>
     );

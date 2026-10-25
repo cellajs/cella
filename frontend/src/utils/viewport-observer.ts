@@ -1,13 +1,11 @@
 /**
- * Marks an open on-screen keyboard with a `keyboard-open` class on <body>, so fixed-to-bottom UI hides through
- * `group-[.keyboard-open]/body:` variants. The class flips only when the state does: on iOS the measurement changes
- * every frame while the keyboard moves, and a class write on <body> restyles everything.
+ * Marks an open on-screen keyboard with a `keyboard-open` class on <body>, so fixed-to-bottom UI hides through the
+ * `chrome-hidden:` variant. The class flips only when the state does: on iOS the measurement changes every frame while
+ * the keyboard moves, and a class write on <body> restyles everything.
  */
 
-/** Fixed elements track browser chrome (URL bar, toolbars) natively, so only a keyboard-sized occlusion counts. Smaller
- * ones are chrome animation lag: while the chrome slides in or out, innerHeight and visualViewport.height disagree by
- * up to its height until the browser resizes, which can be well after the last viewport event. */
-const MIN_KEYBOARD_PX = 100;
+/** Fixed UI follows browser chrome (URL bar, toolbars) natively; a smaller occlusion is chrome animation lag, so only a keyboard counts. */
+const minKeyboardPx = 100;
 
 export const initViewportObserver = () => {
   const viewport = window.visualViewport;
@@ -21,7 +19,7 @@ export const initViewportObserver = () => {
     if (viewport.scale > 1.01) return false;
     // Rubber-band overscroll drives offsetTop negative, which would inflate the occlusion.
     const offsetTop = Math.max(0, viewport.offsetTop);
-    return window.innerHeight - viewport.height - offsetTop >= MIN_KEYBOARD_PX;
+    return window.innerHeight - viewport.height - offsetTop >= minKeyboardPx;
   };
 
   const update = () => {
@@ -41,7 +39,7 @@ export const initViewportObserver = () => {
   // innerHeight can change on its own event, after the visual viewport has gone quiet
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', schedule);
-  // A stale value can survive a bfcache restore or a tab switch (keyboard gone, no resize delivered): resync.
+  // A stale value can survive a bfcache restore or a tab switch (keyboard gone, no resize delivered): measure again.
   window.addEventListener('pageshow', schedule);
   document.addEventListener('visibilitychange', schedule);
   schedule();

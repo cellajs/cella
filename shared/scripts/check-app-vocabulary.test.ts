@@ -117,11 +117,11 @@ describe('loadAllowlist', () => {
 
     const allowlist = await loadAllowlist(root);
     expect(allowlist.files).toEqual(expect.arrayContaining(['cella/CHANGELOG.md', 'json/lucide-icon-names.json']));
-    expect(allowlist.prefixes).toEqual(['cella/migrations/', 'generated/']);
+    expect(allowlist.prefixes).toEqual(['cella/alignments/', 'generated/']);
   });
 
   it('falls back to the template allowlist without the app file', async () => {
     const root = mkdtempSync(join(tmpdir(), 'vocabulary-allowlist-'));
-    expect((await loadAllowlist(root)).prefixes).toEqual(['cella/migrations/']);
+    expect((await loadAllowlist(root)).prefixes).toEqual(['cella/alignments/']);
   });
 });

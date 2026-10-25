@@ -1,47 +1,92 @@
-import { Menu } from '@base-ui/react/menu';
+import { LoaderCircleIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
+import { dropdowner, removeIfCurrent } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Button, type ButtonProps } from '~/modules/ui/button';
+import { openPopConfirm } from '~/modules/common/popconfirm';
+import { Button } from '~/modules/ui/button';
+import { DrawerRowSeparator } from '~/modules/ui/drawer';
+import { DropdownMenuItem, DropdownMenuSeparator } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
-interface Props {
-  isMobile: boolean;
+interface DropdownActionItemProps {
   onSelect?: () => void;
   icon?: IconComponent;
   children: ReactNode;
-  variant?: ButtonProps['variant'];
-  className?: ButtonProps['className'];
-  /**
-   * Close the menu after selection (desktop only). Defaults to true; pass false when the item
-   * swaps in a confirmation panel via `useDropdowner.update`.
-   */
+  variant?: 'default' | 'destructive';
+  className?: string;
+  /** Close the dropdown after selection (default true); an item that swaps it for another, such as `openPopConfirm`, stays either way. */
   closeOnSelect?: boolean;
+  /** Marks the row of a single-select list as the current choice. */
+  selected?: boolean;
+  /** Asks first: selecting turns the menu into this confirmation, whose Cancel steps back to the menu. */
+  confirm?: { title: ReactNode; content: ReactNode };
+  /** Shows a spinner in place of the icon and ignores presses, e.g. while a confirmed delete runs. */
+  loading?: boolean;
+  /** Takes focus when its menu or confirmation opens. */
+  initialFocus?: boolean;
 }
 
-export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, variant = 'secondary', className, closeOnSelect = true }: Props) {
-  if (isMobile) {
+/** A dropdowner action: a menu item in the desktop popup, a row in the mobile drawer. */
+export function DropdownActionItem({
+  onSelect,
+  icon: Icon,
+  children,
+  variant = 'default',
+  className,
+  closeOnSelect = true,
+  selected,
+  confirm,
+  loading,
+  initialFocus,
+}: DropdownActionItemProps) {
+  const inDrawer = useInDropdownerDrawer();
+
+  const handleSelect = confirm ? () => openPopConfirm(confirm.title, confirm.content) : onSelect;
+  const closes = closeOnSelect && !confirm;
+  const icon = loading ? <LoaderCircleIcon className="animate-spin" /> : Icon && <Icon />;
+
+  if (inDrawer) {
+    const select = () => {
+      const key = dropdowner.getState().dropdown?.key;
+      handleSelect?.();
+      if (closes && key !== undefined) removeIfCurrent(key);
+    };
+
     return (
-      <div className="sm:p-1">
-        <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
-          {Icon && <Icon />}
-          {children}
-        </Button>
-      </div>
+      <Button
+        variant="row"
+        data-variant={variant}
+        data-autofocus={initialFocus || undefined}
+        aria-pressed={selected}
+        aria-busy={loading || undefined}
+        disabled={loading}
+        onClick={select}
+        className={cn(variant === 'destructive' && 'text-destructive', className)}
+      >
+        {icon}
+        {children}
+      </Button>
     );
   }
 
   return (
-    <Menu.Item
-      closeOnClick={closeOnSelect}
-      onClick={onSelect}
-      className={cn(
-        'relative flex min-h-10 w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden data-highlighted:bg-accent data-highlighted:text-accent-foreground',
-        variant === 'destructive' && 'text-destructive data-highlighted:bg-destructive data-highlighted:text-destructive-foreground',
-        className,
-      )}
+    <DropdownMenuItem
+      variant={variant}
+      closeOnClick={closes}
+      disabled={loading}
+      data-autofocus={initialFocus || undefined}
+      onClick={handleSelect}
+      className={className}
     >
-      {Icon && <Icon />}
+      {icon}
       {children}
-    </Menu.Item>
+    </DropdownMenuItem>
   );
+}
+
+/** Parts groups of dropdowner actions that do different kinds of things, in the desktop popup and the mobile drawer alike. */
+export function DropdownActionSeparator() {
+  const inDrawer = useInDropdownerDrawer();
+  return inDrawer ? <DrawerRowSeparator /> : <DropdownMenuSeparator />;
 }

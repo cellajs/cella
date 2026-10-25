@@ -52,7 +52,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     const dbCa = readDbCa(env, stack);
     if (!dbCa) console.warn(`${warningMark} DB CA output unavailable; seeding over encrypt-only TLS.`);
     console.info(pc.dim('\n-> Running backend seeds against the temporary endpoint...\n'));
-    // Dev-mode env from backend/.env stays authoritative for everything except the database target.
+    // Dev-mode env from backend/.env supplies everything except the database target.
     const result = spawnSync('pnpm', ['--filter', 'backend', 'seed'], {
       cwd: resolve(infraDir, '..'),
       stdio: 'inherit',

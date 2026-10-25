@@ -2,7 +2,9 @@ import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export type AvatarProps = AvatarPrimitive.Root.Props & React.RefAttributes<HTMLSpanElement> & { size?: 'default' | 'sm' | 'lg' };
+export interface AvatarProps extends AvatarPrimitive.Root.Props {
+  size?: 'default' | 'sm' | 'lg';
+}
 
 export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   return (
@@ -15,11 +17,11 @@ export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   );
 }
 
-export function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props & React.RefAttributes<HTMLImageElement>) {
+export function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full object-cover', className)} {...props} />;
 }
 
-export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props & React.RefAttributes<HTMLSpanElement>) {
+export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -29,37 +31,33 @@ export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback
   );
 }
 
-type AvatarGroupContextValue = { count?: number; limit?: number; setCount?: React.Dispatch<React.SetStateAction<number>> };
+interface AvatarGroupContextValue {
+  count?: number;
+  limit?: number;
+  setCount?: React.Dispatch<React.SetStateAction<number>>;
+}
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 
-function AvatarGroupProvider({ children, limit }: { children?: React.ReactNode; limit?: number }) {
-  const [count, setCount] = React.useState<number>(0);
-
-  return <AvatarGroupContext.Provider value={{ count, setCount, limit }}>{children}</AvatarGroupContext.Provider>;
-}
-
-function useAvatarGroupContext() {
-  return React.useContext(AvatarGroupContext);
-}
-
-export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface AvatarGroupProps extends React.ComponentProps<'div'> {
+  /** Most items shown, the overflow pill included. */
   limit?: number;
 }
 
-export const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(function AvatarGroup({ children, className, limit, ...props }, ref) {
+export function AvatarGroup({ children, className, limit, ...props }: AvatarGroupProps) {
+  const [count, setCount] = React.useState(0);
+
   return (
-    <AvatarGroupProvider limit={limit}>
-      <div ref={ref} className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
+    <AvatarGroupContext.Provider value={{ count, setCount, limit }}>
+      <div className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
         {children}
       </div>
-    </AvatarGroupProvider>
+    </AvatarGroupContext.Provider>
   );
-});
-AvatarGroup.displayName = 'AvatarGroup';
+}
 
 export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
-  const { limit, setCount } = useAvatarGroupContext();
+  const { limit, setCount } = React.useContext(AvatarGroupContext);
 
   const childArray = React.Children.toArray(children);
   const count = childArray.length;
@@ -75,20 +73,12 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
 }
 
-interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
-
-export const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement> & AvatarOverflowIndicatorProps>(
-  function AvatarOverflowIndicator({ className, ...props }, ref) {
-    const { limit, count } = useAvatarGroupContext();
-    if (!limit || !count || count <= limit) return null;
-    return (
-      <span
-        ref={ref}
-        className={cn('relative flex size-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)}
-        {...props}
-      >
-        +{count - limit + 1}
-      </span>
-    );
-  },
-);
+export function AvatarOverflowIndicator({ className, ...props }: React.ComponentProps<'span'>) {
+  const { limit, count } = React.useContext(AvatarGroupContext);
+  if (!limit || !count || count <= limit) return null;
+  return (
+    <span className={cn('relative flex size-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)} {...props}>
+      +{count - limit + 1}
+    </span>
+  );
+}

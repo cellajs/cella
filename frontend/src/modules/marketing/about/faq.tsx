@@ -6,16 +6,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/
 
 export function FAQ() {
   const { t } = useTranslation();
+
   return (
     <div className="mx-auto max-w-3xl">
       <Accordion className="w-full">
         {faqsData.map((faq, index) => {
           const question = `about:faq.question_${index + 1}` as TKey;
           const answer = `about:faq.answer_${index + 1}` as TKey;
+          const isExternal = faq.link?.startsWith('http');
 
           return (
             <AccordionItem key={faq.id} value={faq.id}>
-              <AccordionTrigger className="px-3 text-left text-xl">{t(question)}</AccordionTrigger>
+              <AccordionTrigger className="px-3 text-xl">{t(question)}</AccordionTrigger>
               <AccordionContent className="px-3 pb-8 text-lg">
                 <Trans
                   t={t}
@@ -24,8 +26,8 @@ export function FAQ() {
                     Link: (
                       <Link
                         to={faq.link}
-                        aria-label={`Visit ${faq.link}`}
-                        target={faq.link?.startsWith('https:') ? '_blank' : '_self'}
+                        target={isExternal ? '_blank' : undefined}
+                        rel={isExternal ? 'noreferrer' : undefined}
                         className="link-inline"
                       />
                     ),

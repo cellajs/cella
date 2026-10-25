@@ -9,19 +9,28 @@ import { membershipRuleTriggers } from '#/db/membership-rules';
 import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
-import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
+import { cdcPublicationName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
-import { MAINTENANCE_PROCEDURE, partitionConfigs } from './10-partitions.migration';
+import { deletionQueueTriggers } from './10-deletion-queue.migration';
+import { partitionConfigs, retentionProcedure } from './10-retention.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { loggedAgainTables, unloggedTables } from './10-unlogged.migration';
 
 const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] as const;
+
+/** A `text[]` literal. Items go in unquoted, so each must be a plain identifier. */
+function textArray(items: readonly string[]): string {
+  const unsafe = items.find((item) => !/^\w+$/.test(item));
+  if (unsafe !== undefined) throw new Error(`verify: '${unsafe}' is not a plain identifier`);
+  return `'{${items.join(',')}}'::text[]`;
+}
 
 /**
  * Builds the final assertions for the combined side-effect migration, causing any missing
  * end state to roll back the transaction. Assertions share producer preconditions and
  * derive expected state from the same TypeScript sources: table classification from
  * `10-rls`, the policy set from `rls-helpers`, triggers from `immutability-triggers` and `membership-rules`.
+ * Each check is one query over arrays of expected objects that appends what the catalog lacks.
  */
 async function run(): Promise<SideEffectBlock> {
   const { rlsTables, fullCrudTables, readOnlyTables } = classifyRlsTables();
@@ -31,10 +40,12 @@ async function run(): Promise<SideEffectBlock> {
     ...allImmutabilityTables.map(({ tableName }) => ({ tableName, triggerName: immutableKeysTriggerName(tableName) })),
     ...allAdminOnlyWriteTables.map(({ tableName }) => ({ tableName, triggerName: adminOnlyWriteTriggerName(tableName) })),
     ...membershipRuleTriggers,
+    ...deletionQueueTriggers,
   ];
   const functionNames = [
     ...new Set([...allImmutabilityTables, ...allAdminOnlyWriteTables].map((t) => t.functionName)),
     ...membershipRuleTriggers.map((t) => t.functionName),
+    ...deletionQueueTriggers.map((t) => t.functionName),
     'apply_count_deltas',
     'fold_search',
   ];
@@ -44,93 +55,11 @@ async function run(): Promise<SideEffectBlock> {
     publicationRowFilter(entityType, table),
   ).length;
 
-  const inPublic = (t: string) => `relname = '${t}' AND relnamespace = 'public'::regnamespace`;
   const policyCount = Object.keys(rlsPolicyContract('x')).length;
-
-  const triggerChecks = expectedTriggers
-    .map(
-      ({ tableName, triggerName }) => `  IF NOT EXISTS (
-    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
-    WHERE c.relnamespace = 'public'::regnamespace AND c.relname = '${tableName}'
-      AND t.tgname = '${triggerName}' AND NOT t.tgisinternal
-  ) THEN missing := array_append(missing, 'trigger:${triggerName}'); END IF;`,
-    )
-    .join('\n');
-
-  const functionChecks = functionNames
-    .map(
-      (fn) => `  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${fn}') THEN
-    missing := array_append(missing, 'function:${fn}'); END IF;`,
-    )
-    .join('\n');
-
-  const partitionChecks = partitionConfigs
-    .map(
-      ({ name }) => `    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = '${name}' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:${name}'); END IF;`,
-    )
-    .join('\n');
-
-  // Enabled but never forced: the owner (admin_role) bypasses the policies natively, which is the
-  // only bypass a managed provider can give the CDC worker and the admin connection.
-  const rlsEnabledChecks = rlsTables
-    .map(
-      (t) => `  IF NOT EXISTS (
-    SELECT 1 FROM pg_class WHERE ${inPublic(t)} AND relrowsecurity AND NOT relforcerowsecurity
-  ) THEN missing := array_append(missing, 'rls-enabled-not-forced:${t}'); END IF;`,
-    )
-    .join('\n');
-
-  const ownerChecks = ownedTables
-    .map(
-      (t) => `  IF (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'admin_role' THEN
-    missing := array_append(missing, 'owner:${t}'); END IF;`,
-    )
-    .join('\n');
-
-  // Every policy on an RLS table must be one of the contract's four, with its command, permissive
-  // mode, PUBLIC target and expression shape; a fifth policy or a drifted expression fails too.
-  const policyChecks = rlsTables
-    .flatMap((t) => {
-      const contract = Object.values(rlsPolicyContract(t));
-      const perPolicy = contract.map(({ name, command, expression }) => {
-        const expressionCheck =
-          expression === 'tenant'
-            ? `pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%' AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = current_setting%'`
-            : `COALESCE(pg_get_expr(p.polwithcheck, p.polrelid), pg_get_expr(p.polqual, p.polrelid)) = 'true'`;
-        return `  IF NOT EXISTS (
-    SELECT 1 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
-    WHERE c.${inPublic(t)} AND p.polname = '${name}' AND p.polcmd = '${command}'
-      AND p.polpermissive AND p.polroles = '{0}'::oid[] AND ${expressionCheck}
-  ) THEN missing := array_append(missing, 'policy:${name}'); END IF;`;
-      });
-      const count = `  IF (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.${inPublic(t)}) <> ${contract.length} THEN
-    missing := array_append(missing, 'policy-count:${t}'); END IF;`;
-      return [...perPolicy, count];
-    })
-    .join('\n');
-
-  // CRUD tables hold every privilege; read-only tables hold SELECT and nothing else.
-  const grantCheck = (t: string, priv: string, expected: boolean) =>
-    `  IF ${expected ? 'NOT ' : ''}has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
-    missing := array_append(missing, '${expected ? 'grant' : 'grant-excess'}:${t}:${priv}'); END IF;`;
-  const grantChecks = [
-    ...crudTables.flatMap((t) => PRIVILEGES.map((priv) => grantCheck(t, priv, true))),
-    ...readOnlyTables.flatMap((t) => PRIVILEGES.map((priv) => grantCheck(t, priv, priv === 'SELECT'))),
-  ].join('\n');
-
-  const unloggedChecks = [
-    ...unloggedTables.map(
-      (t) => `  IF (SELECT relpersistence FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'u' THEN
-    missing := array_append(missing, 'unlogged:${t}'); END IF;`,
-    ),
-    ...loggedAgainTables.map(
-      (t) => `  IF (SELECT relpersistence FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'p' THEN
-    missing := array_append(missing, 'logged:${t}'); END IF;`,
-    ),
-  ].join('\n');
+  const policies = rlsTables.flatMap((table) => Object.values(rlsPolicyContract(table)).map((policy) => ({ table, ...policy })));
+  const persistence = [...unloggedTables.map((table) => ({ table, kind: 'u' })), ...loggedAgainTables.map((table) => ({ table, kind: 'p' }))];
+  const partitionedTables = textArray(partitionConfigs.map(({ name }) => name));
+  const inPublic = `relnamespace = 'public'::regnamespace`;
 
   const migrationSql = `-- Side-effect verification
 -- Asserts the end state of every previous block. A failed assertion aborts (and rolls
@@ -153,41 +82,81 @@ BEGIN
   END IF;
 
   -- Functions (created unconditionally by their blocks)
-${functionChecks}
+  missing := missing || ARRAY(
+    SELECT 'function:' || e.fn FROM unnest(${textArray(functionNames)}) AS e(fn)
+    WHERE NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = e.fn));
 
   -- Immutability, write-guard and membership rule triggers
-${triggerChecks}
+  missing := missing || ARRAY(
+    SELECT 'trigger:' || e.tg
+    FROM unnest(${textArray(expectedTriggers.map((t) => t.tableName))}, ${textArray(expectedTriggers.map((t) => t.triggerName))}) AS e(tbl, tg)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      WHERE c.${inPublic} AND c.relname = e.tbl AND t.tgname = e.tg AND NOT t.tgisinternal));
 
-  -- Ownership and enabled (not forced) RLS
-${ownerChecks}
+  -- Ownership and enabled (not forced) RLS: the owner (admin_role) bypasses the policies natively,
+  -- the only bypass a managed provider can give the CDC worker and the admin connection.
+  missing := missing || ARRAY(
+    SELECT 'owner:' || e.tbl FROM unnest(${textArray(ownedTables)}) AS e(tbl)
+    WHERE (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE relname = e.tbl AND ${inPublic}) IS DISTINCT FROM 'admin_role');
+  missing := missing || ARRAY(
+    SELECT 'rls-enabled-not-forced:' || e.tbl FROM unnest(${textArray(rlsTables)}) AS e(tbl)
+    WHERE NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = e.tbl AND ${inPublic} AND relrowsecurity AND NOT relforcerowsecurity));
 
-${rlsEnabledChecks}
+  -- Policy contract (${rlsTables.length} tables x ${policyCount} policies): every policy on an RLS table is one of the
+  -- contract's, with its command, permissive mode, PUBLIC target and expression shape; a fifth policy fails the count.
+  missing := missing || ARRAY(
+    SELECT 'policy:' || e.name
+    FROM unnest(${textArray(policies.map((p) => p.table))}, ${textArray(policies.map((p) => p.name))},
+      ${textArray(policies.map((p) => p.command))}, ${textArray(policies.map((p) => p.expression))}) AS e(tbl, name, cmd, expression)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+      WHERE c.relname = e.tbl AND c.${inPublic} AND p.polname = e.name AND p.polcmd::text = e.cmd
+        AND p.polpermissive AND p.polroles = '{0}'::oid[]
+        AND CASE e.expression
+          WHEN 'tenant' THEN pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%'
+            AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = ( SELECT current_setting(''app.tenant_id''%'
+          ELSE COALESCE(pg_get_expr(p.polwithcheck, p.polrelid), pg_get_expr(p.polqual, p.polrelid)) = 'true'
+        END));
+  missing := missing || ARRAY(
+    SELECT 'policy-count:' || e.tbl FROM unnest(${textArray(rlsTables)}) AS e(tbl)
+    WHERE (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.relname = e.tbl AND c.${inPublic}) <> ${policyCount});
 
-  -- Policy contract (${rlsTables.length} tables x ${policyCount} policies)
-${policyChecks}
+  -- Grants per classification: CRUD tables hold every privilege, read-only tables SELECT and nothing else
+  missing := missing || ARRAY(
+    SELECT CASE WHEN g.expected THEN 'grant:' ELSE 'grant-excess:' END || g.tbl || ':' || g.priv
+    FROM (
+      SELECT tbl, priv, true FROM unnest(${textArray(crudTables)}) AS tbl, unnest(${textArray(PRIVILEGES)}) AS priv
+      UNION ALL
+      SELECT tbl, priv, priv = 'SELECT' FROM unnest(${textArray(readOnlyTables)}) AS tbl, unnest(${textArray(PRIVILEGES)}) AS priv
+    ) AS g(tbl, priv, expected)
+    WHERE has_table_privilege('runtime_role', 'public.' || g.tbl, g.priv) <> g.expected);
 
-  -- Grants per classification
-${grantChecks}
-
-  -- UNLOGGED
-${unloggedChecks}
+  -- UNLOGGED, and tables logged again
+  missing := missing || ARRAY(
+    SELECT CASE e.kind WHEN 'u' THEN 'unlogged:' ELSE 'logged:' END || e.tbl
+    FROM unnest(${textArray(persistence.map((p) => p.table))}, ${textArray(persistence.map((p) => p.kind))}) AS e(tbl, kind)
+    WHERE (SELECT relpersistence::text FROM pg_class WHERE relname = e.tbl AND ${inPublic}) IS DISTINCT FROM e.kind);
 
   -- Partitioning and its maintenance procedure (and nothing partitioned beyond the configs)
-${partitionChecks}
+  missing := missing || ARRAY(
+    SELECT 'partitioned:' || e.tbl FROM unnest(${partitionedTables}) AS e(tbl)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid WHERE c.relname = e.tbl AND c.${inPublic}));
   IF EXISTS (
     SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relnamespace = 'public'::regnamespace AND c.relname NOT IN (${partitionConfigs.map((c) => `'${c.name}'`).join(', ')})
+    WHERE c.${inPublic} AND c.relname::text <> ALL (${partitionedTables})
   ) THEN missing := array_append(missing, 'unexpected-partitioned-table'); END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${MAINTENANCE_PROCEDURE}' AND pronamespace = 'public'::regnamespace) THEN
-    missing := array_append(missing, 'procedure:${MAINTENANCE_PROCEDURE}'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${retentionProcedure}' AND pronamespace = 'public'::regnamespace) THEN
+    missing := array_append(missing, 'procedure:${retentionProcedure}'); END IF;
 
   -- CDC publication (${publicationTableCount} tracked tables)
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
-    missing := array_append(missing, 'publication:${CDC_PUBLICATION_NAME}');
-  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}') <> ${publicationTableCount} THEN
-    missing := array_append(missing, 'publication-tables:${CDC_PUBLICATION_NAME}');
-  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}' AND rowfilter IS NOT NULL) <> ${rowFilteredCount} THEN
-    missing := array_append(missing, 'publication-rowfilters:${CDC_PUBLICATION_NAME}');
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${cdcPublicationName}') THEN
+    missing := array_append(missing, 'publication:${cdcPublicationName}');
+  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = '${cdcPublicationName}') <> ${publicationTableCount} THEN
+    missing := array_append(missing, 'publication-tables:${cdcPublicationName}');
+  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = '${cdcPublicationName}' AND rowfilter IS NOT NULL) <> ${rowFilteredCount} THEN
+    missing := array_append(missing, 'publication-rowfilters:${cdcPublicationName}');
   END IF;
 
   IF array_length(missing, 1) > 0 THEN

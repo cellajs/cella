@@ -1,12 +1,9 @@
 import { hierarchy as appHierarchy, type EntityHierarchy, getEntityPolicies, getPolicyPermissions, type PolicyMatrix, policyMatrix } from 'shared';
+import type { RegisteredSyncView } from '~/query/realtime/sync-store';
 
 /** Grant-boundary view shape (cursor is owned by the sync store, not the derivation). */
-export interface DerivedSyncView {
+export interface DerivedSyncView extends Omit<RegisteredSyncView, 'cursor'> {
   key: string;
-  organizationId: string;
-  prefixes: string[];
-  entityTypes: string[];
-  depth: 'self' | 'subtree';
 }
 
 export interface ViewMembership {
@@ -44,25 +41,25 @@ export function deriveGrantBoundaryViews({
     const entityPolicies = getEntityPolicies(entityType, policies);
     // Ancestors are most-specific → organization; the home level is the first one below it.
     const ancestors = hierarchy.getOrderedAncestors(entityType);
-    const homeLevel = ancestors.find((a) => a !== 'organization') ?? 'organization';
+    const homeLevel = ancestors.find((ancestor) => ancestor !== 'organization') ?? 'organization';
     // Mirrors the engine's isHomeScopedGrant; the hierarchy-compiled set is always present.
     const isSubtreeGrant = (channelType: string, role: string) => channelType === homeLevel || elevatedGrants.has(`${channelType}:${role}`);
 
-    for (const m of memberships) {
-      if (!ancestors.includes(m.channelType)) continue;
-      if (getPolicyPermissions(entityPolicies, m.channelType, m.role)?.read !== 1) continue;
+    for (const { organizationId, channelType, channelId, role } of memberships) {
+      if (!ancestors.includes(channelType)) continue;
+      if (getPolicyPermissions(entityPolicies, channelType, role)?.read !== 1) continue;
 
-      const depth: DerivedSyncView['depth'] = isSubtreeGrant(m.channelType, m.role) ? 'subtree' : 'self';
-      const prefix = m.channelType === 'organization' ? m.organizationId : resolvePath(m.channelType, m.channelId);
+      const depth: DerivedSyncView['depth'] = isSubtreeGrant(channelType, role) ? 'subtree' : 'self';
+      const prefix = channelType === 'organization' ? organizationId : resolvePath(channelType, channelId);
       if (!prefix) continue;
 
       // Merge per (org, entityType, depth): home-level grants become one prefix-set view.
-      const key = `${m.organizationId}:${entityType}:${depth}`;
+      const key = `${organizationId}:${entityType}:${depth}`;
       const existing = views.get(key);
       if (existing) {
         if (!existing.prefixes.includes(prefix)) existing.prefixes.push(prefix);
       } else {
-        views.set(key, { key, organizationId: m.organizationId, prefixes: [prefix], entityTypes: [entityType], depth });
+        views.set(key, { key, organizationId, prefixes: [prefix], entityTypes: [entityType], depth });
       }
     }
   }

@@ -1,25 +1,61 @@
 import type { ReactNode } from 'react';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
+import { useDropdownerSurface } from '~/modules/common/dropdowner/surface';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { NamedText } from '~/modules/common/named-text';
+import { DrawerRowGroup } from '~/modules/ui/drawer';
+import { DropdownMenuGroup, DropdownMenuLabel } from '~/modules/ui/dropdown-menu';
 
-interface Props {
+interface PopConfirmProps {
   children: ReactNode;
-  /** The question asked: a `ConfirmText` when it names what the action hits, so that name shows in bold. */
+  /** The question asked: a `NamedText` when it names what the action hits, so that name shows in bold. */
   title: ReactNode;
 }
 
-export function PopConfirm({ children, title }: Props) {
+/** A confirmation inside a dropdown: in a menu its question labels the two items below it, in the drawer it heads two rows. */
+export function PopConfirm({ children, title }: PopConfirmProps) {
+  const surface = useDropdownerSurface();
+
+  if (surface === 'menu') {
+    return (
+      <DropdownMenuGroup className="w-60">
+        <DropdownMenuLabel className="py-2 font-normal">{title}</DropdownMenuLabel>
+        {children}
+      </DropdownMenuGroup>
+    );
+  }
+
+  if (surface === 'drawer') {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="py-3 text-center text-sm">{title}</p>
+        <DrawerRowGroup>{children}</DrawerRowGroup>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3 sm:w-max sm:max-w-72 sm:p-3">
-      <p className="text-sm max-sm:py-3 max-sm:text-center">{title}</p>
+    <div className="flex w-max max-w-72 flex-col gap-3 p-3">
+      <p className="text-sm">{title}</p>
       {children}
     </div>
   );
 }
 
-/**
- * Turns the open dropdown (e.g. a table row's "…" menu) into a confirmation panel on the same trigger. A menu cannot
- * hold a form: its items close it and its focus handling drops the buttons, so the confirmation opens as a panel.
- */
+interface DeleteQuestionProps {
+  /** What is deleted, e.g. `c:project`. */
+  resource: TKey;
+  name: string;
+}
+
+/** The question a delete confirmation asks: "Delete project **Roadmap**?". */
+export function DeleteQuestion({ resource, name }: DeleteQuestionProps) {
+  const { t } = useTranslation();
+  return <NamedText i18nKey="c:delete_confirm.text" name={name} values={{ resource: t(resource).toLowerCase() }} />;
+}
+
+/** Turns the open menu (e.g. a table row's "…") into a confirmation; its Cancel steps back to the menu. */
 export function openPopConfirm(title: ReactNode, children: ReactNode) {
-  useDropdowner.getState().update({ kind: 'panel', key: Date.now(), content: <PopConfirm title={title}>{children}</PopConfirm> });
+  dropdowner.getState().push(<PopConfirm title={title}>{children}</PopConfirm>);
 }

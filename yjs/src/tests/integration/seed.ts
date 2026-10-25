@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
-import { hierarchy, toTableName } from 'shared';
+import { appConfig, hierarchy, toColumnName, toTableName } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
 import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
@@ -83,6 +83,41 @@ export async function seedMembership(
      ON CONFLICT (tenant_id, user_id, channel_id) DO NOTHING`,
     [randomUUID(), tenantId, orgId, userId, role],
   );
+}
+
+/**
+ * Makes `userId` a `role` member of every channel the plan seeded: an organization role that is not elevated reaches no
+ * row homed below the organization, so a member acts there through these memberships. None in the template, whose plans
+ * seed no channel.
+ */
+export async function joinAttachmentHome(
+  client: pg.Client,
+  tenantId: string,
+  orgId: string,
+  plan: TestEntityHierarchyPlan,
+  userId: string,
+  role: string = hierarchy.getLeastPrivilegedRole('organization'),
+) {
+  for (const row of plan.seedChannelRows) {
+    const fields = new Map<string, unknown>([
+      ['id', randomUUID()],
+      ['tenant_id', tenantId],
+      ['channel_type', row.channelType],
+      ['channel_id', row.id],
+      ['organization_id', orgId],
+      ['user_id', userId],
+      ['role', role],
+      ['created_by', userId],
+      ['display_order', 1],
+    ]);
+    for (const column of row.ancestorColumns) fields.set(column.columnName, column.id);
+    fields.set(toColumnName(appConfig.entityIdColumnKeys[row.channelType]), row.id);
+    const placeholders = [...fields.keys()].map((_, i) => `$${i + 1}`).join(', ');
+    await client.query(
+      `INSERT INTO memberships (${[...fields.keys()].map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (tenant_id, user_id, channel_id) DO NOTHING`,
+      [...fields.values()],
+    );
+  }
 }
 
 export async function seedAttachment(client: pg.Client, id: string, tenantId: string, plan: TestEntityHierarchyPlan, createdBy: string) {

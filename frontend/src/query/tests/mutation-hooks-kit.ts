@@ -6,12 +6,10 @@ import { vi } from 'vitest';
 
 // A test of a module's mutation hooks imports this file first, mocks `sdk` with spies, then imports the module's
 // `query.ts`: the hooks run under the app's own query client, as a queued mutation does after a reload.
-const { queryClient } = await import('~/query/query-client');
+export const { queryClient } = await import('~/query/query-client');
 
 // The retry that leads to the pause waits for this delay first.
 queryClient.setDefaultOptions({ mutations: { ...queryClient.getDefaultOptions().mutations, retryDelay: 0 } });
-
-export { queryClient };
 
 /** Runs a hook in one server render under the app's query client; the mutate functions it returns work after the render. */
 export function callHook<T>(useHook: () => T): T {

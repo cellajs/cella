@@ -43,6 +43,8 @@ describe('Membership Invitation', async () => {
     });
   };
 
+  const outcomesOf = (data: unknown) => (data as { outcomes: { outcome: string }[] }).outcomes.map(({ outcome }) => outcome);
+
   const getInactiveMemberships = async (organizationId: string) => {
     return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
   };
@@ -58,9 +60,7 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-    expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedIds).toHaveLength(0);
+    expect(outcomesOf(data)).toEqual(['invite', 'invite']);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -86,9 +86,7 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-    expect(response.invitesSentCount).toBe(1);
-    expect(response.rejectedIds).toHaveLength(0);
+    expect(outcomesOf(data)).toEqual(['invite']);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(1);
@@ -109,7 +107,7 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    expect((data as { invitesSentCount: number }).invitesSentCount).toBe(1);
+    expect(outcomesOf(data)).toEqual(['invite']);
 
     const [invitation] = await getInactiveMemberships(organization.id);
     expect(invitation.userId).toBe(existingUser.id);
@@ -129,9 +127,7 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(200);
-    const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-    expect(response.invitesSentCount).toBe(2);
-    expect(response.rejectedIds).toHaveLength(0);
+    expect(outcomesOf(data)).toEqual(['invite', 'invite']);
 
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(2);
@@ -156,8 +152,7 @@ describe('Membership Invitation', async () => {
     const { response: secondRes, data } = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
-    const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
-    expect(response.invitesSentCount).toBe(0);
+    expect(outcomesOf(data)).toEqual(['remind']);
   });
 
   it('returns the membership a system admin joins by inviting themself, archive, mute and order included', async () => {

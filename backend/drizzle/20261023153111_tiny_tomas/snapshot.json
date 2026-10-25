@@ -1,0 +1,142 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "15397bd4-6a07-47ef-8363-1324f8b452db",
+  "prevIds": [
+    "ab5f3870-d1a9-45ad-829f-e83ab8e507ce"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "attachments",
+        "attachments_organization_id_created_at_index"
+      ],
+      "writes": [
+        "s|idx|public.attachments_organization_id_created_at_index",
+        "n|idx|public.attachments_organization_id_created_at_index",
+        "e|idx|public.attachments_organization_id_created_at_index",
+        "n|rel|public.attachments_organization_id_created_at_index"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.organization_id",
+        "n|col|public.attachments.created_at",
+        "n|col|public.attachments.id"
+      ]
+    },
+    {
+      "statementType": "alter_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "attachments"
+      ],
+      "writes": [
+        "s|pol|public.attachments.attachments_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ],
+      "sqlHash": "7b256c8daa7700c3"
+    },
+    {
+      "statementType": "alter_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_documents"
+      ],
+      "writes": [
+        "s|pol|public.yjs_documents.yjs_documents_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public"
+      ],
+      "sqlHash": "d60fd50185ae3b07"
+    },
+    {
+      "statementType": "alter_policy",
+      "statementTarget": [
+        "table",
+        "public",
+        "yjs_updates"
+      ],
+      "writes": [
+        "s|pol|public.yjs_updates.yjs_updates_select_policy"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public"
+      ],
+      "sqlHash": "8a26072e43503daa"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "attachments_organization_id_created_at_index",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "organization_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "created_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          },
+          {
+            "value": "id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": null,
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "policies\u0000[\"public\",\"attachments\",\"attachments_select_policy\"]",
+      "set": {
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"attachments\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    AND (\"attachments\".\"deleted_at\" IS NULL OR (SELECT current_setting('app.include_deleted', true)) = 'true')\n  "
+      }
+    },
+    {
+      "op": "alter",
+      "key": "policies\u0000[\"public\",\"yjs_documents\",\"yjs_documents_select_policy\"]",
+      "set": {
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"yjs_documents\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    \n  "
+      }
+    },
+    {
+      "op": "alter",
+      "key": "policies\u0000[\"public\",\"yjs_updates\",\"yjs_updates_select_policy\"]",
+      "set": {
+        "using": "\n    \n  COALESCE((SELECT current_setting('app.tenant_id', true)), '') != ''\n  AND \"yjs_updates\".\"tenant_id\" = (SELECT current_setting('app.tenant_id', true))\n\n    \n  "
+      }
+    }
+  ]
+}

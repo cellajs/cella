@@ -1,14 +1,24 @@
 import { getStepUp } from 'sdk';
 import { retryAfterStepUp, type StepUpMethod } from '~/modules/auth/step-up-retry';
 
-/** The re-auth dialog, loaded on first use so the query modules that step up stay free of UI imports. */
-const openStepUpDialog = async (methods: StepUpMethod[], section?: string) =>
-  (await import('~/modules/auth/step-up-dialog')).openStepUpDialog(methods, section);
+let pending: Promise<void> | null = null;
 
 /**
- * Runs an account-security action; when the server asks the user to prove it's them first, opens the re-auth dialog
- * and runs the action once more after that. A closed dialog rejects with `StepUpDismissed`. `section` is the id of the
- * page section that asks: an emailed link or a new sign-in comes back there, and without it to the section in view.
+ * The re-auth dialog, loaded on first use so the query modules that step up stay free of UI imports. An action that
+ * asks while one is open waits for the same dialog, so one proof lets every waiting action run again.
+ */
+const openStepUpDialog = (methods: StepUpMethod[], section?: string) => {
+  pending ??= import('~/modules/auth/step-up-dialog')
+    .then((module) => module.openStepUpDialog(methods, section))
+    .finally(() => {
+      pending = null;
+    });
+  return pending;
+};
+
+/**
+ * `retryAfterStepUp` through the re-auth dialog; dismissing it fails the action with `StepUpDismissedError`. `section` is the
+ * id of the page section that asks: an emailed link or a new sign-in returns to it, or without one to the section in view.
  */
 export const withStepUp = <T>(action: () => Promise<T>, section?: string) =>
   retryAfterStepUp(action, (methods) => openStepUpDialog(methods, section));

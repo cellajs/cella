@@ -1,0 +1,2 @@
+ALTER TABLE "attachments" ADD COLUMN "purged_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "attachments_purge_pending_index" ON "attachments" ("deleted_at") WHERE "deleted_at" is not null and "purged_at" is null;

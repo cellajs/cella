@@ -30,7 +30,7 @@ export const streamNotificationSchema = z
     channelId: z.string().nullable().describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: nullableStxBaseSchema,
     batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched notification: client should fetch range'),
-    count: z.number().int().nullable().describe('Authoritative row count for batches: sequence ranges of different paths may interleave'),
+    count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),
     spreadWindow: z
       .number()
       .int()
@@ -58,7 +58,7 @@ const catchupViewSchema = z.object({
     .min(1)
     .max(64)
     .openapi({ description: 'Materialized id-path prefixes this view covers (root-first ids, slash-joined)' }),
-  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1),
+  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1).max(64),
   depth: z.enum(['self', 'subtree']).optional().openapi({
     description:
       'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.',

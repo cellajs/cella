@@ -4,21 +4,21 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
-import * as cacheOps from './cache-ops';
-import { propagateEmbeddings } from './propagation';
-import { getSyncTier, isViewingChannel } from './sync-priority';
-import { publishSyncedRows } from './sync-signals';
-import { syncStore } from './sync-store';
-import type { AppStreamNotification } from './types';
-import { resolveChannelPath } from './view-declaration';
+import * as cacheOps from '~/query/realtime/cache-ops';
+import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
+import { publishSyncedRows } from '~/query/realtime/sync-signals';
+import { syncStore } from '~/query/realtime/sync-store';
+import type { AppStreamNotification } from '~/query/realtime/types';
+import { resolveChannelPath } from '~/query/realtime/view-declaration';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
-const DEFAULT_SPREAD_WINDOW_MS = 15_000;
+const defaultSpreadWindowMs = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
-const MAX_FLUSH_ATTEMPTS = 3;
-const RETRY_BASE_MS = 2_000;
-/** Re-check delay while offline (fetching would fail pointlessly; catchup owns reconnect). */
-const OFFLINE_RECHECK_MS = 5_000;
+const maxFlushAttempts = 3;
+const retryBaseMs = 2_000;
+/** Re-check delay while offline, where a fetch would fail; catchup reconciles on reconnect. */
+const offlineRecheckMs = 5_000;
 
 export interface EnqueueInput {
   entityType: ProductEntityType;
@@ -62,67 +62,56 @@ function hashSpread(key: string): number {
 }
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
-function negotiatedDelay(tier: { min: number; max: number }, channelViewKey: string, windowMs: number): number {
+function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: number): number {
   const spread = windowMs > 0 ? hashSpread(`${sourceId}:${channelViewKey}`) % windowMs : 0;
   return Math.min(Math.max(tier.min, spread), tier.max);
 }
 
-/** Enqueue a notified seq range for lazy fetching. Always records the known watermark. */
+/** Enqueue a notified seq range for lazy fetching; a muted or archived scope waits until it is opened. */
 export function enqueueRange(input: EnqueueInput): void {
-  const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
-  if (tier.min === Number.POSITIVE_INFINITY) {
-    // Muted and archived scopes record the known watermark and fetch when opened.
-    syncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
-    return;
-  }
-  enqueueWithTier(input, tier);
+  enqueueWithTier(input, getSyncTier(input.entityType, input.organizationId, input.channelId));
 }
 
 /** Enqueue catchup gaps, including muted views in spread background work so persisted caches converge. */
 export function enqueueCatchupRange(input: EnqueueInput): void {
   const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
-  enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? { min: 2_000, max: 30_000 } : tier);
+  enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? tierBackground : tier);
 }
 
-function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
+function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
-  const store = syncStore.getState();
-  const channelViewId = channelId ?? organizationId;
-
-  // Known watermark: free, recorded even for scopes we never fetch (powers catch-up-on-open).
-  store.setKnownSeq(channelViewId, entityType, untilSeq);
-
   if (!hasEntityQueryKeys(entityType)) return;
 
+  const store = syncStore.getState();
   const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
-  if (untilSeq <= caughtUp) return; // already have this range
+  if (untilSeq <= caughtUp) return;
 
   // Anchoring after the caught-up position heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
-  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? DEFAULT_SPREAD_WINDOW_MS);
+  // The on-open tier gives an infinite delay: the entry waits for promoteLiveChannels.
+  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? defaultSpreadWindowMs);
+  const entry: DirtyEntry = {
+    entityType,
+    organizationId,
+    tenantId,
+    channelId,
+    afterSeq: anchoredAfter,
+    untilSeq,
+    dueAt,
+    hasCreates: isCreate,
+    attempts: 0,
+    propagations: propagation ? [propagation] : [],
+  };
 
   const existing = dirty.get(key);
   if (existing) {
-    existing.afterSeq = Math.min(existing.afterSeq, anchoredAfter);
-    existing.untilSeq = Math.max(existing.untilSeq, untilSeq);
-    existing.dueAt = Math.min(existing.dueAt, dueAt); // more news never postpones
-    existing.hasCreates ||= isCreate;
-    if (propagation) existing.propagations.push(propagation);
+    mergeRange(existing, entry);
+    // More news never postpones.
+    existing.dueAt = Math.min(existing.dueAt, dueAt);
   } else {
-    dirty.set(key, {
-      entityType,
-      organizationId,
-      tenantId,
-      channelId,
-      afterSeq: anchoredAfter,
-      untilSeq,
-      dueAt,
-      hasCreates: isCreate,
-      attempts: 0,
-      propagations: propagation ? [propagation] : [],
-    });
+    dirty.set(key, entry);
   }
 
   installListeners();
@@ -141,9 +130,9 @@ export function attachPendingPropagation(
   return true;
 }
 
-/** Flush every dirty scope now (tab hiding, tests). */
+/** Flush every dirty scope now except those waiting to be opened (tab hiding, tests). */
 export function flushAllNow(): Promise<void> {
-  for (const entry of dirty.values()) entry.dueAt = 0;
+  for (const entry of dirty.values()) if (entry.dueAt !== Number.POSITIVE_INFINITY) entry.dueAt = 0;
   return flushDue();
 }
 
@@ -153,10 +142,11 @@ export async function flushChannelViewNow(
   organizationId: string,
   channelId: string | null,
 ): Promise<'ok' | 'fallback' | 'requeued' | 'none'> {
-  const entry = dirty.get(entryKey(entityType, organizationId, channelId));
+  const key = entryKey(entityType, organizationId, channelId);
+  const entry = dirty.get(key);
   if (!entry) return 'none';
-  dirty.delete(entryKey(entityType, organizationId, channelId));
-  return flushGroup([{ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 }]);
+  dirty.delete(key);
+  return flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]);
 }
 
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view gaps itself. */
@@ -169,9 +159,10 @@ export function resetFetchPrioritizer(): void {
 }
 
 function armTimer(): void {
-  if (dirty.size === 0) return;
   let earliest = Number.POSITIVE_INFINITY;
   for (const entry of dirty.values()) earliest = Math.min(earliest, entry.dueAt);
+  // Nothing is due before an open: a timeout past 2^31-1 ms would fire at once.
+  if (earliest === Number.POSITIVE_INFINITY) return;
 
   const delay = Math.max(0, earliest - Date.now());
   if (timer) clearTimeout(timer);
@@ -186,7 +177,8 @@ async function flushDue(): Promise<void> {
   const due: DirtyEntry[] = [];
   for (const [key, entry] of dirty) {
     if (entry.dueAt > now) continue;
-    dirty.delete(key); // in-flight ranges leave the map; overlapping re-notifications re-enqueue
+    // In-flight ranges leave the map; overlapping re-notifications re-enqueue.
+    dirty.delete(key);
     due.push(entry);
   }
   // Covering fetch: all due channels of one (entityType, org) share one bounded fetch, and rows route to their home lists during patching.
@@ -226,7 +218,7 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   return common.length > 1 ? common[common.length - 1] : undefined;
 }
 
-// A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles. Logs once per entry.
+/** A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles; logs once per drop of trust. */
 function enterBasicFetchMode(context: Record<string, unknown>): void {
   if (!isSyncDeliveryTrusted()) return;
   setSyncDeliveryTrusted(false);
@@ -238,9 +230,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const { entityType, organizationId } = entries[0];
   const tenantId = entries.find((entry) => entry.tenantId)?.tenantId ?? null;
 
-  // Offline: fetching fails pointlessly; keep dirty, recheck soon. Catchup owns reconnect.
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    for (const entry of entries) requeue(entry, OFFLINE_RECHECK_MS);
+    for (const entry of entries) requeue(entry, offlineRecheckMs);
     return 'requeued';
   }
 
@@ -250,8 +241,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const channelId = coveringChannelId(entries);
   const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId);
 
-  if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
-    for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
+  if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < maxFlushAttempts)) {
+    for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, retryBaseMs * 2 ** entry.attempts);
     return 'requeued';
   }
 
@@ -264,7 +255,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
       // The fetch covered (afterSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
       for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     }
-    // Row contents for subscribers that derive state from them; the org id is the fallback home for rows without ancestor ids.
+    // The org id is the fallback home for rows without ancestor ids.
     publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
   } else {
     // Overflow, unsupported, or exhausted retries: the list refetch owns recovery, and the watermark advances to prevent a fetch loop.
@@ -272,7 +263,6 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
-    // Activity happened but no rows were delivered, so subscribers must fall back to invalidation.
     publishSyncedRows({ entityType, organizationId, rows: [], degraded: true });
   }
 
@@ -296,16 +286,18 @@ function advanceCaughtUp(entry: DirtyEntry): void {
 function requeue(entry: DirtyEntry, delayMs: number): void {
   const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
-  if (existing) {
-    // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
-    existing.afterSeq = Math.min(existing.afterSeq, entry.afterSeq);
-    existing.untilSeq = Math.max(existing.untilSeq, entry.untilSeq);
-    existing.hasCreates ||= entry.hasCreates;
-    existing.propagations.push(...entry.propagations);
-  } else {
-    dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
-  }
+  // A newer notification re-enqueued this channel view mid-flight: merge this range back into it.
+  if (existing) mergeRange(existing, entry);
+  else dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
   armTimer();
+}
+
+/** Widens a pending entry by another range of the same scope; the pending entry keeps its own due time. */
+function mergeRange(into: DirtyEntry, from: Pick<DirtyEntry, 'afterSeq' | 'untilSeq' | 'hasCreates' | 'propagations'>): void {
+  into.afterSeq = Math.min(into.afterSeq, from.afterSeq);
+  into.untilSeq = Math.max(into.untilSeq, from.untilSeq);
+  into.hasCreates ||= from.hasCreates;
+  into.propagations.push(...from.propagations);
 }
 
 /** Flush pending ranges whose scope moved onto the live tier for catch-up on open. */
@@ -330,15 +322,15 @@ function installListeners(): void {
   });
 
   // Back online: retry what accumulated while offline.
-  window.addEventListener('online', () => armTimer());
+  window.addEventListener('online', armTimer);
 
-  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications landing just before mount.
+  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications that arrive just before mount.
   queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
 
   // Navigation flushes pending scopes and route context promotes org-level scopes; the lazy import keeps the route tree out of this module's importer graph.
   void import('~/routes/router').then(({ router }) => {
-    router.subscribe('onLoad', () => promoteLiveChannels());
+    router.subscribe('onLoad', promoteLiveChannels);
   });
 }

@@ -22,6 +22,8 @@ export const userFlagsSchema = z.object(
 );
 
 export const userSchema = createSelectSchema(usersTable, { email: z.email(), language: languageSchema, userFlags: userFlagsSchema })
+  // A profile, not an audited row: who last changed it stays in the database.
+  .omit({ updatedBy: true })
   .extend({
     // Activity times from the user's actors row (userSelect)
     lastSeenAt: z.string().nullable(),

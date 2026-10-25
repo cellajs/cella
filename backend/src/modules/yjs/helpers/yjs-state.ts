@@ -9,6 +9,21 @@ export function mergeState(base: Uint8Array | null, payloads: Uint8Array[]): Uin
 }
 
 /**
+ * The state with the content of deleted items dropped, for a base about to be stored: `Y.mergeUpdates` keeps every
+ * deleted character, a garbage-collected document keeps only their length. Structs waiting on a missing dependency are
+ * encoded along.
+ */
+export function collectGarbage(state: Uint8Array): Uint8Array {
+  const doc = new Y.Doc({ gc: true });
+  try {
+    Y.applyUpdate(doc, state);
+    return Y.encodeStateAsUpdate(doc);
+  } finally {
+    doc.destroy();
+  }
+}
+
+/**
  * The merged document and the log rows left out of it: a row Yjs cannot decode, or one that decodes but will not
  * merge, is left out, so one bad row never blocks the document or the rows logged after it. Rows merge in one call,
  * and one at a time only when that call throws. The base is written by compaction and seeding alone, so it is trusted.

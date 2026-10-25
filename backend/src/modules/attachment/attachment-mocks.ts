@@ -1,8 +1,17 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'shared';
-import { generateMockEntityChannelIdColumns, mockBatchResponse, mockNanoid, mockPaginated, mockProductColumns, withFakerSeed } from '#/mocks';
+import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
+import { hashSourceId } from 'shared/utils/hash-source-id';
+import {
+  generateMockEntityChannelIdColumns,
+  mockBatchResponse,
+  mockNanoid,
+  mockPaginated,
+  mockProductColumns,
+  mockStx,
+  withFakerSeed,
+} from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
-import { mockAuditUsers } from '#/schemas/entity-base-mocks';
+import { mockActorRefs } from '#/schemas/entity-base-mocks';
 
 /** Deterministic: the same key produces the same data. */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
@@ -24,10 +33,10 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
     };
   });
 
-/** Attachment wire response with audit-user IDs hydrated to minimal user objects. */
+/** Attachment wire response with its writer ids resolved to actor references. */
 export const mockAttachmentResponse = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
-  return { ...attachment, ...mockAuditUsers(attachment, key) };
+  return { ...attachment, ...mockActorRefs(attachment, key), deletedBy: null };
 };
 
 export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);
@@ -45,3 +54,36 @@ const mockPresignedUrlItem = (key = 'attachment:default') => {
 };
 
 export const mockPresignedUrlsResponse = (count = 2) => mockBatchResponse(mockPresignedUrlItem, count);
+
+// Request bodies of the routes an API key or access token can call, built from the attachment mock so ids agree.
+
+export const mockCreateAttachmentsBody = () =>
+  withFakerSeed('attachment:create-body', () => {
+    const attachment = mockAttachment();
+    const { id, name, filename, contentType, size, keys } = attachment;
+    // Where the hierarchy homes attachments below the organization, the body names that channel (the deepest home).
+    const home = hierarchy.possibleHomeChannels('attachment').find((type) => type !== 'organization');
+    const placement = home && { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] };
+    return [{ id, name, filename, contentType, size, keys, ...placement, stx: mockStx() }];
+  });
+
+/** Each changed field carries its HLC timestamp, `millis:counter:sourceHash`. */
+export const mockUpdateAttachmentBody = () =>
+  withFakerSeed('attachment:update-body', () => {
+    const stx = mockStx();
+    const fieldTimestamps = { name: `1735732800000:0001:${hashSourceId(stx.sourceId)}` };
+    return { ops: { name: `${mockAttachment().name} (final)` }, stx: { ...stx, fieldTimestamps } };
+  });
+
+export const mockDeleteAttachmentsBody = () =>
+  withFakerSeed('attachment:delete-body', () => {
+    const { mutationId, sourceId } = mockStx();
+    return { ids: [mockAttachment().id], stx: { mutationId, sourceId } };
+  });
+
+export const mockPresignedUrlsBody = () => ({ items: [{ attachmentId: mockAttachment().id, variant: 'thumbnail' as const }] });
+
+export const mockLinkAttachmentKeysBody = () => {
+  const { keys } = mockAttachment();
+  return { keys: { ...keys, thumbnail: `${keys.original}.thumbnail.webp` }, convertedContentType: null };
+};

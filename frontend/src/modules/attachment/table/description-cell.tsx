@@ -24,12 +24,12 @@ export function DescriptionCell({ row, editable }: DescriptionCellProps) {
 
   if (!text) return null;
 
-  const onDoubleClick = editable
+  const handleDoubleClick = editable
     ? undefined
     : (event: MouseEvent<HTMLSpanElement>) => openDescriptionSheetFromCell(row.id, event.currentTarget.closest<HTMLElement>('[role="gridcell"]'));
 
   return (
-    <span className="flex size-full items-center opacity-80" onDoubleClick={onDoubleClick}>
+    <span className="flex size-full items-center text-muted-foreground" onDoubleClick={handleDoubleClick}>
       <span className="truncate">{text}</span>
     </span>
   );

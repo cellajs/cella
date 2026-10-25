@@ -4,14 +4,14 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
+import { CountBadge } from '~/modules/common/count-badge';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
 interface SelectionActionBarProps {
   /** Number of selected items; shown as a badge on the bar's edge, the bar is hidden while zero. */
   count: number;
-  /** Clears the selection (wired to the built-in clear button). */
+  /** Clears the selection; the bar's own clear button calls it. */
   onClear: () => void;
   /** Bulk action buttons acting on the selection. */
   children: ReactNode;
@@ -37,7 +37,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
           transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
           className="fixed inset-x-0 bottom-4 z-110 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-lg backdrop-blur-xs"
         >
-          <Badge className="absolute -top-2 -right-2 flex min-w-5 justify-center px-1 py-0 shadow-sm">{count}</Badge>
+          <CountBadge count={count} className="absolute -top-2 -right-2" />
 
           <div className="flex items-center gap-2">{children}</div>
 

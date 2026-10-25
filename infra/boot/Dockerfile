@@ -6,7 +6,7 @@
 # (/var/run/docker.sock), so it needs the docker CLI + compose plugin. The runner
 # also runs with --network host and probes the private network via `ip route`,
 # so it needs iproute2. The JS bundle is produced on the host by
-# `pnpm --filter infra boot:build` (tsup -> boot/dist/entry.cjs) before
+# `pnpm --filter infra boot:build` (rolldown -> boot/dist/entry.cjs) before
 # `docker build` (context: infra/boot). NODE_VERSION is the root package.json
 # `engines.node`, passed by every build (`boot:image`, the deploy pipeline, bake);
 # without a default, so the `check=skip` line on top.

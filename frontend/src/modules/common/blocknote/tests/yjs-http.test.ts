@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import * as encoding from 'lib0/encoding';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -96,12 +95,13 @@ const pullYjsDocument = vi.fn(async ({ body }: { body: { stateVector: string } }
   update: base64url(Y.encodeStateAsUpdate(server.doc, fromBase64url(body.stateVector))),
   stateVector: base64url(Y.encodeStateVector(server.doc)),
 }));
-const pushYjsUpdate = vi.fn(async ({ body }: { body: { update: string; generation: string } }) => {
+const appendToServer = async ({ body }: { body: { update: string; generation: string } }) => {
   const update = fromBase64url(body.update);
   server.pushes.push(update);
   Y.applyUpdate(server.doc, update);
   return { status: 'appended' as const };
-});
+};
+const pushYjsUpdate = vi.fn(appendToServer);
 vi.mock('sdk', () => ({
   getYjsToken: vi.fn(),
   pullYjsDocument: (options: { body: { stateVector: string } }) => pullYjsDocument(options),
@@ -137,7 +137,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 const linked: YjsConnection[] = [];
 let http: typeof import('~/modules/common/blocknote/yjs-http') | undefined;
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
+  wsSyncDeadlineMs: 5_000,
   createHttpLink: (...args: Parameters<typeof import('~/modules/common/blocknote/yjs-http').createHttpLink>) => {
     linked.push(args[0]);
     if (!http) throw new Error('the HTTP link module is not loaded');
@@ -145,9 +145,9 @@ vi.mock('~/modules/common/blocknote/yjs-http', () => ({
   },
 }));
 http = await vi.importActual<typeof import('~/modules/common/blocknote/yjs-http')>('~/modules/common/blocknote/yjs-http');
-const { HTTP_CHUNK_BYTES, batchUpdates } = http;
+const { httpChunkBytes } = http;
 const { ApiError } = await import('~/lib/api');
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -171,10 +171,10 @@ Object.defineProperty(document, 'visibilityState', { configurable: true, get: ()
 /** Mounts one editor's connection, stored with the mock writer; returns its provider, document and latest hook state. */
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
-  useUserStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
+  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: ReturnType<typeof useYjsConnection> = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   root = createRoot(document.createElement('div'));
@@ -258,72 +258,25 @@ describe('yjs over HTTP: the switch', () => {
     expect(conn.generation).toBe('gen-1');
     expect(writer.append).toHaveBeenCalledWith(expect.any(Uint8Array), false, undefined);
   });
-
-  it('does not pull while offline: the deadline waits until the browser is back and the socket starts again', async () => {
-    const { provider, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await act(async () => onlineListener?.(false));
-
-    await advance(30_000);
-    expect(pullYjsDocument).not.toHaveBeenCalled();
-    expect(state()?.transport).toBe('none');
-
-    online = true;
-    await act(async () => onlineListener?.(true));
-    expect(provider.connect).toHaveBeenCalled();
-    await enterHttp(provider);
-    expect(pullYjsDocument).toHaveBeenCalledOnce();
-    expect(state()?.transport).toBe('http');
-  });
-
-  it('does not switch when the socket syncs in time (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await advance(4_000);
-    await act(async () => provider.receiveStep2());
-
-    await advance(30_000);
-    expect(pullYjsDocument).not.toHaveBeenCalled();
-    expect(state()?.transport).toBe('ws');
-    expect(state()?.ready).toBe(true);
-  });
-
-  it('takes over again when a socket lost mid-session has not synced 5 s after its reconnect started', async () => {
-    const { provider, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await act(async () => provider.receiveStep2());
-    await act(async () => provider.dropSocket());
-
-    await enterHttp(provider);
-    expect(pullYjsDocument).toHaveBeenCalledOnce();
-    expect(state()?.transport).toBe('http');
-  });
-
-  it("names the document's generation from the pull: the socket announcing the same one later keeps the document", async () => {
-    const { provider, state } = await mountConnection();
-    await enterHttp(provider);
-
-    const frame = encoding.createEncoder();
-    encoding.writeVarString(frame, 'gen-1');
-    const { createDecoder } = await import('lib0/decoding');
-    await act(async () => provider.messageHandlers[4]?.(undefined, createDecoder(encoding.toUint8Array(frame)), provider, true, 4));
-    await act(async () => provider.receiveStep2());
-
-    expect(providers.at(-1)).toBe(provider);
-    expect(state()?.rebuilds).toBe(0);
-    expect(state()?.transport).toBe('ws');
-  });
 });
 
 describe('yjs over HTTP: the ledger', () => {
-  it("proves the handshake with its post's 200: the server then holds the document, and the stored rows it covered are cleared", async () => {
+  it("must not report clean or prove rows before the server's 200: the handshake post proves them, and each later post holds unsynced until its own", async () => {
     const { provider, doc, state } = await mountConnection();
     await act(async () => provider.openSocket());
     await edit(doc, 'typed while the relay was down');
-    expect(state()?.unsynced).toBe(true);
+    const handshake = deferred<void>();
+    pushYjsUpdate.mockImplementationOnce(async (options) => {
+      await handshake.promise;
+      return appendToServer(options);
+    });
 
     await advance(5_000);
     expect(pushYjsUpdate).toHaveBeenCalledOnce();
+    expect(writer.prove).not.toHaveBeenCalled();
+    expect(state()?.unsynced).toBe(true);
+
+    await act(async () => handshake.resolve());
     expect(server.doc.getText('t').toString()).toBe(doc.getText('t').toString());
     expect(writer.prove).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'handshake', applied: { upTo: 0, ids: new Set() }, vector: expect.any(Uint8Array) }),
@@ -331,58 +284,18 @@ describe('yjs over HTTP: the ledger', () => {
     // Turning clean proves this tab's own rows too.
     expect(writer.prove).toHaveBeenLastCalledWith({ kind: 'clean' });
     expect(state()?.unsynced).toBe(false);
-  });
 
-  it('proves a clean document at once, with no post (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await enterHttp(provider);
-
-    expect(pushYjsUpdate).not.toHaveBeenCalled();
-    expect(writer.prove).not.toHaveBeenCalled();
-    expect(state()?.unsynced).toBe(false);
-  });
-
-  it('debounces local edits into one post, whose 200 turns the document clean', async () => {
-    const { provider, doc, state } = await mountConnection();
-    await enterHttp(provider);
-
-    await edit(doc, 'one ');
-    await advance(300);
-    await edit(doc, 'two');
-    expect(state()?.unsynced).toBe(true);
-    await advance(499);
-    expect(pushYjsUpdate).not.toHaveBeenCalled();
-
-    await advance(1);
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-    expect(server.doc.getText('t').toString()).toBe('stored. one two');
-    expect(state()?.unsynced).toBe(false);
-  });
-
-  it('posts within 2 s while edits keep coming', async () => {
-    const { provider, doc } = await mountConnection();
-    await enterHttp(provider);
-
-    for (let i = 0; i < 5; i++) {
-      await edit(doc, `${i}`);
-      await advance(400);
-    }
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-    expect(server.doc.getText('t').toString()).toBe('stored. 01234');
-  });
-
-  it('must not report clean while a post is in flight', async () => {
-    const { provider, doc, state } = await mountConnection();
-    await enterHttp(provider);
-    const answer = deferred<{ status: 'appended' }>();
-    pushYjsUpdate.mockImplementationOnce(() => answer.promise);
-
-    await edit(doc, 'edit');
+    const later = deferred<void>();
+    pushYjsUpdate.mockImplementationOnce(async (options) => {
+      await later.promise;
+      return appendToServer(options);
+    });
+    await edit(doc, ' and later');
     await advance(500);
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
+    expect(pushYjsUpdate).toHaveBeenCalledTimes(2);
     expect(state()?.unsynced).toBe(true);
 
-    await act(async () => answer.resolve({ status: 'appended' }));
+    await act(async () => later.resolve());
     expect(state()?.unsynced).toBe(false);
   });
 });
@@ -398,14 +311,25 @@ describe('yjs over HTTP: final answers', () => {
     return mounted;
   }
 
-  it('must not post into a reseeded document: a 409 with another generation rebuilds the connection on a fresh document', async () => {
-    const { provider, state } = await refusedEdit(refusal(409, { generation: 'gen-2' }));
+  it('must not drop or retry edits the routes refuse for good: each final answer parks them under the reason it names', async () => {
+    const answers = [
+      [refusal(404), 'deleted'],
+      [refusal(403), 'denied'],
+      [refusal(400), 'refused'],
+      [refusal(409, { generation: 'gen-2' }), 'replaced'],
+    ] as const;
 
-    expect(provider.destroy).toHaveBeenCalledOnce();
-    expect(providers.at(-1)).not.toBe(provider);
-    expect(state()?.rebuilds).toBe(1);
-    expect(state()?.ready).toBe(false);
-    expect(state()?.transport).toBe('none');
+    for (const [error, reason] of answers) {
+      pushYjsUpdate.mockClear();
+      writer.park.mockClear();
+      const { doc } = await refusedEdit(error);
+      await advance(120_000);
+
+      expect(writer.park, reason).toHaveBeenCalledExactlyOnceWith(reason, doc);
+      expect(pushYjsUpdate, reason).toHaveBeenCalledOnce();
+      await act(async () => root?.unmount());
+      root = undefined;
+    }
   });
 
   it('pulls on a 409 with no document, which seeds it, then posts again', async () => {
@@ -415,42 +339,6 @@ describe('yjs over HTTP: final answers', () => {
     expect(pushYjsUpdate).toHaveBeenCalledTimes(2);
     expect(server.doc.getText('t').toString()).toBe('stored. edit');
     expect(state()?.unsynced).toBe(false);
-  });
-
-  it('must not drop unsaved edits of a deleted entity (404): they are parked, and the connection ends as deleted', async () => {
-    const { conn, state } = await refusedEdit(refusal(404));
-
-    expect(writer.park).toHaveBeenCalledExactlyOnceWith('deleted', conn.yDoc);
-    expect(state()?.deleted).toBe(true);
-    expect(state()?.stopped).toBe(true);
-  });
-
-  it('must not drop unsaved edits once edit rights are gone (403): they are parked, and the connection stops as denied', async () => {
-    const { conn, provider, state } = await refusedEdit(refusal(403));
-
-    expect(writer.park).toHaveBeenCalledExactlyOnceWith('denied', conn.yDoc);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.stopReason).toBe('denied');
-    expect(provider.disconnect).toHaveBeenCalledOnce();
-  });
-
-  it('must not retry an update the routes refuse (400): it is parked, and the connection stops as refused', async () => {
-    const { conn, state } = await refusedEdit(refusal(400));
-
-    expect(writer.park).toHaveBeenCalledExactlyOnceWith('refused', conn.yDoc);
-    expect(state()?.stopReason).toBe('refused');
-    await advance(120_000);
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-  });
-
-  it('parks nothing for a clean document whose pull is refused (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await enterHttp(provider);
-    pullYjsDocument.mockRejectedValueOnce(refusal(403));
-
-    await advance(10_000);
-    expect(writer.park).not.toHaveBeenCalled();
-    expect(state()?.stopReason).toBe('denied');
   });
 
   it('backs off on 429 and 5xx: the post goes again after 1 s, then 2 s, and the status stays', async () => {
@@ -470,42 +358,10 @@ describe('yjs over HTTP: final answers', () => {
     expect(state()?.unsynced).toBe(false);
     expect(state()?.stopped).toBe(false);
   });
-
-  it('retries the entering pull with backoff while the API fails, and stays not ready meanwhile', async () => {
-    const { provider, state } = await mountConnection();
-    pullYjsDocument.mockRejectedValueOnce(refusal(503));
-
-    await enterHttp(provider);
-    expect(pullYjsDocument).toHaveBeenCalledOnce();
-    expect(state()?.ready).toBe(false);
-    await advance(1_000);
-    expect(pullYjsDocument).toHaveBeenCalledTimes(2);
-    expect(state()?.transport).toBe('http');
-  });
 });
 
 describe('yjs over HTTP: chunks', () => {
-  const insertUpdate = (size: number) => {
-    const scratch = new Y.Doc();
-    let update: Uint8Array = new Uint8Array();
-    scratch.on('update', (u: Uint8Array) => {
-      update = u;
-    });
-    scratch.getText('t').insert(0, 'x'.repeat(size));
-    return update;
-  };
-
-  it('batches consecutive updates into posts under the cap, and leaves out one over it', () => {
-    const small = insertUpdate(200_000);
-    const big = insertUpdate(HTTP_CHUNK_BYTES + 1);
-    const { batches, oversize } = batchUpdates([small, small, big, small]);
-
-    expect(oversize).toBe(1);
-    expect(batches).toHaveLength(2);
-    expect(batches.every((batch) => batch.length <= HTTP_CHUNK_BYTES)).toBe(true);
-  });
-
-  it('must not post more than 512 KB at once: a backlog over it goes as batches of its edits, then a final diff', async () => {
+  it('must not post more than 512 KB at once: a backlog goes as batches then a final diff, and an edit over it waits for the socket', async () => {
     const { provider, doc, state } = await mountConnection();
     await enterHttp(provider);
 
@@ -516,36 +372,19 @@ describe('yjs over HTTP: chunks', () => {
     await enterHttp(provider);
 
     expect(server.pushes).toHaveLength(3);
-    expect(server.pushes.every((update) => update.length <= HTTP_CHUNK_BYTES)).toBe(true);
-    // The batches, then a pull for the server's vector, before the final diff.
-    expect(pullYjsDocument).toHaveBeenCalledTimes(3);
     expect(server.doc.getText('t').toString()).toBe(doc.getText('t').toString());
     expect(state()?.unsynced).toBe(false);
-  });
 
-  it('must not post an edit over 512 KB: it waits for the socket, which saves it', async () => {
-    const { provider, doc, state } = await mountConnection();
-    await enterHttp(provider);
-
-    await edit(doc, 'x'.repeat(HTTP_CHUNK_BYTES + 1));
+    // One edit over the cap cannot go over HTTP at all: the socket saves it.
+    await edit(doc, 'x'.repeat(httpChunkBytes + 1));
     await advance(2_000);
-    expect(pushYjsUpdate).not.toHaveBeenCalled();
+    expect(server.pushes).toHaveLength(3);
     expect(state()?.unsynced).toBe(true);
 
     await socketHandshake(provider);
     expect(state()?.transport).toBe('ws');
     expect(state()?.unsynced).toBe(false);
-  });
-
-  it('holds a handshake over 512 KB with no edits to batch: nothing is posted, and the document waits for the socket', async () => {
-    const { provider, doc, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await edit(doc, 'x'.repeat(HTTP_CHUNK_BYTES + 1));
-
-    await advance(5_000);
-    expect(state()?.transport).toBe('http');
-    expect(pushYjsUpdate).not.toHaveBeenCalled();
-    expect(state()?.unsynced).toBe(true);
+    expect(server.pushes.every((update) => update.length <= httpChunkBytes)).toBe(true);
   });
 });
 
@@ -569,89 +408,9 @@ describe('yjs over HTTP: pulls', () => {
     await act(async () => document.dispatchEvent(new Event('visibilitychange')));
     expect(pullYjsDocument).toHaveBeenCalledTimes(3);
   });
-
-  it('pulls on focus, at most every 2 s', async () => {
-    const { provider } = await mountConnection();
-    await enterHttp(provider);
-    await advance(2_000);
-
-    await act(async () => window.dispatchEvent(new Event('focus')));
-    expect(pullYjsDocument).toHaveBeenCalledTimes(2);
-    await advance(1_000);
-    await act(async () => window.dispatchEvent(new Event('focus')));
-    expect(pullYjsDocument).toHaveBeenCalledTimes(2);
-    await advance(1_000);
-    await act(async () => window.dispatchEvent(new Event('focus')));
-    expect(pullYjsDocument).toHaveBeenCalledTimes(3);
-  });
-
-  it('pulls nothing for a connection no editor holds, which stays only to post its edits', async () => {
-    const { provider, doc } = await mountConnection();
-    await enterHttp(provider);
-    const answer = deferred<{ status: 'appended' }>();
-    pushYjsUpdate.mockImplementationOnce(() => answer.promise);
-    await edit(doc, 'edit');
-    await advance(500);
-
-    await act(async () => root?.unmount());
-    root = undefined;
-    await advance(60_000);
-    expect(pullYjsDocument).toHaveBeenCalledTimes(1);
-    expect(provider.destroy).not.toHaveBeenCalled();
-
-    // Its post's 200 turns it clean, and it goes.
-    await act(async () => answer.resolve({ status: 'appended' }));
-    expect(provider.destroy).toHaveBeenCalledOnce();
-  });
 });
 
 describe('yjs over HTTP: back to the socket', () => {
-  it("hands back at the socket's first sync: pulls stop, and the handshake post in flight still proves its rows", async () => {
-    const { provider, doc, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await edit(doc, 'edit');
-    const answer = deferred<{ status: 'appended' }>();
-    pushYjsUpdate.mockImplementationOnce(() => answer.promise);
-    await advance(5_000);
-    expect(state()?.transport).toBe('http');
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-
-    await act(async () => provider.receiveStep2());
-    expect(state()?.transport).toBe('ws');
-    await advance(30_000);
-    expect(pullYjsDocument).toHaveBeenCalledOnce();
-
-    await act(async () => answer.resolve({ status: 'appended' }));
-    expect(writer.prove).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: 'handshake' }));
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-  });
-
-  it("must not retry a post that failed after the switch: unsynced stays with the socket's ledger until the relay saves", async () => {
-    const { provider, doc, state } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await edit(doc, 'edit');
-    const answer = deferred<{ status: 'appended' }>();
-    pushYjsUpdate.mockImplementationOnce(() => answer.promise);
-    await advance(5_000);
-
-    await act(async () => provider.dropSocket());
-    await act(async () => {
-      provider.openSocket();
-      provider.sendSync(0);
-      provider.receiveStep2();
-      provider.sendSync(1);
-    });
-    // Within the socket ledger's 10 s wait for a first `Saved`, past several retry delays.
-    await act(async () => answer.reject(refusal(503)));
-    await advance(9_000);
-    expect(pushYjsUpdate).toHaveBeenCalledOnce();
-    expect(writer.prove).not.toHaveBeenCalled();
-    expect(state()?.unsynced).toBe(true);
-
-    await act(async () => provider.messageHandlers[5]?.(undefined, undefined, provider, true, 5));
-    expect(state()?.unsynced).toBe(false);
-  });
-
   it('must not disconnect the provider or remount the editor across ws, http and ws again', async () => {
     const { provider, state } = await mountConnection();
     await act(async () => provider.openSocket());

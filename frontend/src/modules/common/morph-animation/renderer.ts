@@ -1,26 +1,29 @@
-import { FRAGMENT_SOURCE, VERTEX_SOURCE } from '~/modules/common/morph-animation/shader';
+import { fragmentSource, vertexSource } from '~/modules/common/morph-animation/shader';
 
 export type MorphVariant = 'single' | 'colony';
+export type MorphStamp = 'square' | 'plus';
 
 // The grain look tolerates a low render resolution, so touch devices get a lower cap to save battery
-const MAX_PIXEL_RATIO = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
-// The shader lays `grid * GRID_SPAN` cells across the canvas's short side
-const GRID_SPAN = 1.25;
+const maxPixelRatio = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
+// The shader lays `grid * gridSpan` cells across the canvas's short side
+const gridSpan = 1.25;
 // Smaller than this in CSS pixels a grain reads as noise, not as a pixel by design, so a small canvas gets fewer, larger grains
-const MIN_GRAIN_PX = 3;
-// A phone shows the same grain smaller, so its floor sits well above the size a desktop draws
-const MIN_GRAIN_PX_PHONE = 6;
+const minGrainPx = 3;
+// A phone shows the same grain smaller, so its minimum sits well above the size a desktop draws
+const minGrainPxPhone = 6;
 // The mark's true half-width is 0.0372; drawn a bit thicker here, which narrows the gap between the bands
-const BAND_HALF_WIDTH = 0.05;
-const WARP = 0.85;
-const MELT = 0.8;
+const bandHalfWidth = 0.05;
+const warp = 0.85;
+const melt = 0.8;
 
 /** Colony choreography: one full 1 -> 2 -> 3 -> 5 -> 3 -> 2 -> 1 pass. */
-const CYCLE_SECONDS = 60;
+const cycleSeconds = 60;
 /** Entrance length in real seconds, whatever the instance speed: the mark condenses out of a dusted frame. */
-const ENTER_SECONDS = 2.4;
+const enterSeconds = 2.4;
+/** Reduced motion slows the piece to this fraction of its speed and skips the entrance; the piece never freezes. */
+const reducedMotionSpeed = 0.2;
 
-const UNIFORM_NAMES = [
+const uniformNames = [
   'uRes',
   'uTime',
   'uWarp',
@@ -39,7 +42,7 @@ const UNIFORM_NAMES = [
   'uStamp',
   'uEnter',
 ] as const;
-type UniformName = (typeof UNIFORM_NAMES)[number];
+type UniformName = (typeof uniformNames)[number];
 
 function eased(from: number, to: number, x: number) {
   const k = Math.min(1, Math.max(0, (x - from) / (to - from)));
@@ -52,7 +55,7 @@ function eased(from: number, to: number, x: number) {
  * odd counts, never a mirrored grid. Returns each split's progress in 0..1.
  */
 function splitProgress(t: number): [number, number, number, number] {
-  const u = (t % CYCLE_SECONDS) / CYCLE_SECONDS;
+  const u = (t % cycleSeconds) / cycleSeconds;
   return [
     eased(0.055, 0.155, u) - eased(0.88, 0.96, u), // A splits off B (1 -> 2)
     eased(0.26, 0.355, u) - eased(0.775, 0.85, u), // B splits off C (2 -> 3)
@@ -61,13 +64,7 @@ function splitProgress(t: number): [number, number, number, number] {
   ];
 }
 
-/**
- * Drives the morph shader on a transparent WebGL2 canvas: one fullscreen pass per
- * frame, no textures and no feedback buffers. The clock advances by `timeScale`,
- * which is how reduced motion works here: everything slows down, nothing freezes.
- * The first drawn seconds play the entrance once, unless `skipEntrance` ran first.
- * Browsers without WebGL2 get an empty transparent canvas.
- */
+/** Drives the morph shader on a transparent WebGL2 canvas; without WebGL2 the canvas stays empty. */
 export class MorphRenderer {
   private canvas: HTMLCanvasElement;
   private variant: MorphVariant;
@@ -76,31 +73,32 @@ export class MorphRenderer {
   private frameHandle = 0;
   private lastNow = 0;
   private time = Math.random() * 1000;
+  private speed = 1;
   private timeScale = 1;
+  private reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   private enter = 0;
   private grid = 96;
   private shortSide = 0;
-  private minGrain = MIN_GRAIN_PX;
+  private minGrain = minGrainPx;
   private stamp = 0;
   private overscan = 1.2;
   private dark = false;
   private paused = false;
   private disposed = false;
 
-  private onContextLost = (event: Event) => {
+  private handleContextLost = (event: Event) => {
     event.preventDefault();
     cancelAnimationFrame(this.frameHandle);
   };
-  private onContextRestored = () => {
-    this.initGl();
-    this.resume();
-  };
+  private handleContextRestored = () => this.start();
+  private handleMotionChange = () => this.applyMotion();
 
   constructor(canvas: HTMLCanvasElement, variant: MorphVariant) {
     this.canvas = canvas;
     this.variant = variant;
-    canvas.addEventListener('webglcontextlost', this.onContextLost);
-    canvas.addEventListener('webglcontextrestored', this.onContextRestored);
+    canvas.addEventListener('webglcontextlost', this.handleContextLost);
+    canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
+    this.reducedMotionQuery.addEventListener('change', this.handleMotionChange);
   }
 
   start() {
@@ -110,40 +108,30 @@ export class MorphRenderer {
 
   setDark(dark: boolean) {
     this.dark = dark;
-    if (this.paused) this.drawFrame(0); // repaint the resting frame in the new theme
   }
 
-  setTimeScale(scale: number) {
-    this.timeScale = scale;
+  setSpeed(speed: number) {
+    this.speed = speed;
+    this.applyMotion();
   }
 
-  /** Jump to the resting piece: called before `start` the entrance never plays, called during it ends it. */
-  skipEntrance() {
-    this.enter = 1;
-  }
-
-  /** Pixel-grid density in cells across the canvas; lower is chunkier. A small canvas draws fewer: see `MIN_GRAIN_PX`. */
+  /** A small canvas draws fewer cells than this: see `minGrainPx`. */
   setGrid(grid: number) {
     this.grid = grid;
-    if (this.paused) this.drawFrame(0);
   }
 
-  /** A phone-sized viewport gets the larger grain floor: see `MIN_GRAIN_PX_PHONE`. */
-  setPhone(phone: boolean) {
-    this.minGrain = phone ? MIN_GRAIN_PX_PHONE : MIN_GRAIN_PX;
-    if (this.paused) this.drawFrame(0);
+  /** A phone-sized viewport gets the larger minimum grain: see `minGrainPxPhone`. */
+  setPhone(isPhone: boolean) {
+    this.minGrain = isPhone ? minGrainPxPhone : minGrainPx;
   }
 
-  /** Grain stamp: 0 draws squares, 1 draws small plus signs. */
-  setStamp(stamp: number) {
-    this.stamp = stamp;
-    if (this.paused) this.drawFrame(0);
+  setStamp(stamp: MorphStamp) {
+    this.stamp = stamp === 'plus' ? 1 : 0;
   }
 
   /** Margin factor around the shape: the canvas is this much wider than the blob, so warp and grain tails never clip. */
   setOverscan(overscan: number) {
     this.overscan = overscan;
-    if (this.paused) this.drawFrame(0);
   }
 
   setPaused(paused: boolean) {
@@ -154,13 +142,18 @@ export class MorphRenderer {
   }
 
   dispose() {
-    // Never force-lose the context here: the canvas element survives a React
-    // strict-mode remount, and a remount would then inherit a dead context.
+    // Never force-lose the context: the canvas element survives a strict-mode remount, which would then inherit a dead context
     this.disposed = true;
     cancelAnimationFrame(this.frameHandle);
-    this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
-    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
+    this.reducedMotionQuery.removeEventListener('change', this.handleMotionChange);
     this.gl = null;
+  }
+
+  private applyMotion() {
+    this.timeScale = this.speed * (this.reducedMotionQuery.matches ? reducedMotionSpeed : 1);
+    if (this.reducedMotionQuery.matches) this.enter = 1;
   }
 
   private initGl() {
@@ -180,8 +173,8 @@ export class MorphRenderer {
       gl.compileShader(shader);
       return shader;
     };
-    const vert = compile(gl.VERTEX_SHADER, VERTEX_SOURCE);
-    const frag = compile(gl.FRAGMENT_SHADER, FRAGMENT_SOURCE);
+    const vert = compile(gl.VERTEX_SHADER, vertexSource);
+    const frag = compile(gl.FRAGMENT_SHADER, fragmentSource);
     const program = gl.createProgram();
     if (!vert || !frag || !program) return;
     gl.attachShader(program, vert);
@@ -199,11 +192,11 @@ export class MorphRenderer {
       return;
     }
     gl.useProgram(program);
-    for (const name of UNIFORM_NAMES) this.uniforms[name] = gl.getUniformLocation(program, name);
+    for (const name of uniformNames) this.uniforms[name] = gl.getUniformLocation(program, name);
 
     // Resting single cell; the colony variant overwrites these every frame
-    gl.uniform1f(this.uniforms.uWarp, WARP);
-    gl.uniform1f(this.uniforms.uMelt, MELT);
+    gl.uniform1f(this.uniforms.uWarp, warp);
+    gl.uniform1f(this.uniforms.uMelt, melt);
     gl.uniform4f(this.uniforms.uPosA, 0, 0, 0, 0);
     gl.uniform4f(this.uniforms.uPosB, 0, 0, 0, 0);
     gl.uniform2f(this.uniforms.uPosE, 0, 0);
@@ -211,7 +204,7 @@ export class MorphRenderer {
     gl.uniform1f(this.uniforms.uTOffE, 0);
     gl.uniform4f(this.uniforms.uG, 0, 0, 0, 0);
     gl.uniform1f(this.uniforms.uCellScale, 1);
-    gl.uniform1f(this.uniforms.uWidth, BAND_HALF_WIDTH);
+    gl.uniform1f(this.uniforms.uWidth, bandHalfWidth);
   }
 
   private resume() {
@@ -230,7 +223,7 @@ export class MorphRenderer {
   private fitCanvas(gl: WebGL2RenderingContext) {
     const rect = this.canvas.getBoundingClientRect();
     this.shortSide = Math.min(rect.width, rect.height);
-    const ratio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+    const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
     const width = Math.max(2, Math.round(rect.width * ratio));
     const height = Math.max(2, Math.round(rect.height * ratio));
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -246,16 +239,15 @@ export class MorphRenderer {
     this.fitCanvas(gl);
     this.time += dt * this.timeScale;
     // Advances on drawn frames only, so an instance mounted off-screen enters when it scrolls into view
-    this.enter = Math.min(1, this.enter + dt / ENTER_SECONDS);
+    this.enter = Math.min(1, this.enter + dt / enterSeconds);
 
     const u = this.uniforms;
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height);
     gl.uniform1f(u.uTime, this.time);
     gl.uniform1f(u.uDark, this.dark ? 1 : 0);
-    gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (GRID_SPAN * this.minGrain))));
+    gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (gridSpan * this.minGrain))));
     gl.uniform1i(u.uStamp, this.stamp);
     gl.uniform1f(u.uEnter, this.enter);
-    if (this.variant !== 'colony') gl.uniform1f(u.uZoom, this.overscan);
 
     if (this.variant === 'colony') {
       const [g1, g2, g3, g4] = splitProgress(this.time);
@@ -283,8 +275,10 @@ export class MorphRenderer {
       gl.uniform4f(u.uG, g1, g2, g3, g4);
       const cellScale = (1 - 0.26 * g1) * (1 - 0.16 * g2) * (1 - 0.1 * g3) * (1 - 0.1 * g4);
       gl.uniform1f(u.uCellScale, cellScale);
-      gl.uniform1f(u.uWidth, BAND_HALF_WIDTH * (0.7 + 0.3 * cellScale));
+      gl.uniform1f(u.uWidth, bandHalfWidth * (0.7 + 0.3 * cellScale));
       gl.uniform1f(u.uZoom, this.overscan * (1 + 0.16 * g1 + 0.12 * g2 + 0.09 * g3 + 0.09 * g4));
+    } else {
+      gl.uniform1f(u.uZoom, this.overscan);
     }
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);

@@ -10,8 +10,8 @@ export async function fetchAllPages<T>(fetcher: PaginatedFetcher<T>, limit: numb
 
   const remaining = Math.ceil((first.total - first.items.length) / limit);
 
-  const requests = Array.from({ length: remaining }, (_, i) => fetcher({ limit, offset: (i + 1) * limit }));
+  const requests = Array.from({ length: remaining }, (_, index) => fetcher({ limit, offset: (index + 1) * limit }));
   const pages = await Promise.all(requests);
 
-  return { items: [first, ...pages].flatMap((p) => p.items), total: first.total };
+  return { items: [first, ...pages].flatMap((page) => page.items), total: first.total };
 }

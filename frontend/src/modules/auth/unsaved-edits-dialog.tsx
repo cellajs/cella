@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
-import { cachedEntityName, firstLineOf, firstLineOfUpdates, YDOC_FRAGMENT, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
+import { cachedEntityName, firstLineOf, firstLineOfUpdates, yDocFragment, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
 import { type UnstoredYDoc, watchUnstoredYDocs } from '~/modules/common/blocknote/yjs-connections';
 import { loadYDoc, type UnsavedYDoc, watchUnsavedYDocs } from '~/modules/common/blocknote/yjs-store';
 import { Button } from '~/modules/ui/button';
@@ -39,21 +39,22 @@ function combine(stored: UnsavedYDoc[], unstored: UnstoredYDoc[]): UnsavedEdit[]
 
 /**
  * The edits sign-out would discard, live: the store's rows and the connections that keep saving on the sign-out page,
- * so the list shrinks as they save. Undefined until both sources answered, or while `enabled` is false.
+ * so the list shrinks as they save. Undefined until both sources answered.
  */
-export function useUnsavedEdits(enabled: boolean): UnsavedEdit[] | undefined {
+export function useUnsavedEdits(): UnsavedEdit[] | undefined {
   const [stored, setStored] = useState<UnsavedYDoc[]>();
   const [unstored, setUnstored] = useState<UnstoredYDoc[]>();
 
-  useEffect(() => (enabled ? watchUnsavedYDocs(setStored) : undefined), [enabled]);
-  useEffect(() => (enabled ? watchUnstoredYDocs(setUnstored) : undefined), [enabled]);
+  useEffect(() => watchUnsavedYDocs(setStored), []);
+  useEffect(() => watchUnstoredYDocs(setUnstored), []);
 
-  return useMemo(() => (enabled && stored && unstored ? combine(stored, unstored) : undefined), [enabled, stored, unstored]);
+  // Memoized by hand: the gate hands the list on in an effect, where a new array per render (an uncompiled run) loops.
+  return useMemo(() => (stored && unstored ? combine(stored, unstored) : undefined), [stored, unstored]);
 }
 
 /** The first line of an unsaved document, from memory, its parked row or its stored rows. */
 async function readFirstLine({ entityId, entityType, parked, yDoc }: Omit<UnsavedEdit, 'key'>): Promise<string | null> {
-  if (yDoc) return firstLineOf(yDoc.getXmlFragment(YDOC_FRAGMENT));
+  if (yDoc) return firstLineOf(yDoc.getXmlFragment(yDocFragment));
   if (!entityType) return null;
   if (parked) {
     const row = await getLocalUserDb()?.unsaveableYDocs.where('[entityType+entityId]').equals([entityType, entityId]).last();
@@ -138,7 +139,7 @@ interface UnsavedEditsGateProps {
  * connections and the editor chunk, which the auth pages otherwise never load.
  */
 export function UnsavedEditsGate({ onChange, open, onConfirm, onCancel }: UnsavedEditsGateProps) {
-  const edits = useUnsavedEdits(true);
+  const edits = useUnsavedEdits();
   useEffect(() => onChange(edits), [edits, onChange]);
   return open && edits?.length ? <UnsavedEditsDialog edits={edits} onConfirm={onConfirm} onCancel={onCancel} /> : null;
 }

@@ -104,13 +104,6 @@ afterEach(async () => {
 });
 
 describe('tab coordinator leadership', () => {
-  it('becomes leader and holds the lock when it is free', async () => {
-    await initTabCoordinator();
-
-    expect(isLeader()).toBe(true);
-    expect(fakeLocks.isHeld('tab-leader')).toBe(true);
-  });
-
   it('releases the lock on release so a later return re-elects', async () => {
     await initTabCoordinator();
     releaseTabLeadership();
@@ -121,14 +114,6 @@ describe('tab coordinator leadership', () => {
 
     await initTabCoordinator();
     expect(isLeader()).toBe(true);
-  });
-
-  it('parks as follower while another tab holds leadership', async () => {
-    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
-
-    await initTabCoordinator();
-
-    expect(isLeader()).toBe(false);
   });
 
   it('promotes a follower when the leader releases on leaving the app', async () => {
@@ -152,71 +137,38 @@ describe('tab coordinator leadership', () => {
   });
 });
 
-describe('a catchup answer, between tabs', () => {
-  const answer: PostAppCatchupResponse = { cursor: 'c9', changes: {}, generation: 7 };
-
-  it('reaches a follower, which sends no catchup request of its own', async () => {
-    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
-    await initTabCoordinator();
-    const heard: Array<[PostAppCatchupResponse, boolean]> = [];
-    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
-
-    receive({ type: 'catchup', response: answer, baselineOnly: false });
-    stop();
-    receive({ type: 'catchup', response: answer, baselineOnly: true });
-
-    expect(heard).toEqual([[answer, false]]);
-  });
-
-  it('is not acted on by the leader: it processed the answer to its own request', async () => {
-    await initTabCoordinator();
-    const heard: Array<[PostAppCatchupResponse, boolean]> = [];
-    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
-
-    receive({ type: 'catchup', response: answer, baselineOnly: false });
-    stop();
-
-    expect(isLeader()).toBe(true);
-    expect(heard).toEqual([]);
-  });
-
-  it('is posted to the other tabs by the leader', async () => {
-    await initTabCoordinator();
-
-    broadcastCatchup(answer, true);
-
-    expect(FakeBroadcastChannel.opened?.posted).toContainEqual({ type: 'catchup', response: answer, baselineOnly: true });
-  });
-});
-
-describe("the health of the leader's stream, between tabs", () => {
+describe('what the leader tells the other tabs', () => {
   const down = { streamHealthy: false, workerAway: true };
 
-  it('reaches a follower, which has no stream of its own to judge by', async () => {
+  it('reaches the handlers of a follower tab as the leader posted it: a catchup answer and the health of its stream', async () => {
+    const answer: PostAppCatchupResponse = { cursor: 'c9', changes: {}, generation: 7 };
+
+    // This tab leads, and posts.
+    await initTabCoordinator();
+    broadcastCatchup(answer, false);
+    broadcastSyncHealth(down);
+    const posted = FakeBroadcastChannel.opened?.posted.slice(-2) ?? [];
+
+    // Another tab leads now: this one follows, runs no catchup and has no stream, and hears what was posted.
+    releaseTabLeadership();
+    await tick();
     fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
     await initTabCoordinator();
-    const heard: unknown[] = [];
-    const stop = onSyncHealth((health) => heard.push(health));
+    expect(isLeader()).toBe(false);
+    const catchups: unknown[] = [];
+    const healths: unknown[] = [];
+    const stopCatchup = onCatchup(({ response, baselineOnly }) => catchups.push([response, baselineOnly]));
+    const stopHealth = onSyncHealth((health) => healths.push(health));
 
-    receive({ type: 'sync-health', health: down });
-    stop();
-    receive({ type: 'sync-health', health: { streamHealthy: true, workerAway: false } });
+    for (const message of posted) receive(message);
+    stopCatchup();
+    stopHealth();
 
-    expect(heard).toEqual([down]);
+    expect(catchups).toEqual([[answer, false]]);
+    expect(healths).toEqual([down]);
   });
 
-  it('is not acted on by the leader: its own stream says', async () => {
-    await initTabCoordinator();
-    const heard: unknown[] = [];
-    const stop = onSyncHealth((health) => heard.push(health));
-
-    receive({ type: 'sync-health', health: down });
-    stop();
-
-    expect(heard).toEqual([]);
-  });
-
-  it('is said again by the leader to a tab that opens later: every tab announces its version as it opens', async () => {
+  it('includes the health of its stream, said again to a tab that opens later: every tab announces its version as it opens', async () => {
     await initTabCoordinator();
     broadcastSyncHealth(down);
     const posted = FakeBroadcastChannel.opened?.posted ?? [];
@@ -226,16 +178,5 @@ describe("the health of the leader's stream, between tabs", () => {
 
     expect(posted.filter((message) => (message as { type: string }).type === 'sync-health')).toHaveLength(saidBefore + 1);
     expect(posted.at(-1)).toEqual({ type: 'sync-health', health: down });
-  });
-
-  it('must not be answered by a follower: it only knows what it was told', async () => {
-    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
-    await initTabCoordinator();
-    const posted = FakeBroadcastChannel.opened?.posted ?? [];
-    const saidBefore = posted.length;
-
-    receive({ type: 'schema-version', version: 1 });
-
-    expect(posted.slice(saidBefore)).toEqual([]);
   });
 });

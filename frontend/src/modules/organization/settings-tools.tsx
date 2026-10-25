@@ -1,9 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { DeleteToolCard } from '~/modules/entities/channel-settings-tools';
 import { TabsArrangementCard } from '~/modules/entities/tabs-arrangement-card';
@@ -12,6 +10,10 @@ import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
+
+interface OrganizationCardProps {
+  organization: EnrichedOrganization;
+}
 
 function useSlugChangeCallback(organization: EnrichedOrganization) {
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ function useSlugChangeCallback(organization: EnrichedOrganization) {
   };
 }
 
-export function OrganizationGeneralCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationGeneralCard({ organization }: OrganizationCardProps) {
   const callback = useSlugChangeCallback(organization);
   return (
     <ToolCard label="c:general" unsaved id="update-organization">
@@ -37,7 +39,7 @@ export function OrganizationGeneralCard({ organization }: { organization: Enrich
   );
 }
 
-export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationDetailsCard({ organization }: OrganizationCardProps) {
   const callback = useSlugChangeCallback(organization);
   return (
     <ToolCard label="c:details" unsaved id="update-organization-details">
@@ -46,19 +48,18 @@ export function OrganizationDetailsCard({ organization }: { organization: Enrich
   );
 }
 
-export function OrganizationTabsCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationTabsCard({ organization }: OrganizationCardProps) {
   const { mutate } = useOrganizationUpdateMutation();
   return (
     <TabsArrangementCard
       entity={organization}
       parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-      persist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })}
+      onPersist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })}
     />
   );
 }
 
-export function OrganizationDeleteCard({ organization }: { organization: EnrichedOrganization }) {
-  const { t } = useTranslation();
+export function OrganizationDeleteCard({ organization }: OrganizationCardProps) {
   const navigate = useNavigate();
 
   return (
@@ -66,16 +67,14 @@ export function OrganizationDeleteCard({ organization }: { organization: Enriche
       name={organization.name}
       resource="c:organization"
       dialogId="delete-organization"
+      notice="c:delete_organization_notice.text"
+      values={{ days: appConfig.retention.archivedTenantDays }}
       renderDialog={() => (
         <DeleteOrganizations
-          dialog
           tenantId={organization.tenantId}
           organizations={[organization]}
-          callback={({ status }: CallbackArgs<Organization[]>) => {
-            if (status === 'success') {
-              toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
-              navigate({ to: appConfig.defaultRedirectPath, replace: true });
-            }
+          callback={({ status }) => {
+            if (status === 'success') navigate({ to: appConfig.defaultRedirectPath, replace: true });
           }}
         />
       )}

@@ -1,7 +1,8 @@
 import { BlockNoteEditor } from '@blocknote/core';
+import { parseBlocks } from 'shared/blocknote';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import type { CustomBlock } from '~/modules/common/blocknote/types';
+import type { AnyBlockNoteEditor, CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
@@ -12,46 +13,26 @@ export const getHeadlessEditor = () => {
   return headlessEditor;
 };
 
-/** Depth-first walk over parsed blocks and children; returning `false` from the visitor stops early. */
-// biome-ignore lint/suspicious/noConfusingVoidType: `boolean | void` lets visitors omit a return (mirrors editor.forEachBlock)
-export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) => boolean | void): boolean => {
-  for (const block of blocks) {
-    if (visitor(block) === false) return false;
-    if (block.children?.length && !walkBlocks(block.children as CustomBlock[], visitor)) return false;
-  }
-  return true;
+/** Block id of the media a click in rendered content hit, or null. `includeWrapped` also matches nested media and file blocks without a preview. */
+export const findClickedMediaBlockId = (target: EventTarget, { includeWrapped = false } = {}): string | null => {
+  if (!(target instanceof Element)) return null;
+  const media =
+    target.closest('img, video, audio') ??
+    (includeWrapped ? (target.querySelector('img, video, audio') ?? target.closest('.bn-file-block-content-wrapper')) : null);
+  return media?.closest('[data-id]')?.getAttribute('data-id') ?? null;
 };
 
-/** Media element for a click in rendered content, or null. `includeWrapped` also matches nested media and file blocks without a preview. */
-export const findClickedMedia = (target: HTMLElement, { includeWrapped = false } = {}): { src: string | undefined } | null => {
-  const mediaElement =
-    target.closest<HTMLElement>('img, video, audio') ?? (includeWrapped ? target.querySelector<HTMLElement>('img, video, audio') : null);
-  const insideFileBlock = includeWrapped && !!target.closest('.bn-file-block-content-wrapper');
+/** The stored blocks, or undefined for an empty or unparsable string: BlockNote's `initialContent` takes no null. */
+export const getParsedContent = (strBlocks: string | null | undefined) => (parseBlocks(strBlocks) as CustomBlock[] | null) ?? undefined;
 
-  if (!mediaElement && !insideFileBlock) return null;
-  return { src: (mediaElement as HTMLMediaElement | null)?.src };
-};
-
-export const getParsedContent = (initialStringifiedBlocks: string | undefined) => {
-  if (!initialStringifiedBlocks) return undefined;
-  try {
-    return JSON.parse(initialStringifiedBlocks) as CustomBlock[];
-  } catch {
-    return undefined;
-  }
-};
-
-export const blocksToHTML = (srtBlocks: string) => {
-  const blocks = JSON.parse(srtBlocks) as CustomBlock[];
-  return getHeadlessEditor().blocksToHTMLLossy(blocks);
-};
+export const blocksToHTML = (strBlocks: string) => getHeadlessEditor().blocksToHTMLLossy(getParsedContent(strBlocks) ?? []);
 
 /** Writes both HTML (for rich text targets) and Markdown (so code blocks survive in plain-text targets). */
 export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<boolean> => {
-  if (!strBlocks) return false;
+  const blocks = getParsedContent(strBlocks);
+  if (!blocks) return false;
 
   try {
-    const blocks = JSON.parse(strBlocks) as CustomBlock[];
     const editor = getHeadlessEditor();
 
     const markdown = editor.blocksToMarkdownLossy(blocks);
@@ -67,17 +48,14 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
   }
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: schema-agnostic; custom block renderers pass narrower-schema editors
-type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
-
 /** The outer `transact` carries `addToHistory: false`, which covers both the Yjs UndoManager and ProseMirror history. */
 export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
   editor: TEditor,
-  blockId: Parameters<TEditor['updateBlock']>[0],
+  block: Parameters<TEditor['updateBlock']>[0],
   update: Parameters<TEditor['updateBlock']>[1],
 ) => {
   editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
     tr.setMeta('addToHistory', false);
-    editor.updateBlock(blockId, update);
+    editor.updateBlock(block, update);
   });
 };

@@ -5,7 +5,8 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { idInTenantOrgParamSchema, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { nullableActorRefSchema } from '#/schemas/actor-ref';
+import { auditShape } from '#/schemas/entity-base';
 import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from './service-accounts-mocks';
 
 // `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
@@ -25,10 +26,11 @@ const roleBindingSchema = z.object({
 /** The route addresses one key of one account. */
 export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
 
-/** `createdBy` / `updatedBy` stay actor ids: the audit-user hydration resolves users only (service badge is a follow-up). */
+/** Its writers are `ActorRef`s like any row's: an admin's account created by another admin, or by a service. */
 export const serviceAccountSchema = z
   .object({
     ...createSelectSchema(serviceAccountsTable).shape,
+    ...auditShape,
     status: z.enum(serviceAccountStatuses),
     bindings: z.array(roleBindingSchema),
     /** The last request one of the account's API keys or tokens authenticated, to five minutes; null until the first. */
@@ -43,7 +45,7 @@ export const serviceAccountSchema = z
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
   // Only people issue keys, so the creator is always a user the response can name.
-  .extend({ scopes: z.array(scopeEnum).nullable(), createdBy: nullableUserMinimalBaseSchema })
+  .extend({ scopes: z.array(scopeEnum).nullable(), createdBy: nullableActorRefSchema })
   .openapi('ApiKey', {
     description:
       'A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.',
@@ -59,7 +61,7 @@ export const createdApiKeySchema = apiKeySchema
 const apiKeyInputSchema = z.object({
   name: validNameSchema,
   /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
-  scopes: z.array(scopeEnum).min(1).nullable().optional(),
+  scopes: z.array(scopeEnum).min(1).max(accessScopes.all.length).nullable().optional(),
   expiresAt: z.string().datetime().optional(),
 });
 

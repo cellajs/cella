@@ -13,7 +13,7 @@ export const noteStyle: React.CSSProperties = { ...finePrintStyle, margin: '0.5r
 /** Mirrors frontend/src/modules/common/blocknote/styles.css so newsletters match the editor. */
 export const newsletterContentStyles = `
   .bn-email-content {
-    font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
     font-size: 0.888rem;
     line-height: 1.5;
     color: #404040;

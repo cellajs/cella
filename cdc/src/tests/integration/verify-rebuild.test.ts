@@ -10,7 +10,7 @@ import { awaitBooksAnswer, clearBooksRequest, findBooksRequest, requestBooks } f
 import { type SyncCorrection, syncIncidentsTable, syncStateTable } from '#/modules/entities/sync-state-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
-import { CDC_PUBLICATION_NAME, RESOURCE_LIMITS } from '../../constants';
+import { cdcPublicationName, resourceLimits } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { settleLostCases } from '../../pipeline/replication';
 import { answerBooksRequests, rebuildBooks, restoreBooksState, startBooksSchedule, stopBooksSchedule, verifyBooks } from '../../pipeline/verify';
@@ -19,27 +19,27 @@ import { replicationState } from '../../services/replication-state';
 import { lsnToBigInt } from '../../utils/lsn';
 import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, startCdcPipeline, waitFor } from './pipeline-harness';
 
-const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
+const wsPort = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
 
 /** Probe whether the configured DB can support this suite. TEST_MODE gating lives in vitest.config.ts. */
 async function probeReady(): Promise<boolean> {
   try {
     const wal = await cdcDb.execute<{ wal_level: string }>(sql`SHOW wal_level`);
     if (wal.rows[0]?.wal_level !== 'logical') return false;
-    const pub = await cdcDb.execute<{ ok: number }>(sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
+    const pub = await cdcDb.execute<{ ok: number }>(sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${cdcPublicationName}`);
     return pub.rows.length > 0;
   } catch {
     return false;
   }
 }
 
-const READY = await probeReady();
+const ready = await probeReady();
 
 /**
  * Verify and rebuild on the real pipeline: rows are written to the database, read from the replication stream and
  * recorded, and the books are compared with the tables while that goes on.
  */
-describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
+describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
   const tenantId = nanoidTenant();
   const organizationId = generateId();
   /** An organization of its own, in its own tenant, for the test that needs an exact count. */
@@ -76,22 +76,27 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
   const insertAttachment = async (inOrganization = organizationId): Promise<string> => (await insertAttachments(1, inOrganization))[0];
 
   const counts = async (ofOrganization = organizationId) =>
-    ((await cdcDb.execute(sql`SELECT counts FROM channel_counters WHERE channel_key = ${ofOrganization}`)).rows[0]?.counts ?? {}) as Record<
-      string,
-      number
-    >;
+    ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${ofOrganization}`)).rows[0]
+      ?.counts ?? {}) as Record<string, number>;
   const liveAttachments = async (ofOrganization = organizationId) =>
     Number(
-      (await cdcDb.execute(sql`SELECT count(*) FROM attachments WHERE organization_id = ${ofOrganization} AND deleted_at IS NULL`)).rows[0].count,
+      (await cdcDb.execute<{ count: string }>(sql`SELECT count(*) FROM attachments WHERE organization_id = ${ofOrganization} AND deleted_at IS NULL`))
+        .rows[0].count,
     );
   const highestSeq = async () =>
-    Number((await cdcDb.execute(sql`SELECT coalesce(max(seq), 0) AS seq FROM attachments WHERE organization_id = ${organizationId}`)).rows[0].seq);
+    Number(
+      (await cdcDb.execute<{ seq: string }>(sql`SELECT coalesce(max(seq), 0) AS seq FROM attachments WHERE organization_id = ${organizationId}`))
+        .rows[0].seq,
+    );
   const recordedFor = async (ids: string[]) =>
     (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
   const syncState = async () => (await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync')))[0];
   const generation = async () => (await syncState())?.generation ?? 1;
   const lastIncident = async () => (await cdcDb.select().from(syncIncidentsTable).orderBy(desc(syncIncidentsTable.createdAt)).limit(1))[0];
-  const dbNow = async () => (await cdcDb.execute<{ now: string }>(sql`SELECT clock_timestamp()::timestamp::text AS now`)).rows[0].now;
+  // ISO UTC text like every timestamp column, so the string comparisons below order correctly.
+  const dbNow = async () =>
+    (await cdcDb.execute<{ now: string }>(sql`SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS now`)).rows[0]
+      .now;
   const incidentsSince = async (since: string) =>
     await cdcDb.select().from(syncIncidentsTable).where(sql`${syncIncidentsTable.createdAt} > ${since}`).orderBy(syncIncidentsTable.createdAt);
   /** The reasons of the rebuilds since a moment, in order. */
@@ -169,7 +174,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
   beforeAll(async () => {
     ({ WebSocketServer } = await import('ws'));
     await new Promise<void>((resolve) => {
-      wss = new WebSocketServer({ port: WS_PORT });
+      wss = new WebSocketServer({ port: wsPort });
       wss.on('listening', () => resolve());
     });
 
@@ -444,7 +449,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     const refused = Object.assign(new Error('null value in column "organization_id"'), { code: '23502' });
     /** Five failed reads of one change: the worker is stuck there. */
     const stick = () => {
-      for (let attempt = 0; attempt < RESOURCE_LIMITS.reread.stuckAfter; attempt++) replicationState.recordFailure('0/AB', refused);
+      for (let attempt = 0; attempt < resourceLimits.reread.stuckAfter; attempt++) replicationState.recordFailure('0/AB', refused);
     };
 
     let intervalsPassed = 0;
@@ -452,7 +457,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     const pastTheInterval = async (fn: () => Promise<void>) => {
       intervalsPassed += 1;
       vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Date.now() + intervalsPassed * (RESOURCE_LIMITS.books.rebuildIntervalMs + 1000));
+      vi.setSystemTime(Date.now() + intervalsPassed * (resourceLimits.books.rebuildIntervalMs + 1000));
       try {
         await fn();
       } finally {
@@ -695,7 +700,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
       expect(((await syncState()).verifiedAt ?? '') > since).toBe(false);
 
       vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Date.now() + RESOURCE_LIMITS.books.rebuildIntervalMs + 1000);
+      vi.setSystemTime(Date.now() + resourceLimits.books.rebuildIntervalMs + 1000);
       try {
         await answerBooksRequests();
       } finally {

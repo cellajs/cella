@@ -1,12 +1,12 @@
 import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
 import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
-import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
-import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
+import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 
 interface GetOrganizationsInput {
   q?: string;
@@ -86,5 +86,5 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
     return { ...orgData, included };
   });
 
-  return { items: coalesceAuditUsers(items), total };
+  return { items: await withActorRefs(ctx, items), total };
 }

@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -12,7 +12,7 @@ let root: Root;
 let container: HTMLDivElement;
 
 beforeEach(async () => {
-  useUIStore.setState({ uiLocks: [] });
+  uiStore.setState({ uiLocks: [] });
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
@@ -53,19 +53,16 @@ describe('pull to refresh', () => {
     expect(document.body.classList.contains('overflow-hidden')).toBe(false);
   });
 
-  it('drops a pull when an overlay opens mid-pull', async () => {
+  it('drops a pull when an overlay opens mid-pull, and starts none while it stays open', async () => {
     await touch('touchstart', 10);
     await touch('touchmove', 200);
 
-    await act(async () => useUIStore.getState().lockUI('sheeter'));
+    await act(async () => uiStore.getState().lockUI('sheeter'));
 
     expect(isIndicatorShown()).toBe(false);
     expect(document.body.classList.contains('overflow-hidden')).toBe(false);
-  });
 
-  it('starts no pull while an overlay is open', async () => {
-    await act(async () => useUIStore.getState().lockUI('sheeter'));
-
+    await touch('touchend');
     await touch('touchstart', 10);
     await touch('touchmove', 200);
 

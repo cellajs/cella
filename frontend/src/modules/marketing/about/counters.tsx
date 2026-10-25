@@ -7,6 +7,7 @@ import { publicCountsQueryOptions } from '~/modules/marketing/query';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 
+/** Counts from `start` to `end` over `duration` milliseconds, easing out. */
 export function useCountUp(start: number, end: number, duration = 1500) {
   const [value, setValue] = useState(start);
   useEffect(() => {
@@ -24,7 +25,12 @@ export function useCountUp(start: number, end: number, duration = 1500) {
   return value;
 }
 
-function CountUp({ start, end }: { start: number; end: number }) {
+interface CountUpProps {
+  start: number;
+  end: number;
+}
+
+function CountUp({ start, end }: CountUpProps) {
   const value = useCountUp(start, end);
   return <>{value.toLocaleString()}</>;
 }
@@ -57,7 +63,7 @@ export function Counters() {
             <Card key={id} className="bg-background">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="font-medium text-sm sm:text-lg">{t(title)}</CardTitle>
-                <Icon className="size-4 text-muted-foreground sm:size-6" strokeWidth={1.5} />
+                <Icon className="size-4 text-muted-foreground sm:size-6" />
               </CardHeader>
               <CardContent>
                 <div className="font-bold text-3xl">

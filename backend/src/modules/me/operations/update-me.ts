@@ -1,9 +1,10 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { findCurrentUser, type UpdateMeOpts, updateMe } from '#/modules/me/me-queries';
-import { getIsoDate } from '#/utils/iso-date';
 
 interface UpdateMeInput {
   slug?: string;
@@ -36,12 +37,12 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
     ...(lastName !== undefined && { lastName }),
     ...(userFlags && { userFlags }),
     ...((firstName || lastName) && { name: [firstName, lastName].filter(Boolean).join(' ') }),
-    updatedAt: getIsoDate(),
-    updatedBy: user.id,
+    ...updateStamps(user.id),
   };
 
   await updateMe(ctx, { values: updateData as UpdateMeOpts['values'] });
   invalidateCache.user(user.id);
+  await releaseReplacedImages({ owner: { userId: user.id }, before: user, after: input });
 
   const userWithActivity = await findCurrentUser(ctx);
   return userWithActivity;

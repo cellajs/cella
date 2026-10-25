@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isStrategyEnabled } from 'shared';
-import { accessibilityReview, legalConfig } from '~/modules/auth/legal/legal-config';
+import { accessibilityReview } from '~/modules/auth/legal/legal-config';
+import { SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
 import type { AccessibilityResults } from '~/modules/auth/legal/legal-types';
-import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
-
-const sections = legalConfig.accessibility.sections;
-const s = (id: string) => sections.find((sec) => sec.id === id)!;
+import { enabledOAuthProviders } from '~/modules/auth/oauth-providers';
 
 /** Joins items as prose: "a, b and c" or "a, b or c". */
 const listed = (items: string[], conjunction: 'and' | 'or') =>
@@ -32,13 +30,11 @@ const outcomes = ({ supports, partiallySupports, doesNotSupport, notApplicable, 
 /** A `YYYY-MM-DD` day as "October 3, 2026". */
 const longDate = (day: string) => new Date(`${day}T00:00:00`).toLocaleDateString('en-US', { dateStyle: 'long' });
 
-function AccessibilityText() {
+export function AccessibilityText() {
   const { t } = useTranslation();
-  const lastUpdated = 'October 15, 2026';
 
   const appName = appConfig.name;
   const frontendUrl = appConfig.frontendUrl;
-  const supportEmail = appConfig.company.supportEmail;
   const { standard, reviewedAt, provisional, results, limitations, report } = accessibilityReview;
   const notEvaluated = results?.notEvaluated ?? [];
   const conforms = limitations.length === 0 && notEvaluated.length === 0;
@@ -48,9 +44,7 @@ function AccessibilityText() {
       {t(`c:${lang}`)}
     </span>
   ));
-  const oauthNames = mapOAuthProviders
-    .filter(({ id }) => (appConfig.enabledOAuthProviders as readonly string[]).includes(id))
-    .map(({ name }) => name);
+  const oauthNames = enabledOAuthProviders.map(({ name }) => name);
   const signInMethods = [
     isStrategyEnabled('passkey') && 'a passkey',
     isStrategyEnabled('magic') && 'a link sent to your email',
@@ -59,8 +53,7 @@ function AccessibilityText() {
 
   return (
     <div id="accessibility-content">
-      <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+      <LegalSection subject="accessibility" id="overview" lastUpdated="October 15, 2026">
         <p>
           This statement covers the {appName} website and app at{' '}
           <a href={frontendUrl} target="_blank" rel="noreferrer">
@@ -75,18 +68,20 @@ function AccessibilityText() {
             ' These results are provisional: an AI agent judged what tools cannot decide, and testing by a person, including with screen readers, is not finished yet.'}
         </p>
         <p>
-          Something not working for you, or need information in another format? Email <a href={`mailto:${supportEmail}`}>{supportEmail}</a> with the
-          page, what happened, and your browser and any assistive technology.
+          Something not working for you, or need information in another format? Email <SupportEmailLink /> with the page, what happened, and your
+          browser and any assistive technology.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('what-you-can-do').id} label={s('what-you-can-do').label}>
+      <LegalSection subject="accessibility" id="what-you-can-do">
         <ul>
           <li>Use light or dark mode. It starts in the mode your device uses.</li>
           <li>
-            Turn on more contrast under Preferences, in the menu: fields, buttons and panels get stronger edges, and messages stay until you close
-            them. When your device asks for more contrast, {appName} follows it, also before you sign in.
+            Turn on more contrast under Preferences, in the menu: fields, buttons and panels get stronger edges, messages stay until you close them,
+            and a click on a drag handle opens a menu that moves its item, so nothing needs dragging. When your device asks for more contrast,{' '}
+            {appName} follows it, also before you sign in.
           </li>
+          <li>Move an item in a list without dragging: focus its drag handle and press the arrow keys, then Tab or Escape to go on.</li>
           <li>
             Open the menu with Alt + M, search with Ctrl + K and your account with Alt + A (Option and ⌘ on a Mac). Every shortcut needs one of these
             keys, so typing and voice control do not set one off by accident.
@@ -96,7 +91,7 @@ function AccessibilityText() {
         </ul>
       </LegalSection>
 
-      <LegalSection id={s('known-limitations').id} label={s('known-limitations').label}>
+      <LegalSection subject="accessibility" id="known-limitations">
         {limitations.length > 0 ? (
           <ul>
             {limitations.map(({ description, criteria, workaround }) => (
@@ -115,7 +110,7 @@ function AccessibilityText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('how-we-test').id} label={s('how-we-test').label}>
+      <LegalSection subject="accessibility" id="how-we-test">
         {reviewedAt && results ? (
           <p>
             We checked {results.pagesAndStates} pages and states, such as open dialogs and menus, in light and dark mode and with more contrast turned
@@ -137,5 +132,3 @@ function AccessibilityText() {
     </div>
   );
 }
-
-export { AccessibilityText };

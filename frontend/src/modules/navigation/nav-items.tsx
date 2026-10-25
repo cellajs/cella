@@ -8,11 +8,7 @@ import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadNavBadge } from '~/modules/notification/unread-nav-badge';
 import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 
-/**
- * The main navigation items, shown in the navigation bar and as floating buttons on mobile.
- * `iconSlot` replaces the default icon rendering and `badgeSlot` renders a counter over the button;
- * both are plain components. An app with its own set pins this file in `cella/cella.config.ts`.
- */
+/** The main navigation items, in the nav bars and as floating buttons on mobile; an app with its own set pins this file in `cella/cella.config.ts`. */
 export const navItems = [
   // Home lives in the menu sheet header, so the menu button also carries the brand intro and the loading spinner.
   {

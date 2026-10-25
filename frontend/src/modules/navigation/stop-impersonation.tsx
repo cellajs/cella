@@ -4,10 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { stopImpersonationFlow } from '~/modules/me/helpers';
-import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
+import { navIconStrokeWidth, navItemIconClass, SidebarNavButton } from '~/modules/navigation/nav-buttons';
 import { useUserStore } from '~/modules/user/user-store';
-
-const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
 interface StopImpersonationProps {
   isCollapsed: boolean;
@@ -27,24 +25,9 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
 
   if (!impersonator) return null;
 
-  const showTooltip = isCollapsed || !hasSidebarTextLabels;
-
   return (
-    <SidebarMenuItem className="flex grow-0 justify-start pb-2">
-      <SidebarMenuButton
-        size="lg"
-        data-collapsed={isCollapsed}
-        tooltip={{ children: t('c:stop_impersonation'), hidden: !showTooltip }}
-        onClick={stopImpersonation}
-        className="group h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16"
-      >
-        <UserXIcon className="size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.8} />
-        {hasSidebarTextLabels && (
-          <span className="w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
-            {t('c:stop_impersonation')}
-          </span>
-        )}
-      </SidebarMenuButton>
-    </SidebarMenuItem>
+    <SidebarNavButton label={t('c:stop_impersonation')} isCollapsed={isCollapsed} onClick={stopImpersonation}>
+      <UserXIcon className={navItemIconClass} strokeWidth={navIconStrokeWidth} />
+    </SidebarNavButton>
   );
 }

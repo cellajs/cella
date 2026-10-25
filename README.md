@@ -1,4 +1,4 @@
-<div style="text-align: center">
+<center>
 
   <img alt="screenshot" src="./frontend/public/static/marketing/screenshots/readme-screenshot-dark.webp#gh-dark-mode-only" />
   <img alt="screenshot" src="./frontend/public/static/marketing/screenshots/readme-screenshot.webp#gh-light-mode-only" />
@@ -26,27 +26,24 @@
     MIT license
 </p>
 <br />
-</div>
+</center>
 
 #### Contents
 
-- [Agent guidelines](./cella/AGENTS.md)
-- [Architecture](./cella/ARCHITECTURE.md)
-- [Client (React)](./cella/CLIENT.md)
-- [Multi-tenancy](./cella/MULTI_TENANCY.md)
 - [Quickstart](./cella/QUICKSTART.md)
+- [Architecture](./cella/ARCHITECTURE.md)
+- [Agent guidelines](./cella/AGENTS.md)
+
 
 ## Requirements
 
-- Node.js 26, best the exact version of the root `package.json` `engines.node`, which CI and the images run (`node -v`)
-- [Docker](https://docs.docker.com/get-docker/)
-- [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and the [gh cli](https://cli.github.com/)
+Node.js 26, [pnpm 11](https://pnpm.io/installation), [Docker](https://docs.docker.com/get-docker/). For syncing with upstream: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and [gh cli](https://cli.github.com/)
 
 <br>
 
 ## Create app
 
-Do **not** copy this repository. Use the create CLI:
+For best DX, **do not** just clone or copy this repo. Use the create CLI:
 
 ```bash
 pnpm create @cellajs/cella

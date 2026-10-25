@@ -6,39 +6,34 @@ import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
+import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { PopConfirm } from '~/modules/common/popconfirm';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { openConfirm } from '~/modules/common/open-confirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
+import { tw } from '~/utils/tw';
 
 const formSchema = zUpdateOrganizationBody;
 
 type FormValues = z.infer<typeof formSchema>;
-interface Props {
+
+interface UpdateOrganizationDetailsFormProps {
   organization: EnrichedOrganization;
-  sheet?: boolean;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-export function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
+export function UpdateOrganizationDetailsForm({ organization, callback }: UpdateOrganizationDetailsFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
-
-  // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which
-  // an organization UPDATE grant does not imply, and the organization must be an upload target.
-  const canUploadAttachments =
-    (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -58,7 +53,6 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
       { path: { tenantId: organization.tenantId, id: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
@@ -73,33 +67,16 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   };
 
   // Discarding drops the unsaved text for good, so the click asks first.
-  const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
-    create(
-      <PopConfirm title={t('c:confirm.discard_changes')}>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            variant="destructive"
-            className="justify-center sm:w-auto"
-            onClick={() => {
-              remove();
-              discardChanges();
-            }}
-          >
-            {t('c:discard')}
-          </Button>
-          <Button variant="secondary" data-autofocus onClick={() => remove()}>
-            {t('c:keep_editing')}
-          </Button>
-        </div>
-      </PopConfirm>,
-      {
-        id: 'discard-organization-details',
-        triggerId: `discard-organization-details-${organization.id}`,
-        triggerRef: { current: event.currentTarget },
-      },
-    );
-  };
+  const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) =>
+    openConfirm(event.currentTarget, {
+      id: `discard-organization-details-${organization.id}`,
+      title: t('c:confirm.discard_changes'),
+      label: 'c:discard',
+      cancelLabel: 'c:keep_editing',
+      allowOffline: true,
+      align: 'start',
+      onConfirm: discardChanges,
+    });
 
   if (form.loading) return null;
 
@@ -115,9 +92,11 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
-              className:
-                'min-h-20 max-h-[50vh] overflow-auto bg-background p-3 pr-6 pl-8 border-input ring-offset-background focus-visible:ring-ring w-full rounded-md border text-sm focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-offset-2',
-              baseFilePanelProps: canUploadAttachments
+              // The ring goes on the editor's root: the contenteditable inside it takes the focus.
+              className: tw(
+                'max-h-[50vh] min-h-20 overflow-auto rounded-md border border-input bg-background p-3 pr-6 pl-8 text-sm focus-ring:has-focus-visible:outline-hidden focus-ring:has-focus-visible:ring-2 focus-ring:has-focus-visible:ring-ring focus-ring:has-focus-visible:ring-offset-2 focus-ring:has-focus-visible:ring-offset-background',
+              ),
+              baseFilePanelProps: canUploadAttachments(organization)
                 ? {
                     mediaMode: 'private-attachment',
                     tenantId: organization.tenantId,
@@ -135,9 +114,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button variant="secondary" onClick={openDiscardConfirm} className={form.isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton type="button" dirty={form.isDirty} onClick={openDiscardConfirm} />
         </div>
       </form>
     </Form>

@@ -5,7 +5,18 @@ export type ClientOptions = {
 };
 
 /**
- * The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.
+ * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
+ */
+export type ActorRef = {
+  id: string;
+  kind: 'user' | 'service';
+  name: string;
+  slug: string | null;
+  thumbnailUrl: string | null;
+};
+
+/**
+ * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
  */
 export type UserMinimalBase = {
   id: string;
@@ -50,7 +61,7 @@ export type ChannelBase = {
 };
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.
+ * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
  */
 export type ProductBase = {
   id: string;
@@ -58,8 +69,6 @@ export type ProductBase = {
   createdAt: string;
   updatedAt: string | null;
   description: string | null;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   entityType: 'attachment';
   keywords: string;
 };
@@ -143,7 +152,7 @@ export type StreamNotification = {
    */
   batchUntilSeq: number | null;
   /**
-   * Authoritative row count for batches: sequence ranges of different paths may interleave
+   * Exact row count for batches: sequence ranges of different paths may interleave
    */
   count: number | null;
   /**
@@ -195,6 +204,7 @@ export type ApiError = {
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   requestId?: string;
+  version?: string;
   path?: string;
   method?: string;
   timestamp?: string;
@@ -303,16 +313,20 @@ export type User = {
     finishedOnboarding: boolean;
   };
   updatedAt: string | null;
-  updatedBy: string | null;
   lastSeenAt: string | null;
   lastSignInAt: string | null;
 };
 
 /**
- * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export type MeAuthData = {
-  enabledOAuth: Array<'github'>;
+  oauthIdentities: Array<{
+    provider: 'github';
+    email: string | null;
+    createdAt: string;
+    lastUsedAt: string | null;
+  }>;
   institutions: Array<{
     connectionId: string;
     displayName: string;
@@ -321,11 +335,21 @@ export type MeAuthData = {
       label: string;
     };
     /**
-     * Whether the account already holds an identity through this connection
+     * The identity the account holds through this connection; null when not connected
      */
-    connected: boolean;
+    identity: {
+      email: string | null;
+      createdAt: string;
+      lastUsedAt: string | null;
+    } | null;
   }>;
-  hasTotp: boolean;
+  /**
+   * Null without TOTP. Its last use is the start of the time step of the newest code it accepted.
+   */
+  totp: {
+    createdAt: string;
+    lastUsedAt: string | null;
+  } | null;
   sessions: Array<{
     id: string;
     type: 'regular' | 'impersonation' | 'mfa';
@@ -381,7 +405,7 @@ export type InactiveMembership = {
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;
-  createdBy: UserMinimalBase | null;
+  createdBy: ActorRef | null;
   organizationId: string;
 };
 
@@ -437,6 +461,7 @@ export type Tenant = {
   id: string;
   name: string;
   status: 'active' | 'suspended' | 'archived';
+  statusChangedAt: string;
   restrictions: {
     /**
      * Entity quotas (0 = unlimited)
@@ -456,12 +481,13 @@ export type Tenant = {
     allowUnregisteredClients: boolean;
   };
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
-  createdBy: string | null;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   /**
    * The organization this tenant holds, or null if none
    */
@@ -496,9 +522,10 @@ export type Connection = {
      */
     logoUrl?: string;
   };
-  createdBy: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
 };
 
 /**
@@ -516,19 +543,19 @@ export type ProtectedResourceMetadata = {
  * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
  */
 export type Organization = {
-  createdAt: string;
   id: string;
   entityType: 'organization';
   tenantId: string;
   name: string;
+  createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   publishedAt: string | null;
-  publicAt: string | null;
+  public: boolean;
   toolsConfig: {
     'organization.settings'?: {
       order?: Array<string>;
@@ -587,20 +614,20 @@ export type Organization = {
  * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
  */
 export type Attachment = {
-  createdAt: string;
   id: string;
   entityType: 'attachment';
   tenantId: string;
   name: string;
+  createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   deletedAt: string | null;
-  deletedBy: string | null;
-  publicAt: string | null;
+  deletedBy: ActorRef | null;
+  public: boolean;
   seq: number;
   /**
    * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
@@ -631,6 +658,20 @@ export type Attachment = {
   viewCount?: number;
 };
 
+export type InviteOutcome = {
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
+  email: string;
+  /**
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   */
+  outcome: 'invite' | 'remind' | 'add' | 'member';
+  invitedAt?: string;
+  declinedAt?: string;
+  role?: 'admin' | 'member';
+};
+
 /**
  * An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.
  */
@@ -646,10 +687,10 @@ export type ServiceAccount = {
     role: 'admin' | 'member';
   }>;
   oauthClientId: string | null;
-  createdBy: string | null;
-  updatedBy: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   lastSeenAt: string | null;
 };
 
@@ -667,7 +708,7 @@ export type ApiKey = {
   expiresAt: string | null;
   revokedAt: string | null;
   revokedBy: string | null;
-  createdBy: UserMinimalBase | null;
+  createdBy: ActorRef | null;
   createdAt: string;
 };
 
@@ -774,6 +815,53 @@ export type CheckEmailResponses = {
 };
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
+
+export type GetPendingMfaData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/mfa/pending';
+};
+
+export type GetPendingMfaErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
+
+export type GetPendingMfaResponses = {
+  /**
+   * The address of the account the held challenge signs in to
+   */
+  200: {
+    email: string;
+  };
+};
+
+export type GetPendingMfaResponse = GetPendingMfaResponses[keyof GetPendingMfaResponses];
 
 export type InvokeTokenData = {
   body?: never;
@@ -4241,7 +4329,11 @@ export type UpdateTenantData = {
        * Entity quotas (0 = unlimited)
        */
       quotas?: {
-        [key: string]: number;
+        user?: number;
+        organization?: number;
+        attachment?: number;
+        serviceAccount?: number;
+        apiKey?: number;
       };
       allowUnregisteredClients?: boolean;
       rateLimits?: {
@@ -4749,6 +4841,10 @@ export type CreateOrganizationsData = {
     id: string;
     name: string;
     slug: string;
+    /**
+     * Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.
+     */
+    draft?: boolean;
   }>;
   path: {
     tenantId: string;
@@ -5026,6 +5122,60 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
+export type PublishOrganizationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations/{id}/publish';
+};
+
+export type PublishOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PublishOrganizationError = PublishOrganizationErrors[keyof PublishOrganizationErrors];
+
+export type PublishOrganizationResponses = {
+  /**
+   * Organization was published
+   */
+  200: {
+    organization: Organization;
+    /**
+     * Invitations held while it was a draft and sent now.
+     */
+    invitationsSent: number;
+  };
+};
+
+export type PublishOrganizationResponse = PublishOrganizationResponses[keyof PublishOrganizationResponses];
+
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
@@ -5179,7 +5329,6 @@ export type CreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
-    publicAt?: string | null;
     stx: StxBase;
   }>;
   path: {
@@ -5694,7 +5843,7 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Created memberships and invite count
+   * What happened to each address
    */
   200: {
     data: Array<{
@@ -5709,21 +5858,67 @@ export type MembershipInviteResponses = {
       muted?: boolean;
       displayOrder?: number;
     }>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-    invitesSentCount: number;
+    outcomes: Array<InviteOutcome>;
+    held: boolean;
   };
 };
 
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];
+
+export type CheckMembershipInviteData = {
+  body: {
+    emails: Array<string>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityId: string;
+    entityType: 'organization';
+  };
+  url: '/{tenantId}/{organizationId}/memberships/check';
+};
+
+export type CheckMembershipInviteErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof CheckMembershipInviteErrors];
+
+export type CheckMembershipInviteResponses = {
+  /**
+   * What an invite would do with each address
+   */
+  200: {
+    outcomes: Array<InviteOutcome>;
+  };
+};
+
+export type CheckMembershipInviteResponse = CheckMembershipInviteResponses[keyof CheckMembershipInviteResponses];
 
 export type UpdateMembershipData = {
   body: {
@@ -5782,9 +5977,9 @@ export type UpdateMembershipResponses = {
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
-    createdBy: string | null;
+    createdBy: ActorRef | null;
     updatedAt: string | null;
-    updatedBy: string | null;
+    updatedBy: ActorRef | null;
     organizationId: string;
     archived?: boolean;
     muted?: boolean;
@@ -5995,7 +6190,8 @@ export type GetPendingMembershipsResponses = {
       email: string;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: UserMinimalBase | null;
+      remindedAt: string | null;
+      createdBy: ActorRef | null;
     }>;
     total: number;
   };
@@ -6051,6 +6247,55 @@ export type ResendPendingInvitationResponses = {
 };
 
 export type ResendPendingInvitationResponse = ResendPendingInvitationResponses[keyof ResendPendingInvitationResponses];
+
+export type WithdrawPendingInvitationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/memberships/pending/{id}';
+};
+
+export type WithdrawPendingInvitationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type WithdrawPendingInvitationError = WithdrawPendingInvitationErrors[keyof WithdrawPendingInvitationErrors];
+
+export type WithdrawPendingInvitationResponses = {
+  /**
+   * Invitation withdrawn
+   */
+  204: void;
+};
+
+export type WithdrawPendingInvitationResponse = WithdrawPendingInvitationResponses[keyof WithdrawPendingInvitationResponses];
 
 export type MarkSeenData = {
   body: {

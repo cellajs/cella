@@ -23,13 +23,8 @@ export function prepareProductDelete<TRow extends { id: string }, TVars>(
   rows: TRow[],
   toVars: (rows: TRow[]) => TVars,
 ): PreparedVars<TVars> {
-  const cancelled = new Set(
-    removePausedCreates(
-      queryClient,
-      keys.create,
-      rows.map(({ id }) => id),
-    ),
-  );
+  const rowIds = rows.map(({ id }) => id);
+  const cancelled = new Set(removePausedCreates(queryClient, keys.create, rowIds));
 
   if (cancelled.size > 0) {
     const localOnly = rows.filter((row) => cancelled.has(row.id));

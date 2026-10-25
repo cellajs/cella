@@ -3,31 +3,26 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-const TAP_SLOP_PX = 12; // Max finger travel for a touchend to still count as a tap
+const tapSlopPx = 12; // Max finger travel for a touchend to still count as a tap
 
 export interface FloatingNavItem {
   id: string;
   icon: IconComponent;
   onClick: () => void;
-  ariaLabel?: string;
+  ariaLabel: string;
   /** Defaults to true. */
   visible?: boolean;
-  /** Defaults to 'right'; with several items the first visible one defaults to 'left'. */
+  /** Defaults to 'right'. */
   direction?: 'left' | 'right';
   /** Text shown after the icon while `labelVisible`, expanding the circle into a pill (e.g. a first-visit hint). */
   label?: string;
   labelVisible?: boolean;
 }
 
-interface FloatingNavButtonProps {
-  id: string;
-  icon: IconComponent;
-  onClick: () => void;
+interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'ariaLabel'> {
+  /** Required on a nav item; an inert placeholder button may go without. */
   ariaLabel?: string;
   className?: string;
-  direction?: 'left' | 'right';
-  label?: string;
-  labelVisible?: boolean;
 }
 
 export function FloatingNavButton({
@@ -44,23 +39,23 @@ export function FloatingNavButton({
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
   // it would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and
   // dismiss it. Touchcancel (scroll takeover) and the slop check keep drags from triggering.
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = (event: TouchEvent<HTMLButtonElement>) => {
     const touch = event.touches.length === 1 ? event.touches[0] : null;
-    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
   };
 
   const handleTouchCancel = () => {
-    touchStart.current = null;
+    touchStartRef.current = null;
   };
 
   const handleTouchEnd = (event: TouchEvent<HTMLButtonElement>) => {
-    const start = touchStart.current;
-    touchStart.current = null;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
     const touch = event.changedTouches[0];
     if (!start || !touch) return;
-    if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > TAP_SLOP_PX) return;
+    if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > tapSlopPx) return;
     // Not cancelable means the browser consumed the gesture as a scroll and suppresses the click itself
     if (event.cancelable) event.preventDefault();
     onClick();
@@ -72,20 +67,22 @@ export function FloatingNavButton({
       size="icon"
       data-direction={direction}
       variant="secondary"
+      press={false}
       onClick={onClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex items-center rounded-full bg-secondary opacity-100 shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 select-none rounded-full shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out [-webkit-touch-callout:none] hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included
+        'more-contrast:ring-foreground/30 ring-4 ring-foreground/12',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
-        label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14 justify-center',
-        // Animate out while the floating selection action bar or the on-screen keyboard is shown; hiding moves by translate, which skips layout
-        'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:translate-y-16 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
-        'group-[.keyboard-open]/body:pointer-events-none group-[.keyboard-open]/body:translate-y-16 group-[.keyboard-open]/body:scale-50 group-[.keyboard-open]/body:opacity-0',
+        label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
+        // Hiding moves by translate, which skips layout
+        'chrome-hidden:pointer-events-none chrome-hidden:translate-y-16 chrome-hidden:scale-50 chrome-hidden:opacity-0',
         className,
       )}
-      aria-label={ariaLabel ?? 'Navigate'}
+      aria-label={ariaLabel}
     >
       <Icon className="size-6" />
       {label && (

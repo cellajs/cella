@@ -1,16 +1,16 @@
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
-import { type DocScope, YJS_MAX_SERVER_ROW_IDS } from '../constants';
+import { type DocScope, yjsMaxServerRowIds } from '../constants';
 import { compactState, discardLogRows, type LogRow, loadDocument } from '../data/storage';
 import { log } from '../lib/pino';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /** Editors a materialize request names at most, so its size stays bounded however many sockets wrote. */
-const MAX_EDITORS = 20;
+const maxEditors = 20;
 
 /** The distinct senders of a window's rows, the most recent first; server-origin rows have none. */
 function editorsNewestFirst(rows: LogRow[]): string[] {
   const editors: string[] = [];
-  for (let i = rows.length - 1; i >= 0 && editors.length < MAX_EDITORS; i--) {
+  for (let i = rows.length - 1; i >= 0 && editors.length < maxEditors; i--) {
     const userId = rows[i].userId;
     if (userId && !editors.includes(userId)) editors.push(userId);
   }
@@ -34,7 +34,7 @@ export interface CompactionObserver {
  * log are one read (`loadDocument`), so a fold by another relay never splits them.
  *
  * - A window holding a client's row is posted, credited to its senders, newest first, and names the server-origin
- *   rows (outside writes, no sender) its merge holds as `serverRowIds`, none usually and at most YJS_MAX_SERVER_ROW_IDS.
+ *   rows (outside writes, no sender) its merge holds as `serverRowIds`, none usually and at most yjsMaxServerRowIds.
  *   The backend refuses it with 409 when the log holds a server row the window lacks, an outside write committed
  *   during the POST: the stale merge would overwrite it. That is a retry, and the next window holds the row.
  * - A window of server rows alone is not posted: its merge is the last outside write, which the entity row already
@@ -75,11 +75,11 @@ export async function compactDocument(scope: DocScope, generation: string | null
 
   const serverRows = rows.filter((row) => row.userId === null);
   if (serverRows.length < rows.length) {
-    if (serverRows.length > YJS_MAX_SERVER_ROW_IDS) {
+    if (serverRows.length > yjsMaxServerRowIds) {
       // More outside writes than one request may name. Merges commute, so the oldest of them fold alone, unsaved,
       // and the window is compacted again: the rows it posts then name what the log still holds.
       log.error(`Compaction: ${serverRows.length} outside writes in one window of ${scope.entityType}:${scope.entityId}, folding them first`);
-      const batch = serverRows.slice(0, YJS_MAX_SERVER_ROW_IDS);
+      const batch = serverRows.slice(0, yjsMaxServerRowIds);
       const merged = mergeState(
         document.base,
         batch.map((row) => row.payload),

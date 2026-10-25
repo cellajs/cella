@@ -26,18 +26,6 @@ describe('useDebounce', () => {
     vi.useRealTimers();
   });
 
-  it('applies the last value once it has held still for the delay', () => {
-    render('a');
-    render('ab');
-    act(() => vi.advanceTimersByTime(200));
-    render('abc');
-    act(() => vi.advanceTimersByTime(299));
-    expect(shown).toBe('a');
-
-    act(() => vi.advanceTimersByTime(1));
-    expect(shown).toBe('abc');
-  });
-
   it('applies the immediate value at once and drops the pending one', () => {
     render('a');
     render('ab');

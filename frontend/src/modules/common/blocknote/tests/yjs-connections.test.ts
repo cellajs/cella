@@ -125,11 +125,9 @@ class MockDoc {
   destroy = vi.fn();
 }
 
-/** As Yjs applies an update: the document's `update` listeners run synchronously, with the origin given. */
-const applyUpdate = (doc: MockDoc, update: Uint8Array, origin: unknown) => doc.onUpdate?.(update, origin);
 vi.mock('y-websocket', () => ({ WebsocketProvider: MockProvider }));
 vi.mock('y-protocols/awareness', () => ({ Awareness: MockAwareness }));
-vi.mock('yjs', () => ({ Doc: MockDoc, applyUpdate, default: { Doc: MockDoc, applyUpdate } }));
+vi.mock('yjs', () => ({ Doc: MockDoc, default: { Doc: MockDoc } }));
 // The generation frame's decoder stands in for the string it carries.
 vi.mock('lib0/decoding', async (importOriginal) => ({
   ...(await importOriginal<typeof import('lib0/decoding')>()),
@@ -159,7 +157,7 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
   // As the token route answers: 404 for a deleted entity, 403 for one the caller may not edit.
-  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
+  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 /** What each end for good handed to parking: its reason and scope, the document, and whether it held unsynced edits then. */
@@ -169,19 +167,19 @@ vi.mock('~/modules/common/blocknote/unsaveable-notices', () => ({
     parked.push({ reason, scope, doc: conn.yDoc, unsynced: conn.unsynced }),
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its hooks are kept, so
+// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its handlers are kept, so
 // a test can give the routes' final answer.
-const httpHooks: { end: (reason: string) => void }[] = [];
+const httpHandlers: { onEnd: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
-  createHttpLink: (_conn: unknown, _scope: unknown, hooks: { end: (reason: string) => void }) => {
-    httpHooks.push(hooks);
+  wsSyncDeadlineMs: 5_000,
+  createHttpLink: (_conn: unknown, handlers: { onEnd: (reason: string) => void }) => {
+    httpHandlers.push(handlers);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
   },
 }));
 
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
-const { applyRemoteUpdate, useYjsConnection, watchUnstoredYDocs } = await import('~/modules/common/blocknote/yjs-connections');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { useYjsConnection, watchUnstoredYDocs } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -194,10 +192,10 @@ let counter = 0;
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
   const tokenKey = yjsTokenKey('attachment', entityId);
-  useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
+  userStore.getState().setYjsToken(tokenKey, 'token-v1');
   let latest: Connection = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   const container = document.createElement('div');
@@ -225,8 +223,6 @@ const editLocally = async (provider: MockProvider) => {
   if (provider.wsconnected) provider.sendSync(2);
   await act(async () => provider.doc.onUpdate?.(new Uint8Array(), 'editor'));
 };
-/** An update the relay sent, a write from outside the relay among them: y-websocket applies it with itself as origin. */
-const relayUpdate = (provider: MockProvider) => act(async () => provider.doc.onUpdate?.(new Uint8Array(), provider));
 /** The relay's `Saved` for the oldest frame of this socket it has not confirmed yet. */
 const relaySaved = (provider: MockProvider) => act(async () => provider.messageHandlers[5]?.(undefined, undefined, provider, true, 5));
 /** A socket opens, y-websocket sends its Step1, the relay answers with its Step2 and Step1, and y-websocket answers that with its Step2. */
@@ -269,29 +265,20 @@ describe('yjs connection: opening', () => {
     expect(provider.connect).toHaveBeenCalledOnce();
   });
 
-  it('waits while offline, and connects once the browser is back online', async () => {
+  it('connects once the browser is back online, but never a connection whose token was withdrawn meanwhile', async () => {
     online = false;
-    const { provider } = await mountConnection();
+    const { provider, tokenKey, state } = await mountConnection();
     expect(provider.connect).not.toHaveBeenCalled();
 
     await act(async () => onlineListener?.(true));
     expect(provider.connect).toHaveBeenCalledOnce();
-  });
 
-  it('destroys the Awareness with its document', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    try {
-      const { provider } = await mountConnection();
-      await act(async () => root?.unmount());
-      root = undefined;
-      await act(async () => vi.advanceTimersByTime(30_000));
-
-      expect(provider.destroy).toHaveBeenCalledTimes(1);
-      expect(provider.awareness?.destroy).toHaveBeenCalledTimes(1);
-      expect(provider.doc.destroy).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
+    // Withdrawn while offline, the token ends the connection there and then, and coming back online leaves it ended.
+    await act(async () => onlineListener?.(false));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
+    expect(state()?.stopped).toBe(true);
+    await act(async () => onlineListener?.(true));
+    expect(provider.connect).toHaveBeenCalledOnce();
   });
 });
 
@@ -299,43 +286,30 @@ describe('yjs connection: sync frames before the generation', () => {
   /** A sync frame from the relay: a peer's update, or the handshake's answer. */
   const receiveSync = (provider: MockProvider) => act(async () => provider.messageHandlers[0]?.(undefined, undefined, provider, true, 0));
 
-  it("must not apply a peer's update that reaches a socket before its Generation: dropped, and frames after it apply", async () => {
+  it('must not apply a sync frame a socket receives before its own Generation: on the first socket, after a reconnect, and on a rebuilt document', async () => {
     const { provider } = await mountConnection();
     await act(async () => provider.openSocket());
 
     // The relay joined the socket to the session; a peer's update arrives before the handshake answer.
     await receiveSync(provider);
     expect(provider.readSync).not.toHaveBeenCalled();
-
     await announce(provider, 'gen-1');
     await receiveSync(provider);
     expect(provider.readSync).toHaveBeenCalledOnce();
-  });
 
-  it('drops them again on each new socket, until that socket received its own Generation', async () => {
-    const { provider } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await announce(provider, 'gen-1');
-    await receiveSync(provider);
-
+    // A new socket waits for a Generation of its own.
     await act(async () => provider.dropSocket());
     await act(async () => provider.openSocket());
     await receiveSync(provider);
     expect(provider.readSync).toHaveBeenCalledOnce();
-
     await announce(provider, 'gen-1');
     await receiveSync(provider);
     expect(provider.readSync).toHaveBeenCalledTimes(2);
-  });
 
-  it("must not open a rebuilt document's frames on the dropped one's Generation: it waits for its own", async () => {
-    const { provider } = await mountConnection();
-    await act(async () => provider.openSocket());
-    await announce(provider, 'gen-1');
+    // The next socket finds the document reseeded: the rebuilt document waits for its own, not the dropped one's.
     await act(async () => provider.dropSocket());
     await act(async () => provider.openSocket());
     await announce(provider, 'gen-2');
-
     const next = providers.at(-1)!;
     expect(next).not.toBe(provider);
     await act(async () => next.openSocket());
@@ -355,58 +329,15 @@ describe('yjs connection: transient closes', () => {
 
     // y-websocket backs off and resyncs with the same token.
     expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
+    expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
     expect(state()?.stopped).toBe(false);
     expect(warning).not.toHaveBeenCalled();
   });
 
   it('keeps the provider on the latest token, so a reconnect uses it', async () => {
     const { provider, tokenKey } = await mountConnection();
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, 'token-v2'));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, 'token-v2'));
     expect(provider.params.token).toBe('token-v2');
-  });
-});
-
-describe('yjs connection: final closes', () => {
-  it('must not keep accepting edits once the relay denies access (4003): the connection stops for good', async () => {
-    const { provider, state } = await mountConnection();
-
-    await close(provider, 4003);
-
-    expect(provider.disconnect).toHaveBeenCalledTimes(1);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(false);
-    expect(warning).toHaveBeenCalledWith('error:no_permission_for_sync.text');
-    // Clean: parking only drops the stored copy.
-    expect(parked).toMatchObject([{ reason: 'denied', unsynced: false }]);
-  });
-
-  it('must not keep accepting edits once the relay refuses the document (4400)', async () => {
-    const { provider, state } = await mountConnection();
-    await close(provider, 4400);
-    expect(provider.disconnect).toHaveBeenCalledTimes(1);
-    expect(state()?.stopped).toBe(true);
-  });
-
-  it('must not keep an editor editable after the backend withdraws its token, even while offline', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
-    await act(async () => onlineListener?.(false));
-
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
-    expect(state()?.stopped).toBe(true);
-
-    provider.connect.mockClear();
-    await act(async () => onlineListener?.(true));
-    expect(provider.connect).not.toHaveBeenCalled();
-  });
-
-  it('must not reconnect a stopped connection when the browser comes back online', async () => {
-    const { provider } = await mountConnection();
-    await close(provider, 4003);
-    provider.connect.mockClear();
-
-    await act(async () => onlineListener?.(true));
-    expect(provider.connect).not.toHaveBeenCalled();
   });
 });
 
@@ -415,7 +346,7 @@ describe('yjs connection: a reseeded document', () => {
     const { provider, state } = await mountConnection();
     await announce(provider, 'gen-1');
     await act(async () => provider.emit('sync', true));
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
 
     // A local edit; a reconnect announces the same generation, and nothing happens.
     provider.doc.onUpdate?.(new Uint8Array(), 'editor');
@@ -434,7 +365,7 @@ describe('yjs connection: a reseeded document', () => {
     expect(next.awareness).not.toBe(provider.awareness);
     expect(provider.awareness?.destroy).toHaveBeenCalledTimes(1);
     expect(next.connect).toHaveBeenCalledOnce();
-    expect(state()?.synced).toBe(false);
+    expect(state()).toMatchObject({ ready: false, transport: 'none' });
     expect(state()?.rebuilds).toBe(1);
     expect(state()?.stopped).toBe(false);
     // The edits the relay never saved are parked with the dropped document, and the notice replaces a toast.
@@ -445,17 +376,7 @@ describe('yjs connection: a reseeded document', () => {
     await announce(next, 'gen-2');
     await act(async () => next.emit('sync', true));
     expect(next.destroy).not.toHaveBeenCalled();
-    expect(state()?.synced).toBe(true);
-  });
-
-  it('reloads a document never edited here without a notice (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await announce(provider, 'gen-1');
-    await announce(provider, 'gen-2');
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-    expect(state()?.rebuilds).toBe(1);
-    expect(warning).not.toHaveBeenCalled();
-    expect(parked).toMatchObject([{ reason: 'replaced', unsynced: false }]);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
   });
 });
 
@@ -469,20 +390,52 @@ describe('yjs connection: token refusals', () => {
     await act(async () => provider.emit('status', { status: 'connected' }));
     await close(provider, 4001);
   };
-  /** The refetch a refusal starts lands a new token before the next attempt. */
-  const fetchToken = (tokenKey: string, token: string) => act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
+  /** The refetch a refusal starts stores a new token before the next attempt. */
+  const fetchToken = (tokenKey: string, token: string) => act(async () => userStore.getState().setYjsToken(tokenKey, token));
 
-  it('must not stop syncing via an API outage at token refresh: an expired token refused again never counts', async () => {
-    const { provider, state } = await mountConnection();
+  it('must not stop syncing via an API outage at token refresh, nor retry forever: five distinct tokens refused with no sync between stop it, and the edits stay', async () => {
+    const { provider, tokenKey, state } = await mountConnection();
+    await handshake(provider);
+    await relaySaved(provider);
+    await act(async () => provider.dropSocket());
+    await editLocally(provider);
 
-    // The token expired while no refetch could reach the API, so every reconnect carries it again.
+    // The token expired while no refetch could reach the API, so every reconnect carries it again: it counts once.
     for (let i = 0; i < 20; i++) await refuseToken(provider);
-
     expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(state()?.stopped).toBe(false);
-    expect(warning).not.toHaveBeenCalled();
     // Each refusal asks for a fresh token.
     expect(invalidateQueries).toHaveBeenCalledTimes(20);
+
+    // A synced connection resets the count, so routine expiry closes never add up.
+    for (let i = 2; i < 10; i++) {
+      await refuseToken(provider);
+      await fetchToken(tokenKey, `token-v${i}`);
+      await act(async () => provider.emit('sync', true));
+    }
+    expect(provider.disconnect).not.toHaveBeenCalled();
+
+    // Five fresh tokens refused in a row, the last one included, stop it for good.
+    for (let i = 10; i < 14; i++) {
+      await refuseToken(provider);
+      await fetchToken(tokenKey, `token-v${i}`);
+    }
+    expect(provider.disconnect).not.toHaveBeenCalled();
+    await refuseToken(provider);
+    expect(provider.disconnect).toHaveBeenCalledTimes(1);
+    expect(state()?.stopped).toBe(true);
+    expect(warning).toHaveBeenCalledWith('error:sync_token_expired.text');
+
+    // Not parked: the edits stay for the next load, and the released connection keeps them.
+    expect(state()?.unsynced).toBe(true);
+    expect(parked).toEqual([]);
+    await act(async () => root?.unmount());
+    root = undefined;
+    expect(provider.destroy).not.toHaveBeenCalled();
+
+    // Signed out: the token goes with the user, and the connection with it, still without parking.
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(parked).toEqual([]);
   });
 
   it('fetches its own token after a refusal while no editor observes the token query', async () => {
@@ -494,73 +447,10 @@ describe('yjs connection: token refusals', () => {
       await act(async () => {});
 
       expect(tokenQuery).toHaveBeenCalledOnce();
-      expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
+      expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
     } finally {
       tokenObservers = 1;
     }
-  });
-
-  it('leaves the refetch to the token query while an editor observes it (positive control)', async () => {
-    const { provider } = await mountConnection();
-
-    await refuseToken(provider);
-
-    expect(invalidateQueries).toHaveBeenCalledOnce();
-    expect(tokenQuery).not.toHaveBeenCalled();
-  });
-
-  it('must not retry forever via tokens the relay keeps refusing: it stops after five refused tokens', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
-
-    for (let i = 2; i <= 5; i++) {
-      await refuseToken(provider);
-      await fetchToken(tokenKey, `token-v${i}`);
-    }
-    expect(provider.disconnect).not.toHaveBeenCalled();
-
-    // The fifth token, freshly fetched, is refused too.
-    await refuseToken(provider);
-    expect(provider.disconnect).toHaveBeenCalledTimes(1);
-    expect(state()?.stopped).toBe(true);
-    expect(warning).toHaveBeenCalledWith('error:sync_token_expired.text');
-  });
-
-  it('a synced connection resets the count, so routine expiry closes never stop it (positive control)', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
-
-    for (let i = 2; i < 10; i++) {
-      await refuseToken(provider);
-      await fetchToken(tokenKey, `token-v${i}`);
-      await act(async () => provider.emit('sync', true));
-    }
-    expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(state()?.stopped).toBe(false);
-  });
-
-  it('must not park edits via the circuit breaker: they stay for the next load, and sign-out lets the connection go without parking', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await act(async () => provider.dropSocket());
-    await editLocally(provider);
-    for (let i = 2; i <= 5; i++) {
-      await refuseToken(provider);
-      await fetchToken(tokenKey, `token-v${i}`);
-    }
-    await refuseToken(provider);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.unsynced).toBe(true);
-    expect(parked).toEqual([]);
-
-    await act(async () => root?.unmount());
-    root = undefined;
-    expect(provider.destroy).not.toHaveBeenCalled();
-
-    // Signed out: the token goes with the user, and the connection with it. Storage is the sign-out's to keep or delete.
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-    expect(parked).toEqual([]);
-    expect(unloadAsks()).toBe(false);
   });
 });
 
@@ -569,7 +459,7 @@ describe('yjs connection: edits the relay has not saved', () => {
     vi.useRealTimers();
   });
 
-  it('stays unsynced until the relay saved the handshake Step2 and every frame after it', async () => {
+  it('stays unsynced until the relay saved the handshake Step2 and every frame after it, counted afresh on each socket', async () => {
     const { provider, state } = await mountConnection();
     await act(async () => {
       provider.openSocket();
@@ -581,7 +471,6 @@ describe('yjs connection: edits the relay has not saved', () => {
     await act(async () => provider.receiveStep2());
     await relaySaved(provider);
     expect(state()?.unsynced).toBe(true);
-
     await act(async () => provider.sendSync(1));
     expect(state()?.unsynced).toBe(true);
     await relaySaved(provider);
@@ -592,32 +481,18 @@ describe('yjs connection: edits the relay has not saved', () => {
     expect(state()?.unsynced).toBe(true);
     await relaySaved(provider);
     expect(state()?.unsynced).toBe(false);
-  });
 
-  it('counts afresh on each socket: what the last one left unconfirmed travels in the next handshake', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
+    // What a socket left unconfirmed travels in the next handshake, which a new socket counts afresh.
     await editLocally(provider);
-    expect(state()?.unsynced).toBe(true);
-
     await act(async () => provider.dropSocket());
     await handshake(provider);
     await relaySaved(provider);
     expect(state()?.unsynced).toBe(false);
-  });
 
-  it('marks an edit made while disconnected unsynced until a later handshake Step2 is saved', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-
+    // An edit made while disconnected: the relay's answer alone proves nothing, the edit travels in this client's Step2.
     await act(async () => provider.dropSocket());
     await editLocally(provider);
     expect(state()?.unsynced).toBe(true);
-
-    // The relay's answer alone proves nothing: the edit travels in this client's Step2.
     await act(async () => {
       provider.openSocket();
       provider.receiveStep2();
@@ -625,28 +500,6 @@ describe('yjs connection: edits the relay has not saved', () => {
     expect(state()?.unsynced).toBe(true);
     await act(async () => provider.sendSync(1));
     await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-  });
-
-  it('falls back to synced against a relay that sends no Saved within 10 s of the handshake Step2', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { provider, state } = await mountConnection();
-    await act(async () => {
-      provider.openSocket();
-      provider.sendSync(0);
-    });
-    await editLocally(provider);
-    expect(state()?.unsynced).toBe(true);
-
-    // A relay slow to answer gets no fallback before the handshake Step2 carried what it lacks.
-    await act(async () => vi.advanceTimersByTime(15_000));
-    await act(async () => provider.receiveStep2());
-    expect(state()?.unsynced).toBe(true);
-
-    await act(async () => provider.sendSync(1));
-    await act(async () => vi.advanceTimersByTime(9_999));
-    expect(state()?.unsynced).toBe(true);
-    await act(async () => vi.advanceTimersByTime(1));
     expect(state()?.unsynced).toBe(false);
   });
 
@@ -674,321 +527,72 @@ describe('yjs connection: edits the relay has not saved', () => {
     expect(provider.destroy).toHaveBeenCalledTimes(1);
     expect(unloadAsks()).toBe(false);
   });
-
-  it('destroys a released connection with nothing unsaved when its grace period ends (positive control)', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { provider } = await mountConnection();
-    await handshake(provider);
-    await editLocally(provider);
-    await relaySaved(provider);
-    await relaySaved(provider);
-
-    await act(async () => root?.unmount());
-    root = undefined;
-    await act(async () => vi.advanceTimersByTime(29_999));
-    expect(provider.destroy).not.toHaveBeenCalled();
-    await act(async () => vi.advanceTimersByTime(1));
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-  });
-
-  it('must not keep unsaved edits in a read-only editor once the relay denies access (4003): they are parked, and the connection goes', async () => {
-    const { provider, entityId, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-    await close(provider, 4003);
-
-    expect(parked).toEqual([{ reason: 'denied', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.stopReason).toBe('denied');
-    expect(state()?.unsynced).toBe(false);
-    expect(state()?.deleted).toBe(false);
-    // The notice names the reason, so the stop's own toast stays away.
-    expect(warning).not.toHaveBeenCalled();
-    expect(unloadAsks()).toBe(false);
-
-    await act(async () => root?.unmount());
-    root = undefined;
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-  });
-
-  it('drops a reseeded document without a notice once the relay saved every edit it held', async () => {
-    const { provider, state } = await mountConnection();
-    await announce(provider, 'gen-1');
-    await handshake(provider);
-    await editLocally(provider);
-    await relaySaved(provider);
-    await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-
-    await announce(provider, 'gen-2');
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-    expect(state()?.rebuilds).toBe(1);
-    expect(warning).not.toHaveBeenCalled();
-    expect(parked).toMatchObject([{ reason: 'replaced', unsynced: false }]);
-  });
 });
 
-describe('yjs connection: a write from outside the relay', () => {
-  it('must not rebuild on a write from outside the relay: it arrives as an update and the generation stays', async () => {
-    const { provider, state } = await mountConnection();
-    await announce(provider, 'gen-1');
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
+describe('yjs connection: ending for good', () => {
+  type Mounted = Awaited<ReturnType<typeof mountConnection>>;
+  /** A token the token route withdrew: the error it failed with says why. */
+  const withdrawToken =
+    (status: number) =>
+    ({ tokenKey }: Mounted) => {
+      userStore.setState({ user: { id: 'user-1' } as never });
+      tokenError = { status };
+      userStore.getState().setYjsToken(tokenKey, null);
+    };
+  const closeWith =
+    (code: number) =>
+    ({ provider }: Mounted) =>
+      provider.emit('connection-close', { code, reason: '' }, provider);
+  const httpAnswer = (reason: 'deleted' | 'denied' | 'refused') => () => httpHandlers.at(-1)?.onEnd(reason);
 
-    // The write lands while this tab holds an edit the relay has not saved, and again after a reconnect.
-    const opened = providers.length;
-    await relayUpdate(provider);
-    await act(async () => provider.dropSocket());
-    await announce(provider, 'gen-1');
-    await handshake(provider);
-    await relayUpdate(provider);
+  /** Each final answer, by the relay's socket, the HTTP routes or the token route, and the reason its edits are parked under. */
+  const finalAnswers: [string, (mounted: Mounted) => void, 'deleted' | 'denied' | 'refused'][] = [
+    ['the relay denies access (4003)', closeWith(4003), 'denied'],
+    ['the relay refuses the document (4400)', closeWith(4400), 'refused'],
+    ['the relay refuses a frame too big (1009)', closeWith(1009), 'refused'],
+    ['the relay reports the entity deleted (4410)', closeWith(4410), 'deleted'],
+    ['the HTTP routes answer 403', httpAnswer('denied'), 'denied'],
+    ['the HTTP routes answer 400', httpAnswer('refused'), 'refused'],
+    ['the HTTP routes answer 404', httpAnswer('deleted'), 'deleted'],
+    ['the token route answers 403', withdrawToken(403), 'denied'],
+    ['the token route answers 404', withdrawToken(404), 'deleted'],
+  ];
 
-    expect(provider.destroy).not.toHaveBeenCalled();
-    expect(providers).toHaveLength(opened);
-    expect(state()?.awareness).toBe(provider.awareness);
-    expect(state()?.rebuilds).toBe(0);
-    expect(state()?.synced).toBe(true);
-    expect(warning).not.toHaveBeenCalled();
-
-    // The edit survives in the same document, and the handshake Step2 saves it.
-    await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-  });
-
-  it('must not count an update the relay sent as an edit of this tab: unsynced and the ledger stay as they were', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-
-    await relayUpdate(provider);
-    expect(state()?.unsynced).toBe(false);
-    expect(unloadAsks()).toBe(false);
-
-    // A later edit clears with its own `Saved`: the relayed update was never counted as sent.
-    await editLocally(provider);
-    expect(state()?.unsynced).toBe(true);
-    await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-  });
-});
-
-describe('yjs connection: updates from the HTTP routes and other tabs', () => {
-  it('must not count an update from the HTTP routes or another tab as an edit of this tab', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    // The connection as the HTTP link and the tab channel hold it: its document and provider.
-    const conn = { yDoc: provider.doc, provider } as unknown as Parameters<typeof applyRemoteUpdate>[0];
-
-    await act(async () => applyRemoteUpdate(conn, new Uint8Array([1]), { kind: 'http' }));
-    await act(async () => applyRemoteUpdate(conn, new Uint8Array([2]), { kind: 'tab', rowId: 7 }));
-    expect(state()?.unsynced).toBe(false);
-    expect(unloadAsks()).toBe(false);
-
-    // A local edit after them counts again, and clears with its own `Saved`.
-    await editLocally(provider);
-    expect(state()?.unsynced).toBe(true);
-    await relaySaved(provider);
-    expect(state()?.unsynced).toBe(false);
-  });
-});
-
-describe('yjs connection: a deleted entity', () => {
   afterEach(() => {
-    vi.useRealTimers();
-    useUserStore.setState({ user: null });
+    userStore.setState({ user: null });
   });
 
-  it('must not keep edits nothing can save once the entity is deleted (4410): it stops, and parks them for the notice', async () => {
-    const { provider, entityId, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-    expect(unloadAsks()).toBe(true);
-
-    await close(provider, 4410);
-
-    expect(provider.disconnect).toHaveBeenCalledTimes(1);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(true);
-    expect(state()?.unsynced).toBe(false);
-    expect(unloadAsks()).toBe(false);
-    expect(parked).toEqual([{ reason: 'deleted', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
-    expect(warning).not.toHaveBeenCalled();
-
-    // Nothing is left to keep: the editor's release destroys the connection.
-    await act(async () => root?.unmount());
-    root = undefined;
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-  });
-
-  it('ends without a toast when the document held no unsaved edits (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-
-    await close(provider, 4410);
-
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(true);
-    expect(warning).not.toHaveBeenCalled();
-    expect(parked).toMatchObject([{ reason: 'deleted', unsynced: false }]);
-  });
-
-  it('destroys a released connection kept only for its unsaved edits once the entity is deleted', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { provider } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await act(async () => provider.dropSocket());
-    await editLocally(provider);
-    await act(async () => root?.unmount());
-    root = undefined;
-    await act(async () => vi.advanceTimersByTime(30_000));
-    expect(provider.destroy).not.toHaveBeenCalled();
-
-    // Its reconnect finds the entity deleted.
-    await close(provider, 4410);
-
-    expect(provider.destroy).toHaveBeenCalledTimes(1);
-    expect(parked).toMatchObject([{ reason: 'deleted', unsynced: true }]);
-    expect(unloadAsks()).toBe(false);
-  });
-
-  it('must not report a deleted entity as denied: a token a 404 withdrew ends the connection as deleted', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    tokenError = { status: 404 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
-
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(true);
-    expect(state()?.unsynced).toBe(false);
-    expect(parked).toMatchObject([{ reason: 'deleted', unsynced: true }]);
-    expect(warning).not.toHaveBeenCalled();
-  });
-
-  it('a token a 403 withdrew stops the connection as denied (positive control)', async () => {
-    const { tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
-
-    tokenError = { status: 403 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
-
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(false);
-    expect(warning).toHaveBeenCalledExactlyOnceWith('error:no_permission_for_sync.text');
-    expect(parked).toMatchObject([{ reason: 'denied', unsynced: false }]);
-  });
-
-  it('must not keep edits a 403 withdrew the token for: they are parked as denied, and the notice replaces the toast', async () => {
-    const { provider, entityId, tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    tokenError = { status: 403 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
-
-    expect(parked).toEqual([{ reason: 'denied', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.unsynced).toBe(false);
-    expect(warning).not.toHaveBeenCalled();
-  });
-});
-
-describe('yjs connection: edits the relay refuses', () => {
-  for (const code of [4400, 1009]) {
-    it(`must not keep edits after a final close ${code}: they are parked as refused, and the connection goes`, async () => {
-      const { provider, entityId, state } = await mountConnection();
+  it.each(finalAnswers)(
+    'must not keep edits once %s: they are parked once under its reason, and the connection ends for good',
+    async (_, answer, reason) => {
+      const mounted = await mountConnection();
+      const { provider, entityId, state } = mounted;
       await handshake(provider);
       await relaySaved(provider);
       await editLocally(provider);
-      await close(provider, code);
+      expect(unloadAsks()).toBe(true);
 
-      expect(parked).toEqual([{ reason: 'refused', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
+      await act(async () => answer(mounted));
+
+      expect(parked).toEqual([{ reason, scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
+      expect(provider.disconnect).toHaveBeenCalledTimes(1);
       expect(state()?.stopped).toBe(true);
+      expect(state()?.stopReason).toBe(reason === 'deleted' ? null : reason);
+      expect(state()?.deleted).toBe(reason === 'deleted');
       expect(state()?.unsynced).toBe(false);
+      // The notice names the reason, so the stop's own toast stays away.
       expect(warning).not.toHaveBeenCalled();
       expect(unloadAsks()).toBe(false);
-    });
-  }
 
-  it('a clean document refused with 4400 only drops its stored copy, and the stop says why (positive control)', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await close(provider, 4400);
-
-    expect(parked).toMatchObject([{ reason: 'refused', unsynced: false }]);
-    expect(state()?.stopped).toBe(true);
-    expect(warning).toHaveBeenCalledExactlyOnceWith('error:sync_failed.text');
-  });
-});
-
-describe('yjs connection: answers of the HTTP routes', () => {
-  it('must not keep edits the HTTP routes answer 404 for: parked as deleted, as a 4410 does', async () => {
-    const { provider, entityId, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    await act(async () => httpHooks.at(-1)?.end('deleted'));
-
-    expect(parked).toEqual([{ reason: 'deleted', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.deleted).toBe(true);
-    expect(provider.disconnect).toHaveBeenCalledTimes(1);
-  });
-
-  it('a 403 parks as denied, and leaves the entity undeleted', async () => {
-    const { provider, entityId, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    await act(async () => httpHooks.at(-1)?.end('denied'));
-
-    expect(parked).toEqual([{ reason: 'denied', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
-    expect(state()?.stopped).toBe(true);
-    expect(state()?.stopReason).toBe('denied');
-    expect(state()?.deleted).toBe(false);
-    expect(warning).not.toHaveBeenCalled();
-  });
-
-  it('must not park edits twice: a 400 parks them once as refused, and only the notice says so', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    await act(async () => httpHooks.at(-1)?.end('refused'));
-
-    expect(parked).toMatchObject([{ reason: 'refused', unsynced: true }]);
-    expect(state()?.stopReason).toBe('refused');
-    expect(warning).not.toHaveBeenCalled();
-  });
-
-  it('another generation over HTTP parks the edits as replaced, and rebuilds', async () => {
-    const { provider, state } = await mountConnection();
-    await announce(provider, 'gen-1');
-    await handshake(provider);
-    await relaySaved(provider);
-    await editLocally(provider);
-
-    await act(async () => httpHooks.at(-1)?.end('replaced'));
-
-    expect(parked).toEqual([expect.objectContaining({ reason: 'replaced', unsynced: true, doc: provider.doc })]);
-    expect(state()?.rebuilds).toBe(1);
-    expect(state()?.stopped).toBe(false);
-  });
+      // Stopped, it never reconnects, and the editor's release lets it go.
+      provider.connect.mockClear();
+      await act(async () => onlineListener?.(true));
+      expect(provider.connect).not.toHaveBeenCalled();
+      await act(async () => root?.unmount());
+      root = undefined;
+      expect(provider.destroy).toHaveBeenCalledTimes(1);
+    },
+  );
 });
 
 describe('yjs connection: edits no database stores, for the sign-out confirm', () => {

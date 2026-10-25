@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -50,6 +51,7 @@ function Carousel({
   children,
   ...props
 }: React.ComponentProps<'div'> & CarouselProps) {
+  const { t } = useTranslation();
   const [carouselRef, api] = useEmblaCarousel({ ...opts, axis: orientation === 'horizontal' ? 'x' : 'y' }, plugins);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
@@ -126,11 +128,11 @@ function Carousel({
         onMouseLeave={() => setPointerInside(false)}
         onFocus={() => setFocusInside(true)}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusInside(false);
+          if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setFocusInside(false);
         }}
         className={cn('relative', className)}
         role="region"
-        aria-roledescription="carousel"
+        aria-roledescription={t('c:carousel')}
         data-slot="carousel"
         {...props}
       >
@@ -151,12 +153,13 @@ function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
+  const { t } = useTranslation();
   const { orientation } = useCarousel();
 
   return (
     <div
       role="group"
-      aria-roledescription="slide"
+      aria-roledescription={t('c:slide')}
       data-slot="carousel-item"
       className={cn('min-w-0 shrink-0 grow-0 basis-full', orientation === 'horizontal' ? 'pl-4' : 'pt-4', className)}
       {...props}
@@ -165,6 +168,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+  const { t } = useTranslation();
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
   return (
@@ -182,12 +186,13 @@ function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...pr
       {...props}
     >
       <ArrowLeftIcon />
-      <span className="sr-only">Previous slide</span>
+      <span className="sr-only">{t('c:previous_slide')}</span>
     </Button>
   );
 }
 
 function CarouselNext({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+  const { t } = useTranslation();
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
@@ -205,40 +210,40 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
       {...props}
     >
       <ArrowRightIcon />
-      <span className="sr-only">Next slide</span>
+      <span className="sr-only">{t('c:next_slide')}</span>
     </Button>
   );
 }
 
-const dotsVariants = cva('group/dot relative flex cursor-pointer items-center justify-center rounded-full', {
+const carouselDotsVariants = cva('group/dot focus-effect relative mx-1 flex cursor-pointer items-center justify-center rounded-full', {
   variants: {
     size: { default: 'size-5', sm: 'size-6', lg: 'size-7' },
-    gap: { default: 'mx-1', sm: 'mx-1', lg: 'mx-1' },
+    gap: { default: '', sm: '', lg: '' },
   },
   defaultVariants: { size: 'default', gap: 'default' },
 });
 
-interface CarouselDotsProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof dotsVariants> {}
+interface CarouselDotsProps extends React.ComponentProps<'div'>, VariantProps<typeof carouselDotsVariants> {}
 
 function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
+  const { t } = useTranslation();
   const { api } = useCarousel();
   const [current, setCurrent] = React.useState(0);
   const length = api?.scrollSnapList().length ?? 1;
 
   React.useEffect(() => {
     if (!api) return;
-    const onSelect = () => setCurrent(api.selectedScrollSnap());
-    onSelect();
-    api.on('select', onSelect);
+    const handleSelect = () => setCurrent(api.selectedScrollSnap());
+    handleSelect();
+    api.on('select', handleSelect);
 
     return () => {
-      api.off('select', onSelect);
+      api.off('select', handleSelect);
     };
   }, [api]);
 
   return (
-    // ::before widens the strip's hover zone without layout: nearing the dots enlarges them all, so the pointer finds a target before it lands.
-    // The buttons are positioned, so they paint above it and keep their clicks; z-10 lifts the zone over neighboring decoration such as a device bezel.
+    // ::before widens the hover zone without layout (z-10 lifts it over a device bezel); the positioned buttons paint above it and keep their clicks.
     <div
       role="tablist"
       className={cn(
@@ -250,21 +255,18 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
       {Array.from({ length }).map((_, index) => (
         <button
           type="button"
-          key={`dot-${
-            // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
-            index
-          }`}
+          // biome-ignore lint/suspicious/noArrayIndexKey: one dot per snap point, positional and never reordered.
+          key={index}
           role="tab"
-          aria-selected={current === index ? 'true' : 'false'}
-          aria-label={`Slide ${index + 1}`}
+          aria-selected={current === index}
+          aria-label={t('c:slide_number', { number: index + 1 })}
           onClick={() => api?.scrollTo(index)}
-          className={cn(dotsVariants({ size, gap }), 'focus-effect')}
+          className={carouselDotsVariants({ size, gap })}
         >
           <span
             aria-hidden="true"
             className={cn(
-              'size-[30%] rounded-full transition-[width,height,background-color] duration-200',
-              'pointer-coarse:size-[45%] group-hover/dots:size-[45%] group-has-[:focus-visible]/dots:size-[45%]',
+              'pointer-coarse:size-[45%] size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-focus-visible/dots:size-[45%]',
               current === index ? 'bg-foreground' : 'bg-muted-foreground/40 group-hover/dot:bg-muted-foreground',
             )}
           />

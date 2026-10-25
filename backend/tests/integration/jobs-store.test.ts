@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ensureQueues, scheduleJobs } from '#/lib/jobs';
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
-import { JOBS_SCHEMA, jobsOptions } from '#/lib/pg-boss';
+import { jobsOptions, jobsSchema } from '#/lib/pg-boss';
 import { installJobsSchema } from '../../scripts/db/install-jobs-schema';
 
 const TEST_QUEUE = 'jobs-store-test';
@@ -40,7 +40,7 @@ describe('job store as runtime_role', () => {
   });
 
   it('installs into the test schema with every declared job queue', async () => {
-    expect(JOBS_SCHEMA).toBe('pgboss_test');
+    expect(jobsSchema).toBe('pgboss_test');
     const queues = await boss.getQueues();
     for (const job of getBackendJobs()) {
       expect(queues.find((queue) => queue.name === job.name)?.policy).toBe('singleton');
@@ -84,7 +84,7 @@ describe('job store as runtime_role', () => {
   it('reports the store in health', async () => {
     const snapshot = await readJobsHealth();
     expect(snapshot.installed).toBe(true);
-    expect(snapshot.schema).toBe(JOBS_SCHEMA);
+    expect(snapshot.schema).toBe(jobsSchema);
     expect(snapshot.queues.map((queue) => queue.name)).toEqual(expect.arrayContaining(getBackendJobs().map((job) => job.name)));
     const component = mapJobsComponent(snapshot, true);
     expect(['healthy', 'degraded']).toContain(component.status);

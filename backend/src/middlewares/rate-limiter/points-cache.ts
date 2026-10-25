@@ -10,15 +10,15 @@ interface PointsEntry {
 }
 
 /** Fraction of budget below which requests skip the DB entirely. */
-const FAST_PATH_THRESHOLD = 0.8;
+const fastPathThreshold = 0.8;
 
 /** Capacity: one entry per limiter and key. Every write renews the TTL, so eviction drops the least recently written. */
-const MAX_ENTRIES = 50_000;
+const maxEntries = 50_000;
 
 /** The longest window a limiter may count in process: an entry is kept this long after its last write. */
-export const MAX_WINDOW_MS = 60 * 60 * 1000;
+export const maxWindowMs = 60 * 60 * 1000;
 
-const cache = new TTLCache<PointsEntry>({ maxSize: MAX_ENTRIES, defaultTtl: MAX_WINDOW_MS });
+const cache = new TTLCache<PointsEntry>({ maxSize: maxEntries, defaultTtl: maxWindowMs });
 
 /**
  * Local consumption accrues as debt settled by `takeDebt`, so each process reaches the threshold before its first flush.
@@ -33,7 +33,7 @@ export function tryFastConsume(key: string, cost: number, budget: number, window
   const priorConsumed = isFresh ? 0 : entry.consumed;
 
   // At or above the threshold goes to the DB, including a first request whose own cost already exceeds it
-  if (priorConsumed + cost >= budget * FAST_PATH_THRESHOLD) return 'check-db';
+  if (priorConsumed + cost >= budget * fastPathThreshold) return 'check-db';
 
   if (isFresh) {
     cache.set(key, { consumed: cost, flushed: 0, windowEnd: now + windowMs });
@@ -74,7 +74,7 @@ export function windowSecondsLeft(key: string, windowMs: number): number {
 }
 
 /**
- * Called after a DB consume, accepted or rejected. The DB count is authoritative across all processes, and so is the
+ * Called after a DB consume, accepted or rejected. The DB count is shared by all processes, and so is the
  * time `msBeforeNext` its row or the block on it has left: the in-process window ends with it.
  */
 export function syncFromDb(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {
@@ -84,7 +84,7 @@ export function syncFromDb(key: string, consumedPoints: number, msBeforeNext: nu
   const ownEnd = entry && now < entry.windowEnd ? entry.windowEnd : now + windowMs;
   const windowEnd = msBeforeNext > 0 ? now + msBeforeNext : ownEnd;
   // A block longer than an hour keeps its entry until it ends
-  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(MAX_WINDOW_MS, Math.ceil(windowEnd - now)));
+  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(maxWindowMs, Math.ceil(windowEnd - now)));
 }
 
 export function clearCache(): void {

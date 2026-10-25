@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
+import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
 /**
@@ -41,6 +42,15 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
   description: 'File link requests per user: 2000 per hour',
 });
 
+/**
+ * A budget: each token signs one assembly of up to `maxFilesPerUpload` files. The uploader asks one as it opens and
+ * one per assembly, and the offline upload service one per file it sends.
+ */
+export const uploadTokenLimiter = rateLimiter('limit', 'uploadToken', [['userId', 'ip']], {
+  limits: { points: 300, duration: 60 * 60, blockDuration: 0 },
+  description: 'Upload tokens per user: 300 per hour',
+});
+
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },
@@ -57,9 +67,16 @@ export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
   description: 'Failed step-up checks per account: 5 per hour, then blocked for 30 minutes',
 });
 
+/**
+ * Bounds the links one inbox receives, whatever IP asks. A browser that signed in to the address's account before (its
+ * device cookie outlives sign-out) passes uncounted, so its owner can sign in again and again. The count stays a tally
+ * of other browsers' requests, alike for every address: no answer tells an address with an account from one without.
+ */
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
-  limits: { points: 2, duration: 60 * 30, blockDuration: 0 },
-  description: 'Magic link emails per address: 2 per 30 minutes',
+  limits: { points: 3, duration: 60 * 30, blockDuration: 0 },
+  refusalType: 'magic_link_recently_sent',
+  exempt: (ctx, { email }) => !!email && isRecognizedBrowser(ctx, email),
+  description: 'Magic link emails per address from browsers that never signed in to it: 3 per 30 minutes',
 });
 
 /**

@@ -1,14 +1,13 @@
 import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
-  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:inset-ring data-pressed:inset-ring-input data-pressed:bg-accent data-pressed:text-accent-foreground',
+  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm transition-colors hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:inset-ring data-pressed:inset-ring-input data-pressed:bg-accent data-pressed:text-accent-foreground',
   {
     variants: {
       variant: {
-        default: 'bg-transparent shadow-none',
+        default: 'bg-transparent',
         outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
         tile: 'group/toggle border bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
         merged:
@@ -32,8 +31,7 @@ export function Toggle({
   size,
   value,
   ...props
-}: Omit<React.ComponentProps<typeof TogglePrimitive>, 'value'> &
-  VariantProps<typeof toggleVariants> & { value?: string | number | readonly string[] }) {
+}: Omit<TogglePrimitive.Props, 'value'> & VariantProps<typeof toggleVariants> & { value?: string | number | readonly string[] }) {
   return (
     <TogglePrimitive
       data-slot="toggle"

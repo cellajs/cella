@@ -1,24 +1,25 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { z } from 'zod';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 import { type ToastSeverity, toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 import { getErrorInfo } from '~/utils/get-error-info';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
+const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'AccountPage');
 
 /**
  * Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. `connect`
- * names an institution's connection the authentication card offers to connect: where an SSO recovery link lands.
+ * names an institution's connection the authentication card offers to connect: where an SSO recovery link leads.
  */
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
   validateSearch: errorSearchSchema.extend({ connect: z.uuid().optional().catch(undefined) }),
-  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
+  head: () => pageHead(i18n.t('c:settings')),
   beforeLoad: ({ search }) => {
     if (search.error) {
       const { title, message } = getErrorInfo({ errorFromQuery: search.error });
@@ -30,9 +31,6 @@ export const Route = createFileRoute('/_app/account')({
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },
-  loader: async () => {
-    const userAuthOptions = meAuthQueryOptions();
-    return queryClient.query({ ...userAuthOptions, staleTime: 'static' });
-  },
-  component: withSuspenseSpinner(UserAccountPage),
+  loader: () => queryClient.query({ ...meAuthQueryOptions(), staleTime: 'static' }),
+  component: withSuspenseSpinner(AccountPage),
 });

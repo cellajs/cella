@@ -1,5 +1,5 @@
 import type { DbContext } from '#/core/context';
-import { YJS_MAX_UPDATE_BYTES, type YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { type YjsDocScope, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate } from '#/modules/yjs/helpers/yjs-state';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocumentUnderKeyShare, insertYjsUpdate } from '#/modules/yjs/yjs-queries';
@@ -31,10 +31,10 @@ export interface AppendYjsUpdateOpts {
 
 /**
  * The one way into the log, for the relay, outside writes and (release 3) client updates over HTTP. An update larger
- * than YJS_MAX_UPDATE_BYTES, one Yjs cannot decode and one that carries nothing are answered before any query. Then the
+ * than yjsMaxUpdateBytes, one Yjs cannot decode and one that carries nothing are answered before any query. Then the
  * document row of `generation` is held under FOR KEY SHARE until the caller's transaction ends, so a retirement, which
  * deletes that row first, waits for the insert and then deletes the log row too. The row is inserted and, unless
- * `notify` is false, announced on YJS_LOG_CHANNEL in the same transaction: relays hear of it at commit, and never of a
+ * `notify` is false, announced on yjsLogChannel in the same transaction: relays hear of it at commit, and never of a
  * row that rolled back. The relay passes false: one notifying commit per keystroke would serialize its appends, so it
  * announces them after commit, batched. Runs under the document's tenant context, as `findYjsDocument` does.
  */
@@ -42,7 +42,7 @@ export async function appendYjsUpdate(
   ctx: DbContext,
   { doc, update, userId, generation, notify = true }: AppendYjsUpdateOpts,
 ): Promise<AppendResult> {
-  if (update.length > YJS_MAX_UPDATE_BYTES) return { status: 'too-large' };
+  if (update.length > yjsMaxUpdateBytes) return { status: 'too-large' };
   const kind = classifyUpdate(update);
   if (kind === 'malformed') return { status: 'malformed' };
   if (kind === 'empty') return { status: 'empty' };

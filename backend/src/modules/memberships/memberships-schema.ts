@@ -13,7 +13,8 @@ import {
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { nullableActorRefSchema } from '#/schemas/actor-ref';
+import { auditShape } from '#/schemas/entity-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
@@ -22,6 +23,7 @@ const entityRoleSchema = z.enum(roles.all);
 const membershipSchema = z
   .object({
     ...createSelectSchema(membershipsTable).shape,
+    ...auditShape,
     // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
@@ -37,7 +39,7 @@ export const inactiveMembershipSchema = z
     ...createSelectSchema(inactiveMembershipsTable).shape,
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
-    createdBy: nullableUserMinimalBaseSchema,
+    createdBy: nullableActorRefSchema,
   })
   .openapi('InactiveMembership', {
     description:
@@ -72,6 +74,40 @@ export const updatedMembershipSchema = membershipSchema.omit(personalViewMask).e
 
 export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50), role: membershipSchema.shape.role });
 
+export const membershipCheckBodySchema = membershipCreateBodySchema.pick({ emails: true });
+
+const inviteOutcomes = ['invite', 'remind', 'add', 'member'] as const;
+
+/**
+ * What an invite does with one address, told only from what the inviter already sees: the channel's invitations by
+ * address and its members by their listed address. An address an account holds reads as one no account holds.
+ */
+export const inviteOutcomeSchema = z
+  .object({
+    email: userBaseSchema.shape.email,
+    outcome: z.enum(inviteOutcomes).openapi({
+      description:
+        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.',
+    }),
+    /** remind: when the channel first invited the address. */
+    invitedAt: z.string().optional(),
+    /** remind: when the invitee declined; the invitation opens again. */
+    declinedAt: z.string().optional(),
+    /** member: the role the member holds, which an invite never changes. */
+    role: membershipSchema.shape.role.optional(),
+  })
+  .openapi('InviteOutcome');
+
+export const membershipCheckResponseSchema = z.object({ outcomes: inviteOutcomeSchema.array() });
+
+export const membershipInviteResponseSchema = z.object({
+  /** Memberships of organization members added at once. */
+  data: memberMembershipSchema.array(),
+  outcomes: inviteOutcomeSchema.array(),
+  /** The channel is a draft and the role waits for its publish: the invitations are saved, their emails held. */
+  held: z.boolean(),
+});
+
 export const membershipUpdateBodySchema = z
   .object({ role: membershipSchema.shape.role.optional(), ...optionalPersonalView })
   // With no field to change, the write would only stamp the caller on the row.
@@ -105,5 +141,7 @@ export const pendingMembershipSchema = z.object({
   email: userBaseSchema.shape.email,
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
-  createdBy: nullableUserMinimalBaseSchema,
+  /** The last email; null while it waits for its channel to be published. */
+  remindedAt: z.string().nullable(),
+  createdBy: nullableActorRefSchema,
 });

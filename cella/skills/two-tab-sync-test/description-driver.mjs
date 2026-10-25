@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { caretToEnd, chromium, editorText, exactText, mintSession, rowByName } from './driver-lib.mjs';
+import { caretToEnd, chromium, editorText, endSession, exactText, mintSession, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
 const SHOTS = join(OUT, 'shots');
@@ -447,6 +447,7 @@ try {
 } finally {
   writeFileSync(join(OUT, 'description-evidence.json'), JSON.stringify(evidence, null, 1));
   await browser.close();
+  await Promise.all(Object.values(sessions).map(endSession));
   const failed = asserts.filter((assert) => !assert.ok);
   console.log(`\n${asserts.length - failed.length}/${asserts.length} asserts passed -> ${join(OUT, 'description-evidence.json')}`);
   for (const assert of failed) console.log(`FAIL ${assert.what}`);

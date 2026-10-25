@@ -3,12 +3,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
-import { JsonViewer } from '~/modules/common/json-viewer';
+import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { lazyNamed } from '~/utils/lazy-named';
 
 // Lazy: shiki and its grammars load when the code view opens, not with the docs route.
-const CodeViewer = lazyNamed(() => import('./code-viewer'), 'CodeViewer');
+const CodeViewer = lazyNamed(() => import('~/modules/docs/code-viewer'), 'CodeViewer');
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
@@ -40,7 +40,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
       <ToggleGroup
         type="single"
         value={viewMode}
-        onValueChange={(value: string | string[]) => value && setViewMode(value as SchemaViewMode)}
+        onValueChange={(value) => setViewMode((mode) => toggleItems.find((item) => item.value === value)?.value ?? mode)}
         size="xs"
         variant="outline"
         className="absolute top-2 right-2 z-10 bg-muted/50 max-md:hidden"
@@ -49,7 +49,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
           .filter((item) => item.show)
           .map(({ value, icon: Icon, label, ariaLabel }) => (
             <ToggleGroupItem key={value} value={value} aria-label={ariaLabel} className="opacity-50 hover:opacity-70 data-pressed:opacity-100">
-              <Icon className="mr-1.5 size-4" />
+              <Icon className="mr-1.5" />
               <span className="text-xs lowercase">{label}</span>
             </ToggleGroupItem>
           ))}
@@ -75,8 +75,8 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
               />
             )}
             <Suspense fallback={null}>
-              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} language="zod" />}
-              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} language="typescript" />}
+              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
+              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} />}
             </Suspense>
             {viewMode === 'example' && example !== undefined && (
               <JsonViewer value={example} rootName={false} defaultInspectDepth={defaultInspectDepth} indentWidth={3} />

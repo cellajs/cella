@@ -1,4 +1,4 @@
-import { eq, inArray, isNotNull, or } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ActorContext } from '#/core/context';
@@ -18,7 +18,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 // stands in for the publish date: a row without one shows to its creator alone.
 vi.mock('#/db/utils/published-predicate', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#/db/utils/published-predicate')>()),
-  draftVisibleRowsPredicate: (_table: unknown, actorId: string) => or(isNotNull(attachmentsTable.publicAt), eq(attachmentsTable.createdBy, actorId)),
+  draftVisibleRowsPredicate: (_table: unknown, actorId: string) => or(eq(attachmentsTable.public, true), eq(attachmentsTable.createdBy, actorId)),
 }));
 
 /**
@@ -36,7 +36,7 @@ describe('filterExistingProductIds', async () => {
   const seed = async (owner: TestTenant, id: string, createdBy: string = owner.user.id) => {
     const plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
     plans.push(plan);
-    const columns = { id, tenantId: owner.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null, publicAt: null };
+    const columns = { id, tenantId: owner.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null };
     await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
   };
 

@@ -37,7 +37,7 @@ export type ChannelPolicyBuilder = {
 export interface PolicyConfiguration {
   entityType: EntityType;
   channels: Record<ChannelEntityType, ChannelPolicyBuilder>;
-  /** Call at most once per entity type; omitting it leaves `publicAt` dormant. @see public-read.ts */
+  /** Call at most once per entity type; omitting it leaves the `public` flag dormant. @see public-read.ts */
   publicRead: () => void;
 }
 

@@ -1,7 +1,8 @@
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { userActorRef, withActorRefs } from '#/modules/actors/actor-refs';
 import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { checkSlugsAvailable } from '#/modules/entities/operations/check-slug';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
@@ -9,12 +10,11 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { countOrganizationsByTenant, insertOrganizations } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
-import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
-type CreateOrganizationItem = { id: string; name: string; slug: string };
+type CreateOrganizationItem = { id: string; name: string; slug: string; draft?: boolean };
 
 export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOrganizationItem[], tenantId: string) {
   // Normalize old-shape field names to their current names before any body access
@@ -63,6 +63,8 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
       welcomeText: defaultWelcomeText,
       defaultLanguage: appConfig.defaultLanguage,
       createdBy: user.id,
+      // A draft holds its invitations until it is published
+      ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),
     })),
   });
 
@@ -79,7 +81,7 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
 
   const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
-  const orgsWithAudit = await withAuditUsers(ctx, organizationRecords, user);
+  const orgsWithAudit = await withActorRefs(ctx, organizationRecords, [userActorRef(user)]);
 
   // Flags are stored sparse, so merge the config defaults into the response
   const organizationResponses = orgsWithAudit.map((org) => {

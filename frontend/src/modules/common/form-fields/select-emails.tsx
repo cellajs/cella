@@ -1,27 +1,39 @@
-import { useRef, useState } from 'react';
+import { ClockIcon, LoaderCircleIcon, UserCheckIcon } from 'lucide-react';
+import { type InputHTMLAttributes, type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Chip } from '~/modules/ui/chip';
 import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
 
 const delimiter = /[,;\s]+/;
 
 /** True for exactly the addresses an invite submit accepts, so every chip passes the form. */
 export const isInviteEmail = (value: string) => zMembershipInviteBody.shape.emails.element.safeParse(value).success;
 
-interface SelectEmailsProps {
-  emails?: string[];
-  onValueChange?: (emails: string[]) => void;
-  placeholder?: string;
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+/** What a chip says about its address: still being checked, invited before or already a member, with a short note. */
+export interface EmailChipState {
+  state: 'checking' | 'invited' | 'member' | 'new';
+  note?: string;
 }
+
+interface SelectEmailsProps {
+  value?: string[];
+  onChange?: (value: string[]) => void;
+  placeholder?: string;
+  inputProps?: InputHTMLAttributes<HTMLInputElement>;
+  /** Marks each chip; a member's chip is dashed, since an invite leaves it out. */
+  chipState?: (email: string) => EmailChipState;
+}
+
+const stateIcons = { checking: LoaderCircleIcon, invited: ClockIcon, member: UserCheckIcon };
 
 /**
  * Email chip input. Enter, comma, semicolon, space, paste and blur turn the typed text into chips. An address that
  * already is a chip in any letter case is skipped; text that is not an address stays in the input with a warning.
  */
-export function SelectEmails({ emails = [], onValueChange, placeholder, inputProps }: SelectEmailsProps) {
+export function SelectEmails({ value: emails = [], onChange, placeholder, inputProps, chipState }: SelectEmailsProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState('');
@@ -35,13 +47,13 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
     }
 
     if (rejected.length) toaster.warning(t('error:invalid_email'), { description: rejected.join(', ') });
-    if (next.length > emails.length) onValueChange?.(next);
+    if (next.length > emails.length) onChange?.(next);
     setText(rejected.join(' '));
   };
 
-  const remove = (email: string) => onValueChange?.(emails.filter((chip) => chip !== email));
+  const remove = (email: string) => onChange?.(emails.filter((chip) => chip !== email));
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       // Also on an empty input, so Enter never submits the surrounding form.
       event.preventDefault();
@@ -56,13 +68,24 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the padding forwards focus to the input, which takes the keys
     <div
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
-      className="focus-effect flex flex-row flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
+      className="flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
     >
-      {emails.map((email) => (
-        <Chip key={email} onRemove={() => remove(email)} removeLabel={t('c:remove_resource', { resource: email })}>
-          {email}
-        </Chip>
-      ))}
+      {emails.map((email) => {
+        const { state, note } = chipState?.(email) ?? { state: 'new' };
+        const Icon = state === 'new' ? null : stateIcons[state];
+        return (
+          <Chip
+            key={email}
+            onRemove={() => remove(email)}
+            removeLabel={t('c:remove_resource', { resource: email })}
+            end={note && <span className="text-muted-foreground">· {note}</span>}
+            className={cn(state === 'member' && 'border-dashed bg-transparent text-muted-foreground', Icon && 'pl-2')}
+          >
+            {Icon && <Icon className={cn('mr-1 inline size-3.5 align-[-2px] opacity-70', state === 'checking' && 'animate-spin')} />}
+            {email}
+          </Chip>
+        );
+      })}
       <Input
         ref={inputRef}
         type="text"
@@ -70,9 +93,9 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
         value={text}
         {...inputProps}
         onChange={({ target }) => (delimiter.test(target.value) ? commit(target.value) : setText(target.value))}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleKeyDown}
         onBlur={() => text.trim() && commit(text)}
-        className="-my-px h-8 w-auto min-w-32 grow basis-32 border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
+        className="-my-px h-8 min-w-32 grow basis-32 border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
       />
     </div>
   );

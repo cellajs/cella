@@ -1,15 +1,17 @@
-import { and, count, eq, getColumns, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import type { ActorContext, DbContext } from '#/core/context';
+import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { textSearchFilter } from '#/utils/sql';
 
@@ -72,13 +74,20 @@ export const updateOrganization = async (ctx: ActorContext, { id, values }: Upda
   return updated;
 };
 
-interface DeleteOrganizationsByIdsOpts {
-  ids: string[];
+interface PublishOrganizationOpts {
+  id: string;
 }
 
-export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: DeleteOrganizationsByIdsOpts) => {
-  const { db, tenantId } = ctx.var;
-  return db.delete(organizationsTable).where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)));
+/** Stamps a draft organization published. Undefined when it was not a draft, also when another call published it first. */
+export const publishOrganization = async (ctx: UserContext, { id }: PublishOrganizationOpts) => {
+  const { db, tenantId, user } = ctx.var;
+  const at = getIsoDate();
+  const [published] = await db
+    .update(organizationsTable)
+    .set({ publishedAt: at, ...updateStamps(user.id, at) })
+    .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId), isNull(organizationsTable.publishedAt)))
+    .returning();
+  return published;
 };
 
 interface FindOrganizationsPaginatedOpts {
@@ -116,8 +125,13 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 
-  // Org-only filters belong in WHERE (safe for both admin + non-admin)
+  // Org-only filters belong in WHERE (safe for both admin + non-admin); an archived tenant's organization lists for system admins only.
   const orgWhere: SQL[] = [
+    ...(isSystemAdmin
+      ? []
+      : [
+          sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${organizationsTable.tenantId} AND ${tenantsTable.status} = 'archived')`,
+        ]),
     ...(q ? [textSearchFilter(organizationsTable.name, q)] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
   ];
@@ -138,13 +152,12 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   // System admins LEFT JOIN memberships (RLS grants access via createdBy or membership); regular users INNER JOIN and see only their orgs.
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
-  const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
+  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const selectShape = {
-    ...orgCols,
+    ...getColumns(organizationsTable),
     // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
     organizationFlags: organizationFlagsSelect,
     setupConfig: setupConfigSelect,
-    ...auditUserSelect,
     ...(countData && { counts: countData.countsSelect }),
   } as const;
 
@@ -157,8 +170,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   }
 
   const itemsQuery = query
-    .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
-    .leftJoin(updatedByUser, eq(updatedByUser.id, organizationsTable.updatedBy))
     .where(and(...orgWhere))
     .orderBy(...orderBy)
     .limit(limit)

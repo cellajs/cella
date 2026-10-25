@@ -39,7 +39,7 @@ export function useTableBarFilters<T extends { q?: string }>(options: TableBarFi
   return { isFiltered, onSearch, onResetFilters };
 }
 
-interface TableBarShellProps<TRow extends Record<string, unknown>> extends ReturnType<typeof useTableBarFilters> {
+interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useTableBarFilters> {
   searchVars: { q?: string };
   total: number | null;
   /** Count label, pluralized by the total. */
@@ -47,8 +47,9 @@ interface TableBarShellProps<TRow extends Record<string, unknown>> extends Retur
   /** Name of the search input. */
   searchName: string;
   allowOfflineSearch?: boolean;
-  columns: ColumnOrColumnGroup<TRow>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
+  /** The column toggle and the export render only with columns; a grid has none. */
+  columns?: ColumnOrColumnGroup<TRow>[];
+  setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
   /** Buttons before the count, hidden while filtered. */
   actions?: ReactNode;
   /** Rendered after the count. */
@@ -66,36 +67,53 @@ interface TableBarShellProps<TRow extends Record<string, unknown>> extends Retur
 }
 
 /** The bar above an entity table: actions and count, search and filters, columns, export and focus view. */
-export function TableBarShell<TRow extends Record<string, unknown>>(props: TableBarShellProps<TRow>) {
-  const { searchVars, isFiltered, onSearch, onResetFilters, columns, focusView = true, selection } = props;
-
+export function TableBarShell<TRow extends object>({
+  isFiltered,
+  onSearch,
+  onResetFilters,
+  searchVars,
+  total,
+  label,
+  searchName,
+  allowOfflineSearch,
+  columns,
+  setColumns,
+  actions,
+  countExtra,
+  filters,
+  export: exportOptions,
+  controls,
+  focusView = true,
+  selection,
+  after,
+}: TableBarShellProps<TRow>) {
   return (
     <>
       <TableBarContainer searchVars={searchVars}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            {!isFiltered && props.actions}
-            <TableCount count={props.total} label={props.label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
-              {props.countExtra}
+            {!isFiltered && actions}
+            <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+              {countExtra}
             </TableCount>
           </FilterBarActions>
 
           <div className="sm:grow" />
 
           <FilterBarSearch>
-            <TableSearch name={props.searchName} value={searchVars.q} setQuery={onSearch} allowOfflineSearch={props.allowOfflineSearch} />
+            <TableSearch name={searchName} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />
           </FilterBarSearch>
-          {props.filters && <FilterBarFilters>{props.filters}</FilterBarFilters>}
+          {filters && <FilterBarFilters>{filters}</FilterBarFilters>}
         </TableFilterBar>
 
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={props.setColumns} />
-        {props.export && <Export className="max-lg:hidden" columns={columns} {...props.export} />}
-        {props.controls}
+        {columns && setColumns && <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />}
+        {columns && exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
+        {controls}
         {focusView && <FocusView iconOnly />}
       </TableBarContainer>
 
       {selection && <SelectionActionBar {...selection} />}
-      {props.after}
+      {after}
     </>
   );
 }

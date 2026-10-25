@@ -1,6 +1,6 @@
 import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
-import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { type BlockTypeSelectItem, blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import i18n from 'i18next';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
 import {
@@ -9,17 +9,15 @@ import {
   pendingUploadMessage,
   subscribePendingUploads,
 } from '~/modules/attachment/helpers/pending-uploads';
-import { checklistItemBlock, getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
-import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
+import {
+  checklistItemBlock,
+  getChecklistSlashItem,
+  getChecklistTypeItem,
+} from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { mentionInlineContent } from '~/modules/common/blocknote/custom-elements/mention/mention-inline-content';
+import { getNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
-import type {
-  CommonBlockNoteProps,
-  CustomBlockNoteEditor,
-  CustomBlockTypes,
-  CustomFormatToolBarConfig,
-  SlashIndexedItems,
-} from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlock, CustomBlockNoteEditor, CustomBlockTypes, SlashIndexedItems } from '~/modules/common/blocknote/types';
 
 // Drop color inline styles so pasted content cannot carry colors that render invisible against the app theme.
 const { textColor: _textColor, backgroundColor: _backgroundColor, ...safeStyleSpecs } = defaultStyleSpecs;
@@ -43,7 +41,7 @@ const applyImageBox = (dom: HTMLElement | DocumentFragment, props: Record<string
   img.style.height = 'auto';
 };
 
-/** Decorates the image spec without touching config/propSchema, which must stay in lockstep with the Yjs relay schema; stays a vanilla DOM block so the headless read-only editor can render it. */
+/** Decorates the image render only: propSchema stays in lockstep with the Yjs relay schema, and plain DOM lets the headless editor render it. */
 const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
   type Render = NonNullable<typeof spec.implementation.render>;
   type ToExternalHTML = NonNullable<typeof spec.implementation.toExternalHTML>;
@@ -204,7 +202,7 @@ const withLanguageFallback = (spec: ReturnType<typeof createCodeBlockSpec>) => {
   };
 };
 
-// Block and inline configs are shared with the Yjs relay seeder (blocknote-seed.ts) and must stay in lockstep for Y.Doc round-tripping.
+/** Block and inline configs are shared with the Yjs relay seeder (blocknote-seed.ts): they stay in lockstep for Y.Doc round-tripping. */
 export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs }).extend({
   blockSpecs: {
     audio: withPendingUpload(withAttachmentRef(defaultBlockSpecs.audio)),
@@ -215,14 +213,31 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     notify: notifyBlock(),
     codeBlock: withLanguageFallback(createCodeBlockSpec(codeBlockConfig)),
   },
-  inlineContentSpecs: { mention: MentionSchema },
+  inlineContentSpecs: { mention: mentionInlineContent },
 });
 
-export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
+const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
 
-export const getSideMenuItems = (editor: CustomBlockNoteEditor) => [...blockTypeSelectItems(editor)];
+/** The block types a block can switch to: the allowed switch types, with plain headings at `headingLevels` only. */
+export const getBlockTypeItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
+): BlockTypeSelectItem[] => {
+  const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
+  return [...blockTypeSelectItems(editor), getChecklistTypeItem()].filter(
+    ({ type, props }) =>
+      switchTypes.includes(type) && (type !== 'heading' || (!props?.isToggleable && headingLevels.some((level) => level === props?.level))),
+  );
+};
 
-// Indexed items (max 9 for quick number-based selection)
+/** Whether an item names the block's current type: its type, and each prop the item sets. */
+export const isCurrentBlockType = (item: BlockTypeSelectItem, block: CustomBlock) => {
+  const blockProps: Record<string, unknown> = block.props;
+  return item.type === block.type && Object.entries(item.props ?? {}).every(([name, value]) => blockProps[name] === value);
+};
+
+/** The slash items a digit key picks, in order. */
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
 
 export const getSlashMenuItems = (
@@ -230,20 +245,18 @@ export const getSlashMenuItems = (
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
 ): DefaultReactSuggestionItem[] => {
-  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor), getChecklistSlashItem(editor)];
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getNotifySlashItem(editor), getChecklistSlashItem(editor)];
 
-  const { heading, ...restTypeToKeys } = { ...baseBlockNoteTypeToKeys };
+  const { heading, ...restTypeToKeys } = baseBlockNoteTypeToKeys;
   const filteredHeading = heading.filter((key) => {
     const match = key.match(/(?:_)?(\d)$/);
     const level = match ? Number.parseInt(match[1], 10) : 1;
-    return headingLevels.includes(level as (typeof headingLevels)[number]);
+    return headingLevels.some((headingLevel) => headingLevel === level);
   });
 
   const allowedTypeToKeys = { ...restTypeToKeys, heading: filteredHeading };
 
-  const filteredTypeToKeys = Object.fromEntries(
-    Object.entries(allowedTypeToKeys).filter(([type]) => allowedTypes.includes(type as CustomBlockTypes)),
-  );
+  const filteredTypeToKeys = Object.fromEntries(allowedTypes.map((type) => [type, allowedTypeToKeys[type]]));
 
   const allowedKeys: Set<string> = new Set(Object.values(filteredTypeToKeys).flat());
 
@@ -254,21 +267,10 @@ export const getSlashMenuItems = (
   );
 
   return baseItems
-    .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.has(item.key as string))
+    .filter((item): item is DefaultSuggestionItem => 'key' in item && typeof item.key === 'string' && allowedKeys.has(item.key))
     .sort(({ key: first }, { key: second }) => {
-      const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
-      const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
-      return aIndex - bIndex;
+      const firstIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
+      const secondIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
+      return firstIndex - secondIndex;
     });
-};
-
-export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
-  blockTypeSelect: false,
-  blockStyleSelect: true,
-  blockAlignSelect: false,
-  textColorSelect: false,
-  blockNestingSelect: false,
-  fileCaption: true,
-  openPreview: true,
-  createLink: true,
 };

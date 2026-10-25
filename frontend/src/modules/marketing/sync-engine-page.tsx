@@ -4,44 +4,39 @@ import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { InfoGrid } from '~/modules/marketing/info-grid';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { syncCategoryIcons, syncPageItems } from '~/modules/marketing/marketing-config';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
-/**
- * Dedicated sync engine page explaining Cella's selective-sync approach and how it works.
- */
+const pillClass = tw('mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center');
+
 export function SyncEnginePage() {
   const { t } = useTranslation();
 
   return (
-    <MarketingLayout>
-      <AboutSection title="about:selective_sync.title" text="about:selective_sync.text" textComponents={{ em: <em className="italic" /> }}>
-        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal">
+    <MarketingLayout title="about:selective_sync.title">
+      <AboutSection text="about:selective_sync.text" textComponents={{ em: <em /> }}>
+        <p className="mx-auto mb-6 max-w-3xl">
           <Trans
             t={t}
             i18nKey="about:cella_approach_intro"
             components={{
-              strong: <strong className="font-semibold text-foreground" />,
+              strong: <strong className="font-semibold" />,
             }}
           />
         </p>
 
-        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal">
-          <Trans t={t} i18nKey="about:cella_approach_point_1" />
-        </p>
-        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal">
-          <Trans t={t} i18nKey="about:cella_approach_point_2" />
-        </p>
-        <p className="mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal">
-          <Trans t={t} i18nKey="about:cella_approach_point_3" />
-        </p>
+        <div className="space-y-2">
+          {([1, 2, 3] as const).map((point) => (
+            <p key={point} className={pillClass}>
+              <Trans t={t} i18nKey={`about:cella_approach_point_${point}`} />
+            </p>
+          ))}
+        </div>
       </AboutSection>
 
       <AboutSection title="about:how.title" text="about:how.text" alternate>
-        <p className="mx-auto -mt-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal">
-          {t('about:how.concept_1')}
-        </p>
-        <p className="mx-auto mt-2 mb-10 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal">
-          {t('about:how.concept_2')}
-        </p>
+        <p className={cn(pillClass, '-mt-8')}>{t('about:how.concept_1')}</p>
+        <p className={cn(pillClass, 'mt-2 mb-10')}>{t('about:how.concept_2')}</p>
         <SyncDiagram />
       </AboutSection>
 

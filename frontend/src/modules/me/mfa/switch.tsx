@@ -1,10 +1,11 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlertIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { ConfirmMfaToggle } from '~/modules/me/mfa/confirmation';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { MfaConfirmation } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
+import { WarningNote } from '~/modules/me/warning-note';
+import { Label } from '~/modules/ui/label';
 import { Switch } from '~/modules/ui/switch';
 import { useCurrentUser } from '~/modules/user/user-store';
 
@@ -12,17 +13,14 @@ export function MfaSwitch() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const hasPasskey = authData.passkeys.length > 0;
-  const hasTotp = authData.hasTotp;
+  const canEnable = authData.passkeys.length > 0 && authData.totp !== null;
 
-  const createDialog = useDialoger((state) => state.create);
-
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const handleToggleMfa = (mfaRequired: boolean) => {
     const action = mfaRequired ? 'enable' : 'disable';
 
-    createDialog(<ConfirmMfaToggle mfaRequired={mfaRequired} />, {
+    dialoger.getState().create(<MfaConfirmation mfaRequired={mfaRequired} />, {
       id: 'mfa-confirmation',
       triggerRef,
       className: 'max-w-xl',
@@ -32,29 +30,12 @@ export function MfaSwitch() {
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start">
-        <Switch
-          id="mfaRequired"
-          ref={triggerRef}
-          aria-label={t('c:mfa')}
-          disabled={!hasPasskey || !hasTotp}
-          checked={user.mfaRequired}
-          onCheckedChange={handleToggleMfa}
-        />
-        {user.mfaRequired && (
-          <p className="flex items-center gap-2">
-            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
-            <span className="text-muted-foreground text-sm">{t('c:mfa_enabled.text')}</span>
-          </p>
-        )}
-        {(!hasPasskey || !hasTotp) && (
-          <p className="flex items-center gap-2">
-            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
-            <span className="text-muted-foreground text-sm">{t('c:mfa_disabled.text')}</span>
-          </p>
-        )}
+    <div className="mb-6 flex flex-col gap-3">
+      <div className="flex items-center gap-4">
+        <Switch id="mfaRequired" ref={triggerRef} disabled={!canEnable} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
+        <Label htmlFor="mfaRequired">{t('c:enable_resource', { resource: t('c:mfa_short') })}</Label>
       </div>
+      {!canEnable && <WarningNote>{t('c:mfa_disabled.text')}</WarningNote>}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { LucideProvider } from 'lucide-react';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
-import './styling/tailwind.css';
+import '~/styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 import '~/lib/otel';
@@ -11,18 +11,29 @@ import '~/modules'; // Composition root: registers every frontend module before 
 import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/utils/ascii';
+import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
-import { reportReactError } from '~/lib/maple';
+import { reportReactError, reportRejectedResponse } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
+import { ReloadPrompt } from '~/modules/common/reload-prompt';
+import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { QueryClientProvider } from '~/query/provider';
+import { checkForUpdate } from '~/utils/app-update';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initInputModality } from '~/utils/input-modality';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
-// Configure the SDK client with runtime settings (credentials, error handling, etc.)
 client.setConfig(createClientConfig());
+// An error after an ok response is the SDK's response check refusing the body: report it, then rethrow it unchanged.
+client.interceptors.error.use((error, response, request) => {
+  if (response?.ok) reportRejectedResponse(error, request ? new URL(request.url).pathname : '', response.status);
+  // A refused body or a server error can mean a newer release is out: look for it now, not at the next periodic check.
+  // A failed status reaches here as the ApiError the client's fetch threw, with no response.
+  if (response?.ok || (error instanceof ApiError && error.status >= 500)) void checkForUpdate();
+  return error;
+});
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
@@ -61,14 +72,13 @@ if (canonicalUrl) {
   }).render(
     <StrictMode>
       <Themer />
-      {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
-        `:where(svg.lucide)` CSS default, not lucide's misleading px 24. Sizing itself
-        stays class-based (icon-* utilities); classes override both the rule and the attrs.
-        The cast bridges a lucide-react typing gap: LucideConfig narrows size to number,
-        while the icons consuming the context accept LucideProps' string | number. */}
+      {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
       <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
         <QueryClientProvider>
           <AppRouter />
+          {/* Outside the router: the root error page replaces the root route's component, and both outlive it */}
+          <ReloadPrompt />
+          <ToasterProvider />
         </QueryClientProvider>
       </LucideProvider>
     </StrictMode>,

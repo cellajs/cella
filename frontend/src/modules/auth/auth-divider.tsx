@@ -7,9 +7,5 @@ export function AuthDivider() {
 
   if (!isStrategyEnabled('oauth') && !isStrategyEnabled('sso')) return null;
 
-  return (
-    <div className="relative flex justify-center text-xs uppercase">
-      <span className="px-2 text-muted-foreground">{t('c:or')}</span>
-    </div>
-  );
+  return <div className="text-center text-muted-foreground text-xs uppercase">{t('c:or')}</div>;
 }

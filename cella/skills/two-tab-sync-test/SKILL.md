@@ -19,7 +19,7 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 ## Auth: a minted session
 
-No UI login, and no cookie built by hand: the app signs every cookie. The driver runs `pnpm --filter backend session:mint <EMAIL>` (development and test mode only), which prints `<cookie name>=<signed value>` and a curl line with the API URL. Cookie name, cookie version and port all come from the checkout's config, so none of them is written down here.
+No UI login, and no cookie built by hand: the app signs every cookie. The driver runs `pnpm --filter backend session:mint <EMAIL>` (development and test mode only), which prints `<cookie name>=<signed value>` and a curl line with the API URL, and signs that session out when it ends. Cookie name, cookie version and port all come from the checkout's config, so none of them is written down here.
 
 - **Default, the bench user** (needs `pnpm --filter bench db:seed` once): `xbench-user-0000@xbench.local` is admin of `xbench/xbench-org`. The seed sets that tenant's attachment quota to unlimited, so every experiment runs there, creates included.
 - **Any other seeded org**: pick an admin and pass `EMAIL` and `ORG_PATH`.
@@ -54,10 +54,11 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | Evidence | Meaning |
 |---|---|
 | `[TabCoordinator] Acquired leader lock` in one tab, `[AppStream] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
-| `[handleEntityNotification] attachment:<action> viewing=<bool>` in tab B console | notification crossed SSE + BroadcastChannel |
+| `[handleProductNotification] attachment:<action> viewing=<bool>` in tab B console | notification crossed SSE + BroadcastChannel |
 | `Echo: patched stx, skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
 | range response `items` (id, name, `deletedAt`, seq) | payload truth; soft-delete tombstones DO ride the range read (backend drops the `deletedAt` filter for `afterSeq`/`untilSeq`) |
+| `[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched` | the device's last catchup (`caughtUpAt` in `syncStore`) is older than `appConfig.retention.activityDays`: it starts over, as after a rebuild. To test it, move `caughtUpAt` in the persisted `sync` store back and reload |
 
 Decision rule: **no console notification line and the API's `cdc` component is not healthy** (its `reason` says why: `setup_problems`, `worker_stuck`, `reading_again`, `api_away`) → the worker (read its log), not the client; **no console notification line otherwise** → SSE/leader/broadcast layer; **notification but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
 
@@ -86,7 +87,7 @@ The description driver's experiments, by their `ONLY` name:
 | Experiment | Passes when | A failure points at |
 |---|---|---|
 | `live` | typed text reaches the peer, its cursor follows a burst of arrow keys to where it ends, and leaves when the sheet closes right after a move | relay broadcast and the awareness rate window (`yjs/src/sync/relay.ts`) |
-| `typing` | the server row holds the text while nonstop typing goes on (about 10s in) | the max-wait compaction (`YJS_COMPACT_MAX_WAIT_MS`) and materialization |
+| `typing` | the server row holds the text while nonstop typing goes on (about 10s in) | the max-wait compaction (`yjsCompactMaxWaitMs`) and materialization |
 | `outside` | a description written through the API shows in both open editors, with no reconnect and no toast | `recordYjsOutsideWrite` and the relay's log listener |
 | `viewer` | a user without update rights gets the static only: no token request, no socket | `canEdit` in `collaborative-blocknote.tsx` |
 | `offline` | a stored document opens editable offline, keeps its edit across a reopen, and syncs once online with no notice | `yjs-store.ts`, and the load before connect in `yjs-connections.ts` |
@@ -104,7 +105,7 @@ The description driver's experiments, by their `ONLY` name:
 - Table: rows virtualized (~15–20 in DOM), sorted `createdAt desc` so new rows are in the viewport. Selectors: row `.rdg-row`, name `span.truncate.font-medium`, row checkbox `[aria-label="Select"]`, rename = dblclick name cell → `input[data-slot="edit-cell-input"]` → Enter, delete = checkbox → destructive `Delete` bar button → confirm dialog `Delete`. Match a row by its exact name: bench rows are numbered, so `… 2` is also the start of `… 20`.
 - Description editor: dblclick the row's description cell (find the column by its header) → sheet `[role="dialog"]` with the row name as heading → `.bn-editor[contenteditable="true"]`. Remote cursor labels sit inside the editor's text: cut `.bn-collaboration-cursor__base` before matching.
 - Caret: the editor reads a moved caret a moment later, so text typed straight after a click or `Meta+ArrowDown` goes to the caret before it (two users clicking the same spot then type into each other's text). Set the DOM selection (`selectAllChildren` + `collapseToEnd`) and wait about 150ms. A fresh editor also places its own caret right after it shows: wait half a second before the first key.
-- Cursors: typing moves no cursor, which sticks to its neighbouring character; clicks, arrow keys and selections do. The relay sends a socket's first awareness frame at once and holds what follows for half a second, the latest state per client (`YJS_AWARENESS_RATE_LIMIT`), so a peer's view trails a move by up to that long: poll for it.
+- Cursors: typing moves no cursor, which sticks to its neighbouring character; clicks, arrow keys and selections do. The relay sends a socket's first awareness frame at once and holds what follows for half a second, the latest state per client (`yjsAwarenessRateLimit`), so a peer's view trails a move by up to that long: poll for it.
 - Relay outage: DevTools "Block request URL" and CDP `Network.setBlockedURLs` do not stop WebSocket handshakes. Route the socket with playwright (`context.routeWebSocket(/\/yjs\//, …)`: `connectToServer()` passes it through, closing the routed sockets drops it) or stop the relay process. A routed socket that is bridged by hand, with no `connectToServer()`, shows in no `page.on('websocket')` event: count sockets in the route handler. `setBlockedURLs` does block the HTTP pull and push. `context.setOffline(true)` leaves an open socket open; the app's own online handler disconnects the editor.
 - Two users (cursors, a member who may only read): one browser context per user, each with its own minted cookie, as `description-driver.mjs` does. The two tabs of `two-tab-driver.mjs` share one session.
 - A description written through the API (an outside write) needs `stx.fieldTimestamps.description` as an HLC, `<ms>:<4+ digit counter>:<5 chars [0-9a-z]>`, else 400.

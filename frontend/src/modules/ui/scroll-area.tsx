@@ -14,16 +14,16 @@ export function ScrollArea({
   disableTrackClick,
   focusableViewport = true,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+}: ScrollAreaPrimitive.Root.Props & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
-  /** Enable horizontal scrolling (min-width: fit-content on content). Defaults to false. */
+  /** Enable horizontal scrolling (min-width: fit-content on content). */
   horizontalScroll?: boolean;
   /** Enable auto-scrolling when dragging elements near edges (uses @atlaskit/pragmatic-drag-and-drop). */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   /** Disable clicking the scrollbar track to jump scroll position. Only the thumb remains draggable. */
   disableTrackClick?: boolean;
-  /** Keep the viewport out of the tab order. Only for content that has its own tab stops, which already scroll it. */
+  /** `false` takes the viewport out of the tab order: only for content with its own tab stops, which scroll it already. */
   focusableViewport?: boolean;
 }) {
   const internalViewportRef = React.useRef<HTMLDivElement | null>(null);
@@ -43,7 +43,7 @@ export function ScrollArea({
     let lastWidth = viewport.scrollWidth;
     let lastHeight = viewport.scrollHeight;
     let frame = 0;
-    const mo = new MutationObserver(() => {
+    const observer = new MutationObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const { scrollWidth, scrollHeight } = viewport;
@@ -53,10 +53,10 @@ export function ScrollArea({
         viewport.dispatchEvent(new Event('scroll'));
       });
     });
-    mo.observe(viewport, { childList: true, subtree: true });
+    observer.observe(viewport, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(frame);
-      mo.disconnect();
+      observer.disconnect();
     };
   }, [viewportRef]);
 
@@ -67,10 +67,7 @@ export function ScrollArea({
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
         tabIndex={focusableViewport ? undefined : -1}
-        className={cn(
-          'size-full touch-manipulation rounded-[inherit] outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
-          viewportClassName,
-        )}
+        className={cn('focus-effect focus-inset size-full touch-manipulation rounded-[inherit] outline-hidden', viewportClassName)}
       >
         <ScrollAreaPrimitive.Content style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: horizontalScroll ? undefined : 0 }}>
           {children}
@@ -87,7 +84,7 @@ export function ScrollBar({
   orientation = 'vertical',
   disableTrackClick,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & { disableTrackClick?: boolean }) {
+}: ScrollAreaPrimitive.Scrollbar.Props & { disableTrackClick?: boolean }) {
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"

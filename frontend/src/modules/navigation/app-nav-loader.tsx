@@ -5,12 +5,13 @@ import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Logo } from '~/modules/common/logo';
+import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Spinner } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
 
 // Requests have no client timeout, so one that never settles (often after a phone wakes) would keep the spinner going.
-const LOADING_BREAKER_MS = 15_000;
+const loadingBreakerMs = 15_000;
 
 /** Brand intro on first load, then the item's icon, swapped for a spinner while queries or navigation are in flight. */
 export function AppNavLoader({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
@@ -30,7 +31,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
   const navLoading = useRouterState({ select: (state) => state.status === 'pending' });
   const isLoadingRaw = isFetching > 0 || navLoading;
 
-  // Back to the icon after LOADING_BREAKER_MS of unbroken loading; the spinner returns once everything has settled.
+  // Back to the icon after loadingBreakerMs of unbroken loading; the spinner returns once everything has settled.
   useEffect(() => {
     if (!isLoadingRaw) {
       setBreakerOpen(false);
@@ -42,8 +43,8 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
         .getQueryCache()
         .findAll({ fetchStatus: 'fetching' })
         .map((query) => query.queryKey);
-      console.warn(`[AppNavLoader] Still loading after ${LOADING_BREAKER_MS / 1000}s, spinner hidden`, { navLoading, stuckQueries });
-    }, LOADING_BREAKER_MS);
+      console.warn(`[AppNavLoader] Still loading after ${loadingBreakerMs / 1000}s, spinner hidden`, { navLoading, stuckQueries });
+    }, loadingBreakerMs);
     return () => clearTimeout(timeout);
   }, [isLoadingRaw, navLoading, queryClient]);
 
@@ -56,7 +57,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
   const skipInitialAnimation = !hasLoaded && navSheetOpen === 'menu';
 
   return (
-    <div className="relative flex size-10 items-center justify-center overflow-visible">
+    <div className="relative flex size-10 items-center justify-center">
       <AnimatePresence>
         {showLogo && (
           <motion.div
@@ -68,7 +69,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             className="absolute"
           >
             <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 1.5, repeat: 1, repeatDelay: 0.3, ease: 'easeInOut' }}>
-              <Logo iconOnly height={34} className="saturate-[.9]" />
+              <Logo iconOnly height={34} className="saturate-90" />
             </motion.div>
           </motion.div>
         )}
@@ -85,11 +86,9 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             className="absolute"
           >
             {isLoading ? (
-              <Spinner strokeWidth={1.8} className={cn('size-5', className)} />
+              <Spinner strokeWidth={navIconStrokeWidth} className={cn('size-5', className)} />
             ) : (
-              <div className="transition-transform group-hover:scale-110">
-                <Icon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />
-              </div>
+              <Icon strokeWidth={navIconStrokeWidth} className={cn('size-5', className)} />
             )}
           </motion.div>
         )}

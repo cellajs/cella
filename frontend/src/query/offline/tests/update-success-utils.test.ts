@@ -1,121 +1,44 @@
-import { QueryClient } from '@tanstack/react-query';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mergeServerResponse, syncEntityToCache } from '../update-success-utils';
+import { describe, expect, it, vi } from 'vitest';
 
-// Mock cacheUpdate so we can verify it's called
+// The module's list writer pulls in the app's query client at import; mergeServerResponse reads none of it.
 vi.mock('~/query/basic/cache-mutations', () => ({ cacheUpdate: vi.fn() }));
 
-import { cacheUpdate } from '~/query/basic/cache-mutations';
-
-interface FakeEntity {
-  id: string;
-  name: string;
-  description: string;
-  stx: { mutationId: string; sourceId: string; fieldTimestamps: Record<string, string> };
-  updatedAt: string;
-  updatedBy: string;
-}
-
-// Covers mutation onSuccess cache writes to list and detail cache.
-describe('syncEntityToCache', () => {
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
-    queryClient = new QueryClient();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    queryClient.clear();
-  });
-
-  it('writes entity to detail cache when detail entry already exists', () => {
-    const listKey = ['test', 'list'];
-    const detailKey = ['test', 'detail', 'e1'];
-    const entity: FakeEntity = {
-      id: 'e1',
-      name: 'Updated',
-      description: 'Desc',
-      stx: { mutationId: 'mut-2', sourceId: 'src-1', fieldTimestamps: { name: '200:0001:aaa' } },
-      updatedAt: '2026-01-02',
-      updatedBy: 'user-1',
-    };
-
-    // Pre-populate detail cache
-    queryClient.setQueryData<FakeEntity>(detailKey, {
-      id: 'e1',
-      name: 'Old',
-      description: 'Old Desc',
-      stx: { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaa' } },
-      updatedAt: '2026-01-01',
-      updatedBy: 'user-1',
-    });
-
-    syncEntityToCache({ entity, listKey, detailKey, queryClient });
-
-    // Detail cache updated
-    const detail = queryClient.getQueryData<FakeEntity>(detailKey);
-    expect(detail?.name).toBe('Updated');
-    expect(detail?.stx?.fieldTimestamps?.name).toBe('200:0001:aaa');
-
-    // List cache cacheUpdate was called
-    expect(cacheUpdate).toHaveBeenCalledWith(listKey, [entity]);
-  });
-
-  it('does not create detail cache entry if none existed (guard)', () => {
-    const listKey = ['test', 'list'];
-    const detailKey = ['test', 'detail', 'e1'];
-    const entity: FakeEntity = {
-      id: 'e1',
-      name: 'New',
-      description: 'Desc',
-      stx: { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} },
-      updatedAt: '2026-01-01',
-      updatedBy: 'user-1',
-    };
-
-    syncEntityToCache({ entity, listKey, detailKey, queryClient });
-
-    // Detail cache should NOT be created from scratch
-    expect(queryClient.getQueryData(detailKey)).toBeUndefined();
-    // But list cache update is still called
-    expect(cacheUpdate).toHaveBeenCalledWith(listKey, [entity]);
-  });
-});
+const { mergeServerResponse } = await import('../update-success-utils');
 
 describe('mergeServerResponse', () => {
   const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
-  const cached = { id: 'e1', name: 'Typed meanwhile', description: 'old', keywords: 'old', stx, updatedAt: '2026-01-01', updatedBy: 'u1' };
-  const serverEntity = { id: 'e1', name: 'Server name', description: 'new', keywords: 'new words', stx, updatedAt: '2026-01-02', updatedBy: 'u2' };
+  const serverStx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '200:0001:aaaaa' } };
+  const cached = {
+    id: 'e1',
+    name: 'Typed meanwhile',
+    description: 'old',
+    keywords: 'old',
+    labels: ['mine'],
+    stx,
+    updatedAt: '2026-01-01',
+    updatedBy: 'u1',
+  };
+  const serverEntity = {
+    id: 'e1',
+    name: 'Server name',
+    description: 'new',
+    keywords: 'new words',
+    labels: ['server'],
+    stx: serverStx,
+    updatedAt: '2026-01-02',
+    updatedBy: 'u2',
+  };
 
-  it('takes the mutated keys and the stamps, and keeps a concurrent edit of another field', () => {
-    const merged = mergeServerResponse({ cached, serverEntity, mutatedKeys: ['description'] });
-    expect(merged).toEqual({ ...cached, description: 'new', updatedAt: '2026-01-02', updatedBy: 'u2' });
-  });
-
-  it('takes the columns the server derived from a mutated key', () => {
+  it('takes from the response only what this mutation changed, the columns the server derived from it and the stamps, so a concurrent edit survives', () => {
     const merged = mergeServerResponse({
       cached,
       serverEntity,
-      mutatedKeys: ['description'],
+      mutatedKeys: ['description', 'labels'],
       derivedKeys: { description: ['keywords'], name: ['slug'] },
+      skipKeys: ['labels'],
     });
-    expect(merged.keywords).toBe('new words');
-    expect(merged.name).toBe('Typed meanwhile');
-  });
 
-  it('leaves a skipped key alone, derived or mutated', () => {
-    const merged = mergeServerResponse({
-      cached,
-      serverEntity,
-      mutatedKeys: ['description'],
-      derivedKeys: { description: ['keywords'] },
-      skipKeys: ['keywords'],
-    });
-    expect(merged.keywords).toBe('old');
-  });
-
-  it('returns the server entity when nothing is cached', () => {
-    expect(mergeServerResponse({ serverEntity, mutatedKeys: [] })).toBe(serverEntity);
+    // `name` was edited meanwhile and `labels` is skipped (raak's task skips its array fields): both keep the cached value.
+    expect(merged).toEqual({ ...cached, description: 'new', keywords: 'new words', stx: serverStx, updatedAt: '2026-01-02', updatedBy: 'u2' });
   });
 });

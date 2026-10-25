@@ -15,15 +15,15 @@ li:has(.is-focused) {
   background: transparent;
 }
 
-/* Override BlockNote's soft editor text color with the app foreground. */
+/* BlockNote's font and soft editor text color, taken from the app's tokens. */
 .bn-container.bn-shadcn {
-  --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+  --bn-font-family: var(--font-sans);
   --bn-colors-editor-text: var(--foreground);
 }
 
 /* .bn-default-styles hardcodes a font-family in @blocknote/core and bypasses --bn-font-family. */
 .bn-container.bn-shadcn .bn-default-styles {
-  font-family: "Open Sans", ui-sans-serif, sans-serif;
+  font-family: var(--bn-font-family);
 }
 
 .bn-editor[contenteditable="false"] .ProseMirror-selectednode > .bn-block-content > *,
@@ -46,8 +46,8 @@ li:has(.is-focused) {
 }
 
 .bn-shadcn p {
-  font-size: 0.888rem;
-  font-weight: 400;
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-normal);
   -webkit-font-smoothing: antialiased;
   overflow-wrap: anywhere;
   padding: 0;
@@ -67,15 +67,11 @@ li:has(.is-focused) {
   display: contents;
 }
 
-.bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
-  color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
-}
-
 /* BlockNote renders its placeholder via `::after` on `.bn-block-content`; match the editor paragraph size. */
 .bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
-  font-size: 0.888rem;
+  font-size: var(--text-md);
   line-height: 1.4;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
 }
 
 /* An empty heading's placeholder keeps the heading's type, so nothing jumps when typing starts. */
@@ -99,26 +95,31 @@ li:has(.is-focused) {
   display: none;
 }
 
+/* Inline code wears the docs' chip (`.prose code` in tailwind.css), so code reads alike everywhere and in both themes. */
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
-  background: color-mix(in oklch, var(--input) 50%, transparent);
-  padding: 0.15rem;
-  border-radius: 0.25rem;
-  color: #e8912d;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  color: var(--foreground);
+  font-weight: 500;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
-.bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
+.dark .bn-block-content[data-content-type="codeBlock"] {
   background: color-mix(in oklch, var(--input) 50%, transparent);
   border: 0.05rem solid color-mix(in oklch, var(--ring) 40%, transparent);
 }
 
 .bn-block-content[data-content-type="codeBlock"] code {
+  border: 0;
   background: transparent;
   padding: 0;
-  border: none;
-  border-radius: none;
   color: #fff;
+  font-weight: inherit;
 }
 
 .bn-block-content[data-content-type="codeBlock"] > pre {
@@ -196,8 +197,7 @@ li:has(.is-focused) {
   font-weight: 600;
 }
 
-/* The handle must fit inside a 1.5rem left inset (the grip glyph's own transparent margin
-   supplies the visual gap), so hosts need no extra gutter beyond their ordinary padding. */
+/* The handle fits a 1.5rem left inset (the grip glyph's transparent margin gives the gap), so hosts need no extra gutter. */
 .bn-shadcn .bn-side-menu {
   position: relative;
   left: -0.125rem;
@@ -219,12 +219,6 @@ li:has(.is-focused) {
 
 .prosemirror-dropcursor-block {
   border-radius: 2rem;
-}
-
-.bn-block .bn-editor,
-.bn-block .bn-static-editor {
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
 }
 
 .bn-shadcn .bn-editor,
@@ -280,22 +274,13 @@ li:has(.is-focused) {
   background-color: var(--muted);
 }
 
+/* Unlayered, so it outranks the gap-1 that @blocknote/shadcn appends to a checkable menu item. */
 .bn-menu-item {
-  display: flex;
-  flex-direction: row;
   gap: 14px;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.bn-dropdown-button {
-  display: inline-flex;
-  gap: 0.15rem;
 }
 
 .notify {
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-grow: 1;
   border-radius: 4px;
@@ -319,28 +304,23 @@ li:has(.is-focused) {
   background-color: #e6ffe6;
 }
 
-[data-color-scheme="dark"] .notify[data-notify-type="warning"] {
+.dark .notify[data-notify-type="warning"] {
   background-color: #805d20;
 }
 
-[data-color-scheme="dark"] .notify[data-notify-type="error"] {
+.dark .notify[data-notify-type="error"] {
   background-color: #802020;
 }
 
-[data-color-scheme="dark"] .notify[data-notify-type="info"] {
+.dark .notify[data-notify-type="info"] {
   background-color: #203380;
 }
 
-[data-color-scheme="dark"] .notify[data-notify-type="success"] {
+.dark .notify[data-notify-type="success"] {
   background-color: #208020;
 }
 
-.no-hover-bg:hover {
-  background-color: transparent;
-}
-
 .notify-icon-wrapper {
-  border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -368,31 +348,23 @@ li:has(.is-focused) {
   color: #0bc10b;
 }
 
-.inline-content {
-  flex-grow: 1;
-}
-
 /* Notify renders its editable text in a div, so the `.bn-shadcn p` size never applies. */
 .notify .inline-content {
-  font-size: 0.888rem;
+  flex-grow: 1;
+  font-size: var(--text-md);
   line-height: 1.4;
-}
-
-.bn-block-content[data-content-type="checklistItem"] > input {
-  margin: 0;
-  margin-inline-end: 0.5em;
-  margin-bottom: 0.4em;
-  cursor: pointer;
 }
 
 .bn-shadcn th {
   border: 0.05rem solid var(--border);
-  border-collapse: collapse;
+}
+/* `.bn-shadcn p` sets weight 400 on the paragraph inside each cell, so a header cell's text takes the header's bold again. */
+.bn-shadcn th p {
+  font-weight: inherit;
 }
 .bn-shadcn td {
   padding: 4px;
   border: 0.05rem solid var(--border);
-  border-collapse: collapse;
 }
 
 /* BlockNote heading defaults are too big. */

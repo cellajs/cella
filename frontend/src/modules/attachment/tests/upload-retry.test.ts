@@ -1,35 +1,57 @@
-import { describe, expect, it } from 'vitest';
-import { isUploadCandidate } from '../offline/upload-retry';
+import 'fake-indexeddb/auto';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 
-const NOW = 1_000_000;
+vi.mock('shared', async () => ({ appConfig: (await import('~/modules/attachment/tests/test-setup')).mockAttachmentAppConfig }));
 
-describe('isUploadCandidate (failed-upload retry policy, D7)', () => {
-  it('pending blobs are always candidates', () => {
-    expect(isUploadCandidate({ uploadStatus: 'pending', uploadAttempts: 0, nextRetryAt: null }, 3, NOW)).toBe(true);
-  });
+import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candidate';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { mockAttachmentAppConfig } from '~/modules/attachment/tests/test-setup';
+import { bindLocalUserDb } from '~/query/local-user-db';
 
-  it('failed blobs retry once their backoff slot has passed', () => {
-    const blob = { uploadStatus: 'failed' as const, uploadAttempts: 1, nextRetryAt: new Date(NOW - 1) };
-    expect(isUploadCandidate(blob, 3, NOW)).toBe(true);
-  });
+// Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
+bindLocalUserDb('test-user');
 
-  it('failed blobs wait for their backoff slot', () => {
-    const blob = { uploadStatus: 'failed' as const, uploadAttempts: 1, nextRetryAt: new Date(NOW + 60_000) };
-    expect(isUploadCandidate(blob, 3, NOW)).toBe(false);
-  });
+const id = 'att-1:raw';
+const { uploadRetryAttempts } = mockAttachmentAppConfig.localBlobStorage;
 
-  it('failed blobs past the attempt budget are terminal', () => {
-    const blob = { uploadStatus: 'failed' as const, uploadAttempts: 3, nextRetryAt: new Date(NOW - 1) };
-    expect(isUploadCandidate(blob, 3, NOW)).toBe(false);
-  });
+const row = async () => {
+  const blob = await attachmentsDb.blobs.get(id);
+  if (!blob) throw new Error('blob row missing');
+  return blob;
+};
 
-  it('a failed blob without bookkeeping (legacy rows) is retried', () => {
-    expect(isUploadCandidate({ uploadStatus: 'failed', uploadAttempts: undefined, nextRetryAt: null }, 3, NOW)).toBe(true);
-  });
+describe('a failed upload', () => {
+  afterEach(() => attachmentsDb.blobs.clear());
 
-  it('other statuses (uploaded, local-only, uploading) never retry', () => {
-    for (const uploadStatus of ['uploaded', 'local-only', 'uploading'] as const) {
-      expect(isUploadCandidate({ uploadStatus, uploadAttempts: 0, nextRetryAt: null }, 3, NOW)).toBe(false);
-    }
+  it('is retried once its backoff slot has passed, and stays failed past the attempt budget', async () => {
+    await attachmentsDb.blobs.add({
+      id,
+      attachmentId: 'att-1',
+      variant: 'raw',
+      organizationId: 'org-1',
+      blob: new Blob(['png']),
+      size: 3,
+      contentType: 'image/png',
+      source: 'upload',
+      uploadStatus: 'pending',
+      uploadAttempts: 0,
+      nextRetryAt: null,
+      lastError: null,
+      storedAt: new Date(),
+    });
+
+    await attachmentStorage.markFailed(id, 'first');
+    const afterFirst = await row();
+    expect(afterFirst.nextRetryAt).toBeInstanceOf(Date);
+    const slot = new Date(afterFirst.nextRetryAt ?? 0).getTime();
+    expect(isUploadCandidate(afterFirst, uploadRetryAttempts, slot - 1)).toBe(false);
+    expect(isUploadCandidate(afterFirst, uploadRetryAttempts, slot)).toBe(true);
+
+    await attachmentStorage.markFailed(id, 'second');
+    await attachmentStorage.markFailed(id, 'third');
+    const spent = await row();
+    expect(spent.uploadAttempts).toBe(uploadRetryAttempts);
+    expect(isUploadCandidate(spent, uploadRetryAttempts, Number.MAX_SAFE_INTEGER)).toBe(false);
   });
 });

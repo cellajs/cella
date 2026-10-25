@@ -4,6 +4,7 @@ vi.mock('~/query/offline/connectivity', () => ({ checkConnectivity: vi.fn() }));
 
 const { ApiError } = await import('~/lib/api');
 const { createClientConfig } = await import('~/lib/api-client');
+const { getConsentDetails } = await import('~/lib/oauth-interaction');
 
 const { fetch: clientFetch } = createClientConfig({});
 
@@ -25,15 +26,12 @@ describe('API client error responses', () => {
     expect(error).toMatchObject(body);
   });
 
-  it("reads a proxy's gateway page as the service being unavailable", async () => {
+  it("throws an ApiError typed by its status for a response without the API's error body: a proxy's page, none, or foreign JSON", async () => {
     for (const status of [502, 503, 504]) {
       const error = await failWith(new Response('<html><body>Bad Gateway</body></html>', { status }));
-
       expect(error, String(status)).toMatchObject({ status, type: 'service_unavailable', severity: 'error' });
     }
-  });
 
-  it('gives a body-less error its status alone, and a JSON body without a type the same', async () => {
     expect(await failWith(new Response('', { status: 500 }))).toMatchObject({ status: 500, type: 'server_error', severity: 'error' });
 
     const notFound = await failWith(new Response('Not Found', { status: 404 }));
@@ -42,5 +40,14 @@ describe('API client error responses', () => {
 
     const foreign = await failWith(Response.json({ error: 'upstream' }, { status: 502 }));
     expect(foreign).toMatchObject({ status: 502, type: 'service_unavailable' });
+  });
+
+  // The consent page sends a 401 to sign-in: the details route answers it with its details object, which has no type.
+  it('reads a failed consent request the same way, keeping the status of a body without a type', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response('<html><body>Bad Gateway</body></html>', { status: 502 })));
+    await expect(getConsentDetails('uid-1')).rejects.toMatchObject({ status: 502, type: 'service_unavailable' });
+
+    vi.stubGlobal('fetch', () => Promise.resolve(Response.json({ client: { id: 'client-1' } }, { status: 401 })));
+    await expect(getConsentDetails('uid-1')).rejects.toMatchObject({ status: 401 });
   });
 });

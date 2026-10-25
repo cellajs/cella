@@ -22,7 +22,7 @@ const hiddenStyle: CSSProperties = { contentVisibility: 'hidden', height: 0, ove
 
 /** Prerendered sections mount hidden so opening them is instant. */
 export function usePrerenderSection(scope: string, sectionId: string, isOpen: boolean) {
-  const isPrerendered = usePrerenderStore((s) => s.targets[scope] === sectionId);
+  const isPrerendered = usePrerenderStore((state) => state.targets[scope] === sectionId);
   const shouldMount = isOpen || isPrerendered;
   const style = shouldMount && !isOpen ? hiddenStyle : undefined;
 
@@ -31,7 +31,7 @@ export function usePrerenderSection(scope: string, sectionId: string, isOpen: bo
 
 /** Debounces the mount by 150ms so quick scrolling does not churn the DOM. */
 export function usePrerenderTrigger(scope: string) {
-  const setTarget = usePrerenderStore((s) => s.setTarget);
+  const setTarget = usePrerenderStore((state) => state.setTarget);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const prerender = (sectionId: string) => {

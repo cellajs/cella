@@ -1,10 +1,11 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { findServiceAccountInTenant, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { UpdateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { getValidChannel } from '#/permissions';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /**
@@ -19,10 +20,10 @@ export async function updateServiceAccountOp(ctx: UserContext, id: string, input
   const updated = await updateServiceAccount(ctx, {
     id,
     tenantId,
-    values: { ...input, updatedAt: getIsoDate(), updatedBy: ctx.var.actor.id },
+    values: { ...input, ...updateStamps(ctx.var.actor.id) },
   });
   if (!updated) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });
   invalidateCache.serviceAccount(updated);
   log.info('Service account updated', { serviceAccountId: id, status: updated.status });
-  return { ...updated, lastSeenAt: account.lastSeenAt };
+  return { ...(await withActorRef(ctx, updated)), lastSeenAt: account.lastSeenAt };
 }

@@ -3,18 +3,16 @@ import type { ChannelEntityType } from 'shared';
 import type z from 'zod';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
-import type { ChannelQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';
+import type { ChannelQueryProp, MutationData } from '~/query/types';
 
 export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSchema>;
 
 export type Member = GetMembersResponse['items'][number];
 export type PendingMembership = GetPendingMembershipsResponse['items'][number];
 
-export type MemberQueryData = QueryData<Member>;
-export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
-export type MemberChannelProp = ChannelQueryProp<Member, string | null>;
+export type MemberListSnapshot = ChannelQueryProp<Member>;
 
-export type MembershipChannelProp = { queryChannel: MemberChannelProp[]; toastMessage: string; channelType?: ChannelEntityType };
+export type MemberUpdateContext = { previousLists: MemberListSnapshot[]; toastMessage: string };
 
 export type InviteMember = MutationData<MembershipInviteData> & { channel: EnrichedChannel };
 

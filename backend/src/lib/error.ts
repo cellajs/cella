@@ -7,6 +7,7 @@ import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
+import { env } from '#/env';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -15,7 +16,7 @@ const exposesServerMessages = () => appConfig.mode === 'development' || appConfi
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
 
 /** PostgreSQL error codes to user-friendly error mappings */
-const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
+const pgErrorMap: Record<string, { status: number; type: ErrorKey; message: string }> = {
   // Foreign key violations
   '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
   // Unique constraint violations
@@ -39,7 +40,7 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
 };
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
-const PG_CONSTRAINT_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
+const pgConstraintMap: Record<string, { status: number; type: ErrorKey; message: string }> = {
   // Refused when an organization would be left without an admin.
   [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
 };
@@ -137,9 +138,7 @@ export function toClientError(
 
   const isAppError = err instanceof AppError;
   const pgError = !isAppError ? extractPgError(err) : null;
-  const pgMappedError = pgError
-    ? ((pgError.constraint ? PG_CONSTRAINT_MAP[pgError.constraint] : undefined) ?? PG_ERROR_MAP[pgError.code])
-    : undefined;
+  const pgMappedError = pgError ? ((pgError.constraint ? pgConstraintMap[pgError.constraint] : undefined) ?? pgErrorMap[pgError.code]) : undefined;
 
   const severity = isAppError ? err.severity : pgMappedError ? 'warn' : 'error';
   const type = isAppError ? err.type : (pgMappedError?.type ?? 'server_error');
@@ -211,6 +210,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     {
       ...body,
       requestId: ctx.get('requestId'),
+      version: env.RELEASE_SHA,
       path: safePath,
       method: ctx.req.method,
       timestamp: getIsoDate(),

@@ -1,15 +1,14 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { create } from 'zustand';
-import { withDefaults } from '~/modules/common/overlay-store-helpers';
+import { type TriggerRef, withDefaults } from '~/modules/common/overlay-store-helpers';
 
 export type DropdownKind = 'menu' | 'panel';
 
 export type DropdownData = {
   id: number | string;
   triggerId: string;
-  triggerRef: RefObject<HTMLButtonElement | null>;
+  triggerRef: TriggerRef;
   align?: 'start' | 'center' | 'end';
-  modal?: boolean;
   /**
    * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead); 'panel' uses a
    * Popover with a focus trap for arbitrary content. Defaults to 'panel'.
@@ -26,15 +25,16 @@ export type DropdownData = {
 export type InternalDropdown = DropdownData & {
   key: number;
   content: ReactNode;
+  /** The contents `push` stepped away from, newest last; `back` returns to it. */
+  history: ReactNode[];
   /** The trigger's accessible name at open time; names the mobile drawer that stands in for the dropdown. */
   triggerLabel?: string;
   align: 'start' | 'center' | 'end';
-  modal: boolean;
   kind: DropdownKind;
 };
 
-/** How long a trigger shows that the action picked from its dropdown worked. */
-const DONE_DURATION = 1400;
+/** How long (ms) a trigger shows that the action picked from its dropdown worked. */
+const doneDuration = 1400;
 
 interface DropdownStoreState {
   dropdown: InternalDropdown | null;
@@ -45,6 +45,10 @@ interface DropdownStoreState {
 
   create: (content: ReactNode, data: DropdownData) => string | number;
   update: (updates: Partial<InternalDropdown>) => void;
+  /** Shows `content` in the open dropdown, e.g. a confirmation in place of its menu; `back` returns to what it replaced. */
+  push: (content: ReactNode) => void;
+  /** Returns to what the last `push` replaced, or closes the dropdown when nothing was. */
+  back: () => void;
   remove: () => void;
   /** Closes the dropdown after the action picked from it worked: its trigger shows a check and a `label` tip for a moment. */
   complete: (label: string) => void;
@@ -66,7 +70,7 @@ function markDone(trigger: HTMLElement, label: string) {
   endDone();
   trigger.setAttribute('data-dropdowner-done', '');
   useDropdowner.setState({ done: { trigger, label, open: true, key: Date.now() } });
-  doneTimer = setTimeout(endDone, DONE_DURATION);
+  doneTimer = setTimeout(endDone, doneDuration);
 }
 
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
@@ -83,8 +87,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
     // The same trigger toggles the dropdown closed
     if (current?.triggerId === data.triggerId) {
-      set({ dropdown: null, lastRemovedTriggerId: data.triggerId, lastRemovedAt: Date.now() });
-      current.onClose?.();
+      get().remove();
       return data.id;
     }
 
@@ -102,10 +105,10 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
-    const defaults: Pick<InternalDropdown, 'align' | 'modal' | 'kind'> = { align: 'start', modal: true, kind: 'panel' };
+    const defaults: Pick<InternalDropdown, 'align' | 'kind'> = { align: 'start', kind: 'panel' };
     const trigger = data.triggerRef.current;
     const triggerLabel = trigger?.getAttribute('aria-label') || trigger?.textContent?.trim() || undefined;
-    set({ dropdown: { ...withDefaults(defaults, data), content, triggerLabel, key: Date.now() } });
+    set({ dropdown: { ...withDefaults(defaults, data), content, history: [], triggerLabel, key: Date.now() } });
     current?.onClose?.();
 
     return data.id;
@@ -116,6 +119,20 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     if (!current) return;
 
     set({ dropdown: { ...current, ...updates } });
+  },
+
+  push: (content) => {
+    const current = get().dropdown;
+    if (!current) return;
+
+    set({ dropdown: { ...current, content, history: [...current.history, current.content] } });
+  },
+
+  back: () => {
+    const current = get().dropdown;
+    if (!current?.history.length) return get().remove();
+
+    set({ dropdown: { ...current, content: current.history.at(-1), history: current.history.slice(0, -1) } });
   },
 
   remove: () => {
@@ -133,3 +150,18 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
   get: () => get().dropdown,
 }));
+
+/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
+export function removeIfCurrent(key: number) {
+  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
+}
+
+/** Steps back in the dropdown unless it was already swapped for another. */
+export function backIfCurrent(key: number) {
+  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().back();
+}
+
+/** Whether a dropdown is open: an overlay under it then ignores outside presses, which belong to the dropdown. */
+export const isDropdownOpen = () => !!useDropdowner.getState().dropdown;
+
+export { useDropdowner as dropdowner };

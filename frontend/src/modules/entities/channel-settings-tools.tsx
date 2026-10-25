@@ -1,20 +1,15 @@
-import { TrashIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { Suspense, useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { CircleAlertIcon, TrashIcon } from 'lucide-react';
+import { type ReactNode, Suspense, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
-import { ConfirmText } from '~/modules/common/confirm-text';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { NamedText } from '~/modules/common/named-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
-/**
- * A module spreads a tool base into its `tools` array and adds the `slot`, app conditions, and a
- * `render`. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
- * to 50. Bases without `locked` are hideable and reorderable per channel.
- */
+/** Bases a module spreads into its `tools` with a `slot` and a `render`. Orders: general 10, details 20, tabs 80, danger 90; module tools default to 50. */
 export const generalToolBase = {
   id: 'general',
   label: 'c:general',
@@ -52,22 +47,35 @@ interface DeleteToolCardProps {
   /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
   dialogId: string;
   renderDialog: () => ReactNode;
+  /** The card's notice; defaults to the permanent-delete notice, interpolated with `name`, `resource` and `values`. */
+  notice?: TKey;
+  values?: Record<string, string | number>;
+  /** Why the entity cannot be deleted now: the button is disabled and this note shows below it. */
+  disabledReason?: TKey;
 }
 
-export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
+export function DeleteToolCard({
+  name,
+  resource,
+  dialogId,
+  renderDialog,
+  notice = 'c:delete_resource_notice.text',
+  values,
+  disabledReason,
+}: DeleteToolCardProps) {
   const { t } = useTranslation();
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const resourceName = t(resource).toLowerCase();
 
   const openDeleteDialog = () => {
     // Suspense: dialog content is typically a lazy-loaded per-entity component
-    useDialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
+    dialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
       id: dialogId,
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
       title: t('c:delete_resource', { resource: resourceName }),
-      description: <ConfirmText i18nKey="c:confirm.delete_resource" values={{ name, resource: resourceName }} />,
+      description: <NamedText i18nKey="c:confirm.delete_resource" name={name} values={{ resource: resourceName }} />,
     });
   };
 
@@ -75,12 +83,18 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
     <ToolCard
       label="c:delete_resource"
       resource={resource}
-      description={<Trans t={t} i18nKey="c:delete_resource_notice.text" values={{ name, resource: resourceName }} />}
+      description={<NamedText i18nKey={notice} name={name} values={{ resource: resourceName, ...values }} />}
     >
-      <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-        <TrashIcon className="size-4" />
+      <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" disabled={!!disabledReason} onClick={openDeleteDialog}>
+        <TrashIcon />
         <span>{t('c:delete_resource', { resource: resourceName })}</span>
       </Button>
+      {disabledReason && (
+        <p className="mt-4 flex items-center gap-1 text-muted-foreground text-sm italic">
+          <CircleAlertIcon />
+          {t(disabledReason)}
+        </p>
+      )}
     </ToolCard>
   );
 }

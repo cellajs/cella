@@ -9,15 +9,18 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * the only parentless entity); parents before children, and order sets the ancestor chain. Products
  * may add `relatedChannels` (non-ancestor context refs, nullable id columns). Public readability is
  * a permission concern, not declared here. Channels may add `elevated` (roles whose product grants
- * cover the whole subtree, compiled into `hierarchy.elevatedGrants`); channels below the organization
- * may add `organizationRoles` (the complete escalation map for auto-created organization membership rows).
+ * cover the whole subtree, compiled into `hierarchy.elevatedGrants`) and `drafts` (the channel can
+ * start unpublished; `prepareRoles` are invited at once, the rest when it is published); channels below
+ * the organization may add `organizationRoles` (the complete escalation map for auto-created
+ * organization membership rows).
  *
  * @see cella/PERMISSIONS.md
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  // Both org roles are elevated: their product grants cover the whole org subtree, which keeps
-  // catchup/view proving org-wide. Apps adding sub-channels narrow this per channel and role.
-  .organization({ roles: roles.all, elevated: roles.all })
+  // Only org admins are elevated: their product grants reach rows homed anywhere in the org, a member's
+  // only rows homed at the organization. Elevating a role that a sub-channel's `organizationRoles` maps to
+  // gives every member of that sub-channel the role's product grants in all its siblings.
+  .organization({ roles: roles.all, elevated: ['admin'], drafts: { prepareRoles: ['admin'] } })
   .product('attachment', { parent: 'organization' })
   .build();

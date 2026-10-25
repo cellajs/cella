@@ -20,13 +20,13 @@ import { getNotificationSource, loadSubjectPreview } from '../notification-sourc
 import { findReadableSubjectIds } from './readable-subjects';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
-const EXCERPT_LENGTH = 250;
+const excerptLength = 250;
 
 /**
  * Notifications handled per pass. A pass runs after each fan-out in the organization that wrote a
  * mailable row, so a backlog beyond this drains on the next one.
  */
-const MAX_PER_RUN = 200;
+const maxPerRun = 200;
 
 /** Runs after a fan-out, outside any request. */
 const dbCtx = { var: { db: baseDb } };
@@ -45,7 +45,7 @@ type PendingEmail = Awaited<ReturnType<typeof findPendingInstantEmails>>[number]
  * pass.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
-  const pending = await findPendingInstantEmails(dbCtx, { organizationId, limit: MAX_PER_RUN });
+  const pending = await findPendingInstantEmails(dbCtx, { organizationId, limit: maxPerRun });
   if (pending.length === 0) return;
 
   const recipients = await findVerifiedRecipients(dbCtx, { userIds: pending.map((row) => row.userId) });
@@ -78,7 +78,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
       // Per recipient, unlike the newsletter path which mails everyone in the sender's language.
       lng: user.language,
       subjectTitle: preview.title,
-      excerpt: htmlToExcerpt(preview.body, EXCERPT_LENGTH),
+      excerpt: htmlToExcerpt(preview.body, excerptLength),
       link: buildNotificationLink(appConfig.frontendUrl, {
         tenantId: notification.tenantId,
         organizationId: notification.organizationId,

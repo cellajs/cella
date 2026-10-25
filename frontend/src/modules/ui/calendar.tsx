@@ -70,7 +70,7 @@ export function Calendar({
         month_caption: cn('flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)', defaultClassNames.month_caption),
         dropdowns: cn('flex h-(--cell-size) w-full items-center justify-center gap-1.5 font-medium text-sm', defaultClassNames.dropdowns),
         dropdown_root: cn(
-          'relative rounded-md border border-input shadow-xs sm:has-focus-visible:ring-2 sm:has-focus-visible:ring-ring sm:has-focus-visible:ring-offset-2 sm:has-focus-visible:ring-offset-background',
+          'relative rounded-md border border-input focus-ring:has-focus-visible:ring-2 focus-ring:has-focus-visible:ring-ring focus-ring:has-focus-visible:ring-offset-2 focus-ring:has-focus-visible:ring-offset-background',
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn('absolute inset-0 bg-popover opacity-0', defaultClassNames.dropdown),
@@ -125,7 +125,7 @@ function CalendarDayButton({ className, day, modifiers, ...props }: React.Compon
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 font-normal leading-none data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-start=true]:rounded-l-md data-[range-end=true]:bg-primary data-[range-middle=true]:bg-accent data-[range-start=true]:bg-primary data-[selected-single=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:text-accent-foreground data-[range-start=true]:text-primary-foreground data-[selected-single=true]:text-primary-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-2 group-data-[focused=true]/day:ring-ring dark:hover:text-accent-foreground [&>span]:text-xs [&>span]:opacity-70',
+        'flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 font-normal leading-none data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-start=true]:rounded-l-md data-[range-end=true]:bg-primary data-[range-middle=true]:bg-accent data-[range-start=true]:bg-primary data-[selected-single=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:text-accent-foreground data-[range-start=true]:text-primary-foreground data-[selected-single=true]:text-primary-foreground group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-2 group-data-[focused=true]/day:ring-ring dark:hover:text-accent-foreground [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className,
       )}

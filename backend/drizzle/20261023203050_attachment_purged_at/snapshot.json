@@ -1,0 +1,91 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "23ac2dc4-d83e-4955-9d66-aab0fa3ca151",
+  "prevIds": [
+    "15397bd4-6a07-47ef-8363-1324f8b452db"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "purged_at"
+      ],
+      "writes": [
+        "s|col|public.attachments.purged_at",
+        "n|col|public.attachments.purged_at",
+        "e|col|public.attachments.purged_at"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "attachments",
+        "attachments_purge_pending_index"
+      ],
+      "writes": [
+        "s|idx|public.attachments_purge_pending_index",
+        "n|idx|public.attachments_purge_pending_index",
+        "e|idx|public.attachments_purge_pending_index",
+        "n|rel|public.attachments_purge_pending_index"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.deleted_at"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "purged_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "attachments_purge_pending_index",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "deleted_at",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"deleted_at\" is not null and \"purged_at\" is null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

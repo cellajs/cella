@@ -5,9 +5,12 @@ export const seenKeys = { unseenCounts: ['me', 'unseen', 'counts'] };
 export const isSeenTracked = (entityType: string): boolean => (appConfig.seenTrackedProductTypes as readonly string[]).includes(entityType);
 
 /** Every channel type a seen-tracked product can be homed in; mirrors the server's grouping set in mark-seen.ts. */
-export const seenGroupingChannelTypes = new Set(appConfig.seenTrackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
+export const seenGroupingChannelTypes = new Set(appConfig.seenTrackedProductTypes.flatMap((type) => hierarchy.possibleHomeChannels(type)));
 
-/** Grouping channel for a row: its deepest non-null ancestor, matching mark-seen, unseen counts and unseen-sync. */
+/**
+ * Grouping channel for a row: its deepest non-null ancestor, matching mark-seen, unseen counts and unseen-sync.
+ * @public
+ */
 export function getSeenChannelId(entityType: ProductEntityType, entity: Record<string, unknown>): string {
   return String(hierarchy.resolveDeepestAncestorId(entityType, entity) ?? entity.organizationId);
 }

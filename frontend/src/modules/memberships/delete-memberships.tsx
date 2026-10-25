@@ -1,35 +1,25 @@
 import type { ChannelEntityType } from 'shared';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { DeleteForm } from '~/modules/common/delete-form';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
 import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutations';
-import type { Member } from '~/modules/memberships/types';
+import type { DeleteMembership, Member } from '~/modules/memberships/types';
 
-interface Props {
+interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembership>, 'callback'> {
   entityId: string;
   tenantId: string;
   organizationId: string;
   members: Member[];
   entityType: ChannelEntityType;
-  dialog?: boolean;
-  callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
-export function DeleteMemberships({ members, entityId, entityType, tenantId, organizationId, callback, dialog: isDialog }: Props) {
-  const removeDialog = useDialoger((state) => state.remove);
-  const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
+export function DeleteMemberships({ members, entityId, entityType, tenantId, organizationId, ...props }: DeleteMembershipsProps) {
+  const mutation = useMembershipsDeleteMutation();
 
-  const onDeleteMembers = () => {
-    deleteMemberships({
-      path: { tenantId, organizationId },
-      body: { ids: members.map(({ id }) => id) },
-      query: { entityId, entityType },
-      members,
-    });
+  const toVariables = (items: Member[]) => ({
+    path: { tenantId, organizationId },
+    body: { ids: items.map(({ id }) => id) },
+    query: { entityId, entityType },
+    members: items,
+  });
 
-    if (isDialog) removeDialog();
-    callback?.({ data: members, status: 'success' });
-  };
-
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDeleteMembers} onCancel={() => removeDialog()} pending={isPending} />;
+  return <DeleteItems items={members} mutation={mutation} toVariables={toVariables} optimistic {...props} />;
 }

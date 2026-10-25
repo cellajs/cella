@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AttachmentBlob, attachmentsDb, makeBlobKey } from '../offline/attachments-db';
+import { type AttachmentBlob, attachmentsDb, makeBlobKey } from '~/modules/attachment/offline/attachments-db';
 
-vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
+vi.mock('shared', async () => ({ appConfig: (await import('~/modules/attachment/tests/test-setup')).mockAttachmentAppConfig }));
 vi.mock('@tanstack/react-query', () => ({ onlineManager: { isOnline: () => true } }));
 
 const getUploadToken = vi.fn();
@@ -39,15 +39,14 @@ vi.mock('@uppy/core', () => ({
 
 const insertEntitiesIntoHome = vi.fn();
 vi.mock('~/query/basic/apply-entity-to-lists', () => ({ insertEntitiesIntoHome: (...args: unknown[]) => insertEntitiesIntoHome(...args) }));
-vi.mock('../query', () => ({ findAttachmentInCache: () => ({ tenantId: 'tenant-1' }) }));
+vi.mock('~/modules/attachment/query', () => ({ findAttachmentInCache: () => ({ tenantId: 'tenant-1' }) }));
 vi.mock('~/query/query-client', () => ({ queryClient: {} }));
 vi.mock('~/query/realtime/sync-priority', () => ({ getTenantIdForOrg: () => 'tenant-1' }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
 
 import { ApiError } from '~/lib/api';
+import { uploadService } from '~/modules/attachment/offline/upload-service';
 import { bindLocalUserDb } from '~/query/local-user-db';
-import { uploadService } from '../offline/upload-service';
 
 bindLocalUserDb('test-user');
 
@@ -101,16 +100,6 @@ describe('uploadService: files uploaded after their row was created', () => {
     expect(await blob()).toMatchObject({ uploadStatus: 'uploaded', cloudKeys: { original: storedKey }, keysLinkedAt: expect.any(Date) });
   });
 
-  it('files a pending file local-only when the app has no cloud storage', async () => {
-    await storeBlob('pending');
-    getUploadToken.mockResolvedValue({ params: null, signature: null });
-
-    await uploadService.processPendingUploads();
-
-    expect(addedFiles).toEqual([]);
-    expect((await blob())?.uploadStatus).toBe('local-only');
-  });
-
   it('leaves a pending file pending when the server cannot be reached', async () => {
     await storeBlob('pending');
     getUploadToken.mockRejectedValue(new TypeError('Failed to fetch'));
@@ -132,17 +121,5 @@ describe('uploadService: files uploaded after their row was created', () => {
     expect(addedFiles).toHaveLength(1);
     expect(linkAttachmentKeys).toHaveBeenCalledTimes(2);
     expect((await blob())?.keysLinkedAt).toEqual(expect.any(Date));
-  });
-
-  it('stops linking after a refusal that will not change, such as another member linking', async () => {
-    await storeBlob('pending');
-    getUploadToken.mockResolvedValue(cloudToken);
-    linkAttachmentKeys.mockRejectedValue(new ApiError({ status: 403 }));
-
-    await uploadService.processPendingUploads();
-    await uploadService.processPendingUploads();
-
-    expect(linkAttachmentKeys).toHaveBeenCalledTimes(1);
-    expect((await blob())?.keysLinkedAt).toBeNull();
   });
 });

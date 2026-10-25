@@ -1,4 +1,4 @@
-import { and, count, eq, notInArray, type SQL } from 'drizzle-orm';
+import { and, count, eq, lt, notInArray, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -12,6 +12,7 @@ const tenantColumns = pick(tenantsTable, [
   'id',
   'name',
   'status',
+  'statusChangedAt',
   'restrictions',
   'authStrategies',
   'createdBy',
@@ -20,6 +21,7 @@ const tenantColumns = pick(tenantsTable, [
   'subscriptionPlan',
   'createdAt',
   'updatedAt',
+  'updatedBy',
 ]);
 
 /** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
@@ -122,4 +124,29 @@ export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: U
   const { db } = ctx.var;
   const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, targetTenantId)).returning(tenantColumns);
   return updated;
+};
+
+interface FindArchivedTenantsOpts {
+  /** Tenants archived before this ISO moment. */
+  archivedBefore: string;
+}
+
+/** Tenants archived before `archivedBefore`, the ones the archived-tenant sweep removes. */
+export const findArchivedTenants = async (ctx: DbContext, { archivedBefore }: FindArchivedTenantsOpts) => {
+  return ctx.var.db
+    .select({ id: tenantsTable.id, name: tenantsTable.name, statusChangedAt: tenantsTable.statusChangedAt })
+    .from(tenantsTable)
+    .where(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)));
+};
+
+/**
+ * Deletes a tenant and its organization in one transaction. The organization goes first: its cascade takes the
+ * channels, products, memberships and collaborative documents, and their delete triggers queue the stored files. The
+ * tenant row then takes its service accounts, API keys and connections.
+ */
+export const deleteTenantWithOrganization = async (ctx: DbContext, { tenantId }: { tenantId: string }): Promise<void> => {
+  await ctx.var.db.transaction(async (tx) => {
+    await tx.delete(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
+    await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
+  });
 };

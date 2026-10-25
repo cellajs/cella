@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, write
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
-import { chromium, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
 import * as config from './shots-config.mjs';
 
 // A namespace import, so a shots-config.mjs written before an export existed still loads
@@ -229,6 +229,7 @@ try {
   failures.push({ id: '(run)', mode: '-', error: error instanceof Error ? error.message : String(error) });
 } finally {
   await browser?.close();
+  await endSession(session);
   stop();
   rmSync(scratch, { recursive: true, force: true });
 

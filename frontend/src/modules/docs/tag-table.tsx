@@ -1,16 +1,18 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { Badge } from '~/modules/ui/badge';
+import { isModifiedClick } from '~/utils/is-modified-click';
 
-type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> & {
+interface TagHashLinkProps extends Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> {
   /** Search param that records the expanded tag. */
   tagParam: 'operationTag' | 'schemaTag';
   tagName: string;
   hash: string;
   tabIndex: number;
-};
+}
 
 /** Cell-filling row link to a section of the tag list: enqueues the scroll (the store retries until laid out), then navigates. */
 export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, children }: TagHashLinkProps) {
@@ -23,9 +25,9 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
       search={search}
       hash={hash}
       replace
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey) return;
-        e.preventDefault();
+      onClick={(event) => {
+        if (isModifiedClick(event)) return;
+        event.preventDefault();
         scrollToSectionById(hash);
         navigate({ to: '.', search, hash, replace: true, resetScroll: false });
       }}
@@ -67,7 +69,6 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
         rowKeyGetter={rowKeyGetter}
         isLoading={false}
         isFetching={false}
-        limit={rows.length}
         isFiltered={false}
         rowHeight={36}
         hideHeader={hideHeader}
@@ -76,4 +77,25 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
       />
     </div>
   );
+}
+
+export function TagBadges({ values }: { values: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {values.map((tag) => (
+        <Badge key={tag} variant="outline">
+          {tag}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+/** Distinct tag kinds across the items, in first-seen order, without the excluded ones. */
+export function collectTagKinds(items: { tagsByKind: Record<string, string[]> }[], exclude: string[] = []) {
+  const kinds = new Set<string>();
+  for (const item of items) {
+    for (const kind of Object.keys(item.tagsByKind)) if (!exclude.includes(kind)) kinds.add(kind);
+  }
+  return [...kinds];
 }

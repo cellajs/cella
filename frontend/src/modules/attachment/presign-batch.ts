@@ -1,7 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { groupBy } from '~/modules/attachment/offline/group-by';
+import { subscribeOwnerChange } from '~/query/local-user-db';
 
 /** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
 export class PresignRejectedError extends Error {
@@ -17,12 +18,12 @@ interface PendingRequest {
   tenantId: string;
   organizationId: string;
   resolve: (url: string) => void;
-  reject: (err: unknown) => void;
+  reject: (error: unknown) => void;
 }
 
 /** Requests arriving within this window coalesce into one batch call. */
 const flushWindowMs = 10;
-/** Signed URLs live 24h server-side; serve repeats from memory well within that. */
+/** Well under the server's signed-URL lifetime, so a URL served from memory is still valid. */
 const memoTtlMs = 60 * 60 * 1000;
 /** Server-side cap on items per batch call. */
 const maxItemsPerCall = 50;
@@ -42,7 +43,7 @@ function subscribeOwnerOnce() {
   subscribeOwnerChange(() => memo.clear());
 }
 
-/** Resolve one chunk (same tenant/org, ≤50 items) and settle its per-pair promises. */
+/** Resolves one chunk (one tenant and organization, at most `maxItemsPerCall` items) and settles its per-pair promises. */
 async function sendChunk(requests: PendingRequest[]) {
   const { tenantId, organizationId } = requests[0];
   try {
@@ -64,9 +65,9 @@ async function sendChunk(requests: PendingRequest[]) {
         request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
       }
     }
-  } catch (err) {
+  } catch (error) {
     // Transport failure (offline, 401, rate limit): transient, unlike PresignRejectedError.
-    for (const request of requests) request.reject(err);
+    for (const request of requests) request.reject(error);
   }
 }
 
@@ -76,15 +77,7 @@ function flush() {
   const batch = pending;
   pending = [];
 
-  const byScope = new Map<string, PendingRequest[]>();
-  for (const request of batch) {
-    const scope = `${request.tenantId}:${request.organizationId}`;
-    const requests = byScope.get(scope) ?? [];
-    requests.push(request);
-    byScope.set(scope, requests);
-  }
-
-  for (const requests of byScope.values()) {
+  for (const requests of groupBy(batch, (request) => `${request.tenantId}:${request.organizationId}`).values()) {
     for (let i = 0; i < requests.length; i += maxItemsPerCall) {
       void sendChunk(requests.slice(i, i + maxItemsPerCall));
     }
@@ -92,10 +85,9 @@ function flush() {
 }
 
 /**
- * Presigned URL for a private attachment, coalesced: concurrent requests within a short window
- * merge into one batch call, identical in-flight pairs share one promise, and signed URLs are
- * memoized for an hour. Rejected ids reject with {@link PresignRejectedError}; transport failures
- * reject with the underlying error. Fails fast when offline.
+ * Presigned URL for a private attachment, coalesced: requests within `flushWindowMs` share one batch call, identical in-flight
+ * pairs one promise, and URLs are memoized for `memoTtlMs`. A rejected id rejects with {@link PresignRejectedError}, a
+ * transport failure with its own error; offline it fails at once.
  */
 export function getPresignedUrlBatched(attachmentId: string, variant: CloudFileVariant, tenantId: string, organizationId: string): Promise<string> {
   subscribeOwnerOnce();

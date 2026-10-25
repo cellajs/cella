@@ -1,10 +1,10 @@
 import { getTableColumns, sql } from 'drizzle-orm';
-import { type AnyPgColumn, index, integer, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -42,7 +42,7 @@ export type StepUpProof = (typeof stepUpProofs)[number];
 /**
  * Authenticated session data. `secret` holds the hash of the random token in the session's cookie, never the token. A
  * revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows what ended and why; expiry needs
- * no stamp. Rows expired for over 30 days are swept nightly by maintain_partitions().
+ * no stamp. Expired rows are swept nightly by apply_retention() (`appConfig.retention`).
  */
 export const sessionsTable = snakeCase.table(
   'sessions',
@@ -71,7 +71,7 @@ export const sessionsTable = snakeCase.table(
     deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
-    revokedAt: timestamp({ mode: 'string' }),
+    revokedAt: isoTimestamp(),
     /** The actor whose request revoked the session; null when the server did it during a sign-in. */
     revokedBy: uuid()
       .references(() => actorsTable.id, { onDelete: 'set null' })
@@ -80,7 +80,7 @@ export const sessionsTable = snakeCase.table(
     /** The admin session an impersonation is layered on: it authenticates only while that session is presented with it and live, and ends with it. */
     impersonatorSessionId: uuid().references((): AnyPgColumn => sessionsTable.id, { onDelete: 'cascade' }),
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
-    steppedUpAt: timestamp({ mode: 'string' }),
+    steppedUpAt: isoTimestamp(),
     steppedUpVia: varchar({ enum: stepUpProofs }),
   },
   (table) => [

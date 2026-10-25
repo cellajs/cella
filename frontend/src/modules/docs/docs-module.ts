@@ -4,5 +4,5 @@ defineFrontendModule({
   name: 'docs',
   owner: 'cella',
   scope: ['frontend'],
-  description: 'Documentation viewing UI with collaborative editing support.',
+  description: 'Public documentation UI: MDX pages plus the generated API reference.',
 });

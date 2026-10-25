@@ -1,3 +1,4 @@
+import { parseBlocks } from 'shared/blocknote';
 import { generateId } from 'shared/utils/entity-id';
 
 /** Inline content of a paragraph: plain text, or a mention of a seeded user. */
@@ -35,8 +36,9 @@ export const text = (value: string): InlineContent => ({ type: 'text', text: val
 export const textDocument = (...paragraphs: string[]): string =>
   JSON.stringify(paragraphs.map((paragraph) => paragraphBlock([text(paragraph)])));
 
-/** A one-paragraph document that mentions `user`, as the composer stores it. */
-export const mentionDocument = (user: { id: string; name: string; slug: string }, body: string): string =>
+/** `description` with a closing paragraph that mentions `user`, as the composer stores it; one that is no block document is replaced. */
+export const appendMention = (description: string | null | undefined, user: { id: string; name: string; slug: string }, body: string): string =>
   JSON.stringify([
+    ...(parseBlocks(description) ?? []),
     paragraphBlock([{ type: 'mention', props: { id: user.id, slug: user.slug, name: user.name } }, text(` ${body}`)]),
   ]);

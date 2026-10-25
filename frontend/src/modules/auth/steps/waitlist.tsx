@@ -1,6 +1,7 @@
 import { ArrowRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
@@ -9,15 +10,12 @@ export function WaitlistStep() {
   const { t } = useTranslation();
 
   const email = useAuthStore((state) => state.email);
-  const resetSteps = useAuthStore((state) => state.resetSteps);
+  const resetAuthStore = useAuthStore((state) => state.reset);
 
   return (
     <>
-      <div className="text-center text-2xl">
-        <h1>{t('c:request_access')}</h1>
-        {email.length > 0 && <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />}
-      </div>
-      <LegalNotice email={email} mode="waitlist" />
+      <AuthHeader title={t('c:request_access')}>{email.length > 0 && <AuthEmailButton email={email} onClick={resetAuthStore} />}</AuthHeader>
+      <LegalNotice mode="waitlist" />
       {/* Stacked like the email step; the form's own row layout serves the pricing dialog */}
       <WaitlistForm
         email={email}

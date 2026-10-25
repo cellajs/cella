@@ -1,7 +1,7 @@
 import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { SuggestionMenuController } from '@blocknote/react';
 import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-schema';
-import { CustomSlashMenuComponent } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';
+import { SlashMenuList } from '~/modules/common/blocknote/custom-slash-menu/slash-menu-list';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
@@ -9,11 +9,9 @@ export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomB
 
   return (
     <SuggestionMenuController
-      triggerCharacter={'/'}
+      triggerCharacter="/"
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
-      suggestionMenuComponent={(props) => (
-        <CustomSlashMenuComponent {...props} originalItemCount={slashMenuItems.length} allowedTypes={allowedTypes} />
-      )}
+      suggestionMenuComponent={(props) => <SlashMenuList {...props} originalItemCount={slashMenuItems.length} allowedTypes={allowedTypes} />}
     />
   );
 }

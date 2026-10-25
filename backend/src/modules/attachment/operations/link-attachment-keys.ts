@@ -3,15 +3,16 @@ import { hasCloudFile } from 'shared/utils/storage-key';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { tenantContext } from '#/db/tenant-context';
+import { updateStamps } from '#/db/utils/stamps';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { dispatchMutation } from '#/lib/mutation-bus';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { type AttachmentKeys, attachmentKeysSchema, type attachmentLinkKeysBodySchema } from '#/modules/attachment/attachment-schema';
 import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
-import { withAuditUser } from '#/modules/user/operations/with-audit-users';
+import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
 import { getValidProduct } from '#/permissions/get-valid-product';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type LinkAttachmentKeysInput = z.infer<typeof attachmentLinkKeysBodySchema>;
@@ -42,13 +43,15 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
       throw new AppError(409, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'already_stored' } });
     }
 
+    const storedSize = await storedFileSize(keys, entity.bucketName);
+
     const updated = await updateAttachment(txCtx, {
       id,
       values: {
         keys,
+        ...(storedSize === null ? {} : { size: storedSize.toString() }),
         convertedContentType: convertedContentType || null,
-        updatedAt: getIsoDate(),
-        updatedBy: actorId,
+        ...updateStamps(actorId),
         stx: stripChangedFields(attachmentsTable.stx),
       },
     });
@@ -58,5 +61,5 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
 
   log.info('Attachment keys linked', { attachmentId: linkedRecord.id });
 
-  return withAuditUser(ctx, linkedRecord);
+  return withActorRef(ctx, linkedRecord);
 }

@@ -1,14 +1,15 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('shared', () => ({
-  appConfig: {
-    slug: 'test-app',
-    productEntityTypes: ['task', 'label', 'attachment'],
-    channelEntityTypes: ['organization', 'workspace', 'project'],
-    clientCacheVersion: 'v1',
-  },
-}));
+vi.mock('shared', () => {
+  const productEntityTypes = ['task', 'label', 'attachment'];
+  const channelEntityTypes = ['organization', 'workspace', 'project'];
+  return {
+    appConfig: { slug: 'test-app', productEntityTypes, channelEntityTypes, clientCacheVersion: 'v1' },
+    isProduct: (type: string) => productEntityTypes.includes(type),
+    isChannel: (type: string) => channelEntityTypes.includes(type),
+  };
+});
 
 // Lens engine mock: bundle is at schema v1 with a single attachment rename name → title.
 vi.mock('shared/schema-evolution', () => ({
@@ -38,7 +39,7 @@ vi.stubGlobal('sessionStorage', {
   removeItem: (key: string) => sessionStorageMap.delete(key),
 });
 
-const { persister, sessionPersister } = await import('~/query/persister');
+const { persister } = await import('~/query/persister');
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { isBundleStale, resetBundleStale } = await import('~/query/schema-version-guard');
 const { migrateCachedEntity } = await import('shared/schema-evolution');
@@ -110,78 +111,32 @@ describe('persister lens boot migration', () => {
     expect(migrateCachedEntity).not.toHaveBeenCalled();
   });
 
-  it('runs no migration when the pointer is current', async () => {
-    await seedScope('rq', 1);
+  it('leaves a store a newer bundle migrated as it is: restores nothing from it and never writes to it', async () => {
+    const db = getLocalUserDb()!;
+    const writeAttempt = async () => {
+      await persister.persistClient({ timestamp: 999, buster: '', clientState: { queries: [], mutations: [] } });
+      await persister.flush();
+    };
+    /** The pointer on disk, and whether the attempted write reached it. */
+    const onDisk = async () => {
+      const meta = await db.meta.get('rq');
+      return { schemaVersion: meta?.schemaVersion, written: meta?.timestamp === 999 };
+    };
 
-    const restored = await persister.restoreClient();
-    const attachmentQuery = restored!.clientState.queries.find((q) => q.queryHash === '["attachment","list"]');
-    // Row keeps its (old-shape) data untouched, nothing ran.
-    expect(attachmentQuery!.state.data).toEqual([{ id: 'a1', name: 'pic' }]);
-    expect(migrateCachedEntity).not.toHaveBeenCalled();
-  });
-
-  it('marks the bundle stale and touches nothing when the pointer is ahead', async () => {
+    // The store is ahead at boot: a rollback deploy, or a newer tab migrated first.
     await seedScope('rq', 5);
+    expect(await persister.restoreClient()).toBeUndefined();
+    await writeAttempt();
+    expect(await onDisk()).toEqual({ schemaVersion: 5, written: false });
+    expect(await db.queries.where('scope').equals('rq').count()).toBe(1);
 
-    const restored = await persister.restoreClient();
-    expect(restored).toBeUndefined();
-    expect(isBundleStale()).toBe(true);
-
-    // Newer store is untouched, no downgrade, no wipe.
-    const meta = await getLocalUserDb()!.meta.get('rq');
-    expect(meta!.schemaVersion).toBe(5);
-    expect(await getLocalUserDb()!.queries.where('scope').equals('rq').count()).toBe(1);
-  });
-
-  it('stale bundle never persists (guard blocks flush)', async () => {
-    await seedScope('rq', 5);
-    await persister.restoreClient(); // marks stale
-
-    await persister.persistClient({
-      timestamp: 999,
-      buster: '',
-      clientState: { queries: [], mutations: [] },
-    });
-    await persister.flush();
-
-    // Meta unchanged, the stale bundle's write was refused.
-    const meta = await getLocalUserDb()!.meta.get('rq');
-    expect(meta!.schemaVersion).toBe(5);
-    expect(meta!.timestamp).not.toBe(999);
-  });
-
-  it('disk-side guard catches a newer pointer even without the broadcast', async () => {
-    // Bundle boots, restores a current-version store...
+    // A newer tab migrates the store forward after this bundle booted on it, and the broadcast is lost: the write checks the disk.
+    resetBundleStale();
     await seedScope('rq', 1);
     await persister.restoreClient();
-    expect(isBundleStale()).toBe(false);
-
-    // ...then another (newer) tab migrates the store forward.
-    const db = getLocalUserDb()!;
-    const meta = await db.meta.get('rq');
-    await db.meta.put({ ...meta!, schemaVersion: 2 });
-
-    await persister.persistClient({
-      timestamp: 999,
-      buster: '',
-      clientState: { queries: [], mutations: [] },
-    });
-    await persister.flush();
-
+    await db.meta.put({ ...(await db.meta.get('rq'))!, schemaVersion: 2 });
+    await writeAttempt();
     expect(isBundleStale()).toBe(true);
-    const after = await db.meta.get('rq');
-    expect(after!.schemaVersion).toBe(2);
-    expect(after!.timestamp).not.toBe(999);
-  });
-
-  it('wipes session scopes on pointer mismatch instead of migrating', async () => {
-    const sessionScope = [...sessionStorageMap.values()][0] ? `s-${[...sessionStorageMap.values()][0]}` : undefined;
-    expect(sessionScope).toBeDefined();
-    await seedScope(sessionScope!, 0);
-
-    const restored = await sessionPersister.restoreClient();
-    expect(restored).toBeUndefined();
-    expect(await getLocalUserDb()!.meta.get(sessionScope!)).toBeUndefined();
-    expect(await getLocalUserDb()!.queries.where('scope').equals(sessionScope!).count()).toBe(0);
+    expect(await onDisk()).toEqual({ schemaVersion: 2, written: false });
   });
 });

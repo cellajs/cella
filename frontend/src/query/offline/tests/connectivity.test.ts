@@ -21,138 +21,78 @@ describe('connectivity probe', () => {
   });
 
   async function importModule() {
-    return import('../connectivity');
+    return import('~/query/offline/connectivity');
   }
 
-  // --- Cache TTL ---
-
-  it('should return cached result within TTL window', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
-    const { checkConnectivity } = await importModule();
-
-    await checkConnectivity();
-    await checkConnectivity();
-
-    expect(fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should probe again after TTL expires', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
-    const { checkConnectivity } = await importModule();
-
-    await checkConnectivity();
-
-    vi.advanceTimersByTime(10_001);
-    await checkConnectivity();
-
-    expect(fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('should probe fresh after resetConnectivityCache', async () => {
-    // First probe fails on every retry attempt; after reset the next probe succeeds.
+  it('takes the app offline only once every probe attempt fails, so a radio waking after resume is no outage', async () => {
+    // A backgrounded mobile PWA: the first fetch fails while the radio wakes, the retry reaches the server.
     vi.mocked(fetch)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
       .mockResolvedValueOnce({ ok: true } as Response);
     const { checkConnectivity, resetConnectivityCache } = await importModule();
 
-    const firstPromise = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delays
-    expect(await firstPromise).toBe(false);
-
-    resetConnectivityCache();
-    const second = await checkConnectivity();
-    expect(second).toBe(true);
-    expect(fetch).toHaveBeenCalledTimes(4); // 3 failed attempts + 1 success
-  });
-
-  // --- Deduplication ---
-
-  it('should deduplicate concurrent calls into a single probe', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
-    const { checkConnectivity } = await importModule();
-
-    const results = await Promise.all([checkConnectivity(), checkConnectivity(), checkConnectivity()]);
-
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(results).toEqual([true, true, true]);
-  });
-
-  // --- onlineManager cascade ---
-
-  it('should set onlineManager offline on network failure', async () => {
-    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-    const { checkConnectivity } = await importModule();
-
-    const promise = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delays
-    expect(await promise).toBe(false);
-    expect(mockSetOnline).toHaveBeenCalledWith(false);
-  });
-
-  it('should set onlineManager offline on non-ok response', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as Response);
-    const { checkConnectivity } = await importModule();
-
-    const promise = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delays
-    expect(await promise).toBe(false);
-    expect(mockSetOnline).toHaveBeenCalledWith(false);
-  });
-
-  it('should not touch onlineManager when server is reachable', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true } as Response);
-    const { checkConnectivity } = await importModule();
-
-    expect(await checkConnectivity()).toBe(true);
+    const recovering = checkConnectivity();
+    await vi.runAllTimersAsync(); // flush retry delay
+    expect(await recovering).toBe(true);
     expect(mockSetOnline).not.toHaveBeenCalled();
-  });
 
-  // --- Retry before offline (mobile resume) ---
-
-  it('should recover without going offline when an early attempt fails then succeeds', async () => {
-    // Simulates a backgrounded mobile PWA: first fetch fails while the radio wakes, then succeeds.
+    // Every attempt fails, by a network error or an error response: queries and mutations pause.
+    resetConnectivityCache();
     vi.mocked(fetch)
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValueOnce({ ok: true } as Response);
-    const { checkConnectivity } = await importModule();
-
-    const promise = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delay
-    expect(await promise).toBe(true);
-    expect(mockSetOnline).not.toHaveBeenCalled(); // never flipped offline
-    expect(fetch).toHaveBeenCalledTimes(2);
-  });
-
-  // --- Revalidate on resume ---
-
-  it('should restore online state when revalidate finds the network is back', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: true } as Response);
-    const { revalidateConnectivity } = await importModule();
-
-    expect(await revalidateConnectivity()).toBe(true);
-    expect(mockSetOnline).toHaveBeenCalledWith(true);
-  });
-
-  it('should not restore online state when revalidate still finds offline', async () => {
-    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-    const { revalidateConnectivity } = await importModule();
-
-    const promise = revalidateConnectivity();
+      .mockResolvedValue({ ok: false, status: 503 } as Response);
+    const failing = checkConnectivity();
     await vi.runAllTimersAsync(); // flush retry delays
-    expect(await promise).toBe(false);
-    expect(mockSetOnline).not.toHaveBeenCalledWith(true);
+    expect(await failing).toBe(false);
     expect(mockSetOnline).toHaveBeenCalledWith(false);
   });
 
-  it('should bypass the cache so a resume always re-probes', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+  it('re-probes on a tab resume past a cached failure, and brings the app back online only once the server answers', async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
     const { checkConnectivity, revalidateConnectivity } = await importModule();
 
-    await checkConnectivity(); // primes the cache
-    await revalidateConnectivity(); // must probe again despite fresh cache
+    const offline = checkConnectivity(); // caches the failure
+    await vi.runAllTimersAsync();
+    expect(await offline).toBe(false);
 
-    expect(fetch).toHaveBeenCalledTimes(2);
+    const stillOffline = revalidateConnectivity();
+    await vi.runAllTimersAsync();
+    expect(await stillOffline).toBe(false);
+    expect(mockSetOnline).not.toHaveBeenCalledWith(true);
+
+    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+    expect(await revalidateConnectivity()).toBe(true);
+    expect(mockSetOnline).toHaveBeenLastCalledWith(true);
+  });
+
+  // --- Recovery poll behind the offline alert ---
+
+  it('polls until the backend answers, however long the outage lasts', async () => {
+    let failures = 12;
+    vi.mocked(fetch).mockImplementation(async () => {
+      if (failures-- > 0) throw new TypeError('Failed to fetch');
+      return { ok: true } as Response;
+    });
+    const { awaitRecovery } = await importModule();
+
+    const recovered = awaitRecovery(new AbortController().signal);
+    await vi.runAllTimersAsync();
+
+    expect(await recovered).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(13);
+  });
+
+  it('stops polling once the alert cancels it', async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+    const { awaitRecovery } = await importModule();
+    const controller = new AbortController();
+
+    const recovered = awaitRecovery(controller.signal);
+    await vi.advanceTimersByTimeAsync(12_000);
+    controller.abort();
+    await vi.runAllTimersAsync();
+
+    expect(await recovered).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 });

@@ -1,23 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { exportToCsv, exportToPdf } from '~/lib/export';
-
-/** Documents the PDF export saved: file name and raw PDF text. jspdf's own `save` writes to disk in Node. */
-const savedPdfs: { name: string; pdf: string }[] = [];
-
-vi.mock('jspdf', async (importOriginal) => {
-  const { jsPDF } = await importOriginal<typeof import('jspdf')>();
-  class SavingJsPDF extends jsPDF {
-    constructor(...args: ConstructorParameters<typeof jsPDF>) {
-      super(...args);
-      const save = (name?: string) => {
-        savedPdfs.push({ name: name ?? '', pdf: this.output() });
-        return this;
-      };
-      this.save = save as unknown as InstanceType<typeof jsPDF>['save'];
-    }
-  }
-  return { jsPDF: SavingJsPDF, default: SavingJsPDF };
-});
+import { exportToCsv } from '~/lib/export';
 
 /** The text of the CSV file an export of these columns and rows downloads. */
 async function csvText(columns: { key: string; name: string }[], rows: Record<string, unknown>[]) {
@@ -28,7 +10,7 @@ async function csvText(columns: { key: string; name: string }[], rows: Record<st
     return 'blob:export';
   });
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-  await exportToCsv(columns, rows, 'export.csv');
+  exportToCsv(columns, rows, 'export.csv');
   return file ? file.text() : '';
 }
 
@@ -38,34 +20,19 @@ describe('exportToCsv', () => {
     vi.restoreAllMocks();
   });
 
-  it('quotes cells with a comma, a quote or a line break and doubles inner quotes', async () => {
+  it('keeps every value one cell: a comma, a quote or a line break is quoted with inner quotes doubled, a list joined', async () => {
     const columns = [
       { key: 'name', name: 'Name' },
       { key: 'message', name: 'Message' },
+      { key: 'labels', name: 'Labels' },
     ];
     const rows = [
-      { name: 'Plain', message: 'Say "hi"' },
-      { name: 'Smith, Jo', message: 'first line\nsecond line' },
+      { name: 'Plain', message: 'Say "hi"', labels: ['solo'] },
+      { name: 'Smith, Jo', message: 'first line\nsecond line', labels: ['bug', 'ui'] },
     ];
 
-    expect(await csvText(columns, rows)).toBe(['Name,Message', 'Plain,"Say ""hi"""', '"Smith, Jo","first line\nsecond line"'].join('\n'));
-  });
-
-  it('writes a list as one quoted cell', async () => {
-    const rows = [{ labels: ['bug', 'ui'] }, { labels: ['solo'] }];
-
-    expect(await csvText([{ key: 'labels', name: 'Labels' }], rows)).toBe(['Labels', '"bug, ui"', 'solo'].join('\n'));
-  });
-});
-
-describe('exportToPdf', () => {
-  it('saves a document with the page name and the table rows', async () => {
-    await exportToPdf([{ key: 'name', name: 'Name' }], [{ name: 'Ada Lovelace' }], 'members.pdf', '/organization/members', 'light');
-
-    const [saved] = savedPdfs;
-    expect(saved.name).toBe('members.pdf');
-    expect(saved.pdf.startsWith('%PDF-')).toBe(true);
-    expect(saved.pdf).toContain('/organization/members');
-    expect(saved.pdf).toContain('Ada Lovelace');
+    expect(await csvText(columns, rows)).toBe(
+      ['Name,Message,Labels', 'Plain,"Say ""hi""",solo', '"Smith, Jo","first line\nsecond line","bug, ui"'].join('\n'),
+    );
   });
 });

@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "dadfc578-ae86-48a8-a797-a11bbfa88ecf",
+  "prevIds": [
+    "4a5418f9-1db6-455c-a334-6c1100c916e3"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "status_changed_at"
+      ],
+      "writes": [
+        "s|col|public.tenants.status_changed_at",
+        "n|col|public.tenants.status_changed_at",
+        "e|col|public.tenants.status_changed_at"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tenants",
+        "name": "status_changed_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

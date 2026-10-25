@@ -22,7 +22,7 @@ export interface ParseMessageResult {
 }
 
 /** Rate limit for the draft-guard warning (one line per interval, not one per draft edit). */
-const DRAFT_GUARD_WARN_INTERVAL_MS = 60_000;
+const draftGuardWarnIntervalMs = 60_000;
 let lastDraftGuardWarnAt = 0;
 
 /**
@@ -33,7 +33,7 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   if (result.tableMeta.kind !== 'entity' || !isProduct(result.tableMeta.type)) return false;
   if (!isUnpublishedDraft(result.rowData)) return false;
   const now = Date.now();
-  if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {
+  if (now - lastDraftGuardWarnAt > draftGuardWarnIntervalMs) {
     lastDraftGuardWarnAt = now;
     log.warn('Draft product row reached CDC: publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).', {
       entityType: result.tableMeta.type,
@@ -65,8 +65,12 @@ export function parseMessage(message: Pgoutput.Message): ParseMessageResult | nu
         return handleWholeRow(tableMeta, message.new, 'create');
       case 'update':
         return handleUpdate(tableMeta, message);
-      case 'delete':
-        return handleWholeRow(tableMeta, message.old, 'delete');
+      case 'delete': {
+        // The removal of a tombstone (apply_retention()) changes nothing a client holds: the delete reached everyone as
+        // the tombstone, and the counters never counted it.
+        const removed = handleWholeRow(tableMeta, message.old, 'delete');
+        return removed.rowData.deletedAt == null ? removed : null;
+      }
     }
   })();
 

@@ -1,16 +1,25 @@
 import { useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useLatestRef } from '~/hooks/use-latest-ref';
-import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
+import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dialoger';
+import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
+import { OverlayCloseContext } from '~/modules/common/overlay-close';
+import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus, useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
-import { isTouchInteraction } from '~/utils/input-modality';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
+import { tw } from '~/utils/tw';
 
-export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+// A phone's search dialog: at the top below the safe area, inset 0.5rem on every side, its height filling the space
+// above the keyboard (--visual-viewport-height, which SearchDialogBar writes), or above the bottom safe area while the
+// keyboard is closed. A flex column, so the results fill and scroll while the field stays.
+const searchLayoutClass = tw(
+  'max-sm:data-closed:slide-out-to-top-2 max-sm:data-open:slide-in-from-top-2 max-sm:mt-[max(0.5rem,env(safe-area-inset-top))] max-sm:mb-0 max-sm:flex max-sm:h-[calc(min(var(--visual-viewport-height,100dvh)-0.5rem,100dvh-max(0.5rem,env(safe-area-inset-bottom)))-max(0.5rem,env(safe-area-inset-top)))] max-sm:max-h-none max-sm:w-[calc(100%-1rem)] max-sm:flex-col max-sm:self-start max-sm:overflow-hidden max-sm:rounded-xl max-sm:ring-0',
+);
+
+interface DialogerDialogProps {
+  dialog: InternalDialog;
+}
+
+export function DialogerDialog({ dialog }: DialogerDialogProps) {
   const {
     id,
     content,
@@ -19,77 +28,57 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     description,
     title,
     titleContent = title,
-    drawerOnMobile = true,
     outsideScroll = false,
     className,
     headerClassName,
     container,
+    searchLayout,
   } = dialog;
-  const isMobile = useBreakpointBelow('sm', false);
 
   // A container renders the dialog inline: the page keeps scrolling and taking pointer input, focus stays in the dialog
   const inline = !!container;
   const containerElement = container?.ref?.current ?? undefined;
 
-  const removeDialog = () => useDialoger.getState().remove(dialog.id);
+  const removeDialog = () => dialoger.getState().remove(dialog.id);
 
   // The dialog animates out before its entry (and onClose) is removed.
-  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(
-    () => useDialoger.getState().update(dialog.id, { open: false }),
-    removeDialog,
-  );
+  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().update(dialog.id, { open: false }), removeDialog);
 
-  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
-    if (!nextOpen && eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
+  // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
+  const dismiss = dialog.instantClose ? removeDialog : closeDialog;
 
-    // An outside press landing on a dropdown must not close the dialog
-    if (!nextOpen && eventDetails.reason === 'outside-press') {
-      const dropdown = useDropdowner.getState().dropdown;
-      if (dropdown || inline) return;
-    }
-
-    // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
-    if (!nextOpen && dialog.instantClose) {
-      removeDialog();
-      return;
-    }
-
-    if (nextOpen) useDialoger.getState().update(dialog.id, { open: true });
-    else closeDialog();
+  const handleOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
+    if (eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
+    if (eventDetails.reason === 'outside-press' && (isDropdownOpen() || inline)) return;
+    dismiss();
   };
 
-  const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Dialog key={id} open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
-      {container?.overlay &&
-        (container.overlayRef?.current ? (
-          createPortal(
-            <div className={cn('absolute inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />,
-            container.overlayRef.current,
-          )
-        ) : (
-          <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
-        ))}
+    <Dialog open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
+      {container?.overlay && (
+        <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
+      )}
       <DialogContent
         ref={popupRef}
         id={String(id)}
         container={containerElement}
         outsideScroll={outsideScroll}
-        className={cn(className, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
-        // Opened from code, so Base UI cannot see a touch open: on touch the popup takes focus, as Base UI's own touch default does.
-        initialFocus={() => (isTouchInteraction() ? popupRef.current : true)}
-        finalFocus={triggerRef?.current ? finalFocusRef : undefined}
+        // A drag on the inset around a search dialog would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed.
+        viewportClassName={searchLayout ? 'max-sm:touch-none' : undefined}
+        className={cn(className, searchLayout && searchLayoutClass, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
+        initialFocus={touchInitialFocus(popupRef)}
+        finalFocus={finalFocusFor(triggerRef, String(id))}
       >
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
         {(title || description) && (
-          <DialogHeader sticky className={cn(isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName)}>
+          <DialogHeader sticky className={headerClassName}>
             {title && <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
-        {content}
+        <OverlayCloseContext.Provider value={{ close: dismiss, back: dismiss }}>{content}</OverlayCloseContext.Provider>
       </DialogContent>
     </Dialog>
   );

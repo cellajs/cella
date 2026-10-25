@@ -64,6 +64,9 @@ export interface AttachmentBlob {
   linkAttempts?: number;
 
   storedAt: Date;
+
+  /** The attachment's `createdAt` in ms, on downloaded blobs: the offline budget keeps the newest. Uploads rank by `storedAt`. */
+  attachmentCreatedAt?: number;
 }
 
 /** Queue of attachments to cache locally for offline viewing, kept separate from blob storage. */
@@ -73,7 +76,7 @@ export interface DownloadQueueEntry {
 
   organizationId: string;
 
-  /** Download priority; lower runs first. */
+  /** Download priority, lower runs first: the attachment's negated `createdAt` in ms, so the newest goes first. */
   priority: number;
 
   /** Download status; 'skipped' means filtered out (too large / wrong type), see skipReason. */
@@ -86,16 +89,18 @@ export interface DownloadQueueEntry {
   attempts: number;
 }
 
+function boundDb() {
+  const db = getLocalUserDb();
+  if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
+  return db;
+}
+
 /** Blob and download-queue tables of the active per-user localUserDb; accessors throw while signed out, so guard with `getLocalUserDb()`. */
 export const attachmentsDb = {
   get blobs(): Dexie.Table<AttachmentBlob, string> {
-    const db = getLocalUserDb();
-    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
-    return db.blobs;
+    return boundDb().blobs;
   },
   get downloadQueue(): Dexie.Table<DownloadQueueEntry, string> {
-    const db = getLocalUserDb();
-    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
-    return db.downloadQueue;
+    return boundDb().downloadQueue;
   },
 };

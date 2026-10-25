@@ -9,6 +9,8 @@ import { isSeenTracked } from '~/modules/seen/helpers';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
+export type SeenMeta = { tenantId: string; organizationId: string; channelId: string; productType: ProductEntityType; productId: string };
+
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
@@ -16,10 +18,10 @@ interface SeenBatch {
   productIds: Set<string>;
 }
 
-const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000;
+const flushIntervalMs = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000;
 
 /** Cap on persisted flushed IDs, evicting oldest first (Sets iterate in insertion order). Evicted IDs may be re-sent; markSeen skips duplicates. */
-const FLUSHED_IDS_MAX = 10_000;
+const flushedIdsMax = 10_000;
 
 const batchKey = (organizationId: string, productType: ProductEntityType) => `${organizationId}:${productType}`;
 
@@ -29,7 +31,7 @@ let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 interface SeenStoreState {
   flushedIds: Set<string>;
 
-  markProductSeen: (tenantId: string, organizationId: string, channelId: string, productType: ProductEntityType, productId: string) => void;
+  markProductSeen: (meta: SeenMeta) => void;
   startFlushInterval: () => void;
   stopFlushInterval: () => void;
   flush: () => Promise<void>;
@@ -44,7 +46,7 @@ export const seenStore = createStore<SeenStoreState>()(
       (set, get) => ({
         flushedIds: new Set(),
 
-        markProductSeen: (tenantId, organizationId, channelId, productType, productId) => {
+        markProductSeen: ({ tenantId, organizationId, channelId, productType, productId }) => {
           if (!isSeenTracked(productType)) return;
           if (get().flushedIds.has(productId)) return;
 
@@ -60,7 +62,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         startFlushInterval: () => {
           if (flushIntervalId) return;
-          flushIntervalId = setInterval(() => get().flush(), FLUSH_INTERVAL_MS);
+          flushIntervalId = setInterval(() => get().flush(), flushIntervalMs);
         },
 
         stopFlushInterval: () => {
@@ -76,7 +78,7 @@ export const seenStore = createStore<SeenStoreState>()(
           if (isDebugMode)
             console.debug(
               '[SeenStore] flushing',
-              batches.map((b) => `${b.productType}(${b.productIds.size})`),
+              batches.map((batch) => `${batch.productType}(${batch.productIds.size})`),
             );
 
           for (const batch of batches) {
@@ -88,7 +90,7 @@ export const seenStore = createStore<SeenStoreState>()(
               const flushedIds = new Set(get().flushedIds);
               for (const id of productIds) flushedIds.add(id);
               for (const id of flushedIds) {
-                if (flushedIds.size <= FLUSHED_IDS_MAX) break;
+                if (flushedIds.size <= flushedIdsMax) break;
                 flushedIds.delete(id);
               }
               set({ flushedIds });
@@ -104,8 +106,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         reset: () => {
           pending.clear();
-          if (flushIntervalId) clearInterval(flushIntervalId);
-          flushIntervalId = null;
+          get().stopFlushInterval();
           set({ flushedIds: new Set() });
         },
       }),
@@ -130,7 +131,7 @@ export function isSeenLocally(entityId: string): boolean {
 }
 
 /** Flush pending seen data via sendBeacon on page unload. Call once at app init. */
-export const setupSeenBeaconFlush = () => {
+export function setupSeenBeaconFlush() {
   const handler = () => {
     for (const batch of pending.values()) {
       const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType });
@@ -139,4 +140,4 @@ export const setupSeenBeaconFlush = () => {
   };
   window.addEventListener('beforeunload', handler);
   return () => window.removeEventListener('beforeunload', handler);
-};
+}

@@ -1,4 +1,4 @@
-import { and, eq, gt, lt, sql } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -74,35 +74,4 @@ export const updateDeviceNotifiedAt = async (ctx: DbContext, { userId, deviceIdH
     .update(devicesTable)
     .set({ notifiedAt: getIsoDate() })
     .where(and(eq(devicesTable.userId, userId), eq(devicesTable.deviceIdHash, deviceIdHash)));
-};
-
-interface DeleteStaleDevicesOpts {
-  /** Rows last seen before this ISO timestamp go. */
-  seenBefore: string;
-}
-
-/** Removes device rows last seen before `seenBefore`. */
-export const deleteStaleDevices = async (ctx: DbContext, { seenBefore }: DeleteStaleDevicesOpts) => {
-  return ctx.var.db.delete(devicesTable).where(lt(devicesTable.lastSeenAt, seenBefore)).returning({ userId: devicesTable.userId });
-};
-
-interface DeleteExcessDevicesOpts {
-  /** Rows kept per user, the most recently seen. */
-  maxPerUser: number;
-}
-
-/** Removes each user's least recently seen device rows beyond `maxPerUser`. */
-export const deleteExcessDevices = async (ctx: DbContext, { maxPerUser }: DeleteExcessDevicesOpts) => {
-  return ctx.var.db
-    .delete(devicesTable)
-    .where(
-      sql`(${devicesTable.userId}, ${devicesTable.deviceIdHash}) in (
-        select user_id, device_id_hash from (
-          select user_id, device_id_hash, row_number() over (partition by user_id order by last_seen_at desc) as position
-          from ${devicesTable}
-        ) ranked
-        where position > ${maxPerUser}
-      )`,
-    )
-    .returning({ userId: devicesTable.userId });
 };

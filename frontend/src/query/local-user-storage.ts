@@ -1,7 +1,8 @@
-import { useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useBoardStore } from '~/modules/common/board/board-store';
-import { useDraftStore } from '~/modules/common/form-draft/draft-store';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
+import { alertStore } from '~/modules/common/alerter/alert-store';
+import { boardStore } from '~/modules/common/board/board-store';
+import { draftStore } from '~/modules/common/form-draft/draft-store';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
@@ -16,20 +17,15 @@ export interface LocalUserStore {
 }
 
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
-const localUserStores = [seenStore, syncStore, useNavigationStore, useDraftStore, useAlertStore, useBoardStore, ...extraLocalUserStores];
+const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, offlineFilesStore, ...extraLocalUserStores];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-// The owner listeners live with the database, so light modules subscribe without loading every per-user store.
-export { subscribeOwnerChange } from '~/query/local-user-db';
-
 /** Owner to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
 function resolveOwner(): string | null {
   const { user, impersonator } = userStore.getState();
-  if (impersonator) return null;
-  const id = user?.id;
-  return typeof id === 'string' && id.length > 0 ? id : null;
+  return impersonator ? null : user?.id || null;
 }
 
 async function hydrateAll(): Promise<void> {
@@ -53,7 +49,7 @@ function unbind(): void {
 }
 
 /** Reconcile the bound DB with the current auth state. Cheap; no-ops when unchanged. */
-function syncOwner(): void {
+function reconcileOwner(): void {
   const owner = resolveOwner();
   if (owner === boundOwner) return;
   if (owner) bindOwner(owner);
@@ -66,8 +62,8 @@ export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }
 
-userStore.subscribe(syncOwner);
-syncOwner();
+userStore.subscribe(reconcileOwner);
+reconcileOwner();
 
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. Lazy imports keep the
 // router and teardown out of this module's importer graph.

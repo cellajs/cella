@@ -1,16 +1,18 @@
-import { useTranslation } from 'react-i18next';
-import { LeaveChannelButton, type LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
-import { Button } from '~/modules/ui/button';
+import { UserRoundXIcon } from 'lucide-react';
+import { DeleteForm } from '~/modules/common/delete-form';
+import { useOverlayClose } from '~/modules/common/overlay-close';
+import { type LeaveChannelProps, useLeaveChannel } from '~/modules/memberships/use-leave-channel';
 
-export function LeaveChannelForm({ onCancel, ...props }: LeaveChannelButtonProps & { onCancel: () => void }) {
-  const { t } = useTranslation();
+/** Confirms leaving `channel`; it closes the dropdown or dialog it renders in once left. */
+export function LeaveChannelForm({ channel, redirectPath, callback }: LeaveChannelProps) {
+  const overlay = useOverlayClose();
+  const { leave, isPending } = useLeaveChannel(channel, {
+    redirectPath,
+    callback: (args) => {
+      overlay?.close();
+      callback?.(args);
+    },
+  });
 
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <LeaveChannelButton {...props} buttonProps={{ variant: 'destructive', className: 'justify-center sm:w-auto' }} />
-      <Button type="reset" variant="secondary" data-autofocus onClick={onCancel}>
-        {t('c:cancel')}
-      </Button>
-    </div>
-  );
+  return <DeleteForm label="c:leave" icon={UserRoundXIcon} onDelete={leave} pending={isPending} />;
 }

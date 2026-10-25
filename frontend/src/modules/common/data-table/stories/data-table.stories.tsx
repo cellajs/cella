@@ -4,6 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { uiStore } from '~/modules/ui/ui-store';
 
 type Row = { id: string; name: string };
 
@@ -49,72 +50,122 @@ const reorderableRows: Row[] = [
   { id: 'r3', name: 'Third row' },
 ];
 
-/** The reorder column: a grip a pointer drags, and a menu of single steps for every other way of working. */
-export const Reorderable: Story = {
-  render: function Render() {
-    const [rows, setRows] = useState(reorderableRows);
+function ReorderableTable() {
+  const [rows, setRows] = useState(reorderableRows);
 
-    const move = (fromIdx: number, toIdx: number) =>
-      setRows((prev) => {
-        const next = [...prev];
-        const [moved] = next.splice(fromIdx, 1);
-        next.splice(toIdx, 0, moved);
-        return next;
-      });
+  const move = (fromIdx: number, toIdx: number) =>
+    setRows((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
 
-    return (
-      <div className="space-y-2">
-        <DataTable<Row>
-          columns={[
-            reorderColumn<Row>({ getName: (row) => row.name, onMove: (rowIdx, step) => move(rowIdx, rowIdx + step), rowCount: rows.length }),
-            ...columns,
-          ]}
-          rows={rows}
-          rowKeyGetter={(row) => row.id}
-          hasNextPage={false}
-          readOnly
-          enableVirtualization={false}
-          onRowReorder={(fromIdx, toIdx, edge) => {
-            let insertAt = edge === 'bottom' ? toIdx + 1 : toIdx;
-            if (fromIdx < insertAt) insertAt -= 1;
-            move(fromIdx, insertAt);
-          }}
-        />
-        <div className="text-muted-foreground text-xs" data-testid="row-order">
-          {rows.map((row) => row.name).join(',')}
-        </div>
+  return (
+    <div className="space-y-2">
+      <DataTable<Row>
+        columns={[
+          reorderColumn<Row>({
+            getId: (row) => row.id,
+            getName: (row) => row.name,
+            onMove: (rowIdx, step) => move(rowIdx, rowIdx + step),
+            rowCount: rows.length,
+          }),
+          ...columns,
+        ]}
+        rows={rows}
+        rowKeyGetter={(row) => row.id}
+        hasNextPage={false}
+        readOnly
+        cellSelectionMode="cell"
+        enableVirtualization={false}
+        onRowReorder={(fromIdx, toIdx, edge) => {
+          let insertAt = edge === 'bottom' ? toIdx + 1 : toIdx;
+          if (fromIdx < insertAt) insertAt -= 1;
+          move(fromIdx, insertAt);
+        }}
+      />
+      <div className="text-muted-foreground text-xs" data-testid="row-order">
+        {rows.map((row) => row.name).join(',')}
       </div>
-    );
+    </div>
+  );
+}
+
+// The test setup loads no translations, so a grip is found through its row, not by its translated name
+const gripOf = (canvasElement: HTMLElement, rowName: string) => {
+  const row = within(canvasElement).getByText(rowName).closest<HTMLElement>('[role="row"]');
+  if (!row) throw new Error(`No row holds ${rowName}`);
+  return within(row).getByRole('button');
+};
+
+/** The reorder column in a grid that navigates cells: a grip a pointer drags, and arrow keys that move its row while it has focus. */
+export const Reorderable: Story = {
+  render: () => <ReorderableTable />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const body = within(canvasElement.ownerDocument.body);
+    const order = () => canvas.getByTestId('row-order');
+    await canvas.findByText('First row');
+
+    await step('The grip is sortable and is its row drag source', async () => {
+      const grip = gripOf(canvasElement, 'First row');
+      await expect(grip).toHaveAttribute('aria-roledescription');
+      await expect(grip).toHaveAttribute('draggable', 'true');
+    });
+
+    await step('A click focuses the grip and opens no menu', async () => {
+      await userEvent.click(gripOf(canvasElement, 'First row'));
+      await expect(gripOf(canvasElement, 'First row')).toHaveFocus();
+      await expect(body.queryByRole('menu')).toBeNull();
+    });
+
+    await step('ArrowDown moves the row, and focus and the grid selection stay with it', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      await expect(order()).toHaveTextContent('Second row,First row,Third row');
+      const grip = gripOf(canvasElement, 'First row');
+      await waitFor(() => expect(grip).toHaveFocus());
+      await expect(grip.closest('[role="gridcell"]')).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => expect(canvasElement.ownerDocument.querySelector('body > [role="status"]')).not.toBeEmptyDOMElement());
+    });
+
+    await step('Escape hands focus to the cell, so ArrowDown navigates the grid and moves nothing', async () => {
+      await userEvent.keyboard('{Escape}');
+      await expect(gripOf(canvasElement, 'First row').closest('[role="gridcell"]')).toHaveFocus();
+      await userEvent.keyboard('{ArrowDown}');
+      await expect(order()).toHaveTextContent('Second row,First row,Third row');
+      await expect(gripOf(canvasElement, 'Third row')).toHaveFocus();
+    });
+  },
+};
+
+/** With increased contrast a click on the grip opens a menu of single moves, for a pointer that cannot drag. */
+export const ReorderableWithMoreContrast: Story = {
+  render: () => <ReorderableTable />,
+  beforeEach: () => {
+    uiStore.setState({ contrast: 'more' });
+    return () => uiStore.setState({ contrast: 'system' });
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const body = within(canvasElement.ownerDocument.body);
-    const grips = await canvas.findAllByRole('button', { name: /row$/ });
+    const order = () => canvas.getByTestId('row-order');
+    await canvas.findByText('First row');
 
-    await step('The grip names its row and marks itself as the row drag source', async () => {
-      await expect(grips[0]).toHaveAccessibleName(/first row$/i);
-      await expect(grips[0]).toHaveAttribute('data-drag-handle');
-      await expect(grips[0]).toHaveAttribute('draggable', 'true');
-    });
-
-    await step('A key press opens the menu and lands focus inside it', async () => {
-      grips[0].focus();
-      await userEvent.keyboard('{Enter}');
-      const menu = await body.findByRole('menu');
-      // Base UI moves focus into the popup a frame after it mounts
-      await waitFor(() => expect(menu.contains(canvasElement.ownerDocument.activeElement)).toBe(true));
-    });
-
-    await step('The first row cannot move up, and moving down puts it second', async () => {
+    await step('A click opens the menu, where the first row cannot move up and moving down puts it second', async () => {
+      await userEvent.click(gripOf(canvasElement, 'First row'));
       const menu = await body.findByRole('menu');
       await expect(within(menu).getByRole('menuitem', { name: /move.up/i })).toHaveAttribute('data-disabled');
       await userEvent.click(within(menu).getByRole('menuitem', { name: /move.down/i }));
-      await expect(canvas.getByTestId('row-order')).toHaveTextContent('Second row,First row,Third row');
+      await expect(order()).toHaveTextContent('Second row,First row,Third row');
     });
 
-    await step('Focus returns to the grip of the row that moved, once the menu has closed', async () => {
-      const moved = await canvas.findByRole('button', { name: /first row$/i });
-      await waitFor(() => expect(moved).toHaveFocus());
+    await step('Focus returns to the grip of the row that moved, and its arrow keys still move it', async () => {
+      const grip = gripOf(canvasElement, 'First row');
+      await waitFor(() => expect(grip).toHaveFocus());
+      await userEvent.keyboard('{ArrowUp}');
+      await expect(order()).toHaveTextContent('First row,Second row,Third row');
+      await expect(body.queryByRole('menu')).toBeNull();
     });
   },
 };

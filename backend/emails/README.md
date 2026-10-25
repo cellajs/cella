@@ -1,6 +1,6 @@
 # Emails
 
-Transactional email templates, authored as React components and rendered to static HTML on the server. There is **no runtime dependency on [`jsx-email`](https://jsx.email/)**: a small subset of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and [components/primitives/](components/primitives/).
+Transactional email templates, authored as React components and rendered to static HTML on the server. There is **no runtime dependency on [jsx-email](https://jsx.email/)**: a small subset of jsx-email v3.2.1 (MIT) is vendored under [renderer/](renderer/) and [components/primitives/](components/primitives/).
 
 ## Authoring a template
 
@@ -26,9 +26,11 @@ Per-recipient props leave the render as Brevo placeholders, and Brevo fills them
 
 ## Rendering
 
-`render()` in [renderer/render.ts](renderer/render.ts) turns a React element into email-ready HTML (XHTML doctype, rehype style hoisting, raw-HTML and MSO conditional handling). Node-only and async. The `plainText` render option gives plain-text output.
+`render()` in [renderer/render.ts](renderer/render.ts) writes a React element as the HTML that is sent: the XHTML doctype, then the element as [renderer/jsx-to-string.ts](renderer/jsx-to-string.ts) serializes it. Node-only and async. Nothing re-parses the result, so a template writes final markup:
 
-`RenderOptions` keeps the full jsx-email option surface for API parity, but only `plainText` is acted on; `disableDefaultStyle`, `inlineCss`, `minify` and `pretty` are inert. Each component's own `disableDefaultStyle` prop controls its default styling.
+- a `<style>` goes in the head, through `EmailLayout`'s `headChildren`: Gmail reads styles only there;
+- a table's rows sit in a `<tbody>`;
+- `Conditional` and `Raw` write Outlook's conditional comments and verbatim HTML where they stand.
 
 ## Previewing
 

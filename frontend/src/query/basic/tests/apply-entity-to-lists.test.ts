@@ -23,9 +23,9 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-// The change* helpers write through the module-singleton queryClient, so tests use that instance.
+// changeListData writes through the module-singleton queryClient, so tests use that instance.
 const { queryClient } = await import('~/query/query-client');
-const { insertEntitiesIntoHome, spliceEntityIntoListCaches } = await import('~/query/basic/apply-entity-to-lists');
+const { spliceEntityIntoListCaches } = await import('~/query/basic/apply-entity-to-lists');
 
 const orgId = 'org-1';
 
@@ -59,54 +59,25 @@ const row = (id: string, extra: Record<string, unknown> = {}): OrgRoutableItemDa
 describe('spliceEntityIntoListCaches: canonical-home policy', () => {
   afterEach(() => queryClient.clear());
 
-  it('inserts a new row into the canonical home list ONLY, never the filtered/search list', () => {
+  it('puts a new row into its canonical home list only, never a filtered list, and updates a row in every list that holds it', () => {
     queryClient.setQueryData(homeKey, { items: [], total: 0 });
     queryClient.setQueryData(filteredKey, { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0 }] });
 
-    const result = spliceEntityIntoListCaches(queryClient, row('a'));
+    const inserted = spliceEntityIntoListCaches(queryClient, row('a'));
 
-    const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
-    const filtered = queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
+    const home = () => queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
+    const filtered = () => queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
+    expect(home()).toMatchObject({ items: [{ id: 'a' }], total: 1 });
+    // The search list did not gain the row: its server-side filter cannot be checked here.
+    expect(filtered()?.pages[0]).toEqual({ items: [], total: 0 });
+    expect(inserted).toMatchObject({ seen: false, spliced: true, sawFilteredList: true });
 
-    expect(home?.items.map((i) => i.id)).toEqual(['a']);
-    expect(home?.total).toBe(1);
-    // The search list did not gain the non-matching row.
-    expect(filtered?.pages[0].items).toEqual([]);
-    expect(filtered?.pages[0].total).toBe(0);
-    expect(result).toMatchObject({ seen: false, spliced: true, sawFilteredList: true });
-  });
+    // Once the search list holds the row too, an update reaches both, without an insert or a total drift.
+    queryClient.setQueryData(filteredKey, { pages: [{ items: [row('a', { name: 'old' })], total: 1 }], pageParams: [{ page: 0 }] });
+    const updated = spliceEntityIntoListCaches(queryClient, row('a', { name: 'new' }));
 
-  it('updates an existing row in place across home and filtered lists without inserting', () => {
-    queryClient.setQueryData(homeKey, { items: [row('a', { name: 'old' })], total: 1 });
-    queryClient.setQueryData(filteredKey, {
-      pages: [{ items: [row('a', { name: 'old' })], total: 1 }],
-      pageParams: [{ page: 0 }],
-    });
-
-    const result = spliceEntityIntoListCaches(queryClient, row('a', { name: 'new' }));
-
-    const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
-    const filtered = queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
-
-    expect(home?.items[0]).toMatchObject({ name: 'new' });
-    expect(home?.total).toBe(1);
-    // Present in the filtered list, so it updates there too (no leak, no total drift).
-    expect(filtered?.pages[0].items[0]).toMatchObject({ name: 'new' });
-    expect(filtered?.pages[0].total).toBe(1);
-    expect(result.seen).toBe(true);
-  });
-});
-
-describe('insertEntitiesIntoHome: resolves the org-homed attachment home key', () => {
-  afterEach(() => queryClient.clear());
-
-  it('splices an org-homed row into [type, list, org, org]', () => {
-    queryClient.setQueryData(homeKey, { items: [], total: 0 });
-
-    insertEntitiesIntoHome(queryClient, [row('a')]);
-
-    const home = queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
-    expect(home?.items.map((i) => i.id)).toEqual(['a']);
-    expect(home?.total).toBe(1);
+    expect(home()).toMatchObject({ items: [{ id: 'a', name: 'new' }], total: 1 });
+    expect(filtered()?.pages[0]).toMatchObject({ items: [{ id: 'a', name: 'new' }], total: 1 });
+    expect(updated.seen).toBe(true);
   });
 });

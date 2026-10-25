@@ -9,13 +9,13 @@ import { getIp } from '#/utils/get-ip';
 import { TimeSpan } from '#/utils/time-span';
 
 /** Chrome caps cookie lifetime at 400 days; the device id slides forward on every sign-in. */
-const DEVICE_ID_LIFESPAN = new TimeSpan(400, 'd');
+const deviceIdLifespan = new TimeSpan(400, 'd');
 
 /** Get or mint the opaque per-browser device id: set only on successful sign-in and refreshed each sign-in, so active devices never expire. */
 const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   const existing = await getAuthCookie(ctx, 'device-id');
   const deviceId = existing || nanoid(24);
-  await setAuthCookie(ctx, 'device-id', deviceId, DEVICE_ID_LIFESPAN);
+  await setAuthCookie(ctx, 'device-id', deviceId, deviceIdLifespan);
   return deviceId;
 };
 

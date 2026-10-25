@@ -1,8 +1,9 @@
-import { docsIndex as docsFrontmatter } from 'virtual:docs-frontmatter';
-import type { ComponentType } from 'react';
+import { docsIndex } from 'virtual:docs-frontmatter';
+import { type ComponentType, lazy } from 'react';
 import { z } from 'zod';
+import { spyPrefix } from '~/hooks/scroll-spy-store';
 
-const CONTENT_ROOT = '/src/content/docs/';
+const contentRoot = '/src/content/docs/';
 
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
@@ -39,7 +40,7 @@ const docsConfigSchema = z.object({
   sections: z
     .array(docsSectionSchema)
     .default([])
-    .refine((sections) => new Set(sections.map((s) => s.id)).size === sections.length, 'section ids must be unique'),
+    .refine((sections) => new Set(sections.map((section) => section.id)).size === sections.length, 'section ids must be unique'),
 });
 
 export type DocsConfig = z.infer<typeof docsConfigSchema>;
@@ -79,23 +80,15 @@ export type DocPage = {
   headings: DocHeading[];
 };
 
-/** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
-const HEADING_ID_PREFIX = 'spy-';
+/** The page's own spy section, current until the first heading; heading slugs hold no slash, so this id never clashes with one. */
+export const pageSectionId = 'page/intro';
 
-/**
- * Spy section of the page itself: the article wraps every heading, so it is current until the first heading takes over.
- * Heading slugs never contain a slash, so it can't clash with one (pages do have an `## Overview` heading).
- */
-export const PAGE_SECTION_ID = 'page/intro';
-
-// Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
-const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
 /** File path to slug: `architecture/index.md` becomes `architecture`. */
 export function pathToSlug(path: string): string {
   const slug = path
-    .slice(CONTENT_ROOT.length)
+    .slice(contentRoot.length)
     .replace(/\.(md|mdx)$/, '')
     .replace(/(^|\/)index$/, '');
   return slug.replace(/\/$/, '');
@@ -106,7 +99,8 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
   const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
   let config: DocsConfig | null = null;
 
-  for (const [path, entry] of Object.entries(metaModules)) {
+  // Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
+  for (const [path, entry] of Object.entries(docsIndex)) {
     const slug = pathToSlug(path);
     if (!slug) {
       // Root index holds the global docs config and the /docs landing body.
@@ -119,7 +113,7 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
     const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
     slugs.add(slug);
-    const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(HEADING_ID_PREFIX, '') }));
+    const headings = entry.headings.map((heading) => ({ ...heading, id: heading.id.replace(spyPrefix, '') }));
     parsed.push({ slug, path, meta: result.data, headings });
   }
 
@@ -158,23 +152,23 @@ const { pages, loaders, config } = buildIndex();
 
 export const docsConfig: DocsConfig = config;
 
-/** All docs pages, sorted by display order. Includes drafts (callers filter). */
+/** All docs pages, sorted by display order, drafts and hidden pages included. */
 export const docPages: DocPage[] = pages;
+
+/** The pages the sidebar, the search and the child page lists show: no drafts, no hidden pages. */
+export const visibleDocPages = docPages.filter((page) => !page.draft && !page.hidden);
 
 export function getDocPage(slug: string): DocPage | undefined {
   return docPages.find((page) => page.id === slug);
 }
 
 export function getChildDocPages(slug: string): DocPage[] {
-  return docPages.filter((page) => page.parentId === slug && !page.draft && !page.hidden);
-}
-
-export function getDocPageLoader(slug: string): (() => Promise<ComponentType>) | undefined {
-  return loaders.get(slug);
+  return visibleDocPages.filter((page) => page.parentId === slug);
 }
 
 // Resolved ahead of render (docs route loader) so the body renders synchronously: a fresh Suspense boundary commits its fallback for a frame even on a cached chunk.
 const resolvedComponents = new Map<string, ComponentType>();
+const lazyComponents = new Map<string, ComponentType>();
 
 export async function ensureDocPageComponent(slug: string): Promise<ComponentType | undefined> {
   const cached = resolvedComponents.get(slug);
@@ -186,6 +180,13 @@ export async function ensureDocPageComponent(slug: string): Promise<ComponentTyp
   return component;
 }
 
-export function getResolvedDocPageComponent(slug: string): ComponentType | undefined {
-  return resolvedComponents.get(slug);
+/** The page body: the one a docs route loader resolved, else a lazy import kept per slug so its identity holds across renders. */
+export function getDocPageComponent(slug: string): ComponentType | null {
+  const component = lazyComponents.get(slug) ?? resolvedComponents.get(slug);
+  if (component) return component;
+  const loader = loaders.get(slug);
+  if (!loader) return null;
+  const lazyComponent = lazy(async () => ({ default: await loader() }));
+  lazyComponents.set(slug, lazyComponent);
+  return lazyComponent;
 }

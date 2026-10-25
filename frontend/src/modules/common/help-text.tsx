@@ -1,21 +1,24 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { HelpCollapse, HelpToggle } from '~/modules/ui/help-toggle';
 import { cn } from '~/utils/cn';
 
 interface HelpTextProps {
-  children: React.ReactNode;
-  content: React.ReactNode;
+  children: ReactNode;
+  content: ReactNode;
   className?: string;
+  /** At the end of the title row, such as an add button. */
+  action?: ReactNode;
 }
 
-export function HelpText({ content, children, className }: HelpTextProps) {
+export function HelpText({ content, children, className, action }: HelpTextProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className={cn('mb-4 flex flex-col', className)}>
       <div className="flex items-center gap-2">
         {children}
-        <HelpToggle open={open} onToggle={() => setOpen(!open)} />
+        <HelpToggle open={open} onToggle={() => setOpen((prev) => !prev)} />
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       <HelpCollapse open={open}>{content}</HelpCollapse>
     </div>

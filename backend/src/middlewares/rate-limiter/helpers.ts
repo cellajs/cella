@@ -3,7 +3,7 @@ import { and, eq, gt, gte, lt, lte, or, sql } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
+import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
 import type { Identifiers, LimiterStore, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
@@ -186,11 +186,14 @@ export const blockSpentBucket = async (store: LimiterStore, rateLimitKey: string
   return true;
 };
 
-/** The refusal carries the wait alone: the key names a subject, which no client needs and no log line repeats. */
-export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes) => {
+/**
+ * The refusal carries the wait alone: the key names a subject, which no client needs and no log line repeats.
+ * @param type - The limiter's own refusal type, when a client says more than "too many requests" for it.
+ */
+export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, type: ErrorKey = 'too_many_requests') => {
   const retryAfter = getRetryAfter(limitState.msBeforeNext);
   ctx.header('Retry-After', retryAfter);
-  throw new AppError(429, 'too_many_requests', 'warn', { meta: { retryAfter: Number(retryAfter) } });
+  throw new AppError(429, type, 'warn', { meta: { retryAfter: Number(retryAfter) } });
 };
 
 /** Floored to 1s so sub-second waits never emit `Retry-After: 0`, which clients read as "retry immediately". */

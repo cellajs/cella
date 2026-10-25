@@ -1,10 +1,11 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { User } from 'sdk';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from 'sdk';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, type User, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { usersSearchDefaults } from '~/modules/user/search-params-schemas';
 import type { BaseUser } from '~/modules/user/types';
+import { useUserStore } from '~/modules/user/user-store';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
@@ -41,7 +42,7 @@ export const usersListQueryOptions = (params: UsersListParams) => {
   });
 };
 
-export const useUserUpdateMutation = () => {
+const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
 
@@ -57,6 +58,18 @@ export const useUserUpdateMutation = () => {
     },
     gcTime: 1000 * 10,
   });
+};
+
+/** Saves a user's profile: the signed-in user's through `/me`, which also updates the user store, anyone else's as an admin. */
+export const useUpdateUser = (userId: string) => {
+  const isSelf = useUserStore((state) => state.user?.id === userId);
+  const selfMutation = useUpdateSelfMutation();
+  const adminMutation = useUserUpdateMutation();
+
+  const mutate = (body: UpdateUserData['body'], options?: { onSuccess?: (user: User) => void }) =>
+    isSelf ? selfMutation.mutate(body, options) : adminMutation.mutate({ path: { id: userId }, body }, options);
+
+  return { mutate, isPending: selfMutation.isPending || adminMutation.isPending };
 };
 
 export const useUserDeleteMutation = () => {

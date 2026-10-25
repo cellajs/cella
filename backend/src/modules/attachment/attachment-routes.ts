@@ -21,10 +21,14 @@ import {
   tenantOrgParamSchema,
 } from '#/schemas';
 import {
-  mockAttachmentResponse,
   mockBatchAttachmentsResponse,
+  mockCreateAttachmentsBody,
+  mockDeleteAttachmentsBody,
+  mockLinkAttachmentKeysBody,
   mockPaginatedAttachmentsResponse,
+  mockPresignedUrlsBody,
   mockPresignedUrlsResponse,
+  mockUpdateAttachmentBody,
 } from './attachment-mocks';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
@@ -49,14 +53,10 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
-    xTool: {
-      description: 'Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.',
-      approvalRequired: true,
-      entity: 'attachment',
-    },
     summary: 'Create attachments',
-    description: 'Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.',
-    request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema) },
+    description:
+      "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
+    request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema, mockCreateAttachmentsBody()) },
     responses: {
       200: json('Attachments already created (idempotent)', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
       201: json('Attachments created', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
@@ -75,7 +75,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     summary: 'Get attachment',
     description: 'Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.',
     request: { params: idInTenantOrgParamSchema },
-    responses: { 200: json('Attachment', attachmentSchema, mockAttachmentResponse()) },
+    responses: { 200: json('Attachment', attachmentSchema) },
   }),
   updateAttachment: xRoute({
     method: 'put',
@@ -89,19 +89,25 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     },
     summary: 'Update attachment',
     description: 'Updates metadata of an attachment, such as its name or associated entity.',
-    request: { params: idInTenantOrgParamSchema, query: fullResponseQuerySchema, body: jsonBody(attachmentUpdateStxBodySchema) },
-    responses: { 200: json('Attachment was updated', attachmentSchema, mockAttachmentResponse()) },
+    request: {
+      params: idInTenantOrgParamSchema,
+      query: fullResponseQuerySchema,
+      body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()),
+    },
+    responses: { 200: json('Attachment was updated', attachmentSchema) },
   }),
   linkAttachmentKeys: xRoute({
     method: 'put',
     path: '/{id}/keys',
     xGuard: [actorGuard, tenantGuard, orgGuard],
+    // Linking the stored variants of a file needs read access only.
+    xScope: 'attachment:read',
     xRateLimiter: [singlePointsLimiter],
     summary: 'Link attachment keys',
     description:
       'Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
-    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema) },
-    responses: { 200: json('Attachment with its stored file', attachmentSchema, mockAttachmentResponse()) },
+    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
+    responses: { 200: json('Attachment with its stored file', attachmentSchema) },
   }),
   deleteAttachments: xRoute({
     method: 'delete',
@@ -115,18 +121,20 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     },
     summary: 'Delete attachments',
     description: 'Deletes one or more attachment records by ID. This does not delete the underlying file in storage.',
-    request: { params: tenantOrgParamSchema, body: jsonBody(idsWithStxBodySchema()) },
+    request: { params: tenantOrgParamSchema, body: jsonBody(idsWithStxBodySchema(), mockDeleteAttachmentsBody()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
   getPresignedUrls: xRoute({
     method: 'post',
     path: '/presigned-urls',
     xGuard: [actorGuard, tenantGuard, orgGuard],
+    // A POST for its list of keys: signing download URLs needs read access only.
+    xScope: 'attachment:read',
     xRateLimiter: [presignedUrlLimiter],
     summary: 'Get presigned URLs',
     description:
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
-    request: { params: tenantOrgParamSchema, body: jsonBody(presignedUrlsBodySchema) },
+    request: { params: tenantOrgParamSchema, body: jsonBody(presignedUrlsBodySchema, mockPresignedUrlsBody()) },
     responses: {
       200: json('Presigned URLs', batchResponseSchema(presignedUrlItemSchema), mockPresignedUrlsResponse()),
     },

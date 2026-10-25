@@ -5,12 +5,13 @@ import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
+import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
-import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { resolvePlacement } from '#/permissions/product-placement';
@@ -37,7 +38,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
   // `replayed` tells the handler this request created none.
-  if (fresh.length === 0) return { data: await withAuditUsers(ctx, replayed), rejectedIds: [] as string[], replayed: true };
+  if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [] as string[], replayed: true };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
 
@@ -49,20 +50,25 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   // The attachment upload template decides the bucket; the server stamps it on every row and ignores what a client
   // claims, so a row never names storage its upload did not use.
   const storage = uploadStorage('attachment');
+  // The backend later signs these keys: they must name the caller's own uploads, before the bucket is asked about them.
+  if (fresh.some(({ keys }) => !namesOwnStorage(keys, organization.id, ctx.var.actor.id))) {
+    throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
+  }
+  const storedSizes = await Promise.all(fresh.map(({ keys }) => storedFileSize(keys, storage.bucketName)));
+
   const attachmentsToInsert: InsertAttachmentModel[] = [];
-  for (const { stx, ...att } of fresh) {
-    // The backend later signs these keys: they must name this organization's uploads.
-    if (!namesOwnStorage(att.keys, organization.id)) {
-      throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
-    }
+  for (const [index, { stx, ...att }] of fresh.entries()) {
     attachmentContract.assertBlockFields(att, organization.id);
 
     // The ancestor columns come from the home channel's own row; a row in the organization carries none.
-    const { columns: placement } = await resolvePlacement(ctx, 'attachment', att);
+    const { columns: placement, home } = await resolvePlacement(ctx, 'attachment', att);
 
     const attachment = {
       ...att,
       ...storage,
+      size: storedSizes[index]?.toString() ?? att.size,
+      // Public read is the home channel's decision, copied onto the row; a client cannot widen it.
+      public: home ? home.entity.public : organization.public,
       convertedContentType: att.convertedContentType || null,
       groupId: att.groupId || null,
       ...placement,
@@ -93,7 +99,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const missingIds = fresh.map((item) => item.id).filter((id) => !insertedIds.has(id));
   const committedMeanwhile = missingIds.length > 0 ? await checkIdempotency(ctx, attachmentsTable, missingIds) : [];
 
-  const attachmentResponses = await withAuditUsers(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
+  const attachmentResponses = await withActorRefs(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
 
   return { data: attachmentResponses, rejectedIds: [] as string[], replayed: false };
 }

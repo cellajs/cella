@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
+import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import {
@@ -10,7 +10,7 @@ import {
   getEqualityFilterKeys,
   hasEntityQueryKeys,
   type SeqRange,
-  SYNC_CHUNK_SIZE,
+  syncChunkSize,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
@@ -72,7 +72,7 @@ export function patchEntityStxInCache(
   entityType: ProductEntityType,
   entityId: string,
   stx: { fieldTimestamps?: Record<string, string> },
-  organizationId?: string,
+  organizationId: string,
 ): void {
   if (!hasEntityQueryKeys(entityType)) return;
 
@@ -88,26 +88,17 @@ export function patchEntityStxInCache(
   const detail = queryClient.getQueryData<StxEntity>(keys.detail.byId(entityId));
   if (detail?.stx) patchInPlace(detail);
 
-  const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  forEachListQuery<StxEntity>(listPrefix, (_, data) => {
+  forEachListQuery<StxEntity>(keys.list.org(organizationId), (_, data) => {
     for (const item of getQueryItems(data)) if (item.id === entityId) patchInPlace(item);
   });
 }
 
-function removeEntityFromCache(entityType: string, entityId: string): void {
-  if (hasEntityQueryKeys(entityType)) {
-    const keys = getEntityQueryKeys(entityType);
-    queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
-  }
-}
-
 /** Removes one entity from detail and list caches without triggering a refetch; an organizationId narrows the list scan to that org. */
 export function removeEntity(entityType: string, entityId: string, organizationId?: string): void {
-  removeEntityFromCache(entityType, entityId);
-  if (hasEntityQueryKeys(entityType)) {
-    const keys = getEntityQueryKeys(entityType);
-    cacheRemove(organizationId ? keys.list.org(organizationId) : keys.list.base, [{ id: entityId }]);
-  }
+  if (!hasEntityQueryKeys(entityType)) return;
+  const keys = getEntityQueryKeys(entityType);
+  queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
+  cacheRemove(organizationId ? keys.list.org(organizationId) : keys.list.base, [{ id: entityId }]);
 }
 
 export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, refetchType: 'active' | 'none' = 'active'): void {
@@ -156,8 +147,8 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
   const equalityKeys = getEqualityFilterKeys(entityType);
   queryClient.invalidateQueries({
     queryKey: orgListKey,
-    predicate: (q) => {
-      const filters = q.queryKey.slice(2).filter((seg): seg is object => typeof seg === 'object' && seg !== null);
+    predicate: (query) => {
+      const filters = query.queryKey.slice(2).filter((segment): segment is object => typeof segment === 'object' && segment !== null);
       if (!filters.length) return false;
       if (!equalityKeys || !newRows.length) return true;
       return !newRows.every((row) => filtersExcludeRow(filters, asRecord(row), equalityKeys));
@@ -207,7 +198,7 @@ function applyServerEntity(
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
     console.warn(
-      `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache: ` +
+      `[CacheOps] New ${entityType} row ${entity.id} reached no list cache: ` +
         `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
     );
   }
@@ -217,39 +208,37 @@ function applyServerEntity(
 
 /** Fetches one entity through registered query defaults and applies it to caches, falling back to list invalidation. Stream org and tenant IDs pass through meta for path resolution. */
 export async function fetchEntityAndUpdateList(
+  entityType: ProductEntityType,
   entityId: string,
   keys: EntityQueryKeys,
   action: 'create' | 'update',
-  organizationId?: string,
-  tenantId?: string,
-  entityType?: ProductEntityType,
+  organizationId: string,
+  tenantId: string | null,
 ): Promise<void> {
   // Don't even fetch for entities with pending mutations; applyServerEntity re-checks on apply.
-  if (entityType && hasPendingMutationForEntity(entityType, entityId)) {
+  if (hasPendingMutationForEntity(entityType, entityId)) {
     console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId}, has pending mutation`);
     return;
   }
 
   // Read before the fetch, which writes the detail: without a list copy, the guard compares against the row as it was.
-  const cached = entityType ? findInCache<ItemData>(entityType, entityId) : undefined;
+  const cached = findInCache<ItemData>(entityType, entityId);
 
   try {
     const entity = await queryClient.query<ItemData>({
       queryKey: keys.detail.byId(entityId),
-      staleTime: 0, // Always fetch fresh on SSE notification
-      meta: organizationId ? { organizationId, tenantId } : undefined,
+      staleTime: 0,
+      meta: { organizationId, tenantId: tenantId ?? undefined },
     });
     if (!entity) return;
 
     // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
-    const listCopy = entityType ? findInCache<ItemData>(entityType, (item) => item.id === entityId) : undefined;
-    applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null, listCopy ?? cached);
+    const listCopy = findInCache<ItemData>(entityType, (item) => item.id === entityId);
+    applyServerEntity(entityType, entity, keys, organizationId, listCopy ?? cached);
     // The notification says create: active filtered lists refetch to place the new row.
-    if (action === 'create' && organizationId) {
-      invalidateFilteredLists(entityType ?? '', keys.list.org(organizationId), [entity]);
-    }
+    if (action === 'create') invalidateFilteredLists(entityType, keys.list.org(organizationId), [entity]);
   } catch {
-    // No query defaults registered for this entity type, fall back to list invalidation
+    // Any failure (no query defaults for the type, a network error, a 403 or 404): every list of the type refetches.
     invalidateEntityList(keys, 'all');
   }
 }
@@ -262,9 +251,11 @@ export interface RangeFetchResult {
   reachedSeq: number;
 }
 
-// Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
+const failedRange = (status: Exclude<RangeFetchResult['status'], 'ok'>): RangeFetchResult => ({ status, items: [], reachedSeq: 0 });
+
+/** The org sequence a product row carries, which `ItemData` does not type. */
 const seqOf = (item: ItemData): number | undefined => {
-  const seq = (item as { seq?: unknown }).seq;
+  const { seq } = asRecord(item);
   return typeof seq === 'number' ? seq : undefined;
 };
 
@@ -278,21 +269,21 @@ export async function fetchRangeAndPatch(
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} range fetch, falling back to invalidation`);
-    return { status: 'unsupported', items: [], reachedSeq: 0 };
+    return failedRange('unsupported');
   }
 
   const rangeFetch = getEntityRangeFetch(entityType);
-  if (!rangeFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
+  if (!rangeFetch) return failedRange('unsupported');
 
   const { afterSeq, untilSeq } = range;
   const label = `${entityType} after ${afterSeq} until ${untilSeq}`;
   try {
-    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: SYNC_CHUNK_SIZE } });
+    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: syncChunkSize } });
 
     // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
-    if (items.length >= SYNC_CHUNK_SIZE) {
+    if (items.length >= syncChunkSize) {
       console.debug(`[CacheOps] Range fetch: ${label} overflows one chunk → invalidation`);
-      return { status: 'overflow', items: [], reachedSeq: 0 };
+      return failedRange('overflow');
     }
 
     // A server that ignored the range answers with an ordinary page: rows outside it, and no deleted rows. Patching
@@ -303,7 +294,7 @@ export async function fetchRangeAndPatch(
     });
     if (outside) {
       console.warn(`[CacheOps] Range fetch: ${label} returned seq ${seqOf(outside)} → invalidation`);
-      return { status: 'unsupported', items: [], reachedSeq: 0 };
+      return failedRange('unsupported');
     }
 
     const newRows: ItemData[] = [];
@@ -320,6 +311,6 @@ export async function fetchRangeAndPatch(
     return { status: 'ok', items, reachedSeq };
   } catch (error) {
     console.warn(`[CacheOps] Range fetch failed for ${label}, falling back to invalidation`, error);
-    return { status: 'error', items: [], reachedSeq: 0 };
+    return failedRange('error');
   }
 }

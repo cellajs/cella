@@ -6,7 +6,7 @@ import { Alerter } from '~/modules/common/alerter/alerter';
 import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -14,18 +14,11 @@ import { lazyNamed } from '~/utils/lazy-named';
 const DebugDropdown =
   __DEV_TOOLS__ && appConfig.mode === 'development' ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
-/**
- * Layout for all public (unauthenticated) routes. The public SSE stream is mounted by `PublicContentLayout`
- * (a sublayout) only on routes that render synced public entities, so auth/error/marketing routes don't open one.
- */
+/** Layout of the public routes, which need no sign-in: their own overlay hosts, alerts and error boundary. */
 export function PublicLayout() {
   return (
-    <div id="publicLayout">
-      <ErrorBoundary
-        fallbackRender={({ error, resetErrorBoundary }) => (
-          <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
-        )}
-      >
+    <div>
+      <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <Alerter mode="public" />
         <Dialoger />
         <Dropdowner />

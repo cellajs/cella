@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -13,10 +13,9 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { mockUserResponse } from '#/modules/user/user-mocks';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, entityIdParamSchema, entityWithTypeQuerySchema, idsBodySchema, paginationSchema } from '#/schemas';
-import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockPaginatedInvitationsResponse, mockUploadTokenResponse } from './me-mocks';
+import { mockConnectedApp, mockPaginatedInvitationsResponse } from './me-mocks';
 
 const meRoutes = createXRoutes(['me', 'cella'], {
   getMe: xRoute({
@@ -25,7 +24,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get self',
     description: 'Returns the current user.',
-    responses: { 200: json('User', meSchema, mockMeResponse()) },
+    responses: { 200: json('User', meSchema) },
   }),
   getMyInvitations: xRoute({
     method: 'get',
@@ -43,7 +42,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Update self',
     description: 'Updates the current user.',
     request: { body: jsonBody(userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() })) },
-    responses: { 200: json('User', userSchema, mockUserResponse()) },
+    responses: { 200: json('User', userSchema) },
   }),
   deleteMe: xRoute({
     method: 'delete',
@@ -61,7 +60,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get auth data',
     description: 'Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.',
-    responses: { 200: json('User sign-up info', meAuthDataSchema, mockMeAuthResponse()) },
+    responses: { 200: json('User sign-up info', meAuthDataSchema) },
   }),
   revokeMySessions: xRoute({
     method: 'delete',
@@ -89,11 +88,12 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     method: 'get',
     path: '/upload-token',
     xGuard: [userGuard],
+    xRateLimiter: [uploadTokenLimiter],
     summary: 'Get upload token',
     description:
       'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',
     request: { query: uploadTokenQuerySchema },
-    responses: { 200: json('Upload token with a scope for a user or organization', uploadTokenSchema, mockUploadTokenResponse()) },
+    responses: { 200: json('Upload token with a scope for a user or organization', uploadTokenSchema) },
   }),
   toggleMfa: xRoute({
     method: 'put',
@@ -103,7 +103,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Toggle MFA',
     description: 'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
     request: { body: jsonBody(toggleMfaBodySchema) },
-    responses: { 200: json('User', userSchema, mockUserResponse()) },
+    responses: { 200: json('User', userSchema) },
   }),
   getMyMemberships: xRoute({
     method: 'get',

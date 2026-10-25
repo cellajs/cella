@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { TKey } from '~/lib/i18n-locales';
+import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import { cn } from '~/utils/cn';
 
-type SortOptionBase = { name: TKey; value: string; icon: IconComponent };
+interface SortOptionBase {
+  name: TKey;
+  value: string;
+  icon: IconComponent;
+}
 
 interface SelectSortProps<T extends readonly SortOptionBase[]> {
   sortOptions: T;
@@ -19,27 +22,17 @@ export function SelectSort<T extends readonly SortOptionBase[]>({ sortOptions, o
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  const selected = sortOptions.find((option) => option.value === value) ?? sortOptions[0];
+  const options = sortOptions.map((option) => ({ value: option.value, label: t(option.name), icon: <option.icon /> }));
 
   return (
-    <Select value={value} onValueChange={onChange} items={sortOptions.map((option) => ({ value: option.value, label: t(option.name) }))}>
-      <SelectTrigger
-        disabled={!isOnline}
-        aria-label={iconOnly ? `${t('c:sort')}: ${t(selected.name)}` : undefined}
-        className={cn('w-auto', className)}
-      >
-        {iconOnly ? <selected.icon /> : <SelectValue />}
-      </SelectTrigger>
-      <SelectContent align="end" className="min-w-48">
-        {sortOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <div className="flex items-center gap-2">
-              <option.icon />
-              <span>{t(option.name)}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <ResponsiveSelect
+      options={options}
+      value={value}
+      onChange={onChange}
+      title={t('c:sort')}
+      iconOnly={iconOnly}
+      className={className}
+      disabled={!isOnline}
+    />
   );
 }

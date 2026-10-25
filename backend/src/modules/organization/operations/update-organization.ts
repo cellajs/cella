@@ -1,16 +1,17 @@
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { withActorRef } from '#/modules/actors/actor-refs';
+import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
-import { withAuditUser } from '#/modules/user/operations/with-audit-users';
 import { getValidChannel } from '#/permissions';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
@@ -34,7 +35,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
     assertBlockMediaUrls(input.welcomeText as string, organization.id, 'organization', 'welcomeText');
   }
 
-  const values = { ...input, updatedAt: getIsoDate(), updatedBy: actorId };
+  const values = { ...input, ...updateStamps(actorId) };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
@@ -42,6 +43,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });
 
   invalidateCache.org(organization.tenantId, organization.id);
+  await releaseReplacedImages({ owner: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
@@ -53,7 +55,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
     counts,
   };
 
-  const organizationWithAudit = await withAuditUser(ctx, updatedOrganizationRecord);
+  const organizationWithAudit = await withActorRef(ctx, updatedOrganizationRecord);
 
   return { ...organizationWithAudit, included };
 }

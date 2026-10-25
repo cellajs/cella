@@ -83,7 +83,7 @@ the product by: a half-loaded table or a stray tooltip is worth another run.
 ## After
 
 - `frontend/src/modules/marketing/marketing-config.tsx` only needs a change when a filename, the `format` or the set
-  of slides changes; it lists the slides by URL and content type. `README.md` references two of the same files by
+  of slides changes; it lists each slide as `screenshot(path, name)`, and that helper holds the content type. `README.md` references two of the same files by
   path. A changed `format` leaves the files of the old one behind: delete them.
 - Replacing a file in place is enough for production: `infra/tasks/frontend-assets.ts` re-uploads a `static/` key when
   its ETag no longer matches, so no renaming is needed.

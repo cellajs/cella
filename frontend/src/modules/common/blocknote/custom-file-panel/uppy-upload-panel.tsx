@@ -1,13 +1,5 @@
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { useBlockNoteEditor, useExtension } from '@blocknote/react';
-import Audio from '@uppy/audio';
-import type { Body, Meta } from '@uppy/core';
-import ImageEditor from '@uppy/image-editor';
-import Dashboard from '@uppy/react/dashboard';
-import ScreenCapture from '@uppy/screen-capture';
-import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
-import Url from '@uppy/url';
-import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type UploadTemplateId } from 'shared';
@@ -16,17 +8,13 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blocknote/custom-file-panel/file-block-props';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
-import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
-import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
-import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers/uppy-helpers';
-import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
+import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
+import type { CustomUppy, CustomUppyOptions, UploadResults } from '~/modules/common/uploader/types';
+import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/modules/ui/ui-store';
-
-import '~/modules/common/uploader/uppy-styles';
 
 const basicBlockTypes = {
   image: { allowedFileTypes: ['image/*'], plugins: ['image-editor', 'screen-capture', 'webcam', 'url'] },
@@ -70,7 +58,6 @@ export function UppyFilePanel({
   onClose,
 }: UppyFilePanelProps) {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
 
   // Access the editor through a ref so a swapped editor instance does not re-run the setup effect.
@@ -92,7 +79,7 @@ export function UppyFilePanel({
     return block && block.type in basicBlockTypes ? (block.type as keyof typeof basicBlockTypes) : 'file';
   }, [blockId]);
 
-  const uppyOptions: CustomUppyOpt = useMemo(
+  const uppyOptions: CustomUppyOptions = useMemo(
     () => ({ restrictions: { ...appConfig.uppy.defaultRestrictions, allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes } }),
     [blockType],
   );
@@ -124,7 +111,7 @@ export function UppyFilePanel({
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, {
+        localUppy = await createUppy(uppyOptions, {
           templateId,
           // A system upload belongs to no organization, so its token request names none.
           organizationId: isSystemUploadTemplate(templateId) ? undefined : organizationId,
@@ -144,10 +131,11 @@ export function UppyFilePanel({
             if (size) imageSizesRef.current.set(file.meta.attachmentId, size);
           })
           .on('transloadit:complete', (assembly) => {
-            if (assembly?.error) throw new Error(assembly?.error);
+            // A failed assembly reaches the error listener above, which closes the panel
+            if (assembly.error) return;
 
             setOpen(false);
-            const results = assembly.results as UploadedUppyFile<UploadTemplateId>;
+            const results = assembly.results as UploadResults<UploadTemplateId>;
             // Parse once so the block reference and the persisted entity share the same id.
             const attachments = ownTemplateId ? [] : parseUploadedAttachments(results, organizationId);
             const fileBlocks = ownTemplateId
@@ -173,21 +161,7 @@ export function UppyFilePanel({
             if (!ownTemplateId) latestOnCompleteRef.current?.(attachments);
           });
 
-        const imageEditorOptions = getImageEditorOptions(templateId);
-        const webcamOptions: WebcamOptions<Meta, Body> = {
-          videoConstraints: { width: 1280, height: 720 },
-          preferredVideoMimeType: 'video/webm;codecs=vp9',
-        };
-
-        if (basicBlockTypes[blockType].plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
-        if (basicBlockTypes[blockType].plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
-        if (basicBlockTypes[blockType].plugins.includes('audio')) localUppy.use(Audio);
-        if (basicBlockTypes[blockType].plugins.includes('url')) {
-          localUppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
-        }
-        if (basicBlockTypes[blockType].plugins.includes('screen-capture')) {
-          localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
-        }
+        registerUppyPlugins(localUppy, basicBlockTypes[blockType].plugins, templateId);
 
         if (!isMounted) {
           localUppy.destroy();
@@ -219,14 +193,7 @@ export function UppyFilePanel({
         </DialogHeader>
 
         {uppy ? (
-          <Dashboard
-            uppy={uppy}
-            width="100%"
-            height="400px"
-            theme={mode}
-            note={generateRestrictionNote(uppyOptions.restrictions)}
-            proudlyDisplayPoweredByUppy={false}
-          />
+          <UploadDashboard uppy={uppy} />
         ) : (
           <div className="flex h-100 flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
             {isInitializing ? <Spinner noDelay /> : null}

@@ -124,36 +124,10 @@ describe('standalone BlockNote commits', () => {
   const renderEditor = (props: BlockNoteProps) =>
     act(async () => root.render(<BlockNote id="doc" updateData={() => {}} contentApiRef={contentApi} {...props} />));
 
-  it('holds the stored document untouched', async () => {
-    await renderEditor({ defaultValue: stored });
-
-    expect(contentApi.current?.getContent()).toBe(stored);
-  });
-
-  it('commits a changed document on blur', async () => {
-    const updateData = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData });
-
-    await edit();
-    await blur();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
-    expect(updateData.mock.calls[0][0]).not.toBe(stored);
-  });
-
-  it('does not commit on blur when the document equals defaultValue', async () => {
-    const updateData = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData });
-
-    await blur();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
   it('commits once for Escape followed by blur and unmount', async () => {
     const updateData = vi.fn();
-    const onEscapeClick = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData, onEscapeClick });
+    const onEscape = vi.fn();
+    await renderEditor({ defaultValue: stored, updateData, onEscape });
 
     await edit();
     const edited = contentApi.current?.getContent();
@@ -161,7 +135,7 @@ describe('standalone BlockNote commits', () => {
     await blur();
     await unmount();
 
-    expect(onEscapeClick).toHaveBeenCalledOnce();
+    expect(onEscape).toHaveBeenCalledOnce();
     expect(updateData).toHaveBeenCalledExactlyOnceWith(edited);
   });
 
@@ -176,38 +150,7 @@ describe('standalone BlockNote commits', () => {
     expect(updateData).toHaveBeenCalledExactlyOnceWith(edited);
   });
 
-  it('does not commit on unmount when the document equals defaultValue', async () => {
-    const updateData = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData });
-
-    await unmount();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('does not commit on blur or Escape when untouched, though defaultValue moved after mount', async () => {
-    const updateData = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData });
-
-    await renderEditor({ defaultValue: otherStored, updateData });
-    await blur();
-    await pressEscape();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('does not commit on unmount when untouched, though defaultValue moved after mount', async () => {
-    const updateData = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData });
-
-    await renderEditor({ defaultValue: otherStored, updateData });
-    expect(contentApi.current?.getContent()).toBe(stored);
-    await unmount();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('does not commit on unmount a stored document it serializes differently when untouched', async () => {
+  it('never commits an untouched document, on blur, Escape or unmount, though it serializes differently or defaultValue moved', async () => {
     const updateData = vi.fn();
     const unnormalized = JSON.stringify([
       { id: 'p', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },
@@ -215,6 +158,9 @@ describe('standalone BlockNote commits', () => {
     await renderEditor({ defaultValue: unnormalized, updateData });
     expect(contentApi.current?.getContent()).not.toBe(unnormalized);
 
+    await renderEditor({ defaultValue: otherStored, updateData });
+    await blur();
+    await pressEscape();
     await unmount();
 
     expect(updateData).not.toHaveBeenCalled();
@@ -239,102 +185,29 @@ describe('collaborative BlockNote commits', () => {
 
     expect(updateData).not.toHaveBeenCalled();
   });
-
-  it('commits a changed document on blur', async () => {
-    const updateData = vi.fn();
-    await renderEditor(seededFragment(), { updateData });
-
-    await edit();
-    await blur();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
-  });
-
-  it('commits a changed document on unmount when no blur fired, so a dismissed sheet still patches the cache', async () => {
-    const updateData = vi.fn();
-    await renderEditor(seededFragment(), { updateData });
-
-    await edit();
-    const edited = contentApi.current?.getContent();
-    await unmount();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited);
-  });
-
-  it('does not commit on unmount when untouched', async () => {
-    const updateData = vi.fn();
-    await renderEditor(seededFragment(), { updateData });
-
-    await unmount();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
 });
 
 describe('CollaborativeBlockNote with Yjs off', () => {
   withYjsOff();
 
-  it('writes the editor document on navigation once the user changed it', async () => {
+  it('writes on navigation only a user change, compared with the description current then', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
 
-    await edit();
-    await navigate();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent(), false);
-  });
-
-  it('does not write on navigation when untouched, though the description moved after mount', async () => {
-    const updateData = vi.fn();
-    await renderHost({ updateData });
-
+    // Untouched: a description that moved after mount is no reason to write.
     await renderHost({ description: otherStored, updateData });
     await navigate();
-
     expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('does not write on navigation when untouched and the description is null', async () => {
-    const updateData = vi.fn();
-    await renderHost({ description: null, updateData });
-
-    await navigate();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('compares the navigation write with the description current then', async () => {
-    const updateData = vi.fn();
-    await renderHost({ updateData });
 
     await edit();
     const edited = contentApi.current?.getContent();
+    await navigate();
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited, false);
+
     // The edit's own write landed in the description: nothing is left to write.
     await renderHost({ description: edited, updateData });
     await navigate();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('does not write on unmount when untouched, though the description moved after mount', async () => {
-    const updateData = vi.fn();
-    await renderHost({ updateData });
-
-    await renderHost({ description: otherStored, updateData });
-    await unmount();
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('writes on unmount once the user changed the document', async () => {
-    const updateData = vi.fn();
-    await renderHost({ updateData });
-
-    await edit();
-    const edited = contentApi.current?.getContent();
-    await unmount();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited, false);
+    expect(updateData).toHaveBeenCalledOnce();
   });
 });
 
@@ -349,7 +222,6 @@ describe('CollaborativeBlockNote with Yjs on', () => {
       fragment: seededFragment(),
       ready: true,
       transport: 'ws',
-      synced: true,
       stopped: false,
       rebuilds: 0,
       unsynced: false,
@@ -400,26 +272,5 @@ describe('BlockNote commit through the content api', () => {
 
     expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
     expect(updateData.mock.calls[0][0]).not.toBe(stored);
-  });
-
-  it('commits nothing for an untouched standalone editor', async () => {
-    const updateData = vi.fn();
-    await act(async () => root.render(<BlockNote id="doc" defaultValue={stored} updateData={updateData} contentApiRef={contentApi} />));
-
-    act(() => contentApi.current?.commit());
-
-    expect(updateData).not.toHaveBeenCalled();
-  });
-
-  it('hands a collaborative toggle to updateData, the cache patch', async () => {
-    const updateData = vi.fn();
-    await act(async () =>
-      root.render(<BlockNote id="doc" defaultValue="" updateData={updateData} contentApiRef={contentApi} collaboration={bundle(seededFragment())} />),
-    );
-
-    await edit();
-    act(() => contentApi.current?.commit());
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
   });
 });

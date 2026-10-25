@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db, openDedicatedConnection } from '#/db/db';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
@@ -140,6 +140,8 @@ describe('last organization admin', async () => {
       headers: headers(member),
     });
     expect(deleted.response.status).toBe(200);
-    expect(await db.select().from(organizationsTable).where(eq(organizationsTable.id, org.id))).toHaveLength(0);
+    // Deleting archives the tenant; the archived-tenant sweep removes the organization later.
+    const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));
+    expect(tenant.status).toBe('archived');
   });
 });

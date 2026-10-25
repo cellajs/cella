@@ -8,7 +8,7 @@ import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DocScope } from '../../constants';
 import { buildSyncUpdate, createSignedToken, mapUpdate, openSocket, readMap, startRelayServer, until } from '../helpers';
-import { cleanupSeed, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser, storedState } from './seed';
+import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser, storedState } from './seed';
 
 // The real upgrade handler, authorization, relay and storage over the real database (runtime_role); only the
 // backend's materialize route and the connection limiter are stubbed.
@@ -36,6 +36,7 @@ beforeAll(async () => {
   await seedEntityHierarchy(admin, plan, tenantId, member, 'yjs-revoke');
   // A plain member, who may edit what they created: the attachment is theirs.
   await seedMembership(admin, tenantId, organizationId, member, hierarchy.getLeastPrivilegedRole('organization'));
+  await joinAttachmentHome(admin, tenantId, organizationId, plan, member);
   await seedAttachment(admin, attachmentId, tenantId, plan, member);
 });
 

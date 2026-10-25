@@ -7,7 +7,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { paginationSchema, tenantOnlyParamSchema } from '#/schemas';
-import { mockPaginatedTenantsResponse, mockTenantResponse } from './tenants-mocks';
+import { mockPaginatedTenantsResponse } from './tenants-mocks';
 import { selfCreateTenantBodySchema, tenantListQuerySchema, tenantSchema, updateTenantBodySchema } from './tenants-schema';
 
 export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
@@ -30,7 +30,7 @@ export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     description:
       'Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.',
     request: { body: jsonBody(selfCreateTenantBodySchema) },
-    responses: { 200: json('Created tenant', tenantSchema, mockTenantResponse()) },
+    responses: { 200: json('Created tenant', tenantSchema) },
   }),
 
   updateTenant: xRoute({
@@ -41,6 +41,6 @@ export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(updateTenantBodySchema) },
-    responses: { 200: json('Updated tenant', tenantSchema, mockTenantResponse()) },
+    responses: { 200: json('Updated tenant', tenantSchema) },
   }),
 });

@@ -1,3 +1,4 @@
+export { BaseEntityGrid } from '~/modules/entities/entity-grid/base-entity-grid';
 export {
   ChannelTile,
   ChannelTileBanner,
@@ -10,7 +11,5 @@ export {
   ChannelTileParentChip,
   ChannelTileRow,
   ChannelTileStats,
-} from './channel-tile';
-export { EntityGridBar, type EntityGridSortOption } from './entity-grid-bar';
-export { BaseEntityGrid } from './grid';
-export { EntityGridSkeleton } from './skeleton';
+} from '~/modules/entities/entity-grid/channel-tile';
+export { EntityGridBar } from '~/modules/entities/entity-grid/entity-grid-bar';

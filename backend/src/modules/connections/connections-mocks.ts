@@ -1,4 +1,5 @@
 import { mockTenantId, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
+import { mockActorRef } from '#/schemas/entity-base-mocks';
 
 export const mockConnectionResponse = (key = 'connection:default') =>
   withFakerSeed(key, () => ({
@@ -11,6 +12,7 @@ export const mockConnectionResponse = (key = 'connection:default') =>
     status: 'active' as const,
     jitProvisioning: true,
     config: { idpEntityIds: ['https://login.uu.nl/nidp/saml2/metadata'] },
-    createdBy: mockUuid(),
+    createdBy: mockActorRef(`${key}:created-by`),
+    updatedBy: null,
     ...mockTimestamps(),
   }));

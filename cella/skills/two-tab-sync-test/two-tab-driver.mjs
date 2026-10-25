@@ -3,7 +3,7 @@
 // Usage, from the repo root: [EMAIL=<user email>] [ORG_PATH=<tenantId>/<orgSlug>] [OUT_DIR=...] node cella/skills/two-tab-sync-test/two-tab-driver.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { caretToEnd, chromium, editorText, exactText, mintSession, rowByName } from './driver-lib.mjs';
+import { caretToEnd, chromium, editorText, endSession, exactText, mintSession, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
 const SHOTS = join(OUT, 'shots');
@@ -12,7 +12,8 @@ mkdirSync(SHOTS, { recursive: true });
 const EMAIL = process.env.EMAIL ?? 'xbench-user-0000@xbench.local';
 const ORG_PATH = process.env.ORG_PATH ?? 'xbench/xbench-org';
 
-const { base: BASE, cookie: COOKIE } = mintSession(EMAIL);
+const session = mintSession(EMAIL);
+const { base: BASE, cookie: COOKIE } = session;
 const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
 
 const evidence = [];
@@ -254,5 +255,6 @@ try {
 } finally {
   writeFileSync(join(OUT, 'evidence.json'), JSON.stringify(evidence, null, 1));
   await browser.close();
+  await endSession(session);
   console.log(`\nEvidence: ${evidence.length} entries -> ${join(OUT, 'evidence.json')}`);
 }

@@ -1,16 +1,13 @@
-import { onlineManager } from '@tanstack/react-query';
 import { TrashIcon, UploadIcon } from 'lucide-react';
-import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-avatar';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { openImageUpload } from '~/modules/common/uploader/open-image-upload';
 import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 
-interface Props {
+interface AvatarFormFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: Accept any form shape
   form: UseFormReturn<any>;
   name: string;
@@ -19,45 +16,21 @@ interface Props {
   type: EntityAvatarProps['type'];
 }
 
-export function AvatarFormField({ form, label, name, entity, type }: Props) {
+export function AvatarFormField({ form, label, name, entity, type }: AvatarFormFieldProps) {
   const { t } = useTranslation();
-  const uploadButtonRef = useRef(null);
-  const createUpload = useUploader((state) => state.create);
-  const removeUpload = useUploader((state) => state.remove);
 
-  const { control } = form;
-  const url = form.getValues(name);
-
-  const handleUpdateURL = (key: string | null) => {
-    const urlWithPublicCDN = key ? `${appConfig.s3.publicCDNUrl}/${key}` : null;
-    form.setValue(name, urlWithPublicCDN, { shouldDirty: true });
-  };
+  const setUrl = (url: string | null) => form.setValue(name, url, { shouldDirty: true });
 
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    // A user has a profile picture, any other entity a logo.
-    const image = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
-    createUpload({
-      id: 'upload-image',
-      personalUpload: true,
-      plugins: ['webcam', 'image-editor', 'url'],
-      templateId: 'avatar',
-      statusEventHandler: {
-        onComplete(result) {
-          const url = result.thumbnail[0].url;
-          if (url) handleUpdateURL(url);
-          removeUpload();
-        },
-      },
-      title: t('c:upload_item', { item: image.toLowerCase() }),
-    });
+    const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
+    openImageUpload({ templateId: 'avatar', title: t('c:upload_item', { item: imageName.toLowerCase() }), onUploaded: setUrl });
   };
 
   return (
     <FormField
-      control={control}
+      control={form.control}
       name={name}
-      render={() => (
+      render={({ field: { value: url } }) => (
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <div className="flex gap-4">
@@ -71,14 +44,14 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
               )}
               <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (
-                  <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
+                  <Button variant="plain" type="button" size="sm" onClick={openUploadDialog}>
                     <UploadIcon />
                     <span>{t('c:upload')}</span>
                   </Button>
                 )}
 
                 {url && (
-                  <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
+                  <Button variant="secondary" onClick={() => setUrl(null)} size="sm" aria-label={t('c:remove')}>
                     <TrashIcon />
                   </Button>
                 )}

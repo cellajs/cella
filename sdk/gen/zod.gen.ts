@@ -3,7 +3,18 @@
 import * as z from 'zod';
 
 /**
- * The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.
+ * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
+ */
+export const zActorRef = z.object({
+  id: z.string(),
+  kind: z.enum(['user', 'service']),
+  name: z.string(),
+  slug: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
+});
+
+/**
+ * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
  */
 export const zUserMinimalBase = z.object({
   id: z.string(),
@@ -45,7 +56,7 @@ export const zChannelBase = z.object({
 });
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.
+ * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
  */
 export const zProductBase = z.object({
   id: z.string(),
@@ -53,8 +64,6 @@ export const zProductBase = z.object({
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   description: z.string().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   entityType: z.enum(['attachment']),
   keywords: z.string(),
 });
@@ -128,6 +137,7 @@ export const zApiError = z.object({
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
   requestId: z.string().optional(),
+  version: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
   timestamp: z.string().optional(),
@@ -237,7 +247,6 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
   lastSeenAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
 });
@@ -252,10 +261,17 @@ export const zMe = z.object({
 });
 
 /**
- * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export const zMeAuthData = z.object({
-  enabledOAuth: z.array(z.enum(['github'])),
+  oauthIdentities: z.array(
+    z.object({
+      provider: z.enum(['github']),
+      email: z.string().nullable(),
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    }),
+  ),
   institutions: z.array(
     z.object({
       connectionId: z.string(),
@@ -264,10 +280,21 @@ export const zMeAuthData = z.object({
         key: z.string(),
         label: z.string(),
       }),
-      connected: z.boolean(),
+      identity: z
+        .object({
+          email: z.string().nullable(),
+          createdAt: z.string(),
+          lastUsedAt: z.string().nullable(),
+        })
+        .nullable(),
     }),
   ),
-  hasTotp: z.boolean(),
+  totp: z
+    .object({
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    })
+    .nullable(),
   sessions: z.array(
     z.object({
       id: z.uuid(),
@@ -324,7 +351,7 @@ export const zInactiveMembership = z.object({
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
   remindedAt: z.string().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
+  createdBy: zActorRef.nullable(),
   organizationId: z.uuid(),
 });
 
@@ -378,6 +405,7 @@ export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string().max(255),
   status: z.enum(['active', 'suspended', 'archived']),
+  statusChangedAt: z.string(),
   restrictions: z.object({
     quotas: z.record(z.string(), z.int().gte(0)),
     rateLimits: z.object({
@@ -386,12 +414,13 @@ export const zTenant = z.object({
     allowUnregisteredClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])),
-  createdBy: z.uuid().nullable(),
   subscriptionId: z.string().max(255).nullable(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   organization: z
     .object({
       id: z.string(),
@@ -419,9 +448,10 @@ export const zConnection = z.object({
     idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
     logoUrl: z.url().max(255).optional(),
   }),
-  createdBy: z.uuid().nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
 });
 
 /**
@@ -439,30 +469,30 @@ export const zProtectedResourceMetadata = z.object({
  * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
  */
 export const zOrganization = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   entityType: z.enum(['organization']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
+  createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   slug: z.string().max(255),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   publishedAt: z.string().nullable(),
-  publicAt: z.string().nullable(),
+  public: z.boolean(),
   toolsConfig: z.object({
     'organization.settings': z
       .object({
-        order: z.array(z.string()).optional(),
-        hidden: z.array(z.string()).optional(),
+        order: z.array(z.string()).max(100).optional(),
+        hidden: z.array(z.string()).max(100).optional(),
       })
       .optional(),
     'organization.tabs': z
       .object({
-        order: z.array(z.string()).optional(),
-        hidden: z.array(z.string()).optional(),
+        order: z.array(z.string()).max(100).optional(),
+        hidden: z.array(z.string()).max(100).optional(),
       })
       .optional(),
   }),
@@ -512,20 +542,20 @@ export const zOrganization = z.object({
  * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
  */
 export const zAttachment = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   entityType: z.enum(['attachment']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
+  createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   deletedAt: z.string().nullable(),
-  deletedBy: z.uuid().nullable(),
-  publicAt: z.string().nullable(),
+  deletedBy: zActorRef.nullable(),
+  public: z.boolean(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
   publicBucket: z.boolean(),
   bucketName: z.string().max(255),
@@ -542,6 +572,14 @@ export const zAttachment = z.object({
   }),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
+});
+
+export const zInviteOutcome = z.object({
+  email: z.email(),
+  outcome: z.enum(['invite', 'remind', 'add', 'member']),
+  invitedAt: z.string().optional(),
+  declinedAt: z.string().optional(),
+  role: z.enum(['admin', 'member']).optional(),
 });
 
 /**
@@ -561,10 +599,10 @@ export const zServiceAccount = z.object({
     }),
   ),
   oauthClientId: z.string().max(255).nullable(),
-  createdBy: z.uuid().nullable(),
-  updatedBy: z.uuid().nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   lastSeenAt: z.string().nullable(),
 });
 
@@ -582,7 +620,7 @@ export const zApiKey = z.object({
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
+  createdBy: zActorRef.nullable(),
   createdAt: z.string(),
 });
 
@@ -609,6 +647,13 @@ export const zCheckEmailBody = z.object({
  */
 export const zCheckEmailResponse = z.object({
   recognized: z.boolean(),
+});
+
+/**
+ * The address of the account the held challenge signs in to
+ */
+export const zGetPendingMfaResponse = z.object({
+  email: z.string(),
 });
 
 export const zInvokeTokenPath = z.object({
@@ -723,7 +768,7 @@ export const zCreatePasskeyBody = z.object({
       clientDataJSON: z.string(),
       attestationObject: z.string(),
       authenticatorData: z.string().optional(),
-      transports: z.array(z.string()).optional(),
+      transports: z.array(z.string()).max(10).optional(),
       publicKeyAlgorithm: z.number().optional(),
       publicKey: z.string().optional(),
     }),
@@ -955,7 +1000,10 @@ export const zPostAppCatchupBody = z.object({
         key: z.string().max(512),
         organizationId: z.string(),
         prefixes: z.array(z.string().max(512)).min(1).max(64),
-        entityTypes: z.array(z.enum(['attachment'])).min(1),
+        entityTypes: z
+          .array(z.enum(['attachment']))
+          .min(1)
+          .max(64),
         depth: z.enum(['self', 'subtree']).optional(),
         cursor: z.int().gte(0),
       }),
@@ -1451,10 +1499,21 @@ export const zUpdateTenantBody = z.object({
   subscriptionId: z.string().max(255).nullish(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
   subscriptionPlan: z.string().max(255).nullish(),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])).optional(),
+  authStrategies: z
+    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']))
+    .max(8)
+    .optional(),
   restrictions: z
     .object({
-      quotas: z.record(z.string(), z.int().gte(0)).optional(),
+      quotas: z
+        .object({
+          user: z.int().gte(0).optional(),
+          organization: z.int().gte(0).optional(),
+          attachment: z.int().gte(0).optional(),
+          serviceAccount: z.int().gte(0).optional(),
+          apiKey: z.int().gte(0).optional(),
+        })
+        .optional(),
       allowUnregisteredClients: z.boolean().optional(),
       rateLimits: z
         .object({
@@ -1648,6 +1707,7 @@ export const zCreateOrganizationsBody = z
         .min(2)
         .max(255)
         .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/),
+      draft: z.boolean().optional(),
     }),
   )
   .min(1)
@@ -1762,6 +1822,7 @@ export const zUpdateOrganizationBody = z.object({
   languages: z
     .array(z.enum(['en', 'nl']))
     .min(1)
+    .max(64)
     .optional(),
   notificationEmail: z.string().max(255).nullish(),
   color: z.string().max(255).nullish(),
@@ -1777,14 +1838,14 @@ export const zUpdateOrganizationBody = z.object({
     .object({
       'organization.settings': z
         .object({
-          order: z.array(z.string()).optional(),
-          hidden: z.array(z.string()).optional(),
+          order: z.array(z.string()).max(100).optional(),
+          hidden: z.array(z.string()).max(100).optional(),
         })
         .optional(),
       'organization.tabs': z
         .object({
-          order: z.array(z.string()).optional(),
-          hidden: z.array(z.string()).optional(),
+          order: z.array(z.string()).max(100).optional(),
+          hidden: z.array(z.string()).max(100).optional(),
         })
         .optional(),
     })
@@ -1800,6 +1861,19 @@ export const zUpdateOrganizationPath = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = zOrganization;
+
+export const zPublishOrganizationPath = z.object({
+  tenantId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Organization was published
+ */
+export const zPublishOrganizationResponse = z.object({
+  organization: zOrganization,
+  invitationsSent: z.int().gte(0),
+});
 
 export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
@@ -1865,7 +1939,6 @@ export const zCreateAttachmentsBody = z
       }),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
-      publicAt: z.string().nullish(),
       stx: zStxBase,
     }),
   )
@@ -2036,7 +2109,7 @@ export const zMembershipInviteQuery = z.object({
 });
 
 /**
- * Created memberships and invite count
+ * What happened to each address
  */
 export const zMembershipInviteResponse = z.object({
   data: z.array(
@@ -2053,9 +2126,29 @@ export const zMembershipInviteResponse = z.object({
       displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
     }),
   ),
-  rejectedIds: z.array(z.string()),
-  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
-  invitesSentCount: z.number(),
+  outcomes: z.array(zInviteOutcome),
+  held: z.boolean(),
+});
+
+export const zCheckMembershipInviteBody = z.object({
+  emails: z.array(z.email().min(4).max(255)).min(1).max(50),
+});
+
+export const zCheckMembershipInvitePath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zCheckMembershipInviteQuery = z.object({
+  entityId: z.string().max(50),
+  entityType: z.enum(['organization']),
+});
+
+/**
+ * What an invite would do with each address
+ */
+export const zCheckMembershipInviteResponse = z.object({
+  outcomes: z.array(zInviteOutcome),
 });
 
 export const zUpdateMembershipBody = z.object({
@@ -2082,9 +2175,9 @@ export const zUpdateMembershipResponse = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  createdBy: z.uuid().nullable(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
+  updatedBy: zActorRef.nullable(),
   organizationId: z.uuid(),
   archived: z.boolean().optional(),
   muted: z.boolean().optional(),
@@ -2182,7 +2275,8 @@ export const zGetPendingMembershipsResponse = z.object({
       email: z.email(),
       role: z.enum(['admin', 'member']).nullable(),
       createdAt: z.string(),
-      createdBy: zUserMinimalBase.nullable(),
+      remindedAt: z.string().nullable(),
+      createdBy: zActorRef.nullable(),
     }),
   ),
   total: z.number(),
@@ -2198,6 +2292,17 @@ export const zResendPendingInvitationPath = z.object({
  * Invitation resent
  */
 export const zResendPendingInvitationResponse = z.void();
+
+export const zWithdrawPendingInvitationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Invitation withdrawn
+ */
+export const zWithdrawPendingInvitationResponse = z.void();
 
 export const zMarkSeenBody = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500),
@@ -2252,6 +2357,7 @@ export const zCreateServiceAccountBody = z.object({
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
+        .max(4)
         .nullish(),
       expiresAt: z.iso.datetime().optional(),
     })
@@ -2320,6 +2426,7 @@ export const zCreateApiKeyBody = z.object({
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)
+    .max(4)
     .nullish(),
   expiresAt: z.iso.datetime().optional(),
   rollFrom: z.string().max(50).optional(),

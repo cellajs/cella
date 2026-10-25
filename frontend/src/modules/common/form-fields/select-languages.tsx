@@ -1,11 +1,10 @@
-import { CheckIcon, ChevronDownIcon } from 'lucide-react';
+import { CheckIcon } from 'lucide-react';
 import { type CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 
 interface SelectLanguagesProps {
   value: Language[];
@@ -26,7 +25,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
 
   const toggleLanguage = (language: Language) => {
     if (selected.includes(language) && selected.length === 1) return;
-    const next = selected.includes(language) ? selected.filter((l) => l !== language) : [...selected, language];
+    const next = selected.includes(language) ? selected.filter((lang) => lang !== language) : [...selected, language];
     setSelected(next);
     onChange(next);
   };
@@ -35,34 +34,30 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
     <div
       role="listbox"
       aria-multiselectable="true"
-      className="relative overflow-hidden rounded-lg sm:w-(--trigger-width)"
+      className="max-h-[30vh] overflow-y-auto rounded-lg p-1 sm:w-(--trigger-width)"
       style={{ '--trigger-width': `${triggerWidth}px` } as CSSProperties}
     >
-      <div className="max-h-[30vh] overflow-y-auto p-1">
-        {options.map((option) => (
-          <div
-            key={option.value}
-            role="option"
-            aria-selected={selected.includes(option.value)}
-            className="relative flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground aria-selected:font-medium"
-            onClick={() => toggleLanguage(option.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleLanguage(option.value);
-              }
-            }}
-            tabIndex={0}
-          >
-            <div className="flex flex-nowrap items-center truncate">
-              <span className="truncate" lang={option.value}>
-                {option.label}
-              </span>
-            </div>
-            <CheckIcon strokeWidth={3} className={cn('text-success', !selected.includes(option.value) && 'invisible')} />
-          </div>
-        ))}
-      </div>
+      {options.map((option) => (
+        <div
+          key={option.value}
+          role="option"
+          aria-selected={selected.includes(option.value)}
+          className="group/language-option flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground active:bg-accent aria-selected:font-medium"
+          onClick={() => toggleLanguage(option.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggleLanguage(option.value);
+            }
+          }}
+          tabIndex={0}
+        >
+          <span className="truncate" lang={option.value}>
+            {option.label}
+          </span>
+          <CheckIcon className="invisible text-success group-aria-selected/language-option:visible" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -72,7 +67,7 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();
 
   const openDropdown = () => {
-    useDropdowner.getState().create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
+    dropdowner.getState().create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
       id: 'select-languages',
       triggerId: 'select-languages',
       triggerRef,
@@ -80,30 +75,27 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   };
 
   return (
-    <Button
-      type="button"
+    <InputTriggerButton
       ref={triggerRef}
       disabled={appConfig.languages.length < 2}
-      variant="input"
       aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
-      className="w-full justify-between font-normal data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
+      className="w-full data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
       onClick={openDropdown}
     >
       {value.length > 0 ? (
-        <div className="flex flex-nowrap items-center truncate">
+        <div className="flex items-center truncate">
           {value.map((lang, index) => (
-            <span key={lang} className="mr-2 flex flex-nowrap items-center truncate">
+            <span key={lang} className="mr-2 flex items-center truncate">
               <span className="truncate" lang={lang}>
                 {t(`c:${lang}`)}
               </span>
-              {index !== value.length - 1 && <span className="ml-1">,</span>}
+              {index !== value.length - 1 && ','}
             </span>
           ))}
         </div>
       ) : (
         <span className="text-muted-foreground">{t('c:placeholder.select_languages')}</span>
       )}
-      <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
-    </Button>
+    </InputTriggerButton>
   );
 }

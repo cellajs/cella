@@ -6,7 +6,7 @@ import type { FailedSyncRecord } from '~/query/offline/failed-sync';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
-/** Generic key/value row backing migrated zustand stores (value = JSON string). */
+/** A key/value row of a per-user zustand store. */
 export interface KvRecord {
   /** Store base name, e.g. `seen`, `sync`, `navigation`. */
   key: string;
@@ -25,9 +25,9 @@ export interface PersistedQueryRecord {
   dataUpdatedAt: number;
 }
 
-/** React Query meta row, one per scope, bundling context queries, mutations, and cache-bust version. */
+/** A React Query meta row: a scope's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
 export interface PersistedMetaRecord {
-  /** Scope key: `rq` (offline) or `s-<uuid>` (session). */
+  /** A scope's row: `rq` (offline) or `s-<uuid>` (session). A tab's row: `<scope>:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
   buster: string;
@@ -36,7 +36,7 @@ export interface PersistedMetaRecord {
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
   mutations: DehydratedState['mutations'];
-  /** Context queries bundled directly in meta. */
+  /** The bundled queries. The stored name stays: renaming it orphans every stored bundle. */
   channelQueries: DehydratedQuery[];
 }
 
@@ -46,10 +46,14 @@ export interface YDocKey {
   entityId: string;
 }
 
-/** A stored document's metadata. Its state lives apart, so eviction, the byte budget and the sign-out list read no state. */
-export interface YDocRecord extends YDocKey {
+/** One collaborative document: its entity, and the tenant and organization its token and HTTP routes check it in. */
+export interface YjsDocScope extends YDocKey {
   tenantId: string;
   organizationId: string;
+}
+
+/** A stored document's metadata. Its state lives apart, so eviction, the byte budget and the sign-out list read no state. */
+export interface YDocRecord extends YjsDocScope {
   /** The document's generation as the relay announced it; another one means the server reseeded the document. */
   generation: string;
   /** The server's state vector as the last proof established it; null before the first. */
@@ -82,10 +86,8 @@ export interface YDocUpdateRecord extends YDocKey {
 export type UnsaveableReason = 'deleted' | 'denied' | 'replaced' | 'refused';
 
 /** Edits that can never be saved, kept until the user copies or discards them. */
-export interface UnsaveableYDocRecord extends YDocKey {
+export interface UnsaveableYDocRecord extends YjsDocScope {
   id?: number;
-  tenantId: string;
-  organizationId: string;
   generation: string;
   reason: UnsaveableReason;
   state: Uint8Array;
@@ -120,7 +122,7 @@ export class LocalUserDatabase extends Dexie {
   blobs!: Dexie.Table<AttachmentBlob, string>;
   /** Background download queue for offline attachment caching. */
   downloadQueue!: Dexie.Table<DownloadQueueEntry, string>;
-  /** Quarantined mutations that exhausted retries (offline replay failures). */
+  /** Queued mutations kept for repair: replays the server refused with a 4xx, and ones this bundle cannot read. */
   failedSync!: Dexie.Table<FailedSyncRecord, number>;
   /** Collaborative documents opened for editing: metadata only, so a scan over all of them loads no state. */
   yDocs!: Dexie.Table<YDocRecord, [ProductEntityType, string]>;
@@ -176,14 +178,14 @@ export function bindLocalUserDb(ownerId: string): LocalUserDatabase {
   return currentDb;
 }
 
-/** Close and unbind the current per-user DB (sign-out / account switch). */
+/** Close and unbind the current per-user DB; its data stays on disk. */
 export function closeLocalUserDb(): void {
   currentDb?.close();
   currentDb = null;
   currentOwnerId = null;
 }
 
-/** Permanently delete the current per-user DB for account removal. */
+/** Close the current per-user DB and delete it from disk: a hard sign-out. */
 export async function deleteLocalUserDb(): Promise<void> {
   const owner = currentOwnerId;
   closeLocalUserDb();

@@ -9,7 +9,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization } from '../helpers';
-import { attachmentBody, cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
+import { attachmentBody, cleanupEntityHierarchy, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -60,9 +60,11 @@ describe('Idempotent attachment creates', async () => {
     owner = await createOrgUser(call, organization.tenantId, organization.id, 'idempotency-owner');
     other = await createOrgUser(call, organization.tenantId, organization.id, 'idempotency-other');
     plan = await seedAttachmentHome(organization, owner.id);
+    for (const user of [owner, other]) await joinAttachmentHome(organization, plan, user.id);
 
     elsewhere = await createTestOrganization();
     planElsewhere = await seedAttachmentHome(elsewhere, owner.id);
+    await joinAttachmentHome(elsewhere, planElsewhere, owner.id);
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId: owner.id,

@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { ContactPage } from '~/modules/marketing/contact-page';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/_marketing/contact')({
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Contact') }] }),
+  head: () => pageHead(i18n.t('c:contact')),
   component: ContactPage,
 });

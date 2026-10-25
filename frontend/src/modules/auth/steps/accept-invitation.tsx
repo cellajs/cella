@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import type { TokenData } from '~/modules/auth/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
@@ -10,7 +11,7 @@ import type { MeUser } from '~/modules/me/types';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 
-interface Props {
+interface AcceptInvitationStepProps {
   tokenData: TokenData;
   user: MeUser;
 }
@@ -19,7 +20,7 @@ interface Props {
  * Confirm step for a signed-in visitor holding an invitation token. Accepting joins as the signed-in account, also when
  * the invitation was sent to another address, so nothing happens without an explicit click and both identities are named.
  */
-export function AcceptInvitationStep({ tokenData, user }: Props) {
+export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -35,8 +36,9 @@ export function AcceptInvitationStep({ tokenData, user }: Props) {
   if (boundToOther) {
     return (
       <>
-        <h1 className="text-center text-2xl">{t('error:user_mismatch')}</h1>
-        <p className="text-center font-light">{t('error:user_mismatch.text')}</p>
+        <AuthHeader title={t('error:user_mismatch')}>
+          <p className="font-light">{t('error:user_mismatch.text')}</p>
+        </AuthHeader>
         <Button className="w-full" onClick={leave}>
           {t('c:continue')}
         </Button>
@@ -46,18 +48,20 @@ export function AcceptInvitationStep({ tokenData, user }: Props) {
 
   return (
     <>
-      {invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="mx-auto size-14" />}
-      <h1 className="text-center text-2xl">{t('c:invite_accept_as_account')}</h1>
-
-      {invitation && (
-        <p className="text-center font-light">
-          {t('c:invite_accept_as_account.text', {
-            inviterName: invitation.inviterName,
-            entityName: invitation.entityName,
-            role: t(`c:${invitation.role}`).toLowerCase(),
-          })}
-        </p>
-      )}
+      <AuthHeader
+        image={invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-14" />}
+        title={t('c:invite_accept_as_account')}
+      >
+        {invitation && (
+          <p className="font-light">
+            {t('c:invite_accept_as_account.text', {
+              inviterName: invitation.inviterName,
+              entityName: invitation.entityName,
+              role: t(`c:${invitation.role}`).toLowerCase(),
+            })}
+          </p>
+        )}
+      </AuthHeader>
 
       {otherAddress && (
         <Alert variant="warning">

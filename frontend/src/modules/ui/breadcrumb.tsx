@@ -1,10 +1,12 @@
 import { useRender } from '@base-ui/react/use-render';
 import { ChevronRightIcon } from 'lucide-react';
-import type React from 'react';
+import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 
 function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+  const { t } = useTranslation();
+  return <nav aria-label={t('c:breadcrumb')} data-slot="breadcrumb" {...props} />;
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {

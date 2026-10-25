@@ -1,79 +1,75 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { t } from 'i18next';
+import type { UploadTemplateId } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
-import type { UploadContext, UploadStatus } from '~/modules/attachment/offline/attachments-db';
+import type { UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
-type PrepareFilesForOffline = (
-  files: Record<string, CustomUppyFile>,
-  tokenQuery: UploadTokenQuery,
-  uploadStatus?: UploadStatus,
-) => Promise<AssemblyResponse>;
+/** Stores each file's blob locally, under the id its attachment row will be created with. */
+export const storeUploadBlobs = async (files: CustomUppyFile[], organizationId: string, templateId: UploadTemplateId, status: UploadStatus) => {
+  for (const file of files) await attachmentStorage.storeUploadBlob(file, organizationId, status, { templateId }, file.meta.attachmentId);
+};
 
-/**
- * Prepares files for offline/local storage and returns an assembly response.
- * Stores blobs in Dexie; the upload service uploads them once cloud storage is reachable.
- */
-export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, uploadStatus = 'pending') => {
-  const template = uploadTemplates.attachment;
-  const templateKey = template.use[0];
-  const organizationId = tokenQuery.organizationId;
+/** Stores the files on this device, for the upload service to send once cloud storage is reachable, and answers with a completed assembly. */
+export const prepareFilesForOffline = async (
+  files: CustomUppyFile[],
+  { organizationId, templateId }: UploadTokenQuery,
+  uploadStatus: UploadStatus,
+): Promise<AssemblyResponse> => {
+  const [resultStep] = uploadTemplates.attachment.use;
 
   if (!organizationId) {
     throw new Error('organizationId required for local storage');
   }
 
-  const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
-
-  // Store each file blob locally, under the id its attachment row will be created with.
-  for (const file of Object.values(files)) {
-    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
-  }
+  await storeUploadBlobs(files, organizationId, templateId, uploadStatus);
 
   toaster.info(t('c:saved_on_this_device'));
 
-  const localFiles = Object.values(files).map((el) => {
-    const basename = el.meta.name?.replace(`.${el.extension}`, '');
-    const type = el.type?.split('/')[0] || 'file';
+  const localFiles = files.map((file) => {
+    const basename = file.meta.name?.replace(`.${file.extension}`, '');
+    const type = file.type?.split('/')[0] || 'file';
 
-    const user_meta = Object.fromEntries(Object.entries(el.meta || {}).map(([key, value]) => [key, String(value)]));
+    const userMeta = Object.fromEntries(Object.entries(file.meta || {}).map(([key, value]) => [key, String(value)]));
 
     return {
       as: '',
       basename,
       cost: 0,
       exec_time: 0,
-      ext: el.extension,
+      ext: file.extension,
       field: 'file',
       from_batch_import: false,
-      id: el.id,
+      id: file.id,
       is_temp_url: false,
       is_tus_file: false,
       md5hash: '',
       meta: {},
-      mime: el.type,
-      name: el.meta.name,
-      original_id: el.id,
+      mime: file.type,
+      name: file.meta.name,
+      original_id: file.id,
       original_basename: basename,
-      original_name: el.meta.name,
+      original_name: file.meta.name,
       original_md5hash: '',
       original_path: '',
       queue: '',
       queue_time: 0,
       execTime: 0,
       queueTime: 0,
-      localId: el.id,
-      size: el.size || el.data?.size || 0,
-      url: el.preview!,
-      ssl_url: el.preview!,
+      localId: file.id,
+      size: file.size || file.data?.size || 0,
+      url: file.preview!,
+      ssl_url: file.preview!,
       tus_upload_url: '',
       type,
-      user_meta,
+      user_meta: userMeta,
     };
   });
+
+  const totalBytes = localFiles.reduce((total, file) => total + file.size, 0);
 
   return {
     ok: 'ASSEMBLY_COMPLETED',
@@ -82,9 +78,9 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     assembly_ssl_url: '',
     start_date: new Date().toISOString(),
     execution_duration: 0,
-    bytes_received: localFiles.reduce((total, file) => total + (file.size || 0), 0),
-    bytes_expected: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    bytes_received: totalBytes,
+    bytes_expected: totalBytes,
     uploads: localFiles,
-    results: { [templateKey]: localFiles },
+    results: { [resultStep]: localFiles },
   };
 };

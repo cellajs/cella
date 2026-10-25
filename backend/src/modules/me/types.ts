@@ -3,7 +3,7 @@
 import type { EnabledOAuthProvider } from 'shared';
 import type { PasskeyModel } from '#/modules/auth/passkeys/passkeys-db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
-import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
+import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import type { UserModel } from '#/modules/user/user-db';
 
 export interface MeResponse {
@@ -15,9 +15,15 @@ export interface MeResponse {
 /** Session for auth data response (token already omitted by SessionModel) */
 export type MeSession = Omit<SessionModel, 'expiresAt'> & { expiresAt: string; isCurrent: boolean; isNewDevice: boolean };
 
+/** When a sign-in method was added, and when it last signed the user in. */
+interface MethodDates {
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
 export interface MeAuthResponse {
-  enabledOAuth: EnabledOAuthProvider[];
-  hasTotp: boolean;
+  oauthIdentities: (MethodDates & { provider: EnabledOAuthProvider; email: string | null })[];
+  totp: MethodDates | null;
   sessions: MeSession[];
   passkeys: PasskeyModel[];
 }

@@ -108,10 +108,10 @@ describe('sendProductMessagesToApi', () => {
   });
 
   it('must not send the content of a row, of one row or of several', () => {
-    const content = { createdBy: 'u1', publicAt: null, name: 'secret', description: 'body', filename: 'secret.png' };
+    const content = { createdBy: 'u1', public: false, name: 'secret', description: 'body', filename: 'secret.png' };
     sendProductMessagesToApi('attachment', [inOrg('org-a', 10, content), inOrg('org-b', 11, content), inOrg('org-b', 12)], trace);
 
-    const permissionFields = (seq: number, organizationId: string) => ({ id: `entity-${seq}`, organizationId, createdBy: 'u1', publicAt: null });
+    const permissionFields = (seq: number, organizationId: string) => ({ id: `entity-${seq}`, organizationId, createdBy: 'u1', public: false });
     // Ids, the author and the columns a permission reads stay; names and bodies never reach the wire.
     expect(sent().map((message) => message.rows[0].rowData)).toEqual([permissionFields(10, 'org-a'), permissionFields(11, 'org-b')]);
     expect(JSON.stringify(sent())).not.toContain('secret');

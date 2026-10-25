@@ -1,7 +1,8 @@
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import type { ApiError } from '~/lib/api';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { Button } from '~/modules/ui/button';
 
 interface ApiErrorDescriptionProps {
@@ -48,7 +49,7 @@ export function ApiErrorDescription({ message, cause, report }: ApiErrorDescript
             {t('c:request_id')}: <span className="break-all font-mono">{report.requestId}</span>
           </span>
           <Button variant="ghost" size="micro" className="shrink-0" aria-label={copied ? t('c:copied') : t('c:copy')} onClick={copyReport}>
-            {copied ? <CheckIcon className="size-3.5 text-success" /> : <CopyIcon className="size-3.5" />}
+            <CopiedIcon copied={copied} icon={CopyIcon} />
           </Button>
         </p>
       )}

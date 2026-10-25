@@ -1,7 +1,6 @@
-import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
-import { appConfig } from 'shared';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 /** Live editor handle the bridge keeps current, so the host targets the latest editor after a remount. */
@@ -20,13 +19,18 @@ const UploadHostContext = createContext<UploadHostApi | null>(null);
 
 export const useUploadHost = () => useContext(UploadHostContext);
 
-/** Owns the Uppy dialog outside the editor subtree so a mid-upload remount cannot tear it down; a `FilePanelBridge` feeds it the active block and live editor. */
-export function UploadHostProvider({ baseFilePanelProps, children }: { baseFilePanelProps: BaseUppyFilePanelProps; children: ReactNode }) {
+interface UploadHostProviderProps {
+  baseFilePanelProps: BaseUppyFilePanelProps;
+  children: ReactNode;
+}
+
+/** Owns the Uppy dialog outside the editor subtree, so a mid-upload remount cannot tear it down; a `FilePanelBridge` reports the block and editor. */
+export function UploadHostProvider({ baseFilePanelProps, children }: UploadHostProviderProps) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 
   // Stable API object: the setters are referentially stable, so the bridge's effects never re-run on it.
-  const api = useRef<UploadHostApi>({ openFor: setActiveBlockId, registerEditor: setHandle }).current;
+  const [api] = useState<UploadHostApi>(() => ({ openFor: setActiveBlockId, registerEditor: setHandle }));
 
   const close = () => {
     handle?.closeFilePanel();
@@ -37,9 +41,7 @@ export function UploadHostProvider({ baseFilePanelProps, children }: { baseFileP
   return (
     <UploadHostContext.Provider value={api}>
       {children}
-      {appConfig.has.uploadEnabled && handle && activeBlockId !== null && (
-        <UppyFilePanel {...baseFilePanelProps} blockId={activeBlockId} editor={handle.editor} onClose={close} />
-      )}
+      {handle && activeBlockId !== null && <UppyFilePanel {...baseFilePanelProps} blockId={activeBlockId} editor={handle.editor} onClose={close} />}
     </UploadHostContext.Provider>
   );
 }

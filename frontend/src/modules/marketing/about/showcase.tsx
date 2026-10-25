@@ -1,25 +1,29 @@
-import { ArrowUpRightIcon } from 'lucide-react';
-import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
-import { Spinner } from '~/modules/common/spinner';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { useCountUp } from '~/modules/marketing/about/counters';
+import { DeviceMockup } from '~/modules/marketing/device-mockup';
+import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
-import { lazyNamed } from '~/utils/lazy-named';
 
-const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
-
-export type ShowcaseItem = {
+export interface ShowcaseItem {
   id: string;
   url: string;
+  /** Lines of code from cella; with `totalLoc` set too, the item shows cella's share. */
   cellaLoc?: number;
+  /** Lines of code of the whole app. */
   totalLoc?: number;
-  lightItems: { id: string; url: string; contentType: string }[];
-  darkItems: { id: string; url: string; contentType: string }[];
-};
+  lightItems: CarouselItemData[];
+  darkItems: CarouselItemData[];
+}
 
-function CellaShare({ cellaLoc, totalLoc }: { cellaLoc: number; totalLoc: number }) {
+interface CellaShareProps {
+  cellaLoc: number;
+  totalLoc: number;
+}
+
+function CellaShare({ cellaLoc, totalLoc }: CellaShareProps) {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ once: true });
   const percentage = Math.round((cellaLoc / totalLoc) * 100);
@@ -40,36 +44,28 @@ export function Showcase() {
   const darkItems = showcaseItems.flatMap((item) => item.darkItems);
 
   return (
-    <div className="relative mx-auto mt-20 mb-12 flex max-w-3xl items-start gap-8 max-sm:flex-col lg:mb-16">
-      <div className="w-full">
-        <div className="flex flex-wrap">
-          {showcaseItems.map((item, index) => {
-            const title = `about:showcase.title_${index + 1}` as TKey;
-            const text = `about:showcase.text_${index + 1}` as TKey;
+    <div className="mx-auto mt-20 mb-12 flex max-w-3xl items-start gap-8 max-sm:flex-col lg:mb-16">
+      <div className="flex w-full flex-col">
+        {showcaseItems.map((item, index) => {
+          const title = `about:showcase.title_${index + 1}` as TKey;
+          const text = `about:showcase.text_${index + 1}` as TKey;
 
-            return (
-              <div className="w-full" key={item.id}>
-                <div className="flex">
-                  <div className="w-full">
-                    <a href={item.url} target="_blank" rel="noreferrer" className="focus-effect mt-4 block rounded-md">
-                      <h3 className="group mb-2 font-medium text-xl 2xl:text-[1.38rem]">
-                        {t(title)}
-                        <ArrowUpRightIcon className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
-                      </h3>
-                    </a>
-                    <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>
-                    {item.cellaLoc && item.totalLoc && <CellaShare cellaLoc={item.cellaLoc} totalLoc={item.totalLoc} />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div key={item.id}>
+              <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link focus-effect mt-4 block rounded-md">
+                <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">
+                  {t(title)}
+                  <ExternalArrow />
+                </h3>
+              </a>
+              <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>
+              {item.cellaLoc && item.totalLoc && <CellaShare cellaLoc={item.cellaLoc} totalLoc={item.totalLoc} />}
+            </div>
+          );
+        })}
       </div>
-      <div className="">
-        <Suspense fallback={<Spinner />}>
-          <DeviceMockup className="" type="mobile" lightItems={lightItems} darkItems={darkItems} />
-        </Suspense>
+      <div>
+        <DeviceMockup type="mobile" lightItems={lightItems} darkItems={darkItems} />
       </div>
     </div>
   );

@@ -23,7 +23,7 @@
     "repair-certs": "tsx tasks/repair-certs.ts",
     "diag": "tsx tasks/diag.ts",
     "geoip-refresh": "tsx tasks/geoip-refresh.ts",
-    "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && tsup boot/src/entry.ts --format cjs --platform node --target node26 --out-dir boot/dist",
+    "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && rolldown boot/src/entry.ts --format cjs --platform node --file boot/dist/entry.cjs",
     "boot:image": "pnpm run boot:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${BOOT_IMAGE:-infra-boot:dev} boot",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
@@ -32,19 +32,19 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1152.0",
-    "@inquirer/core": "^12.0.4",
-    "@inquirer/prompts": "^8.7.3",
-    "@pulumi/pulumi": "^3.270.0",
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@inquirer/core": "^12.0.5",
+    "@inquirer/prompts": "^8.7.4",
+    "@pulumi/pulumi": "^3.272.0",
     "@pulumi/random": "^4.21.4",
-    "@pulumiverse/scaleway": "^1.58.0",
+    "@pulumiverse/scaleway": "^1.59.0",
     "picocolors": "^1.1.1",
     "shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "tsup": "^9.0.0",
+    "rolldown": "~1.2.15",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
     "vitest": "^5.0.5"

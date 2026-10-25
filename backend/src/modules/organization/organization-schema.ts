@@ -22,7 +22,7 @@ import {
 } from '#/schemas';
 import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { auditShape } from '#/schemas/entity-base';
 import { toolsConfigSchema } from '#/schemas/tools-config';
 import { mockOrganizationResponse } from './organization-mocks';
 
@@ -42,8 +42,7 @@ const organizationFlagsSchema = z.object(
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
-    createdBy: nullableUserMinimalBaseSchema,
-    updatedBy: nullableUserMinimalBaseSchema,
+    ...auditShape,
     languages: z.array(languageSchema).min(1),
     organizationFlags: organizationFlagsSchema,
     setupConfig: setupConfigSchema,
@@ -63,12 +62,20 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
 
 /** Wire registration: lens-widened schemas bound to the organization entity at runtime. */
 export const organizationContract = evolutionContract.channel('organization', {
-  createItem: z.object({ id: validTempIdSchema, name: validNameSchema, slug: validSlugSchema }),
+  createItem: z.object({
+    id: validTempIdSchema,
+    name: validNameSchema,
+    slug: validSlugSchema,
+    draft: z.boolean().optional().openapi({
+      description:
+        'Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.',
+    }),
+  }),
   updateBody: createInsertSchema(organizationsTable, {
     slug: validSlugSchema,
     name: validNameSchema,
     shortName: validNameSchema.nullable(),
-    languages: z.array(languageSchema).min(1),
+    languages: z.array(languageSchema).min(1).max(64),
     defaultLanguage: languageSchema.optional(),
     websiteUrl: validUrlSchema.nullable(),
     thumbnailUrl: validCDNUrlSchema.nullable(),
@@ -103,6 +110,11 @@ export const organizationContract = evolutionContract.channel('organization', {
       toolsConfig: true,
     })
     .partial(),
+});
+
+export const organizationPublishResponseSchema = z.object({
+  organization: organizationSchema,
+  invitationsSent: z.number().int().min(0).openapi({ description: 'Invitations held while it was a draft and sent now.' }),
 });
 
 /** Array schema for batch creates - rejects duplicate slugs */

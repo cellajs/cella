@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
+import type { ErrorKey } from '#/core/error';
 import { blockSpentBucket, getRateLimiterInstance, rateLimitError, refundAttempt, reserveAttempt } from '#/middlewares/rate-limiter/helpers';
 import type { BucketLimits, LimiterStore, Outcome, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
@@ -35,9 +36,10 @@ export interface Reservation {
  * @param ctx - The request, for the refusal's Retry-After header.
  * @param tiers - The buckets to count in, in order.
  * @param key - The subject's key, as the middleware derives it.
- * @throws AppError 429 `too_many_requests` while a tier is spent.
+ * @param refusalType - The limiter's own refusal type, if it has one.
+ * @throws AppError 429 `too_many_requests` (or `refusalType`) while a tier is spent.
  */
-export const reserveTiers = async (ctx: Context<Env>, tiers: Tier[], key: string): Promise<Reservation> => {
+export const reserveTiers = async (ctx: Context<Env>, tiers: Tier[], key: string, refusalType?: ErrorKey): Promise<Reservation> => {
   const reservation: Reservation = { key, held: [] };
   for (const tier of tiers) {
     let taken: Awaited<ReturnType<typeof reserveAttempt>>;
@@ -49,7 +51,7 @@ export const reserveTiers = async (ctx: Context<Env>, tiers: Tier[], key: string
     }
     if (!taken.granted) {
       await settleTiers(reservation, 'other');
-      return rateLimitError(ctx, taken.state);
+      return rateLimitError(ctx, taken.state, refusalType);
     }
     reservation.held.push({ tier, store: taken.store, count: taken.state.consumedPoints });
   }

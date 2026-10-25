@@ -2,17 +2,18 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isUnconditionalCan } from 'shared';
-import { ConfirmText } from '~/modules/common/confirm-text';
+import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { NamedText } from '~/modules/common/named-text';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
-import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
+import type { MembersTableProps } from '~/modules/memberships/members-table/members-table';
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
@@ -20,7 +21,9 @@ import { InviteUsers } from '~/modules/user/invite-users';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { tw } from '~/utils/tw';
 
-type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
+interface MembersTableBarProps extends MembersTableProps, BaseTableBarProps<Member, MembersRouteSearchParams> {
+  canUpdate: boolean;
+}
 
 export function MembersTableBar({
   channel,
@@ -31,6 +34,7 @@ export function MembersTableBar({
   columns,
   setColumns,
   isSheet = false,
+  canUpdate,
   clearSelection,
 }: MembersTableBarProps) {
   const { t } = useTranslation();
@@ -38,29 +42,27 @@ export function MembersTableBar({
 
   const total = useListQueryTotal(queryKey);
 
-  const deleteButtonRef = useRef(null);
-  const inviteButtonRef = useRef(null);
-  const inviteContainerRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteContainerRef = useRef<HTMLDivElement>(null);
 
   const { q, role, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
-  const entityType = channel.entityType;
+  const organizationId = channelOrganizationId(channel);
 
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as MembersRouteSearchParams['role']) });
+    setSearch({ role: role as MembersRouteSearchParams['role'] });
   };
 
   const openDeleteDialog = () => {
     createDialog(
       <DeleteMemberships
         tenantId={channel.tenantId}
-        organizationId={channel.organizationId || channel.id}
+        organizationId={organizationId}
         entityId={channel.id}
         entityType={channel.entityType}
-        dialog
         members={selected}
         callback={clearSelection}
       />,
@@ -70,17 +72,14 @@ export function MembersTableBar({
         className: 'max-w-xl',
         title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
         description: (
-          <ConfirmText
-            i18nKey="c:confirm.remove_members"
-            values={{ entityType: channel.entityType, emails: selected.map((member) => member.email).join(', ') }}
-          />
+          <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email).join(', ') }} />
         ),
       },
     );
   };
 
   const openInviteDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     createDialog(<InviteUsers channel={channel} mode={null} dialog />, {
       id: 'invite-users',
@@ -90,12 +89,12 @@ export function MembersTableBar({
       container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: `${t('c:invite_members.text')}`,
+      description: <NamedText i18nKey="c:invite_members.text" name={channel.name} />,
     });
   };
 
-  const fetchExport = async (limit: number, offset: number) => {
-    return fetchMembersForExport({
+  const fetchExport = (limit: number, offset: number) =>
+    fetchMembersForExport({
       limit,
       offset,
       q,
@@ -105,9 +104,8 @@ export function MembersTableBar({
       entityId: channel.id,
       entityType: channel.entityType,
       tenantId: channel.tenantId,
-      organizationId: channel.organizationId || channel.id,
+      organizationId,
     });
-  };
 
   return (
     <TableBarShell
@@ -117,22 +115,16 @@ export function MembersTableBar({
       searchName="memberSearch"
       actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
-      filters={<SelectRole entityType={channel.entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} />}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
-      export={!isSheet && canUpdate ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport } : undefined}
+      export={
+        !isSheet && canUpdate ? { filename: `${appConfig.slug}-${channel.slug}-members`, selectedRows: selected, fetchRows: fetchExport } : undefined
+      }
       focusView={!isSheet}
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: (
-          <TableBarButton
-            ref={deleteButtonRef}
-            variant="destructive"
-            onClick={openDeleteDialog}
-            icon={TrashIcon}
-            label={channel.id ? 'c:remove' : 'c:delete'}
-          />
-        ),
+        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:remove" />,
       }}
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />

@@ -82,6 +82,22 @@ export const config = {
     rateLimits: { apiPointsPerHour: 1000 },
   } as const,
 
+  /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
+  retention: {
+    activityDays: 90,
+    deletedItemsDays: 120,
+    archivedTenantDays: 120,
+    sessionDaysAfterExpiry: 30,
+    tokenDaysAfterExpiry: 30,
+    deviceDaysUnseen: 400,
+    devicesPerUser: 50,
+    oidcPayloadDaysAfterUse: 30,
+    requestDays: 365,
+    invitationDays: 120,
+    rateLimitDaysAfterWindow: 1,
+    pushSubscriptionDaysUnseen: 400,
+  },
+
   // System roles
 
   systemRoles: ['admin'] as const,
@@ -294,7 +310,7 @@ export const config = {
   localBlobStorage: {
     enabled: true,
     maxFileSize: 10 * 1024 * 1024,
-    maxTotalSize: 100 * 1024 * 1024,
+    maxTotalSize: 1024 * 1024 * 1024,
     allowedContentTypes: [] as string[],
     excludedContentTypes: ['video/*'] as string[],
     downloadConcurrency: 2,
@@ -317,11 +333,15 @@ export const config = {
   matrixURL: 'https://matrix-client.matrix.org',
   /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
   maplePublicIngestKey: '',
+  /**
+   * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
+   * Firefox, Safari and Edge (WNS). `*.` matches any subdomain; entries compare lowercased, without one trailing dot.
+   * The server POSTs each push to the stored endpoint, so registration refuses every other host.
+   */
+  pushServiceHosts: ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', '*.notify.windows.com'],
 
   // Theming & UI
 
-  /** Primary theme color for PWA manifest and browser chrome */
-  themeColor: '#26262b',
   /** Theme configuration for UI components */
   theme: {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },

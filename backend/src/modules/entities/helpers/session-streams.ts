@@ -12,7 +12,7 @@ export const streamErrorForEnding = (reason: SessionEndReason): StreamErrorPaylo
   endingsWithSuccessor.has(reason) ? { code: 'session_replaced', message: 'Session replaced' } : { code: 'unauthorized', message: 'Session revoked' };
 
 /** How long a close waits for the client to take its error event. */
-const ERROR_WRITE_TIMEOUT_MS = 1000;
+const errorWriteTimeoutMs = 1000;
 
 /**
  * Tells the client why its stream ends, then ends it; without this the stream stays live until the client leaves. A
@@ -20,7 +20,7 @@ const ERROR_WRITE_TIMEOUT_MS = 1000;
  */
 async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {
   streamSubscriberManager.unregister(subscriber.id);
-  await withinTimeout(writeError(subscriber.stream, payload), ERROR_WRITE_TIMEOUT_MS);
+  await withinTimeout(writeError(subscriber.stream, payload), errorWriteTimeoutMs);
   // Abort runs the handler's onAbort cleanup, ends the response body and releases a write still waiting for the
   // client; close lets keepAlive return.
   subscriber.stream.abort();
@@ -37,6 +37,24 @@ export async function closeAppStreams(closings: { subscriber: AppStreamSubscribe
     closings.map(({ subscriber, payload }) =>
       closeAppStream(subscriber, payload).catch((error) => log.error(failure, { error, subscriberId: subscriber.id })),
     ),
+  );
+}
+
+/**
+ * Ends the app streams that hold any of `organizationIds` with `access_changed`: their memberships changed without a
+ * membership write, as when the tenant is archived or restored. Each client reconnects, and its catchup reads the
+ * memberships again.
+ */
+export async function endOrganizationStreams(organizationIds: string[], message: string): Promise<void> {
+  const streams = streamSubscriberManager
+    .all()
+    .filter(isAppStream)
+    .filter((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)));
+  if (streams.length === 0) return;
+  const payload: StreamErrorPayload = { code: 'access_changed', message };
+  await closeAppStreams(
+    streams.map((subscriber) => ({ subscriber, payload })),
+    'Failed to close a stream after a tenant status change',
   );
 }
 

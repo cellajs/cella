@@ -1,12 +1,19 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas/common-schemas';
+import { nullableActorRefSchema } from './actor-ref';
 import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
 const entityCoreShape = { id: z.string(), name: z.string(), createdAt: z.string(), updatedAt: z.string().nullable() };
 
-const auditShape = { createdBy: nullableUserMinimalBaseSchema, updatedBy: nullableUserMinimalBaseSchema };
+/**
+ * The writers of a row as responses carry them. A base schema is a reference shape and leaves them out; the full schema
+ * of an entity, a membership or an API key spreads this after its select shape, so the id columns become references.
+ */
+export const auditShape = { createdBy: nullableActorRefSchema, updatedBy: nullableActorRefSchema };
+
+/** The tombstone's actor, for product schemas: `deletedAt` stays the select shape's string. */
+export const tombstoneShape = { deletedBy: nullableActorRefSchema };
 
 /**
  * Exported separately to avoid circular dependencies, which is also why `included` is left out: channel
@@ -33,13 +40,12 @@ export const productBaseSchema = z
   .object({
     ...entityCoreShape,
     description: z.string().nullable(),
-    ...auditShape,
     entityType: productEntityTypeSchema,
     keywords: z.string(),
   })
   .openapi('ProductBase', {
     description:
-      'The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.',
+      'The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.',
     example: mockProductBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });

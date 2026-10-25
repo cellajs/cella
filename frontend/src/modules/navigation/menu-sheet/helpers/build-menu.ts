@@ -12,7 +12,6 @@ function buildInitialMenu<const T extends readonly { entityType: ChannelEntityTy
 
 const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
-/** Builds a user menu from a map of channel entity types to their items; `opts` enables detailed submenus. */
 export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>, menuStructure: MenuSection[]) {
   const menu = { ...baseMenu };
 
@@ -21,21 +20,21 @@ export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['s
 
     // Sub-items are always attached, so unseen badge aggregation has its data whatever detailedMenu renders.
     if (!section.subentityType) {
-      menu[section.entityType] = items.map((e) => ({ ...e, submenu: [] }));
+      menu[section.entityType] = items.map((item) => ({ ...item, submenu: [] }));
       continue;
     }
 
     const subitems = byType.get(section.subentityType) ?? [];
     const parentIdField = appConfig.entityIdColumnKeys[section.entityType];
 
-    const subsByParent = new Map<string, UserMenuItem[]>();
-    for (const s of subitems) {
-      const pid = s?.membership?.[parentIdField];
-      if (!pid) continue;
-      (subsByParent.get(pid) ?? subsByParent.set(pid, []).get(pid)!).push(s);
+    const subitemsByParent = new Map<string, UserMenuItem[]>();
+    for (const subitem of subitems) {
+      const parentId = subitem?.membership?.[parentIdField];
+      if (!parentId) continue;
+      (subitemsByParent.get(parentId) ?? subitemsByParent.set(parentId, []).get(parentId)!).push(subitem);
     }
 
-    menu[section.entityType] = items.map((e) => ({ ...e, submenu: subsByParent.get(e.id) ?? [] }));
+    menu[section.entityType] = items.map((item) => ({ ...item, submenu: subitemsByParent.get(item.id) ?? [] }));
   }
 
   return menu;

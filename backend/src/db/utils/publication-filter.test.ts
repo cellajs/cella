@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm';
 import { PgDialect, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { PUBLISHED_ROW_FILTER, publicationRowFilter } from './publication-filter';
+import { publicationRowFilter, publishedRowFilter } from './publication-filter';
 import { draftVisibleRowsPredicate, publishedRowsPredicate } from './published-predicate';
 
 const draftProduct = pgTable('test_pub_items', { id: varchar('id').primaryKey(), publishedAt: timestamp('published_at', { mode: 'string' }) });
@@ -17,7 +17,7 @@ const authoredDraftProduct = pgTable('test_pub_notes', {
 const normalize = (s: string) => s.replaceAll('"', '').replace(/[()]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 const compile = (predicate: SQL | undefined) => new PgDialect().sqlToQuery(predicate as SQL);
 
-// Channel-entity shape: has publishedAt (defaultNow invitee gate) but is NOT a product.
+// Channel-entity shape: has publishedAt (the invitation gate) but is NOT a product.
 const channel = pgTable('test_pub_courses', {
   id: varchar('id').primaryKey(),
   publishedAt: timestamp('published_at', { mode: 'string' }).defaultNow(),
@@ -27,7 +27,7 @@ describe('publicationRowFilter', () => {
   const productTypes = ['item', 'attachment'] as const;
 
   it('filters draft-lifecycle product tables only', () => {
-    expect(publicationRowFilter('item', draftProduct, productTypes)).toBe(PUBLISHED_ROW_FILTER);
+    expect(publicationRowFilter('item', draftProduct, productTypes)).toBe(publishedRowFilter);
     expect(publicationRowFilter('attachment', plainProduct, productTypes)).toBeUndefined();
   });
 
@@ -39,7 +39,7 @@ describe('publicationRowFilter', () => {
     // The replication boundary and the read boundary must not drift: compare the compiled predicate with the constant.
     const predicate = publishedRowsPredicate(draftProduct);
     expect(predicate).toBeDefined();
-    expect(normalize(compile(predicate).sql)).toBe(normalize(`test_pub_items.${PUBLISHED_ROW_FILTER}`));
+    expect(normalize(compile(predicate).sql)).toBe(normalize(`test_pub_items.${publishedRowFilter}`));
   });
 });
 

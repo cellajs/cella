@@ -137,7 +137,7 @@ The report covers:
 - **The stack.** CPU, memory and database connections of the relay, API and CDC worker (found by port), the Postgres container's CPU, and the database's sessions, wait events, commits and WAL.
 - **After typing.** How long until every edit is saved, the same on every client, and written to the entity row.
 
-The relay writes a document's last state a while after its last client leaves (`YJS_CLEANUP_DELAY_MS`): wait that long after a typing run before a run whose activity count must be exact.
+The relay writes a document's last state a while after its last client leaves (`yjsCleanupDelayMs`): wait that long after a typing run before a run whose activity count must be exact.
 
 ## Interpreting results
 

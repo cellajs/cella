@@ -1,23 +1,24 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/utils/preserve-offset-on-source';
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
 /** Minimum width of an expanded board panel, in px. */
-export const PANEL_MIN_WIDTH = 300;
+export const panelMinWidth = 300;
 /** Minimum width of a collapsed board panel, in px. */
-export const COLLAPSED_PANEL_MIN_WIDTH = 50;
+export const collapsedPanelMinWidth = 50;
 
 export interface BoardLayoutPanel {
   panelId: string;
@@ -144,7 +145,7 @@ export function BoardLayout({
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
-          <ResizablePanel id={panelId} minWidth={PANEL_MIN_WIDTH} collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH} collapsible fade={panelFade}>
+          <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade}>
             {reorderable ? (
               <PanelDragWrapper
                 panelId={panelId}
@@ -217,17 +218,15 @@ function PanelDragWrapper({
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [handleEl, setHandleEl] = useState<HTMLElement | null>(null);
+  const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
 
   const registerHandle = useCallback((el: HTMLElement | null) => setHandleEl(el), []);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      e.preventDefault();
-
+  const handleMove = useCallback(
+    (step: -1 | 1) => {
       const currentOrder = panelIdsRef.current;
       const currentIdx = currentOrder.indexOf(panelId);
-      const targetIdx = e.key === 'ArrowLeft' ? currentIdx - 1 : currentIdx + 1;
+      const targetIdx = currentIdx + step;
       if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
 
       const newOrder = [...currentOrder];
@@ -242,8 +241,8 @@ function PanelDragWrapper({
   }, [onPanelToggle, panelId]);
 
   const ctxValue = useMemo(
-    () => ({ registerHandle, onKeyDown: handleKeyDown, onToggleCollapsed: handleToggleCollapsed, index, total }),
-    [registerHandle, handleKeyDown, handleToggleCollapsed, index, total],
+    () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
+    [panelId, registerHandle, handleMove, handleToggleCollapsed, previewContainer, index, total],
   );
 
   useEffect(() => {
@@ -280,20 +279,15 @@ function PanelDragWrapper({
           element: wrapper,
           dragHandle: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
-          // Draw the drag preview from the header handle: in autoHeight boards the wrapper is as
-          // tall as its content, and the native preview would snapshot the entire panel.
-          onGenerateDragPreview: ({ location, nativeSetDragImage }) => {
-            const rect = handleEl.getBoundingClientRect();
+          onDrop: () => followReorderFocus(panelId),
+          // In autoHeight boards the wrapper is as tall as its content, and the native preview would snapshot the entire panel.
+          onGenerateDragPreview: ({ nativeSetDragImage }) => {
             setCustomNativeDragPreview({
               nativeSetDragImage,
-              getOffset: preserveOffsetOnSource({ element: handleEl, input: location.current.input }),
+              getOffset: pointerOutsideOfPreview({ x: '8px', y: '4px' }),
               render({ container }) {
-                const clone = handleEl.cloneNode(true);
-                if (clone instanceof HTMLElement) {
-                  clone.style.width = `${rect.width}px`;
-                  clone.style.height = `${rect.height}px`;
-                }
-                container.appendChild(clone);
+                setPreviewContainer(container);
+                return () => setPreviewContainer(null);
               },
             });
           },

@@ -1,7 +1,7 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { ChannelIdColumns } from 'shared';
 import { isChannel } from 'shared';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { suppressEmbeddingPropagation } from '../embeddings';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
@@ -13,7 +13,7 @@ import { getCountDeltas } from '../utils/update-counts';
 import { TransactionTooLargeError } from './failure';
 
 /** Prefix of the counter keys that count rows: what a cascaded delete takes off the channels above it. */
-const ENTITY_COUNT_PREFIX = 'e:c:';
+const entityCountPrefix = 'e:c:';
 
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
@@ -50,7 +50,7 @@ export class TransactionBuffer {
 
   constructor(
     onSurvivingEvents: (events: PendingEvent[]) => Promise<void>,
-    { maxEvents = RESOURCE_LIMITS.buffers.maxTransactionEvents as number } = {},
+    { maxEvents = resourceLimits.buffers.maxTransactionEvents as number } = {},
   ) {
     this.onSurvivingEvents = onSurvivingEvents;
     this.maxEvents = maxEvents;
@@ -150,7 +150,7 @@ export class TransactionBuffer {
   /** Sums what a suppressed delete takes off the row counts. The row is dropped; only numbers per channel are kept. */
   private countCascadedDelete({ tableMeta, activity, rowData, oldRowData }: ParseMessageResult): void {
     for (const { channelKey, deltas } of getCountDeltas(tableMeta, activity, rowData, oldRowData ?? null)) {
-      const counts = Object.fromEntries(Object.entries(deltas).filter(([key]) => key.startsWith(ENTITY_COUNT_PREFIX)));
+      const counts = Object.fromEntries(Object.entries(deltas).filter(([key]) => key.startsWith(entityCountPrefix)));
       if (Object.keys(counts).length > 0) mergeDelta(this.cascadeCounts, channelKey, counts);
     }
   }

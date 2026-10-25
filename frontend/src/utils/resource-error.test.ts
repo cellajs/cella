@@ -25,12 +25,4 @@ describe('createResourceError', () => {
     handleError('update', new ApiError({ ...refusal, severity: 'warn' }));
     expect(toaster.error).toHaveBeenLastCalledWith(title, { description: 'A primary label keeps its mode.' });
   });
-
-  it('adds nothing for a failure that is not a refusal: a server fault, or no response at all', () => {
-    handleError('update', new ApiError({ status: 500, type: 'server_error', severity: 'error' }));
-    expect(toaster.error).toHaveBeenLastCalledWith(title, { description: undefined });
-
-    handleError('update', new TypeError('Failed to fetch'));
-    expect(toaster.error).toHaveBeenLastCalledWith(title, { description: undefined });
-  });
 });

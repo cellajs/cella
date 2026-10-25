@@ -7,10 +7,10 @@ import { Button } from '~/modules/ui/button';
 
 interface WelcomeTextProps {
   invitations: Invitation[];
-  onboardingToStepper: () => void;
+  onStart: () => void;
 }
 
-export function WelcomeText({ invitations, onboardingToStepper }: WelcomeTextProps) {
+export function WelcomeText({ invitations, onStart }: WelcomeTextProps) {
   const { t } = useTranslation();
 
   // An invited user is greeted with what they came for, not with the pitch for starting something new.
@@ -22,14 +22,10 @@ export function WelcomeText({ invitations, onboardingToStepper }: WelcomeTextPro
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 p-8 text-center">
       <h1 className="font-bold text-2xl">{t('c:onboarding_welcome', { appName: appConfig.name })}</h1>
-      <div className="pb-8 text-foreground/90 leading-7 md:text-2xl">
-        <TextEffect text={text} className="text-center font-medium text-2xl sm:text-4xl sm:leading-12 md:text-5xl md:leading-16" />
-      </div>
-      <Button onClick={onboardingToStepper} className="max-sm:w-full">
+      <TextEffect text={text} className="pb-8 font-medium text-2xl text-foreground/90 sm:text-4xl sm:leading-12 md:text-5xl md:leading-16" />
+      <Button onClick={onStart} className="max-sm:w-full">
         {t('c:get_started')}
-        <div className="-rotate-90">
-          <ArrowDownIcon className="animate-bounce [animation-iteration-count:5] motion-reduce:animate-none" />
-        </div>
+        <ArrowDownIcon className="repeat-5 -rotate-90 animate-bounce motion-reduce:animate-none" />
       </Button>
     </div>
   );

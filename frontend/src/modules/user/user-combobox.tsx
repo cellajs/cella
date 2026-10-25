@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { ChevronsUpDownIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 'lucide-react';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { ClockIcon, SearchIcon, UserIcon, UsersRoundIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -10,8 +10,10 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { membersListQueryOptions } from '~/modules/memberships/query';
+import { InputTriggerChevron } from '~/modules/common/form-fields/input-trigger-button';
+import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
+import { Chip } from '~/modules/ui/chip';
 import {
   Combobox,
   ComboboxContent,
@@ -21,163 +23,134 @@ import {
   ComboboxList,
   ComboboxPrimitive,
 } from '~/modules/ui/combobox';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
+import { inviteNote } from '~/modules/user/use-invite-check';
 
-interface Props {
+const contentVariants = {
+  hidden: { opacity: 0, y: -5, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
+};
+
+interface UserComboboxProps {
   value: string[];
-  onValueChange: (items: string[]) => void;
+  onChange: (emails: string[]) => void;
   channel: ChannelBase & { organizationId?: string };
 }
 
-export function UserCombobox({ value, onValueChange, channel }: Props) {
+export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const nameLabel = t('c:name').toLowerCase();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const handleUnselect = (item: string) => {
-    onValueChange(value.filter((v) => v !== item));
+  // A removed chip unmounts its focused remove button, so focus goes to the trigger and not to the page
+  const handleUnselect = (email: string) => {
+    onChange(value.filter((selected) => selected !== email));
+    triggerRef.current?.focus();
   };
 
-  const queryOptions = usersListQueryOptions({ q: debouncedSearchQuery });
+  const { data, isFetching } = useInfiniteQuery(usersListQueryOptions({ q: debouncedSearchQuery }));
 
-  const { data, isFetching } = useInfiniteQuery(queryOptions);
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
 
-  const items = data?.pages.flatMap((p) => p.items) ?? [];
-  const userIds = items.map((u) => u.id).join(',');
-
-  const { data: membersData } = useInfiniteQuery({
-    ...membersListQueryOptions({
-      entityId: channel.id,
-      entityType: channel.entityType,
-      tenantId: channel.tenantId,
-      organizationId: channel.organizationId || channel.id,
-      userIds,
-    }),
-    enabled: items.length > 0,
-  });
-
-  const existingMemberIds = new Set(membersData?.pages.flatMap((p) => p.items.map((m) => m.id)) ?? []);
-
-  const variants = {
-    hidden: { opacity: 0, y: -5, scale: 0.98 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
-    exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
-  };
+  // The same check as typed addresses: a member is left out, one invited before shows when
+  const resultEmails = items.map((user) => user.email.toLowerCase()).sort();
+  const { data: outcomes } = useQuery({ ...inviteCheckQueryOptions(channel, resultEmails), placeholderData: keepPreviousData });
+  const outcomeByEmail = new Map((outcomes ?? []).map((outcome) => [outcome.email, outcome]));
 
   return (
     <Combobox<string, true>
       multiple
-      items={items.map((u) => u.email)}
-      itemToStringLabel={(v) => v}
-      itemToStringValue={(v) => v}
+      items={items.map((user) => user.email)}
+      itemToStringLabel={(email) => email}
+      itemToStringValue={(email) => email}
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={onChange}
       inputValue={searchQuery}
       onInputValueChange={setSearchQuery}
       filter={() => true}
     >
-      <ComboboxPrimitive.Trigger
-        render={
-          <button
-            type="button"
-            className="relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left"
-          />
-        }
-      >
-        {value?.length ? (
-          value.map((el) => (
-            <Badge
-              size="sm"
-              variant="secondary"
-              key={el}
-              className="max-w-60 data-disabled:bg-muted-foreground data-fixed:bg-muted-foreground data-disabled:text-muted-foreground/50 data-fixed:text-muted data-disabled:hover:bg-muted-foreground data-fixed:hover:bg-muted-foreground"
-            >
-              <span className="truncate">{el}</span>
-              {/* biome-ignore lint/a11y/useSemanticElements: a native <button> cannot be nested inside the trigger <button>; this is an intentional removable-chip control. */}
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label={t('c:remove')}
-                className="focus-effect -m-1 ml-1 rounded-full py-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUnselect(el);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUnselect(el);
-                }}
-              >
-                <XIcon className="size-4 opacity-50 hover:opacity-100" />
-              </span>
-            </Badge>
-          ))
-        ) : (
-          <span className="ml-1 text-sm">{t('c:search_users')}</span>
-        )}
-        <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
-      </ComboboxPrimitive.Trigger>
+      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input bg-background p-1.5 pr-10">
+        {/* Lies behind the chip row, whose remove buttons cannot nest in a button, and reads out the selection itself */}
+        <ComboboxPrimitive.Trigger
+          ref={triggerRef}
+          render={<button type="button" className="focus-effect absolute inset-0 cursor-pointer rounded-md" />}
+        >
+          <span className="sr-only">{value.length ? value.join(', ') : t('c:search_users')}</span>
+        </ComboboxPrimitive.Trigger>
+        <div className="pointer-events-none relative flex min-w-0 flex-wrap items-center gap-1">
+          {value.length ? (
+            value.map((email) => (
+              <Chip key={email} onRemove={() => handleUnselect(email)} removeLabel={t('c:remove_resource', { resource: email })} className="max-w-60">
+                {email}
+              </Chip>
+            ))
+          ) : (
+            <span aria-hidden="true" className="ml-1 text-sm">
+              {t('c:search_users')}
+            </span>
+          )}
+        </div>
+        <InputTriggerChevron className="pointer-events-none absolute right-0 mx-2" />
+      </div>
 
-      <ComboboxContent className="p-0">
-        <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })} />
-        <ComboboxList className="h-full px-1">
+      <ComboboxContent>
+        <ComboboxSearchInput
+          value={searchQuery}
+          onClear={() => setSearchQuery('')}
+          isSearching={isFetching}
+          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+        />
+        <ComboboxList>
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (
-              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
-                {debouncedSearchQuery.length ? (
-                  <ComboboxEmpty>
-                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:user_other').toLowerCase() }} />
-                  </ComboboxEmpty>
-                ) : (
-                  <ComboboxEmpty>
-                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
-                  </ComboboxEmpty>
-                )}
+              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
+                <ComboboxEmpty>
+                  {debouncedSearchQuery.length ? (
+                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:user_other').toLowerCase() }} />
+                  ) : (
+                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleOptions={{ appName: appConfig.name }} />
+                  )}
+                </ComboboxEmpty>
               </motion.div>
             ) : (
               items.length > 0 && (
-                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={variants} className="max-h-[30vh] overflow-y-auto">
-                  <ScrollArea>
-                    {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
-                      const alreadyMember = existingMemberIds.has(id);
-                      return (
-                        <ComboboxItem
-                          key={id}
-                          value={email}
-                          disabled={alreadyMember}
-                          data-was-selected={value.some((u) => u === email)}
-                          data-already-member={alreadyMember}
-                          className="group w-full justify-between"
-                        >
-                          <div className="flex items-center gap-2 outline-0 ring-0">
-                            <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
-                            <span className="link-decoration group-active:link-decoration-strong truncate font-medium group-hover:underline group-data-[already-member=true]:no-underline">
-                              {isMobile ? email : name}
-                            </span>
-                          </div>
+                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
+                  {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
+                    const outcome = outcomeByEmail.get(email.toLowerCase());
+                    const alreadyMember = outcome?.outcome === 'member';
+                    const invitedNote = outcome?.outcome === 'remind' ? inviteNote(outcome, t) : undefined;
+                    return (
+                      <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
+                        <div className="flex items-center gap-2">
+                          <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
+                          <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
+                            {isMobile ? email : name}
+                          </span>
+                        </div>
 
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
-                              <UserIcon />
-                              <span className="max-sm:hidden">{t('c:already_member')}</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Badge size="sm" variant="plain" className="hidden group-data-disabled/user-item:flex">
+                            <UserIcon />
+                            <span className="max-sm:hidden">{t('c:already_member')}</span>
+                          </Badge>
+                          {invitedNote && (
+                            <Badge size="sm" variant="plain">
+                              <ClockIcon />
+                              <span className="max-sm:hidden">{invitedNote}</span>
                             </Badge>
-                            <span className="group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden max-sm:hidden">
-                              {email}
-                            </span>
-                            <ComboboxItemIndicator />
-                          </div>
-                        </ComboboxItem>
-                      );
-                    })}
-                  </ScrollArea>
+                          )}
+                          <span className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden">{email}</span>
+                          <ComboboxItemIndicator />
+                        </div>
+                      </ComboboxItem>
+                    );
+                  })}
                 </motion.div>
               )
             )}

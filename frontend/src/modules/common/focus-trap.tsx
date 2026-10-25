@@ -1,9 +1,9 @@
-import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import { type CSSProperties, type FocusEventHandler, type ReactNode, type RefObject, useEffect, useRef } from 'react';
 import { isTouchInteraction } from '~/utils/input-modality';
 
 const candidateSelector = 'a[href], button, textarea, input, select, [tabindex], [contenteditable="true"]';
 
-const guardStyle: React.CSSProperties = {
+const guardStyle: CSSProperties = {
   position: 'absolute',
   overflow: 'hidden',
   width: 1,
@@ -19,50 +19,42 @@ const guardStyle: React.CSSProperties = {
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const candidates = container.querySelectorAll<HTMLElement>(candidateSelector);
   return Array.from(candidates).filter(
-    (el) =>
-      el.tabIndex >= 0 &&
-      !el.closest('[aria-hidden="true"]') &&
-      el.getAttribute('data-exclude-from-focus-trap') !== 'true' &&
-      !el.hasAttribute('data-focus-guard'),
+    (element) =>
+      element.tabIndex >= 0 &&
+      !element.closest('[aria-hidden="true"]') &&
+      element.getAttribute('data-exclude-from-focus-trap') !== 'true' &&
+      !element.hasAttribute('data-focus-guard'),
   );
 }
 
+interface FocusGuardProps {
+  onFocus: FocusEventHandler;
+}
+
 /** Visually-hidden sentinel that redirects focus back into the trap */
-function FocusGuard({ onFocus }: { onFocus: (e: React.FocusEvent) => void }) {
-  // biome-ignore lint/a11y/noNoninteractiveTabindex: sentinel guard must be tabbable so a Tab/Shift+Tab off the trap edge lands here and can be redirected back inside
+function FocusGuard({ onFocus }: FocusGuardProps) {
+  // biome-ignore lint/a11y/noNoninteractiveTabindex: sentinel guard must be tabbable so a Tab/Shift+Tab off the trap edge moves focus here and can be redirected back inside
   return <span tabIndex={0} onFocus={onFocus} aria-hidden data-focus-guard="" style={guardStyle} />;
 }
 
-export function FocusTrap({
-  children,
-  mainElementId,
-  active = true,
-  disableInactive = true,
-  initialFocus = false,
-  returnFocus = false,
-  containFocus = false,
-}: {
+interface FocusTrapProps {
   children: ReactNode;
-  mainElementId?: string;
   active?: boolean;
-  disableInactive?: boolean;
   /** Move focus into the trap when activated (true = first element, or the trap itself after touch; ref = specific element) */
   initialFocus?: boolean | RefObject<HTMLElement | null>;
   /** Restore focus to the earlier focused element on deactivation. */
   returnFocus?: boolean;
   /** Pull focus back inside when it escapes via click or programmatic move */
   containFocus?: boolean;
-}) {
-  const internalRef = useRef<HTMLDivElement | null>(null);
-  // Track elements we disabled so we can restore exactly those on re-activation
-  const disabledRef = useRef<Set<HTMLElement>>(new Set());
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+}
 
-  const getContainer = () => internalRef.current;
+export function FocusTrap({ children, active = true, initialFocus = false, returnFocus = false, containFocus = false }: FocusTrapProps) {
+  const trapRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!active) return;
-    const trap = getContainer();
+    const trap = trapRef.current;
     if (!trap) return;
 
     if (returnFocus && document.activeElement instanceof HTMLElement) {
@@ -87,116 +79,60 @@ export function FocusTrap({
 
     if (!returnFocus) return;
     return () => {
-      const el = previousFocusRef.current;
-      if (el?.isConnected) queueMicrotask(() => el.focus({ preventScroll: true }));
+      const element = previousFocusRef.current;
+      if (element?.isConnected) queueMicrotask(() => element.focus({ preventScroll: true }));
       previousFocusRef.current = null;
     };
-  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active]);
 
   useEffect(() => {
     if (!active || !containFocus) return;
-    const trap = getContainer();
+    const trap = trapRef.current;
     if (!trap) return;
 
-    function onFocusIn(e: FocusEvent) {
-      const target = e.target as HTMLElement | null;
-      if (!trap || !target || trap.contains(target)) return;
-      if (target.hasAttribute('data-focus-guard')) return;
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || trap.contains(target) || target.hasAttribute('data-focus-guard')) return;
       const focusable = getFocusableElements(trap);
       // preventScroll: the redirect is involuntary and must not scroll off-screen content into view
       (focusable[0] ?? trap).focus({ preventScroll: true });
-    }
+    };
 
     document.addEventListener('focusin', onFocusIn);
     return () => document.removeEventListener('focusin', onFocusIn);
-  }, [active, containFocus]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Escape → main element
-  useEffect(() => {
-    if (!active || !mainElementId) return;
-    const trap = getContainer();
-    if (!trap) return;
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        const main = document.getElementById(mainElementId!);
-        if (main && document.activeElement !== main) main.focus();
-      }
-    }
-
-    trap.addEventListener('keydown', onKeyDown);
-    return () => trap.removeEventListener('keydown', onKeyDown);
-  }, [active, mainElementId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, containFocus]);
 
   // Prevent Tab from escaping a trap with no focusable elements
   useEffect(() => {
     if (!active) return;
-    const trap = getContainer();
+    const trap = trapRef.current;
     if (!trap) return;
 
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Tab' && getFocusableElements(trap!).length === 0) {
-        e.preventDefault();
-      }
-    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Tab' && getFocusableElements(trap).length === 0) event.preventDefault();
+    };
 
     trap.addEventListener('keydown', onKeyDown);
     return () => trap.removeEventListener('keydown', onKeyDown);
-  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active]);
 
-  // Inactive: optionally remove children from tab order
-  useEffect(() => {
-    const trap = getContainer();
+  // `relatedTarget` tells a Tab off one edge (wrap to the other edge) from focus entering the trap (go to the guard's own edge)
+  const focusFromGuard = (relatedTarget: EventTarget | null, guard: 'before' | 'after') => {
+    const trap = trapRef.current;
     if (!trap) return;
-
-    if (active) {
-      for (const el of disabledRef.current) el.setAttribute('tabindex', '0');
-      disabledRef.current.clear();
-      return;
-    }
-
-    if (!disableInactive) return;
+    const cameFromInside = relatedTarget instanceof Node && trap.contains(relatedTarget);
     const focusable = getFocusableElements(trap);
-    for (const el of focusable) {
-      el.setAttribute('tabindex', '-1');
-      disabledRef.current.add(el);
-    }
-  }, [active, disableInactive]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sentinel focus handlers use relatedTarget to distinguish cycling from entering.
-  const handleBeforeGuardFocus = (e: React.FocusEvent) => {
-    const trap = getContainer();
-    if (!trap) return;
-    const cameFromInside = e.relatedTarget instanceof Node && trap.contains(e.relatedTarget);
-    const focusable = getFocusableElements(trap);
-    if (cameFromInside) {
-      // Shift+Tab from first element: wrap to last.
-      (focusable[focusable.length - 1] ?? trap).focus();
-    } else {
-      // Tabbing forward into trap from outside: land on first.
-      (focusable[0] ?? trap).focus();
-    }
-  };
-
-  const handleAfterGuardFocus = (e: React.FocusEvent) => {
-    const trap = getContainer();
-    if (!trap) return;
-    const cameFromInside = e.relatedTarget instanceof Node && trap.contains(e.relatedTarget);
-    const focusable = getFocusableElements(trap);
-    if (cameFromInside) {
-      // Tab from last element: wrap to first.
-      (focusable[0] ?? trap).focus();
-    } else {
-      // Shift+Tab backward into trap from outside: land on last.
-      (focusable[focusable.length - 1] ?? trap).focus();
-    }
+    const first = focusable[0] ?? trap;
+    const last = focusable.at(-1) ?? trap;
+    if (guard === 'before') (cameFromInside ? last : first).focus();
+    else (cameFromInside ? first : last).focus();
   };
 
   return (
-    <div ref={internalRef} tabIndex={-1}>
-      {active && <FocusGuard onFocus={handleBeforeGuardFocus} />}
+    <div ref={trapRef} tabIndex={-1}>
+      {active && <FocusGuard onFocus={(event) => focusFromGuard(event.relatedTarget, 'before')} />}
       {children}
-      {active && <FocusGuard onFocus={handleAfterGuardFocus} />}
+      {active && <FocusGuard onFocus={(event) => focusFromGuard(event.relatedTarget, 'after')} />}
     </div>
   );
 }

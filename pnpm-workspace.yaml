@@ -26,14 +26,13 @@ overrides:
   '@opentelemetry/instrumentation-pg>@types/pg-pool': '-'
   # Tailwind pins lightningcss exactly, one minor behind Vite: a second set of native bindings until it catches up.
   '@tailwindcss/node>lightningcss': ^1.33.0
-  # drizzle-kit asks for esbuild 0.25; one esbuild (and one set of native bindings) serves every workspace.
-  drizzle-kit>esbuild: ^0.28.1
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
   # Storybook pins an older oxc-resolver exactly; knip's version serves both.
   oxc-resolver: 11.24.2
   postcss-selector-parser@<7.1.6: ^7.1.6
   # react-scan's CLI linter (eslint, oxlint, a second TypeScript), declared as "latest"; the app imports only the runtime.
   react-scan>react-doctor: '-'
+  zod@<4.6.6: ^4.6.6
 packages:
   - mcp
   - oauth
@@ -48,3 +47,10 @@ packages:
   - yjs
   - bench
   - a11y
+updateConfig:
+  # Packages that `pnpm outdated`, `pnpm update --latest` and `pnpm cella audit` leave out. `pnpm audit` still checks them.
+  ignoreDependencies:
+    # 2.6 rewrites about 280 files and adds new lint errors, so it waits for an upgrade of its own (cella#1450).
+    - '@biomejs/biome'
+    # This package only hosts the JS compiler API for SDK codegen; 7, the native rewrite, no longer has that API.
+    - typescript

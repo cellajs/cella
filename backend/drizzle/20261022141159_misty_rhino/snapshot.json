@@ -1,0 +1,2178 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ab5f3870-d1a9-45ad-829f-e83ab8e507ce",
+  "prevIds": [
+    "64adb00c-4cbf-4944-85c6-ced96399a91f"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tenants"
+      ],
+      "writes": [
+        "s|fk|public.tenants.tenants_created_by_users_id_fkey",
+        "n|fk|public.tenants.tenants_created_by_users_id_fkey",
+        "e|fk|public.tenants.tenants_created_by_users_id_fkey",
+        "n|con|public.tenants.tenants_created_by_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "e|col|public.tenants.created_by"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "users"
+      ],
+      "writes": [
+        "s|fk|public.users.users_updated_by_users_id_fkey",
+        "n|fk|public.users.users_updated_by_users_id_fkey",
+        "e|fk|public.users.users_updated_by_users_id_fkey",
+        "n|con|public.users.users_updated_by_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public",
+        "e|col|public.users.updated_by"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "public"
+      ],
+      "writes": [
+        "s|col|public.attachments.public",
+        "n|col|public.attachments.public",
+        "e|col|public.attachments.public"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "updated_by"
+      ],
+      "writes": [
+        "s|col|public.connections.updated_by",
+        "n|col|public.connections.updated_by",
+        "e|col|public.connections.updated_by"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "updated_by"
+      ],
+      "writes": [
+        "s|col|public.oauth_clients.updated_by",
+        "n|col|public.oauth_clients.updated_by",
+        "e|col|public.oauth_clients.updated_by"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "public"
+      ],
+      "writes": [
+        "s|col|public.organizations.public",
+        "n|col|public.organizations.public",
+        "e|col|public.organizations.public"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "updated_by"
+      ],
+      "writes": [
+        "s|col|public.tenants.updated_by",
+        "n|col|public.tenants.updated_by",
+        "e|col|public.tenants.updated_by"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "public_at"
+      ],
+      "writes": [
+        "s|col|public.attachments.public_at",
+        "n|col|public.attachments.public_at",
+        "e|col|public.attachments.public_at"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "public_at"
+      ],
+      "writes": [
+        "s|col|public.organizations.public_at",
+        "n|col|public.organizations.public_at",
+        "e|col|public.organizations.public_at"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.attachments.created_at.type",
+        "s|colprop|public.attachments.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.created_at"
+      ],
+      "sqlHash": "fd31b085106a90e5"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.attachments.updated_at.type",
+        "s|colprop|public.attachments.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.updated_at"
+      ],
+      "sqlHash": "8d0d3ab565e17615"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "deleted_at"
+      ],
+      "writes": [
+        "s|colprop|public.attachments.deleted_at.type",
+        "s|colprop|public.attachments.deleted_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.deleted_at"
+      ],
+      "sqlHash": "b4b34a1bb94d209e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.identities.created_at.type",
+        "s|colprop|public.identities.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|col|public.identities.created_at"
+      ],
+      "sqlHash": "1af505bbc9a23cf1"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "verified_at"
+      ],
+      "writes": [
+        "s|colprop|public.identities.verified_at.type",
+        "s|colprop|public.identities.verified_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|col|public.identities.verified_at"
+      ],
+      "sqlHash": "1be8f5a7c29d8e7e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.passkeys.created_at.type",
+        "s|colprop|public.passkeys.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public",
+        "n|col|public.passkeys.created_at"
+      ],
+      "sqlHash": "8e18b32bdca4e084"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.sessions.created_at.type",
+        "s|colprop|public.sessions.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public",
+        "n|col|public.sessions.created_at"
+      ],
+      "sqlHash": "6c1a609fd0f9726c"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.tokens.created_at.type",
+        "s|colprop|public.tokens.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.created_at"
+      ],
+      "sqlHash": "a3983087669a4685"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "totps",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.totps.created_at.type",
+        "s|colprop|public.totps.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.totps",
+        "n|sch|public",
+        "n|col|public.totps.created_at"
+      ],
+      "sqlHash": "f16bf549c77a7929"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "channel_counters",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.channel_counters.updated_at.type",
+        "s|colprop|public.channel_counters.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.channel_counters",
+        "n|sch|public",
+        "n|col|public.channel_counters.updated_at"
+      ],
+      "sqlHash": "b877e320409caba1"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "inactive_memberships",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.inactive_memberships.created_at.type",
+        "s|colprop|public.inactive_memberships.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public",
+        "n|col|public.inactive_memberships.created_at"
+      ],
+      "sqlHash": "c6e97484020257b6"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "inactive_memberships",
+        "rejected_at"
+      ],
+      "writes": [
+        "s|colprop|public.inactive_memberships.rejected_at.type",
+        "s|colprop|public.inactive_memberships.rejected_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public",
+        "n|col|public.inactive_memberships.rejected_at"
+      ],
+      "sqlHash": "91a8874b4f338443"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "inactive_memberships",
+        "reminded_at"
+      ],
+      "writes": [
+        "s|colprop|public.inactive_memberships.reminded_at.type",
+        "s|colprop|public.inactive_memberships.reminded_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public",
+        "n|col|public.inactive_memberships.reminded_at"
+      ],
+      "sqlHash": "3470dea656eba595"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "memberships",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.memberships.created_at.type",
+        "s|colprop|public.memberships.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "n|col|public.memberships.created_at"
+      ],
+      "sqlHash": "540f96cec51e6650"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "memberships",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.memberships.updated_at.type",
+        "s|colprop|public.memberships.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "n|col|public.memberships.updated_at"
+      ],
+      "sqlHash": "f39bc13aed164976"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.organizations.created_at.type",
+        "s|colprop|public.organizations.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.organizations.created_at"
+      ],
+      "sqlHash": "03b97b73bf155b13"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.organizations.updated_at.type",
+        "s|colprop|public.organizations.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.organizations.updated_at"
+      ],
+      "sqlHash": "c0e4240b506a1e3e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "published_at"
+      ],
+      "writes": [
+        "s|colprop|public.organizations.published_at.type",
+        "s|colprop|public.organizations.published_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.organizations.published_at"
+      ],
+      "sqlHash": "e1102fd6158da295"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "requests",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.requests.created_at.type",
+        "s|colprop|public.requests.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public",
+        "n|col|public.requests.created_at"
+      ],
+      "sqlHash": "0f6303939f94d646"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "system_roles",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.system_roles.created_at.type",
+        "s|colprop|public.system_roles.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.system_roles",
+        "n|sch|public",
+        "n|col|public.system_roles.created_at"
+      ],
+      "sqlHash": "cb4689d34aa1a888"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "system_roles",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.system_roles.updated_at.type",
+        "s|colprop|public.system_roles.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.system_roles",
+        "n|sch|public",
+        "n|col|public.system_roles.updated_at"
+      ],
+      "sqlHash": "b7926d5a834f56ad"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.created_at.type",
+        "s|colprop|public.tenants.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.created_at"
+      ],
+      "sqlHash": "5530e4b5c5d4f80b"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.updated_at.type",
+        "s|colprop|public.tenants.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.updated_at"
+      ],
+      "sqlHash": "4e7cdb85648864f8"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "emails",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.emails.created_at.type",
+        "s|colprop|public.emails.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.emails",
+        "n|sch|public",
+        "n|col|public.emails.created_at"
+      ],
+      "sqlHash": "e450b68821e2e83a"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "emails",
+        "verified_at"
+      ],
+      "writes": [
+        "s|colprop|public.emails.verified_at.type",
+        "s|colprop|public.emails.verified_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.emails",
+        "n|sch|public",
+        "n|col|public.emails.verified_at"
+      ],
+      "sqlHash": "0b5364bb63f35282"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.users.created_at.type",
+        "s|colprop|public.users.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public",
+        "n|col|public.users.created_at"
+      ],
+      "sqlHash": "b6078d89aa1555e1"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.users.updated_at.type",
+        "s|colprop|public.users.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public",
+        "n|col|public.users.updated_at"
+      ],
+      "sqlHash": "06fe1fc97a4f4681"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "yjs_documents",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.yjs_documents.updated_at.type",
+        "s|colprop|public.yjs_documents.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public",
+        "n|col|public.yjs_documents.updated_at"
+      ],
+      "sqlHash": "d9475d4970ae4c5b"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "last_digest_at"
+      ],
+      "writes": [
+        "s|colprop|public.notification_preferences.last_digest_at.type",
+        "s|colprop|public.notification_preferences.last_digest_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public",
+        "n|col|public.notification_preferences.last_digest_at"
+      ],
+      "sqlHash": "70965e830220f1b4"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notification_preferences",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.notification_preferences.updated_at.type",
+        "s|colprop|public.notification_preferences.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.notification_preferences",
+        "n|sch|public",
+        "n|col|public.notification_preferences.updated_at"
+      ],
+      "sqlHash": "11d4fbdcd85ceccb"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "read_at"
+      ],
+      "writes": [
+        "s|colprop|public.notifications.read_at.type",
+        "s|colprop|public.notifications.read_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public",
+        "n|col|public.notifications.read_at"
+      ],
+      "sqlHash": "c18d235cd380030a"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "emailed_at"
+      ],
+      "writes": [
+        "s|colprop|public.notifications.emailed_at.type",
+        "s|colprop|public.notifications.emailed_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public",
+        "n|col|public.notifications.emailed_at"
+      ],
+      "sqlHash": "ba74f7f47abf19c5"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "digested_at"
+      ],
+      "writes": [
+        "s|colprop|public.notifications.digested_at.type",
+        "s|colprop|public.notifications.digested_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public",
+        "n|col|public.notifications.digested_at"
+      ],
+      "sqlHash": "3bee65fa28ee796c"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "push_subscriptions",
+        "expiration_time"
+      ],
+      "writes": [
+        "s|colprop|public.push_subscriptions.expiration_time.type",
+        "s|colprop|public.push_subscriptions.expiration_time.default"
+      ],
+      "reads": [
+        "n|tbl|public.push_subscriptions",
+        "n|sch|public",
+        "n|col|public.push_subscriptions.expiration_time"
+      ],
+      "sqlHash": "1bb9b41f061a7727"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "push_subscriptions",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.push_subscriptions.created_at.type",
+        "s|colprop|public.push_subscriptions.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.push_subscriptions",
+        "n|sch|public",
+        "n|col|public.push_subscriptions.created_at"
+      ],
+      "sqlHash": "4a994e55a5edaae7"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "push_subscriptions",
+        "last_seen_at"
+      ],
+      "writes": [
+        "s|colprop|public.push_subscriptions.last_seen_at.type",
+        "s|colprop|public.push_subscriptions.last_seen_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.push_subscriptions",
+        "n|sch|public",
+        "n|col|public.push_subscriptions.last_seen_at"
+      ],
+      "sqlHash": "a7c990f526a60585"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "yjs_updates",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.yjs_updates.created_at.type",
+        "s|colprop|public.yjs_updates.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public",
+        "n|col|public.yjs_updates.created_at"
+      ],
+      "sqlHash": "3a424aec35b46ae1"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "identities",
+        "last_used_at"
+      ],
+      "writes": [
+        "s|colprop|public.identities.last_used_at.type",
+        "s|colprop|public.identities.last_used_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.identities",
+        "n|sch|public",
+        "n|col|public.identities.last_used_at"
+      ],
+      "sqlHash": "75f5eb90a57b3fce"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "emails",
+        "last_verified_at"
+      ],
+      "writes": [
+        "s|colprop|public.emails.last_verified_at.type",
+        "s|colprop|public.emails.last_verified_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.emails",
+        "n|sch|public",
+        "n|col|public.emails.last_verified_at"
+      ],
+      "sqlHash": "11083c59d7466c6b"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "first_seen_at"
+      ],
+      "writes": [
+        "s|colprop|public.devices.first_seen_at.type",
+        "s|colprop|public.devices.first_seen_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public",
+        "n|col|public.devices.first_seen_at"
+      ],
+      "sqlHash": "f6485f41ac4dd418"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "last_seen_at"
+      ],
+      "writes": [
+        "s|colprop|public.devices.last_seen_at.type",
+        "s|colprop|public.devices.last_seen_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public",
+        "n|col|public.devices.last_seen_at"
+      ],
+      "sqlHash": "6b19b304ab263465"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "devices",
+        "notified_at"
+      ],
+      "writes": [
+        "s|colprop|public.devices.notified_at.type",
+        "s|colprop|public.devices.notified_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.devices",
+        "n|sch|public",
+        "n|col|public.devices.notified_at"
+      ],
+      "sqlHash": "83d0aade244d2f5c"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.oauth_clients.created_at.type",
+        "s|colprop|public.oauth_clients.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|col|public.oauth_clients.created_at"
+      ],
+      "sqlHash": "b45b33763dddcb11"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oauth_clients",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.oauth_clients.updated_at.type",
+        "s|colprop|public.oauth_clients.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|col|public.oauth_clients.updated_at"
+      ],
+      "sqlHash": "16b1deaa068b0da6"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oidc_payloads",
+        "expires_at"
+      ],
+      "writes": [
+        "s|colprop|public.oidc_payloads.expires_at.type",
+        "s|colprop|public.oidc_payloads.expires_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.oidc_payloads",
+        "n|sch|public",
+        "n|col|public.oidc_payloads.expires_at"
+      ],
+      "sqlHash": "e5a765178652fc76"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oidc_payloads",
+        "consumed_at"
+      ],
+      "writes": [
+        "s|colprop|public.oidc_payloads.consumed_at.type",
+        "s|colprop|public.oidc_payloads.consumed_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.oidc_payloads",
+        "n|sch|public",
+        "n|col|public.oidc_payloads.consumed_at"
+      ],
+      "sqlHash": "cf558b321ec76916"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "oidc_payloads",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.oidc_payloads.created_at.type",
+        "s|colprop|public.oidc_payloads.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.oidc_payloads",
+        "n|sch|public",
+        "n|col|public.oidc_payloads.created_at"
+      ],
+      "sqlHash": "2a76c1b04dad8490"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "signing_keys",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.signing_keys.created_at.type",
+        "s|colprop|public.signing_keys.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.signing_keys",
+        "n|sch|public",
+        "n|col|public.signing_keys.created_at"
+      ],
+      "sqlHash": "5fe9deb801028727"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "signing_keys",
+        "retired_at"
+      ],
+      "writes": [
+        "s|colprop|public.signing_keys.retired_at.type",
+        "s|colprop|public.signing_keys.retired_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.signing_keys",
+        "n|sch|public",
+        "n|col|public.signing_keys.retired_at"
+      ],
+      "sqlHash": "83bfc7a0b987534c"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "actors",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.actors.created_at.type",
+        "s|colprop|public.actors.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.actors.created_at"
+      ],
+      "sqlHash": "180c2b2309bfcd2d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "api_keys",
+        "revoked_at"
+      ],
+      "writes": [
+        "s|colprop|public.api_keys.revoked_at.type",
+        "s|colprop|public.api_keys.revoked_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.api_keys",
+        "n|sch|public",
+        "n|col|public.api_keys.revoked_at"
+      ],
+      "sqlHash": "9be2483944f07bce"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "api_keys",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.api_keys.created_at.type",
+        "s|colprop|public.api_keys.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.api_keys",
+        "n|sch|public",
+        "n|col|public.api_keys.created_at"
+      ],
+      "sqlHash": "9d87462ab6ffaaf6"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "service_accounts",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.service_accounts.created_at.type",
+        "s|colprop|public.service_accounts.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.created_at"
+      ],
+      "sqlHash": "6d155b1eddb2bed6"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "service_accounts",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.service_accounts.updated_at.type",
+        "s|colprop|public.service_accounts.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.service_accounts",
+        "n|sch|public",
+        "n|col|public.service_accounts.updated_at"
+      ],
+      "sqlHash": "cf0cb388c9220970"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "revoked_at"
+      ],
+      "writes": [
+        "s|colprop|public.sessions.revoked_at.type",
+        "s|colprop|public.sessions.revoked_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public",
+        "n|col|public.sessions.revoked_at"
+      ],
+      "sqlHash": "10e748dd688fe298"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkey_challenges",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.passkey_challenges.created_at.type",
+        "s|colprop|public.passkey_challenges.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.passkey_challenges",
+        "n|sch|public",
+        "n|col|public.passkey_challenges.created_at"
+      ],
+      "sqlHash": "f7f0ccc3465faa03"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "stepped_up_at"
+      ],
+      "writes": [
+        "s|colprop|public.sessions.stepped_up_at.type",
+        "s|colprop|public.sessions.stepped_up_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public",
+        "n|col|public.sessions.stepped_up_at"
+      ],
+      "sqlHash": "9e8a1909db0e4546"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.connections.created_at.type",
+        "s|colprop|public.connections.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.created_at"
+      ],
+      "sqlHash": "f9bce596152887a8"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "connections",
+        "updated_at"
+      ],
+      "writes": [
+        "s|colprop|public.connections.updated_at.type",
+        "s|colprop|public.connections.updated_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|col|public.connections.updated_at"
+      ],
+      "sqlHash": "ac71b9be8dbdccb6"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "actors",
+        "last_seen_at"
+      ],
+      "writes": [
+        "s|colprop|public.actors.last_seen_at.type",
+        "s|colprop|public.actors.last_seen_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.actors.last_seen_at"
+      ],
+      "sqlHash": "10b7dd5231ee6b5d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "actors",
+        "last_sign_in_at"
+      ],
+      "writes": [
+        "s|colprop|public.actors.last_sign_in_at.type",
+        "s|colprop|public.actors.last_sign_in_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.actors.last_sign_in_at"
+      ],
+      "sqlHash": "774af96e90fd5e07"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "requests",
+        "invited_at"
+      ],
+      "writes": [
+        "s|colprop|public.requests.invited_at.type",
+        "s|colprop|public.requests.invited_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public",
+        "n|col|public.requests.invited_at"
+      ],
+      "sqlHash": "fb3817da3e042959"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_incidents",
+        "created_at"
+      ],
+      "writes": [
+        "s|colprop|public.sync_incidents.created_at.type",
+        "s|colprop|public.sync_incidents.created_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sync_incidents",
+        "n|sch|public",
+        "n|col|public.sync_incidents.created_at"
+      ],
+      "sqlHash": "0ea49767100f2847"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_state",
+        "verified_at"
+      ],
+      "writes": [
+        "s|colprop|public.sync_state.verified_at.type",
+        "s|colprop|public.sync_state.verified_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sync_state",
+        "n|sch|public",
+        "n|col|public.sync_state.verified_at"
+      ],
+      "sqlHash": "353c0cd2a424114e"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sync_state",
+        "rebuilt_at"
+      ],
+      "writes": [
+        "s|colprop|public.sync_state.rebuilt_at.type",
+        "s|colprop|public.sync_state.rebuilt_at.default"
+      ],
+      "reads": [
+        "n|tbl|public.sync_state",
+        "n|sch|public",
+        "n|col|public.sync_state.rebuilt_at"
+      ],
+      "sqlHash": "2c442e3ef1ebc4b4"
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "connections"
+      ],
+      "writes": [
+        "s|fk|public.connections.connections_updated_by_actors_id_fkey",
+        "n|fk|public.connections.connections_updated_by_actors_id_fkey",
+        "e|fk|public.connections.connections_updated_by_actors_id_fkey",
+        "n|con|public.connections.connections_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.connections",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.connections.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "oauth_clients"
+      ],
+      "writes": [
+        "s|fk|public.oauth_clients.oauth_clients_updated_by_actors_id_fkey",
+        "n|fk|public.oauth_clients.oauth_clients_updated_by_actors_id_fkey",
+        "e|fk|public.oauth_clients.oauth_clients_updated_by_actors_id_fkey",
+        "n|con|public.oauth_clients.oauth_clients_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.oauth_clients",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.oauth_clients.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tenants"
+      ],
+      "writes": [
+        "s|fk|public.tenants.tenants_created_by_actors_id_fkey",
+        "n|fk|public.tenants.tenants_created_by_actors_id_fkey",
+        "e|fk|public.tenants.tenants_created_by_actors_id_fkey",
+        "n|con|public.tenants.tenants_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.tenants.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tenants"
+      ],
+      "writes": [
+        "s|fk|public.tenants.tenants_updated_by_actors_id_fkey",
+        "n|fk|public.tenants.tenants_updated_by_actors_id_fkey",
+        "e|fk|public.tenants.tenants_updated_by_actors_id_fkey",
+        "n|con|public.tenants.tenants_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.tenants.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "users"
+      ],
+      "writes": [
+        "s|fk|public.users.users_updated_by_actors_id_fkey",
+        "n|fk|public.users.users_updated_by_actors_id_fkey",
+        "e|fk|public.users.users_updated_by_actors_id_fkey",
+        "n|con|public.users.users_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.users.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "attachments",
+        "name": "public",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organizations",
+        "name": "public",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tenants",
+        "name": "updated_by",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "connections",
+        "name": "connections_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "oauth_clients",
+        "name": "oauth_clients_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tenants",
+        "name": "tenants_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tenants",
+        "name": "tenants_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "users",
+        "name": "users_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"attachments\",\"public_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"organizations\",\"public_at\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"tenants\",\"tenants_created_by_users_id_fkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"users\",\"users_updated_by_users_id_fkey\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"attachments\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"attachments\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"attachments\",\"deleted_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"identities\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"identities\",\"verified_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"passkeys\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sessions\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tokens\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"totps\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"channel_counters\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"inactive_memberships\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"inactive_memberships\",\"rejected_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"inactive_memberships\",\"reminded_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"memberships\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"memberships\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organizations\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organizations\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organizations\",\"published_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"requests\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"system_roles\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"system_roles\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"emails\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"emails\",\"verified_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"users\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"users\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"yjs_documents\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notification_preferences\",\"last_digest_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notification_preferences\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notifications\",\"read_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notifications\",\"emailed_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"notifications\",\"digested_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"push_subscriptions\",\"expiration_time\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"push_subscriptions\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"push_subscriptions\",\"last_seen_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"yjs_updates\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"identities\",\"last_used_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"emails\",\"last_verified_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"devices\",\"first_seen_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"devices\",\"last_seen_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"devices\",\"notified_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"oauth_clients\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"oauth_clients\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"oidc_payloads\",\"expires_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"oidc_payloads\",\"consumed_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"oidc_payloads\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"signing_keys\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"signing_keys\",\"retired_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"actors\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"api_keys\",\"revoked_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"api_keys\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"service_accounts\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"service_accounts\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sessions\",\"revoked_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"passkey_challenges\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sessions\",\"stepped_up_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"connections\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"connections\",\"updated_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"actors\",\"last_seen_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"actors\",\"last_sign_in_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"requests\",\"invited_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sync_incidents\",\"created_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sync_state\",\"verified_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"sync_state\",\"rebuilt_at\"]",
+      "set": {
+        "type": "timestamp with time zone"
+      }
+    }
+  ]
+}

@@ -1,3 +1,3 @@
-// Bind before observability, Maple, and the router install wrappers. See frontend/src/lib/README.md.
+// Why this binds first: frontend/src/lib/README.md, "History wrappers".
 history.pushState = history.pushState.bind(history);
 history.replaceState = history.replaceState.bind(history);

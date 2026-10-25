@@ -35,6 +35,18 @@ vi.mock('#/lib/mailer', async (importOriginal) => {
   return { ...actual, mailer: { ...actual.mailer, prepareEmails: vi.fn(actual.mailer.prepareEmails) } };
 });
 
+// No test reaches object storage, whose client sends over node:https: every key names a stored 1-byte object, and a
+// delete succeeds. A test of a missing object or a failed delete overrides one function with `vi.mocked`.
+vi.mock('#/lib/object-storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/lib/object-storage')>();
+  return {
+    ...actual,
+    storedObjectSize: vi.fn(async () => 1),
+    deleteStoredObjects: vi.fn(async () => {}),
+    deleteStoredPrefix: vi.fn(async () => 0),
+  };
+});
+
 // The app's outbound requests get an empty 200 (a Request's own JSON body as the answer), so no test reaches the
 // network. A test that needs real fetch calls `vi.unstubAllGlobals()`; `startTestOauthServer` does.
 vi.stubGlobal(

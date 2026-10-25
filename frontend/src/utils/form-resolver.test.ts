@@ -12,16 +12,12 @@ const schema = z.object({
 const options: ResolverOptions<z.input<typeof schema>> = { fields: {}, shouldUseNativeValidation: false };
 
 describe('formResolver', () => {
-  it('submits a cleared optional field as null', async () => {
-    const result = await formResolver(schema)({ name: 'Acme', shortName: '  ', description: '' }, undefined, options);
+  it('reads a blank text field as no value: a cleared optional one submits null, a required one is refused', async () => {
+    const cleared = await formResolver(schema)({ name: 'Acme', shortName: '  ', description: '' }, undefined, options);
+    expect(cleared.errors).toEqual({});
+    expect(cleared.values).toEqual({ name: 'Acme', shortName: null, description: null });
 
-    expect(result.errors).toEqual({});
-    expect(result.values).toEqual({ name: 'Acme', shortName: null, description: null });
-  });
-
-  it('refuses a required field left blank, also one holding only spaces', async () => {
-    const result = await formResolver(schema)({ name: '   ', shortName: null, description: null }, undefined, options);
-
-    expect(Object.keys(result.errors)).toEqual(['name']);
+    const blank = await formResolver(schema)({ name: '   ', shortName: null, description: null }, undefined, options);
+    expect(Object.keys(blank.errors)).toEqual(['name']);
   });
 });

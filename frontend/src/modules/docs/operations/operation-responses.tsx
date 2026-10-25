@@ -1,29 +1,18 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
+import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
+import { getStatusColor } from '~/modules/docs/helpers/get-status-color';
+import { OperationSection } from '~/modules/docs/operations/operation-section';
+import { schemasQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
+import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
-import {
-  type DefinitionIndex,
-  getTypeCodeForResponse,
-  getZodCodeForResponse,
-  typesIndexQueryOptions,
-  zodIndexQueryOptions,
-} from '../helpers/extract-types';
-import { getStatusColor } from '../helpers/get-status-color';
-import { schemasQueryOptions } from '../query';
-import { ViewerGroup } from '../viewer-group';
 
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
-  if (response.name) {
-    const schemaEntry = schemas.find((s) => s.name === response.name);
-    return schemaEntry?.schema;
-  }
+  if (response.name) return schemas.find((schema) => schema.name === response.name)?.schema;
   return undefined;
 }
 
@@ -40,7 +29,7 @@ interface ResponsesAccordionProps {
 export function ResponsesAccordion({ responses: allResponses, schemas, operationId, zodIndex, typesIndex, examplesOnly }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
-  const responses = examplesOnly ? allResponses.filter((r) => r.example !== undefined) : allResponses;
+  const responses = examplesOnly ? allResponses.filter((response) => response.example !== undefined) : allResponses;
 
   if (responses.length === 0) {
     return (
@@ -49,25 +38,17 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   }
 
   return (
-    <Accordion className="w-full" defaultValue={examplesOnly ? [String(responses[0].status)] : undefined}>
+    <Accordion defaultValue={examplesOnly ? [String(responses[0].status)] : undefined}>
       {responses.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="group py-2 opacity-80 hover:opacity-100 group-data-open/accordion-header:opacity-100">
+            <AccordionTrigger className="py-2 opacity-80 hover:opacity-100 group-data-open/accordion-header:opacity-100">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
+                <div className={cn('rounded px-2 py-0.5 font-mono font-semibold', getStatusColor(response.status))}>{response.status}</div>
                 <div
                   className={cn(
-                    'rounded px-2 py-0.5 font-mono font-semibold text-sm group-data-open/accordion-header:opacity-100',
-                    !examplesOnly && 'decoration-transparent',
-                    getStatusColor(response.status),
-                  )}
-                >
-                  {response.status}
-                </div>
-                <div
-                  className={cn(
-                    'grow text-sm',
+                    'grow',
                     examplesOnly
                       ? 'text-muted-foreground group-data-open/accordion-header:text-foreground'
                       : 'text-foreground group-data-open/accordion-header:text-primary',
@@ -90,7 +71,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   defaultViewMode={examplesOnly ? 'example' : undefined}
                 />
               ) : (
-                <div className="p-3 text-muted-foreground text-sm">{t('c:docs.no_response_body')}</div>
+                <div className="p-3 text-muted-foreground">{t('c:docs.no_response_body')}</div>
               )}
             </AccordionContent>
           </AccordionItem>
@@ -106,36 +87,20 @@ interface OperationResponsesProps {
 
 export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
-  // Height keyframes run on the main thread and drop frames while the opening panel mounts the accordion
-
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
-  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
-  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
-
-  const responses = detail?.responses ?? [];
+  const { zodIndex, typesIndex } = useDefinitionIndexes();
 
   return (
-    <Collapsible defaultOpen className="mt-8">
-      <CollapsibleTrigger
-        nativeButton
-        render={
-          <Button variant="ghost" size="sm" className="group w-full justify-start gap-2">
-            <span className="font-medium text-sm">{t('c:docs.responses')}</span>
-            <ChevronDownIcon className="size-4 opacity-40 transition-transform duration-200 group-hover:opacity-70 group-data-panel-open:rotate-180" />
-          </Button>
-        }
-      />
-      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-        <div className="mt-2">
-          <ResponsesAccordion
-            responses={responses}
-            schemas={schemas}
-            operationId={detail?.operationId ?? ''}
-            zodIndex={zodIndex}
-            typesIndex={typesIndex}
-          />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <OperationSection title={t('c:docs.responses')}>
+      <div className="mt-2">
+        <ResponsesAccordion
+          responses={detail?.responses ?? []}
+          schemas={schemas}
+          operationId={detail?.operationId ?? ''}
+          zodIndex={zodIndex}
+          typesIndex={typesIndex}
+        />
+      </div>
+    </OperationSection>
   );
 }

@@ -181,6 +181,24 @@ export const uniqueIdsSchema = (maxItems = 50) =>
     .max(maxItems)
     .refine((ids) => new Set(ids).size === ids.length, 'IDs must be unique');
 
+/**
+ * A string-keyed record that holds at most `maxKeys` keys. `z.record` has no size check, so the count is checked before
+ * any value parses: an oversized record fails with one issue, not one per failing value.
+ * @public
+ */
+export const boundedRecord = <V extends z.ZodType>(value: V, maxKeys: number) =>
+  z
+    .preprocess(
+      (input, ctx) => {
+        if (input && typeof input === 'object' && Object.keys(input).length > maxKeys) {
+          ctx.addIssue({ code: 'custom', message: `At most ${maxKeys} keys` });
+        }
+        return input;
+      },
+      z.record(z.string(), value),
+    )
+    .openapi({ maxProperties: maxKeys });
+
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) => new Set(items.map((i) => i.slug)).size === items.length;
 
 /** Scheme and host are case-insensitive; userinfo, path, query and fragment are not, so they keep their case. */

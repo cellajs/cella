@@ -3,21 +3,21 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
-import { LEGAL_OVERVIEW_ID, type LegalSection } from '~/modules/auth/legal/legal-types';
+import { type LegalSectionConfig, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
 import { buttonVariants } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
 interface LegalSubjectConfig {
   id: LegalSubject;
   label: TKey;
-  sections: readonly LegalSection[];
+  sections: readonly LegalSectionConfig[];
 }
 
 interface LegalAsideProps {
@@ -30,7 +30,6 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   const { t } = useTranslation();
 
   const isMobile = useBreakpointBelow('sm');
-  // Below `md` the aside stacks above the legal text, so a height animation would relayout the text every frame
 
   const [layoutId] = useState(() => nanoid());
 
@@ -48,16 +47,16 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   };
 
   const spySection = useCurrentSection();
-  const currentSection = spySection || LEGAL_OVERVIEW_ID;
+  const currentSection = spySection || legalOverviewId;
 
   return (
     <div className={cn('mb-6 flex w-full flex-col gap-2', className)}>
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
-        const subjectSections = sections.filter((s) => s.label);
+        const subjectSections = sections.filter((section) => section.label);
         // Collapsing is a re-click at the subject's overview. Further down, the link scrolls back up and the subject stays open.
-        const isAtSubject = isActive && currentSection === LEGAL_OVERVIEW_ID;
+        const isAtSubject = isActive && currentSection === legalOverviewId;
 
         return (
           <Collapsible
@@ -76,18 +75,17 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                   <Link
                     to="/legal/$subject"
                     params={{ subject: id }}
-                    hash={isMobile ? '' : LEGAL_OVERVIEW_ID}
+                    hash={isMobile ? '' : legalOverviewId}
                     hashScrollIntoView={{ behavior: 'instant' }}
-                    resetScroll={true}
+                    resetScroll
                     draggable={false}
                     // A link to the current subject only changes the hash, which doesn't scroll
                     onClick={() => {
-                      if (isActive && !isAtSubject) requestAnimationFrame(() => scrollToSectionById(LEGAL_OVERVIEW_ID));
+                      if (isActive && !isAtSubject) requestAnimationFrame(() => scrollToSectionById(legalOverviewId));
                     }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
-                      'group focus-inset w-full pl-5 text-left font-medium',
-                      'group-data-[active=true]/subject:bg-accent group-data-[active=true]/subject:font-semibold',
+                      'group focus-inset w-full pl-5 text-left font-medium group-data-[active=true]/subject:bg-accent group-data-[active=true]/subject:font-semibold',
                     )}
                   />
                 }
@@ -98,11 +96,8 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                 <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
-              <CollapsibleContent
-                keepMounted
-                className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}
-              >
-                <div className="relative flex flex-col px-0 py-1">
+              <CollapsibleContent keepMounted className={collapsiblePanelClass}>
+                <div className="flex flex-col py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
                     <SpyNavItem
                       key={sectionId}

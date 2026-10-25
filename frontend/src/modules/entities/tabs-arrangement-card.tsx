@@ -8,6 +8,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { arrangePlacements } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
+import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
@@ -37,33 +38,29 @@ function rowKeyGetter(row: TabRow) {
 
 // The label cell stacks a tab's name and description, centred in the row
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// Below `sm` a row grows as its description unfolds. The top padding seats the name where a centred row has it (1.5rem is
-// the help toggle's height), and the other cells keep to the row's first line, so nothing shifts while the text opens beneath
+// Below `sm` the top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
 const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
-const firstLineCellClass = tw('max-sm:h-(--rdg-row-height) max-sm:self-start');
+// Below `sm` the other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
+const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
-  return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
+  return <RowDragPreview name={row.name} />;
 }
 
 interface TabsArrangementCardProps {
   entity: EnrichedChannel & { toolsConfig?: ToolsConfig };
-  /** The tabbed surface whose candidates are managed (route navTabs plus registry slot tools). */
+  /** Layout route whose tabs it arranges: its `navTab` child routes plus the tools of its `tabsSlot`. */
   parentRouteId: string;
   /** Persists the next toolsConfig through the channel's update mutation. */
-  persist: (toolsConfig: ToolsConfig) => void;
+  onPersist: (toolsConfig: ToolsConfig) => void;
 }
 
-/**
- * Arranges a channel surface's tabs, persisted in `toolsConfig['<channelType>.tabs']`. Candidates
- * list ungated, so tabs the viewer's own grants would hide stay manageable; `locked` tabs cannot be
- * hidden. UI visibility only, never authorization.
- */
-export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
+/** Orders and hides a channel's tabs in `toolsConfig['<channelType>.tabs']`, listed ungated so the viewer's grants hide none; UI only, never authorization. */
+export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
-  const slot = `${entity.entityType}.tabs` as ChannelSlot;
+  const slot: ChannelSlot = `${entity.entityType}.tabs`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
@@ -72,22 +69,17 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);
 
-  const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, description, order, locked }) => ({
-    id,
-    label,
-    resource,
-    description,
-    order,
-    locked,
-  }));
-  const rows = arrangePlacements(slot, candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
-    ...tab,
-    name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
-    description: tab.description ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }) : undefined,
-    visible: !hidden.has(tab.id),
-  }));
+  const rows = arrangePlacements(slot, getNavTabCandidates(parentRouteId), draftOrder ? { order: draftOrder } : slotConfig).map((tab) => {
+    const resource = tab.resource ? t(tab.resource).toLowerCase() : '';
+    return {
+      ...tab,
+      name: t(tab.label, { resource }),
+      description: tab.description ? t(tab.description, { resource }) : undefined,
+      visible: !hidden.has(tab.id),
+    };
+  });
 
-  const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
+  const persistSlot = (nextConfig: SlotToolsConfig) => onPersist({ [slot]: nextConfig });
 
   const toggleHidden = (id: string, visible: boolean) => {
     const nextHidden = rows.filter((row) => (row.id === id ? !visible : !row.visible)).map((row) => row.id);
@@ -108,21 +100,25 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     reorder(ids);
   };
 
-  // The same reorder one step at a time, from the grip's menu, for the keyboard and for a pointer that cannot drag
-  const [moveStatus, setMoveStatus] = useState('');
+  // The same reorder one place at a time, from the grip's arrow keys or its menu
   const moveRow = (fromIdx: number, step: -1 | 1) => {
-    const toIdx = fromIdx + step;
-    if (toIdx < 0 || toIdx >= rows.length) return;
     const ids = rows.map((row) => row.id);
-    [ids[fromIdx], ids[toIdx]] = [ids[toIdx], ids[fromIdx]];
+    [ids[fromIdx], ids[fromIdx + step]] = [ids[fromIdx + step], ids[fromIdx]];
     reorder(ids);
-    setMoveStatus(t('c:success.move_position', { name: rows[fromIdx].name, position: toIdx + 1, total: rows.length }));
   };
 
   const columns: ColumnOrColumnGroup<TabRow>[] = [
-    // A single tab has no order to change, so its grip would open a menu of two dead items
+    // A single tab has no order to change
     ...(rows.length > 1
-      ? [reorderColumn<TabRow>({ getName: (row) => row.name, onMove: moveRow, rowCount: rows.length, cellClass: firstLineCellClass })]
+      ? [
+          reorderColumn<TabRow>({
+            getId: rowKeyGetter,
+            getName: (row) => row.name,
+            onMove: moveRow,
+            rowCount: rows.length,
+            cellClass: firstLineCellClass,
+          }),
+        ]
       : []),
     {
       key: 'label',
@@ -132,7 +128,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       wrapText: true,
       cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
       renderCell: ({ row }) => {
-        const name = <span className="text-sm leading-tight">{row.name}</span>;
+        const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
         if (!row.description) return name;
 
         // A narrow column wraps a description over many lines, so there it unfolds from a help toggle
@@ -156,8 +152,8 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'visible',
       name: t('c:visible'),
       width: 64,
-      cellClass: cn('flex items-center justify-center', firstLineCellClass),
-      headerCellClass: 'text-center',
+      cellClass: firstLineCellClass,
+      headerCellClass: 'justify-center',
       renderCell: ({ row }) =>
         row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />
@@ -180,9 +176,6 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
         onRowReorder={onRowReorder}
         renderRowDragPreview={renderRowDragPreview}
       />
-      <span className="sr-only" role="status">
-        {moveStatus}
-      </span>
     </ToolCard>
   );
 }

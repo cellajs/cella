@@ -19,7 +19,7 @@ the first run, serves the backend, the Yjs relay (when the app runs one) and a b
 checkout's dev ports, runs the audit and stops what it started. It sets the database URLs and the system admin allowlist for that stack itself, so
 `backend/.env` stays as it is.
 
-The audit signs in as the seeded admin through `pnpm --filter backend session:mint`, so it runs in development only.
+The audit signs in as the seeded admin through `pnpm --filter backend session:mint`, so it runs in development only. It signs that session out when it ends.
 
 ### Against a stack you started yourself
 

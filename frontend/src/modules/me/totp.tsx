@@ -1,27 +1,37 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { CheckIcon, RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
+import { RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ensureStepUp } from '~/modules/auth/step-up';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { ExpandableTile, ExpandableTileDetail } from '~/modules/common/expandable-tile';
+import { RelativeDate } from '~/modules/common/relative-date';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
-import { SetupTotp } from '~/modules/me/totp-setup';
+import { TotpSetup } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { dateShort } from '~/utils/date-short';
 
-export function Totp() {
+interface TotpProps {
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+/** TOTP as a tile once it is set up, else the button that sets it up. */
+export function Totp({ expanded, onToggle }: TotpProps) {
   const { t } = useTranslation();
 
   const user = useCurrentUser();
-  const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const hasTotp = authData.hasTotp;
+  const {
+    data: { totp },
+  } = useSuspenseQuery(meAuthQueryOptions());
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const openSetupTotp = async () => {
+  const openTotpSetup = async () => {
     // The key request and the code check need a stepped-up session: the user proves it before the setup opens.
     const steppedUp = await ensureStepUp().then(
       () => true,
@@ -29,12 +39,12 @@ export function Totp() {
     );
     if (!steppedUp) return;
 
-    useDialoger.getState().create(
+    dialoger.getState().create(
       <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
-        <SetupTotp />
+        <TotpSetup />
       </Suspense>,
       {
-        id: 'setup-totp',
+        id: 'totp-setup',
         title: t('c:totp_qr.title'),
         description: t('c:totp_qr.description'),
         triggerRef,
@@ -44,33 +54,53 @@ export function Totp() {
     );
   };
 
-  const handleDeleteTOTP = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    if (user.mfaRequired) return toaster.info(t('c:delete_mfa_last', { method: 'TOTP' }));
-
+  const handleDeleteTotp = () => {
+    if (!onlineManager.isOnline()) return toastOffline();
     deleteTotp();
   };
 
+  if (!totp)
+    return (
+      <div className="mb-6">
+        <Button ref={triggerRef} variant="plain" className="max-sm:w-full" onClick={openTotpSetup}>
+          <RotateCcwKeyIcon />
+          {t('c:totp_setup')}
+        </Button>
+      </div>
+    );
+
   return (
-    <div className="mb-6 flex gap-2 max-sm:flex-col">
-      {hasTotp && (
-        <div className="flex items-center gap-2 px-3">
-          <RotateCcwKeyIcon className="mr-2 size-4" />
-          <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
-          <span>{t('c:totp_activated')}</span>
-        </div>
-      )}
-      {hasTotp ? (
-        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
-          <TrashIcon className="size-4" />
-          <span>{t('c:delete')}</span>
-        </Button>
-      ) : (
-        <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
-          <RotateCcwKeyIcon className="size-4" />
-          <span>{t('c:totp_setup')}</span>
-        </Button>
-      )}
+    <div className="mb-6">
+      <ExpandableTile
+        icon={<RotateCcwKeyIcon />}
+        title={t('c:authenticator_app')}
+        meta={
+          totp.lastUsedAt ? (
+            <>
+              {t('c:last_used')} <RelativeDate date={totp.lastUsedAt} />
+            </>
+          ) : (
+            t('c:never_used')
+          )
+        }
+        expanded={expanded}
+        onToggle={onToggle}
+        details={
+          <>
+            <ExpandableTileDetail label={t('c:created_at')}>{dateShort(totp.createdAt)}</ExpandableTileDetail>
+            {totp.lastUsedAt && <ExpandableTileDetail label={t('c:last_used')}>{dateShort(totp.lastUsedAt)}</ExpandableTileDetail>}
+          </>
+        }
+        actions={
+          <>
+            <Button variant="plain" size="sm" className="max-sm:w-full" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
+              <TrashIcon />
+              {t('c:delete')}
+            </Button>
+            {user.mfaRequired && <p className="text-muted-foreground text-sm">{t('c:totp_locked.text')}</p>}
+          </>
+        }
+      />
     </div>
   );
 }

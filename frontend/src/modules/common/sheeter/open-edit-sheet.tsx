@@ -1,16 +1,17 @@
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
-import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ToolCard } from '~/modules/common/tool-card';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import { Card, CardContent } from '~/modules/ui/card';
 import { tw } from '~/utils/tw';
 
 interface OpenEditSheetOptions {
   id: string;
   /** The edited resource, such as `c:user`. */
   resource: TKey;
+  /** Names the edited item under the title, usually a `NamedText`. */
+  description?: ReactNode;
   triggerRef: TriggerRef;
   /** The edit form, rendered in the first card. */
   children: ReactNode;
@@ -25,21 +26,24 @@ interface OpenEditSheetOptions {
 }
 
 /** Opens a right-side sheet that edits one resource: the form in a card, the title (or the section card) with an unsaved badge. */
-export function openEditSheet({ id, resource, triggerRef, children, section, after, className = tw('container w-full') }: OpenEditSheetOptions) {
+export function openEditSheet({
+  id,
+  resource,
+  description,
+  triggerRef,
+  children,
+  section,
+  after,
+  className = tw('container w-full'),
+}: OpenEditSheetOptions) {
   const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
   const cardClass = after ? 'mb-4' : 'mb-20';
 
-  useSheeter.getState().create(
+  sheeter.getState().create(
     <div className={className}>
-      {section ? (
-        <ToolCard label={section.label} unsaved id={section.id} className={cardClass}>
-          {children}
-        </ToolCard>
-      ) : (
-        <Card className={cardClass}>
-          <CardContent>{children}</CardContent>
-        </Card>
-      )}
+      <ToolCard label={section?.label} unsaved={!!section} id={section?.id} className={cardClass}>
+        {children}
+      </ToolCard>
       {after}
     </div>,
     {
@@ -48,6 +52,7 @@ export function openEditSheet({ id, resource, triggerRef, children, section, aft
       side: 'right',
       className: tw('max-w-full lg:max-w-4xl'),
       title,
+      description,
       // A sectioned sheet shows the badge per section, on the card the form marks.
       titleContent: section ? undefined : <UnsavedBadge title={title} />,
     },

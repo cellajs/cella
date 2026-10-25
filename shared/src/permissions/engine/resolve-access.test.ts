@@ -19,10 +19,10 @@ import type { AccessMembership, SubjectForPermission } from './types.ts';
  * decision equals the mapped single decision, over policies the template never ships. It lives
  * here because only the engine's own tests can inject synthetic policies.
  */
-const ORGS = ['org1', 'org2'];
-const PROJECTS = ['proj1', 'proj2', 'proj3'];
-const WORKSPACES = ['ws1', 'ws2'];
-const USERS = ['user1', 'user2', 'user3', 'user4'];
+const orgs = ['org1', 'org2'];
+const projects = ['proj1', 'proj2', 'proj3'];
+const workspaces = ['ws1', 'ws2'];
+const users = ['user1', 'user2', 'user3', 'user4'];
 
 interface PolicyScenario {
   name: string;
@@ -117,23 +117,23 @@ const makeRandomizer = (seed: number) => {
   const randomSubject = (): SubjectForPermission => {
     const productTypes: WideProductType[] = ['task', 'label', 'attachment'];
     const channelTypes: WideChannelType[] = ['organization', 'workspace', 'project'];
-    const organization = pick(ORGS);
-    const createdBy = random() < 0.3 ? null : pick(USERS);
-    const row = { createdBy, ...(random() < 0.3 ? { publicAt: '2026-07-01T00:00:00Z' } : {}) };
+    const organization = pick(orgs);
+    const createdBy = random() < 0.3 ? null : pick(users);
+    const row = { createdBy, ...(random() < 0.3 ? { public: true } : {}) };
 
     if (random() < 0.6) {
       return wideSubject({
         entityType: pick(productTypes),
         id: `subject-${Math.floor(random() * 1e9)}`,
         createdBy,
-        channelIds: { organization, project: random() < 0.7 ? pick(PROJECTS) : null },
+        channelIds: { organization, project: random() < 0.7 ? pick(projects) : null },
         row,
       });
     }
     const channelType = pick(channelTypes);
     return wideSubject({
       entityType: channelType,
-      id: channelType === 'organization' ? organization : channelType === 'project' ? pick(PROJECTS) : pick(WORKSPACES),
+      id: channelType === 'organization' ? organization : channelType === 'project' ? pick(projects) : pick(workspaces),
       createdBy,
       channelIds: channelType === 'organization' ? {} : { organization },
       row,
@@ -146,11 +146,11 @@ const makeRandomizer = (seed: number) => {
     const membershipCount = Math.floor(random() * 4);
     const memberships: AccessMembership[] = Array.from({ length: membershipCount }, () => {
       const kind = random();
-      if (kind < 0.5) return wideMembership('organization', pick(ORGS), pick(['admin', 'member'] as WideRole[]));
-      if (kind < 0.85) return wideMembership('project', pick(PROJECTS), pick(roles));
-      return wideMembership('workspace', pick(WORKSPACES), pick(roles));
+      if (kind < 0.5) return wideMembership('organization', pick(orgs), pick(['admin', 'member'] as WideRole[]));
+      if (kind < 0.85) return wideMembership('project', pick(projects), pick(roles));
+      return wideMembership('workspace', pick(workspaces), pick(roles));
     });
-    return { memberships, actorId: pick(USERS), isSystemAdmin: random() < 0.05 };
+    return { memberships, actorId: pick(users), isSystemAdmin: random() < 0.05 };
   };
 
   return { random, pick, randomSubject, randomAccess };

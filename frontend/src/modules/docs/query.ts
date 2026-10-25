@@ -1,11 +1,13 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, useSuspenseQueries } from '@tanstack/react-query';
 import type { GenComponentSchema, GenInfoSummary, GenOperationDetail, GenOperationSummary, GenSchemaTagSummary, GenTagSummary } from 'sdk/docs-types';
 import { appConfig } from 'shared';
+import { buildIndex } from '~/modules/docs/helpers/extract-types';
+import { queryClient } from '~/query/query-client';
 
 /** Append the build SHA to a /static URL, so browser and service worker caches roll over per release. */
-export const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;
+const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;
 
-/** Base URL for docs JSON files served at /static/docs.gen (generated into sdk/gen, copied by Vite) */
+/** Where Vite serves the docs JSON that the sdk generates into sdk/gen. */
 const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 
 /** Fetch JSON with Content-Type validation (guards against SPA HTML fallback responses). */
@@ -31,6 +33,8 @@ const docsKeys = {
   schemas: ['docs', 'schemas'] as const,
   schemaTags: ['docs', 'schema-tags'] as const,
   tagDetails: (tagName: string) => ['docs', 'tag-details', tagName] as const,
+  zodIndex: ['docs', 'zod-index'] as const,
+  typesIndex: ['docs', 'types-index'] as const,
 };
 
 export const openApiSpecQueryOptions = queryOptions({
@@ -39,11 +43,11 @@ export const openApiSpecQueryOptions = queryOptions({
   staleTime: 'static',
 });
 
-/** Group items by key(s). Supports single-key and multi-key (array) extractors. */
-function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<string, T[]> {
+/** An item whose extractor returns several keys joins each of those groups. */
+function groupBy<T>(items: T[], getKeys: (item: T) => string | string[]): Record<string, T[]> {
   const result: Record<string, T[]> = {};
   for (const item of items) {
-    const keys = keyFn(item);
+    const keys = getKeys(item);
     for (const key of Array.isArray(keys) ? keys : [keys]) {
       result[key] ??= [];
       result[key].push(item);
@@ -70,6 +74,12 @@ export const tagsQueryOptions = queryOptions({
   staleTime: 'static',
 });
 
+/** Tags that hold operations, derived per observer from the tagsQueryOptions cache. */
+export const nonEmptyTagsQueryOptions = queryOptions({
+  ...tagsQueryOptions,
+  select: (tags: GenTagSummary[]) => tags.filter((tag) => tag.count > 0),
+});
+
 export const infoQueryOptions = queryOptions({
   queryKey: docsKeys.info,
   queryFn: () => fetchJson<GenInfoSummary>(`${docsBaseUrl}/info.gen.json`),
@@ -85,7 +95,7 @@ export const schemasQueryOptions = queryOptions({
 /** Schemas grouped by schema tag, derived per observer from the schemasQueryOptions cache. */
 export const schemasByTagQueryOptions = queryOptions({
   ...schemasQueryOptions,
-  select: (schemas: GenComponentSchema[]) => groupBy(schemas, (s) => s.schemaTag),
+  select: (schemas: GenComponentSchema[]) => groupBy(schemas, (schema) => schema.schemaTag),
 });
 
 export const schemaTagsQueryOptions = queryOptions({
@@ -97,6 +107,31 @@ export const schemaTagsQueryOptions = queryOptions({
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
-    queryFn: () => (tagName ? fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`) : ([] as GenOperationDetail[])),
+    queryFn: async (): Promise<GenOperationDetail[]> => (tagName ? fetchJson(`${docsBaseUrl}/details.gen/${tagName}.gen.json`) : []),
     staleTime: 'static',
   });
+
+/** Loads a tag's details before its section opens; a failure stays silent, and the section's own query fetches again. */
+export const prefetchTagDetails = (tagName: string) => {
+  void queryClient.query(tagDetailsQueryOptions(tagName)).catch(() => {});
+};
+
+/** The `buildIndex` of a generated sdk file, which Vite serves from /static. */
+const definitionIndexQueryOptions = (queryKey: readonly string[], file: string) =>
+  queryOptions({
+    queryKey,
+    queryFn: async () => {
+      const response = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/${file}`));
+      return buildIndex(await response.text());
+    },
+    staleTime: 'static',
+  });
+
+const zodIndexQueryOptions = definitionIndexQueryOptions(docsKeys.zodIndex, 'zod.gen.ts');
+const typesIndexQueryOptions = definitionIndexQueryOptions(docsKeys.typesIndex, 'types.gen.ts');
+
+/** Both definition indexes, fetched in parallel: two `useSuspenseQuery` calls would start the second only once the first resolved. */
+export function useDefinitionIndexes() {
+  const [{ data: zodIndex }, { data: typesIndex }] = useSuspenseQueries({ queries: [zodIndexQueryOptions, typesIndexQueryOptions] });
+  return { zodIndex, typesIndex };
+}

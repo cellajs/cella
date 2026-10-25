@@ -155,7 +155,6 @@
       "includes": [
         "**/vite.config.ts",
         "**/vitest.config.ts",
-        "**/tsup.config.ts",
         "frontend/src/styling/tailwind-plugin.ts",
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",

@@ -1,32 +1,138 @@
-.uppy-Container .uppy-DashboardContent-back,
-.uppy-Container .uppy-DashboardContent-save,
-.uppy-Container .uppy-Dashboard-browse,
-.uppy-Container .uppy-Dashboard-link {
-  color: var(--primary); /* Replace with your desired color */
+/*
+ * Uppy paints a fixed palette per theme (`[data-uppy-theme=dark] .uppy-…`) and exposes no variables. Each rule here
+ * matches that selector shape for any theme, so it wins by order and the app's tokens follow the mode in both.
+ */
+
+/* Tailwind's base layer makes every svg a block; Uppy lays its icons out inline. */
+:where([data-uppy-theme]) svg {
+  display: inline;
 }
 
-.uppy-Container .uppy-Dashboard-browse:focus,
-.uppy-Container .uppy-Dashboard-browse:hover {
-  border-bottom: 0.125rem solid var(--primary);
+[data-uppy-theme] .uppy-Dashboard-inner {
+  background-color: var(--card);
+  border-color: var(--border);
 }
 
-.uppy-Dashboard-note {
+[data-uppy-theme] .uppy-Dashboard-AddFiles {
+  border-color: var(--border);
+}
+
+[data-uppy-theme] .uppy-Dashboard-AddFiles-title,
+[data-uppy-theme] .uppy-DashboardContent-title,
+[data-uppy-theme] .uppy-DashboardTab-btn,
+[data-uppy-theme] .uppy-Dashboard-Item-name,
+[data-uppy-theme] .uppy-Dashboard-FileCard-label,
+[data-uppy-theme] .uppy-Webcam-title,
+[data-uppy-theme] .uppy-Audio-title,
+[data-uppy-theme] .uppy-StatusBar-content,
+[data-uppy-theme] .uppy-StatusBar-statusPrimary {
+  color: var(--foreground);
+}
+
+[data-uppy-theme] .uppy-Dashboard-note,
+[data-uppy-theme] .uppy-Dashboard-Item-status,
+[data-uppy-theme] .uppy-Dashboard-dropFilesHereHint,
+[data-uppy-theme] .uppy-StatusBar-statusSecondary {
+  color: var(--muted-foreground);
+}
+
+[data-uppy-theme] .uppy-Dashboard-note {
   font-size: 12px;
 }
 
-.uppy-DashboardTab-btn {
+[data-uppy-theme] .uppy-DashboardTab {
+  border-color: var(--border);
+}
+
+[data-uppy-theme] .uppy-DashboardTab-btn {
   display: flex;
+}
+
+[data-uppy-theme] .uppy-DashboardTab-btn:hover,
+[data-uppy-theme] .uppy-DashboardTab-btn:focus,
+[data-uppy-theme] .uppy-DashboardTab-btn:active,
+[data-uppy-theme] .uppy-DashboardContent-back:focus,
+[data-uppy-theme] .uppy-DashboardContent-save:focus,
+[data-uppy-theme] .uppy-DashboardContent-addMore:focus,
+[data-uppy-theme] .uppy-StatusBar-actionBtn--done:focus {
+  background-color: var(--accent);
+}
+
+[data-uppy-theme] .uppy-DashboardTab-inner {
+  background-color: var(--background);
+}
+
+[data-uppy-theme] .uppy-DashboardContent-bar,
+[data-uppy-theme] .uppy-DashboardContent-panel,
+[data-uppy-theme] .uppy-DashboardContent-panelBody,
+[data-uppy-theme] .uppy-Url,
+[data-uppy-theme] .uppy-ScreenCapture-buttonContainer,
+[data-uppy-theme] .uppy-Dashboard-FileCard-info,
+[data-uppy-theme] .uppy-Dashboard-FileCard-actions,
+[data-uppy-theme] .uppy-StatusBar,
+[data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actions,
+[data-uppy-theme] .uppy-StatusBar:not([aria-hidden="true"]).is-waiting {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+[data-uppy-theme] .uppy-Dashboard-AddFilesPanel {
+  background: var(--card);
+}
+
+[data-uppy-theme] .uppy-Dashboard-FileCard-preview {
+  background-color: var(--muted);
+}
+
+[data-uppy-theme] .uppy-Dashboard-Item {
+  border-color: var(--border);
+}
+
+[data-uppy-theme] .uppy-StatusBar::before {
+  background-color: var(--border);
+}
+
+[data-uppy-theme] .uppy-StatusBar-progress {
+  background-color: var(--primary);
+}
+
+[data-uppy-theme] .uppy-DashboardContent-back,
+[data-uppy-theme] .uppy-DashboardContent-save,
+[data-uppy-theme] .uppy-DashboardContent-addMore,
+[data-uppy-theme] .uppy-StatusBar-actionBtn--done,
+[data-uppy-theme] .uppy-Dashboard-browse,
+[data-uppy-theme] .uppy-Dashboard-link,
+[data-uppy-theme] .uppy-DashboardTab-iconMyDevice {
+  color: var(--primary);
+}
+
+[data-uppy-theme] .uppy-Dashboard-browse:focus,
+[data-uppy-theme] .uppy-Dashboard-browse:hover {
+  border-bottom: 0.125rem solid var(--primary);
+}
+
+[data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload,
+[data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload.uppy-StatusBar-actionBtn--disabled:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+[data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload:hover {
+  background-color: oklch(from var(--primary) l c h / 0.9);
 }
 
 .uppy-Url-input {
   border-radius: 0.25rem;
-  border: 0.1rem solid var(--muted);
+  border: 0.1rem solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
   padding: 0.25rem;
 }
 
 .uppy-Url-input:focus-visible {
-  outline: 0.1rem solid var(--accent-foreground);
+  outline: 0.1rem solid var(--ring);
 }
+
 .uppy-Url-importButton {
   padding: 0.3rem 1rem !important;
   cursor: pointer;

@@ -1,40 +1,33 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TKey } from '~/lib/i18n-locales';
-import { Badge } from '~/modules/ui/badge';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps<T> {
   items: T[];
-  renderItem: (item: T, index: number) => React.ReactNode;
+  renderItem: (item: T, index: number) => ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
-  expandText: TKey;
 }
 
-export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) {
+export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false }: ExpandableListProps<T>) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
-  const hasExpandedOnce = useRef(false);
+  const hasExpandedOnceRef = useRef(false);
 
   return (
     <>
       {items.map((item, index) => {
         const isInitiallyVisible = index < initialDisplayCount;
-        const shouldAnimate = hasExpandedOnce.current && !isInitiallyVisible;
+        const shouldAnimate = hasExpandedOnceRef.current && !isInitiallyVisible;
 
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
           <AnimatePresence key={index}>
             {isInitiallyVisible || expanded ? (
-              <motion.div
-                initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
+              <motion.div {...collapseMotion} initial={shouldAnimate ? collapseMotion.initial : false}>
                 {renderItem(item, index)}
               </motion.div>
             ) : null}
@@ -45,17 +38,14 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
       {!expanded && items.length > initialDisplayCount && (
         <Button
           variant="ghost"
-          className="group flex w-full items-center"
+          className="group/expandable-list flex w-full"
           onClick={() => {
-            hasExpandedOnce.current = true;
+            hasExpandedOnceRef.current = true;
             setExpanded(true);
           }}
         >
-          <Badge size="sm" className="aspect-square px-1 py-0">
-            {items.length - initialDisplayCount}
-          </Badge>
-          {t(expandText)}
-          <ChevronDownIcon className="opacity-50 transition-opacity group-hover:opacity-100" />
+          {t('c:show_more', { count: items.length - initialDisplayCount })}
+          <ChevronDownIcon className="opacity-50 transition-opacity group-hover/expandable-list:opacity-100" />
         </Button>
       )}
     </>

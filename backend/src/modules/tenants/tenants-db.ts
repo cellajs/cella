@@ -1,11 +1,10 @@
-import { index, json, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, json, snakeCase, varchar } from 'drizzle-orm/pg-core';
 import { nanoidTenant } from 'shared/utils/nanoid';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
-import { usersTable } from '#/modules/user/user-db';
 
 export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
 export const subscriptionStatusValues = ['none', 'trialing', 'active', 'past_due', 'paused', 'canceled'] as const;
@@ -17,17 +16,15 @@ export const tenantsTable = snakeCase.table(
     id: varchar({ length: tenantIdLength }).primaryKey().$defaultFn(nanoidTenant),
     name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: tenantStatusValues }).notNull().default('active'),
+    /** When `status` last changed, stamped by the server; an archived tenant is removed `archivedTenantDays` after it. */
+    statusChangedAt: isoTimestamp().defaultNow().notNull(),
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     // Sign-in strategies a tenant's members may use (empty = all enabled); enforced at the tenant boundary (tenantGuard) once SSO ships.
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
-    createdBy: uuid()
-      .references(() => usersTable.id, { onDelete: 'set null' })
-      .$type<UserId>(),
     subscriptionId: varchar({ length: maxLength.field }),
     subscriptionStatus: varchar({ enum: subscriptionStatusValues }).notNull().default('none'),
     subscriptionPlan: varchar({ length: maxLength.field }),
-    createdAt: timestampColumns.createdAt,
-    updatedAt: timestampColumns.updatedAt,
+    ...auditColumns(),
   },
   (table) => [
     index('tenants_status_index').on(table.status),

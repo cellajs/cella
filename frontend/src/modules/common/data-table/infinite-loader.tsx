@@ -3,7 +3,7 @@ import { useInView } from '~/hooks/use-in-view';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 
-type InfiniteLoaderProps = {
+interface InfiniteLoaderProps {
   hasNextPage: boolean;
   isFetching?: boolean;
   isFetchMoreError?: boolean;
@@ -11,7 +11,7 @@ type InfiniteLoaderProps = {
   hideEndIndicator?: boolean;
   /** When set, an intersection observer calls it as the loader enters the viewport. Omit with DataGrid, which uses onNearEndChange. */
   fetchMore?: () => Promise<unknown>;
-};
+}
 
 export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hideEndIndicator, fetchMore }: InfiniteLoaderProps) {
   const { t } = useTranslation();
@@ -19,7 +19,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
 
   // inView is level-triggered state: a sentinel entering view during a fetch is served once that fetch settles.
   const { ref: measureRef, inView } = useInView();
-  useFetchMoreOnDemand({ demand: inView, hasNextPage, isFetching: !!isFetching, error: !!isFetchMoreError, fetchMore });
+  useFetchMoreOnDemand({ demand: inView, hasNextPage, isFetching: !!isFetching, hasError: !!isFetchMoreError, fetchMore });
 
   if (isFetchMoreError) return <div className="my-8 text-center text-destructive text-sm">{t('error:load_more_failed')}</div>;
 
@@ -47,9 +47,10 @@ function AllLoaded() {
 }
 
 function Loading() {
+  const { t } = useTranslation();
   return (
     <div className="relative top-4 mb-10 flex h-0 w-full animate-pulse items-center justify-center gap-1 opacity-50">
-      <span className="sr-only">Loading...</span>
+      <span className="sr-only">{t('c:loading')}</span>
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground" />

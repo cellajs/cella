@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import { collectGarbage } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
@@ -92,18 +93,20 @@ export async function readLogOf(doc: DocKey, generation: string): Promise<LogRow
 export type FoldResult = 'ok' | 'retired' | 'overlap';
 
 /**
- * Replaces the base state of `generation`, the one the merge was read from, and deletes exactly the log rows merged
- * into it, in one transaction; rows appended meanwhile stay. `retired`, with nothing changed, when the row of that
- * generation is gone. `overlap`, rolled back, when fewer of the rows are left than were merged: another compaction (a
- * second relay during a rollout) folded them meanwhile, and its base holds rows this merge may lack. The document row
- * is locked first, as a retirement locks it, so two folds of one document wait for each other.
+ * Replaces the base state of `generation`, the one the merge was read from, with the merge stripped of deleted content
+ * (`collectGarbage`), and deletes exactly the log rows merged into it, in one transaction; rows appended meanwhile
+ * stay. `retired`, with nothing changed, when the row of that generation is gone. `overlap`, rolled back, when fewer of
+ * the rows are left than were merged: another compaction (a second relay during a rollout) folded them meanwhile, and
+ * its base holds rows this merge may lack. The document row is locked first, as a retirement locks it, so two folds of
+ * one document wait for each other.
  */
 export async function compactState(doc: DocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
+  const state = collectGarbage(merged);
   try {
     return await asSystem(doc, async (tx): Promise<FoldResult> => {
       const updated = await tx
         .update(yjsDocumentsTable)
-        .set({ state: Buffer.from(merged), updatedAt: sql`now()` })
+        .set({ state: Buffer.from(state), updatedAt: sql`now()` })
         .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
         .returning({ entityId: yjsDocumentsTable.entityId });
       if (updated.length === 0) return 'retired';
@@ -165,7 +168,7 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
 }
 
 /** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
-const SWEEP_TENANT_CONCURRENCY = 4;
+const sweepTenantConcurrency = 4;
 
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;
@@ -203,7 +206,7 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
+ * row every yjsLiveTouchMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
  * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
  * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
  * nothing.
@@ -212,8 +215,8 @@ export async function listStaleDocs(olderThanMs: number): Promise<DocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.
   const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
   const stale: DocScope[] = [];
-  for (let i = 0; i < tenantIds.length; i += SWEEP_TENANT_CONCURRENCY) {
-    const batch = tenantIds.slice(i, i + SWEEP_TENANT_CONCURRENCY);
+  for (let i = 0; i < tenantIds.length; i += sweepTenantConcurrency) {
+    const batch = tenantIds.slice(i, i + sweepTenantConcurrency);
     const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));
     for (const rows of perTenant) stale.push(...rows);
   }

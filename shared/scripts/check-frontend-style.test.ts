@@ -105,3 +105,19 @@ describe('button-press-cancel', () => {
     expect(found(source)).toEqual([]);
   });
 });
+
+describe('reorder-grip', () => {
+  const component = 'frontend/src/modules/example/example.tsx';
+  const found = (source: string, path = component) => frontendFindings(path, source, new Set()).map(({ rule }) => rule);
+  const gripImport = "import { GripVerticalIcon } from 'lucide-react';";
+
+  it('reports a grip icon in a file that renders no reorder handle', () => {
+    expect(found(gripImport)).toEqual(['reorder-grip']);
+  });
+
+  it('accepts a grip beside ReorderHandle or reorderColumn, and in the drag preview', () => {
+    expect(found(`${gripImport}\nimport { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';`)).toEqual([]);
+    expect(found(`${gripImport}\nimport { reorderColumn } from '~/modules/common/data-table/reorder-column';`)).toEqual([]);
+    expect(found(gripImport, 'frontend/src/modules/common/data-table/row-drag-preview.tsx')).toEqual([]);
+  });
+});

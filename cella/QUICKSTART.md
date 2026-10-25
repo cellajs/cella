@@ -4,7 +4,7 @@ This document explains how you can get started building a modern web app with ce
 
 ## Create
 
-The [`create-cella`](https://github.com/cellajs/create-cella) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs. Requirements: docker, node. Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
+The [create-cella](https://github.com/cellajs/create-cella) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs. Requirements: docker, node, [pnpm](https://pnpm.io/installation). Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
 
 ```bash
 pnpm create @cellajs/cella my-app
@@ -49,7 +49,7 @@ pnpm offline
 
 ## Customize & contribute
 
-1. Set your app identity in `shared/config/config.default.ts`.
+1. Set your app identity in `shared/config/config.default.ts`, and its colors and fonts in `frontend/src/styling/app.css`.
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
 3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
 4. Read the [architecture](./ARCHITECTURE.md) in your repo or on the cella docs site.

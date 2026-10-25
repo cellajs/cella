@@ -19,7 +19,7 @@ Constants used in all examples:
 
 ## General rules
 
-- **State**: `resolveLayout(panelConfigs, separatorIndex, initialWidths, dx, mode)` is a pure, idempotent function returning the complete layout (widths + hint data). Dragging back reverses the change; no undo logic.
+- **State**: `resolveLayout(panels, drag, dx)` is a pure, idempotent function of the panels, the state captured at drag start and the pointer delta, returning the complete layout (widths + hint data). Dragging back reverses the change; no undo logic.
 - **Layout**: pixel widths (`style.width`) in a flex container; no CSS grid or fr tracks. Stored widths equal rendered widths.
 
 ## G1: Direction determines roles
@@ -65,7 +65,7 @@ In collapse and expand zones a curtain grows from the dragged separator with pro
 - `collapse`: the curtain covers the panel up to its collapsed width, the part that leaves.
 - `expand`: the curtain covers the neighbour across the separator by the width the panel takes.
 
-The leading edge ends where the dragged separator lands after the snap. As the curtain grows, the edge widens to the separator's width while the separator thins and fades, so at the snap the separator takes the edge's place.
+The leading edge ends where the dragged separator stops after the snap. As the curtain grows, the edge widens to the separator's width while the separator thins and fades, so at the snap the separator takes the edge's place.
 
 As progress grows, the panel content fades out:
 
@@ -89,7 +89,7 @@ Every pixel freed by victims goes to the grower, uncapped in both modes, so the 
 ## G9: Two-phase cascade
 
 - Phase 1: shrink victims toward `minWidth` in order away from the separator.
-- Phase 2: collapse, only after all victims are at min; freed pixels fund the grower (G8).
+- Phase 2: collapse, only after all victims are at min, nearest first: each victim enters the collapse zone and collapses before the next is touched; freed pixels fund the grower (G8).
 - Panels collapsed at drag start are skipped in both phases.
 
 ```
@@ -167,23 +167,3 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 ## Viewport clamp (redistributePanels)
 
 After drag ends and on window resize, `redistributePanels` runs a pre-pass that clamps any panel exceeding the scroll parent's visible width. It runs before proportional ratio scaling, so it fires even when the total already matches available space (ratio ≈ 1).
-
-## G11: Per-panel cascade (last victim off-screen)
-
-Condition, checked once at drag start and fixed for the drag: mode is overflow, and the last victim's bounding rect extends beyond the scroll container's visible edge. Then:
-
-- Phase 1: shrink all victims to `minWidth`, nearest first (as G9).
-- Phase 2: per-panel collapse, nearest first: each victim enters the collapse zone and collapses before the next is touched.
-
-```
-  5 panels, E off-screen. Drag right (A grower):
-
-  +-------- A --------+||+--- B ----++--- C ----++--- D ----+  :+--- E ----+
-  |      550px         |||  350px    ||  350px    ||  350px    |  :|  350px    |
-  |     (grower)       ||| (victim1) || (victim2) || (victim3) |  :| (victim4) |
-  +--------------------+||+----------++----------++----------+  :+----------+
-                        -> drag                      viewport edge : off-screen
-
-  Phase 1: B->300, C->300, D->300, E->300.
-  Phase 2: B collapses to 50, then C, then D, then E. Nearest first.
-```

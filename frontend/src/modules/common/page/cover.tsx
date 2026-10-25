@@ -1,10 +1,8 @@
-import { onlineManager } from '@tanstack/react-query';
 import { UploadIcon } from 'lucide-react';
-import { memo, useRef, useState } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { openImageUpload } from '~/modules/common/uploader/open-image-upload';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -14,41 +12,27 @@ export interface PageCoverProps {
   canUpdate: boolean;
   url?: string | null;
   organizationId?: string;
-  coverUpdateCallback: (bannerKey: string) => void;
+  onCoverUpdate?: (bannerKey: string) => void;
 }
 
-function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) {
+function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: PageCoverProps) {
   const { t } = useTranslation();
-  const createUpload = useUploader((state) => state.create);
-  const removeUpload = useUploader((state) => state.remove);
-
-  const uploadButtonRef = useRef(null);
-
   const [coverUrl, setCoverUrl] = useState(url);
 
-  const handleUpdateURL = (bannerKey: string) => {
-    const bannerUrl = `${appConfig.s3.publicCDNUrl}/${bannerKey}`;
-    setCoverUrl(bannerUrl);
-    coverUpdateCallback(bannerUrl);
-  };
+  const uploadLabel = t('c:upload_item', { item: t('c:cover').toLowerCase() });
 
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    createUpload({
-      id: 'page-cover',
-      ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
-      plugins: ['webcam', 'image-editor', 'url'],
+    openImageUpload({
       templateId: 'cover',
-      statusEventHandler: {
-        onComplete(result) {
-          const url = result.cover[0].url;
-          if (url) handleUpdateURL(url);
-          removeUpload();
-        },
+      organizationId,
+      title: uploadLabel,
+      onUploaded: (bannerUrl) => {
+        setCoverUrl(bannerUrl);
+        onCoverUpdate?.(bannerUrl);
       },
-      title: t('c:upload_item', { item: t('c:cover').toLowerCase() }),
     });
   };
+
   return (
     <div
       data-url={!!url}
@@ -56,15 +40,9 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (
-        <Button
-          ref={uploadButtonRef}
-          variant="secondary"
-          size="sm"
-          className="relative top-3 mx-auto bg-secondary/80 hover:bg-secondary"
-          onClick={openUploadDialog}
-        >
+        <Button variant="secondary" size="sm" className="relative top-3 mx-auto bg-secondary/80 hover:bg-secondary" onClick={openUploadDialog}>
           <UploadIcon />
-          <span>{t('c:upload_item', { item: t('c:cover').toLowerCase() })}</span>
+          <span>{uploadLabel}</span>
         </Button>
       )}
     </div>

@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   decorators: [
     (Story) => (
-      <button type="button" className="group flex items-center font-medium text-sm">
+      <button type="button" className="group/toggle flex items-center font-medium text-sm">
         Learn more
         <Story />
       </button>

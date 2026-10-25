@@ -9,7 +9,11 @@ interface FindTotpOpts {
 
 /** The account's authenticator app, with its secret still encrypted; undefined without one. */
 export const findTotp = async (ctx: DbContext, { userId }: FindTotpOpts) => {
-  const [totp] = await ctx.var.db.select({ secret: totpsTable.secret }).from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
+  const [totp] = await ctx.var.db
+    .select({ secret: totpsTable.secret, createdAt: totpsTable.createdAt, lastUsedStep: totpsTable.lastUsedStep })
+    .from(totpsTable)
+    .where(eq(totpsTable.userId, userId))
+    .limit(1);
   return totp;
 };
 

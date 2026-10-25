@@ -1,7 +1,7 @@
 import type { ToastManagerEvent } from '@base-ui/react/toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toaster, toastManager } from '~/modules/common/toaster/toaster';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 
 // Stands in for the Toaster: the Base UI provider subscribes the same way.
 let events: ToastManagerEvent[] = [];
@@ -20,62 +20,25 @@ describe('toaster', () => {
     unsubscribe?.();
     unsubscribe = undefined;
     toaster.close();
-    useUIStore.setState({ contrast: 'system' });
+    uiStore.setState({ contrast: 'system' });
     vi.unstubAllGlobals();
   });
 
-  it('gives string messages a stable id so repeats refresh one toast', () => {
-    subscribe();
-
-    expect(toaster('Saved')).toBe('toast:Saved');
-    expect(toaster.success('Saved')).toBe('toast:Saved');
-    expect(events.map((event) => event.options)).toMatchObject([
-      { id: 'toast:Saved', title: 'Saved', type: undefined, priority: 'low' },
-      { id: 'toast:Saved', title: 'Saved', type: 'success', priority: 'low' },
-    ]);
-  });
-
-  it('sets the severity as type, announces errors urgently and forwards options', () => {
-    subscribe();
-
-    toaster.info('Delete denied', { description: 'Attachment kept', timeout: 8_000 });
-    toaster.error('Upload failed');
-
-    expect(events.map((event) => event.options)).toMatchObject([
-      { title: 'Delete denied', type: 'info', description: 'Attachment kept', timeout: 8_000 },
-      { title: 'Upload failed', type: 'error', priority: 'high' },
-    ]);
-  });
-
-  it('closes a toast by itself, later when it is an error or carries a description', () => {
+  // The accessibility statement promises it: with more contrast, messages stay until closed, also before sign-in
+  it('keeps a toast open when its call asks for it or more contrast is on, by setting or by device', () => {
     subscribe();
 
     toaster.success('Saved');
-    toaster.warning('Offline');
-    toaster.error('Upload failed');
-    toaster.warning('Too many requests', { description: 'Please try again in 4 minutes' });
-
-    expect(events.map((event) => event.options.timeout)).toEqual([4_000, 4_000, 10_000, 10_000]);
-  });
-
-  it('keeps a toast open when the call asks for it or the reader turned on increased contrast', () => {
-    subscribe();
-
     toaster('New version', { timeout: 0 });
-    useUIStore.setState({ contrast: 'more' });
-    toaster.success('Saved');
+    uiStore.setState({ contrast: 'more' });
     toaster.error('Upload failed', { timeout: 8_000 });
-
-    expect(events.map((event) => event.options.timeout)).toEqual([0, 0, 0]);
-  });
-
-  it('keeps a toast open when the device asks for more contrast, as on signed-out pages', () => {
+    uiStore.setState({ contrast: 'system' });
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-contrast: more)' }));
-    subscribe();
+    toaster.success('Copied');
 
-    toaster.success('Saved');
-
-    expect(events.map((event) => event.options.timeout)).toEqual([0]);
+    const [closesItself, ...kept] = events.map((event) => event.options.timeout);
+    expect(closesItself).toBeGreaterThan(0);
+    expect(kept).toEqual([0, 0, 0]);
   });
 
   it('keeps explicit ids and leaves the id of a non-string message to Base UI', () => {

@@ -3,25 +3,21 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowLeftIcon, ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getAuthHealth } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
+import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
 import { SsoProviders } from '~/modules/auth/sso-providers';
-import {
-  AcceptInvitationStep,
-  CheckEmailStep,
-  InvitationStep,
-  InviteOnlyStep,
-  MagicLinkSentStep,
-  SignInStep,
-  SignUpStep,
-  WaitlistStep,
-} from '~/modules/auth/steps';
+import { AcceptInvitationStep } from '~/modules/auth/steps/accept-invitation';
+import { CheckEmailStep } from '~/modules/auth/steps/check-email';
+import { InvitationStep } from '~/modules/auth/steps/invitation';
+import { MagicLinkSentStep } from '~/modules/auth/steps/magic-link-sent';
+import { SignInStep } from '~/modules/auth/steps/sign-in';
+import { SignUpStep } from '~/modules/auth/steps/sign-up';
+import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { TokenData } from '~/modules/auth/types';
-import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -30,9 +26,8 @@ import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
-// Warn after the slow delay and abort at the timeout, so a down backend never hangs on the browser default.
-const HEALTH_SLOW_MS = 5000;
-const HEALTH_TIMEOUT_MS = 20000;
+// Warn after this delay that the backend is slow to answer.
+const healthSlowMs = 5000;
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
@@ -57,20 +52,14 @@ export function AuthenticatePage() {
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
 
   // A signed-in visitor gets this page's own notice for a spent token, so the global toast stays quiet for them.
-  const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId, !!signedInUser);
-
+  const tokenQuery = tokenDataQueryOptions('invitation', tokenId);
   const {
-    data: healthData,
-    isLoading: isHealthLoading,
-    isError: isHealthError,
-  } = useQuery({
-    queryKey: ['auth', 'health'],
-    // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
-    queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
-    staleTime: 0,
-    refetchOnMount: 'always',
-    retry: false,
-  });
+    data: tokenData,
+    isLoading: isTokenLoading,
+    isError: isTokenError,
+  } = useQuery({ ...tokenQuery, meta: { ...tokenQuery.meta, suppressGlobalErrorToast: !!signedInUser } });
+
+  const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
   const [showSlowWarning, setShowSlowWarning] = useState(false);
   useEffect(() => {
@@ -78,7 +67,7 @@ export function AuthenticatePage() {
       setShowSlowWarning(false);
       return;
     }
-    const timer = setTimeout(() => setShowSlowWarning(true), HEALTH_SLOW_MS);
+    const timer = setTimeout(() => setShowSlowWarning(true), healthSlowMs);
     return () => clearTimeout(timer);
   }, [isHealthLoading]);
 
@@ -88,7 +77,7 @@ export function AuthenticatePage() {
   }, [healthData, setRestrictedMode]);
 
   useEffect(() => {
-    // Don't override terminal steps (e.g. magicLinkSent)
+    // The link-sent step stays until the visitor leaves it.
     if (step === 'magicLinkSent') return;
 
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
@@ -104,14 +93,14 @@ export function AuthenticatePage() {
   }, [tokenData, lastUser, restrictedMode, step, inviteOtherAccount]);
 
   // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
-  const nothingToConfirm = !!signedInUser && !!tokenId && !isLoading && !tokenData?.inactiveMembershipId;
+  const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.inactiveMembershipId;
   useEffect(() => {
     if (!nothingToConfirm) return;
     if (isTokenError) toaster.info(t('c:invite_link_spent'));
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
   }, [nothingToConfirm]);
 
-  if (isLoading || isHealthLoading || signedIn) {
+  if (isTokenLoading || isHealthLoading || signedIn) {
     return (
       <>
         <Spinner size="lg" />
@@ -147,7 +136,6 @@ export function AuthenticatePage() {
       {step === 'signUp' && <SignUpStep tokenData={tokenData} />}
 
       {step === 'waitlist' && <WaitlistStep />}
-      {step === 'inviteOnly' && <InviteOnlyStep />}
       {step === 'magicLinkSent' && <MagicLinkSentStep />}
 
       {isSigningIn && (
@@ -156,7 +144,7 @@ export function AuthenticatePage() {
           {isStrategyEnabled('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
           {isStrategyEnabled('oauth') && <OAuthProviders authStep={step} />}
           {inviteOtherAccount && (
-            <Button type="button" variant="ghost" onClick={() => setInviteOtherAccount(false)}>
+            <Button variant="ghost" onClick={() => setInviteOtherAccount(false)}>
               <ArrowLeftIcon />
               {t('c:invite_back')}
             </Button>

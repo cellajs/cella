@@ -1,39 +1,33 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenOperationSummary } from 'sdk/docs-types';
-import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
+import type { GenOperationSummary, GenTagSummary } from 'sdk/docs-types';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
+import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { TagOperationsList } from '~/modules/docs/operations/operation-detail';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
-import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
+import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails, tagDetailsQueryOptions } from '~/modules/docs/query';
 import { TagExpandLink } from '~/modules/docs/tag-expand-link';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
-import { queryClient } from '~/query/query-client';
-import { cn } from '~/utils/cn';
-import { getHashUrl } from '../hash-url';
+import { TagSectionCard } from '~/modules/docs/tag-section-card';
 
-function OperationsPage() {
+export function OperationsPage() {
   const { t } = useTranslation();
   const { operationTag: activeTag } = useSearch({ from: '/_public/_content/docs/operations' });
 
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
-  const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
-  const tags = allTags.filter((t) => t.count > 0);
+  const { data: tags } = useSuspenseQuery(nonEmptyTagsQueryOptions);
 
-  const operationCount = tags.reduce((sum, t) => sum + t.count, 0);
+  const operationCount = tags.reduce((sum, tag) => sum + tag.count, 0);
 
-  // Operation hashes are contributed by OperationDetail when rendered
-  const tagSectionIds = tags.map((t) => `tag/${t.name}`);
+  // Tag ids only: each tag's TagOperationsList adds its operation hashes once it mounts
+  const tagSectionIds = tags.map((tag) => `tag/${tag.name}`);
 
   useScrollSpy(tagSectionIds);
 
@@ -42,11 +36,10 @@ function OperationsPage() {
     const hash = window.location.hash.slice(1);
     if (hash && tagSectionIds.includes(hash)) scrollToSectionById(hash);
     // Mount only. Re-running on tag changes would fight user scrolling.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div>
+    <>
       <div className="container">
         <DocsPageHeader title={t('c:operation', { count: 2 })} className="pb-2" />
       </div>
@@ -63,82 +56,62 @@ function OperationsPage() {
 
       <div className="container flex flex-col gap-12 lg:gap-20">
         {tags.map((tag) => (
-          <TagSection
+          <OperationTagSection
             key={tag.name}
             tag={tag}
-            operations={operationsByTag[tag.name] || []}
+            operations={operationsByTag[tag.name] ?? []}
             isOpen={activeTag === tag.name}
             onPrerender={() => {
-              void queryClient.query(tagDetailsQueryOptions(tag.name)).catch(() => {});
+              prefetchTagDetails(tag.name);
               prerender(tag.name);
             }}
           />
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
-interface TagSectionProps {
-  tag: { name: string; description?: string; count: number };
+interface OperationTagSectionProps {
+  tag: GenTagSummary;
   operations: GenOperationSummary[];
   isOpen: boolean;
   onPrerender: () => void;
 }
 
-/** Separate component so usePrerenderSection can be called per tag. */
-function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
+function OperationTagSection({ tag, operations, isOpen, onPrerender }: OperationTagSectionProps) {
   // Defer page content mount by one frame so the sidebar can update first
   const [deferredIsOpen, setDeferredIsOpen] = useState(isOpen);
   useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(() => setDeferredIsOpen(true));
-    } else {
+    if (!isOpen) {
       setDeferredIsOpen(false);
+      return;
     }
+    const frame = requestAnimationFrame(() => setDeferredIsOpen(true));
+    return () => cancelAnimationFrame(frame);
   }, [isOpen]);
 
-  const { shouldMount, style } = usePrerenderSection('operations', tag.name, deferredIsOpen);
-
-  // `enabled: isOpen` keeps tag details dormant until the user expands the section
-  const { isFetching: detailsLoading } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
+  // While open, the expand link spins until the tag's details arrive; the route loader already started that fetch
+  const { isFetching: isFetchingDetails } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
 
   return (
-    <Collapsible open={deferredIsOpen}>
-      <Card id={`spy-tag/${tag.name}`} className={cn('scroll-mt-4 border-0', deferredIsOpen && 'rounded-b-none')}>
-        <CardHeader className="group">
-          <CardTitle level={2} className="gap-2 text-2xl leading-12">
-            {tag.name}
-            <HashUrlButton url={getHashUrl(`tag/${tag.name}`)} />
-          </CardTitle>
-          {tag.description && <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>}
-        </CardHeader>
-        <CardContent className="rdg-readonly flex flex-col gap-4">
-          <TagOperationsTable operations={operations} tagName={tag.name} onPrerender={onPrerender} />
-
-          <TagExpandLink
-            isOpen={isOpen}
-            loading={isOpen && detailsLoading}
-            to="."
-            search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
-            tagName={tag.name}
-            onMouseEnter={onPrerender}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Operation details list, prerendered with content-visibility: hidden on hover */}
-      {shouldMount && (
-        <CollapsibleContent keepMounted>
-          <div style={style}>
-            <Suspense>
-              <TagOperationsList operations={operations} />
-            </Suspense>
-          </div>
-        </CollapsibleContent>
-      )}
-    </Collapsible>
+    <TagSectionCard
+      scope="operations"
+      name={tag.name}
+      sectionId={`tag/${tag.name}`}
+      description={tag.description}
+      isOpen={deferredIsOpen}
+      details={<TagOperationsList operations={operations} />}
+    >
+      <TagOperationsTable operations={operations} tagName={tag.name} onPrerender={onPrerender} />
+      <TagExpandLink
+        isOpen={isOpen}
+        loading={isOpen && isFetchingDetails}
+        to="."
+        search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
+        tagName={tag.name}
+        onMouseEnter={onPrerender}
+      />
+    </TagSectionCard>
   );
 }
-
-export { OperationsPage };

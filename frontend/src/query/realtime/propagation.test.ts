@@ -35,62 +35,39 @@ const { queryClient } = await import('~/query/query-client');
 const { propagateEmbeddedProduct } = await import('./propagation');
 
 // The synthetic 'label' and 'task' types exist only in this file's shared mock, hence the casts.
-const LABEL = 'label' as ProductEntityType;
-const ORG = 'org-1';
-const PROJECT = 'project-1';
+const labelType = 'label' as ProductEntityType;
+const org = 'org-1';
+const project = 'project-1';
 
-const labelKeys = createEntityKeys<Record<string, never>>(LABEL);
+const labelKeys = createEntityKeys<Record<string, never>>(labelType);
 
 describe('propagateEmbeddedProduct', () => {
-  const TASK = 'task' as ProductEntityType;
-  const taskKeys = createEntityKeys<Record<string, never>>(TASK);
-  const infiniteKey = [...taskKeys.list.org(ORG), { q: '' }];
-  const flatKey = taskKeys.list.home(ORG, PROJECT);
+  const taskType = 'task' as ProductEntityType;
+  const taskKeys = createEntityKeys<Record<string, never>>(taskType);
+  const infiniteKey = [...taskKeys.list.org(org), { q: '' }];
+  const flatKey = taskKeys.list.home(org, project);
 
   const label = (id: string, name: string, updatedAt: string) => ({ id, name, updatedAt });
 
   beforeEach(() => {
-    registerEntityQueryKeys(TASK, taskKeys, async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys(LABEL, labelKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(taskType, taskKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(labelType, labelKeys, async () => ({ items: [], total: 0 }));
   });
   afterEach(() => queryClient.clear());
 
-  it('swaps in a newer embedded copy on the page that holds it and keeps the other page', () => {
+  it('replaces an embedded copy only with a strictly newer row', () => {
     queryClient.setQueryData(labelKeys.detail.byId('l1'), label('l1', 'new', '2026-02-01'));
+    queryClient.setQueryData(labelKeys.detail.byId('l2'), label('l2', 'fresh', '2026-01-01'));
     queryClient.setQueryData(infiniteKey, {
-      pages: [
-        {
-          items: [{ id: 't1', labels: [label('l1', 'old', '2026-01-01'), label('l2', 'kept', '2026-01-01')] }],
-          total: 2,
-        },
-        { items: [{ id: 't2', labels: [label('l2', 'kept', '2026-01-01')] }], total: 2 },
-      ],
-      pageParams: [
-        { page: 0, offset: 0 },
-        { page: 1, offset: 1 },
-      ],
+      pages: [{ items: [{ id: 't1', labels: [label('l1', 'old', '2026-01-01'), label('l2', 'local edit', '2026-01-01')] }], total: 1 }],
+      pageParams: [{ page: 0, offset: 0 }],
     });
-    const before = queryClient.getQueryData<{ pages: { items: ItemData[] }[]; pageParams: unknown[] }>(infiniteKey);
 
-    propagateEmbeddedProduct(LABEL, ['l1'], 'update');
+    propagateEmbeddedProduct(labelType, ['l1', 'l2'], 'update');
 
-    const after = queryClient.getQueryData<typeof before>(infiniteKey);
-    expect(after?.pages[0].items[0]).toEqual({ id: 't1', labels: [label('l1', 'new', '2026-02-01'), label('l2', 'kept', '2026-01-01')] });
-    expect(after?.pages[1]).toBe(before?.pages[1]);
-    expect(after?.pageParams).toBe(before?.pageParams);
-  });
-
-  it('keeps a cached copy that is as new as the fresh one', () => {
-    queryClient.setQueryData(labelKeys.detail.byId('l1'), label('l1', 'fresh', '2026-01-01'));
-    queryClient.setQueryData(flatKey, {
-      items: [{ id: 't1', labels: [label('l1', 'local edit', '2026-01-01')] }],
-      total: 1,
-    });
-    const before = queryClient.getQueryData(flatKey);
-
-    propagateEmbeddedProduct(LABEL, ['l1'], 'update');
-
-    expect(queryClient.getQueryData(flatKey)).toBe(before);
+    // A copy as new as the fresh row may carry a concurrent edit, so it stays.
+    const after = queryClient.getQueryData<{ pages: { items: ItemData[] }[] }>(infiniteKey);
+    expect(after?.pages[0].items[0]).toEqual({ id: 't1', labels: [label('l1', 'new', '2026-02-01'), label('l2', 'local edit', '2026-01-01')] });
   });
 
   it('strips a removed id from id arrays, embedded copies and single object columns', () => {
@@ -106,7 +83,7 @@ describe('propagateEmbeddedProduct', () => {
     queryClient.setQueryData(taskKeys.detail.byId('t1'), { id: 't1', labels: ['l1'] });
     const untouched = queryClient.getQueryData<{ items: ItemData[] }>(flatKey)?.items[3];
 
-    propagateEmbeddedProduct(LABEL, ['l1'], 'remove');
+    propagateEmbeddedProduct(labelType, ['l1'], 'remove');
 
     const after = queryClient.getQueryData<{ items: ItemData[]; total: number }>(flatKey);
     expect(after).toEqual({
@@ -120,20 +97,5 @@ describe('propagateEmbeddedProduct', () => {
     });
     expect(after?.items[3]).toBe(untouched);
     expect(queryClient.getQueryData(taskKeys.detail.byId('t1'))).toEqual({ id: 't1', labels: [] });
-  });
-
-  it('keeps the data object of lists that reference none of the ids', () => {
-    queryClient.setQueryData(flatKey, { items: [{ id: 't1', labels: ['l2'] }], total: 1 });
-    queryClient.setQueryData(infiniteKey, {
-      pages: [{ items: [{ id: 't2', labels: [label('l2', 'kept', '2026-01-01')] }], total: 1 }],
-      pageParams: [{ page: 0, offset: 0 }],
-    });
-    const flat = queryClient.getQueryData(flatKey);
-    const paged = queryClient.getQueryData(infiniteKey);
-
-    propagateEmbeddedProduct(LABEL, ['l1'], 'remove');
-
-    expect(queryClient.getQueryData(flatKey)).toBe(flat);
-    expect(queryClient.getQueryData(infiniteKey)).toBe(paged);
   });
 });

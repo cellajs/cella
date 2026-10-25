@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { getTools, type Slot, type SlotContexts } from '~/lib/placements';
 
 interface SlotTabHostProps<S extends Slot> {
@@ -13,13 +12,9 @@ interface SlotTabHostProps<S extends Slot> {
   fallback?: ReactNode;
 }
 
-/**
- * Renders the registry tab tool named by a `$tool` host route's param, with the surface's context.
- * The tool's content lazy-loads behind Suspense; an unmatched id renders `fallback`. The matching
- * tab bar comes from {@link resolveNavTabs}.
- */
+/** Renders the registry tool a `$tool` route param names, lazy-loaded behind Suspense; its tab bar comes from {@link resolveNavTabs}. */
 export function SlotTabHost<S extends Slot>({ slot, toolId, context, fallback = null }: SlotTabHostProps<S>) {
   const tool = getTools(slot).find((candidate) => candidate.id === toolId);
-  if (!tool) return <>{fallback}</>;
+  if (!tool) return fallback;
   return <Suspense fallback={null}>{tool.render(context)}</Suspense>;
 }

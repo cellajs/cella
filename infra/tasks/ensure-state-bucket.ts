@@ -24,7 +24,7 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
     .then(() => true)
     .catch((err: { $metadata?: { httpStatusCode?: number } }) => {
       const status = err.$metadata?.httpStatusCode;
-      // 403 is ambiguous on Scaleway (foreign-owned, missing perms, stale reservation), so CreateBucket gives the authoritative answer.
+      // 403 is ambiguous on Scaleway (foreign-owned, missing perms, stale reservation), so CreateBucket gives the definite answer.
       if (status === 403) {
         headWasAmbiguous403 = true;
         return false;

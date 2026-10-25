@@ -2,7 +2,7 @@ import { type OpenAPIHono, type RouteConfig, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, type EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
-import type { XTool } from '#/core/openapi-extensions';
+import { toolAction, type XTool } from '#/core/openapi-extensions';
 import { createServerStx, createServerStxStamping } from '#/core/stx/create-server-stx';
 
 /** A tool as `tools/list` returns it. */
@@ -117,8 +117,8 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
   const paramKeys = Object.keys(params.shape);
   const queryKeys = Object.keys(query.shape);
   const method = route.method.toUpperCase();
-  const isRead = method === 'GET';
-  const action: EntityActionType = isRead ? 'read' : 'update';
+  const action = toolAction(method);
+  const isRead = action === 'read';
   const scope = accessScopes.required(spec.entity, action);
 
   return {

@@ -18,8 +18,8 @@ export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext
   const rows = await tenantRead(ctx, (readCtx) =>
     readCtx.var.db
       .select()
-      .from(table as PgTable)
+      .from(table)
       .where(and(inArray(table.id, ids), eq(table.createdBy, ctx.var.actor.id), isNull(table.deletedAt), requestScopeWhere(ctx, table))),
   );
-  return rows as InferSelectModel<T>[];
+  return rows;
 }
