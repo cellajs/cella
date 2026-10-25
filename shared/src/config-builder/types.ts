@@ -206,6 +206,12 @@ export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;
 /** Every placement surface of an app whose channel types are `C`. */
 export type SlotOf<C extends string> = ChannelSlotOf<C> | SingletonSlot;
 
+/**
+ * What the desktop nav rail leads with: `menu` is one button whose sheet lists every channel, `organizations` a button
+ * per organization whose sheet holds that organization alone, with an organization switcher in the mobile menu.
+ */
+export type NavSidebarMode = 'menu' | 'organizations';
+
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   entityTypes: T['entityTypes'];
   channelEntityTypes: T['channelEntityTypes'];
@@ -216,6 +222,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   resourceTypes: T['resourceTypes'];
   productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
+  navSidebarMode: NavSidebarMode;
   /**
    * Placement ids per surface, in display order. A listed surface is total: an id left out has no
    * placement there. An unlisted surface renders every registered placement in its declared order.

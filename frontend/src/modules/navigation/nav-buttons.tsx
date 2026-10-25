@@ -41,6 +41,8 @@ interface SidebarNavButtonProps {
   isCollapsed: boolean;
   onClick: () => void;
   isActive?: boolean;
+  /** Marks the button as the place the page belongs to, with a bar on its edge. */
+  isCurrent?: boolean;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
   /** The icon. */
@@ -49,7 +51,7 @@ interface SidebarNavButtonProps {
 }
 
 /** A sidebar nav button: tooltip while collapsed or without text labels, and the text label when the theme shows one. */
-export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, className, children, badge }: SidebarNavButtonProps) {
+export function SidebarNavButton({ label, isCollapsed, onClick, isActive, isCurrent, ref, className, children, badge }: SidebarNavButtonProps) {
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
@@ -61,11 +63,13 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
         tooltip={{ children: label, hidden: !showTooltip }}
         onClick={onClick}
         isActive={isActive}
+        aria-current={isCurrent || undefined}
         className={cn(
           'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 data-[collapsed=true]:w-16 [&>svg]:size-5',
           className,
         )}
       >
+        {isCurrent && <span className="absolute inset-y-3 left-0 w-1 rounded-r-lg bg-primary" />}
         {children}
         {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
         {badge}

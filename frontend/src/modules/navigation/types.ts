@@ -32,3 +32,6 @@ export type NavItem = {
 };
 
 export type EntityRoute = { to: LinkComponentProps['to']; params: LinkComponentProps['params']; search: LinkComponentProps['search'] };
+
+/** Opens the menu sheet with one organization alone, the way a rail button per organization does. */
+export type TriggerOrganizationFn = (organization: UserMenuItem, triggerRef: RefObject<HTMLButtonElement | null>) => void;

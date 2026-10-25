@@ -9,7 +9,11 @@ interface NavigationStoreState {
   recentSearches: string[]; // Search values entered in AppSearch
 
   navSheetOpen: NavItemId | null;
-  setNavSheetOpen: (navSheetOpen: NavItemId | null) => void;
+  navSheetOrganizationId: string | null; // Organization the open menu sheet holds alone; null while it lists every channel
+  /** Opening with an `organizationId` also makes it the `lastOrganizationId`. */
+  setNavSheetOpen: (navSheetOpen: NavItemId | null, organizationId?: string | null) => void;
+
+  lastOrganizationId: string | null; // Organization last opened from the rail or the switcher, where the mobile menu opens outside organization pages
 
   keepNavOpen: boolean; // Nav sheet stays open beside the content
   setKeepNavOpen: (keepNavOpen: boolean) => void;
@@ -41,6 +45,8 @@ interface InitStore
     | 'detailedMenu'
     | 'activeSections'
     | 'navSheetOpen'
+    | 'navSheetOrganizationId'
+    | 'lastOrganizationId'
     | 'keepOpenPreference'
     | 'floatingNavActive'
     | 'navSheetPanel'
@@ -49,6 +55,8 @@ interface InitStore
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
+  navSheetOrganizationId: null,
+  lastOrganizationId: null,
   keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
   detailedMenu: false,
@@ -63,9 +71,11 @@ export const useNavigationStore = create<NavigationStoreState>()(
       persist(
         (set) => ({
           ...initStore,
-          setNavSheetOpen: (navSheetOpen) => {
+          setNavSheetOpen: (navSheetOpen, organizationId = null) => {
             set((state) => {
               state.navSheetOpen = navSheetOpen;
+              state.navSheetOrganizationId = navSheetOpen ? organizationId : null;
+              if (navSheetOpen && organizationId) state.lastOrganizationId = organizationId;
               if (!navSheetOpen) state.navSheetPanel = null;
             });
           },
@@ -115,6 +125,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
             detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            lastOrganizationId: state.lastOrganizationId,
           }),
           storage: createJSONStorage(() => idbKvStorage('navigation')),
         },

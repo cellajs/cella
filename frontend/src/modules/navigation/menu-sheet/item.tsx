@@ -7,9 +7,8 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
-import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
@@ -30,14 +29,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
   const canAccess = !offlineAccess || isOnline || !item.membership.archived;
   const isSubitem = !item.submenu;
 
-  // Own count for grouping channels, plus the submenu's when its rows are not rendered (detailedMenu off, or an archived item)
-  const aggregateSubmenu = !!item.submenu?.length && (!detailedMenu || item.membership.archived);
-  const channelIds = [
-    ...(seenGroupingChannelTypes.has(item.entityType) ? [item.id] : []),
-    ...(aggregateSubmenu && item.submenu ? item.submenu.map((sub) => sub.id) : []),
-  ];
-  const unseenCount = useUnseenCount(channelIds);
-  const showBadge = unseenCount > 0 && !item.membership.muted;
+  const unseenCount = useMenuItemUnseenCount(item, detailedMenu && !item.membership.archived);
 
   const { to, params, search } = getChannelRoute(item, isSubitem);
 
@@ -91,7 +83,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
           </span>
         </div>
       </div>
-      {showBadge && <CountBadge count={unseenCount} className="mr-3 shrink-0 self-center" />}
+      {unseenCount > 0 && <CountBadge count={unseenCount} className="mr-3 shrink-0 self-center" />}
     </Link>
   );
 }

@@ -1,4 +1,12 @@
-import type { ConfigMode, FederationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput, SlotOf } from '../src/config-builder/types.ts';
+import type {
+  ConfigMode,
+  FederationConfig,
+  NavSidebarMode,
+  ProductEmbedding,
+  RequiredConfig,
+  S3ConfigInput,
+  SlotOf,
+} from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -58,6 +66,9 @@ export const config = {
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
   menuStructure: [{ entityType: 'organization', subentityType: null } as const],
+
+  /** `menu` (one menu button) or `organizations` (a rail button per organization): `NavSidebarMode`. */
+  navSidebarMode: 'menu' as NavSidebarMode,
 
   /**
    * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
