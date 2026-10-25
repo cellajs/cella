@@ -1,6 +1,4 @@
-import { runIfMain } from '../lib/utils/is-main';
 import { parseServiceRows } from '../lib/utils/service-rows';
-import { getFlag } from './args';
 
 interface ServiceUrlRow {
   service: string;
@@ -25,14 +23,3 @@ export function frontendBuildEnv(mode: string, raw: string): Record<'APP_MODE' |
   if (!backendUrl || !frontendUrl) throw new Error('frontend/backend public URLs are required to build the frontend');
   return { APP_MODE: mode, BACKEND_URL: backendUrl, FRONTEND_URL: frontendUrl };
 }
-
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const mode = getFlag(argv, '--mode');
-  const servicesJson = getFlag(argv, '--services-json');
-  if (!mode || !servicesJson) throw new Error('Usage: print-frontend-build-env.ts --mode <environment> --services-json <enabled_services_json>');
-  for (const [key, value] of Object.entries(frontendBuildEnv(mode, servicesJson))) {
-    console.info(`${key}=${value}`);
-  }
-}
-
-runIfMain(import.meta.url, main);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { frontendBuildEnv, parseServiceUrls } from './print-frontend-build-env';
+import { frontendBuildEnv, parseServiceUrls } from './frontend-build-env';
 
 describe('frontendBuildEnv', () => {
   it('emits APP_MODE and config-loader URL overrides from enabled services JSON', () => {

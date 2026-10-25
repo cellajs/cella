@@ -75,7 +75,6 @@ export async function runTeardown(context: InfraContext): Promise<void> {
 /** Destroy the stack's resources and remove it from the backend; true when the destroy completed. */
 async function destroyStack(context: InfraContext, operator: OperatorKey): Promise<boolean> {
   const { appConfig } = context;
-  const mode = context.environment;
   const { accessKey, secretKey, organizationId } = operator;
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
@@ -120,8 +119,7 @@ async function destroyStack(context: InfraContext, operator: OperatorKey): Promi
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
   console.info(
-    `\n${pc.dim('Not touched (by design): the Pulumi state bucket (versioned history), Secret Manager containers with operator values, GitHub Environment secrets.')}\n` +
-      `${pc.dim('Remove GitHub secrets with')} ${pc.cyan(`gh secret delete -e ${mode} SCW_ACCESS_KEY`)} ${pc.dim('etc. when the environment is gone for good.')}`,
+    `\n${pc.dim('Not touched (by design): the Pulumi state bucket (versioned history), Secret Manager containers with operator values.')}\n`,
   );
   return true;
 }

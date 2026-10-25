@@ -1,5 +1,4 @@
 import { confirm, select } from '@inquirer/prompts';
-import { syncGithubEnvironment } from '../../lib/github-sync';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { deleteApiKey } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
@@ -12,7 +11,6 @@ import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-pe
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
-import { infraDir } from '../../lib/utils/paths';
 import { ensureMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
@@ -134,7 +132,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; accessKe
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt, and nothing else runs on it
  * (no Pulumi, no state, no value of the app's). The machine identities with their policies and standing keys (in the deploy folder), the CI
- * deploy key (synced to GitHub), and the app's operator and observer: created when the app has none, else given this environment's project
+ * deploy key (its copy for the main job), and the app's operator and observer: created when the app has none, else given this environment's project
  * in place; the observer's key goes to this machine's env files. A rotation replaces every key. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
@@ -178,20 +176,6 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId, { rotate: mode === 'rotate-keys' }).catch((error) =>
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
-
-  // GitHub holds the CI deploy key now; the passphrase follows from the operator part, which makes it.
-  if (ciKey.accessKey) {
-    const synced = await syncGithubEnvironment({
-      repoRoot: new URL('..', `file://${infraDir}/`).pathname,
-      environment,
-      ciKey: { accessKey: ciKey.accessKey, secretKey: ciKey.secretKey, projectId, organizationId: ciKey.organizationId },
-    });
-    if (!synced) {
-      console.warn(
-        `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote). The environment holds: SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_PROJECT_ID, SCW_ORGANIZATION_ID, PULUMI_CONFIG_PASSPHRASE.`,
-      );
-    }
-  }
 
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.

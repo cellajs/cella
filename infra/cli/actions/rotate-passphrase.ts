@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { syncGithubEnvironment } from '../../lib/github-sync';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -19,7 +18,7 @@ import {
 import { operatorKeys } from './operator-unlock';
 
 /**
- * Rotates and verifies the Pulumi passphrase, then synchronizes it to the GitHub environment.
+ * Rotates and verifies the Pulumi passphrase, then stores it in Secret Manager, where the operator key and the main job read it.
  * The stack lock prevents CI reads during state re-encryption. No Scaleway resources are touched,
  * so state-bucket access is sufficient.
  */
@@ -41,7 +40,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(
     pc.dim(
-      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched: your operator key does the work, fetches the current passphrase and stores the new one.\n',
+      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then stores it in Secret Manager. No Scaleway resources are touched: your operator key does the work, fetches the current passphrase and stores the new one.\n',
     ),
   );
 
@@ -54,7 +53,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase: oldPassphrase });
   pulumiLoginAndSelect(infraDir, env, context.appConfig, targetStack);
 
-  // Hold the stack lock across the re-encryption: a CI deploy reading state mid-rotation would decrypt against the wrong passphrase.
+  // Hold the stack lock across the re-encryption: a deploy reading state mid-rotation would decrypt against the wrong passphrase.
   const stackLock = await acquireStackLockOrExit({
     appConfig: context.appConfig,
     accessKey: state.accessKey,
@@ -79,7 +78,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   if (rotate.status !== 0) {
     await stackLock.release();
     console.error(
-      `\n${crossMark} change-secrets-provider exited ${rotate.status}. The stack most likely still uses the OLD passphrase: verify before changing GitHub or your password manager.`,
+      `\n${crossMark} change-secrets-provider exited ${rotate.status}. The stack most likely still uses the OLD passphrase: verify before changing your password manager.`,
     );
     endAction(rotate.status ?? 1);
   }
@@ -100,35 +99,25 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   if (!verifyStackPassphrase(rotatedYaml, newPassphrase)) {
     await stackLock.release();
     console.error(
-      `${crossMark} Post-check failed: ${stackPath} does not verify against the new passphrase. Do not update GitHub or discard the old passphrase; investigate before retrying.`,
+      `${crossMark} Post-check failed: ${stackPath} does not verify against the new passphrase. Do not discard the old passphrase; investigate before retrying.`,
     );
     endAction(1);
   }
   console.info(`${checkMark} Stack re-encrypted: ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`);
 
-  const synced = await syncGithubEnvironment({
-    repoRoot: new URL('..', `file://${infraDir}/`).pathname,
-    environment: context.environment,
-    passphrase: newPassphrase,
-  });
-
-  // The copy the operator key fetches: without this write the next run would read the old passphrase from Secret Manager and ask for the new one.
+  // The copy the operator key fetches and the main job reads by reference: without this write both would read the old passphrase.
   rememberPassphrase(newPassphrase);
   const custodied = (await passphraseCustody()?.store(newPassphrase)) ?? false;
 
   await stackLock.release();
 
   console.info(`\n${checkMark} ${pc.bold(pc.greenBright('Passphrase rotated.'))}`);
-  console.info(`  1. Commit the updated ${pc.cyan(`infra/Pulumi.${stackShort}.yaml`)} (the encryptionsalt changed).`);
   console.info(
-    synced
-      ? `  2. GitHub Environment secret ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} updated.`
-      : `  2. ${warningMark} GitHub sync skipped: update ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} in the ${context.environment} GitHub Environment before the next deploy.`,
+    `  1. Commit the updated ${pc.cyan(`infra/Pulumi.${stackShort}.yaml`)} (the encryptionsalt changed): a deploy runs on its target's stack file, so a target without this commit cannot read the state.`,
   );
   console.info(
     custodied
-      ? '  3. Secret Manager holds the new passphrase: the operator key fetches it from now on.'
-      : `  3. ${warningMark} Secret Manager was not updated (the session was unlocked with the passphrase, not the operator key): the next run asks for the new passphrase once and stores it.`,
+      ? '  2. Secret Manager holds the new passphrase: the operator key and the main job read it from now on.'
+      : `  2. ${warningMark} Secret Manager was not updated (the session was unlocked with the passphrase, not the operator key): the next run asks for the new passphrase once and stores it.`,
   );
-  console.info(`  ${pc.dim('A CI deploy started before this rotation may fail once; re-run it after updating the secret.')}`);
 }

@@ -5,7 +5,7 @@ export const ADMISSION_RUN_ENV = 'INFRA_ADMISSION_RUN';
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */
   group: string;
-  /** CI deploy application (the key GitHub Actions deploys with). */
+  /** The deploy application: the key the main job deploys with. */
   ciDeploy: string;
   /** The retired admin application: its key admits the operator to bucket policies written before it, once, in an apply (ledger L2). */
   admin: string;

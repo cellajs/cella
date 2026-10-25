@@ -16,7 +16,7 @@ import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 import { bakeDefinition, parseBuildRows } from './build-images';
 import { ENTRY_FILE_NAMES } from './frontend-assets';
-import { frontendBuildEnv } from './print-frontend-build-env';
+import { frontendBuildEnv } from './frontend-build-env';
 import { releaseEntryPrefix } from './release-files';
 import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 

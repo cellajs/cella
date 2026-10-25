@@ -62,8 +62,8 @@ export async function syncDeployTelemetryKey(opts: {
 }
 
 /**
- * Best-effort read of the telemetry ingest key from Secret Manager, so CI deploys export telemetry without a dedicated
- * CI secret: the deploy key reads the deploy folder's copy. Which secret is the app's choice (config/telemetry.config.ts).
+ * Best-effort read of the telemetry ingest key from Secret Manager, so deploys export telemetry without a key of their own: the
+ * deploy key reads the deploy folder's copy. Which secret is the app's choice (config/telemetry.config.ts).
  */
 export async function sinkIngestKeyFromSecretManager(): Promise<SinkKeyLookup> {
   const secretKey = process.env.SCW_SECRET_KEY;

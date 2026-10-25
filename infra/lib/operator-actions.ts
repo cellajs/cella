@@ -28,8 +28,7 @@ export const OPERATOR_ACTIONS = {
   preview: {
     label: 'Preview changes',
     key: 'operator',
-    description:
-      'The plan of "Review & apply changes" without its question, refreshed against the live stack (a CI deploy applies the same minus VM policy rules). Read-only.',
+    description: 'The plan of "Review & apply changes" without its question, refreshed against the live stack. Read-only.',
   },
   apply: {
     label: 'Review & apply changes',
@@ -122,7 +121,12 @@ export const OPERATOR_ACTIONS = {
   resume: {
     label: 'Resume setup',
     key: 'operator',
-    description: 'Re-sync config and GitHub secrets, and self-heal missing keys.',
+    description: 'Continue an interrupted setup: re-sync config and self-heal missing keys.',
+  },
+  'state-prune': {
+    label: 'Remove from state',
+    key: 'operator',
+    description: "Remove one resource from the stack's Pulumi state: one the program no longer declares and whose live object is gone already.",
   },
   'geoip-refresh': {
     label: 'Refresh GeoIP data',
@@ -163,8 +167,8 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`) runs only by
- * its command.
+ * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
+ * runs only by its command.
  */
 export const MENU_ROWS = {
   status: {

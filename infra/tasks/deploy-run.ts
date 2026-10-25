@@ -14,8 +14,8 @@ import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
+import { type AllowedKey, buildDeployEnv } from './deploy-env';
 import { main as runWavedRolloutCli } from './deploy-rollout';
-import { type AllowedKey, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
@@ -26,8 +26,6 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 export interface DeployOptions {
   mode: string;
   sha: string;
-  /** CI ref for the production trust gate; local operator runs may omit it. */
-  gitRef?: string;
   /** The run's id in its record; a new one (start time and target) when not given. */
   run?: string;
   /**
@@ -97,12 +95,11 @@ export function deployFailureHint(err: unknown, mode: string): { description: st
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--git-ref <ref>] [--defer-reap]');
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--defer-reap]');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
     sha,
-    gitRef: getFlag(argv, '--git-ref'),
     run: getFlag(argv, '--run'),
     deferReap: argv.includes('--defer-reap'),
   };
@@ -122,10 +119,6 @@ export async function runDeploy(
   fx: DeployEffects,
   loadDeployEnv: (opts: DeployOptions) => Promise<Record<AllowedKey, string>> = loadDeployEnvFromConfig,
 ): Promise<void> {
-  if (opts.mode === 'production' && opts.gitRef && !isAllowedProductionRef(opts.gitRef)) {
-    throw new Error(`Production deploys are only allowed from the main branch or a release tag (got ${opts.gitRef})`);
-  }
-
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
@@ -410,7 +403,7 @@ export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<strin
   return opts.env ? { ...parentEnv, ...opts.env } : parentEnv;
 }
 
-// Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware log grouping. Every ordering and failure decision lives in runDeploy.
+// Real effects: subprocesses in the infra dir, S3 entry publish, log grouping. Every ordering and failure decision lives in runDeploy.
 
 const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
   { name: 'index.html', contentType: 'text/html; charset=utf-8' },
@@ -472,7 +465,6 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
 };
 
 function createRealEffects(): DeployEffects {
-  const inActions = Boolean(process.env.GITHUB_ACTIONS);
   return {
     async initTelemetry({ mode, sha }) {
       let config = otlpConfigFromEnv();
@@ -487,8 +479,8 @@ function createRealEffects(): DeployEffects {
           // In-process consumers (black-box replay on failure) resolve via env.
           process.env[telemetrySink.keyEnvVar] ??= lookup.key;
         } else {
-          // An annotation in CI: a deploy whose telemetry goes nowhere must say so where someone reads it.
-          console.warn(`${inActions ? '::warning::' : ''}[deploy] telemetry ingest key unavailable: ${lookup.missing}`);
+          // A deploy whose telemetry goes nowhere says so in its log, which its run record keeps.
+          console.warn(`[deploy] telemetry ingest key unavailable: ${lookup.missing}`);
         }
       }
       if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or ingest key); black box only');
@@ -581,10 +573,8 @@ function createRealEffects(): DeployEffects {
         account ? { service, key: account.key, failed: account.failed } : { service },
       );
     },
-    group: (title) => console.info(inActions ? `::group::${title}` : `\n=== ${title} ===`),
-    groupEnd: () => {
-      if (inActions) console.info('::endgroup::');
-    },
+    group: (title) => console.info(`\n=== ${title} ===`),
+    groupEnd: () => {},
     info: (msg) => console.info(msg),
   };
 }
