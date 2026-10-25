@@ -78,7 +78,8 @@ export function DocsLayout() {
     triggerRef,
     title: t('c:docs'),
     headerClassName: 'hidden',
-    className: tw('w-72 p-0'),
+    // shadow-card colors the drawer's overdrag bleed like the card-colored sidebar
+    className: tw('w-72 p-0 data-[swipe-direction=left]:shadow-card'),
     closeSheetOnRouteChange: false,
     keepMounted: true,
   };

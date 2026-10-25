@@ -795,7 +795,7 @@
           },
           "count": {
             "type": ["integer", "null"],
-            "description": "Authoritative row count for batches: sequence ranges of different paths may interleave"
+            "description": "Exact row count for batches: sequence ranges of different paths may interleave"
           },
           "spreadWindow": {
             "type": ["integer", "null"],

@@ -53,4 +53,4 @@ than a desktop's. The static `+` texture language in
 
 Cost: one fullscreen pass, no textures, no feedback buffers; at rest only one cell is
 evaluated. The prototypes under `.todos/morph-animation/` document how the system was
-found; the shader and the call sites now carry the authoritative tuned values.
+found; the shader and the call sites carry the final tuned values.

@@ -41,7 +41,7 @@ export async function expectAllowed(name: string, run: () => Promise<unknown>): 
 
 /**
  * Record a check that must be denied. A success means the policy is not effective (the whole
- * point of H3). A non-403 error counts as a failure: the call was not authoritatively refused,
+ * point of H3). A non-403 error counts as a failure: it does not prove the policy refused the call,
  * so the outcome is inconclusive and reported as failing to force a look.
  */
 export async function expectDenied(name: string, run: () => Promise<unknown>): Promise<PolicyCheck> {

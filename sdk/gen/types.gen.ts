@@ -152,7 +152,7 @@ export type StreamNotification = {
    */
   batchUntilSeq: number | null;
   /**
-   * Authoritative row count for batches: sequence ranges of different paths may interleave
+   * Exact row count for batches: sequence ranges of different paths may interleave
    */
   count: number | null;
   /**

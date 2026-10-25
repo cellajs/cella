@@ -71,7 +71,7 @@ async function handleNotificationPush(data: NotificationPushData): Promise<void>
   await updateUnreadBadge();
 }
 
-/** Recount hint: the push carries no number; the API recount is authoritative and cheap. */
+/** Recount hint: the push carries no number; the API recount is current and cheap. */
 async function updateUnreadBadge(): Promise<void> {
   try {
     const response = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });

@@ -34,7 +34,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 Renaming attachment `a42` inside `org1`:
 
 1. The tab optimistically patches every cached query containing `a42` and sends the update: `ops` carries the changed fields, `stx` the attempt ID and field timestamps.
-2. The API stamps the changed fields with a server timestamp, applies the write and returns the authoritative row, which the tab's cache reconciles against.
+2. The API stamps the changed fields with a server timestamp, applies the write and returns the stored row, which the tab's cache reconciles against.
 3. Postgres commits to the WAL. The CDC worker, in commit order, records the audit activity, stamps the row with the next organization sequence position and updates channel summaries.
 4. The worker sends the change to the API over the internal WebSocket. The API drops its cached detail and dispatches the change.
 5. Dispatch checks the full row with the permission engine used by REST reads. Allowed subscribers receive an SSE notification with entity ID, path, sequence range, and `stx`.
@@ -126,7 +126,7 @@ The engine keeps no reference counts. A count such as the tasks with a label is 
 
 ## Writes
 
-Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching caches, success merges the authoritative server row, failure rolls back where configured. Mutations run with React Query `networkMode: 'offlineFirst'`.
+Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching caches, success merges the row the server stored, failure rolls back where configured. Mutations run with React Query `networkMode: 'offlineFirst'`.
 
 An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. An HTTP error response settles at once. Restored paused mutations replay after the first catchup attempt, or once the stream stops reconnecting ([REST fallback](#rest-fallback)). Online writes never wait.
 
@@ -156,7 +156,7 @@ Value shape selects merge behavior:
 }
 ```
 
-`fieldTimestamps` names exactly the scalar operation keys. A replay's losing scalars are skipped and the server returns the authoritative row, never a conflict response. An update locks its row before it merges (`getValidProduct` with `forUpdate`), so overlapping updates resolve in turn; an app's own update operation passes `forUpdate` as well.
+`fieldTimestamps` names exactly the scalar operation keys. A replay's losing scalars are skipped and the server returns the stored row, never a conflict response. An update locks its row before it merges (`getValidProduct` with `forUpdate`), so overlapping updates resolve in turn; an app's own update operation passes `forUpdate` as well.
 
 Columns the server derives from a write, such as the attachment `keywords` and audit stamps, are written in the same transaction but carry no HLC and stay out of `fieldTimestamps` and `changedFields`. Only `updatedAt` joins `changedFields`, which is how the CDC worker tells a user edit from its own writes.
 

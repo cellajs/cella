@@ -4,7 +4,7 @@ import { isRecord } from '../utils/guards';
 
 /** A provisioned, content-addressed generation: VM resource `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
 export interface GenRef {
-  /** Content-addressed generation id, authoritative resource suffix. Stored because the live VM exists under this id; never re-derived. @see lib/gen-id.ts */
+  /** Content-addressed generation id, the suffix of its resource names. Stored because the live VM exists under this id; never re-derived. @see lib/gen-id.ts */
   id: string;
   /** Image SHA baked into this generation. */
   sha: string;

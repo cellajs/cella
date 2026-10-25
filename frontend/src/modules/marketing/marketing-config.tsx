@@ -9,6 +9,7 @@ import {
   KeyRoundIcon,
   RadioTowerIcon,
   RocketIcon,
+  ScaleIcon,
   ShieldCheckIcon,
   SparklesIcon,
   UsersIcon,
@@ -92,11 +93,12 @@ export const stackItems = [
 
 // Features page (/features): each item reads `about:features.<id>` and `about:features.<id>.text`.
 
-export type FeatureCategory = 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
+export type FeatureCategory = 'security' | 'auth' | 'compliance' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
 
 export const featureCategoryIcons = {
   security: ShieldCheckIcon,
   auth: KeyRoundIcon,
+  compliance: ScaleIcon,
   ux: SparklesIcon,
   dx: CodeXmlIcon,
   deploy: RocketIcon,
@@ -108,8 +110,6 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   // Data modelling
   { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
-  { id: 'channel_entities', category: 'data' },
-  { id: 'product_entities', category: 'data' },
   { id: 'schema_evolution', category: 'data' },
   { id: 'user', category: 'data' },
   { id: 'organization', category: 'data' },
@@ -120,37 +120,43 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'tenant_isolation', category: 'security' },
   { id: 'permission_engine', category: 'security' },
   { id: 'guard_chain', category: 'security' },
-  { id: 'rls', category: 'security' },
-  { id: 'immutability', category: 'security' },
+  { id: 'secret_redaction', category: 'security' },
+  { id: 'rate_limiting', category: 'security' },
+  { id: 'security_tests', category: 'security' },
 
   // Authentication
   { id: 'magic_link', category: 'auth' },
   { id: 'passkey', category: 'auth' },
   { id: 'oauth', category: 'auth' },
-  { id: 'totp', category: 'auth' },
+  { id: 'sso_federation', category: 'auth' },
   { id: 'mfa', category: 'auth' },
   { id: 'session_management', category: 'auth' },
   { id: 'impersonation', category: 'auth' },
-  { id: 'rate_limiting', category: 'auth' },
+  { id: 'service_accounts', category: 'auth' },
+
+  // Privacy & compliance
+  { id: 'retention', category: 'compliance' },
+  { id: 'gdpr_legal', category: 'compliance' },
+  { id: 'accessibility', category: 'compliance' },
+  { id: 'audit_trail', category: 'compliance' },
 
   // UI & UX
   { id: 'responsive', category: 'ux' },
-  { id: 'ui_components', category: 'ux' },
   { id: 'pwa', category: 'ux' },
   { id: 'i18n', category: 'ux' },
   { id: 'data_grid', category: 'ux' },
   { id: 'blocknote_editor', category: 'ux' },
-  { id: 'resizable_panels', category: 'ux' },
-  { id: 'storybook', category: 'ux' },
+  { id: 'notifications', category: 'ux' },
 
   // Developer experience
   { id: 'cella_cli', category: 'dx' },
   { id: 'openapi_sdk_docs', category: 'dx' },
-  { id: 'openapi_extensions', category: 'dx' },
+  { id: 'mcp', category: 'dx' },
+  { id: 'typed_errors', category: 'dx' },
   { id: 'mock_generators', category: 'dx' },
-  { id: 'drizzle_orm', category: 'dx' },
-  { id: 'vitest', category: 'dx' },
   { id: 'email_templates', category: 'dx' },
+  { id: 'storybook', category: 'dx' },
+  { id: 'agent_skills', category: 'dx' },
 
   // Deployment & infrastructure
   { id: 'pulumi_iac', category: 'deploy' },

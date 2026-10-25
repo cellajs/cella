@@ -31,7 +31,7 @@ export const productCache = (entityType: ProductEntityType): MiddlewareHandler<E
           ctx.header('X-Cache', 'HIT');
           return ctx.json(cached);
         }
-        // Denied from cache: fall through so the handler produces the authoritative 403/404.
+        // Denied from cache: fall through so the handler's own check returns the 403/404.
         ctx.header('X-Cache', 'MISS');
         await next();
         return;
@@ -79,7 +79,7 @@ function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached
     const subject = buildSubjectFromEntity(productType, authRow);
     return checkAccess(access, 'read', subject).allowed;
   } catch {
-    // Unexpected row shape → don't serve from cache; the handler re-authorizes authoritatively.
+    // Unexpected row shape → don't serve from cache; the handler runs the full permission check.
     return false;
   }
 }

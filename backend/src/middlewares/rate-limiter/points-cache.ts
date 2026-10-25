@@ -74,7 +74,7 @@ export function windowSecondsLeft(key: string, windowMs: number): number {
 }
 
 /**
- * Called after a DB consume, accepted or rejected. The DB count is authoritative across all processes, and so is the
+ * Called after a DB consume, accepted or rejected. The DB count is shared by all processes, and so is the
  * time `msBeforeNext` its row or the block on it has left: the in-process window ends with it.
  */
 export function syncFromDb(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {

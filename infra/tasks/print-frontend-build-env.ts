@@ -15,8 +15,8 @@ export function parseServiceUrls(raw: string): ServiceUrlRow[] {
  * Env for the CI frontend build. APP_MODE selects the baked appConfig
  * (shared/src/config-builder/app-config.ts prefers it over NODE_ENV, which the
  * build script pins to production); BACKEND_URL/FRONTEND_URL are the override
- * names that same loader reads, keeping the deploy pipeline authoritative for
- * public URLs.
+ * names that same loader reads, so the public URLs come from the deploy
+ * pipeline.
  */
 export function frontendBuildEnv(mode: string, raw: string): Record<'APP_MODE' | 'BACKEND_URL' | 'FRONTEND_URL', string> {
   const rows = parseServiceUrls(raw);

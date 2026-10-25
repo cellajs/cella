@@ -15,7 +15,7 @@ import { queryClient } from '~/query/query-client';
 
 export const notificationKeys = { list: ['me', 'notifications'] as const, preferences: ['me', 'notification-preferences'] as const };
 
-/** The server response is authoritative; `sync-listener` invalidates this key on change events, so nothing polls. */
+/** Each fetch replaces the cached list whole; `sync-listener` invalidates this key on change events, so nothing polls. */
 export const notificationsQueryOptions = () =>
   queryOptions({
     queryKey: notificationKeys.list,
