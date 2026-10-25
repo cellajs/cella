@@ -72,6 +72,17 @@ export const OPERATOR_ACTIONS = {
     description:
       "Start one run of the environment's main job for its target (the environments file's line, or its branch or newest release) and follow it until it is deployed, blocked or failed.",
   },
+  'runner-identity': {
+    label: 'Set up the runner',
+    key: 'owner',
+    description:
+      "Make the organization's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json.",
+  },
+  'runner-replace': {
+    label: 'Replace the runner',
+    key: 'operator',
+    description: "Replace the runner's machine with one that runs the release and serves the environments infra/runner.json names.",
+  },
   'repository-key': {
     label: 'Set repository read key',
     key: 'operator',
@@ -152,7 +163,8 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`) runs only by its command.
+ * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`) runs only by
+ * its command.
  */
 export const MENU_ROWS = {
   status: {

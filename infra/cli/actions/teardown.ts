@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
+import { removeMachines } from '../../lib/scaleway/machines';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
@@ -9,7 +10,7 @@ import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBoo
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
+import { builderPrefix } from '../../tasks/build-release';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
 import { acquireIdentityKey, acquirePrivilegedKey, type OperatorKey } from './operator-unlock';
@@ -97,7 +98,7 @@ async function destroyStack(context: InfraContext, operator: OperatorKey): Promi
   try {
     // A builder machine is no resource of the program, and its server holds the stack's security group.
     const { naming, zone } = deriveInfra(appConfig);
-    for (const name of await removeBuilderMachines({ secretKey, projectId: context.projectId, zone, prefix: builderPrefix(naming.resource) })) {
+    for (const name of await removeMachines({ secretKey, projectId: context.projectId, zone, prefix: builderPrefix(naming.resource) })) {
       console.info(`  ${tildeMark} deleted builder ${name}`);
     }
     console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));

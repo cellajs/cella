@@ -80,6 +80,13 @@ export const OBSERVER_PROJECT_PERMISSION_SETS = [
 /** Org-scoped observer set: IAM reads, so `status` and the identity plan can name what exists. */
 export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
+/**
+ * Project-scoped set for the runner (`<app>-runner`), in each environment it serves: starting and reading the main job's runs. Scaleway has
+ * no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference (plan §7). Its one rule carries the
+ * condition of its reserved address.
+ */
+export const RUNNER_PROJECT_PERMISSION_SETS = ['ServerlessJobsFullAccess'] as const;
+
 // Operator app (`<app>-operator`): the principal a person runs privileged actions as, one per app
 
 /**

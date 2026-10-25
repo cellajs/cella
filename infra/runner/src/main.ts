@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util';
 import { gitKeyOptions, listRemoteRefs } from '../../lib/deploy/git-remote.ts';
 import { findJobDefinition, listJobRuns, startJobRun } from '../../lib/deploy/job-runs.ts';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../../lib/deploy/target.ts';
+import { type RunnerEnvironment, readRunnerEnvironments } from './config.ts';
 import { decide } from './decide.ts';
 
 /**
@@ -14,18 +15,6 @@ import { decide } from './decide.ts';
  * when that target has none. It runs on Node alone, from a checkout of a pinned release, with nothing installed: every module it imports
  * names its own imports with their `.ts` extension.
  */
-
-/** One environment the runner serves (D23), from the runner project's stack config by way of the machine's boot plan. */
-export interface RunnerEnvironment {
-  /** The environment's name, and its line in the repository's environments file. */
-  environment: string;
-  projectId: string;
-  region: string;
-  /** The name of the environment's main job definition. */
-  definition: string;
-  /** The https URL its targets are read from. */
-  repository: string;
-}
 
 const ROUND_MS = 60_000;
 
@@ -35,28 +24,6 @@ const USAGE = `Usage: node runner/src/main.ts --config <file> [--once] [--dry-ru
   --dry-run    decide, start nothing
   --state-dir  where the environments files are fetched (default: the system's temporary folder)
 Env: SCW_SECRET_KEY (the runner key), REPOSITORY_READ_KEY (a private repository's read key, optional)`;
-
-/** Read and check the runner's list of environments. */
-function readRunnerConfig(text: string): RunnerEnvironment[] {
-  const { environments } = JSON.parse(text) as { environments?: Array<Record<string, unknown>> };
-  if (!Array.isArray(environments) || environments.length === 0) throw new Error('the config lists no environments');
-  return environments.map((entry, index) => {
-    const field = (name: keyof RunnerEnvironment): string => {
-      const value = entry[name];
-      if (typeof value !== 'string' || value === '') throw new Error(`environments[${index}] has no ${name}`);
-      return value;
-    };
-    const repository = field('repository');
-    if (!repository.startsWith('https://')) throw new Error(`environments[${index}]: the repository must be an https URL`);
-    return {
-      environment: field('environment'),
-      projectId: field('projectId'),
-      region: field('region'),
-      definition: field('definition'),
-      repository,
-    };
-  });
-}
 
 /**
  * The environments file at the head of the repository's default branch, or '' when it has none (D22). The head is fetched without its file
@@ -132,7 +99,7 @@ async function main(argv: string[]): Promise<number> {
     console.error(USAGE);
     return 1;
   }
-  const environments = readRunnerConfig(readFileSync(values.config, 'utf8'));
+  const environments = readRunnerEnvironments((JSON.parse(readFileSync(values.config, 'utf8')) as { environments?: unknown }).environments);
   const readKey = process.env.REPOSITORY_READ_KEY || undefined;
   const opts = {
     secretKey,

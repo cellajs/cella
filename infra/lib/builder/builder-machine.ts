@@ -1,3 +1,4 @@
+import { type CloudConfigFile, cloudConfigDocument } from '../utils/cloud-config';
 import { S3_SCRIPT } from './s3-script';
 
 /** What the script reads from `/etc/builder.env`. */
@@ -133,12 +134,6 @@ const UNIT = [
   'ExecStart=/usr/local/bin/builder.sh',
 ].join('\n');
 
-const indent = (text: string, spaces: number) =>
-  text
-    .split('\n')
-    .map((line) => (line ? ' '.repeat(spaces) + line : ''))
-    .join('\n');
-
 /**
  * The builder machine's cloud-init: the values, the bake file, the commands of its keyless container, the script, and a unit started once.
  * The script runs on Scaleway's `docker` image: it takes the builder key from its read-once bundle with the boot key, fetches the release's
@@ -146,7 +141,7 @@ const indent = (text: string, spaces: number) =>
  * and uploads the frontend files with the builder key, and reports each step to the boot-diagnostics bucket with the boot key.
  */
 export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: Record<string, string>; bake: unknown; container: string }): string {
-  const files = [
+  const files: CloudConfigFile[] = [
     {
       path: '/etc/builder.env',
       permissions: '0600',
@@ -167,19 +162,5 @@ export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: R
     { path: '/usr/local/bin/builder.sh', permissions: '0755', content: BUILDER_SCRIPT.trimEnd() },
     { path: '/etc/systemd/system/builder.service', permissions: '0644', content: UNIT },
   ];
-  const written = files.flatMap((file) => [
-    `  - path: ${file.path}`,
-    `    permissions: '${file.permissions}'`,
-    '    content: |',
-    indent(file.content, 6),
-  ]);
-  return [
-    '#cloud-config',
-    'write_files:',
-    ...written,
-    'runcmd:',
-    '  - systemctl daemon-reload',
-    '  - systemctl start --no-block builder.service',
-    '',
-  ].join('\n');
+  return cloudConfigDocument(files, ['systemctl daemon-reload', 'systemctl start --no-block builder.service']);
 }
