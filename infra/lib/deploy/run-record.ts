@@ -13,6 +13,13 @@ export interface RunStep {
 /** How a run ended; `running` while it runs. Blocked: a privileged change is owed, and an apply comes first. */
 export type RunOutcome = 'running' | 'deployed' | 'blocked' | 'failed';
 
+/** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */
+export interface RunBootAccount {
+  service: string;
+  key?: string;
+  failed?: boolean;
+}
+
 /** One run, one record (plan §3.8): what it deployed where, each step with its duration, the step that failed, and how it ended. */
 export interface RunRecord {
   run: string;
@@ -24,6 +31,8 @@ export interface RunRecord {
   steps: RunStep[];
   failedStep?: string;
   error?: string;
+  /** Set when the rollout failed: each service's account of the release, which Show runs prints for a failed boot. */
+  boot?: RunBootAccount[];
 }
 
 /** A run's id: when it started and what it deploys, so ids sort by time and say their target (`20261015T002000Z-21bae33f7c`). */
@@ -74,6 +83,11 @@ export class RunRecorder {
     if (outcome === 'error') this.current.failedStep ??= title;
   }
 
+  /** Name the release's boot accounts, once the rollout failed. */
+  boot(accounts: RunBootAccount[]): void {
+    this.current.boot = accounts;
+  }
+
   /** End the run. */
   finish(outcome: Exclude<RunOutcome, 'running'>, error?: string, now = new Date()): void {
     this.current.outcome = outcome;
@@ -82,7 +96,7 @@ export class RunRecorder {
   }
 
   record(): RunRecord {
-    return { ...this.current, steps: [...this.current.steps] };
+    return { ...this.current, steps: [...this.current.steps], ...(this.current.boot ? { boot: [...this.current.boot] } : {}) };
   }
 
   log(): string {

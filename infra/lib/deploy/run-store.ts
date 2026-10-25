@@ -1,4 +1,5 @@
 import { GetObjectCommand, ListObjectsV2Command, type S3Client } from '@aws-sdk/client-s3';
+import { BOOT_ACCOUNTS_PREFIX } from './boot-accounts';
 import { RUNS_PREFIX, type RunRecord, runLogKey, runRecordKey } from './run-record';
 
 /** The runs of an environment, as its diagnostics bucket keeps them. */
@@ -7,6 +8,8 @@ export interface RunStore {
   listRuns(limit: number): Promise<string[]>;
   readRecord(run: string): Promise<RunRecord | undefined>;
   readLog(run: string): Promise<string | undefined>;
+  /** A machine's boot account a record names, by its key under the boot accounts' prefix. */
+  readBootAccount(key: string): Promise<string | undefined>;
 }
 
 /** A run store on the diagnostics bucket, read with any key the bucket admits to read (the observer's). */
@@ -37,5 +40,6 @@ export function bucketRunStore(s3: Pick<S3Client, 'send'>, bucket: string): RunS
       return text ? (JSON.parse(text) as RunRecord) : undefined;
     },
     readLog: (run) => read(runLogKey(run)),
+    readBootAccount: (key) => read(`${BOOT_ACCOUNTS_PREFIX}${key}`),
   };
 }

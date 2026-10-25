@@ -4,7 +4,7 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
-import { type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
+import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
@@ -66,8 +66,8 @@ export interface DeployEffects {
   rollout(argv: string[]): Promise<void>;
   verifyVersion(url: string, sha: string): Promise<boolean>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
-  /** Print the boot bundles of release `sha` (saying so when there is none) and replay its black-box events from `sinceIso` on. */
-  bootDiagnostics(sha: string, sinceIso?: string): Promise<void>;
+  /** The boot accounts of release `sha`, one per service that boots a machine of its own; its black-box events from `sinceIso` on are replayed. */
+  bootAccounts(opts: { mode: string; sha: string; sinceIso?: string }): Promise<RunBootAccount[]>;
   /** Write a run's record and log to the environment's diagnostics bucket. */
   writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
   group(title: string): void;
@@ -83,14 +83,14 @@ interface RolloutRow {
 /** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
 const STEPS_WITH_MACHINES = new Set(['Base stack update', 'Waved rollout', 'Verify public versions', 'Smoke tests']);
 
-/** What a failed deploy says last: the step it stopped at, and the diagnostics only when machines of the release booted. */
-export function deployFailureHint(err: unknown, mode: string, sha?: string): { description: string; command?: string } {
+/** What a failed deploy says last: the step it stopped at, and where to read the machines' boot accounts only when machines of the release booted. */
+export function deployFailureHint(err: unknown, mode: string): { description: string; command?: string } {
   const step = (err as { deployStep?: string } | undefined)?.deployStep;
   const where = step ? `It stopped at "${step}". ` : '';
   if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: generations are content-addressed.` };
   return {
-    description: `${where}Re-running is safe (generations are content-addressed). For a machine that did not come up, read this release's diagnostics:`,
-    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
+    description: `${where}Re-running is safe (generations are content-addressed). The run's record names each new machine's boot account, and Show runs prints a failed one:`,
+    command: `pnpm infra runs --mode ${mode}`,
   };
 }
 
@@ -129,7 +129,7 @@ export async function runDeploy(
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
-  // Downstream tools (the state backend, diag's aws CLI reader) read AWS_* and region conventions; derived once here.
+  // The state backend reads AWS_* and region conventions; derived once here.
   adoptStateBackendEnv(env.region);
 
   const startedAtIso = new Date().toISOString();
@@ -291,8 +291,19 @@ export async function runDeploy(
       );
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
-      say('[deploy] rollout failed; collecting boot diagnostics');
-      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => say(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
+      say("[deploy] rollout failed; reading the release's boot accounts");
+      const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha, sinceIso: startedAtIso }).catch((diagErr) => {
+        say(`[deploy] the boot accounts could not be read: ${errorMessage(diagErr)}`);
+        return undefined;
+      });
+      if (accounts) {
+        recorder.boot(accounts);
+        for (const account of accounts) {
+          say(
+            `[deploy] ${account.service}: ${account.key ? `${account.failed ? 'boot failed' : 'booted'} (${account.key})` : 'no account of this release: its boot runner has not finished'}`,
+          );
+        }
+      }
       throw err;
     }
 
@@ -557,14 +568,18 @@ function createRealEffects(): DeployEffects {
     },
     publishEntryFiles: publishEntryFilesToBucket,
     writeRunRecord: writeRunRecordToBucket,
-    async bootDiagnostics(sha, sinceIso) {
-      const { main: diag } = await import('./diag');
-      // This release's bundles only: an older release's transcript would read like this deploy's boot.
-      await diag(['--sha', sha]);
+    async bootAccounts({ mode, sha, sinceIso }) {
+      const { bootAccountReader, diagTarget, replayEvents } = await import('./diag');
+      const { releaseAccounts } = await import('../lib/deploy/boot-accounts');
+      const target = await diagTarget(mode);
+      const reader = await bootAccountReader(target, mode);
       // Re-ship black-box events from VMs that died before their exporter was configured; best-effort like all telemetry.
-      await diag(['--replay', '--sha', sha, ...(sinceIso ? ['--since', sinceIso] : [])]).catch((err) => {
+      await replayEvents(reader, target.serviceNames, { sha, sinceIso }).catch((err) => {
         console.warn(`[deploy] black-box replay failed: ${err instanceof Error ? err.message : String(err)}`);
       });
+      return (await releaseAccounts(reader, target.serviceNames, sha)).map(({ service, account }) =>
+        account ? { service, key: account.key, failed: account.failed } : { service },
+      );
     },
     group: (title) => console.info(inActions ? `::group::${title}` : `\n=== ${title} ===`),
     groupEnd: () => {
