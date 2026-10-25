@@ -98,13 +98,20 @@ fi
 finish ok
 `;
 
-/** The keyless container's commands: install the workspace, build the boot bundle, and the frontend with its upload list when there is one. */
+/**
+ * The keyless container's commands: install the workspace and build the boot bundle; when there is a frontend, write this environment's
+ * OpenAPI spec (the docs page serves it, with the environment's URLs), then build the frontend and its upload list.
+ */
 export function containerScript(opts: { pnpmVersion: string; sha: string; frontendBucketUrl?: string }): string {
   const lines = [`npm install -g --silent pnpm@${opts.pnpmVersion}`];
   if (opts.frontendBucketUrl) {
     lines.push(
-      "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'infra...'",
+      "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'backend...' --filter 'infra...'",
       'pnpm --filter infra boot:build',
+      // The spec opens no database and signs nothing: the example env and a placeholder cookie secret only pass validation.
+      'cp backend/.env.example backend/.env',
+      'COOKIE_SECRET=openapi-spec-placeholder-secret pnpm --filter backend generate:openapi --force',
+      'cp backend/openapi.cache.json sdk/gen/openapi.json',
       'pnpm --filter frontend build',
       `pnpm --silent --filter infra release-files --dist /build/frontend/dist --sha ${opts.sha} --bucket-url ${opts.frontendBucketUrl} > /build/.release-files`,
     );
