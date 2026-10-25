@@ -16,7 +16,12 @@ export function SearchClearButton({ className, ...props }: ComponentProps<'butto
     <button
       type="button"
       aria-label={t('c:clear_search')}
-      className={cn(searchButtonClass, 'size-7 text-muted-foreground', className)}
+      // A 44px tap target on touch, the X itself unchanged
+      className={cn(
+        searchButtonClass,
+        'relative size-7 text-muted-foreground pointer-coarse:after:absolute pointer-coarse:after:-inset-2',
+        className,
+      )}
       // Keeps focus in the input, so typing can continue right after clearing
       onMouseDown={(event) => event.preventDefault()}
       {...props}
