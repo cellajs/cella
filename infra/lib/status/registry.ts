@@ -2,6 +2,7 @@ import { componentsProvider } from './providers/components';
 import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
 import { githubProvider } from './providers/github';
+import { inventoryProvider } from './providers/inventory';
 import { liveProvider } from './providers/live';
 import { secretsProvider } from './providers/secrets';
 import { identityProvider, stackProvider } from './providers/stack';
@@ -17,6 +18,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   toolingProvider,
   stackProvider,
   identityProvider,
+  inventoryProvider,
   githubProvider,
   stateProvider,
   secretsProvider,
@@ -31,6 +33,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
 const NEXT_ACTION_PRIORITY = [
   'tooling.pulumi',
   'identity.project',
+  'inventory.',
   'config.stackState',
   'stores.',
   'github.environment',

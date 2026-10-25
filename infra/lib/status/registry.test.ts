@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ComponentsFact } from './providers/components';
 import type { DbEndpointFacts } from './providers/database';
 import type { GithubFacts } from './providers/github';
+import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { IdentityFacts } from './providers/stack';
 import type { StoreValidationFact } from './providers/stores';
@@ -18,6 +19,7 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
 interface Facts {
   tooling?: ToolingFacts;
   identity?: IdentityFacts;
+  inventory?: InventoryFacts;
   github?: GithubFacts;
   state?: ScalewayFacts;
   secrets?: string[];
@@ -33,6 +35,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
   return {
     tooling: { pulumi: true, dockerBuildx: true, gh: true },
     identity: { observerAppId: 'app-1', keyAges: [] },
+    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {} },
     github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
     state: {
       stateBucketExists: true,
@@ -75,6 +78,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     tooling: facts.tooling,
     config: {},
     identity: facts.identity,
+    inventory: facts.inventory,
     github: facts.github,
     state: facts.state,
     secrets: facts.secrets,

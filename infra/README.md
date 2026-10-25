@@ -74,6 +74,8 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: checks needing Scaleway API access (`credential: "scaleway"`) degrade without a key, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
+The **inventory** checks (`inventory.*`) compare what exists with what the environment declares, as an Owner checks after a suspected break-in: an application the environment does not declare that can act in its project (a rule on the project, or a rule on the organization that does more than read, its own or a group's), a key beside the one each identity holds (the observer holds one per machine), a policy beside an identity's declared one, a person's key without an end date, and a machine that is neither an active generation nor a builder. **Rotate keys** deletes the extra keys and **Update identities** the extra policies; an application or a machine the engine did not make is removed in the console once it is known who made it.
+
 ```jsonc
 {
   "schemaVersion": 1,

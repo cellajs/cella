@@ -1,7 +1,7 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaredIdentities } from '../../lib/scaleway/declared-identities';
-import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
+import { IAM_BASE, type IamAuth, listOrganizationPolicies, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
 import type { MachinePolicy } from '../../lib/scaleway/machine-policies';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
@@ -9,6 +9,7 @@ import { type AppPrincipalNames, appPrincipalNames, principalNames } from '../..
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
+import { scwSend } from '../../lib/scaleway/scw-fetch';
 import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
@@ -35,8 +36,16 @@ export interface MachineIdentityPlan {
   keys: MachineKeyStep[];
 }
 
-/** What an identity update would change: the machine part, the observer's step, the retired admin. */
+/** A policy on one of the environment's identities beside the declared one, which the inventory reports: no step of the engine writes one. */
+export interface ExtraPolicy {
+  id: string;
+  name: string;
+  application: string;
+}
+
+/** What an identity update would change: the machine part, the policies beside the declared ones, the observer's step, the retired admin. */
 export interface IdentityPlan extends MachineIdentityPlan {
+  extraPolicies: ExtraPolicy[];
   observer: ObserverStep;
   retiredAdmin?: RetiredAdmin;
 }
@@ -47,6 +56,7 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
     plan.missingApplications.length === 0 &&
     plan.policies.every((step) => step.change === 'none') &&
     plan.keys.every((step) => step.change === 'none') &&
+    plan.extraPolicies.length === 0 &&
     plan.observer === 'none' &&
     !plan.retiredAdmin?.removable
   );
@@ -84,6 +94,7 @@ export function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNa
   const observer = observerWords[plan.observer];
   return [
     ...machineIdentityLines(plan),
+    ...plan.extraPolicies.map((policy) => `policy ${policy.name} on ${policy.application}: beside the declared one, to delete`),
     ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
     ...(plan.retiredAdmin?.removable ? [`application ${plan.retiredAdmin.name}: retired, to delete with its keys and its custody secret`] : []),
   ];
@@ -164,6 +175,20 @@ export async function exitOnIdentityChanges(
   endAction(1);
 }
 
+/** The policies on the environment's identities beside the declared ones: each widens what that identity may do, so Update identities deletes it. */
+async function extraPolicies(auth: IamAuth, organizationId: string, declared: readonly MachinePolicy[]): Promise<ExtraPolicy[]> {
+  const ids = new Map<string, string>();
+  for (const policy of declared) {
+    const id = await resolveApplicationIdByName(auth, organizationId, policy.applicationName);
+    if (id) ids.set(id, policy.applicationName);
+  }
+  const names = new Set(declared.map((policy) => policy.name));
+  return (await listOrganizationPolicies(auth, organizationId)).flatMap((policy) => {
+    const application = policy.application_id ? ids.get(policy.application_id) : undefined;
+    return application && !names.has(policy.name) ? [{ id: policy.id, name: policy.name, application }] : [];
+  });
+}
+
 async function planIdentities(
   auth: IamAuth,
   organizationId: string,
@@ -171,6 +196,7 @@ async function planIdentities(
 ): Promise<IdentityPlan> {
   return {
     ...(await planMachineIdentities(auth, organizationId, context)),
+    extraPolicies: await extraPolicies(auth, organizationId, declaredPolicies(context, organizationId)),
     observer: await observerStep(auth, organizationId, context, context.projectId),
     retiredAdmin: await retiredAdmin(auth, organizationId, context),
   };
@@ -245,6 +271,10 @@ export async function runIdentity(context: InfraContext): Promise<void> {
       ...registry,
       steps: plan.keys,
     });
+    for (const policy of plan.extraPolicies) {
+      await scwSend(auth, 'DELETE', `${IAM_BASE}/policies/${policy.id}`);
+      console.info(`  ${changeMark} Deleted ${policy.name} from ${policy.application}.`);
+    }
     if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
     if (plan.retiredAdmin?.removable) await deleteRetiredAdmin(ownerKey, context, plan.retiredAdmin);
     console.info(`${checkMark} The identities of ${context.environment} are written.`);
