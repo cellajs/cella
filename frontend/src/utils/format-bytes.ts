@@ -8,7 +8,8 @@ export const formatBytes = (bytes: string | number): string => {
 
   const index = Math.floor(Math.log(parsedBytes) / Math.log(1024));
 
-  const formattedSize = (parsedBytes / 1024 ** index).toFixed(index > 1 ? 2 : 0);
+  // Number() drops trailing zeros: 50 MB, 1.5 GB
+  const formattedSize = Number((parsedBytes / 1024 ** index).toFixed(index > 1 ? 2 : 0));
 
   return `${formattedSize} ${units[index]}`;
 };
