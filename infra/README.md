@@ -12,7 +12,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Go European without looking back.** Scaleway is one of Europe's most established cloud providers.
 
-**Everything is yours.** Your Scaleway account, your action runner (GitHub Actions today).
+**Everything is yours.** Your Scaleway account runs the deploys too: a runner in it starts each one as a job, and GitHub holds no key.
 
 **Full stack deployment.** One guided setup: domain, HTTPS, load balancer, managed database, file storage, servers.
 
@@ -28,13 +28,13 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one Owner API key ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
 
-**Release** is one command, triggered by a published GitHub release, a manual dispatch, or any other CI:
+**Release** is one command, which the environment's main job runs on a checkout of the target when the runner sees the target move (a published release, a new commit on a followed branch, a line in `infra/environments`):
 
 ```
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)): when the release's images or frontend files are missing, a builder machine it makes builds them from the pushed commit. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
+It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)): when the release's images or frontend files are missing, a builder machine it makes builds them from the pushed commit. The main job deploys with `--defer-reap`, then runs `pnpm --filter infra run reap`, which destroys the displaced VMs off the critical path (already detached from every LB pool).
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: one menu for status, reviewing and applying privileged changes (database, VPC, IAM), key and passphrase rotation, runtime secrets, database access and reset, repair (a stale lock, interrupted Pulumi operations, a re-sync of the setup) and [teardown](../cella/DEPLOYMENT.md#teardown). Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help` ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
 

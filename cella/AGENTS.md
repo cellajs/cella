@@ -187,7 +187,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 
 ## Deploy debugging
 
-Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control object). The LB-overlap cutover waits for the new VM to serve `X-App-Version: <SHA>` (`/health` → 204 backend/yjs/mcp/oauth, 200 frontend). "cutover unhealthy / wait-for-version timeout" means the app never bound its port: almost always a **boot-time crash**, not the LB.
+A deploy is one run of the environment's main job (Serverless Jobs), which the runner starts when the target moves; `pnpm infra runs` (observer key) lists every run with its record. Deploys are immutable VM generations on Scaleway (Pulumi + S3 control object). The LB-overlap cutover waits for the new VM to serve `X-App-Version: <SHA>` (`/health` → 204 backend/yjs/mcp/oauth, 200 frontend). "cutover unhealthy / wait-for-version timeout" means the app never bound its port: almost always a **boot-time crash**, not the LB.
 
 1. **Read the boot logs first.** The boot runner ([infra/boot/src/boot.ts](../infra/boot/src/boot.ts)) runs `docker compose up --wait` and uploads the VM's boot log (its phases and the migrate companion's output, mounted read-only into the runner) plus a crashed container's stdout/stderr to the `boot-diag/` prefix of the boot-diag bucket. `pnpm infra runs` shows a failed rollout's record with the failed machine's boot error; `pnpm --filter infra diag --sha <sha>` (`--service backend`, `--list`, `--mode staging`, `--replay`, observer key) prints that release's whole account, and "no account of <sha>" means the boot runner never finished (a hung phase, or it never started).
 2. **No SSH, no serial-log API.** SecurityGroup drops inbound. The only channels are the S3 boot-diag above and the Scaleway **web** serial console (`::cella::` markers + `BOOT FAILED (exit N)`).
@@ -199,7 +199,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
    - node-postgres TLS hostname check vs. the dialed IP (`sslmode=require` + host-pinned `checkServerIdentity`).
    - `SecretManagerSecretAccess` missing on the VM's service key (`<slug>-<mode>-vm-<service>`, 403 on hydrate).
    - Instance-type quota too low for create-before-destroy.
-5. **Validate infra changes** with `pnpm --filter infra exec vitest run` (infra is **Biome-ignored**, match style by hand) and `pnpm check` at the root.
+5. **Validate infra changes** with `pnpm --filter infra exec vitest run` and `pnpm check` at the root.
 
 ## Commits & PRs
 
