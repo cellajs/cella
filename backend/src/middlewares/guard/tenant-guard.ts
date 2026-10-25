@@ -32,6 +32,8 @@ export const tenantGuard = xMiddleware(
   {
     functionName: 'tenantGuard',
     type: 'x-guard',
+    requires: ['actor'],
+    provides: ['tenant'],
     name: 'tenant',
     description: 'Requires being in the tenant: a member, a system admin, or its creator while it has no organization',
   },
@@ -43,7 +45,7 @@ export const tenantGuard = xMiddleware(
     const tenantId = rawTenantId.toLowerCase();
 
     const actor = ctx.var.actor;
-    if (!actor) throw new AppError(401, 'unauthorized', 'warn', { message: 'tenantGuard requires userGuard or serviceGuard' });
+    if (!actor) throw new AppError(500, 'server_error', 'error', { message: 'tenantGuard requires userGuard or serviceGuard' });
 
     // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
     // so a key learns nothing about other tenants.

@@ -3,12 +3,14 @@ import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { invalidateTenantCache } from '#/middlewares/guard/tenant-cache';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { adminDb, createTestOrganization } from '../helpers';
+import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
 import { attachmentBody, cleanupEntityHierarchy, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -175,5 +177,29 @@ describe('Idempotent attachment creates', async () => {
     const { data } = await create(owner, body);
     expect(data).toEqual([]);
     expect((await storedRow(id))?.deletedAt).not.toBeNull();
+  });
+
+  it('refuses a create past the tenant quota with 403 restrict_by_org, and still answers a replay of rows it wrote', async () => {
+    const body = bodyFor(generateId(), generateId());
+    expect((await create(owner, body)).status).toBe(201);
+
+    const { tenantId } = organization;
+    const [tenant] = await adminDb.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    const setRestrictions = async (restrictions: typeof tenant.restrictions) => {
+      await adminDb.update(tenantsTable).set({ restrictions }).where(eq(tenantsTable.id, tenantId));
+      invalidateTenantCache(tenantId);
+    };
+    onTestFinished(() => setRestrictions(tenant.restrictions));
+    await setRestrictions({ ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, attachment: 1 } });
+
+    const overQuota = await call(createAttachments, {
+      path: { tenantId, organizationId: organization.id },
+      body: [bodyFor(generateId(), generateId()), bodyFor(generateId(), generateId())] as never,
+      headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
+    });
+    await expectRefusal(overQuota, 403, 'restrict_by_org');
+
+    // Positive control: a replay creates nothing, so the full quota lets it through.
+    expect((await create(owner, body)).status).toBe(200);
   });
 });

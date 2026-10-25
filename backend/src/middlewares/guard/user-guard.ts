@@ -15,6 +15,7 @@ export const userGuard = xMiddleware(
     functionName: 'userGuard',
     type: 'x-guard',
     security: [{ cookieAuth: [] }],
+    provides: ['actor', 'session'],
     name: 'user',
     description: 'Requires a session cookie; acts as the signed-in user',
   },
