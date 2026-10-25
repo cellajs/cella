@@ -1,4 +1,4 @@
-import { type ScwAuth, scwFetch } from '../scaleway/scw-fetch';
+import { type ScwAuth, scwFetch } from '../scaleway/scw-fetch.ts';
 
 /** One run of a job definition, as the Serverless Jobs API reports it. */
 export interface JobRun {
@@ -32,6 +32,23 @@ export async function findJobDefinition(auth: ScwAuth, opts: { region: string; p
     const found = job_definitions.find((definition) => definition.name === opts.name);
     if (found) return found.id;
     if (page * 100 >= total_count || job_definitions.length === 0) return undefined;
+  }
+}
+
+/**
+ * Every run of a definition Scaleway still keeps (60 days), newest first. Each run's `environment_variables` holds the definition's values
+ * and its start call's, so a run names the target it was started for.
+ */
+export async function listJobRuns(auth: ScwAuth, opts: { region: string; projectId: string; definitionId: string }): Promise<JobRun[]> {
+  const runs: JobRun[] = [];
+  for (let page = 1; ; page++) {
+    const { job_runs = [], total_count = 0 } = await scwFetch<{ job_runs?: JobRun[]; total_count?: number }>(
+      auth,
+      'GET',
+      `${base(opts.region)}/job-runs?project_id=${opts.projectId}&job_definition_id=${opts.definitionId}&order_by=created_at_desc&page=${page}&page_size=100`,
+    );
+    runs.push(...job_runs);
+    if (page * 100 >= total_count || job_runs.length === 0) return runs;
   }
 }
 

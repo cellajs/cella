@@ -82,7 +82,7 @@
       "ignoreUnresolved": ["^#pdfjs/"]
     },
     "infra": {
-      "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]
+      "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts", "runner/src/main.ts"]
     },
     "shared": {
       // pino resolves transport targets by name.
