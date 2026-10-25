@@ -80,20 +80,6 @@ function findMigrationByTag(tagSuffix: string): string | undefined {
 }
 
 /**
- * Get the latest snapshot from existing migrations.
- */
-function getLatestSnapshot(): object | null {
-  const folders = getMigrationFolders();
-  for (let i = folders.length - 1; i >= 0; i--) {
-    const snapshotPath = join(drizzleDir, folders[i], 'snapshot.json');
-    if (existsSync(snapshotPath)) {
-      return JSON.parse(readFileSync(snapshotPath, 'utf-8'));
-    }
-  }
-  return null;
-}
-
-/**
  * Resolve SQL content from either a file path or inline SQL string.
  * @param sqlOrPath - SQL content or path to a .sql file
  */
@@ -112,6 +98,9 @@ export function resolveSqlContent(sqlOrPath: string): string {
  * SQL → action 'evolved', leaving the old folder untouched and writing a fresh timestamped
  * folder with the new SQL.
  *
+ * The folder holds no `snapshot.json`: drizzle-kit skips it and diffs against the last schema
+ * snapshot, and a copy would repeat that snapshot's id, which `drizzle-kit up` refuses.
+ *
  * @param sql - SQL content, not a file path (use resolveSqlContent first if needed)
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
@@ -129,46 +118,19 @@ export function upsertMigration(tag: string, sql: string): MigrationResult {
     const migrationPath = join(folderPath, 'migration.sql');
 
     // Compare content; if unchanged, skip entirely.
-    if (existsSync(migrationPath)) {
-      const existingSql = readFileSync(migrationPath, 'utf-8');
-      if (existingSql === finalSql) {
-        return { folderName: existingFolder, path: folderPath, tag: normalizedTag, action: 'unchanged' };
-      }
+    if (existsSync(migrationPath) && readFileSync(migrationPath, 'utf-8') === finalSql) {
+      return { folderName: existingFolder, path: folderPath, tag: normalizedTag, action: 'unchanged' };
     }
-
-    // Preserve the old migration and create a new one with a fresh timestamp.
-    const timestamp = generateTimestamp();
-    const newFolderName = `${timestamp}_${normalizedTag}`;
-    const newFolderPath = join(drizzleDir, newFolderName);
-
-    mkdirSync(newFolderPath, { recursive: true });
-    writeFileSync(join(newFolderPath, 'migration.sql'), finalSql);
-
-    // Copy the snapshot from the latest migration.
-    const latestSnapshot = getLatestSnapshot();
-    if (latestSnapshot) {
-      writeFileSync(join(newFolderPath, 'snapshot.json'), JSON.stringify(latestSnapshot, null, 2));
-    }
-
-    return { folderName: newFolderName, path: newFolderPath, tag: normalizedTag, action: 'evolved' };
   }
 
-  // Create a new migration folder with Drizzle v1 naming convention.
-  const timestamp = generateTimestamp();
-  const folderName = `${timestamp}_${normalizedTag}`;
+  // A changed migration keeps its old folder and gets a new one with a fresh timestamp.
+  const folderName = `${generateTimestamp()}_${normalizedTag}`;
   const folderPath = join(drizzleDir, folderName);
 
-  // Create the folder and write the migration file.
   mkdirSync(folderPath, { recursive: true });
   writeFileSync(join(folderPath, 'migration.sql'), finalSql);
 
-  // Copy the latest snapshot; manual SQL migrations don't change Drizzle schema.
-  const latestSnapshot = getLatestSnapshot();
-  if (latestSnapshot) {
-    writeFileSync(join(folderPath, 'snapshot.json'), JSON.stringify(latestSnapshot, null, 2));
-  }
-
-  return { folderName, path: folderPath, tag: normalizedTag, action: 'created' };
+  return { folderName, path: folderPath, tag: normalizedTag, action: existingFolder ? 'evolved' : 'created' };
 }
 
 /**

@@ -9,7 +9,6 @@ overrides:
   '@opentelemetry/instrumentation-pg>@types/pg': '-'
   '@opentelemetry/instrumentation-pg>@types/pg-pool': '-'
   '@tailwindcss/node>lightningcss': ^1.33.0
-  drizzle-kit>esbuild: ^0.28.1
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
   oxc-resolver: 11.24.2
   postcss-selector-parser@<7.1.6: ^7.1.6
@@ -200,8 +199,8 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0
       drizzle-kit:
-        specifier: 1.0.0-rc.5-ab785fc
-        version: 1.0.0-rc.5-ab785fc
+        specifier: 1.0.0-rc.5
+        version: 1.0.0-rc.5(drizzle-orm@1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7))
       drizzle-orm:
         specifier: 1.0.0-rc.5
         version: 1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7)
@@ -1551,9 +1550,6 @@ packages:
   '@date-fns/tz@1.5.0':
     resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
 
-  '@drizzle-team/brocli@0.12.1':
-    resolution: {integrity: sha512-yHwomvolVafvUXhy5TdiJVkuNCxXn+bKOs2aWiWEQh/5YaV97Oa/abJz3dmx7lxgIUsUlS1Jl4mEfvJPo3YsVw==}
-
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
 
@@ -2096,10 +2092,6 @@ packages:
 
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
-
-  '@js-temporal/polyfill@0.5.1':
-    resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
-    engines: {node: '>=12'}
 
   '@jsdevtools/ono@7.1.3':
     resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
@@ -5154,9 +5146,14 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
-  drizzle-kit@1.0.0-rc.5-ab785fc:
-    resolution: {integrity: sha512-TSg7sK1finOxdo48O9mDfyMY3lhi/aHCVIil5TFhthyq/H/89H/3nwX5V9Gdp7HYMUGFHyWJD5iowSn98l0elw==}
+  drizzle-kit@1.0.0-rc.5:
+    resolution: {integrity: sha512-8glQN7iFK3e1aOIoRit1NtslcsqE/rnlqNw/1jUC5Ph4RFVh/E5Jricxd6Nu2ugj2HlFZlZ6O4006AwqJ9e24g==}
     hasBin: true
+    peerDependencies:
+      drizzle-orm: '>=1.0.0-rc.5'
+    peerDependenciesMeta:
+      drizzle-orm:
+        optional: true
 
   drizzle-orm@1.0.0-rc.5:
     resolution: {integrity: sha512-7BMYTsAZbQ9DcQCtLG4G202Hq6nc/e8o1EBKN6nBweRI8EGPFe/VdyvWQCsU9fuZSiRjNpELolUSi//JFBq+lw==}
@@ -5888,9 +5885,6 @@ packages:
   js-yaml@4.3.2:
     resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
-
-  jsbi@4.3.2:
-    resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
 
   jsdom@30.1.3:
     resolution: {integrity: sha512-hQMUPvRgN7KxsfIytDQji7bimuJeRQa6Qo5+iuiZQk5CafeRxLIA10/cG5YCBFNpD9RO3oqIiN4CO1Y44kxqXg==}
@@ -8781,8 +8775,6 @@ snapshots:
 
   '@date-fns/tz@1.5.0': {}
 
-  '@drizzle-team/brocli@0.12.1': {}
-
   '@emnapi/core@1.11.2':
     dependencies:
       '@emnapi/wasi-threads': 1.2.2
@@ -9193,10 +9185,6 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.6.0
 
   '@js-sdsl/ordered-map@4.4.2': {}
-
-  '@js-temporal/polyfill@0.5.1':
-    dependencies:
-      jsbi: 4.3.2
 
   '@jsdevtools/ono@7.1.3': {}
 
@@ -12204,13 +12192,9 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  drizzle-kit@1.0.0-rc.5-ab785fc:
-    dependencies:
-      '@drizzle-team/brocli': 0.12.1
-      '@js-temporal/polyfill': 0.5.1
-      esbuild: 0.28.2
-      get-tsconfig: 4.14.3
-      jiti: 2.7.0
+  drizzle-kit@1.0.0-rc.5(drizzle-orm@1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7)):
+    optionalDependencies:
+      drizzle-orm: 1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7)
 
   drizzle-orm@1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7):
     optionalDependencies:
@@ -12784,8 +12768,6 @@ snapshots:
   js-yaml@4.3.2:
     dependencies:
       argparse: 2.0.1
-
-  jsbi@4.3.2: {}
 
   jsdom@30.1.3:
     dependencies:

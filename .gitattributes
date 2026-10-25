@@ -2,4 +2,5 @@
 sdk/gen/** linguist-generated=true
 sdk/gen/openapi.json linguist-generated=false
 backend/drizzle/**/snapshot.json linguist-generated=true
+backend/drizzle/*_side_effects/migration.sql linguist-generated=true
 frontend/src/routes/routeTree.gen.ts linguist-generated=true
