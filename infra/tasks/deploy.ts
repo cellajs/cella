@@ -11,15 +11,12 @@ if (!mode) {
 }
 process.env.APP_MODE = mode;
 
-const shaIndex = argv.indexOf('--sha');
-const sha = shaIndex >= 0 ? argv[shaIndex + 1] : undefined;
-
 const { deployFailureHint, main } = await import('./deploy-run');
 await main(argv).catch(async (err: unknown) => {
   const { failWithHint } = await import('../lib/utils/cli-output');
   const { ExitCodeError } = await import('../lib/utils/errors');
   // A deploy that stopped on an owed privileged change keeps the preflight's code, so the main job can tell blocked from failed.
-  failWithHint(err instanceof Error ? err.message : String(err), deployFailureHint(err, mode, sha), err instanceof ExitCodeError ? err.exitCode : 1);
+  failWithHint(err instanceof Error ? err.message : String(err), deployFailureHint(err, mode), err instanceof ExitCodeError ? err.exitCode : 1);
 });
 
 export {};

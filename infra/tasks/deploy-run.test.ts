@@ -95,8 +95,9 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     publishEntryFiles: async () => {
       ops.push('publish-entry');
     },
-    bootDiagnostics: async (sha) => {
+    bootAccounts: async ({ sha }) => {
       ops.push(`boot-diag:${sha}`);
+      return [{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }];
     },
     writeRunRecord: async ({ bucket, record, log }) => {
       ops.push('record');
@@ -229,10 +230,10 @@ describe('runDeploy sequencing', () => {
     expect(process.exitCode).toBe(exitCodeBefore);
   });
 
-  it('collects the deploying release’s boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
-    const { fx, ops } = makeFake({ rolloutFails: true });
+  it('names the release’s boot accounts in the record, releases the lock, and skips publish when the rollout fails', async () => {
+    const { fx, ops, records } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(ops).toContain(`boot-diag:${baseOpts.sha}`);
+    expect(records[0]?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
     expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
@@ -373,7 +374,7 @@ describe('the run record', () => {
 });
 
 describe('deployFailureHint', () => {
-  it('names the step it stopped at, and points at boot diagnostics only once machines booted', async () => {
+  it('names the step it stopped at, and points at the boot accounts only once machines booted', async () => {
     const early = makeFake();
     const task = early.fx.task;
     early.fx.task = async (name, argv) => {
@@ -381,15 +382,15 @@ describe('deployFailureHint', () => {
       return task(name, argv);
     };
     const buildError = await runDeploy(baseOpts, early.fx, fakeDeployEnv).catch((err: unknown) => err);
-    expect(deployFailureHint(buildError, 'staging', 'abc123')).toEqual({
+    expect(deployFailureHint(buildError, 'staging')).toEqual({
       description: 'It stopped at "Build the release". Re-running is safe: generations are content-addressed.',
     });
 
     const late = makeFake({ rolloutFails: true });
     const rolloutError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
-    expect(deployFailureHint(rolloutError, 'staging', 'abc123')).toMatchObject({
+    expect(deployFailureHint(rolloutError, 'staging')).toMatchObject({
       description: expect.stringContaining('"Waved rollout"'),
-      command: 'pnpm --filter infra diag --mode staging --sha abc123',
+      command: 'pnpm infra runs --mode staging',
     });
   });
 });
