@@ -400,15 +400,16 @@ Stacks set up before the observer have a `<slug>-<mode>-admin` application, and 
 `pnpm infra` → **Rotate keys & secrets** → **Set up operator key** (`pnpm infra operator-key`), run once per app with your Owner API key (a first setup runs it for you), and again when the address changes. A new environment needs no new key, as its setup adds the environment to the operator's policy in place. The action:
 
 1. Asks for the dedicated IPv4 address or addresses the key works from; the default is the address this machine reaches the internet with. Ranges wider than `/24` are refused, as for the database allowlist.
-2. Creates the `<app>-operator` application with a policy of up to three rules: every product in the project of each environment this machine knows (the ones whose setup wrote a project to `infra/.env.<mode>`), DNS in the serving zone's project when that is none of them, and IAM read in the organization. Each rule carries the same address condition. The app's name is production's slug, the one in `shared/config/config.default.ts`, so staging (`cella-staging`) and production (`cella`) share `cella-operator`.
+2. Creates the `<app>-operator` application with a policy of up to three rules: every product in the project of each environment this machine knows (the ones whose setup wrote a project to `infra/.env.<mode>`) and of each project it reaches already (the runner's), DNS in the serving zone's project when that is none of them, and IAM read in the organization. Each rule carries the same address condition. The app's name is production's slug, the one in `shared/config/config.default.ts`, so staging (`cella-staging`) and production (`cella`) share `cella-operator`.
 3. Shows the new key once and waits until you confirm it is in your password manager.
-4. Tries the key from this machine until Scaleway accepts it. A new policy takes about a minute to apply, and single APIs follow later still.
+4. Gives the observer the same addresses; its key keeps working.
+5. Tries the key from this machine until Scaleway accepts it. A new policy takes about a minute to apply, and single APIs follow later still.
 
 From another address Scaleway refuses the key: IAM, Secret Manager and Object Storage answer with an error, while the database and Instances APIs answer a list with nothing in it. A stack that looks empty from a new address is therefore the address, not the stack.
 
 Running the action again replaces the policy and every earlier key. It needs your Owner API key each time: the operator key writes no IAM, its own policy included. Keep the Owner account for this and for recovery, with MFA and no API key lying around.
 
-**A new dedicated address** is set the same way, with **Set up operator key**, or by editing the address in the policy's rules in the console. Scaleway applies a policy change within a few minutes, one API after the other, so an address that was removed can still work for a short while.
+**A new dedicated address** is set the same way, with **Set up operator key**, which gives it to the observer too, or by editing the address in the rules of both policies, the operator's and the observer's, in the console. List the old address beside the new one to keep both. Scaleway applies a policy change within a few minutes, one API after the other, so an address that was removed can still work for a short while.
 
 **How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the operator key, access key and secret key. The CLI proves it by asking IAM who bears it, with the key itself: the answer has to be the operator application. It keeps the pair in memory until you quit, and every action of the run works with that key. When Scaleway refuses the key, the CLI says why: a secret key Scaleway does not know, or an address off the list, with this machine's address beside the ones the policy names.
 
