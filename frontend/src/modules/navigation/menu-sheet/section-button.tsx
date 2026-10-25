@@ -10,6 +10,7 @@ import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;
@@ -65,7 +66,8 @@ export function MenuSheetSectionButton({
       {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}
       <AnimatePresence initial={false}>
         {isSectionVisible && !!items.length && (
-          <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
+          // Below sm only while editing: the way out of the manage mode the organization switcher starts
+          <motion.div key={`settings-${options.entityType}`} {...widenMotion} className={cn('shrink-0', !isEditing && 'max-sm:hidden')}>
             <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
               <Button variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={onToggleEditing}>
                 <Settings2Icon className="size-5" />

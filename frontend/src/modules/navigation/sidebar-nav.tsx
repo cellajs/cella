@@ -1,3 +1,4 @@
+import { EllipsisIcon } from 'lucide-react';
 import { type CSSProperties, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
@@ -8,27 +9,37 @@ import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { SidebarOrganizationButtons } from '~/modules/navigation/organization-buttons';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
-import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
+import type { NavItem, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu } from '~/modules/ui/sidebar';
+import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
-const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
+const hasOrganizationRail = appConfig.navSidebarMode === 'organizations';
+
+// With the organizations above it, the menu button only leads to the full menu, and their badges carry its unseen count
+const toRailNavItem = (item: NavItem): NavItem =>
+  hasOrganizationRail && item.id === 'menu' ? { ...item, icon: EllipsisIcon, badgeSlot: undefined } : item;
+
+const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base').map(toRailNavItem);
 const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
 interface SidebarNavProps {
   onNavItemClick: TriggerNavItemFn;
+  onOrganizationClick: TriggerOrganizationFn;
 }
 
-export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
+export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpointAbove('2xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const navSheetOrganizationId = useNavigationStore((state) => state.navSheetOrganizationId);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
   const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
@@ -68,15 +79,21 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full">
           <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
-            <SidebarContent className="gap-1">
-              <SidebarGroup className="p-0">
+            {/* With the organization rail only its group scrolls, so the buttons under it stay in view */}
+            <SidebarContent className={cn('gap-1', hasOrganizationRail && 'overflow-hidden')}>
+              {hasOrganizationRail && (
+                <SidebarGroup className="min-h-0 p-0">
+                  <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
+                </SidebarGroup>
+              )}
+              <SidebarGroup className="shrink-0 p-0">
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-1">
                     {baseNavItems.map((navItem) => (
                       <SidebarNavItemButton
                         key={navItem.id}
                         navItem={navItem}
-                        isActive={navSheetOpen === navItem.id}
+                        isActive={navSheetOpen === navItem.id && !navSheetOrganizationId}
                         isCollapsed={!isExpanded}
                         onClick={onNavItemClick}
                       />
