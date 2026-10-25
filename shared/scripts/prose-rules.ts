@@ -15,7 +15,7 @@ export interface ProseRule {
 }
 
 /** Agent-associated wording, skipped in infra/ and in text that is generated or addresses app maintainers. */
-const agentWording = { level: 'review', docs: true, exclude: /^(?:cella\/migrations\/|infra\/|sdk\/gen\/)/ } as const;
+const agentWording = { level: 'review', docs: true, exclude: /^(?:cella\/alignments\/|infra\/|sdk\/gen\/)/ } as const;
 
 export const proseRules: ProseRule[] = [
   { name: 'em-dash', pattern: /—/, level: 'required', message: 'split the sentence, use a colon, or drop the clause', docs: true },
@@ -36,7 +36,7 @@ export const proseRules: ProseRule[] = [
     name: 'change-history',
     pattern: /\b(?:previously|formerly|used to|originally)\b/i,
     level: 'required',
-    message: 'move evolution history to the commit or migration documentation',
+    message: 'move evolution history to the commit or an alignment',
   },
   {
     name: 'review-conversation',

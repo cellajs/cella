@@ -44,7 +44,7 @@ describe('docFindings', () => {
 
   it('finds inline code in a link label, outside fenced code, double-backtick examples and image alt text', () => {
     const source = [
-      'See [`define.ts`](./define.ts) and the [`migrate` skill][skills].',
+      'See [`define.ts`](./define.ts) and the [`align` skill][skills].',
       'Write [define.ts](./define.ts), never ``[`define.ts`](./define.ts)``. ![`logo`](./logo.svg)',
       '```md',
       '[`define.ts`](./define.ts)',
@@ -53,14 +53,14 @@ describe('docFindings', () => {
 
     expect(found('guide.md', source).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
       { line: 1, column: 5, term: '[`define.ts`]' },
-      { line: 1, column: 40, term: '[`migrate` skill]' },
+      { line: 1, column: 40, term: '[`align` skill]' },
     ]);
   });
 
-  it('skips changelogs, non-doc files, and agent wording in migration notes and infra', () => {
+  it('skips changelogs, non-doc files, and agent wording in alignments and infra', () => {
     expect(found('CHANGELOG.md', `${dash} ${singular}`)).toEqual([]);
     expect(found('guide.txt', `${dash} ${singular}`)).toEqual([]);
-    expect(found('cella/migrations/x/README.md', 'This lands load-bearing code.')).toEqual([]);
+    expect(found('cella/alignments/x/README.md', 'This lands load-bearing code.')).toEqual([]);
     expect(found('infra/README.md', `A ${dash} here.`)).toHaveLength(1);
   });
 });

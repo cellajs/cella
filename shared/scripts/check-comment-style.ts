@@ -9,7 +9,7 @@ import { type Finding, lineColumn } from './repo-files.ts';
 import { type Comment, parseSource, scriptExtensions, sourceComments } from './source-comments.ts';
 
 const sourceExtensions = new Set([...scriptExtensions, '.css', '.jsonc', '.scss', '.sql', '.yaml', '.yml']);
-const excludedPrefixes = ['backend/drizzle/', 'cella/migrations/', 'locales/', 'sdk/gen/'];
+const excludedPrefixes = ['backend/drizzle/', 'cella/alignments/', 'locales/', 'sdk/gen/'];
 const placementAdvice = 'move shared context to a README or attach a concise local constraint to a declaration';
 
 function isSource(file: string): boolean {
