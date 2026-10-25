@@ -83,7 +83,7 @@ export function isPrivilegedUrn(urn: string): boolean {
 
 const MUTATING_OPS = new Set(['create', 'update', 'replace', 'delete', 'create-replacement', 'delete-replaced', 'import']);
 
-/** The privileged changes a preview would apply, i.e. the ones a CI deploy cannot make and an operator Apply must run first. */
+/** The privileged changes a preview would apply, i.e. the ones the deploy key cannot make and an operator apply must run first. */
 export function classifyPreviewSteps(steps: PreviewStep[]): { privileged: PendingPrivilegedChange[]; ciApplicable: number } {
   const privileged: PendingPrivilegedChange[] = [];
   let ciApplicable = 0;
@@ -113,7 +113,7 @@ export function applyHint(mode: string): string {
 }
 
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {
-  const lines = [`✗ ${pending.length} privileged change(s) pending; a CI deploy cannot apply them:`];
+  const lines = [`✗ ${pending.length} privileged change(s) pending; the deploy key cannot apply them:`];
   for (const change of pending) {
     const changedPaths = change.paths.length ? `  (${change.paths.join(', ')})` : '';
     lines.push(`  ${change.op.padEnd(7)} ${change.resource}${changedPaths}`);
@@ -191,7 +191,7 @@ const liveEffects: PreflightEffects = {
 
 /**
  * Standalone entry: `pnpm --filter infra preflight --mode <m> [--login]`. Exit 2 with the operator command when a privileged change is pending,
- * 0 when a CI deploy can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
+ * 0 when the deploy key can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
  */
 export async function main(argv = process.argv.slice(2), fx: PreflightEffects = liveEffects): Promise<void> {
   const mode = getFlag(argv, '--mode') ?? process.env.APP_MODE ?? process.env.INFRA_MODE;

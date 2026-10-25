@@ -96,7 +96,7 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
     endAction(status);
   }
   console.info(
-    `\n${pc.dim('The plan changed nothing. A clean "no changes" result means the stack matches the code; a deploy stops on any privileged change in it.')}`,
+    `\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code; a deploy stops on any privileged change in it.')}`,
   );
   return { passphrase, basis };
 }
