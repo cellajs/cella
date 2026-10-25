@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.24.0](https://github.com/cellajs/cella/compare/0.23.0...0.24.0) (2026-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **db:** migration snapshots are stored as diffs, backend/drizzle shrinks from 13 MB to 2.4 MB ([#1515](https://github.com/cellajs/cella/issues/1515))
+
+### 🔧 Small improvements
+
+* **db:** side-effect verification checks each kind of object in one query, at a fifth of the size ([#1518](https://github.com/cellajs/cella/issues/1518)) ([d865f33](https://github.com/cellajs/cella/commit/d865f3371c9afee033f163390935042a99dd687e))
+
+
+### 🧹 Chores
+
+* **db:** migration snapshots are stored as diffs, backend/drizzle shrinks from 13 MB to 2.4 MB ([#1515](https://github.com/cellajs/cella/issues/1515)) ([3dcf39c](https://github.com/cellajs/cella/commit/3dcf39c9e6110094cfe1292d7ff64076d4bff996))
+* tuning bundle: features page refresh, a prose rule against "authoritative", Markdown owes no migration note ([#1517](https://github.com/cellajs/cella/issues/1517)) ([866507c](https://github.com/cellajs/cella/commit/866507cdb7b7edf50a18ffbf4baa6dea969a70e7))
+
 ## [0.23.0](https://github.com/cellajs/cella/compare/0.22.0...0.23.0) (2026-10-24)
 
 
