@@ -82,7 +82,8 @@ interface RowDropTargetProps<R, SR> extends RenderRowProps<R, SR> {
 
 /** One drop target per row box; indicators update a data attribute on the row, not React state. */
 export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: RowDropTargetProps<R, SR>) {
-  const ref = useRef<HTMLDivElement>(null);
+  // Callback ref: the React Compiler skips a component that passes a ref object to a function during render
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
   // Last row element marked with `data-drop-edge`, cleared when the pointer reaches another row.
   const prevRowElRef = useRef<HTMLElement | null>(null);
   const { rowIdx } = props;
@@ -90,7 +91,6 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
   const canDropRow = config.canDropRow;
 
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
 
     // Geometry is cached per drag to skip layout reads on pointer move, and refreshed on scroll because auto-scroll moves the row.
@@ -153,9 +153,9 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         else config.onRowReorder(source.data.rowIdx, rowIdx, zone);
       },
     });
-  }, [rowIdx, allowCenter, canDropRow, config]);
+  }, [el, rowIdx, allowCenter, canDropRow, config]);
 
-  return renderRow(rowKey, { ...props, ref });
+  return renderRow(rowKey, { ...props, ref: setEl });
 }
 
 /** Lets a control inside a handle cell register as the row's drag source, so the drag starts from that control alone. */
