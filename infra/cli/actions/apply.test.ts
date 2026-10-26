@@ -64,7 +64,7 @@ describe('runApply', () => {
     await runApply(context);
 
     expect(order).toEqual(['admit', 'plan']);
-    expect(admitOperatorOrExit).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR', stack: 'cella/production' }));
+    expect(admitOperatorOrExit).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR' }));
   });
 
   it('hands the confirmed plan to the converge, which applies it unless the state changed', async () => {

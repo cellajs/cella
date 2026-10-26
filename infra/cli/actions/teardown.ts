@@ -80,7 +80,7 @@ async function destroyStack(context: InfraContext, operator: OperatorKey): Promi
   const targetStack = stackNameFor(context);
 
   // The operator key serves both sides, as in Apply; buckets written before it was admitted let it in first.
-  await admitOperatorOrExit(context, { ...operator, passphrase, stack: targetStack });
+  await admitOperatorOrExit(context, operator);
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 

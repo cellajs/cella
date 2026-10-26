@@ -79,7 +79,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   const { organizationId } = operator;
   const stack = stackNameFor(context);
 
-  await admitOperatorOrExit(context, { ...operator, passphrase, stack });
+  await admitOperatorOrExit(context, operator);
   const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
@@ -284,21 +284,15 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
  * Admit the operator to bucket policies written before it, before anything of the run reads the state (tasks/admit-operator-buckets.ts):
  * nothing when it is admitted already. Ends the action when the policies shut it out and nothing can let it in.
  */
-export async function admitOperatorOrExit(
-  context: InfraContext,
-  run: { accessKey: string; secretKey: string; organizationId: string; passphrase: string; stack: string },
-): Promise<void> {
-  const operator = await describeKey(run).catch(() => undefined);
+export async function admitOperatorOrExit(context: InfraContext, key: { accessKey: string; secretKey: string }): Promise<void> {
+  const operator = await describeKey(key).catch(() => undefined);
   if (operator?.bearer !== 'application') return;
   try {
     const admitted = await admitOperatorToBuckets({
       appConfig: context.appConfig,
       mode: context.environment,
       projectId: context.projectId,
-      organizationId: run.organizationId,
-      stack: run.stack,
-      operator: { accessKey: run.accessKey, secretKey: run.secretKey, applicationId: operator.bearerId },
-      passphrase: run.passphrase,
+      operator: { accessKey: key.accessKey, secretKey: key.secretKey, applicationId: operator.bearerId },
     });
     if (admitted.length > 0) console.info(`${checkMark} The operator is admitted to the buckets now: ${admitted.join(', ')}.`);
   } catch (error) {

@@ -8,6 +8,13 @@
       "region": "nl-ams",
       "definition": "cella-staging-main",
       "repository": "https://github.com/cellajs/cella.git"
+    },
+    {
+      "environment": "production",
+      "projectId": "3ad2b2d5-a772-40a2-a82b-bd0cee9ebb12",
+      "region": "nl-ams",
+      "definition": "cella-main",
+      "repository": "https://github.com/cellajs/cella.git"
     }
   ]
 }

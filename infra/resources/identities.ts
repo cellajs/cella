@@ -5,7 +5,7 @@ import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
-import { ADMISSION_RUN_ENV, allPrincipalNames } from '../lib/scaleway/principals';
+import { allPrincipalNames } from '../lib/scaleway/principals';
 import { principalServices } from '../lib/services';
 import { mode, organizationId } from '../pulumi-context';
 
@@ -79,13 +79,6 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
   pulumi.log.warn(`Observer IAM application '${names.observer}' not found: its bucket-policy statements are dropped this update.`);
   return undefined;
 });
-
-/**
- * The retired admin application's id, on the admission run only: that run writes the bucket policies with the admin key, so they keep admitting
- * it until the run ends, and the apply after it drops the statement. Undefined on every other run.
- */
-export const retiredAdminApplicationId: pulumi.Output<string | undefined> =
-  process.env[ADMISSION_RUN_ENV] === '1' ? findApplicationId(names.admin) : pulumi.output(undefined);
 
 // Machine principals: one application per registry service, wherever it runs, plus the boot fetcher. Registry-derived: neither an `enabled`
 // toggle nor a placement changes a principal.

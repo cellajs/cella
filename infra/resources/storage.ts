@@ -10,7 +10,6 @@ import {
   ciDeployApplicationId,
   observerApplicationId,
   operatorApplicationId,
-  retiredAdminApplicationId,
 } from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
@@ -21,25 +20,23 @@ const uploadCorsRules = browserOrigin
   : undefined;
 
 /**
- * The people's S3 access on the bucket policies: the operator application, which applies the stack, and the retired admin application on the
- * run that admits the operator with its key. Bucket policies are deny-by-default, so without them even a key with every IAM right 403s on
- * ListObjects/GetBucketCors during `pulumi up --refresh`. Resolved from IAM by name so local and CI ups produce the same policy; an
- * application that does not exist drops its statement.
+ * The people's S3 access on the bucket policies: the operator application, which applies the stack. Bucket policies are deny-by-default, so
+ * without it even a key with every IAM right 403s on ListObjects/GetBucketCors during `pulumi up --refresh`. Resolved from IAM by name so
+ * local and CI ups produce the same policy; an application that does not exist drops its statement.
  */
 const humanAccess = (bucketName: pulumi.Input<string>) =>
-  pulumi.all([operatorApplicationId, retiredAdminApplicationId]).apply(([operatorId, adminId]) =>
-    [
-      { sid: 'OperatorAccess', id: operatorId },
-      { sid: 'AdminAccess', id: adminId },
-    ]
-      .filter((entry): entry is { sid: string; id: string } => Boolean(entry.id))
-      .map(({ sid, id }) => ({
-        Sid: sid,
-        Effect: 'Allow',
-        Principal: { SCW: `application_id:${id}` },
-        Action: ['s3:*'],
-        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-      })),
+  operatorApplicationId.apply((operatorId) =>
+    operatorId
+      ? [
+          {
+            Sid: 'OperatorAccess',
+            Effect: 'Allow',
+            Principal: { SCW: `application_id:${operatorId}` },
+            Action: ['s3:*'],
+            Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+          },
+        ]
+      : [],
   );
 
 /**

@@ -5,12 +5,15 @@
  *   ensure-secrets since 4a·1. Deleting a version deletes the value it holds;
  * - the database roles, their privileges and passwords, and the connection strings' versions, made by the operator task ensure-database
  *   since 4a·2. Deleting a role would cut the app off its database.
+ * - the shared container (`secret-<name>`, in the shared folder) of an engine-made secret with several consumers, on a stack set up before
+ *   3a·1: it holds the only value until copy-shared-secrets moves it into the copies and deletes it.
  */
 const MACHINE_POLICY_URN = /::scaleway:iam\/policy:Policy::vm-[a-z0-9-]+-policy$/;
 const SECRET_VERSION_URN = /::scaleway:secrets\/version:Version::secret-version-([a-z0-9-]+?)(@[a-z0-9-]+)?$/;
 const RANDOM_VALUE_URN = /::random:index\/randomPassword:RandomPassword::generated-([a-z0-9-]+)$/;
 const DATABASE_ROLE_URN = /::scaleway:databases\/(user:User|privilege:Privilege)::[a-z0-9-]+$/;
 const ROLE_PASSWORD_URN = /::random:index\/randomPassword:RandomPassword::(admin|runtime)-password$/;
+const SHARED_CONTAINER_URN = /::scaleway:secrets\/secret:Secret::secret-([a-z0-9-]+)$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -23,9 +26,14 @@ function resourcesOf(deployment: Record<string, unknown>): Record<string, unknow
   return Array.isArray(deployment.resources) ? deployment.resources.filter(isRecord) : [];
 }
 
-/** Whether a URN is a retired resource. `generated` names the runtime secrets whose values the operator tasks make. */
-export function isRetired(urn: string, generated: ReadonlySet<string>): boolean {
+/**
+ * Whether a URN is a retired resource. `generated` names the runtime secrets whose values the operator tasks make, `shared` those of them
+ * with several consumers.
+ */
+export function isRetired(urn: string, generated: ReadonlySet<string>, shared: ReadonlySet<string> = new Set()): boolean {
   if (MACHINE_POLICY_URN.test(urn) || DATABASE_ROLE_URN.test(urn) || ROLE_PASSWORD_URN.test(urn)) return true;
+  const container = SHARED_CONTAINER_URN.exec(urn)?.[1];
+  if (container !== undefined) return shared.has(container);
   const version = SECRET_VERSION_URN.exec(urn)?.[1];
   if (version !== undefined) return generated.has(version);
   const random = RANDOM_VALUE_URN.exec(urn)?.[1];
@@ -33,10 +41,10 @@ export function isRetired(urn: string, generated: ReadonlySet<string>): boolean 
 }
 
 /** The retired resources a stack export still holds, by URN. */
-export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): string[] {
+export function retiredUrns(exported: unknown, generated: ReadonlySet<string>, shared: ReadonlySet<string> = new Set()): string[] {
   return resourcesOf(deploymentOf(exported))
     .map((resource) => resource.urn)
-    .filter((urn): urn is string => typeof urn === 'string' && isRetired(urn, generated));
+    .filter((urn): urn is string => typeof urn === 'string' && isRetired(urn, generated, shared));
 }
 
 /**
