@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { hintFadeIn, hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
 import { cn } from '~/utils/cn';
 import { formatCount } from '~/utils/format-count';
@@ -72,8 +72,12 @@ export interface CollapsedSection {
 }
 
 interface CollapsedPanelViewProps {
-  mainCount: number;
+  /** The count in the middle; a panel without one leaves it out. */
+  mainCount?: number;
   sections?: CollapsedSection[];
+  /** Makes the strip a button that expands the panel. It stays out of the Tab order: the header handle is the panel's stop. */
+  expand?: { id: string; label: string; onExpand: (event: MouseEvent<HTMLButtonElement>) => void };
+  className?: string;
 }
 
 const emptySections: CollapsedSection[] = [];
@@ -101,13 +105,33 @@ function CollapsedSections({ sections, position }: CollapsedSectionsProps) {
     ));
 }
 
-export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
-  return (
-    <div className="relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border">
+export function CollapsedPanelView({ mainCount, sections = emptySections, expand, className }: CollapsedPanelViewProps) {
+  const stripClass = cn('relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border', className);
+  const content = (
+    <>
       <CollapsedSections sections={sections} position="top" />
       <div className="grow" />
-      <div className={cn(collapsedCountClass, hintFadeOut)}>{formatCount(mainCount)}</div>
+      {mainCount !== undefined && <div className={cn(collapsedCountClass, hintFadeOut)}>{formatCount(mainCount)}</div>}
       <CollapsedSections sections={sections} position="bottom" />
-    </div>
+    </>
+  );
+
+  if (!expand) return <div className={stripClass}>{content}</div>;
+
+  return (
+    <button
+      type="button"
+      id={expand.id}
+      aria-label={expand.label}
+      tabIndex={-1}
+      onClick={expand.onExpand}
+      // An outline, not the inset ring: the section counts at the strip's ends would paint over an inset ring
+      className={cn(
+        stripClass,
+        'cursor-pointer outline-hidden focus-ring:focus-visible:outline-2 focus-ring:focus-visible:outline-ring focus-ring:focus-visible:outline-solid focus-ring:focus-visible:-outline-offset-2',
+      )}
+    >
+      {content}
+    </button>
   );
 }

@@ -122,7 +122,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
         />
 
         {testOnly && (
-          <AlertBanner id="test-email" variant="plain" icon={InfoIcon} animate>
+          <AlertBanner id="test-email" variant="info" icon={InfoIcon} animate>
             {t('c:test_email.text')}
           </AlertBanner>
         )}

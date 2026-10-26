@@ -18,7 +18,7 @@ export const attachmentDialogId = 'attachment-dialog';
 const attachmentDialogClassName = tw('flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0');
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = tw('relative -z-1 h-dvh p-2');
+export const attachmentDialogContentClassName = tw('relative h-dvh p-2');
 
 /**
  * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom

@@ -19,7 +19,8 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
 
   if (surface === 'menu') {
     return (
-      <DropdownMenuGroup className="w-60">
+      // contain-inline-size keeps a long question from widening the popup: it grows only to the popup's min-width
+      <DropdownMenuGroup className="min-w-60 contain-inline-size">
         <DropdownMenuLabel className="py-2 font-normal">{title}</DropdownMenuLabel>
         {children}
       </DropdownMenuGroup>

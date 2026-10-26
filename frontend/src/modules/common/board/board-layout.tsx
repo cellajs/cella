@@ -22,6 +22,8 @@ export const collapsedPanelMinWidth = 50;
 
 export interface BoardLayoutPanel {
   panelId: string;
+  /** Accessible name of the panel's region. */
+  label?: string;
 }
 
 export interface BoardLayoutHandle {
@@ -140,12 +142,12 @@ export function BoardLayout({
       onReady={handleReady}
       className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
     >
-      {panels.map(({ panelId }, i) => (
+      {panels.map(({ panelId, label }, i) => (
         <motion.div key={panelId} layout="position" layoutId={`${boardId}-${panelId}`} className="relative flex shrink-0">
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
-          <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade}>
+          <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade} label={label}>
             {reorderable ? (
               <PanelDragWrapper
                 panelId={panelId}
@@ -275,12 +277,11 @@ function PanelDragWrapper({
 
     if (handleEl) {
       cleanups.push(
+        // The handle, not the panel, is the drag source: a draggable element turns off text selection for everything in it
         draggable({
-          element: wrapper,
-          dragHandle: handleEl,
+          element: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
           onDrop: () => followReorderFocus(panelId),
-          // In autoHeight boards the wrapper is as tall as its content, and the native preview would snapshot the entire panel.
           onGenerateDragPreview: ({ nativeSetDragImage }) => {
             setCustomNativeDragPreview({
               nativeSetDragImage,

@@ -1,6 +1,6 @@
 import { onlineManager, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { BuildingIcon, TrashIcon } from 'lucide-react';
+import { BuildingIcon, InfoIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect } from 'sdk';
@@ -152,7 +152,8 @@ export function AccountAuthenticationCard() {
           <>
             <AuthSectionTitle title={t('c:institution_accounts')} help={t('c:institution_accounts.text')} />
             {toConnect && (
-              <Alert className="mb-3">
+              <Alert variant="info" className="mb-3">
+                <InfoIcon />
                 <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
               </Alert>
             )}

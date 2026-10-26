@@ -9,11 +9,16 @@ import { navSheetId, sheeter, useSheeter } from '~/modules/common/sheeter/use-sh
 import type { UserMenuItem } from '~/modules/me/types';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
+import { organizationLanding } from '~/modules/navigation/menu-sheet/helpers/organization-landing';
 import { navItems } from '~/modules/navigation/nav-items';
 import { closeNavSheet, navSheetOptions } from '~/modules/navigation/nav-sheet';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
+import { getCurrentUser } from '~/modules/user/user-store';
+import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
+import { getChannelRoute } from '~/utils/channel-route';
 
 const { navBar } = appConfig.navigation;
 const { sheetPanelWidth } = appConfig.theme.navigation;
@@ -83,13 +88,24 @@ export function AppNav() {
     openNavSheet(navItem, triggerRef);
   };
 
-  // A second press on the same organization closes its sheet
+  // A second press on the same organization closes its sheet. Coming from elsewhere, it also lands on a channel of it.
   const triggerOrganization: TriggerOrganizationFn = (organization, triggerRef) => {
-    const { navSheetOpen: openItemId, navSheetOrganizationId } = navigationStore.getState();
+    const { navSheetOpen: openItemId, navSheetOrganizationId, keepNavOpen, lastChannelIds } = navigationStore.getState();
     if (openItemId === 'menu' && navSheetOrganizationId === organization.id) return closeNavSheet();
 
     const menuItem: NavItem | undefined = navItems.find((item) => item.id === 'menu');
-    if (menuItem) openNavSheet(menuItem, triggerRef, organization);
+    if (!menuItem) return;
+    const openSheet = () => openNavSheet(menuItem, triggerRef, organization);
+
+    const landing =
+      organization.id !== getRouteOrganizationId() &&
+      organizationLanding(organization, buildMenuFromCache(getCurrentUser().id), lastChannelIds[organization.id]);
+    if (!landing) return openSheet();
+
+    const switched = navigate(getChannelRoute(landing));
+    // The path change removes every sheet but a pinned open one: an unpinned sheet opens once the page has switched
+    if (keepNavOpen) openSheet();
+    else void switched.then(openSheet);
   };
 
   // Each needs Ctrl, Alt or Meta: a letter alone or with Shift is typed by speech input and fires by accident (WCAG 2.1.4).

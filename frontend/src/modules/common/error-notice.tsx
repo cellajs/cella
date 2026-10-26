@@ -118,11 +118,11 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 <AnimatePresence>
                   {showDetails && (
                     <motion.div {...collapseMotion} className="overflow-hidden">
-                      <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
+                      <div className="mx-auto grid w-fit grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
                         {errorDetailRows(apiError).map(([label, value]) => (
                           <Fragment key={label}>
-                            <div className="place-self-end pr-4 font-medium">{t(label)}</div>
-                            <div>{value || '-'}</div>
+                            <div className="justify-self-end pr-4 font-medium">{t(label)}</div>
+                            <div className="wrap-anywhere">{value || '-'}</div>
                           </Fragment>
                         ))}
                       </div>

@@ -109,7 +109,7 @@ export const Icon: Story = {
  */
 export const Disabled: Story = { args: { disabled: true } };
 
-const buttonVariantNames = ['default', 'brand', 'destructive', 'success', 'warning', 'secondary'] as const;
+const buttonVariantNames = ['default', 'brand', 'destructive', 'success', 'info', 'warning', 'secondary'] as const;
 
 /** Intent button variants in soft and solid fill, side by side, to catch soft labels losing the cascade. */
 export const VariantMatrix: Story = {

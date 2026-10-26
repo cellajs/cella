@@ -45,13 +45,14 @@ interface ChannelTileCardProps {
   children: ReactNode;
 }
 
-/** Hands the entity to every part inside, and draws the ring, shadow and press state of the tile link, its only focus target. */
+/** Hands the entity to every part inside, and draws the ring and press state of the tile link, its only focus target. */
 export function ChannelTileCard({ entity, className, children }: ChannelTileCardProps) {
   return (
     <ChannelTileContext.Provider value={entity}>
       <Card
         className={cn(
-          'has-[.tile-link:active]:press gap-0 overflow-hidden py-0 shadow-xs transition has-[.tile-link:hover]:shadow-sm focus-ring:has-[.tile-link:focus-visible]:ring-2 focus-ring:has-[.tile-link:focus-visible]:ring-ring focus-ring:has-[.tile-link:focus-visible]:ring-offset-2 focus-ring:has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
+          // The edge is drawn over the content, so a cover is shaded at its edge in its own hue and a white cover still has one
+          'has-[.tile-link:active]:press relative gap-0 overflow-hidden border-0 py-0 transition after:pointer-events-none after:absolute after:inset-0 after:inset-ring after:inset-ring-edge-overlay after:rounded-[inherit] focus-ring:has-[.tile-link:focus-visible]:ring-2 focus-ring:has-[.tile-link:focus-visible]:ring-ring focus-ring:has-[.tile-link:focus-visible]:ring-offset-2 focus-ring:has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
           className,
         )}
       >
@@ -189,7 +190,7 @@ export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
   );
 }
 
-/** Banner overlay: the member previews on the row (`include=members`, the channel's most privileged role) and a +N bubble for the rest. */
+/** Banner overlay, centered above the heading bar: the member previews on the row (`include=members`, the channel's most privileged role) and a +N bubble for the rest. */
 export function ChannelTileMembers() {
   const entity = useTileEntity();
   const members = entity.included?.members;
@@ -199,13 +200,13 @@ export function ChannelTileMembers() {
   const overflow = Math.max(0, (entity.included?.counts?.membership[role] ?? 0) - members.length);
 
   return (
-    <div className="pointer-events-none absolute bottom-16 left-4 [&_button]:pointer-events-auto">
-      <AvatarGroup className="justify-start">
+    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-14 flex items-center justify-center [&_button]:pointer-events-auto">
+      <AvatarGroup>
         {members.map((member) => (
-          <MemberAvatar key={member.id} member={member} className="size-8" />
+          <MemberAvatar key={member.id} member={member} className="size-10 border-background/70" />
         ))}
         {overflow > 0 && (
-          <div className="z-10 flex size-8 items-center justify-center rounded-full bg-muted font-semibold more-contrast:text-foreground/85 text-foreground/50 text-xs tracking-tighter more-contrast:ring-black/85 ring-2 ring-black/25">
+          <div className="z-10 flex size-10 items-center justify-center rounded-full border-2 border-background/70 more-contrast:border-black/85 bg-background/75 bg-clip-padding font-semibold more-contrast:text-foreground text-muted-foreground text-xs tracking-tighter backdrop-blur-xs">
             +{formatCount(overflow)}
           </div>
         )}
@@ -264,7 +265,8 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
   if (entity.invited) return <Badge variant="secondary">{t('c:pending')}</Badge>;
-  if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} className="w-full" redirectPath={null} />;
+  if (entity.membership)
+    return <JoinedButton channel={entity} role={entity.membership.role} variant="outline" className="w-full" redirectPath={null} />;
   return fallback;
 }
 

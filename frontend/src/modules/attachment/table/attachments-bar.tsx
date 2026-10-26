@@ -83,7 +83,7 @@ export function AttachmentsTableBar({
       }}
       after={
         !!total && (
-          <AlertBanner id="edit_attachment" variant="plain" className="mb-4" icon={InfoIcon} animate>
+          <AlertBanner id="edit_attachment" variant="info" className="mb-4" icon={InfoIcon} animate>
             {t('c:edit_attachment.text')}
           </AlertBanner>
         )

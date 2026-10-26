@@ -85,7 +85,7 @@ export function MembersTableBar({
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: tw('w-auto max-w-4xl border shadow-none'),
-      container: { ref: inviteContainerRef, overlay: !isSheet },
+      container: { ref: inviteContainerRef, overlay: true },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
       description: <NamedText i18nKey="c:invite_members.text" name={channel.name} />,

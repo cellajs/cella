@@ -90,11 +90,11 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
                   <SidebarGroup className="shrink-0 p-0">
                     <SidebarMenu className="gap-1">{leadNavItems.map((navItem) => renderNavItem(navItem, 'pb-0'))}</SidebarMenu>
                   </SidebarGroup>
-                  <div className="mx-3 h-px shrink-0 bg-input" />
+                  <div className="mx-3 h-px shrink-0 bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40" />
                   <SidebarGroup className="min-h-0 p-0">
                     <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
                   </SidebarGroup>
-                  <div className="mx-3 h-px shrink-0 bg-input" />
+                  <div className="mx-3 h-px shrink-0 bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40" />
                 </>
               )}
               <SidebarGroup className="shrink-0 p-0">

@@ -2,10 +2,11 @@ import i18n from 'i18next';
 import { Children, type ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { truncateMiddle } from '~/utils/truncate-middle';
 
-// A name this long still fits one line of a sheet description on a phone
-const maxNameLength = 40;
+// A cut name keeps its end whole: the last 12 characters (a file extension, the domain of an address), from the
+// start of their first word while that keeps at most 20 (a surname)
+const keptEndLength = 12;
+const maxKeptEndLength = 20;
 
 // A confirmation spells out this many names and counts the rest, so a large selection keeps its question short
 const maxListedNames = 3;
@@ -22,27 +23,45 @@ function listParts(names: string[]) {
 
 type ListParts = ReturnType<typeof listParts>;
 
+/** A name on one line: when it overflows the line its middle gives way to an ellipsis, so its start and end stay readable. */
+function CutName({ text }: { text: string }) {
+  const endStart = Math.max(text.length - keptEndLength, Math.ceil(text.length / 2));
+  const wordStart = text.lastIndexOf(' ', endStart) + 1;
+  const splitAt = wordStart > 0 && text.length - wordStart <= maxKeptEndLength ? wordStart : endStart;
+  return (
+    // 1ch less than the line leaves room for the mark that ends the sentence, so a "?" never wraps alone
+    <strong className="inline-flex max-w-[calc(100%-1ch)] font-semibold text-foreground">
+      <span className="sr-only">{text}</span>
+      <span aria-hidden className="overflow-hidden text-ellipsis whitespace-pre">
+        {text.slice(0, splitAt)}
+      </span>
+      <span aria-hidden className="whitespace-pre">
+        {text.slice(splitAt)}
+      </span>
+    </strong>
+  );
+}
+
 interface StrongProps {
   /** The interpolated text of each list value, mapped to its parts. */
   lists: Map<string, ListParts>;
+  /** The interpolated `name`, which keeps to one line and is cut in the middle. */
+  name?: string;
   children?: ReactNode;
 }
 
 /** Marks what the sentence names; a list of names marks each one apart, so the list wraps between names. */
-function Strong({ lists, children }: StrongProps) {
+function Strong({ lists, name, children }: StrongProps) {
   const nodes = Children.toArray(children);
-  const parts = nodes.every((node) => typeof node === 'string') ? lists.get(nodes.join('')) : undefined;
+  const text = nodes.every((node) => typeof node === 'string') ? nodes.join('') : undefined;
+  if (text !== undefined && text === name) return <CutName text={text} />;
+
+  const parts = text === undefined ? undefined : lists.get(text);
   if (!parts) return <strong className={strongClass}>{children}</strong>;
 
   return parts.map((part, index) =>
-    part.type === 'element' ? (
-      // biome-ignore lint/suspicious/noArrayIndexKey: list parts are positional and never reordered.
-      <strong key={index} className={strongClass}>
-        {part.value}
-      </strong>
-    ) : (
-      part.value
-    ),
+    // biome-ignore lint/suspicious/noArrayIndexKey: list parts are positional and never reordered.
+    part.type === 'element' ? <CutName key={index} text={part.value} /> : part.value,
   );
 }
 
@@ -57,9 +76,9 @@ interface NamedTextProps {
 
 /**
  * A sentence that names what it is about: what a confirmation hits, or the entity a sheet or dialog acts on. The
- * translation marks the name (or an email address, a count of items) with `<strong>`, so it shows in semibold, and a
- * `name` longer than 40 characters is cut in the middle. What it marks keeps to one line while it fits one, so an
- * address never splits at its hyphen.
+ * translation marks the name (or an email address, a count of items) with `<strong>`, so it shows in semibold. The
+ * `name` and each name of a list stay on one line and are cut in the middle when they overflow it; anything else it
+ * marks keeps to one line while it fits one, so an address never splits at its hyphen.
  */
 export function NamedText({ i18nKey, name, values = {} }: NamedTextProps) {
   const { t } = useTranslation();
@@ -74,8 +93,8 @@ export function NamedText({ i18nKey, name, values = {} }: NamedTextProps) {
       return [key, text];
     }),
   );
-  if (name !== undefined) interpolated.name = truncateMiddle(name, maxNameLength);
+  if (name !== undefined) interpolated.name = name;
 
   // `as never`: the prop already checks the key, and Trans cannot represent the union of all keys a second time
-  return <Trans t={t} i18nKey={i18nKey as never} values={interpolated} components={{ strong: <Strong lists={lists} /> }} />;
+  return <Trans t={t} i18nKey={i18nKey as never} values={interpolated} components={{ strong: <Strong lists={lists} name={name} /> }} />;
 }

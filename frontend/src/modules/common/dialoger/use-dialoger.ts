@@ -6,7 +6,7 @@ export type { TriggerRef } from '~/modules/common/overlay-store-helpers';
 
 type DialogContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;
-  /** Dims the page and its navigation through the spotlight, which lifts the dialog above the dim and closes it on a backdrop click. */
+  /** Dims the page and its navigation (in a sheet: that sheet) through the spotlight, which lifts the dialog above the dim and closes it on a backdrop click. */
   overlay?: boolean;
 };
 
@@ -20,7 +20,10 @@ export type DialogData = {
    * to the keyboard's edge, also while its results are empty. Its content renders a `SearchDialogBar`, whose close X ends it.
    */
   searchLayout?: boolean;
-  /** At the bottom edge, where the selection bar sits, its header centered and without a close X. A phone shows the drawer. */
+  /**
+   * At the bottom edge, where the selection bar sits, its header centered and without a close X: of the sheet its trigger is in,
+   * else of the screen. A phone shows the drawer.
+   */
   dock?: 'bottom';
   outsideScroll?: boolean;
   /** Remove immediately on dismissal so externally owned open state cannot flash the dialog back. */

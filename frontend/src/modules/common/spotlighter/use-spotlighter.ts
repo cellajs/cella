@@ -7,6 +7,8 @@ interface SpotlightEntry {
   id: string;
   /** Invoked on backdrop click and Esc while this entry is topmost. */
   onClose: () => void;
+  /** The element the overlay dims; the whole page when absent (see `useSpotlight`). */
+  scope?: Element;
 }
 
 interface SpotlighterState {
@@ -25,15 +27,16 @@ export const useSpotlighter = create<SpotlighterState>((set) => ({
 
 /**
  * Declarative registration: the overlay shows while `active`, and backdrop/Esc call `onClose`.
+ * A region inside a sheet passes its `sheetLayerOf` as `scope`: the overlay then dims only that sheet, and `spotlightLift` raises the region above it there.
  * @public
  */
-export function useSpotlight(id: string, active: boolean, onClose: () => void) {
+export function useSpotlight(id: string, active: boolean, onClose: () => void, scope?: Element | null) {
   const handleClose = useLatestCallback(onClose);
   useEffect(() => {
     if (!active) return;
-    useSpotlighter.getState().open({ id, onClose: handleClose });
+    useSpotlighter.getState().open({ id, onClose: handleClose, scope: scope ?? undefined });
     return () => useSpotlighter.getState().close(id);
-  }, [id, active, handleClose]);
+  }, [id, active, handleClose, scope]);
 }
 
 /**

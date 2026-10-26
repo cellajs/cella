@@ -12,6 +12,7 @@ import { useRouteOrganizationId } from '~/modules/navigation/use-route-organizat
 import { useOrganizationUnseenCounts } from '~/modules/seen/use-unseen-count';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 
 interface SidebarOrganizationButtonProps {
   organization: UserMenuItem;
@@ -42,7 +43,8 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
       badge={unseenCount > 0 && <CountBadge count={unseenCount} className="absolute top-2 left-8" />}
     >
       <EntityAvatar
-        className="size-8 shrink-0 transition-transform group-hover:scale-110"
+        // An outline, not a ring: its offset stays transparent over the button's translucent hover and open fills
+        className={cn('size-8 shrink-0 transition-transform group-hover:scale-110', isCurrent && 'outline-2 outline-primary outline-offset-2')}
         type={organization.entityType}
         id={organization.id}
         name={organization.name}

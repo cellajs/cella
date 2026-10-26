@@ -15,7 +15,7 @@ interface PanelConfig {
 }
 
 interface PanelEntry extends PanelConfig {
-  element: HTMLDivElement;
+  element: HTMLElement;
 }
 
 interface HintData {
@@ -242,7 +242,7 @@ function ResizeHint() {
 // Eased so the curtain answers the first pixels of the zone and settles as it nears its reach
 const curtainProgress = (hint: HintData) => (hint.reach ? 1 - (1 - hint.progress) ** 2 : 0);
 
-function showResizeHint(element: HTMLDivElement, hint: HintData, clientY: number) {
+function showResizeHint(element: HTMLElement, hint: HintData, clientY: number) {
   element.setAttribute('data-resizing', `${hint.mode}-${hint.side}`);
   if (hint.mode !== 'cover') element.style.setProperty('--content-opacity', `${1 - hint.progress}`);
 
@@ -255,7 +255,7 @@ function showResizeHint(element: HTMLDivElement, hint: HintData, clientY: number
   curtain.style.setProperty('--hint-y', `${clientY - element.getBoundingClientRect().top}px`);
 }
 
-function clearResizeHint(element: HTMLDivElement) {
+function clearResizeHint(element: HTMLElement) {
   if (!element.hasAttribute('data-resizing')) return;
   element.removeAttribute('data-resizing');
   element.style.removeProperty('--content-opacity');
@@ -736,12 +736,14 @@ interface ResizablePanelProps {
   collapsible?: boolean;
   /** What a resize hint fades: all content (default), or only elements carrying `hintFadeOut` / `hintFadeIn` */
   fade?: 'all' | 'marked';
+  /** Accessible name. A named section is a region, a landmark screen reader users can jump between; unnamed it stays generic. */
+  label?: string;
   children?: ReactNode;
 }
 
-export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible = false, fade = 'all', children }: ResizablePanelProps) {
+export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible = false, fade = 'all', label, children }: ResizablePanelProps) {
   const context = useContext(PanelGroupContext);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const domId = useId();
 
   useEffect(() => {
@@ -753,16 +755,17 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
   }, [id, minWidth, collapsedWidth, collapsible, context]);
 
   return (
-    <div
+    <section
       ref={panelRef}
       id={domId}
       data-panel={id}
+      aria-label={label}
       // clip, not hidden: hidden makes this a scroll container and captures the panel's sticky elements
       className="relative shrink-0 overflow-clip"
     >
       <div className={cn('h-full', fade === 'all' && 'opacity-(--content-opacity,1)')}>{children}</div>
       <ResizeHint />
-    </div>
+    </section>
   );
 }
 

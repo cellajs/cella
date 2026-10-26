@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CircleAlertIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 
-const alertVariantNames = ['default', 'brand', 'destructive', 'success', 'warning', 'plain', 'secondary'] as const;
+const alertVariantNames = ['default', 'brand', 'destructive', 'success', 'info', 'warning', 'plain', 'secondary'] as const;
 
 /**
  * Displays a callout for user attention.

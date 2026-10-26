@@ -1,8 +1,8 @@
 import { useMatchRoute } from '@tanstack/react-router';
-import { PlusIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
@@ -23,11 +23,27 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
   return <MenuSheetChannelTabs channel={channel} className="py-1 pl-12" />;
 }
 
-/** The row a section shows while it has no items. */
-export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType }) {
-  const { t } = useTranslation();
+interface MenuSheetNoItemsProps {
+  entityType: ChannelEntityType;
+  onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
+}
 
-  return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(entityType).toLowerCase() })}</li>;
+/** The placeholder a section shows while it has no items, with a create button when the section offers one. */
+export function MenuSheetNoItems({ entityType, onCreate }: MenuSheetNoItemsProps) {
+  const { t } = useTranslation();
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <li>
+      <ContentPlaceholder size="sm" title="c:no_resource_yet" titleOptions={{ resource: t(entityType, { count: 0 }).toLowerCase() }}>
+        {onCreate && (
+          <Button ref={createButtonRef} variant="plain" size="xs" onClick={() => onCreate(createButtonRef)}>
+            {t('c:create')}
+          </Button>
+        )}
+      </ContentPlaceholder>
+    </li>
+  );
 }
 
 interface MenuSheetItemsListProps {
@@ -35,34 +51,18 @@ interface MenuSheetItemsListProps {
   entityType: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
-  /** The section's create handler, offered as a first-item button while the list is empty. */
+  /** The section's create handler, offered under the empty-list placeholder. */
   onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
   className?: string;
 }
 
 export function MenuSheetItemsList({ items, entityType, isArchived, options, onCreate, className }: MenuSheetItemsListProps) {
-  const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const createButtonRef = useRef<HTMLButtonElement>(null);
-
-  if (items.length === 0) {
-    if (!onCreate) return <MenuSheetNoItems entityType={entityType} />;
-
-    return (
-      <li className="flex items-center">
-        <Button ref={createButtonRef} className="w-full" variant="ghost" onClick={() => onCreate(createButtonRef)}>
-          <PlusIcon className="size-3.5" />
-          <span className="text-sm">
-            {t('c:create_your_first')} {t(entityType).toLowerCase()}
-          </span>
-        </Button>
-      </li>
-    );
-  }
+  if (items.length === 0) return <MenuSheetNoItems entityType={entityType} onCreate={onCreate} />;
 
   return sortAndFilterMenu(items, isArchived).map((item) => (
-    <li className={cn('my-1', !!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
+    <li className={cn(!!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
       <MenuSheetItem item={item} className={className} icon={options?.icon} />
       {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
       {!item.membership.archived && !!item.submenu?.length && detailedMenu && (

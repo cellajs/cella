@@ -39,11 +39,17 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
   const content = (
     <>
       <span className="relative inline-flex shrink-0 items-center justify-center">
-        <span className={cn('inline-flex', panelDrag && 'transition-[opacity,filter] group-hover/drag:opacity-30 group-hover/drag:blur-[1px]')}>
+        <span
+          className={cn(
+            'inline-flex',
+            panelDrag &&
+              'transition-[opacity,filter] group-hover/drag:opacity-30 group-hover/drag:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]',
+          )}
+        >
           {icon}
         </span>
         {panelDrag && (
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/drag:opacity-100">
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/drag:opacity-100 group-focus/drag:opacity-100">
             <GripVerticalIcon className="size-4 shrink-0" />
           </span>
         )}
@@ -79,7 +85,13 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
             {t(isCollapsed ? 'c:expand' : 'c:collapse')}
           </DropdownMenuItem>
         }
-        className={cn(buttonVariants({ variant: 'ghost' }), className, 'group/drag cursor-grab active:cursor-grabbing')}
+        // Any focus shows the ring, a click's too: the handle then takes ←/→. The same ring as focus-effect's, so a key
+        // focus draws it once.
+        className={cn(
+          buttonVariants({ variant: 'ghost' }),
+          className,
+          'group/drag cursor-grab focus-ring:focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background active:cursor-grabbing',
+        )}
       >
         {content}
       </ReorderHandle>

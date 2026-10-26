@@ -11,6 +11,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
 import { collectChannelIds } from '~/modules/navigation/menu-sheet/helpers/collect-channel-ids';
+import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
 import { MenuSheetSectionButton } from '~/modules/navigation/menu-sheet/section-button';
@@ -63,6 +64,12 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
 
   const handleToggleArchived = () => setSectionOpen(archivedSectionKey, !isArchivedVisible);
 
+  const handleArchive = () => {
+    if (isArchivedVisible) return false;
+    setSectionOpen(archivedSectionKey, true);
+    return true;
+  };
+
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
       <MenuSheetSectionButton
@@ -83,7 +90,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
             transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
             className="overflow-hidden"
           >
-            <AlertBanner id="menu_management" variant="plain" icon={InfoIcon} animate>
+            <AlertBanner id="menu_management" variant="info" icon={InfoIcon} animate>
               {t('c:configure_menu.text')}
             </AlertBanner>
           </motion.div>
@@ -91,20 +98,23 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
       </AnimatePresence>
       <AnimatePresence initial={false}>
         {isSectionVisible && (
-          <motion.ul key={options.entityType} {...collapseMotion} className="overflow-hidden">
+          <motion.ul key={options.entityType} {...menuListMotion}>
             {isEditing ? (
-              <MenuSheetItemsListEdit items={items} isArchived={false} options={options} />
+              <MenuSheetItemsListEdit items={items} isArchived={false} options={options} onArchive={handleArchive} />
             ) : (
               <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} onCreate={handleCreate} />
             )}
             {!!items.length && (
               <li className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
                 {(!!archivedCount || isEditing) && (
-                  <MenuSheetArchivedToggle onToggle={handleToggleArchived} archivedCount={archivedCount} archivedChannelIds={archivedChannelIds} />
+                  // Moves with the rows when an archive or restore shifts them; only then, so other changes of place stay instant
+                  <motion.div layout="position" layoutDependency={archivedCount}>
+                    <MenuSheetArchivedToggle onToggle={handleToggleArchived} archivedCount={archivedCount} archivedChannelIds={archivedChannelIds} />
+                  </motion.div>
                 )}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
-                    <motion.ul key={archivedSectionKey} {...collapseMotion} className="overflow-hidden">
+                    <motion.ul key={archivedSectionKey} {...menuListMotion}>
                       {isEditing ? (
                         <MenuSheetItemsListEdit items={items} isArchived={true} options={options} />
                       ) : (

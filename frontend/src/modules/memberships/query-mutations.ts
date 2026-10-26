@@ -2,6 +2,7 @@ import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query
 import { t } from 'i18next';
 import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership, withdrawPendingInvitation } from 'sdk';
+import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
@@ -21,6 +22,7 @@ import { cacheUpdate } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
 import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
+import { getCachedMemberships } from '~/query/enrichment/helpers';
 import { queryClient } from '~/query/query-client';
 
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
@@ -138,6 +140,13 @@ export const useMemberUpdateMutation = () =>
       const { channelId, channelType, path, body } = variables;
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
+
+      const { archived } = body;
+      const myMemberships = getCachedMemberships();
+      const wasArchived = myMemberships?.find((membership) => membership.id === id)?.archived;
+      if (myMemberships && archived !== undefined && archived !== wasArchived) {
+        membershipInfo.displayOrder = getArchiveMoveOrder(myMemberships, channelType, archived);
+      }
 
       const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
 

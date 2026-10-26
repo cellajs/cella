@@ -31,7 +31,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
       <ComboboxGroup>
         <button
           type="button"
-          className="sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-3 py-2 font-medium text-muted-foreground text-sm backdrop-blur-sm hover:text-foreground"
+          className="sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-4 py-2 font-medium text-muted-foreground text-sm backdrop-blur-sm hover:text-foreground"
           onClick={onToggleCollapsed}
         >
           {t(entityType)}

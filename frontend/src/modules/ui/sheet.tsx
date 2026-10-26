@@ -55,6 +55,7 @@ export function SheetContent({
   const content = (
     <SheetPrimitive.Popup
       data-slot="sheet-content"
+      data-sheet-layer
       className={cn(
         'flex flex-col bg-background shadow-lg focus-visible:outline-hidden',
         !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',

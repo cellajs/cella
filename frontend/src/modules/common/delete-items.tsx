@@ -18,7 +18,7 @@ export interface DeleteItemsProps<TItem, TVariables> {
   onlineOnly?: boolean;
   /** Report to `callback` before closing; by default the confirmation closes first. */
   callbackFirst?: boolean;
-  /** Replaces the default cancel, which steps back out of the confirmation and settles `callback`. */
+  /** Replaces the default cancel, which steps back out of the confirmation and leaves `callback` unreported, so a selection survives it. */
   onCancel?: () => void;
   /** For a delete that is optimistic and queues offline: finish right after `mutate`, and let the press through offline. */
   optimistic?: boolean;
@@ -53,12 +53,5 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
     if (props.optimistic) succeed();
   };
 
-  const handleCancel =
-    props.onCancel ??
-    (() => {
-      overlay?.back();
-      callback?.({ status: 'settle' });
-    });
-
-  return <DeleteForm allowOfflineDelete={props.optimistic} onDelete={handleDelete} onCancel={handleCancel} pending={mutation.isPending} />;
+  return <DeleteForm allowOfflineDelete={props.optimistic} onDelete={handleDelete} onCancel={props.onCancel} pending={mutation.isPending} />;
 }

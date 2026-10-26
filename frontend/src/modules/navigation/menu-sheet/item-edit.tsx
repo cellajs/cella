@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import { env } from '~/env';
@@ -12,11 +13,14 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const avatarBoxClass = tw('mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1');
+const avatarBoxClass = tw(
+  'relative z-2 mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1',
+);
 
 interface MembershipFlagButtonProps {
   icon: IconComponent;
@@ -43,17 +47,28 @@ interface MenuSheetItemEditProps {
   /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
   siblings: UserMenuItem[];
   icon?: IconComponent;
+  /** Its submenu shows below it, so the submenu's dotted line starts at its avatar. */
+  hasSubmenuBelow?: boolean;
+  /** It mounted by moving here from the other list, so it travels above the rows it passes. */
+  isArriving?: boolean;
+  /** Runs before it is archived; true when the move has to wait, for the archived list to open or its submenu to fold. */
+  onArchive?: () => boolean;
 }
 
-export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemEditProps) {
+export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow = false, isArriving = false, onArchive }: MenuSheetItemEditProps) {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
+  const [isTravelling, setIsTravelling] = useState(isArriving);
 
   const toggleMembershipFlag = (key: 'archived' | 'muted') => {
-    if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) return toastOffline();
+    if (key === 'muted') return updateMembership(buildMembershipUpdate(item, { muted: !item.membership.muted }));
+    if (item.membership.archived && !onlineManager.isOnline()) return toastOffline();
 
-    updateMembership(buildMembershipUpdate(item, key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted }));
+    const update = buildMembershipUpdate(item, { archived: !item.membership.archived });
+    // One step at a time: a closed archive opens and a submenu folds before the row travels
+    if (!item.membership.archived && onArchive?.()) setTimeout(() => updateMembership(update), menuListOpenMs);
+    else updateMembership(update);
   };
 
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
@@ -69,7 +84,11 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
 
   const avatar = (
     <EntityAvatar
-      className="size-8 group-data-[subitem=true]/options-item:size-6 group-data-[archived=true]/options-item:opacity-70"
+      // An icon avatar's tile would stand out on the row's fill
+      className={cn(
+        'size-8 group-data-[subitem=true]/options-item:size-6 group-data-[archived=true]/options-item:opacity-70',
+        Icon && 'bg-transparent shadow-none',
+      )}
       type={item.entityType}
       id={item.id}
       icon={Icon}
@@ -81,10 +100,27 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
+      onLayoutAnimationComplete={() => setIsTravelling(false)}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/options-item relative flex h-12 w-full items-center rounded-sm pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-10 data-[archived=false]:cursor-grab"
+      // The ghost button's hover tint (8% foreground) mixed into the fill, opaque so the grip box can repaint it. The fill
+      // is muted/70 on the card made opaque, so a row travelling past covers the rows under it.
+      className={cn(
+        'group/options-item relative flex h-12 w-full items-center pr-2 [--hover-fill:color-mix(in_oklab,var(--muted),var(--foreground)_8%)] before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-(--hover-fill) data-[subitem=true]:h-11',
+        isSortable && 'cursor-grab',
+        isTravelling && 'z-3',
+      )}
     >
+      {/* The view mode's dotted submenu line, drawn per row so it travels with the row and stays under its avatar while a move animates */}
+      {(hasSubmenuBelow || (!item.submenu && !item.membership.archived)) && (
+        <span
+          aria-hidden
+          className={cn(
+            'dotted-line pointer-events-none absolute bottom-0 left-[27px] text-foreground opacity-50',
+            hasSubmenuBelow ? 'top-10' : 'top-0',
+          )}
+        />
+      )}
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
@@ -98,12 +134,17 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
           index={index}
           total={siblings.length}
           onMove={move}
-          className={cn(avatarBoxClass, 'focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing')}
+          className={cn(
+            avatarBoxClass,
+            // Opaque while the avatar fades for the grip, so the subitem line behind it stays hidden. Any focus shows the
+            // outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset clear over the row's fill.
+            'group/drag relative cursor-grab rounded-md outline-hidden focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-(--hover-fill) active:cursor-grabbing group-hover/options-item:bg-(--hover-fill)',
+          )}
         >
-          <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus-visible/drag:opacity-30 group-focus-visible/drag:blur-[1px]">
+          <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]">
             {avatar}
           </span>
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/options-item:opacity-100 group-focus-visible/drag:opacity-100">
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/options-item:opacity-100 group-focus/drag:opacity-100">
             <GripVerticalIcon className="size-4" />
           </span>
         </ReorderHandle>
@@ -112,8 +153,8 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
       )}
 
       {/* Not a clipping box: focus scrolls one to reveal a button whose box reaches past it */}
-      <div className="min-w-0 grow text-left">
-        <div className="truncate text-md leading-5 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70">
+      <div className="relative min-w-0 grow text-left">
+        <div className="truncate text-md leading-5 group-data-[archived=true]/options-item:opacity-70">
           {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted-foreground/50">#{item.membership.displayOrder}</span>}
         </div>
         <div className="flex items-center gap-2">

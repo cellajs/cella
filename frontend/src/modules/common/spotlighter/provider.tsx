@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { spotlighter, useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
+import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 const closeTop = () => {
@@ -11,6 +13,11 @@ const closeTop = () => {
 /** The one page-dim layer, mounted in AppLayout beside the other global layers (see use-spotlighter.ts). */
 export function Spotlighter() {
   const hasSpotlight = useSpotlighter((state) => state.stack.length > 0);
+  const scope = useSpotlighter((state) => state.stack[state.stack.length - 1]?.scope);
+
+  // A closing overlay fades out where it was: a scoped one keeps its scope until it has gone
+  const [shownScope, setShownScope] = useState(scope);
+  if (hasSpotlight && scope !== shownScope) setShownScope(scope);
 
   useEffect(() => {
     if (!hasSpotlight) return;
@@ -22,11 +29,11 @@ export function Spotlighter() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasSpotlight]);
 
-  return (
+  const layer = (
     <AnimatePresence>
       {hasSpotlight && (
         <motion.div
-          className="fixed inset-0 z-110 bg-overlay"
+          className={cn('inset-0 z-110 bg-overlay', shownScope ? 'absolute' : 'fixed')}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -37,4 +44,6 @@ export function Spotlighter() {
       )}
     </AnimatePresence>
   );
+
+  return shownScope ? createPortal(layer, shownScope) : layer;
 }

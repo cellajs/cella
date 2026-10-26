@@ -24,12 +24,20 @@ export function HomePage() {
     <div className="container">
       <SimpleHeader heading={t('c:home')} text={t('c:home.text', { appName: appConfig.name })} className="pt-4 md:pt-6" />
       {!user.mfaRequired && (
-        <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
-          <p>{t('c:require_mfa.text')}</p>
-          <Button variant="plain" size="sm" className="mt-2 max-sm:w-full" render={<Link to="/account" hash="authentication" />}>
-            {t('c:setup_resource', { resource: 'MFA' })}
-            <ArrowRightIcon />
-          </Button>
+        <AlertBanner
+          id="enable_mfa"
+          variant="info"
+          icon={ShieldAlertIcon}
+          title="c:require_mfa"
+          className="mt-4"
+          action={
+            <Button variant="info" soft size="sm" className="max-sm:w-full" render={<Link to="/account" hash="authentication" />}>
+              {t('c:setup_resource', { resource: 'MFA' })}
+              <ArrowRightIcon />
+            </Button>
+          }
+        >
+          {t('c:require_mfa.text')}
         </AlertBanner>
       )}
       <div className="mt-6 mb-24 hidden has-[div[role='grid']]:block">

@@ -3,6 +3,7 @@ import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dia
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus, useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
+import { sheetLayerOf } from '~/modules/common/sheeter/sheet-layer';
 import { spotlightLift, useSpotlight } from '~/modules/common/spotlighter/use-spotlighter';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
@@ -57,7 +58,7 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
 
   const popupRef = useRef<HTMLDivElement>(null);
 
-  useSpotlight(`dialog-${id}`, !!open && !!container?.overlay, dismiss);
+  useSpotlight(`dialog-${id}`, !!open && !!container?.overlay, dismiss, sheetLayerOf(containerElement));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
@@ -65,6 +66,7 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         ref={popupRef}
         id={String(id)}
         container={containerElement}
+        layer={dock ? sheetLayerOf(triggerRef.current) : null}
         outsideScroll={outsideScroll}
         dock={dock}
         // A drag on the inset around a search dialog would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed.

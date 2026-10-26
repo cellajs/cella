@@ -50,14 +50,23 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
       className={cn(
-        'group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-foreground active:bg-accent/60 data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
+        'group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-foreground active:bg-accent/60 data-[subitem=true]:h-10 sm:hover:bg-foreground/8 sm:hover:text-accent-foreground',
         className,
       )}
     >
       <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
-      <span className="relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
+      {/* The card backing keeps the submenu line from showing through a dimmed avatar; an icon avatar sits above that line, so it goes without */}
+      <span
+        className={cn(
+          'relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6',
+          Icon && 'bg-transparent',
+        )}
+      >
         <EntityAvatar
-          className="size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80"
+          className={cn(
+            'size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
+            Icon && 'bg-transparent shadow-none',
+          )}
           type={item.entityType}
           id={item.id}
           icon={Icon}
