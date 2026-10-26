@@ -11,8 +11,7 @@ permissions: {}
 # The one required status check is `ci-passed`, the last job, which waits for all the others.
 on:
   pull_request:
-    # `infra-rewrite` is the integration branch of the infra rewrite; its entry leaves with the landing on main.
-    branches: [main, infra-rewrite]
+    branches: [main]
 
 # Cancel older runs of the same PR when a new push arrives.
 concurrency:
