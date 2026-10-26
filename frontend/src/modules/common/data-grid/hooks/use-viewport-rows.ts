@@ -21,6 +21,8 @@ interface RowPosition {
   estimate: number;
 }
 
+const emptyRowPosition: RowPosition = { top: 0, height: 0, estimate: 0 };
+
 /** Run-length encoded track list, so rows of equal height share one `repeat()`. */
 function buildTemplate(tracks: Iterable<string>) {
   let template = '';
@@ -76,17 +78,19 @@ export function useViewportRows<R>({
       return position;
     });
 
-    const validateRowIdx = (rowIdx: number) => {
-      return max(0, min(rows.length - 1, rowIdx));
+    // Header rows use the position of the closest row, or an empty position at the top when there are no rows
+    const getRowPosition = (rowIdx: number): RowPosition => {
+      if (positions.length === 0) return emptyRowPosition;
+      return positions[max(0, min(positions.length - 1, rowIdx))];
     };
 
     return {
       positions,
       fixedTemplate: null,
       totalRowHeight,
-      getRowTop: (rowIdx: number) => positions[validateRowIdx(rowIdx)].top,
-      getRowHeight: (rowIdx: number) => positions[validateRowIdx(rowIdx)].height,
-      getRowEstimate: (rowIdx: number) => positions[validateRowIdx(rowIdx)].estimate,
+      getRowTop: (rowIdx: number) => getRowPosition(rowIdx).top,
+      getRowHeight: (rowIdx: number) => getRowPosition(rowIdx).height,
+      getRowEstimate: (rowIdx: number) => getRowPosition(rowIdx).estimate,
       findRowIdx(offset: number) {
         let start = 0;
         let end = positions.length - 1;

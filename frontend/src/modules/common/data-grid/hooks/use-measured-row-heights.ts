@@ -65,7 +65,7 @@ export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, he
           const assumed = (next ?? base).get(key) ?? estimate;
           if (Math.abs(height - assumed) < heightTolerance) continue;
 
-          next ??= new Map(base);
+          if (next === null) next = new Map(base);
           // A row back at its estimate needs no entry: positions fall back to the estimate
           if (Math.abs(height - estimate) < heightTolerance) next.delete(key);
           else next.set(key, height);

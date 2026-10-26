@@ -62,8 +62,9 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       isSticky = false;
     }
 
-    function syncHorizontal(gridRect = grid!.getBoundingClientRect()) {
+    function syncHorizontal(rect?: DOMRect) {
       if (!isSticky || headerCells.length === 0) return;
+      const gridRect = rect ?? grid!.getBoundingClientRect();
       const scrollLeft = grid!.scrollLeft;
       const gridLeft = gridRect.left;
       const gridRight = gridRect.right;

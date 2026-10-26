@@ -502,8 +502,96 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   } = useColumnWidths(columns, templateColumns, gridRef, columnWidths, onColumnWidthsChange, onColumnResize, setColumnResizing);
 
   const maxColIdx = columns.length - 1;
+
+  // utils
+  function isColIdxWithinSelectionBounds(idx: number) {
+    return idx >= 0 && idx <= maxColIdx;
+  }
+
+  function isRowIdxWithinViewportBounds(rowIdx: number) {
+    return rowIdx >= 0 && rowIdx < rows.length;
+  }
+
+  function isCellWithinSelectionBounds({ idx, rowIdx }: Position): boolean {
+    return rowIdx >= minRowIdx && rowIdx <= maxRowIdx && isColIdxWithinSelectionBounds(idx);
+  }
+
+  function isCellWithinViewportBounds({ idx, rowIdx }: Position): boolean {
+    return isRowIdxWithinViewportBounds(rowIdx) && isColIdxWithinSelectionBounds(idx);
+  }
+
+  function isCellEditable(position: Position): boolean {
+    return isCellWithinViewportBounds(position) && isSelectedCellEditable({ columns, rows, selectedPosition: position });
+  }
+
   const selectedCellIsWithinSelectionBounds = isCellWithinSelectionBounds(selectedPosition);
   const selectedCellIsWithinViewportBounds = isCellWithinViewportBounds(selectedPosition);
+
+  function selectHeaderRow(args: SelectHeaderRowEvent) {
+    if (!effectiveOnSelectedRowsChange) return;
+
+    assertIsValidKeyGetter<R, K>(rowKeyGetter);
+
+    const newSelectedRows = new Set(effectiveSelectedRows);
+    for (const row of rows) {
+      if (isRowSelectionDisabled?.(row) === true) continue;
+      const rowKey = rowKeyGetter(row);
+      if (args.checked) {
+        newSelectedRows.add(rowKey);
+      } else {
+        newSelectedRows.delete(rowKey);
+      }
+    }
+    effectiveOnSelectedRowsChange(newSelectedRows);
+  }
+
+  function selectRow(args: SelectRowEvent<R>) {
+    if (!effectiveOnSelectedRowsChange) return;
+
+    assertIsValidKeyGetter<R, K>(rowKeyGetter);
+    const { row, checked, isShiftClick } = args;
+    if (isRowSelectionDisabled?.(row) === true) return;
+
+    const newSelectedRows = new Set(effectiveSelectedRows);
+    const rowKey = rowKeyGetter(row);
+    const rowIdx = rows.indexOf(row);
+    setPreviousRowIdx(rowIdx);
+
+    if (checked) {
+      newSelectedRows.add(rowKey);
+    } else {
+      newSelectedRows.delete(rowKey);
+    }
+
+    if (isShiftClick && previousRowIdx !== -1 && previousRowIdx !== rowIdx && previousRowIdx < rows.length) {
+      const step = sign(rowIdx - previousRowIdx);
+      for (let i = previousRowIdx + step; i !== rowIdx; i += step) {
+        const row = rows[i];
+        if (isRowSelectionDisabled?.(row) === true) continue;
+        if (checked) {
+          newSelectedRows.add(rowKeyGetter(row));
+        } else {
+          newSelectedRows.delete(rowKeyGetter(row));
+        }
+      }
+    }
+
+    effectiveOnSelectedRowsChange(newSelectedRows);
+  }
+
+  function updateRow(column: CalculatedColumn<R, SR>, rowIdx: number, row: R) {
+    if (typeof onRowsChange !== 'function') return;
+    if (row === rows[rowIdx]) return;
+    const updatedRows = rows.with(rowIdx, row);
+    onRowsChange(updatedRows, { indexes: [rowIdx], column });
+  }
+
+  function commitEditorChanges() {
+    if (selectedPosition.mode !== 'EDIT') return;
+    if (editCommittedRef.current) return;
+    editCommittedRef.current = true;
+    updateRow(columns[selectedPosition.idx], selectedPosition.rowIdx, selectedPosition.row);
+  }
 
   function selectCell(position: Position, options?: SelectCellOptions): void {
     if (!isCellSelectionEnabled) return;
@@ -535,10 +623,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     if (cellSelectionMode === 'cell-range') {
       const shouldExtendSelection = options?.extendSelection === true;
-      const fallbackAnchor = isDataCellPosition(selectedPosition) ? selectedPosition : position;
+      const fallbackAnchor = isCellWithinViewportBounds(selectedPosition) ? selectedPosition : position;
       const anchor = shouldExtendSelection ? (cellRangeAnchor ?? fallbackAnchor) : position;
 
-      if (isDataCellPosition(anchor) && isDataCellPosition(position)) {
+      if (isCellWithinViewportBounds(anchor) && isCellWithinViewportBounds(position)) {
         setSelectedCellRange(createRange(anchor, position));
         setCellRangeAnchor(anchor);
       } else {
@@ -548,7 +636,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
 
     // Cell-padding clicks route through row selection; the checkbox button stops propagation to avoid a double toggle.
-    if (rowSelectionMode !== 'none' && effectiveOnSelectedRowsChange && isDataCellPosition(position)) {
+    if (rowSelectionMode !== 'none' && effectiveOnSelectedRowsChange && isCellWithinViewportBounds(position)) {
       const row = rows[position.rowIdx];
       if (row !== undefined && isRowSelectionDisabled?.(row) !== true) {
         assertIsValidKeyGetter<R, K>(rowKeyGetter);
@@ -668,58 +756,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   useNearEnd({ totalRows: rows.length, rowOverscanEndIdx, measured, onNearEndChange, threshold: rawNearEndThreshold });
 
   // event handlers
-  function selectHeaderRow(args: SelectHeaderRowEvent) {
-    if (!effectiveOnSelectedRowsChange) return;
-
-    assertIsValidKeyGetter<R, K>(rowKeyGetter);
-
-    const newSelectedRows = new Set(effectiveSelectedRows);
-    for (const row of rows) {
-      if (isRowSelectionDisabled?.(row) === true) continue;
-      const rowKey = rowKeyGetter(row);
-      if (args.checked) {
-        newSelectedRows.add(rowKey);
-      } else {
-        newSelectedRows.delete(rowKey);
-      }
-    }
-    effectiveOnSelectedRowsChange(newSelectedRows);
-  }
-
-  function selectRow(args: SelectRowEvent<R>) {
-    if (!effectiveOnSelectedRowsChange) return;
-
-    assertIsValidKeyGetter<R, K>(rowKeyGetter);
-    const { row, checked, isShiftClick } = args;
-    if (isRowSelectionDisabled?.(row) === true) return;
-
-    const newSelectedRows = new Set(effectiveSelectedRows);
-    const rowKey = rowKeyGetter(row);
-    const rowIdx = rows.indexOf(row);
-    setPreviousRowIdx(rowIdx);
-
-    if (checked) {
-      newSelectedRows.add(rowKey);
-    } else {
-      newSelectedRows.delete(rowKey);
-    }
-
-    if (isShiftClick && previousRowIdx !== -1 && previousRowIdx !== rowIdx && previousRowIdx < rows.length) {
-      const step = sign(rowIdx - previousRowIdx);
-      for (let i = previousRowIdx + step; i !== rowIdx; i += step) {
-        const row = rows[i];
-        if (isRowSelectionDisabled?.(row) === true) continue;
-        if (checked) {
-          newSelectedRows.add(rowKeyGetter(row));
-        } else {
-          newSelectedRows.delete(rowKeyGetter(row));
-        }
-      }
-    }
-
-    effectiveOnSelectedRowsChange(newSelectedRows);
-  }
-
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const { idx, rowIdx, mode } = selectedPosition;
     if (mode === 'EDIT') return;
@@ -757,20 +793,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     // Toggle data attribute so CSS can scope frozen-column shadow to scrolled state
     el.toggleAttribute('data-scrolled-left', el.scrollLeft > 0);
     onScroll?.(event);
-  }
-
-  function updateRow(column: CalculatedColumn<R, SR>, rowIdx: number, row: R) {
-    if (typeof onRowsChange !== 'function') return;
-    if (row === rows[rowIdx]) return;
-    const updatedRows = rows.with(rowIdx, row);
-    onRowsChange(updatedRows, { indexes: [rowIdx], column });
-  }
-
-  function commitEditorChanges() {
-    if (selectedPosition.mode !== 'EDIT') return;
-    if (editCommittedRef.current) return;
-    editCommittedRef.current = true;
-    updateRow(columns[selectedPosition.idx], selectedPosition.rowIdx, selectedPosition.row);
   }
 
   function handleCellCopy(event: CellClipboardEvent) {
@@ -839,35 +861,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }
 
-  // utils
-  function isColIdxWithinSelectionBounds(idx: number) {
-    return idx >= 0 && idx <= maxColIdx;
-  }
-
-  function isRowIdxWithinViewportBounds(rowIdx: number) {
-    return rowIdx >= 0 && rowIdx < rows.length;
-  }
-
-  function isCellWithinSelectionBounds({ idx, rowIdx }: Position): boolean {
-    return rowIdx >= minRowIdx && rowIdx <= maxRowIdx && isColIdxWithinSelectionBounds(idx);
-  }
-
-  function isCellWithinEditBounds({ idx, rowIdx }: Position): boolean {
-    return isRowIdxWithinViewportBounds(rowIdx) && idx >= 0 && idx <= maxColIdx;
-  }
-
-  function isCellWithinViewportBounds({ idx, rowIdx }: Position): boolean {
-    return isRowIdxWithinViewportBounds(rowIdx) && isColIdxWithinSelectionBounds(idx);
-  }
-
-  function isDataCellPosition({ idx, rowIdx }: Position): boolean {
-    return isRowIdxWithinViewportBounds(rowIdx) && idx >= 0 && idx <= maxColIdx;
-  }
-
-  function isCellEditable(position: Position): boolean {
-    return isCellWithinEditBounds(position) && isSelectedCellEditable({ columns, rows, selectedPosition: position });
-  }
-
   function getNextPosition(key: string, ctrlKey: boolean, shiftKey: boolean): Position {
     const { idx, rowIdx } = selectedPosition;
 
@@ -887,7 +880,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       case 'End':
         return { idx: maxColIdx, rowIdx: ctrlKey ? maxRowIdx : rowIdx };
       case 'PageUp': {
-        if (selectedPosition.rowIdx === minRowIdx) return selectedPosition;
+        // Header rows sit above the rows, so there is nothing to page up to.
+        if (rowIdx < 0) return selectedPosition;
         const nextRowY = getRowTop(rowIdx) + getRowHeight(rowIdx) - clientHeight;
         return { idx, rowIdx: nextRowY > 0 ? findRowIdx(nextRowY) : 0 };
       }
@@ -973,8 +967,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     };
 
     if (closeOnExternalRowChange && rows[selectedPosition.rowIdx] !== selectedPosition.originalRow) {
-      // Discard changes if rows are updated from outside
-      closeEditor(false);
+      // Discard changes if rows are updated from outside. This runs during render, so it skips the focus refs closeEditor writes.
+      setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
     }
 
     return (

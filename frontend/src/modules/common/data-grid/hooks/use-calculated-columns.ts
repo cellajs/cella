@@ -157,7 +157,7 @@ export function useCalculatedColumns<R, SR>({
         columns.push(column);
 
         if (frozen) {
-          lastFrozenColumnIndex++;
+          lastFrozenColumnIndex += 1;
         }
 
         if (level > headerRowsCount) {
@@ -227,6 +227,7 @@ export function useCalculatedColumns<R, SR>({
     defaultSortable,
     defaultDraggable,
     currentBreakpoint,
+    isMobile,
     activeModes,
   ]);
 
