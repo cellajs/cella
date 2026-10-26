@@ -38,7 +38,7 @@ export function DraftBanner({ channel, publishForm }: DraftBannerProps) {
         <span className="max-w-2xl text-muted-foreground">
           <NamedText i18nKey="c:draft_banner.text" name={channel.name} values={{ prepareRoles: prepareRolesText(channel.entityType) }} />
         </span>
-        <Button ref={buttonRef} size="sm" onClick={openPublishDialog}>
+        <Button ref={buttonRef} size="sm" className="max-sm:w-full" onClick={openPublishDialog}>
           <RocketIcon className="size-3.5" />
           {t('c:publish')}
         </Button>

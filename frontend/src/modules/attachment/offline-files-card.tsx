@@ -1,7 +1,7 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import { liveQuery } from 'dexie';
 import { TriangleAlertIcon } from 'lucide-react';
-import { type PointerEvent, useEffect, useId, useState } from 'react';
+import { type PointerEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   defaultOfflineFilesTier,
@@ -72,6 +72,8 @@ function useOfflineFootprint() {
 export function OfflineFilesCard() {
   const { t } = useTranslation();
   const descriptionId = useId();
+  const confirmId = useId();
+  const thumbInputRef = useRef<HTMLInputElement>(null);
   const tier = useOfflineFilesStore((state) => state.tier) ?? defaultOfflineFilesTier();
   const setTier = useOfflineFilesStore((state) => state.setTier);
   const footprint = useOfflineFootprint();
@@ -103,10 +105,16 @@ export function OfflineFilesCard() {
     else if (index !== current) apply(index);
   };
 
+  // Focus returns to the thumb: the confirmation turns inert under a focused button
+  const cancel = () => {
+    setPending(null);
+    thumbInputRef.current?.focus();
+  };
+
   const confirm = () => {
     if (pending === null) return;
     apply(pending);
-    setPending(null);
+    cancel();
   };
 
   const hover = (event: PointerEvent<HTMLDivElement>) => {
@@ -119,12 +127,6 @@ export function OfflineFilesCard() {
     const label = t(tierText[offlineFilesTiers[index]].label);
     if (!budgets[index]) return label;
     return `${label}. ${t('c:offline_files.usage', { used: formatBytes(stored), budget: formatBytes(budgets[index]) })}`;
-  };
-
-  const hint = (index: number) => {
-    if (index === current) return t('c:offline_files.current.text');
-    if (droppedBy(index) > 0) return t('c:offline_files.removes.text', { size: formatBytes(droppedBy(index)) });
-    return t('c:offline_files.apply.text');
   };
 
   // A panel per tier stays mounted, so the one leaving fades out while the next slides in from the side of travel
@@ -148,7 +150,7 @@ export function OfflineFilesCard() {
         }}
         onValueCommitted={choose}
         onKeyDown={(event) => {
-          if (event.key === 'Escape' && pending !== null) setPending(null);
+          if (event.key === 'Escape' && pending !== null) cancel();
         }}
         className="group/slider touch-none select-none [--tick-cut:var(--card)] max-sm:[--tick-cut:var(--background)]"
       >
@@ -206,11 +208,12 @@ export function OfflineFilesCard() {
               />
             ))}
             <SliderPrimitive.Thumb
+              inputRef={thumbInputRef}
               aria-label={t('c:offline_files')}
-              aria-describedby={descriptionId}
+              aria-describedby={pending === null ? descriptionId : `${descriptionId} ${confirmId}`}
               getAriaValueText={(_, value) => valueText(value)}
               className={cn(
-                'focus-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 data-dragging:duration-150 motion-reduce:transition-none',
+                'focus-within-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 has-focus-visible:ring-offset-(--tick-cut) data-dragging:duration-150 motion-reduce:transition-none',
                 snapEase,
                 pending !== null && 'border-destructive bg-card',
               )}
@@ -241,36 +244,37 @@ export function OfflineFilesCard() {
             </p>
           ))}
         </div>
-        <div className="mt-3 grid min-h-9 items-center border-t pt-3">
-          {offlineFilesTiers.map((value, index) => (
-            <p
-              key={value}
-              aria-hidden={index !== explored || pending !== null}
-              className={cn(panelClass(index, index === explored && pending === null), 'text-muted-foreground text-sm')}
-            >
-              {hint(index)}
-            </p>
-          ))}
-          <div
-            inert={pending === null}
-            className={cn(
-              'col-start-1 row-start-1 flex flex-wrap items-center gap-x-3 gap-y-2 transition-[opacity,translate,visibility] duration-200 motion-reduce:transition-none',
-              pending === null ? 'invisible translate-y-1 opacity-0' : 'visible opacity-100',
-            )}
-          >
-            <p className="flex min-w-48 flex-1 gap-2 text-sm" aria-live="polite">
-              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-              <span>
-                <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />
-              </span>
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => setPending(null)}>
-                {t('c:cancel')}
-              </Button>
-              <Button size="sm" variant="destructive" onClick={confirm}>
-                {t('c:remove_resource', { resource: formatBytes(asked) })}
-              </Button>
+        {/* Mounted and empty until a confirmation, so each one is announced */}
+        <p id={confirmId} role="status" className="sr-only">
+          {pending !== null && <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />}
+        </p>
+        <div
+          inert={pending === null}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') cancel();
+          }}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none',
+            pending === null ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]',
+          )}
+        >
+          {/* -m-1 p-1 keeps the buttons' focus rings inside the clip */}
+          <div className="-m-1 overflow-hidden p-1">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-3">
+              <p className="flex min-w-48 flex-1 gap-2 text-sm" aria-hidden="true">
+                <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+                <span>
+                  <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />
+                </span>
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" onClick={cancel}>
+                  {t('c:cancel')}
+                </Button>
+                <Button size="sm" variant="destructive" onClick={confirm}>
+                  {t('c:remove_resource', { resource: formatBytes(asked) })}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

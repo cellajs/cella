@@ -14,7 +14,7 @@ export const buttonVariants = cva(
         destructive: 'intent-destructive',
         success: 'intent-success',
         secondary: 'border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
+        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground dark:hover:bg-input/50',
         // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
         ghost: 'hover:bg-foreground/8 hover:text-accent-foreground',
         'outline-ghost':

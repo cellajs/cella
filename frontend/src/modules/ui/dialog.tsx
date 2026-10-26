@@ -25,7 +25,7 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 in-[.sheeter-open]:z-125 z-115 bg-overlay backdrop-blur-xs duration-200 data-closed:animate-out data-open:animate-in data-closed:fill-mode-forwards',
+        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 in-[.sheeter-open]:z-125 z-115 bg-overlay duration-200 data-closed:animate-out data-open:animate-in data-closed:fill-mode-forwards',
         className,
       )}
       {...props}
@@ -39,12 +39,15 @@ function DialogContent({
   container,
   outsideScroll = false,
   viewportClassName,
+  dock,
   ...props
 }: DialogPrimitive.Popup.Props & {
   container?: HTMLElement | null;
   /** Scroll tall content inside the popup by default, or outside through the viewport. */
   outsideScroll?: boolean;
   viewportClassName?: string;
+  /** Sits at the bottom edge and rises from below the screen. */
+  dock?: 'bottom';
 }) {
   return (
     <DialogPortal container={container || undefined}>
@@ -54,19 +57,25 @@ function DialogContent({
         className={cn(
           !container && [
             'fixed inset-0 in-[.sheeter-open]:z-125 z-115',
-            outsideScroll
-              ? // Outside scroll: the viewport scrolls, and its p-4 keeps a gap that the popup's max-w-full respects on narrow screens.
-                'flex flex-col items-center overflow-y-auto p-4'
-              : // Inside scroll: the viewport only centers; the popup is capped and scrolls internally.
-                'grid place-items-center overflow-hidden',
+            dock
+              ? 'grid items-end justify-items-center overflow-hidden p-4'
+              : outsideScroll
+                ? // Outside scroll: the viewport scrolls, and its p-4 keeps a gap that the popup's max-w-full respects on narrow screens.
+                  'flex flex-col items-center overflow-y-auto p-4'
+                : // Inside scroll: the viewport only centers; the popup is capped and scrolls internally.
+                  'grid place-items-center overflow-hidden',
           ],
           viewportClassName,
         )}
       >
         <DialogPrimitive.Popup
           data-slot="dialog-content"
+          data-dock={dock}
           className={cn(
-            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip rounded-lg bg-background p-4 shadow-lg duration-200 focus-visible:outline-hidden data-closed:animate-out data-open:animate-in',
+            'data-closed:fade-out-0 data-open:fade-in-0 relative mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip rounded-lg bg-background p-4 shadow-lg duration-200 focus-visible:outline-hidden data-closed:animate-out data-open:animate-in',
+            dock
+              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+              : 'data-closed:zoom-out-95 data-open:zoom-in-95',
             // A container owns the scroll, so the popup only clips; inside scroll caps the height to keep a screen-edge gap.
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',
             className,

@@ -1,4 +1,4 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,10 +8,9 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { heldContextRoles } from '~/modules/entities/context-roles';
 import { DraftBanner } from '~/modules/entities/draft-banner';
+import { useChannelTabOptions } from '~/modules/entities/use-channel-tab-options';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { PublishOrganizationForm } from '~/modules/organization/publish-organization-form';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -31,14 +30,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
 
   const resolveCan = useResolveCan();
   const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
-
-  // Grants for declarative tab gating: tabs declaring navTab.requires (settings) hide without them
-  const grants = canUpdate ? ['update'] : [];
-
-  // Context-role pairs and channel arrangement for registry tabs (visibleTo gating + order/hidden)
-  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
-  const pairs = heldContextRoles(organization, myMemberships?.items ?? []);
-  const tabsConfig = organization.toolsConfig?.['organization.tabs'];
+  const tabOptions = useChannelTabOptions(organization);
 
   const { mutate } = useOrganizationUpdateMutation();
 
@@ -70,14 +62,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
         <DraftBanner channel={organization} publishForm={(close) => <PublishOrganizationForm organization={organization} close={close} />} />
       )}
       <ScrollReset>
-        <PageTabNav
-          title={organization.name}
-          avatar={organization}
-          parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-          grants={grants}
-          pairs={pairs}
-          slotConfig={tabsConfig}
-        />
+        <PageTabNav title={organization.name} avatar={organization} parentRouteId="/_app/$tenantId/$organizationSlug/organization" {...tabOptions} />
         <FocusViewContainer>
           <Outlet />
         </FocusViewContainer>

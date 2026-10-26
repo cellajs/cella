@@ -123,7 +123,7 @@
 
 .uppy-Url-input {
   border-radius: 0.25rem;
-  border: 0.1rem solid var(--border);
+  border: 0.1rem solid var(--input);
   background-color: var(--background);
   color: var(--foreground);
   padding: 0.25rem;

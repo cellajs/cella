@@ -1,9 +1,11 @@
 import { type StaticDataRouteOption, useNavigate, useRouterState } from '@tanstack/react-router';
 import { type RefObject, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hotkeys';
-import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
@@ -12,6 +14,9 @@ import { closeNavSheet, navSheetOptions } from '~/modules/navigation/nav-sheet';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
+
+const { navBar } = appConfig.navigation;
+const { sheetPanelWidth } = appConfig.theme.navigation;
 
 type FloatingNavConfig = { left: NavItemId[]; right: NavItemId[]; ownerPathname?: string };
 
@@ -37,6 +42,11 @@ export function AppNav() {
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const setKeepNavOpen = useNavigationStore((state) => state.setKeepNavOpen);
+  const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
+  const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
+
+  useBodyClass({ 'keep-nav-open': keepNavOpen });
+  useBodyClass({ 'nav-sheet-open': navSheetExists });
 
   const openNavSheet = (navItem: NavItem, triggerRef: RefObject<HTMLButtonElement | null>, organization?: UserMenuItem) => {
     if (!navItem.sheet) return;
@@ -90,14 +100,26 @@ export function AppNav() {
     ['Alt + M', () => triggerNavItem('menu')],
   ]);
 
+  // Without a nav bar the menu is the navigation: beside the page on every screen above a phone, whatever the preference
+  const isMenuAlwaysOpen = !navBar && !isMobile;
+
   useEffect(() => {
-    const shouldPin = isDesktop && keepOpenPreference && !!navSheetOpen;
+    const shouldPin = (isMenuAlwaysOpen || (isDesktop && keepOpenPreference)) && !!navSheetOpen;
     if (navigationStore.getState().keepNavOpen !== shouldPin) setKeepNavOpen(shouldPin);
-  }, [isDesktop, keepOpenPreference, navSheetOpen, setKeepNavOpen]);
+  }, [isMenuAlwaysOpen, isDesktop, keepOpenPreference, navSheetOpen, setKeepNavOpen]);
+
+  // Reopens the menu after another nav sheet closes over it
+  useEffect(() => {
+    if (!isMenuAlwaysOpen || navSheetOpen) return;
+    const menuItem: NavItem | undefined = navItems.find((item) => item.id === 'menu');
+    if (menuItem) openNavSheet(menuItem, { current: null });
+  }, [isMenuAlwaysOpen, navSheetOpen]);
 
   // A primitive select: matches are new objects on every router write, so selecting them would re-render on each URL change.
   const floatingNavConfigJson = useRouterState({ select: (state) => serializeFloatingNavConfig(state.matches) });
   const floatingNavConfig: FloatingNavConfig = JSON.parse(floatingNavConfigJson);
+  // Without a nav bar the floating menu button is the way into the navigation on every page
+  if (!navBar && !floatingNavConfig.left.includes('menu')) floatingNavConfig.left.unshift('menu');
   const floatingItems: FloatingNavItem[] = [];
 
   if (isMobile) {
@@ -112,11 +134,10 @@ export function AppNav() {
   return (
     <>
       <FloatingNav items={floatingItems} resetTrigger={floatingNavConfig.ownerPathname} />
-      {isMobile ? (
-        <BottomBarNav onNavItemClick={triggerNavItem} />
-      ) : (
-        <SidebarNav onNavItemClick={triggerNavItem} onOrganizationClick={triggerOrganization} />
-      )}
+      {navBar && isMobile && <BottomBarNav onNavItemClick={triggerNavItem} />}
+      {navBar && !isMobile && <SidebarNav onNavItemClick={triggerNavItem} onOrganizationClick={triggerOrganization} />}
+      {/* Without a nav bar the open menu takes its place: this pushes the page aside by the menu's width */}
+      {isMenuAlwaysOpen && <div data-slot="sidebar-spacer" className="shrink-0 focus-view:hidden" style={{ width: sheetPanelWidth }} />}
     </>
   );
 }

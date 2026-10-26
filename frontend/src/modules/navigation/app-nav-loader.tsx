@@ -13,6 +13,11 @@ import { cn } from '~/utils/cn';
 // Requests have no client timeout, so one that never settles (often after a phone wakes) would keep the spinner going.
 const loadingBreakerMs = 15_000;
 
+/** The app's logo mark as a nav icon, a size up from the line icons so the mark reads at nav bar size. */
+export function AppIcon({ className }: { className?: string }) {
+  return <Logo iconOnly height={28} className={cn(className, 'size-7 sm:size-7')} />;
+}
+
 /** Brand intro on first load, then the item's icon, swapped for a spinner while queries or navigation are in flight. */
 export function AppNavLoader({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
   const queryClient = useQueryClient();

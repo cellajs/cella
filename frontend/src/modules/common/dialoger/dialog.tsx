@@ -3,6 +3,7 @@ import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dia
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus, useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
+import { spotlightLift, useSpotlight } from '~/modules/common/spotlighter/use-spotlighter';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
@@ -33,9 +34,10 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
     headerClassName,
     container,
     searchLayout,
+    dock,
   } = dialog;
 
-  // A container renders the dialog inline: the page keeps scrolling and taking pointer input, focus stays in the dialog
+  // A container renders the dialog inline: the page keeps scrolling, and takes pointer input unless `overlay` dims it; focus stays in the dialog
   const inline = !!container;
   const containerElement = container?.ref?.current ?? undefined;
 
@@ -55,25 +57,25 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
 
   const popupRef = useRef<HTMLDivElement>(null);
 
+  useSpotlight(`dialog-${id}`, !!open && !!container?.overlay, dismiss);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
-      {container?.overlay && (
-        <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
-      )}
       <DialogContent
         ref={popupRef}
         id={String(id)}
         container={containerElement}
         outsideScroll={outsideScroll}
+        dock={dock}
         // A drag on the inset around a search dialog would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed.
         viewportClassName={searchLayout ? 'max-sm:touch-none' : undefined}
-        className={cn(className, searchLayout && searchLayoutClass, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
+        className={cn(className, searchLayout && searchLayoutClass, containerElement && (container?.overlay ? spotlightLift : 'z-40'))}
         initialFocus={touchInitialFocus(popupRef)}
         finalFocus={finalFocusFor(triggerRef, String(id))}
       >
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
         {(title || description) && (
-          <DialogHeader sticky className={headerClassName}>
+          <DialogHeader sticky className={dock ? 'text-center' : headerClassName}>
             {title && <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>

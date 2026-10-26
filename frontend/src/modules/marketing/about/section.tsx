@@ -36,6 +36,25 @@ export function AboutSectionHeader({ title, text, textComponents, className }: A
   );
 }
 
+interface AboutStatementProps {
+  text: TKey;
+  className?: string;
+}
+
+/** Large centered statement: muted text whose `<strong>` parts carry the message in the foreground color. */
+export function AboutStatement({ text, className }: AboutStatementProps) {
+  return (
+    <p
+      className={cn(
+        'mx-auto max-w-3xl text-balance text-center font-semibold text-2xl text-muted-foreground leading-tight md:text-3xl lg:text-4xl',
+        className,
+      )}
+    >
+      <Trans i18nKey={text as never} components={{ strong: <strong className="font-semibold text-foreground" /> }} />
+    </p>
+  );
+}
+
 export function AboutSection({ title, text, textComponents, sectionId, children, alternate }: AboutSectionProps) {
   return (
     <section

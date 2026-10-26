@@ -61,15 +61,15 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
             // The icon carries the state on screen; the text names it in the table tooltip and for screen readers
             renderCell: ({ row }) => {
               if (row.mfaRequired === undefined) return null;
-              const label = t(row.mfaRequired ? 'c:enabled' : 'c:disabled');
+              const label = t(row.mfaRequired ? 'c:mfa_on' : 'c:mfa_off');
               return (
                 <span className="-mx-2 inline-flex h-full items-center px-2" data-tooltip="true" data-tooltip-content={label}>
-                  {row.mfaRequired ? <ShieldCheckIcon className="text-success" /> : <ShieldMinusIcon className="opacity-50" />}
+                  {row.mfaRequired ? <ShieldCheckIcon className="text-success" /> : <ShieldMinusIcon className="text-destructive" />}
                   <span className="sr-only">{label}</span>
                 </span>
               );
             },
-            exportValue: (row) => (row.mfaRequired === undefined ? undefined : t(row.mfaRequired ? 'c:enabled' : 'c:disabled')),
+            exportValue: (row) => (row.mfaRequired === undefined ? undefined : t(row.mfaRequired ? 'c:mfa_on' : 'c:mfa_off')),
           } satisfies ColumnOrColumnGroup<Member>,
         ]
       : []),

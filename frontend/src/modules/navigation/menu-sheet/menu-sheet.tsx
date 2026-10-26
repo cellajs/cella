@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getMenuSection } from '~/lib/entity-modules';
+import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { Spinner } from '~/modules/common/spinner';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
@@ -13,23 +14,24 @@ import { MenuSheetOrganization } from '~/modules/navigation/menu-sheet/organizat
 import { OrganizationSwitcher } from '~/modules/navigation/menu-sheet/organization-switcher';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
-import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useRouteOrganizationId } from '~/modules/navigation/use-route-organization-id';
 import { useUserStore } from '~/modules/user/user-store';
 
-const hasOrganizationRail = appConfig.navSidebarMode === 'organizations';
+const { navBar, menu: menuMode } = appConfig.navigation;
+const isMenuPerOrganization = menuMode === 'perOrganization';
 
 /**
- * The organization a menu sheet holds alone in the organization rail mode. On desktop it is the one whose rail button
- * opened the sheet; on mobile the switcher's pick, else the page's, else the last one opened, else the first.
+ * The organization a menu per organization holds. Picked with a nav bar button, it is that button's; picked with the
+ * switcher, the switcher's pick, else the page's, else the last one opened, else the first.
  */
-function pickOrganization(organizations: UserMenuItem[], isMobile: boolean, candidateIds: (string | null | undefined)[]) {
-  const ids = isMobile ? candidateIds : candidateIds.slice(0, 1);
+function pickOrganization(organizations: UserMenuItem[], hasOrganizationButtons: boolean, candidateIds: (string | null | undefined)[]) {
+  const ids = hasOrganizationButtons ? candidateIds.slice(0, 1) : candidateIds;
   for (const id of ids) {
     const organization = id && organizations.find((item) => item.id === id);
     if (organization) return organization;
   }
-  return isMobile ? sortAndFilterMenu(organizations, false)[0] : undefined;
+  return hasOrganizationButtons ? undefined : sortAndFilterMenu(organizations, false)[0];
 }
 
 export function MenuSheet() {
@@ -37,8 +39,9 @@ export function MenuSheet() {
   const isMobile = useBreakpointBelow('sm', false);
   const navSheetOrganizationId = useNavigationStore((state) => state.navSheetOrganizationId);
   const lastOrganizationId = useNavigationStore((state) => state.lastOrganizationId);
-  // Mobile has no full menu to manage the organizations in, so the sheet turns to it in place
-  const [isManaging, setIsManaging] = useState(false);
+  // Only a desktop nav bar holds organization buttons; elsewhere the switcher picks, and can turn the sheet to the full menu
+  const hasOrganizationButtons = navBar && !isMobile;
+  const [showsFullMenu, setShowsFullMenu] = useState(false);
 
   const { menu, isLoading } = useMenu(user?.id);
   useMenuDropMonitor(menu);
@@ -49,48 +52,26 @@ export function MenuSheet() {
   if (isLoading || !user) return <Spinner />;
 
   const organization =
-    hasOrganizationRail && !isManaging
-      ? pickOrganization(organizations, isMobile, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
+    isMenuPerOrganization && !showsFullMenu
+      ? pickOrganization(organizations, hasOrganizationButtons, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
       : undefined;
 
-  if (organization) {
-    const startManaging = () => {
-      navigationStore.getState().setSectionOpen('organization', true);
-      setIsManaging(true);
-    };
+  const menuSections = appConfig.menuStructure.flatMap(({ entityType }) => {
+    const menuSection = getMenuSection(entityType);
+    return menuSection ? [{ entityType, menuSection }] : [];
+  });
+  const renderedSections = menuSections.map(({ entityType, menuSection }) => (
+    <MenuSheetSection key={entityType} options={menuSection} items={menu[entityType]} isCollapsible={menuSections.length > 1} />
+  ));
 
-    return (
-      <NavSheetFrame panels>
-        <MenuSheetHeader />
-        {isMobile && <OrganizationSwitcher organization={organization} onManage={startManaging} />}
-        <MenuSheetOrganization organization={organization} menu={menu} />
-      </NavSheetFrame>
-    );
-  }
-
-  const renderedSections = appConfig.menuStructure
-    .filter(({ entityType }) => !isManaging || entityType === 'organization')
-    .map(({ entityType }) => {
-      const items = menu[entityType];
-      const menuSection = getMenuSection(entityType);
-      if (!menuSection) return null;
-
-      return (
-        <MenuSheetSection
-          key={entityType}
-          options={menuSection}
-          items={items}
-          initialEditing={isManaging}
-          onEditingEnd={isManaging ? () => setIsManaging(false) : undefined}
-        />
-      );
-    })
-    .filter((section) => section !== null);
-
+  // The header, switcher and panels stay while the organization, or the full menu, fades in between them
   return (
     <NavSheetFrame panels>
       <MenuSheetHeader />
-      {renderedSections}
+      {organization && !hasOrganizationButtons && <OrganizationSwitcher organization={organization} onShowMenu={() => setShowsFullMenu(true)} />}
+      <ContentKeyTransition contentKey={organization?.id ?? 'all'}>
+        {organization ? <MenuSheetOrganization organization={organization} menu={menu} hasSwitcher={!hasOrganizationButtons} /> : renderedSections}
+      </ContentKeyTransition>
     </NavSheetFrame>
   );
 }

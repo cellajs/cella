@@ -1,7 +1,5 @@
-import { EllipsisIcon } from 'lucide-react';
 import { type CSSProperties, Suspense } from 'react';
 import { appConfig } from 'shared';
-import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -13,20 +11,18 @@ import { SidebarOrganizationButtons } from '~/modules/navigation/organization-bu
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu } from '~/modules/ui/sidebar';
-import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
-const hasOrganizationRail = appConfig.navSidebarMode === 'organizations';
+const isMenuPerOrganization = appConfig.navigation.menu === 'perOrganization';
 
-// With the organizations above it, the menu button only leads to the full menu, and their badges carry its unseen count
-const toRailNavItem = (item: NavItem): NavItem =>
-  hasOrganizationRail && item.id === 'menu' ? { ...item, icon: EllipsisIcon, badgeSlot: undefined } : item;
-
-const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base').map(toRailNavItem);
+const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
+const leadNavItems = baseNavItems.filter((item) => item.id === 'home');
+// With a menu per organization their buttons stand in for the menu button, and their badges for its unseen count
+const mainNavItems = baseNavItems.filter((item) => item.id !== 'home' && !(isMenuPerOrganization && item.id === 'menu'));
 const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
 interface SidebarNavProps {
@@ -44,9 +40,6 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
 
   const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
 
-  useBodyClass({ 'keep-nav-open': keepNavOpen });
-  useBodyClass({ 'nav-sheet-open': navSheetExists });
-
   const isExpanded = hasSidebarTextLabels && isDesktop && !navSheetOpen;
   const isOverlay = !isDesktop || !keepNavOpen;
 
@@ -61,6 +54,17 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
       : sidebarWidth;
 
   const cssVars = { '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
+
+  const renderNavItem = (navItem: NavItem, itemClassName?: string) => (
+    <SidebarNavItemButton
+      key={navItem.id}
+      navItem={navItem}
+      isActive={navSheetOpen === navItem.id && !navSheetOrganizationId}
+      isCollapsed={!isExpanded}
+      itemClassName={itemClassName}
+      onClick={onNavItemClick}
+    />
+  );
 
   return (
     <div className="contents" style={cssVars}>
@@ -79,26 +83,23 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full">
           <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
-            {/* With the organization rail only its group scrolls, so the buttons under it stay in view */}
-            <SidebarContent className={cn('gap-1', hasOrganizationRail && 'overflow-hidden')}>
-              {hasOrganizationRail && (
-                <SidebarGroup className="min-h-0 p-0">
-                  <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
-                </SidebarGroup>
+            {/* Only the organization buttons scroll, so the buttons under them stay in view */}
+            <SidebarContent className="gap-0 overflow-hidden">
+              <SidebarGroup className="shrink-0 p-0">
+                <SidebarMenu className="gap-1">{leadNavItems.map((navItem) => renderNavItem(navItem, 'pb-0'))}</SidebarMenu>
+              </SidebarGroup>
+              <div className="mx-3 h-px shrink-0 bg-input" />
+              {isMenuPerOrganization && (
+                <>
+                  <SidebarGroup className="min-h-0 p-0">
+                    <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
+                  </SidebarGroup>
+                  <div className="mx-3 h-px shrink-0 bg-input" />
+                </>
               )}
               <SidebarGroup className="shrink-0 p-0">
                 <SidebarGroupContent>
-                  <SidebarMenu className="gap-1">
-                    {baseNavItems.map((navItem) => (
-                      <SidebarNavItemButton
-                        key={navItem.id}
-                        navItem={navItem}
-                        isActive={navSheetOpen === navItem.id && !navSheetOrganizationId}
-                        isCollapsed={!isExpanded}
-                        onClick={onNavItemClick}
-                      />
-                    ))}
-                  </SidebarMenu>
+                  <SidebarMenu className="gap-1">{mainNavItems.map((navItem) => renderNavItem(navItem))}</SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>

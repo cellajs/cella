@@ -1,7 +1,7 @@
 import type { AnyRoute } from '@tanstack/react-router';
 import { Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
-import { appConfig } from 'shared';
+import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
@@ -40,6 +40,23 @@ function getTabsSlot(parentRouteId: string): Slot | undefined {
   return getRoutesById()[parentRouteId]?.options?.staticData?.tabsSlot;
 }
 
+/** The layout route whose bar shows `slot`'s tabs. */
+function getTabsRouteId(slot: Slot): string | undefined {
+  const routesById = getRoutesById();
+  return Object.keys(routesById).find((routeId) => routesById[routeId].options?.staticData?.tabsSlot === slot);
+}
+
+/** Whether a channel type's page tabs show in the menu, in place of its page header's tab bar (`appConfig.navigation.pageTabs`). */
+export function channelTabsInMenu(entityType: ChannelEntityType): boolean {
+  return appConfig.navigation.pageTabs[entityType] === 'menu';
+}
+
+/** Whether `slot` is a channel's tabs slot that shows in the menu. */
+function showsTabsInMenu(slot: Slot): boolean {
+  const [entityType, surface] = slot.split('.');
+  return surface === 'tabs' && isChannel(entityType) && channelTabsInMenu(entityType);
+}
+
 export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
 
 /** The `$tool` param of a match, naming a registry tab. */
@@ -57,7 +74,6 @@ function findActiveTab(candidates: NavCandidate[], toolId: string | undefined, f
  */
 export function assertSurfaces(): void {
   const routesById = getRoutesById();
-  const parentRouteIdForSlot = (slot: Slot) => Object.keys(routesById).find((routeId) => routesById[routeId].options?.staticData?.tabsSlot === slot);
 
   try {
     for (const [routeId, route] of Object.entries(routesById)) {
@@ -67,7 +83,7 @@ export function assertSurfaces(): void {
       }
     }
     assertSurfaceIds((slot) => {
-      const parentRouteId = parentRouteIdForSlot(slot);
+      const parentRouteId = getTabsRouteId(slot);
       const tabIds = parentRouteId ? getNavTabCandidates(parentRouteId).map((tab) => tab.id) : [];
       return [...tabIds, ...getSlotDescriptors(slot).map((descriptor) => descriptor.id)];
     });
@@ -121,6 +137,24 @@ function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions 
 
   const resolved = resolvePlacementList(slot, getNavTabCandidates(parentRouteId), options);
   return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
+}
+
+/**
+ * A channel's page tabs, gated and ordered as its page bar shows them, linked with `channelParams` so they work from any
+ * page: route tabs take the channel's params as they are, registry tabs add their `$tool`.
+ */
+export function resolveChannelTabs(
+  entityType: ChannelEntityType,
+  channelParams: Record<string, string>,
+  options: ResolvePlacementOptions = {},
+): PageTab[] {
+  const routeId = getTabsRouteId(`${entityType}.tabs`);
+  if (!routeId) return [];
+
+  return resolveNavTabs(routeId, options).map((tab) => ({
+    ...tab,
+    params: typeof tab.params === 'function' ? { ...channelParams, tool: tab.id } : channelParams,
+  }));
 }
 
 /**
@@ -215,6 +249,10 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
   }, [hasStarted]);
 
   const scrollToResetOnNavigate = useScrollResetOnNavigate();
+
+  // The menu lists these tabs; the redirect above still keeps the page off a disabled tab
+  const slot = parentRouteId ? getTabsSlot(parentRouteId) : undefined;
+  if (!explicitTabs && slot && showsTabsInMenu(slot)) return null;
 
   return (
     <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>

@@ -45,17 +45,30 @@ interface SidebarNavButtonProps {
   isCurrent?: boolean;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
+  /** Classes of the list item around the button, e.g. to drop the space below it. */
+  itemClassName?: string;
   /** The icon. */
   children: ReactNode;
   badge?: ReactNode;
 }
 
 /** A sidebar nav button: tooltip while collapsed or without text labels, and the text label when the theme shows one. */
-export function SidebarNavButton({ label, isCollapsed, onClick, isActive, isCurrent, ref, className, children, badge }: SidebarNavButtonProps) {
+export function SidebarNavButton({
+  label,
+  isCollapsed,
+  onClick,
+  isActive,
+  isCurrent,
+  ref,
+  className,
+  itemClassName,
+  children,
+  badge,
+}: SidebarNavButtonProps) {
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
-    <SidebarMenuItem className="flex pb-2">
+    <SidebarMenuItem className={cn('flex pb-2', itemClassName)}>
       <SidebarMenuButton
         ref={ref}
         size="lg"
@@ -83,7 +96,13 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, isCurr
   );
 }
 
-export function SidebarNavItemButton({ navItem, isActive, isCollapsed, onClick }: NavItemButtonProps) {
+export function SidebarNavItemButton({
+  navItem,
+  isActive,
+  isCollapsed,
+  onClick,
+  itemClassName,
+}: NavItemButtonProps & Pick<SidebarNavButtonProps, 'itemClassName'>) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const label = t(`c:${navItem.id}`);
@@ -94,6 +113,7 @@ export function SidebarNavItemButton({ navItem, isActive, isCollapsed, onClick }
       label={label}
       isCollapsed={isCollapsed}
       isActive={isActive}
+      itemClassName={itemClassName}
       onClick={() => onClick(navItem.id, buttonRef)}
       className="relative data-[active=true]:bg-background/50"
       badge={<NavItemBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />}

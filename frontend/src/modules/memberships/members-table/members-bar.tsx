@@ -9,6 +9,7 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { NamedText } from '~/modules/common/named-text';
+import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
@@ -56,27 +57,25 @@ export function MembersTableBar({
     setSearch({ role: role as MembersRouteSearchParams['role'] });
   };
 
-  const openDeleteDialog = () => {
-    createDialog(
-      <DeleteMemberships
-        tenantId={channel.tenantId}
-        organizationId={organizationId}
-        entityId={channel.id}
-        entityType={channel.entityType}
-        members={selected}
-        callback={clearSelection}
-      />,
-      {
-        id: 'delete-memberships',
-        triggerRef: deleteButtonRef,
-        className: 'max-w-xl',
-        title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
-        description: (
-          <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email).join(', ') }} />
-        ),
-      },
-    );
-  };
+  const confirmRemove = () =>
+    openDeleteDialog({
+      id: 'delete-memberships',
+      triggerRef: deleteButtonRef,
+      resource: 'c:member',
+      count: selected.length,
+      content: (
+        <DeleteMemberships
+          tenantId={channel.tenantId}
+          organizationId={organizationId}
+          entityId={channel.id}
+          entityType={channel.entityType}
+          members={selected}
+          callback={clearSelection}
+        />
+      ),
+      title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
+      description: <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email) }} />,
+    });
 
   const openInviteDialog = () => {
     if (!onlineManager.isOnline()) return toastOffline();
@@ -85,7 +84,7 @@ export function MembersTableBar({
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
-      className: tw('relative z-60 w-auto max-w-4xl border shadow-none'),
+      className: tw('w-auto max-w-4xl border shadow-none'),
       container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
@@ -124,7 +123,7 @@ export function MembersTableBar({
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:remove" />,
+        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={confirmRemove} icon={TrashIcon} label="c:remove" />,
       }}
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />

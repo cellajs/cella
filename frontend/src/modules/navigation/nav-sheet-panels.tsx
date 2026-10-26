@@ -98,7 +98,7 @@ export function NavSheetPanels() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 bottom-full left-0 z-10 h-[200vh] bg-card/60"
+            className="absolute right-0 bottom-full left-0 z-10 h-[200vh] bg-overlay"
             onClick={() => toggleNavSheetPanel(navSheetPanel)}
           />
         )}
@@ -108,7 +108,7 @@ export function NavSheetPanels() {
         <div
           className={cn(
             'flex flex-col gap-1 border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
-            hasOpenPanel && 'max-h-dvh overflow-y-auto rounded-t-md shadow-lg',
+            hasOpenPanel && 'max-h-dvh overflow-y-auto shadow-lg',
           )}
         >
           <NavSheetPanel id="preferences" label="c:preferences">

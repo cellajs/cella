@@ -1,7 +1,7 @@
 import type {
   ConfigMode,
   FederationConfig,
-  NavSidebarMode,
+  NavigationConfig,
   ProductEmbedding,
   RequiredConfig,
   S3ConfigInput,
@@ -68,8 +68,8 @@ export const config = {
    */
   menuStructure: [{ entityType: 'organization', subentityType: null } as const],
 
-  /** `menu` (one menu button) or `organizations` (a rail button per organization): `NavSidebarMode`. */
-  navSidebarMode: 'menu' as NavSidebarMode,
+  /** Nav bar, how the menu groups channels and where page tabs show: `NavigationConfig`. */
+  navigation: { navBar: true, menu: 'all', pageTabs: {} } as NavigationConfig<(typeof hierarchy.channelTypes)[number]>,
 
   /**
    * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
