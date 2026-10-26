@@ -17,7 +17,9 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 
-const { navBar } = appConfig.navigation;
+const { navBar, menu } = appConfig.navigation;
+// A desktop nav bar of organization buttons leads with the app icon going home, so the logo here would repeat it
+const hasHomeOnNavBar = navBar && menu === 'perOrganization';
 
 /** Stacks a nav sheet over the menu sheet, for layouts with no nav bar to open it from: no bar at all, or a floating-nav page. */
 function openStackedNavSheet(id: NavItemId, content: ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
@@ -25,7 +27,7 @@ function openStackedNavSheet(id: NavItemId, content: ReactNode, triggerRef: RefO
   sheeter.getState().create(content, { ...navSheetOptions(id, triggerRef), id: `${id}-sheet`, side: 'left', disablePointerDismissal: true });
 }
 
-/** The logo home link and, where no nav bar holds them, the notifications and account buttons; with a nav bar only floating-nav pages show it. */
+/** The logo home link, wherever no nav bar has a home button, and the notifications and account buttons where no nav bar holds them. */
 export function MenuSheetHeader() {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
@@ -33,7 +35,7 @@ export function MenuSheetHeader() {
   const accountButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className={cn('h-14 p-3 pb-1', navBar && 'in-[.floating-nav]:block hidden')}>
+    <div className={cn('h-14 p-3 pb-1', hasHomeOnNavBar && 'sm:hidden')}>
       <div className="flex h-10 items-center justify-between">
         <Link
           to="/home"
@@ -45,7 +47,7 @@ export function MenuSheetHeader() {
         </Link>
 
         {user && (
-          <div className="flex items-center gap-1">
+          <div className={cn('flex items-center gap-1', navBar && 'in-[.floating-nav]:flex hidden')}>
             <Button
               ref={notificationsButtonRef}
               size="icon"

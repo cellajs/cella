@@ -21,13 +21,13 @@ export function SimpleHeader({ heading, text, children, className = '', textClas
   const textSetsSpacing = collapseText || !!textClassName;
 
   return (
-    <div className={cn('flex flex-col', !textSetsSpacing && 'gap-2 md:gap-3', className)}>
+    <div className={cn('flex flex-col', !textSetsSpacing && 'gap-1', className)}>
       {heading && <h1 className="font-heading font-semibold text-xl">{t(heading as TKey)}</h1>}
       {text && (
         <p
           className={cn(
-            'text-base text-muted-foreground',
-            collapseText && 'mt-2 max-h-24 transition-[max-height,opacity,margin] duration-300 ease-in-out md:mt-3',
+            'text-muted-foreground text-sm md:text-base',
+            collapseText && 'mt-1 max-h-24 transition-[max-height,opacity,margin] duration-300 ease-in-out',
             collapseText &&
               hasScrolled &&
               'overflow-hidden group-data-[sticky=true]/sticky:mt-0 group-data-[sticky=true]/sticky:max-h-0 group-data-[sticky=true]/sticky:opacity-0',

@@ -112,19 +112,23 @@ export function ExpandableTileDetail({ label, wide, children }: ExpandableTileDe
 interface TileListHeadingProps {
   title: string;
   count: number;
+  /** The heading's level in the page outline; 3 inside a card. */
+  level?: 2 | 3 | 4;
   className?: string;
   /** An action for the whole list, at the end of the row. */
   children?: ReactNode;
 }
 
 /** A list of tiles: its name, how many it holds and an optional action. */
-export function TileListHeading({ title, count, className, children }: TileListHeadingProps) {
+export function TileListHeading({ title, count, level = 3, className, children }: TileListHeadingProps) {
+  const Heading = level === 2 ? 'h2' : level === 4 ? 'h4' : 'h3';
+
   return (
     <div className={cn('flex items-center justify-between gap-2', children && 'min-h-9', className)}>
-      <h3 className="font-medium text-muted-foreground text-sm">
+      <Heading className="font-medium text-muted-foreground text-sm">
         {title}
         <span className="ml-3 font-normal text-xs">{count}</span>
-      </h3>
+      </Heading>
       {children}
     </div>
   );
