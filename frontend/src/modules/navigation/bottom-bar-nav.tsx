@@ -4,8 +4,8 @@ import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 
-// The footer items end the row, as they end the desktop nav bar
-const barNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base' || item.type === 'footer');
+// No home button: the menu header links home. The footer items end the row, as they end the desktop nav bar.
+const barNavItems: NavItem[] = navItems.filter((item: NavItem) => (item.type === 'base' && item.id !== 'home') || item.type === 'footer');
 
 interface BottomBarNavProps {
   onNavItemClick: TriggerNavItemFn;

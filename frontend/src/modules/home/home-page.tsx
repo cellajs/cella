@@ -26,7 +26,7 @@ export function HomePage() {
       {!user.mfaRequired && (
         <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
           <p>{t('c:require_mfa.text')}</p>
-          <Button variant="plain" size="sm" className="mt-2" render={<Link to="/account" hash="authentication" />}>
+          <Button variant="plain" size="sm" className="mt-2 max-sm:w-full" render={<Link to="/account" hash="authentication" />}>
             {t('c:setup_resource', { resource: 'MFA' })}
             <ArrowRightIcon />
           </Button>

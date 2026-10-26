@@ -107,7 +107,7 @@ export function NavSheetPanels() {
       <FocusTrap active={hasOpenPanel}>
         <div
           className={cn(
-            'flex flex-col gap-1 border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
+            'flex flex-col gap-1 border-input border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
             hasOpenPanel && 'max-h-dvh overflow-y-auto shadow-lg',
           )}
         >

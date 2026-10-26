@@ -20,8 +20,8 @@ const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheet
 const isMenuPerOrganization = appConfig.navigation.menu === 'perOrganization';
 
 const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
-const leadNavItems = baseNavItems.filter((item) => item.id === 'home');
-// With a menu per organization their buttons stand in for the menu button, and their badges for its unseen count
+// With a menu per organization the app icon heads their buttons, which stand in for the menu button and its unseen count
+const leadNavItems = isMenuPerOrganization ? baseNavItems.filter((item) => item.id === 'home') : [];
 const mainNavItems = baseNavItems.filter((item) => item.id !== 'home' && !(isMenuPerOrganization && item.id === 'menu'));
 const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
@@ -85,12 +85,12 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
           <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
             {/* Only the organization buttons scroll, so the buttons under them stay in view */}
             <SidebarContent className="gap-0 overflow-hidden">
-              <SidebarGroup className="shrink-0 p-0">
-                <SidebarMenu className="gap-1">{leadNavItems.map((navItem) => renderNavItem(navItem, 'pb-0'))}</SidebarMenu>
-              </SidebarGroup>
-              <div className="mx-3 h-px shrink-0 bg-input" />
               {isMenuPerOrganization && (
                 <>
+                  <SidebarGroup className="shrink-0 p-0">
+                    <SidebarMenu className="gap-1">{leadNavItems.map((navItem) => renderNavItem(navItem, 'pb-0'))}</SidebarMenu>
+                  </SidebarGroup>
+                  <div className="mx-3 h-px shrink-0 bg-input" />
                   <SidebarGroup className="min-h-0 p-0">
                     <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
                   </SidebarGroup>

@@ -1,9 +1,10 @@
 import { PlusIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { type ReactNode, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import { getMenuSection } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { TileListHeading } from '~/modules/common/expandable-tile';
 import { ChannelTileCard, ChannelTileHeading, ChannelTileRow } from '~/modules/entities/entity-grid/channel-tile';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
@@ -18,26 +19,68 @@ const hasChannelsBelowOrganizations = appConfig.menuStructure.some(
   ({ entityType, subentityType }) => entityType !== 'organization' || !!subentityType,
 );
 
-// The role as the meta line: menu rows carry no counts for the default stats
-function ChannelTiles({ items }: { items: UserMenuItem[] }) {
+interface ChannelTilesSectionProps {
+  entityType: ChannelEntityType;
+  title: string;
+  items: UserMenuItem[];
+  level: 2 | 4;
+  onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
+  /** Shown under the heading in place of the tile grid. */
+  body?: ReactNode;
+}
+
+/** One list of channel tiles, as other tile lists show theirs: a create button while it is empty, its count and a small add button once it holds tiles. */
+function ChannelTilesSection({ entityType, title, items, level, onCreate, body }: ChannelTilesSectionProps) {
   const { t } = useTranslation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const resource = t(entityType).toLowerCase();
+
+  if (!items.length) {
+    if (!onCreate) return <p className="text-muted-foreground text-sm">{t('c:no_resource_yet', { resource })}</p>;
+
+    return (
+      <Button ref={buttonRef} className="self-start max-sm:w-full" variant="plain" onClick={() => onCreate(buttonRef)}>
+        <PlusIcon />
+        {t('c:create_resource', { resource })}
+      </Button>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-4">
-      {items.map((item) => (
-        <ChannelTileCard key={item.id} entity={item}>
-          <ChannelTileRow>
-            <ChannelTileHeading meta={<span className="truncate text-muted-foreground text-sm">{t(item.membership.role)}</span>} />
-          </ChannelTileRow>
-        </ChannelTileCard>
-      ))}
+    <div className="flex flex-col gap-2">
+      <TileListHeading title={title} count={items.length} level={level}>
+        {onCreate && (
+          <Button
+            ref={buttonRef}
+            className="-mr-2"
+            variant="ghost"
+            size="sm"
+            aria-label={t('c:create_resource', { resource })}
+            onClick={() => onCreate(buttonRef)}
+          >
+            <PlusIcon />
+            {t('c:create')}
+          </Button>
+        )}
+      </TileListHeading>
+      {body ?? (
+        // The role as the meta line: menu rows carry no counts for the default stats
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-4">
+          {items.map((item) => (
+            <ChannelTileCard key={item.id} entity={item}>
+              <ChannelTileRow>
+                <ChannelTileHeading meta={<span className="truncate text-muted-foreground text-sm">{t(item.membership.role)}</span>} />
+              </ChannelTileRow>
+            </ChannelTileCard>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function OrganizationBlock({ organization, menu }: { organization: UserMenuItem; menu: UserMenu }) {
   const { t } = useTranslation();
-  const sections = organizationSections(organization, menu).map(({ options, items }) => ({ options, items: sortAndFilterMenu(items, false) }));
   const headingId = `home-${organization.id}`;
 
   return (
@@ -55,53 +98,54 @@ function OrganizationBlock({ organization, menu }: { organization: UserMenuItem;
         </h3>
         <Badge variant="secondary">{t(organization.membership.role)}</Badge>
       </div>
-      {sections.map(({ options, items }) => (
-        <div key={options.entityType} className="flex flex-col gap-2">
-          {sections.length > 1 && <h4 className="text-muted-foreground text-sm">{t(options.label)}</h4>}
-          {items.length ? (
-            <ChannelTiles items={items} />
-          ) : (
-            <p className="text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(options.label).toLowerCase() })}</p>
-          )}
-        </div>
-      ))}
+      {organizationSections(organization, menu).map(({ options, items }) => {
+        const { createAction } = options;
+        return (
+          <ChannelTilesSection
+            key={options.entityType}
+            entityType={options.entityType}
+            title={t(options.label)}
+            items={sortAndFilterMenu(items, false)}
+            level={4}
+            onCreate={createAction && ((ref) => createAction(ref, organization.id))}
+          />
+        );
+      })}
     </section>
   );
 }
 
 /**
- * Links to the signed-in user's channels: a block per organization with its channels as tiles, or organization tiles
- * when nothing sits below organizations. Creating channels and managing them stay in the menu; only a new organization
- * starts here, since a menu per organization has nowhere else for it.
+ * Links to the signed-in user's channels: the organizations as one tile list, or as a block each with a tile list per
+ * menu section when channels sit below them. Each list creates its channels; managing them stays in the menu.
  */
 export function HomeChannels({ userId }: { userId: string }) {
   const { t } = useTranslation();
-  const createButtonRef = useRef<HTMLButtonElement>(null);
   const { menu, isLoading } = useMenu(userId);
-  const createOrganization = getMenuSection('organization')?.createAction;
 
   if (isLoading) return null;
 
   const organizations = sortAndFilterMenu(menuOrganizations(menu), false);
+  const createOrganization = getMenuSection('organization')?.createAction;
 
   return (
-    <section aria-labelledby="home-channels" className="mt-6 mb-24 flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <h2 id="home-channels" className="grow font-semibold text-lg">
-          {t('c:organization_other')}
-        </h2>
-        {createOrganization && (
-          <Button ref={createButtonRef} variant="plain" onClick={() => createOrganization(createButtonRef)}>
-            <PlusIcon />
-            {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
-          </Button>
-        )}
-      </div>
-      {hasChannelsBelowOrganizations ? (
-        organizations.map((organization) => <OrganizationBlock key={organization.id} organization={organization} menu={menu} />)
-      ) : (
-        <ChannelTiles items={organizations} />
-      )}
-    </section>
+    <div className="mt-6 mb-24 flex flex-col">
+      <ChannelTilesSection
+        entityType="organization"
+        title={t('c:organization_other')}
+        items={organizations}
+        level={2}
+        onCreate={createOrganization}
+        body={
+          hasChannelsBelowOrganizations ? (
+            <div className="mt-2 flex flex-col gap-8">
+              {organizations.map((organization) => (
+                <OrganizationBlock key={organization.id} organization={organization} menu={menu} />
+              ))}
+            </div>
+          ) : undefined
+        }
+      />
+    </div>
   );
 }
