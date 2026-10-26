@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.25.0](https://github.com/cellajs/cella/compare/0.24.0...0.25.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* ui tuning: a navigation config, docked selection confirms, one unblurred scrim, inline dialogs dim the page ([#1541](https://github.com/cellajs/cella/issues/1541))
+* **infra:** deploys run inside the organization, and GitHub holds no Scaleway key ([#1370](https://github.com/cellajs/cella/issues/1370))
+* **navigation:** an organization rail mode, with a button per organization and a mobile switcher ([#1533](https://github.com/cellajs/cella/issues/1533))
+* one error response table, a closed AppError status set, and guard order checked at load ([#1531](https://github.com/cellajs/cella/issues/1531))
+* migration notes become alignments, and start empty ([#1519](https://github.com/cellajs/cella/issues/1519))
+
+### 🎉 New features
+
+* **attachment:** the offline files slider draws what is stored and asks before a lower tier removes files ([#1522](https://github.com/cellajs/cella/issues/1522)) ([a0aa1e1](https://github.com/cellajs/cella/commit/a0aa1e12b641d8347b8878c7d8647aaa3dcc6899))
+* **infra:** deploys run inside the organization, and GitHub holds no Scaleway key ([#1370](https://github.com/cellajs/cella/issues/1370)) ([6abad48](https://github.com/cellajs/cella/commit/6abad482702757e86cb024b2fb1e713160c95a68))
+* **navigation:** an organization rail mode, with a button per organization and a mobile switcher ([#1533](https://github.com/cellajs/cella/issues/1533)) ([2e50814](https://github.com/cellajs/cella/commit/2e5081425a3fb5519ded313bac5f0d549ae54fd4))
+
+
+### 🐞 Bug fixes
+
+* **data-grid:** the React Compiler compiles DataGrid, plus upstream beta.63 fixes ([#1540](https://github.com/cellajs/cella/issues/1540)) ([6ba65db](https://github.com/cellajs/cella/commit/6ba65db784eebd8ab97c4ea5e0f9dc4648526b8b))
+
+
+### 🔧 Small improvements
+
+* migration notes become alignments, and start empty ([#1519](https://github.com/cellajs/cella/issues/1519)) ([b374861](https://github.com/cellajs/cella/commit/b374861b94298005aef0b7b0a2c95b5515879a21))
+* one error response table, a closed AppError status set, and guard order checked at load ([#1531](https://github.com/cellajs/cella/issues/1531)) ([88272a4](https://github.com/cellajs/cella/commit/88272a454450ace80a09933d23843884549d0c86))
+
+
+### 🧹 Chores
+
+* **deps:** update frontend, infra and root dependencies, pnpm 11.28.8 ([#1537](https://github.com/cellajs/cella/issues/1537)) ([71eede1](https://github.com/cellajs/cella/commit/71eede1e08b5f8038b031a2525a932acb8d36ed6))
+* **infra:** staging follows infra-rewrite until the infra rewrite lands ([#1528](https://github.com/cellajs/cella/issues/1528)) ([fe4c762](https://github.com/cellajs/cella/commit/fe4c762615b21585076b9ee80c448ceb053d7796))
+* ui tuning: a navigation config, docked selection confirms, one unblurred scrim, inline dialogs dim the page ([#1541](https://github.com/cellajs/cella/issues/1541)) ([72e1481](https://github.com/cellajs/cella/commit/72e14812ff364ffe8cd7489290476aa445424350))
+* ui tuning: grid/table view toggle, picked sorts carry their order, tile row hover, bigger clear tap target ([#1534](https://github.com/cellajs/cella/issues/1534)) ([d490b3d](https://github.com/cellajs/cella/commit/d490b3da3837d6cc6a1ae09ec3855a3687409693))
+* ui tuning: home tile lists create their channels, the app icon leads only organization buttons ([#1542](https://github.com/cellajs/cella/issues/1542)) ([9becdb6](https://github.com/cellajs/cella/commit/9becdb64d05b5e03117eb5d6a82239ce7e42ab80))
+
 ## [0.24.0](https://github.com/cellajs/cella/compare/0.23.0...0.24.0) (2026-10-25)
 
 
