@@ -14,12 +14,14 @@ import { getFlag } from './args';
  * before the change is kept beside the edited one in a temporary folder.
  */
 export function forgetRetiredResources(stack: string, log: (message: string) => void = console.info): number {
-  const generated = new Set(engineMadeRuntimeSecrets().map((definition) => definition.secretName));
+  const engineMade = engineMadeRuntimeSecrets();
+  const generated = new Set(engineMade.map((definition) => definition.secretName));
+  const shared = new Set(engineMade.filter((definition) => definition.services.length > 1).map((definition) => definition.secretName));
   const run = (args: string[]) => spawnSync('pulumi', [...args, '--stack', stack], { cwd: infraDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const exported = run(['stack', 'export']);
   if (exported.status !== 0) throw new Error(`pulumi stack export failed: ${exported.stderr.trim()}`);
   const document: unknown = JSON.parse(exported.stdout);
-  const urns = retiredUrns(document, generated);
+  const urns = retiredUrns(document, generated, shared);
   if (urns.length === 0) {
     log('The state holds no retired resource.');
     return 0;
@@ -32,7 +34,7 @@ export function forgetRetiredResources(stack: string, log: (message: string) => 
   if (imported.status !== 0)
     throw new Error(`pulumi stack import failed: ${imported.stderr.trim()} (the export before the change is ${folder}/before.json)`);
   const check = run(['stack', 'export']);
-  if (check.status !== 0 || retiredUrns(JSON.parse(check.stdout), generated).length > 0) {
+  if (check.status !== 0 || retiredUrns(JSON.parse(check.stdout), generated, shared).length > 0) {
     throw new Error(`the state still holds retired resources after the import (the export before the change is ${folder}/before.json)`);
   }
   log(`Took ${urns.length} retired resource(s) out of the state; they stay live: ${urns.map((u) => u.split('::').pop()).join(', ')}.`);

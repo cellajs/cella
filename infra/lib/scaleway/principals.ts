@@ -1,6 +1,3 @@
-/** Set by tasks/admit-operator-buckets.ts on the one run that writes bucket policies with the retired admin application's key. */
-export const ADMISSION_RUN_ENV = 'INFRA_ADMISSION_RUN';
-
 /** Canonical names for the IAM principals of one environment. Names are per-mode so a key re-mint in one environment cannot purge the other's key. */
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */

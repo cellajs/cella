@@ -1,7 +1,7 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { endAction, type InfraContext } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
@@ -21,8 +21,7 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
   const operator = await acquirePrivilegedKey(context);
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  await admitOperatorOrExit(context, { ...operator, passphrase, stack: stackNameFor(context) });
+  await admitOperatorOrExit(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);
   const reviewed = await reviewPlan(context, operator, { forgetRetired: true });

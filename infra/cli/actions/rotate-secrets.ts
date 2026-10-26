@@ -39,7 +39,7 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const operator = await acquirePrivilegedKey(context);
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
-  await admitOperatorOrExit(context, { ...operator, passphrase, stack });
+  await admitOperatorOrExit(context, operator);
   const env = buildProviderEnv(infraDir, { ...operator, projectId, passphrase, organizationId: operator.organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 

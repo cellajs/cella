@@ -1,4 +1,4 @@
-import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
+import { engineMadeRuntimeSecrets, operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { type CopyContainer, secretCopyContainers } from '../lib/scaleway/secret-copies';
 import { legacySharedSecretPath } from '../lib/scaleway/secret-paths';
@@ -25,9 +25,10 @@ export function copyStep(
 }
 
 /**
- * Move the operator values of secrets that several services consume out of the shared folder each lived in, into the copy of every consumer.
- * A copy that has a value already keeps it. The shared container is deleted once every copy exists, as the `pulumi up` keeps it (operator
- * values outlive a registry change). Runs after each `up` until no stack has a shared folder left (ledger L3). Returns the secrets moved.
+ * Move the values of secrets that several services consume out of the shared folder each lived in, into the copy of every consumer: the
+ * operator's, and the engine-made ones of a stack set up before 3a·1, whose shared container forget-retired-resources keeps live. A copy
+ * that has a value already keeps it. The shared container is deleted once every copy exists, as the `pulumi up` keeps it (operator values
+ * outlive a registry change). Runs after each `up` until no stack has a shared folder left (ledger L3). Returns the secrets moved.
  */
 export async function copySharedSecrets(opts: {
   client: CopySharedClient;
@@ -38,7 +39,9 @@ export async function copySharedSecrets(opts: {
 }): Promise<string[]> {
   const log = opts.log ?? ((message) => console.info(message));
   const moved: string[] = [];
-  for (const secret of (opts.secrets ?? operatorManagedRuntimeSecrets).filter((definition) => definition.services.length > 1)) {
+  for (const secret of (opts.secrets ?? [...operatorManagedRuntimeSecrets, ...engineMadeRuntimeSecrets()]).filter(
+    (definition) => definition.services.length > 1,
+  )) {
     const legacyPath = legacySharedSecretPath(opts.slug, opts.mode, secret.services);
     const legacy = await opts.client.getSecretByName(secret.secretName, legacyPath);
     const step = copyStep(legacy, legacy ? await secretCopyContainers(opts.client, secret, opts.slug, opts.mode) : []);
