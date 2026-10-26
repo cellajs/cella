@@ -1,4 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { engineConfig } from '../config/engine-config';
+import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
@@ -51,7 +53,7 @@ describe('storage module', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const operator = Statement.find((statement) => statement.Sid === 'OperatorAccess');
-      expect(operator?.Principal, policy.name).toEqual({ SCW: 'application_id:cella-operator-id' });
+      expect(operator?.Principal, policy.name).toEqual({ SCW: `application_id:${appPrincipalNames(engineConfig().appSlug).operator}-id` });
       expect(operator?.Action, policy.name).toEqual(['s3:*']);
     }
   });
@@ -72,7 +74,7 @@ describe('storage module', () => {
 
   it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
-      expect(String(policy.inputs.policy), policy.name).not.toContain('cella-production-admin');
+      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(engineConfig().slug, 'production').admin);
     }
   });
 
@@ -80,7 +82,9 @@ describe('storage module', () => {
     type Statement = { Sid: string; Principal: unknown; Action: string[] };
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
-      const observer = Statement.filter((statement) => JSON.stringify(statement.Principal).includes('cella-observer-id'));
+      const observer = Statement.filter((statement) =>
+        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(engineConfig().appSlug).observer}-id`),
+      );
       if (policy.name === 'boot-diag-policy') {
         expect(observer.map((statement) => statement.Action)).toEqual([['s3:ListBucket', 's3:GetObject']]);
       } else {
