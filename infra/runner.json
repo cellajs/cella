@@ -1,0 +1,13 @@
+{
+  "projectId": "8fee7cf0-1023-447d-a055-4e9fbb6e7247",
+  "release": "15ac409d54536cfbea9b298b958ae04dd8154df5",
+  "environments": [
+    {
+      "environment": "staging",
+      "projectId": "0e35dfaf-61f7-4c67-a207-64fd05914feb",
+      "region": "nl-ams",
+      "definition": "cella-staging-main",
+      "repository": "https://github.com/cellajs/cella.git"
+    }
+  ]
+}

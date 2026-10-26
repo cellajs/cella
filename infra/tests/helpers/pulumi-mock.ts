@@ -4,16 +4,10 @@ import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
 import { vi } from 'vitest';
 import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
-import type { GenerationKeys } from '../../tasks/mint-generation-keys';
+import { installKeylessMocks, type RenderedResource, settleRender } from '../../lib/stack/keyless-render';
+import type { GenerationKeys } from '../../tasks/stage-generation-keys';
 
-export interface CapturedResource {
-  type: string;
-  name: string;
-  inputs: Record<string, unknown>;
-  /** The provider-computed outputs the mock stubbed for this resource (see `newResource`). */
-  outputs: Record<string, unknown>;
-  provider?: string;
-}
+export type CapturedResource = RenderedResource;
 
 export interface MockHarness {
   pulumi: typeof PulumiNS;
@@ -63,57 +57,12 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   await loadEngineConfig();
 
   const pulumi = await import('@pulumi/pulumi');
-  const resources: CapturedResource[] = [];
-  let ipamAddresses = 0;
-
-  pulumi.runtime.setMocks(
-    {
-      newResource(args) {
-        // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
-        // Outputs only the provider computes get deterministic stubs: a managed database's CA certificate, a generated password, a reserved private IP, the LB's public address, the registry endpoint.
-        const computedByType: Record<string, () => Record<string, unknown>> = {
-          'scaleway:databases/instance:Instance': () => ({ certificate: 'mock-ca-certificate' }),
-          'random:index/randomPassword:RandomPassword': () => ({ result: `random-${args.name}` }),
-          'scaleway:ipam/ip:Ip': () => ({ address: `10.0.0.${++ipamAddresses}/24` }),
-          'scaleway:loadbalancers/loadBalancer:LoadBalancer': () => ({ ipAddress: '203.0.113.10' }),
-          'scaleway:registry/namespace:Namespace': () => ({ endpoint: `rg.nl-ams.scw.cloud/${String((args.inputs as { name?: string }).name)}` }),
-        };
-        const computed = computedByType[args.type]?.() ?? {};
-        resources.push({
-          type: args.type,
-          name: args.name,
-          inputs: args.inputs as Record<string, unknown>,
-          outputs: computed,
-          provider: args.provider,
-        });
-        return { id: `${args.name}-id`, state: { ...args.inputs, ...computed, id: `${args.name}-id` } };
-      },
-      call(args) {
-        // IAM data sources pulumi-context.ts derives identity ids from; deterministic stub ids let consuming modules render without talking to Scaleway.
-        if (args.token.includes('getApplication')) {
-          const name = String((args.inputs as { name?: string }).name ?? 'app');
-          if (opts.absentApplication?.(name)) return { id: '', applicationId: '', name };
-          return { id: `${name}-id`, applicationId: `${name}-id`, name };
-        }
-        if (args.token.includes('getApiKey')) {
-          return { id: 'mock-access-key', applicationId: 'mock-application-id', userId: 'mock-user-id', defaultProjectId: 'mock-project-id' };
-        }
-        // Secret Manager data sources: deterministic stubs so a module reading a secret container or version renders without talking to Scaleway.
-        if (args.token.includes('getSecret')) {
-          const name = String((args.inputs as { name?: string }).name ?? 'secret');
-          return { id: `fr-par/${name}-id`, name };
-        }
-        if (args.token.includes('getVersion')) {
-          const payload = JSON.stringify({ accessKey: 'mock-vm-access', secretKey: 'mock-vm-secret' });
-          return { data: Buffer.from(payload).toString('base64') };
-        }
-        return args.inputs as Record<string, unknown>;
-      },
-    },
-    opts.project ?? 'infra',
-    opts.stack ?? opts.mode ?? 'production',
-    opts.preview ?? false,
-  );
+  const resources = installKeylessMocks(pulumi, {
+    project: opts.project ?? 'infra',
+    stack: opts.stack ?? opts.mode ?? 'production',
+    preview: opts.preview ?? false,
+    absentApplication: opts.absentApplication,
+  });
 
   const byType = (prefix: string) => resources.filter((r) => r.type.startsWith(prefix));
   const oneOfType = (typeStr: string) => {
@@ -123,23 +72,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
     }
     return match;
   };
-  const settle = async () => {
-    let quiet = 0;
-    for (let seen = resources.length; quiet < 25; quiet++) {
-      await flushPulumi();
-      if (resources.length !== seen) {
-        seen = resources.length;
-        quiet = 0;
-      }
-    }
-  };
-
+  const settle = () => settleRender(resources);
   return { pulumi, resources, byType, oneOfType, settle };
-}
-
-/** One event-loop turn: the mock's newResource answers synchronously, but a resource waiting on Outputs registers a turn later. */
-async function flushPulumi(): Promise<void> {
-  await new Promise((resolve) => setImmediate(resolve));
 }
 
 /** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */

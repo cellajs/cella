@@ -12,7 +12,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Go European without looking back.** Scaleway is one of Europe's most established cloud providers.
 
-**Everything is yours.** Your Scaleway account, your action runner (GitHub Actions today).
+**Everything is yours.** Your Scaleway account runs the deploys too: a runner in it starts each one as a job, and GitHub holds no key.
 
 **Full stack deployment.** One guided setup: domain, HTTPS, load balancer, managed database, file storage, servers.
 
@@ -28,13 +28,13 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one Owner API key ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
 
-**Release** is one command, triggered by a published GitHub release, a manual dispatch, or any other CI:
+**Release** is one command, which the environment's main job runs on a checkout of the target when the runner sees the target move (a published release, a new commit on a followed branch, a line in `infra/environments`):
 
 ```
-pnpm --filter infra run deploy --mode <production|staging> --sha <sha> [--build]
+pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). `--build` also bakes and pushes the images, for self-contained laptop and bring-your-own-CI deploys. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
+It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)): when the release's images or frontend files are missing, a builder machine it makes builds them from the pushed commit. The main job deploys with `--defer-reap`, then runs `pnpm --filter infra run reap`, which destroys the displaced VMs off the critical path (already detached from every LB pool).
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: one menu for status, reviewing and applying privileged changes (database, VPC, IAM), key and passphrase rotation, runtime secrets, database access and reset, repair (a stale lock, interrupted Pulumi operations, a re-sync of the setup) and [teardown](../cella/DEPLOYMENT.md#teardown). Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help` ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
 
@@ -48,15 +48,16 @@ Three rules:
 
 ## Security boundaries
 
-- **The CI key never writes IAM policy** (no `IAMPolicyManager`): granting permissions self-escalates to full admin, so identity administration is a human action with the **Owner API key**: a privileged run mints a 30-minute key from it and revokes that at the end. CI does manage applications and keys org-wide through one unconditioned `IAMApplicationManager` rule (to rotate service keys every deploy): an api-key POST carries no `resource.id`, so a conditioned rule 403s ([lib/scaleway/permissions.ts](lib/scaleway/permissions.ts)).
-- **The admin application** is the day-2 human principal: `s3:*` via bucket policies plus read-only on every infra surface, no IAM write; its key lives in the operator's `infra/.env.<mode>` (`SCW_ADMIN_*`) and, as the custody copy, in the `admin-key` secret, never in git or GitHub.
+- **The CI key never writes IAM policy** (no `IAMPolicyManager`): granting permissions self-escalates to full admin, so identity administration is a human action with an **Owner API key**, made for the occasion. Every other privileged run takes the **operator key**, which writes no IAM and which Scaleway accepts from a dedicated IP address only. The CI key writes no IAM at all: each machine identity has one standing key, made at an Owner moment and kept in `/<slug>-<mode>/deploy/`, and a deploy only hands it over ([tasks/stage-generation-keys.ts](tasks/stage-generation-keys.ts)).
+- **The CI key reads no secret of the app's.** It reads values in `/<slug>-<mode>/deploy/` only (the machine keys it hands over, the telemetry ingest key) and checks the services' copies from metadata. Secret containers and values are made by an apply on the operator key ([lib/scaleway/deploy-policy.ts](lib/scaleway/deploy-policy.ts)).
+- **The observer application** is the read-only principal: read sets on the app's projects, IAM read, and read on the state and boot-diagnostics buckets; from the dedicated IP address only. Its key lives in `infra/.env.<mode>` (`SCW_OBSERVER_*`), never in git or GitHub. The admin application it replaces is retired: an apply lets the operator into bucket policies written before it with the admin key from its custody secret, and **Update identities** then deletes it.
 - **VM keys are per service and per deploy**, path-conditioned (`resource.name.startsWith`). Cloud-init carries only the **boot key**; the service key arrives in a **single-access** Secret Manager bundle. A consumed bundle on first boot halts the VM as an interception signal; reboots reuse the on-disk pair.
-- **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). Uploads buckets are versioned and CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user data.
-- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` for a secret one service consumes, `/shared/<consumers>/` for each set of consumers (so a VM key reads exactly the secrets its services consume), `/handoff/`, `/engine/` (unreadable from VMs).
+- **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). The deploy key's statement on each bucket is object-level: no bucket configuration, no policy, no `s3:DeleteObjectVersion`, so a leaked deploy key cannot destroy state history or user data. A bucket's configuration and policy change through an apply.
+- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` holds one copy of every secret that service consumes, so a secret of several consumers is stored once in each one's folder and a machine key reads its own folder only; `/handoff/`, `/deploy/`, `/engine/` (unreadable from machines). A change of consumers adds or removes copies and writes no IAM.
 
 ## Observability
 
-The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads **boot diagnostics** (logs and JSONL events) to a dedicated bucket: `pnpm --filter infra diag --sha <sha>` prints one release's bundle for each service that boots its own VM (under `singleVM`, the host alone), or says that release has none; without `--sha` it prints each service's newest; `--replay` re-ships them. A failed deploy runs it for the release it was deploying. The boot runner redacts by value: each secret it handled (the boot and service keys, every hydrated runtime secret) and any URL userinfo is replaced in its console output, its telemetry and every uploaded object, whatever name printed it. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT` (the OTLP base URL, as the OTel SDKs read it: `https://collector:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
+The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads its **boot account** (its boot log and JSONL events) to a dedicated bucket at the end of every boot: `pnpm --filter infra diag --sha <sha>` prints one release's account for each service that boots its own VM (under `singleVM`, the host alone), or says that release has none; without `--sha` it prints each service's newest; `--replay` re-ships the events. It reads with the observer key. A failed rollout names each new machine's account in the run's record. Every deploy also writes one **run record** and its log to the same bucket, under `runs/<run>/`, which `pnpm infra runs` reads on the observer key ([run records](../cella/DEPLOYMENT.md#run-records)). The boot runner redacts by value: each secret it handled (the boot and service keys, every hydrated runtime secret) and any URL userinfo is replaced in its console output, its telemetry and every uploaded object, whatever name printed it. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT` (the OTLP base URL, as the OTel SDKs read it: `https://collector:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
 
 ## Status command
 
@@ -72,6 +73,8 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 | `--json` | Emit the versioned contract below; a breaking shape change bumps `schemaVersion`. |
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: checks needing Scaleway API access (`credential: "scaleway"`) degrade without a key, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
+
+The **inventory** checks (`inventory.*`) compare what exists with what the environment declares, as an Owner checks after a suspected break-in: an application the environment does not declare that can act in its project (a rule on the project, or a rule on the organization that does more than read, its own or a group's), a key beside the one each identity holds (the observer holds one per machine), a policy beside an identity's declared one, a person's key without an end date, and a machine that is neither an active generation nor a builder. **Rotate keys** deletes the extra keys and **Update identities** the extra policies; an application or a machine the engine did not make is removed in the console once it is known who made it.
 
 ```jsonc
 {
@@ -93,7 +96,7 @@ Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `
 
 ## Key files
 
-Operator keys load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. A value of the form `keychain:<service>/<account>` or `op:op://…` is resolved on load from the OS keychain or the 1Password CLI, so the file can hold pointers instead of secrets. Every CLI action reads its keys through one resolver ([lib/scaleway/operator-identity.ts](lib/scaleway/operator-identity.ts)): the admin application key (`SCW_ADMIN_*`), the Owner API key (`SCW_OWNER_*`, prompted when absent) and, for diagnostics only, the `SCW_*` pair the process was started with. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. The admin application's key (`<slug>-<mode>-admin`) covers every read-only set plus the state bucket, enough for status, Preview and the state side of a privileged run. A bare `infra/.env` is never read, and the CLI says so when it finds one.
+Operator keys load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. That file also names the environment's Scaleway project (`SCW_PROJECT_ID`, written by setup): every environment has a project of its own, and `status` reports an error when two share one. A value of the form `keychain:<service>/<account>` or `op:op://…` is resolved on load from the OS keychain or the 1Password CLI, so the file can hold pointers instead of secrets. The CLI reads the observer key (`SCW_OBSERVER_*`) from there and, for diagnostics only, the `SCW_*` pair the process was started with ([lib/scaleway/operator-identity.ts](lib/scaleway/operator-identity.ts)). It reads no privileged key and no passphrase from a file or the environment, in any form: `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` found there are dropped with a notice, so nothing on the machine can change infrastructure with nobody at the prompt. The operator key is typed once per run and unlocks it; the passphrase comes from Secret Manager with it. The mode file holds a live secret key; the CLI tightens it to `0600` on sight. The observer's key (`<app>-observer`) reads: enough for status and the plan of an identity update, never for the state side of a run. A bare `infra/.env` is never read, and the CLI says so when it finds one.
 
 ## Extending
 
@@ -118,9 +121,10 @@ One name per concept across code and docs:
 | **control object** | `control/<stack>.json` in the state bucket; per-service `active` and `pendingSha`. |
 | **stack lock** | `control/<stack>.lock.json`; conditional write serializing deploys and operator actions. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack (state storage, principals, base infra) and the markers it leaves (`infra:bootstrapComplete`, `bootstrap:computeDeferred`); not VM boot. |
-| **Owner API key** | Your own Scaleway user key as organization Owner, or an application key holding IAMManager (`SCW_OWNER_*`). Privileged runs use it or mint a 30-minute key from it. |
-| **admin application key** | The key of `<slug>-<mode>-admin`, the read-only day-2 principal; `SCW_ADMIN_*` in `infra/.env.<mode>`. |
-| **privileged** | A run or resource that needs the Owner API key: database, VPC, private network, IAM policies, the state-bucket policy. |
+| **Owner API key** | Your own Scaleway user key as organization Owner. It works from every address, so the CLI asks for it only where IAM is written: a setup's Owner moment, **Update identities**, **Rotate keys**, the operator key, a teardown's identities. |
+| **operator key** | The key of the `<app>-operator` application: every product in the app's projects plus IAM read, no IAM write, accepted by Scaleway from the dedicated IP address only. Pasted once per run of the CLI. |
+| **observer key** | The key of the `<app>-observer` application: read-only, from the dedicated IP address only; `SCW_OBSERVER_*` in `infra/.env.<mode>`. |
+| **privileged** | A run or resource that needs the operator key: database, VPC, private network, IAM policies, the state-bucket policy. |
 | **boot runner** | The `infra-boot` container run at first boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |

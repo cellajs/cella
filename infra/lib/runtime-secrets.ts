@@ -2,14 +2,14 @@ import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
 import { serviceKeyCondition } from './scaleway/secret-paths';
-import { principalSecretScopeSlugs, serviceNames } from './services';
-import type { StoreProvisioner } from './stores';
+import { serviceNames } from './services';
+import type { DatabaseRole, StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
 
 export type RuntimeSecretConsumer = ServiceName;
 
-export type RuntimeSecretValueSource = 'pulumi' | 'operator';
+export type RuntimeSecretValueSource = 'engine' | 'operator';
 export type RuntimeSecretGeneration = 'manual' | 'random';
 
 /** One runtime secret's app-owned mapping data from `runtime-secrets.config.ts`. The `id` is the config object key; {@link RuntimeSecretDefinition} is the flattened shape. */
@@ -22,7 +22,7 @@ export interface RuntimeSecretConfig {
   envVar: string;
   /** Whether deploy/health gating treats the value's absence as fatal. */
   required: boolean;
-  /** `'pulumi'` = the engine writes a version; `'operator'` = supplied out-of-band. */
+  /** `'engine'` = the engine makes the value (generated, derived, a database's connection string, a store's output); `'operator'` = the operator sets it. */
   valueSource: RuntimeSecretValueSource;
   /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
   generation: RuntimeSecretGeneration;
@@ -30,6 +30,12 @@ export interface RuntimeSecretConfig {
   services: readonly RuntimeSecretConsumer[];
   /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
   derivedFrom?: RuntimeSecretDerivation;
+  /**
+   * A generated value "Rotate secrets" may replace: one that protects no stored data (a signing key, a secret two services share). A key that
+   * encrypts or hashes stored data is left out: a new value would leave that data unreadable or unmatched. A value derived from a rotatable
+   * one follows it.
+   */
+  rotatable?: boolean;
 }
 
 /** How a derived secret's value follows its source: the source secret's id and a pure function of the source value. */
@@ -53,6 +59,9 @@ export interface RuntimeSecretDefinition {
   /** Consuming services; store contributions are runtime-validated against the registry. */
   services: readonly string[];
   derivedFrom?: RuntimeSecretDerivation;
+  rotatable?: boolean;
+  /** A database connection string the operator task ensure-database assembles for this role. */
+  database?: { role: DatabaseRole };
 }
 
 /** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
@@ -75,6 +84,7 @@ export function buildRuntimeSecrets(
       valueSource: contribution.valueSource,
       generation: 'manual' as const,
       services: contribution.services,
+      ...(contribution.database ? { database: contribution.database } : {}),
     })),
   );
   return [...storeContributions, ...Object.entries(appSecrets).map(([id, definition]) => ({ id, ...definition }))];
@@ -113,7 +123,7 @@ export function validateRuntimeSecrets(secrets: readonly RuntimeSecretDefinition
     if (!secret.derivedFrom) continue;
     const source = secrets.find((candidate) => candidate.id === secret.derivedFrom?.secretId);
     // Only Pulumi writes both values, so the derived one can never drift from an out-of-band rotation of its source.
-    if (source?.valueSource !== 'pulumi' || source.derivedFrom || secret.valueSource !== 'pulumi') {
+    if (source?.valueSource !== 'engine' || source.derivedFrom || secret.valueSource !== 'engine') {
       throw new Error(`runtime-secrets.config: secret '${secret.id}' must be pulumi-owned and derive from a pulumi-owned, non-derived secret.`);
     }
   }
@@ -122,6 +132,24 @@ export function validateRuntimeSecrets(secrets: readonly RuntimeSecretDefinition
 /** Flattened runtime secret definitions for this app: store contributions then `runtime-secrets.config.ts` entries, validated at load time. */
 export const runtimeSecrets: RuntimeSecretDefinition[] = buildRuntimeSecrets(appStores, runtimeSecretsConfig);
 validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
+
+/**
+ * The runtime secrets whose values the operator task ensure-secrets makes straight into Secret Manager: generated ones, and the ones derived
+ * from another runtime secret. Their versions never pass through the Pulumi state.
+ */
+export function generatedRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return definitions.filter((secret) => secret.valueSource === 'engine' && (secret.generation === 'random' || secret.derivedFrom !== undefined));
+}
+
+/** The database connection strings, which the operator task ensure-database assembles; a deploy only fills an empty copy from another. */
+export function databaseRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return definitions.filter((secret) => secret.database !== undefined);
+}
+
+/** Every runtime secret whose value the engine makes outside the Pulumi state: the generated, the derived and the database ones. */
+export function engineMadeRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return [...generatedRuntimeSecrets(definitions), ...databaseRuntimeSecrets(definitions)];
+}
 
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
 
@@ -142,15 +170,9 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
 }
 
 /**
- * The secret-read condition of a service principal: its scope's own folders plus the shared folder of every runtime
- * secret its scope consumes, and nothing else. The Pulumi program (resources/vm-iam.ts) and the deploy's grant
- * assertion both build it here, so they compare equal as strings.
+ * The secret-read condition of a service principal: its own folder, and nothing else. The machine policies (lib/scaleway/machine-policies.ts)
+ * and the deploy's grant assertion both build it here, so they compare equal as strings.
  */
-export function principalSecretCondition(slug: string, mode: string, singleVM: boolean, service: ServiceName): string {
-  return serviceKeyCondition(
-    slug,
-    mode,
-    principalSecretScopeSlugs(singleVM, service),
-    runtimeSecrets.map((secret) => secret.services),
-  );
+export function principalSecretCondition(slug: string, mode: string, service: ServiceName): string {
+  return serviceKeyCondition(slug, mode, service);
 }

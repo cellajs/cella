@@ -87,7 +87,7 @@ describe('boot', () => {
         registry: 'rg.nl-ams.scw.cloud/ns',
         region: 'nl-ams',
         credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
-        serviceKeyHandoff: { secretId: 'handoff-id', cacheFile: '/etc/app/service-key.json' },
+        serviceKeyHandoffs: [{ service: 'backend', secretId: 'handoff-id', cacheFile: '/etc/app/service-key-backend.json' }],
         exportS3Env: true,
         bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
         releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', '--rm', 'backend-release'] },

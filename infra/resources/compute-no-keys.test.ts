@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { fakeConfig } from '../tests/helpers/fake-config';
 import { installPulumiMocks } from '../tests/helpers/pulumi-mock';
 
-vi.mock('../lib/scaleway/boot-image', () => ({ resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }) }));
+vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
+  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
+}));
 
 describe('compute without the deploy keys', () => {
   it('must not bake an empty key: an update that would make a new generation refuses', async () => {

@@ -6,7 +6,7 @@ export interface StackProbe {
   yamlText?: string;
 }
 
-/** Any of these keys in the stack yaml means a CI deploy key has been minted, so the stack counts as bootstrapped. */
+/** Any of these keys in the stack yaml means the deploy key has been minted, so the stack counts as bootstrapped. */
 const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const;
 
 export function detectStackState(probe: StackProbe): StackState {
@@ -28,6 +28,14 @@ export function extractComputeDeferredMarker(yamlText: string): string | undefin
 /** Detect a leftover `bootstrap:computeDeferred` marker from a fresh provision whose first `pulumi up` did not complete. While present, compute stays gated off until images are pushed. */
 export function detectComputeDeferred(yamlText?: string): string | undefined {
   return yamlText ? extractComputeDeferredMarker(yamlText) : undefined;
+}
+
+/**
+ * Whether a stack is in its first provisioning: never provisioned, or a resume of a first provisioning that did not finish, which still
+ * carries the compute-deferred marker. The one reading of it, so the steps that care cannot disagree.
+ */
+export function inFirstProvisioning(stack: { state: StackState; stackYaml?: string }): boolean {
+  return stack.state === 'fresh' || Boolean(detectComputeDeferred(stack.stackYaml));
 }
 
 /** Detect `infra:dbPublicEndpoint: "true"` in a stack config text. Callers pass the gitignored exposure overlay when present; the converge is idempotent, so a stale read only mislabels the menu. */

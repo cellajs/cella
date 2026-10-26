@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployEffects, type DeployOptions, execEnv, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
-import type { AllowedKey } from './print-deploy-env';
+import type { RunRecord } from '../lib/deploy/run-record';
+import { ExitCodeError } from '../lib/utils/errors';
+import type { AllowedKey } from './deploy-env';
+import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -13,7 +15,8 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     public_bucket: '',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
-    vm_assert_json: JSON.stringify([
+    diag_bucket: 'cella-boot-diag',
+    grant_rows_json: JSON.stringify([
       {
         app: 'cella-production-vm-backend',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
@@ -23,7 +26,6 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
         app: 'cella-production-vm-yjs',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
         condition: 'resource.name.startsWith("/cella-production/yjs/")',
-        dormant: true,
       },
       {
         app: 'cella-production-boot',
@@ -32,7 +34,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
       },
     ]),
     enabled_services_json: JSON.stringify([
-      // health_url mirrors print-deploy-env: set for LB-exposed services
+      // health_url mirrors deploy-env: set for LB-exposed services
       // (including co-hosted followers), '' for internal-only ones. The
       // version-verification step reads THESE rows, not the rollout matrices.
       { service: 'backend', public_url: 'https://www.cellajs.com/api', health_url: 'https://www.cellajs.com/api' },
@@ -55,16 +57,14 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
   const grantArgs: string[][] = [];
   const taskArgs: Record<string, string[]> = {};
   const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
+  const records: Array<{ bucket: string; record: RunRecord; log: string }> = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init');
     },
-    uploadAssets: async () => {
-      ops.push('upload-assets');
-    },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
-      if (name === 'assert-vm-grants') grantArgs.push([...argv]);
+      if (name === 'assert-grants') grantArgs.push([...argv]);
       taskArgs[name] = [...argv];
     },
     lease: async (_stack, operation) => {
@@ -95,29 +95,31 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     publishEntryFiles: async () => {
       ops.push('publish-entry');
     },
-    bootDiagnostics: async (sha) => {
+    bootAccounts: async ({ sha }) => {
       ops.push(`boot-diag:${sha}`);
+      return [{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }];
+    },
+    writeRunRecord: async ({ bucket, record, log }) => {
+      ops.push('record');
+      records.push({ bucket, record, log });
     },
     group: () => {},
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls };
+  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls, records };
 }
 
-const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
+const baseOpts = { mode: 'production', sha: 'abc123' };
 
 describe('parseDeployArgs', () => {
   it('parses flags and refuses non-pinned tags', () => {
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--dist', 'dist'])).toEqual({
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({
       mode: 'staging',
       sha: 'abc',
-      distDir: 'dist',
-      build: false,
-      gitRef: undefined,
+      run: undefined,
       deferReap: false,
     });
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true);
     expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--defer-reap']).deferReap).toBe(true);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
@@ -130,8 +132,8 @@ describe('runDeploy sequencing', () => {
 
     const ok = makeFake();
     await runDeploy(baseOpts, ok.fx, withBucket);
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:wait-for-images'));
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:mint-generation-keys'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:build-release'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:stage-generation-keys'));
 
     const failing = makeFake();
     const task = failing.fx.task;
@@ -162,10 +164,10 @@ describe('runDeploy sequencing', () => {
       // Leftover pointers are reconciled before anything plans the stack.
       'task:sync-rollout-config',
       'task:preflight-privileged',
-      'task:wait-for-images',
-      'task:mint-generation-keys',
+      'task:build-release',
+      'task:stage-generation-keys',
       'update:production',
-      'task:assert-vm-grants',
+      'task:assert-grants',
       'rollout',
       'publish-entry',
       'task:smoke',
@@ -182,6 +184,12 @@ describe('runDeploy sequencing', () => {
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
     expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
     expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
+  });
+
+  it("only checks the state bucket: making and hardening it is the setup's, on the operator key", async () => {
+    const { fx, taskArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(taskArgs['ensure-state-bucket']).toEqual(['--check']);
   });
 
   it('reconciles pointers against the services the rollout cuts over', async () => {
@@ -216,87 +224,53 @@ describe('runDeploy sequencing', () => {
     expect(ops).toContain('task:preflight-privileged');
     expect(ops).not.toContain('update:production');
     expect(ops).not.toContain('rollout');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
     // The failure travels as the thrown error; the process exit code stays the entry point's business.
     expect(process.exitCode).toBe(exitCodeBefore);
   });
 
-  it('collects the deploying release’s boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
-    const { fx, ops } = makeFake({ rolloutFails: true });
+  it('names the release’s boot accounts in the record, releases the lock, and skips publish when the rollout fails', async () => {
+    const { fx, ops, records } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(ops).toContain(`boot-diag:${baseOpts.sha}`);
+    expect(records[0]?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
-  it('a frontend-less registry (empty frontend_bucket) skips build, asset upload, and entry publish', async () => {
-    const { fx, ops } = makeFake();
+  it('a frontend-less registry (empty frontend_bucket) builds no frontend and publishes no entry file', async () => {
+    const { fx, ops, taskArgs } = makeFake();
     const frontendless = async (opts: DeployOptions) => ({ ...(await fakeDeployEnv(opts)), frontend_bucket: '' });
-    await runDeploy({ ...baseOpts, distDir: undefined as unknown as string }, fx, frontendless);
-    expect(ops).not.toContain('exec:pnpm:--filter');
-    expect(ops).not.toContain('upload-assets');
+    await runDeploy(baseOpts, fx, frontendless);
+    const build = taskArgs['build-release'] ?? [];
+    expect(build[build.indexOf('--dist') + 1]).toBe('');
     expect(ops).not.toContain('publish-entry');
     expect(ops).toContain('task:smoke');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
-  it('builds the frontend itself when no dist dir is provided', async () => {
-    const { fx, ops } = makeFake();
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-    expect(ops).toContain('exec:pnpm:--filter');
-    expect(ops).toContain('upload-assets');
-    expect(ops).toContain('publish-entry');
-    expect(ops).toContain('task:smoke');
-  });
-
-  it('the registry wait progresses while the frontend build runs (exec must not block it)', async () => {
-    const { fx, ops } = makeFake();
-    const fxConcurrent: DeployEffects = {
-      ...fx,
-      exec: async (cmd, args) => {
-        // The fake build finishes only after the concurrent images branch completed its registry wait; a build that blocks that branch deadlocks this test.
-        if (cmd === 'pnpm' && args[0] === '--filter') {
-          while (!ops.includes('task:wait-for-images')) await new Promise((tick) => setTimeout(tick, 1));
-        }
-        ops.push(`exec:${cmd}:${args[0]}`);
-      },
-    };
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fxConcurrent, fakeDeployEnv);
-    expect(ops.indexOf('task:wait-for-images')).toBeLessThan(ops.indexOf('exec:pnpm:--filter'));
-  });
-
-  it('skips the frontend build (but still uploads) with a prebuilt dist dir', async () => {
-    const { fx, ops } = makeFake();
+  it('publishes and smoke-tests the entry files the build wrote', async () => {
+    const { fx, taskArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect(ops).not.toContain('exec:pnpm:--filter');
-    expect(ops).toContain('upload-assets');
+    const build = taskArgs['build-release'] ?? [];
+    const distDir = build[build.indexOf('--dist') + 1] ?? '';
+    expect(distDir).toMatch(/release-/);
+    expect(build.slice(0, 4)).toEqual(['--sha', 'abc123', '--mode', 'production']);
+    const smoke = taskArgs.smoke ?? [];
+    expect(smoke[smoke.indexOf('--dist') + 1]).toBe(`${distDir}/index.html`);
   });
 
-  it('bakes and pushes images in-process with --build', async () => {
-    const { fx, ops } = makeFake();
-    await runDeploy({ ...baseOpts, build: true }, fx, fakeDeployEnv);
-    expect(ops).toContain('exec:docker:buildx');
-    const bakeIndex = ops.indexOf('exec:docker:buildx');
-    const waitIndex = ops.indexOf('task:wait-for-images');
-    expect(bakeIndex).toBeGreaterThan(-1);
-    expect(waitIndex).toBeGreaterThan(bakeIndex);
-  });
-
-  it('asserts every principal, flagging only the dormant one', async () => {
+  it('asserts every principal', async () => {
     const { fx, grantArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
     expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-boot']);
-    expect(byApp.get('cella-production-vm-yjs')).toContain('--dormant');
-    expect(byApp.get('cella-production-vm-backend')).not.toContain('--dormant');
-    expect(byApp.get('cella-production-boot')).not.toContain('--dormant');
   });
 
   it('passes --skip-reap to the rollout only with deferReap', async () => {
@@ -307,17 +281,6 @@ describe('runDeploy sequencing', () => {
     const without = makeFake();
     await runDeploy(baseOpts, without.fx, fakeDeployEnv);
     expect(without.rolloutArgs[0]).not.toContain('--skip-reap');
-  });
-
-  it('rejects production deploys from untrusted refs before touching anything', async () => {
-    const { fx, ops } = makeFake();
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(/only allowed/);
-    expect(ops).toHaveLength(0);
-  });
-
-  it('accepts production deploys from release tags', async () => {
-    const { fx } = makeFake();
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/tags/1.2.3' }, fx, fakeDeployEnv)).resolves.toBeUndefined();
   });
 });
 
@@ -350,56 +313,72 @@ describe('runReap sequencing', () => {
   });
 });
 
-describe('frontend build process', () => {
-  /** The deploy job's environment: cloud keys, the state passphrase and the GitHub token beside ordinary runner vars. */
-  const deployJobEnv = {
-    PATH: '/usr/bin',
-    HOME: '/home/runner',
-    CI: 'true',
-    SCW_ACCESS_KEY: 'SCWDEPLOYACCESSKEY01',
-    SCW_SECRET_KEY: 'scw-deploy-secret-value',
-    SCW_DEFAULT_PROJECT_ID: 'scw-project-id-value',
-    SCW_DEFAULT_ORGANIZATION_ID: 'scw-organization-id-value',
-    PULUMI_CONFIG_PASSPHRASE: 'pulumi-passphrase-value',
-    GITHUB_TOKEN: 'ghs_deploy_token_value',
-    AWS_SECRET_ACCESS_KEY: 'aws-secret-access-key-value',
-  };
-  const deploySecrets = Object.entries(deployJobEnv).filter(([key]) => !['PATH', 'HOME', 'CI'].includes(key));
-
-  it('must not hand a deploy secret to the frontend build via its environment', async () => {
-    const { fx, execCalls } = makeFake();
-    // No --dist: the deploy command builds the frontend itself, as an operator run does.
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-
-    const build = execCalls.find((call) => call.cmd === 'pnpm' && call.args.join(' ') === '--filter frontend build');
-    expect(build).toBeDefined();
-    const buildEnv = execEnv(deployJobEnv, build?.opts ?? {});
-    for (const [key, value] of deploySecrets) {
-      expect(buildEnv, key).not.toHaveProperty(key);
-      expect(Object.values(buildEnv)).not.toContain(value);
-    }
-    // Positive control: the build still receives its config and the runner basics.
-    expect(buildEnv).toMatchObject({
-      APP_MODE: 'production',
-      BACKEND_URL: 'https://www.cellajs.com/api',
-      FRONTEND_URL: 'https://www.cellajs.com',
-      PATH: '/usr/bin',
-    });
-  });
-
-  it('keeps the deploy secrets for the steps that use them', async () => {
-    const { fx, execCalls } = makeFake();
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-
-    const login = execCalls.find((call) => call.cmd === 'pulumi' && call.args[0] === 'login');
-    expect(login).toBeDefined();
-    expect(execEnv(deployJobEnv, login?.opts ?? {})).toMatchObject(Object.fromEntries(deploySecrets));
-  });
-
-  it('runs no frontend build in the deploy process when CI hands it a prebuilt dist', async () => {
+describe('what the deploy runs', () => {
+  it('runs no build and needs no Docker: the app code runs on the builder machine, never beside the deploy key, and a job has no daemon', async () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['pulumi login', 'pulumi stack']);
+  });
+});
 
-    expect(execCalls.filter((call) => call.args.includes('frontend'))).toEqual([]);
+describe('the run record', () => {
+  it('keeps every step with its duration, and ends deployed, in the diagnostics bucket', async () => {
+    const { fx, records, ops } = makeFake();
+    await runDeploy({ ...baseOpts, run: 'run-1' }, fx, fakeDeployEnv);
+    const [written] = records;
+    expect(written?.bucket).toBe('cella-boot-diag');
+    expect(written?.record).toMatchObject({ run: 'run-1', environment: 'production', target: 'abc123', outcome: 'deployed' });
+    expect(written?.record.failedStep).toBeUndefined();
+    expect(written?.record.steps.map((step) => step.title)).toContain('Waved rollout');
+    expect(written?.log).toContain('[deploy] Smoke tests: ok');
+    expect(ops.at(-1)).toBe('record');
+  });
+
+  it('is written when the deploy fails too, naming the step and the error', async () => {
+    const { fx, records } = makeFake({ rolloutFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
+    expect(records[0]?.record).toMatchObject({ outcome: 'failed', failedStep: 'Waved rollout', error: 'cutover failed' });
+    expect(records[0]?.log).toContain('[deploy] Waved rollout: failed');
+  });
+
+  it('ends blocked, not failed, when the preflight found an owed privileged change', async () => {
+    const { fx, records } = makeFake();
+    const task = fx.task;
+    fx.task = async (name, argv) => {
+      if (name === 'preflight-privileged') throw new ExitCodeError('an apply is owed', 2);
+      return task(name, argv);
+    };
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/apply is owed/);
+    expect(records[0]?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Preflight privileged changes' });
+  });
+
+  it('must not fail a deploy whose record cannot be written', async () => {
+    const { fx } = makeFake();
+    fx.writeRunRecord = async () => {
+      throw new Error('bucket refused');
+    };
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).resolves.toBeUndefined();
+  });
+});
+
+describe('deployFailureHint', () => {
+  it('names the step it stopped at, and points at the boot accounts only once machines booted', async () => {
+    const early = makeFake();
+    const task = early.fx.task;
+    early.fx.task = async (name, argv) => {
+      if (name === 'build-release') throw new Error('the builder failed');
+      return task(name, argv);
+    };
+    const buildError = await runDeploy(baseOpts, early.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(buildError, 'staging')).toEqual({
+      description: 'It stopped at "Build the release". Re-running is safe: generations are content-addressed.',
+    });
+
+    const late = makeFake({ rolloutFails: true });
+    const rolloutError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(rolloutError, 'staging')).toMatchObject({
+      description: expect.stringContaining('"Waved rollout"'),
+      command: 'pnpm infra runs --mode staging',
+    });
   });
 });

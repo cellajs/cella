@@ -15,6 +15,7 @@ export default defineProject({
       'lib/**/*.test.ts',
       'tests/**/*.test.ts',
       'resources/**/*.test.ts',
+      'runner/**/*.test.ts',
       '*.test.ts',
     ],
     exclude: ['node_modules/**', 'dist/**', ...(integration ? [] : ['tests/integration/**'])],

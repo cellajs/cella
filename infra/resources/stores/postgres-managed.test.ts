@@ -1,19 +1,17 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext } from '../../lib/stores';
 import { installPulumiMocks, type MockHarness } from '../../tests/helpers/pulumi-mock';
 
 // Importing postgres-managed.ts pulls in the Pulumi resource graph (pulumi-context,
 // network) at module load, so prime the runtime mocks first. The provisioner's
 // resources are created inside provision(), rendered below against the mocks.
-let formatPostgresUrl: (user: string, pass: string, host: string, port: number | string, database: string) => string;
 let postgresManaged: typeof import('./postgres-managed').postgresManaged;
 let harness: MockHarness;
 let ctx: ProvisionContext;
 
 beforeAll(async () => {
   harness = await installPulumiMocks({ deferCompute: true });
-  ({ formatPostgresUrl, postgresManaged } = await import('./postgres-managed'));
+  ({ postgresManaged } = await import('./postgres-managed'));
   const { pulumi } = harness;
   ctx = {
     pulumi,
@@ -26,38 +24,6 @@ beforeAll(async () => {
     privateNetworkId: 'pn-id',
     configuredOrRandomSecret: () => pulumi.output('secret'),
   };
-});
-
-describe('formatPostgresUrl', () => {
-  it('assembles a DSN with host, port and database in place', () => {
-    expect(formatPostgresUrl('admin', 'pw', 'db.internal', 5432, 'app')).toBe(
-      'postgresql://admin:pw@db.internal:5432/app?sslmode=require&uselibpqcompat=true',
-    );
-  });
-
-  it('always pins sslmode=require and uselibpqcompat=true', () => {
-    const url = formatPostgresUrl('u', 'p', 'h', 1234, 'd');
-    expect(url).toContain('?sslmode=require&uselibpqcompat=true');
-  });
-
-  it('accepts a string port', () => {
-    expect(formatPostgresUrl('u', 'p', 'h', '6432', 'd')).toContain('@h:6432/d');
-  });
-
-  it('percent-encodes a user and password that contain URI metacharacters', () => {
-    const url = formatPostgresUrl('user@org', 'p@ss:w/rd?#&', 'h', 5432, 'd');
-    expect(url).toBe('postgresql://user%40org:p%40ss%3Aw%2Frd%3F%23%26@h:5432/d?sslmode=require&uselibpqcompat=true');
-  });
-
-  it('keeps a password with @ and : from breaking out of the userinfo segment', () => {
-    // Authority must split into exactly userinfo + host:port. The encoded
-    // password cannot inject a second `@` or `:` that re-parses the host.
-    const url = formatPostgresUrl('u', 'p@ss:bad@host', 'real-host', 5432, 'd');
-    const authority = url.slice('postgresql://'.length, url.indexOf('/d?'));
-    const [userinfo, hostport] = authority.split('@');
-    expect(hostport).toBe('real-host:5432');
-    expect(userinfo).toBe('u:p%40ss%3Abad%40host');
-  });
 });
 
 describe('postgresManaged public endpoint ACL', () => {
@@ -87,13 +53,11 @@ describe('postgresManaged public endpoint ACL', () => {
     expect(rules).toBeUndefined();
   });
 
-  it('gives only the migration role Scaleway admin; the request-serving role stays subject to RLS', async () => {
+  it('must not hold a database password in the state: the program declares no role, privilege or password', async () => {
     await render({});
-    const users = harness.byType('scaleway:databases/user:User').map((user) => [user.inputs.name, user.inputs.isAdmin]);
-    expect(users.sort()).toEqual([
-      [POSTGRES_ROLE_NAMES.admin, true],
-      [POSTGRES_ROLE_NAMES.runtime, false],
-    ]);
+    expect(harness.byType('scaleway:databases/user:User')).toEqual([]);
+    expect(harness.byType('scaleway:databases/privilege:Privilege')).toEqual([]);
+    expect(harness.byType('random:index/randomPassword:RandomPassword')).toEqual([]);
   });
 
   it("must not open the endpoint without an ACL: it would run on Scaleway's default rule 0.0.0.0/0", async () => {

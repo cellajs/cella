@@ -6,21 +6,17 @@ const argv = process.argv.slice(2);
 const modeIndex = argv.indexOf('--mode');
 const mode = modeIndex >= 0 ? argv[modeIndex + 1] : undefined;
 if (!mode) {
-  console.error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>]');
+  console.error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--defer-reap]');
   process.exit(1);
 }
 process.env.APP_MODE = mode;
 
-const shaIndex = argv.indexOf('--sha');
-const sha = shaIndex >= 0 ? argv[shaIndex + 1] : undefined;
-
-const { main } = await import('./deploy-run');
+const { deployFailureHint, main } = await import('./deploy-run');
 await main(argv).catch(async (err: unknown) => {
   const { failWithHint } = await import('../lib/utils/cli-output');
-  failWithHint(err instanceof Error ? err.message : String(err), {
-    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
-    description: "Re-running is safe (generations are content-addressed). For a boot crash, read this release's diagnostics:",
-  });
+  const { ExitCodeError } = await import('../lib/utils/errors');
+  // A deploy that stopped on an owed privileged change keeps the preflight's code, so the main job can tell blocked from failed.
+  failWithHint(err instanceof Error ? err.message : String(err), deployFailureHint(err, mode), err instanceof ExitCodeError ? err.exitCode : 1);
 });
 
 export {};

@@ -1,5 +1,5 @@
 /** The Scaleway key an operator action runs with. */
-export type KeyTier = 'none' | 'admin' | 'owner';
+export type KeyTier = 'none' | 'observer' | 'operator' | 'owner';
 
 export interface OperatorAction {
   /** The one name of the action: its menu entry, every prompt and hint that points at it, and the docs. */
@@ -16,79 +16,121 @@ export interface OperatorAction {
 export const OPERATOR_ACTIONS = {
   status: {
     label: 'Show status',
-    key: 'none',
+    key: 'observer',
     description: 'Health check: what is set up, what is live, and the next step. Read-only.',
+  },
+  runs: {
+    label: 'Show runs',
+    key: 'observer',
+    description:
+      "The environment's last deploys: when, which target, how each ended and where a failed one stopped, then one in full with the end of its log. Read-only.",
   },
   preview: {
     label: 'Preview changes',
-    key: 'admin',
-    description:
-      'The plan of "Review & apply changes" without its question, refreshed against the live stack (a CI deploy applies the same minus VM policy rules). Read-only.',
+    key: 'operator',
+    description: 'The plan of "Review & apply changes" without its question, refreshed against the live stack. Read-only.',
   },
   apply: {
     label: 'Review & apply changes',
-    key: 'owner',
+    key: 'operator',
     description:
-      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, IAM principals and policies. Answer no to only look.',
+      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, buckets, DNS. Machine policies are written by "Update identities". Answer no to only look.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
+    description:
+      'Replace the CI deploy key, the observer key and every standing machine key with fresh ones (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
+  },
+  'rotate-secrets': {
+    label: 'Rotate secrets',
+    key: 'operator',
+    description:
+      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; the next deploy replaces every machine. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'rotate-passphrase': {
     label: 'Rotate passphrase',
-    key: 'admin',
+    key: 'operator',
     description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
+  },
+  'operator-key': {
+    label: 'Set up operator key',
+    key: 'owner',
+    description:
+      "Create the app's operator application and a fresh key that works from your dedicated IP address only, in every environment. Replaces an earlier operator key; run it again to change the address.",
+  },
+  identity: {
+    label: 'Update identities',
+    key: 'owner',
+    description:
+      'Make the applications the service registry needs, write the machine policies, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
+  },
+  'start-deploy': {
+    label: 'Start a deploy',
+    key: 'operator',
+    description:
+      "Start one run of the environment's main job for its target (the environments file's line, or its branch or newest release) and follow it until it is deployed, blocked or failed.",
+  },
+  'runner-identity': {
+    label: 'Set up the runner',
+    key: 'owner',
+    description:
+      "Make the organization's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json.",
+  },
+  'runner-replace': {
+    label: 'Replace the runner',
+    key: 'operator',
+    description: "Replace the runner's machine with one that runs the release and serves the environments infra/runner.json names.",
+  },
+  'repository-key': {
+    label: 'Set repository read key',
+    key: 'operator',
+    description:
+      "Store, replace or remove the read-only GitHub key a private repository needs: the builder fetches a release's commit with it. A repository anyone may read needs none.",
   },
   secrets: {
     label: 'Manage runtime secrets',
-    key: 'owner',
+    key: 'operator',
     description: 'List, set, rotate, or delete the runtime secrets, and mint managed keys.',
   },
   'db-open': {
     label: 'Open public DB access',
-    key: 'owner',
+    key: 'operator',
     description: 'Open a temporary DB endpoint locked to your IP and print the admin connection string (close it after).',
   },
   'db-seed': {
     label: 'Seed database',
-    key: 'owner',
+    key: 'operator',
     description: 'Open the endpoint to your IP, run the backend seeds, and close it again. Never on production.',
   },
   'db-close': {
     label: 'Close public DB access',
-    key: 'owner',
+    key: 'operator',
     description: 'Close the temporary public DB endpoint.',
   },
   'db-reset': {
     label: 'Reset database',
-    key: 'owner',
+    key: 'operator',
     description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
   },
   unlock: {
     label: 'Unlock stack',
-    key: 'admin',
+    key: 'operator',
     description: 'Clear a stale stack lock and review the operations an interrupted run left in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
-    key: 'owner',
-    description: 'Re-sync config and GitHub secrets, and self-heal missing keys.',
+    key: 'operator',
+    description: 'Continue an interrupted setup: re-sync config and self-heal missing keys.',
   },
-  'fetch-admin-key': {
-    label: 'Fetch admin application key',
-    key: 'owner',
-    description: 'Put the admin application key in infra/.env.<mode> on this machine.',
-  },
-  'store-passphrase': {
-    label: 'Store passphrase in keychain',
-    key: 'none',
-    description: 'Keep the Pulumi passphrase in the OS keychain; the env file keeps a reference.',
+  'state-prune': {
+    label: 'Remove from state',
+    key: 'operator',
+    description: "Remove one resource from the stack's Pulumi state: one the program no longer declares and whose live object is gone already.",
   },
   'geoip-refresh': {
     label: 'Refresh GeoIP data',
-    key: 'admin',
+    key: 'operator',
     description: "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
   },
   teardown: {
@@ -125,7 +167,8 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`, `store-passphrase`) runs only by its command.
+ * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
+ * runs only by its command.
  */
 export const MENU_ROWS = {
   status: {
@@ -135,54 +178,69 @@ export const MENU_ROWS = {
     hint: 'read-only',
     description: OPERATOR_ACTIONS.status.description,
   },
+  runs: {
+    group: 'observe',
+    label: OPERATOR_ACTIONS.runs.label,
+    actions: ['runs'],
+    hint: 'read-only',
+    description: OPERATOR_ACTIONS.runs.description,
+  },
   changes: {
     group: 'observe',
     label: OPERATOR_ACTIONS.apply.label,
     actions: ['apply'],
-    hint: 'admin key to review · Owner key to apply',
+    hint: 'operator key',
     description: OPERATOR_ACTIONS.apply.description,
   },
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-passphrase'],
-    hint: 'CI deploy key, admin key, passphrase',
-    description: 'Replace the CI deploy key and the admin application key, or re-encrypt the stack with a new Pulumi passphrase.',
+    actions: ['rotate-keys', 'rotate-secrets', 'rotate-passphrase', 'operator-key'],
+    hint: 'keys, secrets, passphrase, operator key',
+    description:
+      'Replace every Scaleway key or every secret the engine makes, re-encrypt the stack, or set up the operator key and its dedicated IP.',
   },
   secrets: {
     group: 'change',
     label: OPERATOR_ACTIONS.secrets.label,
     actions: ['secrets'],
-    hint: 'Owner key',
+    hint: 'operator key',
     description: `${OPERATOR_ACTIONS.secrets.description} A new value takes effect at the next deploy.`,
+  },
+  identity: {
+    group: 'change',
+    label: OPERATOR_ACTIONS.identity.label,
+    actions: ['identity'],
+    hint: 'Owner key',
+    description: OPERATOR_ACTIONS.identity.description,
   },
   'db-open': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-open'].label,
     actions: ['db-open', 'db-seed'],
-    hint: 'Owner key · temporary, locked to your IP',
+    hint: 'operator key · temporary, locked to your IP',
     description: 'Open a temporary DB endpoint locked to your IP: to connect yourself, or to run the backend seeds and close it again.',
   },
   'db-close': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-close'].label,
     actions: ['db-close'],
-    hint: 'Owner key',
+    hint: 'operator key',
     description: OPERATOR_ACTIONS['db-close'].description,
   },
   'db-reset': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-reset'].label,
     actions: ['db-reset'],
-    hint: 'Owner key · DESTRUCTIVE',
+    hint: 'operator key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS['db-reset'].description,
   },
   repair: {
     group: 'recover',
     label: 'Repair stack',
-    actions: ['unlock', 'resume', 'fetch-admin-key'],
-    hint: 'stack lock, setup, admin key',
-    description: 'Clear a stale stack lock, re-sync the setup, or put the admin application key on this machine.',
+    actions: ['unlock', 'resume'],
+    hint: 'stack lock, setup',
+    description: 'Clear a stale stack lock, or re-sync the setup.',
   },
   teardown: {
     group: 'rare',
@@ -233,11 +291,15 @@ export function menuPath(id: OperatorActionId): string {
 
 const KEY_SENTENCES = {
   none: 'Works without a Scaleway key.',
-  admin: 'Uses the admin application key.',
+  observer: 'Reads with the observer key.',
+  operator: 'Needs your operator key.',
   owner: 'Needs your Owner API key.',
 } as const satisfies Record<KeyTier, string>;
 
-const KEY_HINTS = { none: 'no key', admin: 'admin key', owner: 'Owner key' } as const satisfies Record<KeyTier, string>;
+const KEY_HINTS = { none: 'no key', observer: 'observer key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<
+  KeyTier,
+  string
+>;
 
 /** The description of an action in a pick: what it does, then the key it runs with. `what` replaces the table's sentence for an entry that depends on live state. */
 export function actionDescription(id: OperatorActionId, what?: string): string {

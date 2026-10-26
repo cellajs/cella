@@ -8,6 +8,8 @@ export interface EngineServiceEndpoint {
 export interface EngineConfig {
   /** URL-safe resource prefix for every Scaleway resource and bucket. */
   slug: string;
+  /** The app's own slug, the same in every environment: it names what the app has one of, the operator and the observer. */
+  appSlug: string;
   /** Config mode; deploys accept 'production' or 'staging'. */
   mode: string;
   /** Registered DNS zone the app deploys under ('localhost' disables deploys). */
@@ -65,7 +67,7 @@ function assertValidSlug(slug: string): void {
 function isEngineConfig(value: unknown): value is EngineConfig {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
-  const strings = ['slug', 'mode', 'domain', 'frontendUrl', 'backendUrl'] as const;
+  const strings = ['slug', 'appSlug', 'mode', 'domain', 'frontendUrl', 'backendUrl'] as const;
   if (!strings.every((key) => typeof record[key] === 'string')) return false;
   if (typeof record.singleVM !== 'boolean') return false;
   if (typeof record.s3 !== 'object' || record.s3 === null) return false;
@@ -85,11 +87,15 @@ export async function loadEngineConfig(): Promise<EngineConfig> {
       throw new Error(`engine-config: module '${configModule}' does not export an EngineConfig ('engineConfig' or default export).`);
     }
     assertValidSlug(candidate.slug);
+    assertValidSlug(candidate.appSlug);
     setEngineConfig(candidate);
     return candidate;
   }
-  const { appConfig } = await import('shared');
-  assertValidSlug(appConfig.slug);
-  setEngineConfig(appConfig);
-  return appConfig;
+  // The app's slug is production's: the default config's, which production keeps and other modes override.
+  const [{ appConfig }, { config: defaults }] = await Promise.all([import('shared'), import('shared/config/config.default')]);
+  const config: EngineConfig = { ...appConfig, appSlug: defaults.slug };
+  assertValidSlug(config.slug);
+  assertValidSlug(config.appSlug);
+  setEngineConfig(config);
+  return config;
 }

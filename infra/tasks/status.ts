@@ -13,8 +13,9 @@ import {
   type PrincipalRole,
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
-import { principalNames } from '../lib/scaleway/principals';
+import { allPrincipalNames, appPrincipalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
+import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
   type ControlState,
@@ -23,6 +24,8 @@ import {
   lockKey,
   makeControlClient,
   peekLock,
+  type RotationRecord,
+  type Rotations,
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
@@ -54,7 +57,7 @@ function isNoSuchBucket(err: unknown): boolean {
 
 /**
  * Build the probe session the providers draw on: resolved stack context, the
- * key to probe with (the admin application key, else the key the process was
+ * key to probe with (the observer key, else the key the process was
  * started with), and one memoized best-effort state-bucket read (control
  * object, lock, checkpoint) shared by the state and live providers.
  */
@@ -64,7 +67,8 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
       ? { accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY }
       : undefined;
-  const key = identity.admin ?? identity.ambient ?? aws;
+  const key = identity.observer ?? identity.ambient ?? aws;
+  const projectId = ctx.projectId ?? resolveProjectId();
   const accessKey = key?.accessKey;
   const secretKey = key?.secretKey;
   const scalewayKeyAvailable = Boolean(accessKey && secretKey);
@@ -81,12 +85,18 @@ export function buildSession(ctx: StatusContext): ProbeSession {
       const out: ScalewayFacts = {};
       if (!scalewayKeyAvailable || !accessKey || !secretKey) return out;
       try {
-        const s3 = await makeControlClient(ctx.appConfig.s3.region, accessKey, secretKey);
+        // The state bucket is in the environment's project, which a key made in another one names as `<access key>@<project id>`.
+        const s3 = await makeControlClient(ctx.appConfig.s3.region, projectId ? projectAccessKey(accessKey, projectId) : accessKey, secretKey);
         const bucket = stateBucket(ctx.appConfig.slug);
         try {
           const { state } = await readControlState(s3, bucket, controlKey(ctx.mode));
           out.stateBucketExists = true;
-          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({ slug, activeSha: r.active?.sha, pendingSha: r.pendingSha }));
+          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
+            slug,
+            activeSha: r.active?.sha,
+            activeGeneration: r.active?.id,
+            pendingSha: r.pendingSha,
+          }));
         } catch (err) {
           if (isNoSuchBucket(err)) out.stateBucketExists = false;
         }
@@ -126,7 +136,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     appConfig: ctx.appConfig,
     stackState: ctx.stackState,
     stackYaml: ctx.stackYaml,
-    projectId: ctx.projectId ?? resolveProjectId(),
+    projectId,
     scalewayKeyAvailable,
     accessKey,
     secretKey,
@@ -211,8 +221,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
 runIfMain(import.meta.url, main);
 
-/** Which env pair the CLI found its key in: the admin application key from infra/.env.<mode>, or the process's own SCW_* pair. */
-export type KeySlot = 'admin' | 'ambient';
+/** Which env pair the CLI found its key in: the observer key from infra/.env.<mode>, or the process's own SCW_* pair. */
+export type KeySlot = 'observer' | 'ambient';
 
 /** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
 export interface QuickFacts {
@@ -231,13 +241,17 @@ export async function collectQuickFacts(
   const budgetMs = opts.budgetMs ?? 4_000;
   const facts: QuickFacts = { unavailable: [] };
   const identity = resolveOperatorIdentity();
-  const slot: KeySlot | undefined = identity.admin ? 'admin' : identity.ambient ? 'ambient' : undefined;
-  const key = identity.admin ?? identity.ambient;
+  const slot: KeySlot | undefined = identity.observer ? 'observer' : identity.ambient ? 'ambient' : undefined;
+  const key = identity.observer ?? identity.ambient;
   const bucket = stateBucket(ctx.appConfig.slug);
 
   const stateProbe = async () => {
     if (!key) return;
-    const s3 = await makeControlClient(ctx.appConfig.s3.region, key.accessKey, key.secretKey);
+    const s3 = await makeControlClient(
+      ctx.appConfig.s3.region,
+      ctx.projectId ? projectAccessKey(key.accessKey, ctx.projectId) : key.accessKey,
+      key.secretKey,
+    );
     const [lock, control] = await Promise.all([
       peekLock(s3, bucket, lockKey(ctx.environment)),
       readControlState(s3, bucket, controlKey(ctx.environment)).then((result) => result.state),
@@ -248,7 +262,7 @@ export async function collectQuickFacts(
   const keyProbe = async () => {
     if (!key || !slot) return;
     const desc = await describeKey(key);
-    facts.key = { desc, role: classifyPrincipal(desc, principalNames(ctx.appConfig.slug, ctx.environment)), slot };
+    facts.key = { desc, role: classifyPrincipal(desc, allPrincipalNames(ctx.appConfig, ctx.environment)), slot };
   };
   await Promise.all([
     within(
@@ -267,8 +281,17 @@ export async function collectQuickFacts(
   return facts;
 }
 
-/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`; `adminApplication` names the application whose key the admin slot expects. */
-export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; configured?: KeySlot | 'none'; adminApplication?: string } = {}): string[] {
+/** The last rotation of each kind, "never" where none happened. No date is a deadline (D12): the line only says when. */
+export function rotationLine(rotations: Rotations | undefined): string {
+  const day = (record: RotationRecord | undefined) => (record ? `${record.at.slice(0, 10)} by ${record.by}` : 'never');
+  return `Last rotation: keys ${day(rotations?.keys)}, secrets ${day(rotations?.secrets)}`;
+}
+
+/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`; `observerApplication` names the application whose key the observer slot expects. */
+export function formatQuickFacts(
+  facts: QuickFacts,
+  opts: { now?: number; configured?: KeySlot | 'none'; observerApplication?: string } = {},
+): string[] {
   const now = opts.now ?? Date.now();
   const lines: string[] = [];
   if (facts.lock) {
@@ -291,25 +314,26 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; config
       ? ` (updated ${facts.control.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.control.updatedBy ?? '?'})`
       : '';
     lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
+    lines.push(`${pc.green('●')} ${rotationLine(facts.control.rotations)}`);
   }
-  const fetchHint = menuPath('fetch-admin-key');
-  const named = opts.adminApplication ? ` ('${opts.adminApplication}')` : '';
+  const fetchHint = `${menuPath('identity')} puts it on this machine`;
+  const named = opts.observerApplication ? ` ('${opts.observerApplication}')` : '';
   if (facts.key) {
     const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);
     const expiry = hours === undefined ? '' : hours < 0 ? ' — EXPIRED' : hours < 48 ? ` — expires in ${Math.max(1, Math.round(hours))}h` : '';
-    const healthy = slot === 'admin' && role === 'admin' && !(hours !== undefined && hours < 48);
-    const label = slot === 'admin' ? 'Admin application key:' : 'Ambient key: SCW_ACCESS_KEY';
+    const healthy = slot === 'observer' && role === 'observer' && !(hours !== undefined && hours < 48);
+    const label = slot === 'observer' ? 'Observer key:' : 'Ambient key: SCW_ACCESS_KEY';
     lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);
     if (slot === 'ambient') {
       lines.push(
-        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; put the admin application key${named} in infra/.env.<mode> as SCW_ADMIN_* (${fetchHint}).`)}`,
+        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; the observer key${named} reads from infra/.env.<mode> as SCW_OBSERVER_* (${fetchHint}).`)}`,
       );
-    } else if (role !== 'admin') {
-      lines.push(`  ${pc.dim(`SCW_ADMIN_* should hold the admin application key${named}: ${fetchHint}.`)}`);
+    } else if (role !== 'observer') {
+      lines.push(`  ${pc.dim(`SCW_OBSERVER_* should hold the observer key${named}: ${fetchHint}.`)}`);
     }
   } else if (opts.configured === 'none') {
-    lines.push(`${warningMark} Admin application key${named}: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`);
+    lines.push(`${warningMark} Observer key${named}: none in infra/.env.<mode> (SCW_OBSERVER_ACCESS_KEY / SCW_OBSERVER_SECRET_KEY; ${fetchHint})`);
   }
   if (facts.unavailable.length > 0) lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
   return lines;
@@ -321,8 +345,8 @@ export async function printQuickFacts(context: { environment: string; appConfig:
     collectQuickFacts({ environment: context.environment, appConfig: context.appConfig, projectId: context.projectId || undefined }),
   );
   const identity = resolveOperatorIdentity();
-  const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';
-  const adminApplication = principalNames(context.appConfig.slug, context.environment).admin;
-  for (const line of formatQuickFacts(facts, { configured, adminApplication })) console.info(line);
+  const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
+  const observerApplication = appPrincipalNames(context.appConfig.appSlug).observer;
+  for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   console.info('');
 }

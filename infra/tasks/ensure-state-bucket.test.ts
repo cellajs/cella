@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assertBucketProject, ensureStateBucket, hardenStateBucket, keyProjectMismatch } from './ensure-state-bucket';
+import { assertBucketProject, ensureStateBucket, hardenStateBucket } from './ensure-state-bucket';
 
 /**
  * Builds a mock S3Client that responds to HEAD/CREATE commands using the
@@ -132,20 +132,6 @@ describe('hardenStateBucket', () => {
   it('rethrows non-403 errors', async () => {
     const s3 = hardenClient([], { command: 'PutBucketEncryptionCommand', status: 500 });
     await expect(hardenStateBucket(s3, 'cella-pulumi-state', () => {})).rejects.toThrow(/hard failure/);
-  });
-});
-
-describe('keyProjectMismatch', () => {
-  it('is silent when the key points at the app project', () => {
-    expect(keyProjectMismatch('proj-a', 'proj-a', 'SCWKEY')).toBeUndefined();
-  });
-
-  it('names the key, both projects, and the remedy on mismatch', () => {
-    const message = keyProjectMismatch('org-default', 'proj-a', 'SCWKEY');
-    expect(message).toContain('SCWKEY');
-    expect(message).toContain('org-default');
-    expect(message).toContain('proj-a');
-    expect(message).toMatch(/preferred project/);
   });
 });
 

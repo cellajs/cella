@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { projectAccessKey } from './s3-client';
 
 /** `SCW_CONFIG_PATH` that neutralises the local Scaleway CLI profile: the file is never created, so the SDK finds nothing to load. */
 export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir, '.scw-config-none');
@@ -14,7 +15,7 @@ export function resolveProjectId(): string | undefined {
 }
 
 /**
- * Resolve the repository (`SCW_ORGANIZATION_ID`, the name backend/.env and the GitHub Environment use) and Scaleway-native
+ * Resolve the repository (`SCW_ORGANIZATION_ID`, the name backend/.env uses) and Scaleway-native
  * (`SCW_DEFAULT_ORGANIZATION_ID`, the name the provider and the Pulumi program read) organization id variables to one value. Both present must match.
  */
 export function resolveOrganizationIdFromEnv(env: NodeJS.ProcessEnv = process.env): string | undefined {
@@ -44,7 +45,8 @@ export interface ProviderEnvInput {
 /** Build a child environment with an explicit Scaleway key, state-backend key and Pulumi passphrase, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */
 export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): NodeJS.ProcessEnv {
   const { accessKey, secretKey, projectId, passphrase, organizationId } = input;
-  const stateAccessKey = input.stateAccessKey ?? accessKey;
+  // The state side names the project: a key made for another environment's project reaches this one's state bucket that way.
+  const stateAccessKey = projectAccessKey(input.stateAccessKey ?? accessKey, projectId);
   const stateSecretKey = input.stateSecretKey ?? secretKey;
 
   const env: NodeJS.ProcessEnv = {

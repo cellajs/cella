@@ -6,77 +6,62 @@ const REGION = 'fr-par';
 const PROJECT = 'proj-1';
 const KEY = 'scw-secret-key';
 
-const b64 = (value: string) => Buffer.from(value, 'utf-8').toString('base64');
-
-interface FakeSecret {
-  /** Secret value as stored; null = no accessible version (404 on access). */
-  value: string | null;
+interface ListedSecret {
+  name: string;
+  path?: string;
+  version_count: number;
 }
 
 /**
- * Build a fetch double that resolves a secret id by name then serves its latest
- * version, mirroring the two Secret Manager calls the task makes. A name absent
- * from the map lists empty (secret does not exist).
+ * A fetch double that serves only the Secret Manager list call, filtered by name, and records every URL it was asked for. Any other call (a
+ * value read) fails the test: the check is metadata only.
  */
-function fakeFetch(secrets: Record<string, FakeSecret>): FetchLike {
-  const idByName = new Map(Object.keys(secrets).map((name, i) => [name, `id-${i}`]));
-  const byId = new Map([...idByName].map(([name, id]) => [id, secrets[name]!]));
-  return async (url) => {
-    if (url.includes('/secrets?')) {
-      const name = decodeURIComponent(new URL(url).searchParams.get('name') ?? '');
-      const id = idByName.get(name);
-      const body = JSON.stringify({ secrets: id ? [{ id, name }] : [] });
-      return { ok: true, status: 200, text: async () => body };
-    }
-    const id = url.match(/secrets\/([^/]+)\/versions/)?.[1] ?? '';
-    const secret = byId.get(id);
-    if (!secret || secret.value === null) {
-      return { ok: false, status: 404, text: async () => 'NoSuchVersion' };
-    }
-    return { ok: true, status: 200, text: async () => JSON.stringify({ data: b64(secret.value!) }) };
+function fakeFetch(listed: ListedSecret[]): { fetchImpl: FetchLike; urls: string[] } {
+  const urls: string[] = [];
+  const fetchImpl: FetchLike = async (url) => {
+    urls.push(url);
+    if (!url.includes('/secrets?')) throw new Error(`unexpected call: ${url}`);
+    const name = decodeURIComponent(new URL(url).searchParams.get('name') ?? '');
+    const body = JSON.stringify({ secrets: listed.filter((secret) => secret.name === name).map((secret, i) => ({ id: `id-${i}`, ...secret })) });
+    return { ok: true, status: 200, text: async () => body };
   };
+  return { fetchImpl, urls };
 }
 
 const silent = () => {};
 
 describe('assertSecretsDeliverable', () => {
-  it('passes when every required secret is present and single-line', async () => {
+  it('passes when every required copy holds a version, without reading a value', async () => {
     const secrets: SecretToCheck[] = [
       { envVar: 'DATABASE_URL', secretName: 'database-url', required: true },
       { envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: true },
     ];
-    const res = await assertSecretsDeliverable({
-      secretKey: KEY,
-      region: REGION,
-      projectId: PROJECT,
-      secrets,
-      log: silent,
-      fetchImpl: fakeFetch({
-        'database-url': { value: 'postgres://u:p@h:5432/db' },
-        // base64-encoded PEM is single-line on the wire: deliverable.
-        'database-ssl-ca': { value: b64('-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----') },
-      }),
-    });
+    const { fetchImpl, urls } = fakeFetch([
+      { name: 'database-url', version_count: 2 },
+      { name: 'database-ssl-ca', version_count: 1 },
+    ]);
+    const res = await assertSecretsDeliverable({ secretKey: KEY, region: REGION, projectId: PROJECT, secrets, log: silent, fetchImpl });
     expect(res.ok).toBe(true);
     expect(res.checked).toBe(2);
     expect(res.offenders).toEqual([]);
+    expect(urls.every((url) => !url.includes('/versions/'))).toBe(true);
   });
 
-  it('flags a present-but-multiline value regardless of required', async () => {
+  it('flags a required container with no version', async () => {
+    const { fetchImpl } = fakeFetch([{ name: 'cookie-secret', version_count: 0 }]);
     const res = await assertSecretsDeliverable({
       secretKey: KEY,
       region: REGION,
       projectId: PROJECT,
-      secrets: [{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: false }],
+      secrets: [{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', required: true }],
       log: silent,
-      // Stored as a raw multi-line PEM.
-      fetchImpl: fakeFetch({ 'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' } }),
+      fetchImpl,
     });
-    expect(res.ok).toBe(false);
-    expect(res.offenders).toEqual([{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', reason: 'multiline' }]);
+    expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }]);
   });
 
   it('flags a missing required secret but skips a missing optional one', async () => {
+    const { fetchImpl, urls } = fakeFetch([]);
     const res = await assertSecretsDeliverable({
       secretKey: KEY,
       region: REGION,
@@ -86,11 +71,12 @@ describe('assertSecretsDeliverable', () => {
         { envVar: 'OPENAI_API_KEY', secretName: 'openai-api-key', required: false },
       ],
       log: silent,
-      // Neither secret exists; only the required one is an offender.
-      fetchImpl: fakeFetch({}),
+      fetchImpl,
     });
     expect(res.ok).toBe(false);
     expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }]);
+    // An optional secret is not even probed.
+    expect(urls).toHaveLength(1);
   });
 });
 
@@ -98,5 +84,27 @@ describe('serviceNamesFromServicesJson', () => {
   it('extracts known service names and drops unknown rows', () => {
     const raw = JSON.stringify([{ service: 'backend' }, { service: 'bogus' }, { service: 'frontend' }]);
     expect(serviceNamesFromServicesJson(raw)).toEqual(['backend', 'frontend']);
+  });
+});
+
+describe('assertSecretsDeliverable, one copy per consumer', () => {
+  it('reads the copy in the given folder, not another copy of the same name', async () => {
+    // Only the backend copy has a version: the jobs copy is empty and must be reported.
+    const { fetchImpl } = fakeFetch([
+      { name: 'brevo-api-key', path: '/app-production/backend', version_count: 1 },
+      { name: 'brevo-api-key', path: '/app-production/jobs', version_count: 0 },
+    ]);
+    const res = await assertSecretsDeliverable({
+      secretKey: 'k',
+      region: 'nl-ams',
+      projectId: 'p',
+      secrets: [
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/backend/' },
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/jobs/' },
+      ],
+      fetchImpl,
+      log: () => {},
+    });
+    expect(res.offenders).toEqual([{ envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', path: '/app-production/jobs/', reason: 'missing' }]);
   });
 });

@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
-import { actionCommand, menuPath, type OperatorActionId } from '../lib/operator-actions';
-import { type KeyPair, resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
-import { principalNames } from '../lib/scaleway/principals';
+import { menuPath, type OperatorActionId } from '../lib/operator-actions';
+import type { KeyPair } from '../lib/scaleway/operator-identity';
+import { allPrincipalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 import type { StackContext } from '../lib/stack/stack-context';
@@ -12,6 +12,7 @@ import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
 import { maskedSecret } from './prompts/masked-secret';
+import { passphraseCustody, rememberedPassphrase, rememberPassphrase } from './session';
 
 type AppConfigType = EngineConfig;
 
@@ -59,33 +60,27 @@ export function endsAction(error: unknown): boolean {
   return error instanceof ActionEnded || isPromptAbort(error);
 }
 
-/** Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its default, its env value, or empty; a prompt without a safe default throws. */
-export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1';
-
 /**
- * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
- * They differ only for required inputs such as the Owner API key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
+ * True when the run takes prompt defaults without asking: `--defaults`, a person on the fast path. A required input such as the Owner API
+ * key is still asked, so the CLI never changes infrastructure without someone at the prompt.
  */
-export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
+export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults');
 
-/** Short label for the auto-resolution log line. */
-const autoLabel = (): string => (nonInteractive() ? 'non-interactive' : 'defaults');
-
-/** `confirm` that resolves to its default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** `confirm` that resolves to its default under `--defaults`. */
 export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
   if (autoAcceptDefaults()) {
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
     return opts.default;
   }
   return confirm(opts);
 }
 
-/** Optional free-text `input` that resolves to env/default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** Optional free-text `input` that resolves to env/default under `--defaults`. */
 export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
   const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined;
   if (autoAcceptDefaults()) {
     const value = fromEnv ?? opts.default ?? '';
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${value || '<empty>'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${value || '<empty>'}`));
     return value;
   }
   if (fromEnv) return fromEnv;
@@ -93,56 +88,59 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
 }
 
 /**
- * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
- * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
+ * Resolve and verify the Pulumi passphrase against existing stack encryption metadata. It never comes from the environment: a value on disk
+ * would let the CLI run with nobody at the prompt. It comes from Secret Manager, read with the operator key the session is unlocked with,
+ * else from the prompt; either way it is kept in memory for this run of the CLI, so a menu session asks once.
+ * A passphrase typed while the session is unlocked is stored in Secret Manager, which is how an existing stack gets its copy there.
+ * A stack with nothing encrypted yet takes one prompt unverified.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return process.env.PULUMI_CONFIG_PASSPHRASE || maskedSecret({ message: 'Pulumi passphrase' });
+  if (!canVerify) return maskedSecret({ message: 'Pulumi passphrase' });
 
-  const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE;
-  if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
-  if (fromEnv) {
-    console.warn(`${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`);
+  // From earlier in this run: a rotation since then changed the stack's salt, so a stale one fails here and is fetched or asked again.
+  const remembered = rememberedPassphrase();
+  if (remembered && verifyStackPassphrase(stackYaml, remembered)) return remembered;
+
+  const custody = passphraseCustody();
+  const stored = await custody?.read();
+  if (stored && verifyStackPassphrase(stackYaml, stored)) {
+    rememberPassphrase(stored);
+    return stored;
   }
+  if (stored) console.warn(`${warningMark} The passphrase in Secret Manager does not open this stack: type the current one, and it is stored again.`);
 
   while (true) {
     const entered = await maskedSecret({ message: 'Pulumi passphrase' });
-    if (verifyStackPassphrase(stackYaml, entered)) return entered;
+    if (verifyStackPassphrase(stackYaml, entered)) {
+      rememberPassphrase(entered);
+      if (await custody?.store(entered)) console.info(pc.dim('  Stored in Secret Manager: from now on the operator key fetches it.'));
+      return entered;
+    }
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`);
   }
 }
 
-/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, is unrecoverable if lost, and GitHub Actions secrets are write-only. */
+/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state and is unrecoverable if lost. */
 export async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
   console.info(`\n→ ${heading}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
-  console.info(
-    `  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost,\n` +
-      '  and once synced to GitHub it can never be viewed again (Actions secrets are write-only).' +
-      (note ? `\n  ${pc.dim(note)}` : ''),
-  );
+  console.info(`  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost.${note ? `\n  ${pc.dim(note)}` : ''}`);
   while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
     console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
   }
 }
 
 /**
- * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
+ * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack defers to the fetch-or-prompt flow.
  * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
 export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ passphrase: string; generated: boolean }> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (canVerify || process.env.PULUMI_CONFIG_PASSPHRASE) {
-    return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
-  }
+  if (canVerify) return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
 
   const passphrase = generatePassphrase();
-  await confirmPassphraseStored(
-    passphrase,
-    `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`,
-    'To supply your own instead, abort and re-run with PULUMI_CONFIG_PASSPHRASE set.',
-  );
+  await confirmPassphraseStored(passphrase, `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`);
   return { passphrase, generated: true };
 }
 
@@ -159,16 +157,6 @@ export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, 
   return { accessKey, secretKey };
 }
 
-/** The admin application key from the env, else a prompt naming the application that bears it and the action that stores it on this machine. */
-export function adminKeyOrPrompt(context: Pick<StackContext, 'appConfig' | 'environment'>): Promise<KeyPair> {
-  const { admin } = principalNames(context.appConfig.slug, context.environment);
-  return keyPairOrPrompt(
-    resolveOperatorIdentity().admin,
-    `Scaleway admin application key ('${admin}')`,
-    `\`${actionCommand('fetch-admin-key')}\` stores it`,
-  );
-}
-
 /** S3-backend login URL for the app's Pulumi state bucket. */
 export function pulumiLoginUrl(appConfig: AppConfigType): string {
   return stateBackendUrl(stateBucket(appConfig.slug), appConfig.s3.region);
@@ -178,9 +166,9 @@ export function pulumiLoginUrl(appConfig: AppConfigType): string {
 export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, appConfig: AppConfigType, targetStack: string): void {
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
-    const names = principalNames(appConfig.slug, appConfig.mode);
+    const names = allPrincipalNames(appConfig, appConfig.mode);
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the '${names.admin}' and '${names.ciDeploy}' applications: put the key of '${names.admin}' in infra/.env.${appConfig.mode} as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (${menuPath('fetch-admin-key')}).`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits the '${names.operator}', '${names.observer}' and '${names.ciDeploy}' applications, and a key made for another project reaches it only as \`<access key>@<project id>\`.`,
     );
     endAction(login.status ?? 1);
   }

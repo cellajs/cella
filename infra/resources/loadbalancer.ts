@@ -6,7 +6,6 @@ const appConfig = engineConfig();
 
 import type { ServiceName } from '../compose/compose';
 import { healthContract } from '../config/health.config';
-import { sizing } from '../config/sizing';
 import { enabledServices } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
 import { serviceGenerationIps } from './compute';
@@ -29,7 +28,7 @@ const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug;
 interface LoadBalancerOutputs {
   /** Public URL per LB-exposed service slug. */
   serviceUrls: Record<string, pulumi.Output<string>>;
-  lbId: pulumi.Output<string | undefined>;
+  lbId: pulumi.Output<string>;
   lbBackendIds: pulumi.Output<Record<string, string>>;
 }
 
@@ -328,12 +327,11 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   };
 }
 
-// Skipped while compute is deferred on a fresh provision: without VMs the LB has no backends to route to.
-const outputs: LoadBalancerOutputs = sizing.computeEnabled
-  ? provisionLoadBalancer()
-  : { serviceUrls: {}, lbId: pulumi.output(undefined), lbBackendIds: pulumi.output({} as Record<string, string>) };
+// Made by the setup's first apply, before any machine, with empty pools: its records and certificates are then in place for the first deploy,
+// whose key writes no DNS. The cutover fills the pools.
+const outputs = provisionLoadBalancer();
 
-/** Public URL per LB-exposed service slug; empty when no domain/compute. */
+/** Public URL per LB-exposed service slug. */
 export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = outputs.serviceUrls;
 export const lbId = outputs.lbId;
 export const lbBackendIds = outputs.lbBackendIds;

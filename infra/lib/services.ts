@@ -16,9 +16,6 @@ export const serviceNames = services.map((s) => s.slug);
 /** Lookup a service definition by slug. */
 export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.map((s) => [s.slug, s]));
 
-/** Services that build & push their own image (exclude image-reuse services). */
-export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug);
-
 /** Services enabled for an app. Enabled by default; an entry opts out with `{ enabled: false }`. Compute and the load balancer both derive from this list. */
 export function enabledServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);
@@ -32,8 +29,8 @@ export interface PlacedServices {
 }
 
 /**
- * Apply singleVM placement to any service list: the enabled set for compute, LB and key minting; the full registry for privileged IAM.
- * Privileged IAM (principals, policies, conditions) follows the registry, so an `enabled` toggle changes compute only and needs no privileged up.
+ * Apply singleVM placement to any service list: the enabled set for compute, LB and key handing-over; the full registry for the identities.
+ * The identities (applications, policies, conditions) follow the registry, so an `enabled` toggle changes compute only and needs no identity update.
  */
 export function placeServices(definitions: readonly ServiceDefinition[], singleVM: boolean): PlacedServices {
   if (!singleVM) return { vm: definitions, coHosted: [], collocated: [] };
@@ -90,22 +87,18 @@ export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpo
   return [...placed.coHosted, ...placed.collocated].some((s) => s.replacementStrategy === 'stop-first');
 }
 
-/** Secret folders `service`'s VMs read, over `definitions`: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
-export function secretScopeSlugs(definitions: readonly ServiceDefinition[], singleVM: boolean, service: ServiceName): readonly ServiceName[] {
-  const placed = placeServices(definitions, singleVM);
-  const host = placed.vm.find((s) => s.primaryRollout)?.slug;
-  if (!singleVM || service !== host) return [service];
-  return [service, ...placed.coHosted.map((s) => s.slug), ...placed.collocated.map((s) => s.slug)];
+/**
+ * Services owning an IAM principal and a policy: every registry service, wherever it runs. A host that carries several services receives one
+ * key per service, so placement (singleVM, a worker folded into the host process) never changes an identity. Registry-derived on purpose, so
+ * `enabled` never touches IAM: a registry service that is not enabled keeps its principal and its standing key, and nothing hands the key over.
+ */
+export function principalServices(): readonly ServiceDefinition[] {
+  return services;
 }
 
-/** Services owning an IAM principal and policy: every registry service under split-VM, only the host under singleVM. Registry-derived on purpose, so `enabled` never touches privileged IAM; a registry service outside the deployed set is a dormant principal that must hold no key. */
-export function principalServices(singleVM: boolean): readonly ServiceDefinition[] {
-  return placeServices(services, singleVM).vm;
-}
-
-/** Secret scope of a principal's policy condition, over the full registry. Feeds both the Pulumi program and the deploy's grant assertion, which compare the resulting condition as a string. */
-export function principalSecretScopeSlugs(singleVM: boolean, service: ServiceName): readonly ServiceName[] {
-  return secretScopeSlugs(services, singleVM, service);
+/** The services that run somewhere, each needing its key: every enabled service, on its own machine or on the singleVM host. */
+export function runningServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
+  return enabledServices(serviceConfig);
 }
 
 /**

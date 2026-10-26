@@ -1,35 +1,34 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { pc } from '../../lib/utils/cli-output';
-import { endAction, type InfraContext } from '../shared';
-import { printRevokeReminder } from './owner-key';
-import { askToApply, type ReviewedPlan, reviewPlan } from './plan';
-import { runPrivilegedConverge } from './privileged-converge';
+import { pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
+import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { exitOnIdentityChanges } from './identity';
+import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
+import { acquirePrivilegedKey } from './operator-unlock';
+import { askToApply, reviewPlan } from './plan';
+import { startBlockedTarget } from './start-deploy';
 
 /**
- * Plan, ask, then one `pulumi up` with the Owner API key in SCW_* env, for changes to privileged resources (registry IAM principals and policies, DB, VPC, private network) the read-only CI key cannot make.
- * The admin application key is enough to plan, so the Owner API key and the stack lock are taken only for a plan the operator said yes to.
+ * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
+ * The machine policies and the registry's applications are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
+ * The plan is made before the stack lock, so the lock is taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
   console.info(
-    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your Owner API key.\n`),
+    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your operator key.\n`),
   );
 
-  const { admin } = resolveOperatorIdentity();
-  let reviewed: ReviewedPlan | undefined;
-  if (admin) {
-    reviewed = await reviewPlan(context, admin);
-    if (!(await askToApply(context.environment))) {
-      console.info('Declined; nothing applied.');
-      return;
-    }
-  } else {
-    console.info(
-      pc.dim(
-        `No admin application key on this machine (\`${actionCommand('fetch-admin-key')}\` stores it): the plan is made with your Owner API key, under the stack lock.`,
-      ),
-    );
+  // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
+  const operator = await acquirePrivilegedKey(context);
+  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
+  await admitOperatorOrExit(context, { ...operator, passphrase, stack: stackNameFor(context) });
+  // A missing identity would break the plan itself: the program looks up every application it names.
+  await exitOnIdentityChanges(context, operator);
+  const reviewed = await reviewPlan(context, operator, { forgetRetired: true });
+  if (!(await askToApply(context.environment))) {
+    console.info('Declined; nothing applied.');
+    return;
   }
 
   console.warn(
@@ -39,13 +38,17 @@ export async function runApply(context: InfraContext): Promise<void> {
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=1) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === '1';
-  const { completed, verified, ownerKeyPasted } = await runPrivilegedConverge(context, {
+  const { completed, verified } = await runOperatorApply(context, {
     operation: 'apply',
     confirmPlan: true,
     reviewed,
     verifyAfter: true,
     debugProvider,
   });
-  if (completed && ownerKeyPasted) printRevokeReminder();
   if (completed && verified === false) endAction(1);
+  if (completed) {
+    await startBlockedTarget(context, operator).catch((error) =>
+      console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
+    );
+  }
 }

@@ -115,11 +115,11 @@ describe('renderCloudInit', () => {
   });
 
   it('writes a boot plan the boot runner accepts, whose paths sit under the allowed prefixes', () => {
-    const out = renderCloudInit(params({ slug: 'acme', handoffSecretId: 'handoff-secret' }));
+    const out = renderCloudInit(params({ slug: 'acme', handoffs: [{ service: 'backend', secretId: 'handoff-secret' }] }));
 
     const { plan } = bootPlanIn(out, '/etc/acme/boot-plan.json');
     expect(plan.credentials).toEqual({ scwAccessKeyFile: '/etc/acme/scw-access-key', scwSecretKeyFile: '/etc/acme/scw-secret-key' });
-    expect(plan.serviceKeyHandoff?.cacheFile).toBe('/etc/acme/service-key.json');
+    expect(plan.serviceKeyHandoffs).toEqual([{ service: 'backend', secretId: 'handoff-secret', cacheFile: '/etc/acme/service-key-backend.json' }]);
   });
 
   it('gates the release companion through the boot plan', () => {

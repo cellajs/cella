@@ -53,16 +53,16 @@ const workflows = readdirSync(workflowsDir)
 describe('CI workflows', () => {
   it('must not run a job that holds secrets on a dependency cache a secretless job can write', () => {
     // Every job saves the pnpm store under one lockfile-hashed key; a secretless job running third-party build code
-    // could plant a package in it that the deploy then runs with its keys.
+    // could plant a package in it that a job holding a secret (the release app's key) then runs.
     const offenders = workflows.flatMap(({ file, jobs }) =>
       [...trustedJobs(jobs)].filter((name) => restoresCache(jobs.get(name) ?? '')).map((name) => `${file}: ${name}`),
     );
     expect(offenders).toEqual([]);
 
-    // Positive control: the parser finds the jobs, and the secretless ones keep their cache.
-    const pipeline = workflows.find(({ file }) => file === 'deploy-pipeline.yml')?.jobs;
-    expect(trustedJobs(pipeline ?? new Map())).toEqual(new Set(['setup', 'build-images', 'build-boot-image', 'deploy', 'reap']));
-    expect(restoresCache(pipeline?.get('build-frontend') ?? '')).toBe(true);
+    // Positive control: the parser finds the jobs, and a secretless job elsewhere keeps its cache.
+    const release = workflows.find(({ file }) => file === 'release.yml')?.jobs;
+    expect(trustedJobs(release ?? new Map())).toEqual(new Set(['release-please']));
+    expect(workflows.some(({ jobs }) => [...jobs.values()].some(restoresCache))).toBe(true);
   });
 
   it('must not skip the schema-bust gate via a base spec git never tracks', () => {

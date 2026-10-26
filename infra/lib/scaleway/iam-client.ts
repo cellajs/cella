@@ -140,7 +140,7 @@ export async function fetchAppRulesByName(opts: {
   return fetchGrantedRules(auth, organizationId, applicationId);
 }
 
-/** All api keys on an application (one page of 100; the fleet keeps ≤2 per app). */
+/** All api keys on an application (one page of 100; a machine identity holds its standing key only). */
 export async function listApiKeys(auth: IamAuth, organizationId: string, applicationId: string): Promise<ScwApiKey[]> {
   const { api_keys = [] } = await scwFetch<{ api_keys?: ScwApiKey[] }>(
     auth,

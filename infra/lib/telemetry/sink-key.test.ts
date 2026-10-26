@@ -1,56 +1,97 @@
 import { describe, expect, it } from 'vitest';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
-import type { SecretManagerSecret } from '../scaleway/scaleway-secret-manager';
-import { lookupSinkIngestKey, type SinkKeyClient } from './sink-key';
+import type { SecretManagerSecret, SecretManagerSecretVersion } from '../scaleway/scaleway-secret-manager';
+import { lookupSinkIngestKey, type SinkKeySyncClient, syncDeployTelemetryKey } from './sink-key';
 
-/** A Secret Manager holding `secrets` (path → name → value) that records every path it is asked about. */
-function fakeClient(secrets: Record<string, Record<string, string>>): SinkKeyClient & { paths: string[] } {
+/** A Secret Manager holding `secrets` (path → name → latest value) that records the paths asked about and the values written. */
+function fakeClient(secrets: Record<string, Record<string, string>>): SinkKeySyncClient & { paths: string[]; writes: string[] } {
   const paths: string[] = [];
+  const writes: string[] = [];
+  const containers = new Map<string, { path: string; name: string }>();
+  const find = (name: string, path: string): SecretManagerSecret | undefined => {
+    if (!(path in secrets) || !(name in (secrets[path] ?? {}))) return undefined;
+    const id = `${path}${name}`;
+    containers.set(id, { path, name });
+    return { id, name, path, version_count: secrets[path]?.[name] === undefined ? 0 : 1 } as SecretManagerSecret;
+  };
   return {
     paths,
+    writes,
     getSecretByName: async (name, path) => {
       paths.push(path);
-      return secrets[path]?.[name] === undefined ? undefined : ({ id: `${path}${name}`, name, path } as SecretManagerSecret);
+      return find(name, path);
     },
     accessLatestValue: async (id) => {
-      for (const [path, byName] of Object.entries(secrets)) {
-        for (const [name, value] of Object.entries(byName)) if (`${path}${name}` === id) return value;
-      }
-      throw new Error(`no version for ${id}`);
+      const at = containers.get(id);
+      const value = at ? secrets[at.path]?.[at.name] : undefined;
+      if (value === undefined) throw new Error(`no version for ${id}`);
+      return value;
+    },
+    ensureSecret: async ({ name, path }) => {
+      secrets[path] ??= {};
+      return { id: `${path}${name}`, name, path, version_count: 0 } as SecretManagerSecret;
+    },
+    putSecretValue: async ({ secretId, value }) => {
+      writes.push(secretId);
+      const path = secretId.slice(0, secretId.lastIndexOf('/') + 1);
+      const name = secretId.slice(secretId.lastIndexOf('/') + 1);
+      secrets[path] = { ...secrets[path], [name]: value };
+      containers.set(secretId, { path, name });
+      return { revision: 1, secret_id: secretId } as SecretManagerSecretVersion;
     },
   };
 }
 
-const sharedPath = '/cella-production/shared/backend/cdc/jobs/yjs/';
+const deployPath = '/cella-production/deploy/';
+const backendPath = '/cella-production/backend/';
+const KEY_NAME = 'maple-secret-ingest-key';
 
 describe('lookupSinkIngestKey', () => {
-  it('reads the key from the folder its registry entry derives, never the stack root', async () => {
-    // The stack root /cella-production/ holds no secret: a lookup there leaves every deploy without telemetry.
-    const client = fakeClient({ [sharedPath]: { 'maple-secret-ingest-key': ' ik-123 \n' }, '/cella-production/': {} });
+  it('reads the copy in the deploy folder, the one folder whose values the deploy key reads', async () => {
+    const client = fakeClient({ [deployPath]: { [KEY_NAME]: ' ik-123 \n' }, [backendPath]: { [KEY_NAME]: 'ik-other' } });
     expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-123' });
-    expect(client.paths).toEqual([sharedPath]);
-  });
-
-  it('follows the entry when its consumer list changes', async () => {
-    const maple = runtimeSecrets.find((secret) => secret.secretName === 'maple-secret-ingest-key');
-    if (!maple) throw new Error('the registry declares no maple-secret-ingest-key');
-    const secrets: RuntimeSecretDefinition[] = [{ ...maple, services: ['backend'] }];
-    const client = fakeClient({ '/cella-staging/backend/': { 'maple-secret-ingest-key': 'ik-9' } });
-    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'staging', client, secrets })).toEqual({ key: 'ik-9' });
+    expect(client.paths).toEqual([deployPath]);
   });
 
   it('says why when there is no key', async () => {
-    const missing = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({}) });
-    expect(missing).toEqual({ missing: expect.stringContaining(`not found in ${sharedPath}`) });
+    const missing = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({ [backendPath]: { [KEY_NAME]: 'ik' } }) });
+    expect(missing).toEqual({ missing: expect.stringContaining(`no copy of '${KEY_NAME}' in ${deployPath}`) });
 
-    const empty = await lookupSinkIngestKey({
-      slug: 'cella',
-      mode: 'production',
-      client: fakeClient({ [sharedPath]: { 'maple-secret-ingest-key': '  ' } }),
-    });
+    const empty = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({ [deployPath]: { [KEY_NAME]: '  ' } }) });
     expect(empty).toEqual({ missing: expect.stringContaining('empty value') });
+  });
+});
 
-    const undeclared = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({}), secrets: [] });
-    expect(undeclared).toEqual({ missing: expect.stringContaining('no runtime secret named') });
+describe('syncDeployTelemetryKey', () => {
+  it('copies the runtime value into the deploy folder, then leaves an equal copy alone', async () => {
+    const client = fakeClient({ [backendPath]: { [KEY_NAME]: 'ik-1' } });
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('written');
+    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-1' });
+
+    client.writes.length = 0;
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('unchanged');
+    expect(client.writes).toEqual([]);
+  });
+
+  it('follows a value the operator set anew', async () => {
+    const client = fakeClient({ [backendPath]: { [KEY_NAME]: 'ik-new' }, [deployPath]: { [KEY_NAME]: 'ik-old' } });
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('written');
+    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-new' });
+  });
+
+  it('writes nothing when no runtime copy holds a value, or the app declares no such secret', async () => {
+    const client = fakeClient({});
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('absent');
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production', secrets: [] })).toBe('absent');
+    expect(client.writes).toEqual([]);
+  });
+
+  it('reads the runtime copies its registry entry names', async () => {
+    const maple = runtimeSecrets.find((secret) => secret.secretName === KEY_NAME);
+    if (!maple) throw new Error(`the registry declares no ${KEY_NAME}`);
+    const secrets: RuntimeSecretDefinition[] = [{ ...maple, services: ['jobs'] }];
+    const client = fakeClient({ '/cella-staging/jobs/': { [KEY_NAME]: 'ik-9' } });
+    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'staging', secrets })).toBe('written');
+    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'staging', client })).toEqual({ key: 'ik-9' });
   });
 });

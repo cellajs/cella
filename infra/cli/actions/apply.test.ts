@@ -1,27 +1,40 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InfraContext } from '../shared';
 
-const resolveOperatorIdentity = vi.fn();
+const acquirePrivilegedKey = vi.fn();
+const admitOperatorOrExit = vi.fn();
 const reviewPlan = vi.fn();
 const askToApply = vi.fn();
-const runPrivilegedConverge = vi.fn();
-const printRevokeReminder = vi.fn();
+const runOperatorApply = vi.fn();
 
-vi.mock('../../lib/scaleway/operator-identity', () => ({ resolveOperatorIdentity: () => resolveOperatorIdentity() }));
+vi.mock('./operator-unlock', () => ({ acquirePrivilegedKey: (...args: unknown[]) => acquirePrivilegedKey(...args) }));
+vi.mock('../shared', () => ({
+  endAction: (code: number) => {
+    throw Object.assign(new Error('ended'), { name: 'ActionEnded', exitCode: code });
+  },
+  resolveVerifiedPassphrase: async () => 'correct horse',
+  stackNameFor: () => 'cella/production',
+}));
 vi.mock('./plan', () => ({ reviewPlan: (...args: unknown[]) => reviewPlan(...args), askToApply: (...args: unknown[]) => askToApply(...args) }));
-vi.mock('./privileged-converge', () => ({ runPrivilegedConverge: (...args: unknown[]) => runPrivilegedConverge(...args) }));
-vi.mock('./owner-key', () => ({ printRevokeReminder: () => printRevokeReminder() }));
+vi.mock('./operator-apply', () => ({
+  admitOperatorOrExit: (...args: unknown[]) => admitOperatorOrExit(...args),
+  runOperatorApply: (...args: unknown[]) => runOperatorApply(...args),
+}));
+vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
+vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 
 const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
-const admin = { accessKey: 'SCWADMIN', secretKey: 'admin-secret' };
+const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
 const reviewed = { passphrase: 'correct horse', basis: { checkpoint: '"aaa"', control: '"bbb"' } };
 
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  runPrivilegedConverge.mockResolvedValue({ completed: true, verified: true, ownerKeyPasted: false });
+  acquirePrivilegedKey.mockResolvedValue(operator);
+  reviewPlan.mockResolvedValue(reviewed);
+  runOperatorApply.mockResolvedValue({ completed: true, verified: true });
 });
 
 afterEach(() => {
@@ -30,42 +43,42 @@ afterEach(() => {
 });
 
 describe('runApply', () => {
-  it('must not ask for the Owner API key or take the lock for a plan the operator declined', async () => {
-    resolveOperatorIdentity.mockReturnValue({ admin });
-    reviewPlan.mockResolvedValue(reviewed);
+  it('must not apply a plan the operator declined', async () => {
     askToApply.mockResolvedValue(false);
 
     await runApply(context);
 
-    expect(reviewPlan).toHaveBeenCalledWith(context, admin);
-    expect(runPrivilegedConverge).not.toHaveBeenCalled();
+    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true });
+    expect(runOperatorApply).not.toHaveBeenCalled();
+  });
+
+  it('lets the operator into older bucket policies before it plans: the plan reads the state', async () => {
+    const order: string[] = [];
+    admitOperatorOrExit.mockImplementation(async () => order.push('admit'));
+    reviewPlan.mockImplementation(async () => {
+      order.push('plan');
+      return reviewed;
+    });
+    askToApply.mockResolvedValue(false);
+
+    await runApply(context);
+
+    expect(order).toEqual(['admit', 'plan']);
+    expect(admitOperatorOrExit).toHaveBeenCalledWith(context, expect.objectContaining({ accessKey: 'SCWOPERATOR', stack: 'cella/production' }));
   });
 
   it('hands the confirmed plan to the converge, which applies it unless the state changed', async () => {
-    resolveOperatorIdentity.mockReturnValue({ admin });
-    reviewPlan.mockResolvedValue(reviewed);
     askToApply.mockResolvedValue(true);
 
     await runApply(context);
 
-    expect(runPrivilegedConverge).toHaveBeenCalledWith(context, expect.objectContaining({ operation: 'apply', confirmPlan: true, reviewed }));
-  });
-
-  it('plans under the lock on a machine without the admin application key', async () => {
-    resolveOperatorIdentity.mockReturnValue({});
-
-    await runApply(context);
-
-    expect(reviewPlan).not.toHaveBeenCalled();
-    expect(askToApply).not.toHaveBeenCalled();
-    expect(runPrivilegedConverge).toHaveBeenCalledWith(context, expect.objectContaining({ confirmPlan: true, reviewed: undefined }));
+    expect(runOperatorApply).toHaveBeenCalledWith(context, expect.objectContaining({ operation: 'apply', confirmPlan: true, reviewed }));
   });
 
   it('ends with a failure when the up completed but the live grants still differ', async () => {
-    resolveOperatorIdentity.mockReturnValue({});
-    runPrivilegedConverge.mockResolvedValue({ completed: true, verified: false, ownerKeyPasted: true });
+    askToApply.mockResolvedValue(true);
+    runOperatorApply.mockResolvedValue({ completed: true, verified: false });
 
     await expect(runApply(context)).rejects.toMatchObject({ name: 'ActionEnded', exitCode: 1 });
-    expect(printRevokeReminder).toHaveBeenCalled();
   });
 });

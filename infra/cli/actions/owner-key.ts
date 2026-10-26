@@ -5,13 +5,13 @@ import {
   hoursUntilExpiry,
   type KeyDescription,
   type KeyPair,
-  type OperatorIdentity,
+  organizationIdOfKey,
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
-import type { PrincipalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
+import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
 import { endAction, keyPairOrPrompt } from '../shared';
 
 /** Lifetime of the key a privileged run mints from a durable Owner API key. */
@@ -27,33 +27,34 @@ export interface OwnerKey extends KeyPair {
   organizationId: string;
   /** True when this run minted the key from a durable Owner API key and revokes it on release. */
   minted: boolean;
-  /** True when the Owner API key was typed at the prompt: the operator holds a key the CLI did not mint and cannot revoke for them. */
-  pasted: boolean;
   /** Revoke a minted key; a supplied key is left alone. Safe to call twice. */
   release(): Promise<void>;
 }
 
 /**
- * The key for a privileged run: the Owner API key from `SCW_OWNER_*` (on an operator machine a `keychain:`/`op:` reference), else a prompt.
+ * An Owner API key for a run that cannot take the operator key: creating the operator key itself, and a privileged action on a stack that
+ * has no operator application yet. It is typed at the prompt, never read from the environment.
  * The bearer is validated first: an organization Owner, or a principal holding IAMManager; an application the engine created is refused by name.
  * A durable user key (no expiry, or more than a day left) never drives Pulumi itself: the run mints a 30-minute key from it and revokes that at
  * the end. A short-lived user key or an application key is used as it is. Every failure names the fix and exits before the stack is touched.
+ * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  */
 export async function acquireOwnerKey(opts: {
-  identity: OperatorIdentity;
-  names: PrincipalNames;
+  names: PrincipalNames & AppPrincipalNames;
   projectId: string;
   slug: string;
   mode: string;
 }): Promise<OwnerKey> {
-  const { identity, names, projectId } = opts;
-  const pasted = !identity.owner;
-  const pair = await keyPairOrPrompt(identity.owner, 'Scaleway Owner API key', OWNER_KEY_HINT);
+  const { names, projectId } = opts;
+  // A key typed earlier in this run is used again, and validated again below: it may have been revoked since.
+  const remembered = rememberedOwnerKey();
+  const pair = remembered ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
 
   let organizationId: string;
   try {
-    organizationId = await resolveOrganizationId(pair.secretKey, projectId);
+    organizationId = await organizationIdOfKey(pair, projectId);
   } catch (error) {
+    forgetOwnerKey();
     console.error(
       `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
     );
@@ -64,15 +65,18 @@ export async function acquireOwnerKey(opts: {
   try {
     ({ desc, role } = await assertIamManager({ pair, names, organizationId }));
   } catch (error) {
+    forgetOwnerKey();
     console.error(`${warningMark} ${errorMessage(error)}`);
     endAction(1);
   }
+  rememberOwnerKey(pair);
+  if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
 
   const hours = hoursUntilExpiry(desc);
   const durableUserKey = desc.bearer !== 'application' && (hours === undefined || hours > DURABLE_KEY_HOURS);
   if (!durableUserKey) {
     console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
-    return { ...pair, organizationId, minted: false, pasted, release: async () => {} };
+    return { ...pair, organizationId, minted: false, release: async () => {} };
   }
 
   const expiresAt = new Date(Date.now() + MINTED_KEY_TTL_MS).toISOString();
@@ -89,7 +93,6 @@ export async function acquireOwnerKey(opts: {
     secretKey: minted.secret_key,
     organizationId,
     minted: true,
-    pasted,
     async release() {
       if (released) return;
       released = true;
@@ -101,9 +104,16 @@ export async function acquireOwnerKey(opts: {
   };
 }
 
-/** Reminder after a run whose Owner API key was typed at the prompt: the CLI cannot revoke a key it did not mint. */
+let revokeReminderShown = false;
+
+/**
+ * Reminder after an action whose Owner API key was typed at the prompt: the CLI cannot revoke a key it did not mint. Printed once per run of
+ * the CLI, as the key stays in memory for the actions that follow.
+ */
 export function printRevokeReminder(): void {
+  if (revokeReminderShown) return;
+  revokeReminderShown = true;
   console.info(
-    `\n${pc.dim('Reminder:')} the Owner API key you pasted stays valid; revoke it in the console (IAM → API keys) if it was created for this run.`,
+    `\n${pc.dim('Reminder:')} the Owner API key you pasted stays valid, and this session keeps it in memory until you quit. Revoke it in the console (IAM → API keys) when you are done, if it was created for this.`,
   );
 }

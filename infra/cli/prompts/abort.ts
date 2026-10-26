@@ -37,7 +37,7 @@ export function endOnPromptAbort(overrides: Partial<PromptAbortEffects> = {}): v
   if (!fx.isTerminal) {
     fx.log(
       `\n${crossMark} A prompt needed an answer and this run has no terminal to ask on.\n` +
-        `  ${pc.dim('Run `pnpm infra` in a terminal, or set INFRA_NON_INTERACTIVE=1 and pass the values it asks for through the environment.')}`,
+        `  ${pc.dim('Run `pnpm infra` in a terminal: it changes infrastructure only with a person at the prompt.')}`,
     );
     fx.exit(1);
     return;

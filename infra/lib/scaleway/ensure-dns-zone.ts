@@ -1,5 +1,4 @@
 import { confirm } from '@inquirer/prompts';
-import { nonInteractive } from '../../cli/shared';
 import { checkMark, pc, tildeMark, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { isMain } from '../utils/is-main';
@@ -91,7 +90,7 @@ export async function ensureDnsZone(opts: {
   console.info('  A second email will arrive once ownership is validated: then recheck below.\n');
 
   while (true) {
-    const action = nonInteractive() ? false : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
+    const action = await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
       console.info(`  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`);
       return { status: 'skipped' };

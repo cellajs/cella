@@ -1,6 +1,6 @@
-import { errorMessage } from '../utils/errors';
-import { type FetchLike, resolveFetch } from '../utils/fetch-like';
-import { retry } from '../utils/retry';
+import { errorMessage } from '../utils/errors.ts';
+import { type FetchLike, resolveFetch } from '../utils/fetch-like.ts';
+import { retry } from '../utils/retry.ts';
 
 // SCW_DEBUG only, never the generic DEBUG var: verbose mode prints API bodies into retained CI logs.
 const DEBUG = process.env.SCW_DEBUG === '1';
@@ -55,6 +55,12 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
   if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
   if (!res.ok) throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`);
   return text;
+}
+
+/** The HTTP status a failed Scaleway call carried, read from the error {@link scwFetch} throws; undefined for a failure without an answer. */
+export function scwErrorStatus(error: unknown): number | undefined {
+  const status = error instanceof Error ? error.message.match(/ → (\d{3}): /)?.[1] : undefined;
+  return status ? Number(status) : undefined;
 }
 
 /** Authenticated Scaleway call whose JSON response body is the result. */

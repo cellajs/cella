@@ -20,7 +20,6 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import {
   acquireStackLockOrExit,
-  adminKeyOrPrompt,
   confirmOrDefault,
   endAction,
   type InfraContext,
@@ -28,6 +27,7 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { operatorKeys } from './operator-unlock';
 
 /** Gitignored folder for the state exports taken before a state edit: the rollback copies. */
 const STATE_BACKUP_DIR = resolve(infraDir, '.state-backups');
@@ -49,8 +49,10 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
   const targetStack = stackNameFor(context);
 
-  // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
-  const key = await adminKeyOrPrompt(context);
+  await resolveVerifiedPassphrase(context.stackYaml);
+
+  // The operator key, as Apply locks with: the state bucket admits the operator, the observer (read) and the CI deploy application.
+  const { state: key } = await operatorKeys(context);
 
   const s3 = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));

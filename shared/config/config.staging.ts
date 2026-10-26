@@ -14,7 +14,8 @@ export const staging = {
   yjsUrl: 'wss://staging.cellajs.com/yjs',
   mcpUrl: 'https://staging.cellajs.com/mcp',
   oauthUrl: 'https://staging.cellajs.com/oauth',
-  services: { oauth: { enabled: true } },
+  // Off while the in-process authorization server does not answer on the single-machine host: its health check on port 4004 fails.
+  services: { oauth: { enabled: false } },
   federations: {
     surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
   },

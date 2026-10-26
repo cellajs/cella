@@ -26,11 +26,30 @@ export interface BootstrapState {
   computeDeferredSince?: string;
 }
 
+/** One rotation: when, and who ran it. */
+export interface RotationRecord {
+  at: string;
+  by: string;
+}
+
+/**
+ * The rotations of an environment. `counter` rises with every rotation and is part of every new generation's identity, so the next deploy
+ * replaces every machine and none keeps a key or a value from before. No date is a deadline (D12): the CLI shows the last of each kind.
+ */
+export interface Rotations {
+  counter: number;
+  /** The last rotation of Scaleway API keys, at an Owner moment. */
+  keys?: RotationRecord;
+  /** The last rotation of the secrets the engine checks: database role passwords and generated values. */
+  secrets?: RotationRecord;
+}
+
 export interface ControlState {
   schemaVersion: 2;
   bootstrap: BootstrapState;
   /** Keyed by service slug. */
   rollout: Record<string, ServiceRollout>;
+  rotations?: Rotations;
   /** ISO timestamp of the last write. */
   updatedAt?: string;
   /** Who wrote it last, e.g. `ci:run-512` or `operator:flip@host`. */
@@ -148,6 +167,27 @@ function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
   return out;
 }
 
+function parseRotationRecord(kind: string, value: unknown): RotationRecord {
+  if (!isRecord(value) || typeof value.at !== 'string' || typeof value.by !== 'string') {
+    throw new Error(`control: rotations.${kind} must be { at, by } strings`);
+  }
+  return { at: value.at, by: value.by };
+}
+
+function parseRotations(value: unknown): Rotations {
+  if (!isRecord(value) || typeof value.counter !== 'number') throw new Error('control: rotations.counter must be a number');
+  const rotations: Rotations = { counter: value.counter };
+  if (value.keys !== undefined) rotations.keys = parseRotationRecord('keys', value.keys);
+  if (value.secrets !== undefined) rotations.secrets = parseRotationRecord('secrets', value.secrets);
+  return rotations;
+}
+
+/** Record a rotation of one kind: the counter rises, so every machine a deploy makes from now on is a new generation. */
+export function withRotation(state: ControlState, kind: 'keys' | 'secrets', record: RotationRecord): ControlState {
+  const counter = (state.rotations?.counter ?? 0) + 1;
+  return { ...state, rotations: { ...state.rotations, counter, [kind]: record } };
+}
+
 /** Parse and validate the control JSON. A malformed document fails the deploy loudly. */
 export function parseControlState(text: string): ControlState {
   let raw: unknown;
@@ -179,6 +219,7 @@ export function parseControlState(text: string): ControlState {
   }
 
   const state: ControlState = { schemaVersion: 2, bootstrap, rollout };
+  if (raw.rotations !== undefined) state.rotations = parseRotations(raw.rotations);
   if (typeof raw.updatedAt === 'string') state.updatedAt = raw.updatedAt;
   if (typeof raw.updatedBy === 'string') state.updatedBy = raw.updatedBy;
   return state;
@@ -258,9 +299,9 @@ export function adoptStateBackendEnv(region?: string, env: NodeJS.ProcessEnv = p
   }
 }
 
-/** Identifies the writer in `updatedBy`: CI run or local operator. */
+/** Identifies the writer in `updatedBy`: a main job run (its target) or a local operator. */
 export function controlActor(): string {
-  if (process.env.GITHUB_RUN_NUMBER) return `ci:run-${process.env.GITHUB_RUN_NUMBER}`;
+  if (process.env.TARGET_SHA) return `job:${process.env.TARGET_SHA.slice(0, 10)}`;
   return `operator:${process.env.USER ?? process.env.LOGNAME ?? 'unknown'}`;
 }
 

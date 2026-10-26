@@ -44,7 +44,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
           envVar: 'REDIS_URL',
           description: 'Managed Redis connection URL (derived by pulumi from the cluster)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.url,
         });
       }
@@ -55,7 +55,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
           envVar: 'REDIS_SSL_CA',
           description: 'base64-encoded PEM CA cert of the managed Redis cluster TLS endpoint',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.ca,
         });
       }

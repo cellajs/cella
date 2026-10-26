@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { recordRotation } from '../../tasks/record-rotation';
 import { makeLockS3 } from '../../tests/helpers/fake-lock-s3';
 import {
   acquireLock,
@@ -18,6 +19,7 @@ import {
   stateBucket,
   updateServiceRollout,
   withoutPending,
+  withRotation,
   writeControlState,
 } from './control-store';
 
@@ -299,5 +301,41 @@ describe('updateServiceRollout', () => {
       /PreconditionFailed/,
     );
     expect(send.mock.calls.filter(([cmd]) => (cmd as { constructor: { name: string } }).constructor.name === 'PutObjectCommand')).toHaveLength(2);
+  });
+});
+
+describe('rotations', () => {
+  it('must not lose a rotation when a deploy reads and writes the record back: the parse keeps it', () => {
+    const state = withRotation(emptyControlState(), 'keys', { at: '2026-10-14T09:00:00.000Z', by: 'operator:flip' });
+    expect(parseControlState(serializeControlState(state)).rotations).toEqual({
+      counter: 1,
+      keys: { at: '2026-10-14T09:00:00.000Z', by: 'operator:flip' },
+    });
+  });
+
+  it('raises the counter at every rotation, of either kind, and keeps the last record of the other', () => {
+    const once = withRotation(emptyControlState(), 'keys', { at: 'a', by: 'x' });
+    const twice = withRotation(once, 'secrets', { at: 'b', by: 'y' });
+    expect(twice.rotations).toEqual({ counter: 2, keys: { at: 'a', by: 'x' }, secrets: { at: 'b', by: 'y' } });
+  });
+
+  it('leaves a record that never rotated without rotations, so its generations keep their identity', () => {
+    expect(parseControlState(serializeControlState(emptyControlState())).rotations).toBeUndefined();
+  });
+
+  it('writes the rotation conditional on the record it read, so a racing write fails loudly', async () => {
+    const current = serializeControlState(emptyControlState());
+    const { s3, puts } = makeS3({ get: [{ body: current, etag: '"e1"' }] });
+    const rotations = await recordRotation({
+      s3,
+      bucket: 'b',
+      stack: 'organization/infra/staging',
+      kind: 'secrets',
+      by: 'operator:flip',
+      now: new Date('2026-10-14T10:00:00Z'),
+    });
+    expect(rotations).toEqual({ counter: 1, secrets: { at: '2026-10-14T10:00:00.000Z', by: 'operator:flip' } });
+    expect(puts[0]!.IfMatch).toBe('"e1"');
+    expect(puts[0]!.Key).toBe('control/staging.json');
   });
 });

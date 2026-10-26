@@ -56,6 +56,8 @@ export interface LockFacts {
 export interface RolloutRowFact {
   slug: string;
   activeSha?: string;
+  /** The active generation's id, the suffix of its machine's name. */
+  activeGeneration?: string;
   pendingSha?: string;
 }
 

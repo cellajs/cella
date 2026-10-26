@@ -1,7 +1,9 @@
+import { OBSERVER_KEY_NAMES } from '../utils/env-files';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
-import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies } from './iam-client';
-import type { PrincipalNames } from './principals';
+import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
+import type { AppPrincipalNames, PrincipalNames } from './principals';
+import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch } from './scw-fetch';
 
 export interface KeyPair {
@@ -19,17 +21,14 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 
 /**
  * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
- * - `admin`: `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` from infra/.env.<mode>, the admin application's key: provider reads and the state bucket.
- * - `owner`: `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY`, the Owner API key (usually a `keychain:`/`op:` reference). Privileged actions use it,
- *   or mint a short-lived key from it, and prompt for one when it is absent.
+ * - `observer`: `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` from infra/.env.<mode>, the observer application's key: read-only.
  * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI runner, a shell export): shown in diagnostics, never written to the env file.
- * Deprecated pairs are read for one more release with a rename warning: `SCW_STATE_*` as the admin key, `SCW_BOOTSTRAP_*` as the Owner API key.
+ * A privileged key is not among them: the operator key and an Owner API key are typed at the prompt and never read from the environment.
  */
 export interface OperatorIdentity {
-  admin?: KeyPair & { source: 'SCW_ADMIN_*' | 'SCW_STATE_*' };
-  owner?: KeyPair & { source: 'SCW_OWNER_*' | 'SCW_BOOTSTRAP_*' };
+  observer?: KeyPair;
   ambient?: KeyPair;
-  /** Deprecated or suspicious configuration, for the CLI to print once. */
+  /** Suspicious configuration, for the CLI to print once. */
   warnings: string[];
 }
 
@@ -45,48 +44,9 @@ function optionalKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar: s
 
 export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): OperatorIdentity {
   const warnings: string[] = [];
-
-  const adminPair = optionalKeyPair(env, 'SCW_ADMIN_ACCESS_KEY', 'SCW_ADMIN_SECRET_KEY', warnings);
-  let admin: OperatorIdentity['admin'] = adminPair ? { ...adminPair, source: 'SCW_ADMIN_*' } : undefined;
-  const statePair = optionalKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY', warnings);
-  if (statePair) {
-    if (admin) {
-      warnings.push(
-        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated and ignored because SCW_ADMIN_* is set: remove the SCW_STATE_* pair.',
-      );
-    } else {
-      admin = { ...statePair, source: 'SCW_STATE_*' };
-      warnings.push(
-        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated: rename them to SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (the admin application key).',
-      );
-    }
-  }
-
+  const observer = optionalKeyPair(env, OBSERVER_KEY_NAMES.accessKey, OBSERVER_KEY_NAMES.secretKey, warnings);
   const ambient = optionalKeyPair(env, 'SCW_ACCESS_KEY', 'SCW_SECRET_KEY', warnings);
-
-  const ownerPair = optionalKeyPair(env, 'SCW_OWNER_ACCESS_KEY', 'SCW_OWNER_SECRET_KEY', warnings);
-  let owner: OperatorIdentity['owner'] = ownerPair ? { ...ownerPair, source: 'SCW_OWNER_*' } : undefined;
-  // `SCW_BOOTSTRAP_*` named this key until 0.12, and `SCW_BOOTSTRAP_KEY` is the misspelling operators reached for.
-  const legacyEnv: NodeJS.ProcessEnv = { ...env };
-  if (!legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY?.trim() && legacyEnv.SCW_BOOTSTRAP_KEY?.trim()) {
-    legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY = legacyEnv.SCW_BOOTSTRAP_KEY;
-  }
-  const legacyOwner = optionalKeyPair(legacyEnv, 'SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_BOOTSTRAP_SECRET_KEY', warnings);
-  if (legacyOwner) {
-    if (owner) {
-      warnings.push('SCW_BOOTSTRAP_* is ignored because SCW_OWNER_* is set: remove the SCW_BOOTSTRAP_* pair.');
-    } else {
-      owner = { ...legacyOwner, source: 'SCW_BOOTSTRAP_*' };
-      warnings.push('SCW_BOOTSTRAP_* is read as SCW_OWNER_ACCESS_KEY / SCW_OWNER_SECRET_KEY (the Owner API key): rename it.');
-    }
-  }
-
-  if (owner && admin && owner.accessKey === admin.accessKey) {
-    warnings.push(
-      'SCW_OWNER_* holds the same key as SCW_ADMIN_*: the Owner API key is your own user key as organization Owner, not the admin application key.',
-    );
-  }
-  return { admin, owner, ambient, warnings };
+  return { observer, ambient, warnings };
 }
 
 /** Who bears an API key: an organization Owner, a member user, or an IAM application. */
@@ -101,6 +61,8 @@ export interface KeyDescription {
   bearerId: string;
   expiresAt?: string;
   description?: string;
+  /** The organization the bearer belongs to, as IAM reports it. */
+  organizationId?: string;
 }
 
 /**
@@ -112,23 +74,56 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
   const record = await getApiKey(auth, pair.accessKey);
   const base = { accessKey: pair.accessKey, expiresAt: record.expires_at ?? undefined, description: record.description || undefined };
   if (record.user_id) {
-    const user = await scwFetch<{ email?: string; type?: string }>(auth, 'GET', `${IAM_BASE}/users/${record.user_id}`);
-    return { ...base, bearer: user.type === 'owner' ? 'owner' : 'member', name: user.email ?? record.user_id, bearerId: record.user_id };
+    const user = await scwFetch<{ email?: string; type?: string; organization_id?: string }>(auth, 'GET', `${IAM_BASE}/users/${record.user_id}`);
+    return {
+      ...base,
+      bearer: user.type === 'owner' ? 'owner' : 'member',
+      name: user.email ?? record.user_id,
+      bearerId: record.user_id,
+      organizationId: user.organization_id,
+    };
   }
   if (record.application_id) {
-    const app = await scwFetch<{ name?: string }>(auth, 'GET', `${IAM_BASE}/applications/${record.application_id}`);
-    return { ...base, bearer: 'application', name: app.name ?? record.application_id, bearerId: record.application_id };
+    const app = await scwFetch<{ name?: string; organization_id?: string }>(auth, 'GET', `${IAM_BASE}/applications/${record.application_id}`);
+    return {
+      ...base,
+      bearer: 'application',
+      name: app.name ?? record.application_id,
+      bearerId: record.application_id,
+      organizationId: app.organization_id,
+    };
   }
   throw new Error(`IAM returned no bearer for API key ${pair.accessKey}`);
 }
 
-/** The engine role of a key's bearer, or the kind of outside principal it is. */
-export type PrincipalRole = 'ci-deploy' | 'admin' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
+/**
+ * The organization a key works in, the one way the engine finds it: the env value when one is set, else what IAM says about the key's own
+ * bearer, else the owner of the project through the Account API: the given project, or the key's default one before a project is known. An
+ * application key holds IAM read and no right over the Account API, so the last ways serve user keys.
+ */
+export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
+  const fromEnv = resolveOrganizationIdFromEnv();
+  if (fromEnv) return fromEnv;
+  const described = await describeKey(pair, opts).then(
+    (desc) => desc.organizationId,
+    () => undefined,
+  );
+  if (described) return described;
+  const auth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
+  const project = projectId ?? (await getApiKey(auth, pair.accessKey)).default_project_id;
+  if (!project) throw new Error(`API key ${pair.accessKey} names no project to find its organization by: set SCW_DEFAULT_ORGANIZATION_ID.`);
+  return resolveOrganizationIdViaProject(auth, project);
+}
 
-export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
+/** The engine role of a key's bearer, or the kind of outside principal it is. */
+export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'observer' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
+
+export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames & AppPrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
+  if (desc.name === names.operator) return 'operator';
+  if (desc.name === names.observer) return 'observer';
   if (desc.name === names.boot) return 'boot';
   if (desc.name.startsWith(`${names.group}-vm-`)) return 'vm-service';
   return 'application';
@@ -137,6 +132,8 @@ export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): 
 const ROLE_LABELS: Record<PrincipalRole, string> = {
   'ci-deploy': 'CI deploy application',
   admin: 'admin application',
+  operator: 'operator application',
+  observer: 'observer application',
   boot: 'boot application',
   'vm-service': 'VM service application',
   owner: 'organization Owner',
@@ -166,7 +163,7 @@ const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your
  */
 export async function assertIamManager(opts: {
   pair: KeyPair;
-  names: PrincipalNames;
+  names: PrincipalNames & AppPrincipalNames;
   organizationId: string;
   fetchImpl?: FetchLike;
 }): Promise<{ desc: KeyDescription; role: PrincipalRole }> {
@@ -179,7 +176,7 @@ export async function assertIamManager(opts: {
     );
   }
   const role = classifyPrincipal(desc, opts.names);
-  if (role === 'ci-deploy' || role === 'admin' || role === 'boot' || role === 'vm-service') {
+  if (role === 'ci-deploy' || role === 'admin' || role === 'observer' || role === 'boot' || role === 'vm-service') {
     throw new Error(
       `${formatKeyLine(desc, role)} is an application the engine created, not an Owner API key: it cannot write IAM policies or database privileges. Use ${OWNER_KEY_HOWTO}.`,
     );

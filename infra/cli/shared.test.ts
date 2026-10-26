@@ -6,7 +6,6 @@ const savedArgv = process.argv;
 
 beforeEach(() => {
   process.argv = ['node', 'infra-cli.ts'];
-  vi.stubEnv('INFRA_NON_INTERACTIVE', undefined);
   vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
@@ -26,9 +25,9 @@ describe('autoAcceptDefaults', () => {
     expect(autoAcceptDefaults()).toBe(true);
   });
 
-  it('is true under INFRA_NON_INTERACTIVE', () => {
+  it('must not let the environment answer for the operator: INFRA_NON_INTERACTIVE no longer exists', () => {
     vi.stubEnv('INFRA_NON_INTERACTIVE', '1');
-    expect(autoAcceptDefaults()).toBe(true);
+    expect(autoAcceptDefaults()).toBe(false);
   });
 });
 
@@ -37,11 +36,6 @@ describe('confirmOrDefault', () => {
     process.argv = ['node', 'infra-cli.ts', '--defaults'];
     await expect(confirmOrDefault({ message: 'ok?', default: true })).resolves.toBe(true);
     await expect(confirmOrDefault({ message: 'ok?', default: false })).resolves.toBe(false);
-  });
-
-  it('resolves to the default without prompting under INFRA_NON_INTERACTIVE', async () => {
-    vi.stubEnv('INFRA_NON_INTERACTIVE', '1');
-    await expect(confirmOrDefault({ message: 'ok?', default: true })).resolves.toBe(true);
   });
 });
 

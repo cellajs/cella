@@ -3,20 +3,32 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { actionCommand } from '../lib/operator-actions';
 import { adoptStateBackendEnv, PLAN_LIVE_ONLY_ENV, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
-import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
 import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
 /**
- * Pulumi resource types only a privileged run (the Owner API key) may write: the database and its privileges, IAM, the VPC and private network, and the state bucket's
- * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
+ * Pulumi resource types only an apply (on the operator key) writes: the database, IAM, the VPC and private network, secret containers, DNS
+ * records, buckets with their policies, and the load balancer. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
+ * A deploy still moves the load balancer's pools: the cutover sets their servers through the API, which the program leaves alone.
  */
-const PRIVILEGED_URN_TYPES = ['scaleway:databases/', 'scaleway:iam/', 'scaleway:network/vpc:', 'scaleway:network/privateNetwork:'] as const;
-
-/** Resource names (the URN's last segment) that are privileged regardless of type. */
-const PRIVILEGED_URN_NAMES = new Set(['state-bucket-policy']);
+// A secret container is privileged: a new one needs its value, which only the apply makes; the deploy makes no value.
+const PRIVILEGED_URN_TYPES = [
+  'scaleway:databases/',
+  'scaleway:iam/',
+  'scaleway:network/vpc:',
+  'scaleway:network/privateNetwork:',
+  'scaleway:secrets/secret:',
+  // A record follows the load balancer's address, which the setup's first apply makes: the deploy key writes no DNS.
+  'scaleway:domain/',
+  // A bucket's configuration and its policy: the deploy writes objects only.
+  'scaleway:object/',
+  // Frontends, routes, ACLs and certificates decide what is public, and an ACL guards the internal listener (D15).
+  'scaleway:loadbalancers/',
+  // The main job's definition names the secrets its runs read and the image they start from.
+  'scaleway:job/',
+] as const;
 
 /** One step of `pulumi preview --json`. */
 export interface PreviewStep {
@@ -60,14 +72,18 @@ export function splitUrn(urn: string): { type: string; name: string } {
   return { type: parts[2] ?? '', name: parts.slice(3).join('::') };
 }
 
+/** True for a Pulumi resource type only an apply writes. */
+export function isPrivilegedType(type: string): boolean {
+  return PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
+}
+
 export function isPrivilegedUrn(urn: string): boolean {
-  const { type, name } = splitUrn(urn);
-  return PRIVILEGED_URN_NAMES.has(name) || PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
+  return isPrivilegedType(splitUrn(urn).type);
 }
 
 const MUTATING_OPS = new Set(['create', 'update', 'replace', 'delete', 'create-replacement', 'delete-replaced', 'import']);
 
-/** The privileged changes a preview would apply, i.e. the ones a CI deploy cannot make and an operator Apply must run first. */
+/** The privileged changes a preview would apply, i.e. the ones the deploy key cannot make and an operator apply must run first. */
 export function classifyPreviewSteps(steps: PreviewStep[]): { privileged: PendingPrivilegedChange[]; ciApplicable: number } {
   const privileged: PendingPrivilegedChange[] = [];
   let ciApplicable = 0;
@@ -97,7 +113,7 @@ export function applyHint(mode: string): string {
 }
 
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {
-  const lines = [`✗ ${pending.length} privileged change(s) pending; a CI deploy cannot apply them:`];
+  const lines = [`✗ ${pending.length} privileged change(s) pending; the deploy key cannot apply them:`];
   for (const change of pending) {
     const changedPaths = change.paths.length ? `  (${change.paths.join(', ')})` : '';
     lines.push(`  ${change.op.padEnd(7)} ${change.resource}${changedPaths}`);
@@ -135,13 +151,13 @@ export function previewFailureMessage(code: number | null, stdout: string, stder
 }
 
 /**
- * `pulumi preview --json` under the privileged marker, so VM policy rules are diffed too. Read-only: the CI key can run it.
+ * `pulumi preview --json`. Read-only: the CI key can run it.
  * It plans live generations only: the release PR's check runs outside the deploy, where a pending sha would plan a generation without minted keys.
  */
 export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv = process.env): Promise<PreviewStep[]> {
   const child = spawn('pulumi', ['preview', '--stack', stack, '--json', '--non-interactive'], {
     cwd: infraDir,
-    env: { ...env, [PRIVILEGED_UP_ENV]: '1', [PLAN_LIVE_ONLY_ENV]: '1' },
+    env: { ...env, [PLAN_LIVE_ONLY_ENV]: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let stdout = '';
@@ -175,7 +191,7 @@ const liveEffects: PreflightEffects = {
 
 /**
  * Standalone entry: `pnpm --filter infra preflight --mode <m> [--login]`. Exit 2 with the operator command when a privileged change is pending,
- * 0 when a CI deploy can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
+ * 0 when the deploy key can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
  */
 export async function main(argv = process.argv.slice(2), fx: PreflightEffects = liveEffects): Promise<void> {
   const mode = getFlag(argv, '--mode') ?? process.env.APP_MODE ?? process.env.INFRA_MODE;

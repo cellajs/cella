@@ -7,7 +7,7 @@ describe('redisManaged store', () => {
   it('contributes url + ca secrets when consumers are declared (tls on by default)', () => {
     const secrets = redisManaged({ ...base, secretConsumers: { url: ['api'], ca: ['api'] } }).secrets?.() ?? [];
     expect(secrets.map((s) => s.id)).toEqual(['redisUrl', 'redisSslCa']);
-    expect(secrets[0]).toMatchObject({ envVar: 'REDIS_URL', valueSource: 'pulumi', required: true });
+    expect(secrets[0]).toMatchObject({ envVar: 'REDIS_URL', valueSource: 'engine', required: true });
   });
 
   it('omits the ca contribution when tls is disabled', () => {

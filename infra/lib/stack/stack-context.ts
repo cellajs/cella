@@ -2,9 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../../config/engine-config';
 import { resolveProjectId } from '../scaleway/provider-env';
-import { loadModeEnvFile } from '../utils/env-files';
+import { loadModeEnvFile, ownProjectId, sharedFileProjectId } from '../utils/env-files';
 import { infraDir } from '../utils/paths';
 import { detectStackState, type Environment, type StackState } from './bootstrap-stack-state';
+import { type ProjectIdSource, resolveModeProject } from './project-per-mode';
 
 /** What an operator entry (the CLI menu, the standalone status task) knows about the target stack once its env file and config are loaded. */
 export interface StackContext {
@@ -13,8 +14,10 @@ export interface StackContext {
   stackYaml?: string;
   state: StackState;
   appConfig: EngineConfig;
-  /** Scaleway project id. Empty only on a fresh install without SCW_PROJECT_ID; the setup wizard resolves it. */
+  /** Scaleway project id of this environment. Empty when the mode has none of its own yet; the setup wizard picks or creates it. */
   projectId: string;
+  /** Where the id comes from. `shared-file` is an existing stack still reading backend/.env. */
+  projectIdSource: ProjectIdSource;
   /** Superseded key names the env file still uses, for the CLI to print once. */
   envWarnings: string[];
 }
@@ -32,5 +35,13 @@ export async function loadStackContext(environment: Environment, log?: (message:
   process.env.APP_MODE = environment;
   const { loadEngineConfig } = await import('../../config/engine-config');
   const appConfig = await loadEngineConfig();
-  return { environment, stackPath, stackYaml, state, appConfig, projectId: resolveProjectId() ?? '', envWarnings };
+  const project = resolveModeProject({
+    own: ownProjectId(environment),
+    resolved: resolveProjectId(),
+    shared: sharedFileProjectId(),
+    hasStack: stackYaml !== undefined,
+  });
+  // A mode without a stack does not take the project of a file every mode reads: nothing later in this run may resolve it either.
+  if (project.dropShared) delete process.env.SCW_PROJECT_ID;
+  return { environment, stackPath, stackYaml, state, appConfig, projectId: project.projectId, projectIdSource: project.source, envWarnings };
 }

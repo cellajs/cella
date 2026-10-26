@@ -30,7 +30,7 @@ export const sleep = (ms: number): Promise<void> => new Promise((resolve) => set
 
 /** True when stderr is a TTY and the run is not automated; automation and piped output get a single static line. */
 function spinnerEnabled(): boolean {
-  return Boolean(process.stderr.isTTY) && process.env.INFRA_NON_INTERACTIVE !== '1' && process.env.CI !== 'true' && !process.env.GITHUB_ACTIONS;
+  return Boolean(process.stderr.isTTY) && process.env.CI !== 'true';
 }
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -60,15 +60,16 @@ export async function withSpinner<T>(label: string, task: () => Promise<T>): Pro
 
 /** A recovery hint printed after a failure: a runnable command and why. */
 export interface Hint {
-  command: string;
+  /** The command that recovers from it, when there is one. */
+  command?: string;
   description?: string;
 }
 
-/** Print an error plus the command that recovers from it. */
+/** Print an error plus what recovers from it. */
 export function printFailureHint(message: string, hint: Hint): void {
   console.error(`\n${crossMark} ${message}`);
   if (hint.description) console.error(`  ${pc.dim(hint.description)}`);
-  console.error(`  ${pc.bold('Next:')} ${pc.cyan(hint.command)}`);
+  if (hint.command) console.error(`  ${pc.bold('Next:')} ${pc.cyan(hint.command)}`);
 }
 
 /** Print an error plus a recovery command, then exit. Use at CLI and task entry points only: in-process tasks must throw so an orchestrator can catch them. */

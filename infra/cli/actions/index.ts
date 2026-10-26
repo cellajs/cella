@@ -5,15 +5,21 @@ import { isPromptAbort } from '../prompts/abort';
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
-import { runFetchAdminKey } from './fetch-admin-key';
 import { runGeoipRefresh } from './geoip-refresh';
+import { runIdentity } from './identity';
+import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
+import { runRepositoryKey } from './repository-key';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
+import { runRotateSecrets } from './rotate-secrets';
+import { runRunnerIdentity, runRunnerReplace } from './runner';
+import { runRuns } from './runs';
 import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
 import { runSetup } from './setup';
-import { runStorePassphrase } from './store-passphrase';
+import { runStartDeploy } from './start-deploy';
+import { runStatePrune } from './state-prune';
 import { runTeardown } from './teardown';
 import { runUnlock } from './unlock';
 
@@ -23,10 +29,18 @@ type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise
 export const ACTION_RUNNERS: ActionRunners = {
   // The status task reads config while its module loads, so it is imported once the context has loaded the config.
   status: async (context) => (await import('../../tasks/status')).runStatus(context),
+  runs: runRuns,
   preview: runPreview,
   apply: runApply,
   'rotate-keys': (context) => runSetup(context, 'rotate-keys'),
+  'rotate-secrets': runRotateSecrets,
   'rotate-passphrase': runRotatePassphrase,
+  'operator-key': runOperatorKey,
+  identity: runIdentity,
+  'start-deploy': runStartDeploy,
+  'runner-identity': runRunnerIdentity,
+  'runner-replace': runRunnerReplace,
+  'repository-key': runRepositoryKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
   'db-seed': runSeedDatabase,
@@ -34,9 +48,8 @@ export const ACTION_RUNNERS: ActionRunners = {
   'db-reset': runResetDatabase,
   unlock: runUnlock,
   resume: (context) => runSetup(context, 'resume'),
-  'fetch-admin-key': runFetchAdminKey,
-  'store-passphrase': runStorePassphrase,
   'geoip-refresh': runGeoipRefresh,
+  'state-prune': runStatePrune,
   teardown: runTeardown,
 };
 

@@ -13,7 +13,7 @@ published.
 
 1. Merge work into `main` with Conventional Commit messages (a lefthook `commit-msg` hook checks the header locally with `shared/scripts/check-commit-msg.ts`). `feat:` bumps minor and `fix:` bumps patch. A `!` (`feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and a larger bump. Types and their changelog sections: [release-please-config.json](../.github/release-please-config.json).
 2. release-please keeps an open **release PR**, updating the proposed version bump and generated [Changelog](./CHANGELOG.md) on every merge.
-3. Merging the release PR bumps the version, updates the changelog, tags, and publishes the GitHub Release, which triggers the production deploy ([CI deploys](./DEPLOYMENT.md#ci-deploys)).
+3. Merging the release PR bumps the version, updates the changelog, tags, and publishes the GitHub Release. Production follows the releases: the runner deploys the new tag about a minute later ([Deploys](./DEPLOYMENT.md#deploys)).
 
 On `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch, so versions stay meaningful for apps syncing upstream via `pnpm cella`.
 

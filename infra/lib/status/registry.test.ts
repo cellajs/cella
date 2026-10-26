@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComponentsFact } from './providers/components';
 import type { DbEndpointFacts } from './providers/database';
-import type { GithubFacts } from './providers/github';
+import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { IdentityFacts } from './providers/stack';
 import type { StoreValidationFact } from './providers/stores';
@@ -18,7 +18,7 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
 interface Facts {
   tooling?: ToolingFacts;
   identity?: IdentityFacts;
-  github?: GithubFacts;
+  inventory?: InventoryFacts;
   state?: ScalewayFacts;
   secrets?: string[];
   live?: LiveServiceFact[];
@@ -31,9 +31,9 @@ interface Facts {
 /** A fully-healthy bootstrapped staging stack; override per test. */
 function base(overrides: Partial<Facts> = {}): Facts {
   return {
-    tooling: { pulumi: true, dockerBuildx: true, gh: true },
-    identity: { adminAppId: 'app-1' },
-    github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
+    tooling: { pulumi: true },
+    identity: { observerAppId: 'app-1', keyAges: [] },
+    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {} },
     state: {
       stateBucketExists: true,
       lock: { held: false },
@@ -59,7 +59,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
 function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
   return {
     mode: 'staging',
-    appConfig: {} as ProbeSession['appConfig'],
+    appConfig: { slug: 'cella-staging' } as ProbeSession['appConfig'],
     stackState: 'bootstrapped',
     projectId: 'proj-1',
     scalewayKeyAvailable: true,
@@ -75,7 +75,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     tooling: facts.tooling,
     config: {},
     identity: facts.identity,
-    github: facts.github,
+    inventory: facts.inventory,
     state: facts.state,
     secrets: facts.secrets,
     live: facts.live,
@@ -125,7 +125,7 @@ describe('report envelope (public contract)', () => {
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
     const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), { scalewayKeyAvailable: false });
-    for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
+    for (const id of ['identity.observerApp', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
       expect(check?.credential).toBe('scaleway');
@@ -137,30 +137,30 @@ describe('key degradation', () => {
 
 describe('admin app identity', () => {
   it('reports the id resolved from IAM by name', () => {
-    expect(find(reportFor(base()).checks, 'identity.adminApp')?.status).toBe('ok');
+    expect(find(reportFor(base()).checks, 'identity.observerApp')?.status).toBe('ok');
   });
 
   it('warns and points at setup when the application does not exist', () => {
-    const check = find(reportFor(base({ identity: { adminAppId: null } })).checks, 'identity.adminApp');
+    const check = find(reportFor(base({ identity: { observerAppId: null, keyAges: [] } })).checks, 'identity.observerApp');
     expect(check?.status).toBe('warn');
     expect(check?.detail).toContain('not found');
     expect(check?.nextAction?.command).toBe('pnpm infra');
   });
 
   it('is unknown, not a warning, when the IAM probe could not run', () => {
-    const check = find(reportFor(base({ identity: undefined })).checks, 'identity.adminApp');
+    const check = find(reportFor(base({ identity: undefined })).checks, 'identity.observerApp');
     expect(check?.status).toBe('unknown');
   });
 
   it('is absent on a stack that has not been bootstrapped', () => {
     const report = reportFor(base({ identity: undefined }), { stackState: 'fresh' });
-    expect(find(report.checks, 'identity.adminApp')).toBeUndefined();
+    expect(find(report.checks, 'identity.observerApp')).toBeUndefined();
   });
 });
 
 describe('nextAction priority (lifecycle order)', () => {
   it('missing pulumi outranks everything', () => {
-    const report = reportFor(base({ tooling: { pulumi: false, dockerBuildx: true, gh: true } }), { stackState: 'fresh', projectId: undefined });
+    const report = reportFor(base({ tooling: { pulumi: false } }), { stackState: 'fresh', projectId: undefined });
     expect(find(report.checks, 'tooling.pulumi')?.status).toBe('error');
     expect(report.nextAction?.command).toBe('brew install pulumi/tap/pulumi');
   });

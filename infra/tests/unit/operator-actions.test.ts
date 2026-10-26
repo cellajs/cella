@@ -31,6 +31,7 @@ const RETIRED_LABELS = [
   'Public DB access: OPEN',
   'Apply infra change',
   'Apply changes',
+  'Store passphrase in keychain',
   'Manage keys & secrets',
   'Manage database',
   'Stack setup →',
@@ -62,10 +63,11 @@ describe('operator action table', () => {
   });
 
   it('ends every description with the key the action runs with', () => {
-    expect(actionDescription('apply')).toMatch(/Needs your Owner API key\.$/);
-    expect(actionDescription('preview')).toMatch(/Uses the admin application key\.$/);
-    expect(actionDescription('status')).toMatch(/Works without a Scaleway key\.$/);
-    expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your Owner API key.');
+    expect(actionDescription('apply')).toMatch(/Needs your operator key\.$/);
+    expect(actionDescription('operator-key')).toMatch(/Needs your Owner API key\.$/);
+    expect(actionDescription('preview')).toMatch(/Needs your operator key\.$/);
+    expect(actionDescription('status')).toMatch(/Reads with the observer key\.$/);
+    expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your operator key.');
   });
 });
 
@@ -76,8 +78,8 @@ describe('menu rows', () => {
     expect(new Set(listed).size).toBe(listed.length);
   });
 
-  it('keeps the menu to eight rows: the two DB access rows share one place', () => {
-    expect(rowIds).toHaveLength(9);
+  it('keeps the menu to ten rows: the two DB access rows share one place', () => {
+    expect(rowIds).toHaveLength(11);
     expect(rowIds).toContain('db-open');
     expect(rowIds).toContain('db-close');
   });
@@ -86,13 +88,10 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it('leaves three actions without a row: the plan without its question, and the two background actions', () => {
+  it("leaves seven actions without a row: the plan without its question, the GeoIP refresh each deploy already runs, the key only a private repository needs, the hand start the runner makes rare, the runner's setup and replacement, run when its file changes, and the rare removal from the state", () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
     const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toHaveLength(3);
-    expect(commandOnly[0]).toBe('geoip-refresh');
-    expect(commandOnly[1]).toBe('preview');
-    expect(commandOnly[2]).toBe('store-passphrase');
+    expect(commandOnly).toEqual(['geoip-refresh', 'preview', 'repository-key', 'runner-identity', 'runner-replace', 'start-deploy', 'state-prune']);
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {
@@ -103,7 +102,7 @@ describe('menu rows', () => {
     expect(menuPath('apply')).toBe('Review & apply changes');
     expect(menuPath('preview')).toBe('pnpm infra preview');
     expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
-    expect(menuPath('fetch-admin-key')).toBe('Repair stack → Fetch admin application key');
+    expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
     expect(menuPath('geoip-refresh')).toBe('pnpm infra geoip-refresh');
   });
 });

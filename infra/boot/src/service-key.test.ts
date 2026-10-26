@@ -9,7 +9,12 @@ const pair = { accessKey: 'SCWAK', secretKey: 'sk' };
 const bundleResponse = () => new Response(JSON.stringify({ data: Buffer.from(JSON.stringify(pair), 'utf-8').toString('base64') }), { status: 200 });
 
 function options(cacheFile: string, fetchImpl: (url: string, init?: RequestInit) => Promise<Response>) {
-  return { handoff: { secretId: 'sec-1', cacheFile }, bootSecretKey: 'boot-secret', region: 'nl-ams', fetchImpl: fetchImpl as never };
+  return {
+    handoff: { service: 'backend', secretId: 'sec-1', cacheFile },
+    bootSecretKey: 'boot-secret',
+    region: 'nl-ams',
+    fetchImpl: fetchImpl as never,
+  };
 }
 
 describe('fetchServiceKey (single-access handoff)', () => {

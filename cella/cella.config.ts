@@ -29,6 +29,7 @@ export default defineConfig({
       'infra/Pulumi.production.yaml',
       'infra/Pulumi.staging.yaml',
       'infra/environments',
+      'infra/runner.json',
       'sdk/gen',
       'shared/config',
       'backend/drizzle',

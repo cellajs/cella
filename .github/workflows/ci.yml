@@ -279,49 +279,42 @@ jobs:
             docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target "$target" -t "$target-check" .
           done
 
-  # Privileged infra changes (a database privilege, a VM policy rule) need an operator
-  # `pnpm infra apply` before the release deploys; this read-only preview under the CI key
-  # names them on the release PR, where an owed Apply blocks the merge. Skips when
-  # the production Environment secrets are absent (an app without a set-up stack).
-  infra-preflight:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+  # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
+  # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
+  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it.
+  privileged-changes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-    environment: production
-    env:
-      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
-      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-      PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
     steps:
-      - name: Checkout repo
-        if: env.SCW_ACCESS_KEY != ''
+      - name: Checkout the head
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
+      - name: Checkout the base
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .base
+
       - name: Setup pnpm
-        if: env.SCW_ACCESS_KEY != ''
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
-        if: env.SCW_ACCESS_KEY != ''
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: package.json
+          cache: "pnpm"
 
-      - name: Install dependencies
-        if: env.SCW_ACCESS_KEY != ''
+      - name: Install the head
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
-      - name: Install Pulumi CLI (at the SDK version)
-        if: env.SCW_ACCESS_KEY != ''
-        uses: ./.github/actions/pulumi-cli
+      - name: Install the base
+        working-directory: .base
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
-      - name: Preflight privileged changes
-        if: env.SCW_ACCESS_KEY != ''
-        run: pnpm --filter infra preflight --mode production --login
+      - name: Say what the change owes
+        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
 
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's sync PR,
   # so a story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
@@ -428,7 +421,7 @@ jobs:
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
   ci-passed:
     if: always()
-    needs: [pr-title, lint, frontend-build, build-services, test, docker-images, infra-preflight, storybook-test, schema-bust-gate]
+    needs: [pr-title, lint, frontend-build, build-services, test, docker-images, storybook-test, schema-bust-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -1,12 +1,12 @@
 import { confirm } from '@inquirer/prompts';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
 import { pc } from '../../lib/utils/cli-output';
 import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import type { InfraContext } from '../shared';
-import { acquireOwnerKey, printRevokeReminder } from './owner-key';
+import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
+import type { OwnerKey } from './owner-key';
+import { printRevokeReminder } from './owner-key';
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string };
 
@@ -17,23 +17,23 @@ async function selectWithEscape<T extends string>(options: { message: string; ch
 }
 
 /**
- * Manage this environment's runtime secrets. Writing a secret version or minting a managed key needs Secret Manager write and IAMManager, which
- * the admin application key lacks, so this takes the Owner API key the way every privileged action does (SCW_OWNER_*, else a prompt).
+ * Manage this environment's runtime secrets. Writing a secret version needs Secret Manager write, so this takes the operator key the
+ * way every privileged action does. Minting a managed key writes IAM, which takes an Owner API key, asked
+ * for when a mint is confirmed.
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager, which the admin application key cannot: it uses your Owner API key.'));
-  const ownerKey = await acquireOwnerKey({
-    identity: resolveOperatorIdentity(),
-    names: principalNames(appConfig.slug, context.environment),
-    projectId,
-    slug: appConfig.slug,
-    mode: context.environment,
-  });
+  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager: it uses your operator key.'));
+  const operator = await acquirePrivilegedKey(context);
+  let identityKey: OwnerKey | undefined;
 
   try {
     await manageRuntimeSecrets({
-      secretKey: ownerKey.secretKey,
+      secretKey: operator.secretKey,
+      identityKey: async () => {
+        identityKey ??= await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
+        return identityKey;
+      },
       projectId,
       region: appConfig.s3.region,
       slug: appConfig.slug,
@@ -42,7 +42,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
       prompts: { select: selectWithEscape, password: maskedSecret, confirm },
     });
   } finally {
-    await ownerKey.release();
+    await identityKey?.release();
   }
-  if (ownerKey.pasted) printRevokeReminder();
+  if (identityKey) printRevokeReminder();
 }

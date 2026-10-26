@@ -4,6 +4,7 @@ import type { EngineConfig } from '../../config/engine-config';
 export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {
   return {
     slug: 'cella',
+    appSlug: 'cella',
     mode: 'production',
     domain: 'cellajs.com',
     frontendUrl: 'https://www.cellajs.com',

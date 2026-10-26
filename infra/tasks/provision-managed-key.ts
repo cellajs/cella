@@ -1,8 +1,8 @@
 import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../lib/scaleway/secret-paths';
+import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
+import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
 import { checkMark } from '../lib/utils/cli-output';
 
 export interface ProvisionManagedKeyOptions {
@@ -10,6 +10,7 @@ export interface ProvisionManagedKeyOptions {
   definition: ManagedKeyDefinition;
   /** IAM-capable caller key: needs IAMManager to create the app/policy + key. */
   callerSecretKey: string;
+  organizationId: string;
   projectId: string;
   region: string;
   slug: string;
@@ -55,40 +56,40 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   // Resolve + verify every target container up front. Minting an IAM key is a
   // side effect we cannot cheaply undo, so bail before minting if a container is
   // missing so a live key is never leaked.
-  const containerBySecretName = new Map<string, { id: string }>();
+  const containersBySecretName = new Map<string, SecretManagerSecret[]>();
   for (const { secret } of targets) {
-    const container = await client.getSecretByName(secret.secretName, secretPathFor(secret, opts.slug, opts.mode));
-    if (!container) {
+    const copies = await secretCopyContainers(client, secret, opts.slug, opts.mode);
+    const missing = missingCopies(copies);
+    if (missing.length > 0) {
       throw new Error(
-        `${secret.secretName} (${secret.envVar}) has no container yet: run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
+        `${secret.secretName} (${secret.envVar}) has no container yet for ${missing.join(', ')}: run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
       );
     }
-    containerBySecretName.set(secret.secretName, container);
+    containersBySecretName.set(secret.secretName, existingContainers(copies));
   }
 
   const minted = await provisionScopedKey(
-    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
+    { callerSecretKey: opts.callerSecretKey, organizationId: opts.organizationId, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
     {
       suffix: definition.suffix,
       appDescription: definition.appDescription,
       policyDescription: definition.policyDescription,
       buildRules: ({ projectId }) => [{ permission_set_names: [...definition.permissionSets], project_ids: [projectId] }],
-      mintKey: true,
     },
   );
 
   const seeded: Record<string, number> = {};
   for (const { field, secret } of targets) {
     const value = field === 'accessKey' ? minted.accessKey : minted.secretKey;
-    const container = containerBySecretName.get(secret.secretName)!;
-    const version = await client.putSecretValue({
-      secretId: container.id,
-      value,
+    const revisions = await putEveryCopy(client, containersBySecretName.get(secret.secretName) ?? [], value, {
       description: `Minted by infra CLI (${definition.suffix})`,
       disablePrevious: true,
     });
-    seeded[secret.secretName] = version.revision;
-    log(`  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) → revision ${version.revision}`);
+    const revision = Math.max(...revisions);
+    seeded[secret.secretName] = revision;
+    log(
+      `  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) to ${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'} → revision ${revision}`,
+    );
   }
 
   return { applicationId: minted.applicationId, seeded };

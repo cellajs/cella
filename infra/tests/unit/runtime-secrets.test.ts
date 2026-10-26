@@ -60,10 +60,10 @@ describe('runtime secret registry', () => {
     }
   });
 
-  it('only allows random generation for pulumi-owned secrets', () => {
+  it('only allows random generation for secrets the engine makes', () => {
     for (const secret of runtimeSecrets) {
       if (secret.generation === 'random') {
-        expect(secret.valueSource, `${secret.id} random generation must stay pulumi-owned`).toBe('pulumi');
+        expect(secret.valueSource, `${secret.id} random generation must stay the engine's`).toBe('engine');
       }
     }
   });

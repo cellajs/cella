@@ -13,7 +13,7 @@ import type { Environment } from './lib/stack/bootstrap-stack-state';
  * stack NAME is the config mode (index.ts derives APP_MODE from it before any
  * module loads the shared appConfig); everything else here is a pure derivation
  * of that identity. Provider lookups, secret reads, and sizing live with their
- * consumers (vm-iam.ts, compute.ts, config/sizing.ts).
+ * consumers (identities.ts, compute.ts, config/sizing.ts).
  */
 export const stackName = pulumi.getStack().split('/').pop() ?? '';
 
