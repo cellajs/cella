@@ -1,0 +1,4 @@
+# What an environment deploys when it does not follow its default (production: the newest release; any other: branch main).
+# <environment> <target> [retry <n>], the target being branch:<name>, releases, a release tag or a full commit id.
+# Read by the runner at the head of the default branch; nothing reads it before the infra rewrite lands.
+staging branch:infra-rewrite

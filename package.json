@@ -76,16 +76,16 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
-    "@cellajs/cli": "^0.4.1",
+    "@cellajs/cli": "^0.4.2",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "^5.0.5",
     "cross-env": "^10.1.0",
-    "knip": "^6.42.1",
+    "knip": "^6.43.0",
     "lefthook": "^2.2.2",
     "rimraf": "^6.1.3",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
     "vitest": "^5.0.5"
   },
-  "packageManager": "pnpm@11.28.7"
+  "packageManager": "pnpm@11.28.8"
 }

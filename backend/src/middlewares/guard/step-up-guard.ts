@@ -10,6 +10,7 @@ export const stepUpGuard = xMiddleware(
   {
     functionName: 'stepUpGuard',
     type: 'x-guard',
+    requires: ['session'],
     name: 'stepUp',
     description:
       'Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or emailed link; refuses impersonation',

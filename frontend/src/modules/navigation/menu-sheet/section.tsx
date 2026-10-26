@@ -27,14 +27,18 @@ export type MenuSectionOptions = {
 interface MenuSheetSectionProps {
   items: UserMenuItem[];
   options: MenuSectionOptions;
+  /** Opens in manage mode, as the organization switcher's Manage does. */
+  initialEditing?: boolean;
+  /** Called when manage mode is turned off. */
+  onEditingEnd?: () => void;
 }
 
-export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
+export function MenuSheetSection({ items, options, initialEditing = false, onEditingEnd }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initialEditing);
 
   // Own entries only: toggling one section re-renders that section alone
   const archivedSectionKey = `${options.entityType}-archived`;
@@ -52,7 +56,10 @@ export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
     options.createAction?.(ref);
   };
 
-  const handleToggleEditing = () => setIsEditing((prev) => !prev);
+  const handleToggleEditing = () => {
+    setIsEditing(!isEditing);
+    if (isEditing) onEditingEnd?.();
+  };
 
   const handleToggleArchived = () => setSectionOpen(archivedSectionKey, !isArchivedVisible);
 

@@ -65,6 +65,7 @@
         "src/modules/common/form-fields/select-combobox/parent.tsx",
         "src/modules/common/list-skeleton.tsx",
         "src/modules/common/page/local-tab-nav.tsx",
+        "src/modules/entities/entity-grid/view-mode.ts",
         "src/modules/marketing/about/faq.tsx",
         "src/hooks/use-organization-layout-context.ts",
         "src/utils/clean-url.ts",

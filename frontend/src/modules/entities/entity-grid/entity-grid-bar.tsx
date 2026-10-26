@@ -10,12 +10,15 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-type EntityGridBarSearch = { q?: string; sort?: string; role?: string };
+type SortOrder = 'asc' | 'desc';
 
+type EntityGridBarSearch = { q?: string; sort?: string; order?: SortOrder; role?: string };
+
+// A picked sort writes its order too: the list's own default order may suit neither option
 const sortOptions = [
-  { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
-  { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt' },
-] satisfies { name: TKey; icon: IconComponent; value: string }[];
+  { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name', order: 'asc' },
+  { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt', order: 'desc' },
+] satisfies { name: TKey; icon: IconComponent; value: string; order: SortOrder }[];
 
 interface EntityGridBarProps {
   queryKey: QueryKey;
@@ -67,7 +70,11 @@ export function EntityGridBar({
       actions={actions}
       filters={
         <>
-          <SelectSort value={sort ?? sortOptions[0].value} onChange={(sort) => setSearch({ sort })} sortOptions={sortOptions} />
+          <SelectSort
+            value={sort ?? sortOptions[0].value}
+            onChange={(sort) => setSearch({ sort, order: sortOptions.find((option) => option.value === sort)?.order })}
+            sortOptions={sortOptions}
+          />
           {roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} />}
         </>
       }

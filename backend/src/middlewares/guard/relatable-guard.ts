@@ -9,6 +9,7 @@ export const relatableGuard = xMiddleware(
   {
     functionName: 'relatableGuard',
     type: 'x-guard',
+    requires: ['session'],
     name: 'relatable',
     description: 'Requires sharing an organization with the user the request names, or being a system admin',
   },

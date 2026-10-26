@@ -15,6 +15,7 @@ export const tokenGuard = xMiddleware(
     functionName: 'tokenGuard',
     type: 'x-guard',
     security: [{ oauth2: [] }],
+    provides: ['actor'],
     name: 'token',
     description: 'Requires an access token, no session or API key; acts as its service account or consenting user, limited to its scopes',
   },

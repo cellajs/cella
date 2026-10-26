@@ -33,11 +33,18 @@ export type ExtensionType = keyof typeof extensionMap;
 /** One OpenAPI security requirement alternative, e.g. `{ cookieAuth: [] }`. */
 export type SecurityRequirement = Record<string, string[]>;
 
+/** Request context one guard sets for the guards after it: who acts, a signed-in user's session (`userGuard` only), the tenant. */
+export type GuardContext = 'actor' | 'session' | 'tenant';
+
 export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __extensionType: ExtensionType;
   __description?: string;
   /** For guards: the security schemes the route accepts, emitted per operation; `[]` means public. */
   __security?: SecurityRequirement[];
+  /** For guards: the context this guard sets. */
+  __provides?: GuardContext[];
+  /** For guards: the context this guard reads, which a guard before it on the route must provide. */
+  __requires?: GuardContext[];
 };
 
 export type SpecificationExtensions = Record<ExtensionType, string[]>;
@@ -61,7 +68,7 @@ export type XTool = {
 export const toolAction = (method: string): EntityActionType => (method.toUpperCase() === 'GET' ? 'read' : 'update');
 
 /** When adding an extension to `extensionMap`, add its prop here too. `xScope` is the one prop without an `x-*` key. */
-export type XMiddlewareOptions = {
+export type XRouteProps = {
   /**
    * The scope a scoped API key or access token needs on a route whose guards accept one; it fills that route's
    * security requirements. An MCP tool route leaves it out: its scope follows from `xTool`, as the MCP server enforces it.
@@ -76,15 +83,15 @@ export type XMiddlewareOptions = {
   xTool?: XTool;
 };
 
-export type ExtensionPropId = keyof XMiddlewareOptions;
+export type ExtensionPropId = keyof XRouteProps;
 
 export const collectExtensionMiddleware = (config: Record<string, unknown>): MiddlewareHandler<Env>[] =>
   Object.values(extensionMap)
     .filter(({ kind }) => kind === 'middleware')
     .flatMap(({ id }) => (config[id] as MiddlewareHandler<Env>[]) ?? []);
 
-/** The route prop ids of every extension (`xGuard`, `xRateLimiter`, `xCache`, `xTool`, `xEnabledBy`), kept out of the spec. */
-export const getExtensionPropIds = (): string[] => Object.values(extensionMap).map(({ id }) => id);
+/** Every prop of `XRouteProps`: the extension ids (`xGuard`, `xRateLimiter`, `xCache`, `xTool`, `xEnabledBy`) and `xScope`, kept out of the spec. */
+export const getExtensionPropIds = (): string[] => [...Object.values(extensionMap).map(({ id }) => id), 'xScope'];
 
 /** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`, `xEnabledBy` as `x-enabled-by`). */
 export const createMetadataExtensions = (config: Record<string, unknown>): Record<string, unknown> =>
