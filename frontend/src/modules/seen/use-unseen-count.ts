@@ -30,12 +30,16 @@ export function useUnseenCount(channelIds: string[]) {
   return data ?? 0;
 }
 
-/** Total unseen count across non-archived, non-muted channel entities, for the sidebar menu button badge. */
-export function useTotalUnseenCount() {
+/**
+ * Unseen counts by organization id across its non-archived, non-muted channel entities, whichever menu section lists them.
+ * The rail, the organization switcher and the menu button badge all read these, so their counts add up.
+ */
+export function useOrganizationUnseenCounts() {
   const { data: unseenData } = useQuery(unseenCountsQueryOptions());
   const { data: membershipsData } = useQuery(myMembershipsQueryOptions());
 
-  if (!unseenData || !membershipsData) return 0;
+  const counts = new Map<string, number>();
+  if (!unseenData || !membershipsData) return counts;
 
   // A sub-channel under an archived channel belongs to that channel's archived toggle, though its own row stays unarchived.
   const archivedChannelIds = new Set<string>();
@@ -43,16 +47,18 @@ export function useTotalUnseenCount() {
     if (membership.archived) archivedChannelIds.add(membership.channelId);
   }
 
-  const activeIds = new Set<string>();
   for (const membership of membershipsData.items) {
     if (!seenGroupingChannelTypes.has(membership.channelType) || membership.muted || membership.archived) continue;
     if (hasArchivedAncestor(membership, archivedChannelIds)) continue;
-    activeIds.add(membership.channelId);
+    const count = sumCounts(unseenData[membership.channelId]);
+    if (count) counts.set(membership.organizationId, (counts.get(membership.organizationId) ?? 0) + count);
   }
+  return counts;
+}
 
+/** Total unseen count across non-archived, non-muted channel entities, for the menu button badge. */
+export function useTotalUnseenCount() {
   let total = 0;
-  for (const [id, counts] of Object.entries(unseenData)) {
-    if (activeIds.has(id)) total += sumCounts(counts);
-  }
+  for (const count of useOrganizationUnseenCounts().values()) total += count;
   return total;
 }

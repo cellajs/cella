@@ -94,7 +94,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
               trailingBlock: false,
               // The ring goes on the editor's root: the contenteditable inside it takes the focus.
               className: tw(
-                'max-h-[50vh] min-h-20 overflow-auto rounded-md border border-input bg-background p-3 pr-6 pl-8 text-sm focus-ring:has-focus-visible:outline-hidden focus-ring:has-focus-visible:ring-2 focus-ring:has-focus-visible:ring-ring focus-ring:has-focus-visible:ring-offset-2 focus-ring:has-focus-visible:ring-offset-background',
+                'focus-within-effect max-h-[50vh] min-h-20 overflow-auto rounded-md border border-input bg-background p-3 pr-6 pl-8 text-sm',
               ),
               baseFilePanelProps: canUploadAttachments(organization)
                 ? {

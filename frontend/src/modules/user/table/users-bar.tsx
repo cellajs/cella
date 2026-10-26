@@ -39,7 +39,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
-      className: tw('relative z-60 w-auto max-w-4xl border shadow-none'),
+      className: tw('w-auto max-w-4xl border shadow-none'),
       container: { ref: inviteContainerRef, overlay: true },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
@@ -58,7 +58,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         <NamedText
           i18nKey="c:confirm.delete_resource"
           values={{
-            name: selected.map((user) => user.email).join(', '),
+            name: selected.map((user) => user.email),
             resource: t('c:user', { count: selected.length }).toLowerCase(),
           }}
         />

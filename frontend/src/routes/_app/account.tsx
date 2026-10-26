@@ -19,7 +19,7 @@ const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'Accoun
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
   validateSearch: errorSearchSchema.extend({ connect: z.uuid().optional().catch(undefined) }),
-  head: () => pageHead(i18n.t('c:settings')),
+  head: () => pageHead(i18n.t('c:account_settings')),
   beforeLoad: ({ search }) => {
     if (search.error) {
       const { title, message } = getErrorInfo({ errorFromQuery: search.error });

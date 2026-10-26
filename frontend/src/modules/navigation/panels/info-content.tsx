@@ -42,7 +42,7 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
 
   return (
     <HoverCard>
-      <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect')}>
+      <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect border-input')}>
         <StatusDot status={status} />
         <span className="min-w-0">{t(entry.label)}</span>
       </HoverCardTrigger>

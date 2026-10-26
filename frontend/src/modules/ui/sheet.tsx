@@ -25,7 +25,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-113 bg-muted/30 backdrop-blur-xs data-closed:animate-out data-open:animate-in',
+        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-113 bg-overlay data-closed:animate-out data-open:animate-in',
         // Same duration as the popup, which Base UI waits on before unmounting; forwards keeps the overlay hidden until then
         'data-closed:fill-mode-forwards data-closed:duration-300 data-open:duration-300',
         className,

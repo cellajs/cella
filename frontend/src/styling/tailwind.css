@@ -340,6 +340,11 @@
   .focus-effect {
     @apply focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  /* The same ring for an element whose focus lands on a descendant: a slider thumb's hidden input, an editor's contenteditable. */
+  .focus-within-effect {
+    @apply has-focus-visible:outline-hidden focus-ring:has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:shadow-none has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background;
+  }
 }
 
 /* Draws the focus-effect ring inside the element, for rows in clipping containers such as collapsible nav lists. */
@@ -437,7 +442,8 @@
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.92 0.004 285.75);
-    /* One resting edge: a field is outlined no more strongly than an outline button. Increased contrast raises both. */
+    /* --input edges what a person acts on (a field, button, link tile, toggle); --border frames or divides content.
+       One resting edge: a field is outlined no more strongly than an outline button. Increased contrast raises both. */
     --input: var(--border);
     /* What --border, --input and --sidebar-border become under increased contrast. Never used by a class: the
        three tokens below are what components read, this only holds the raised value so it is written once. */
@@ -455,8 +461,8 @@
     --info-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
-    /* Modal backdrop scrim, the same in both modes. */
-    --overlay: oklch(0 0 0 / 0.4);
+    /* The scrim behind every dialog, sheet and drawer, never blurred, so the page stays readable under it. */
+    --overlay: oklch(0 0 0 / 0.5);
     /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */
     --chart-1: oklch(0.871 0.006 286.286);
     --chart-2: oklch(0.552 0.016 285.938);
@@ -489,8 +495,8 @@
     --accent-foreground: oklch(0.9851 0 0);
     --destructive: oklch(0.72 0.17 29.23);
     --destructive-foreground: oklch(0.1963 0.0092 285.53);
-    --border: oklch(0.36 0.011 285.63);
-    --input: var(--border);
+    --border: oklch(0.27 0.011 285.63);
+    --input: oklch(0.36 0.011 285.63);
     --edge-raised: oklch(0.54 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
     --success: oklch(0.72 0.2 142.5);
@@ -501,6 +507,8 @@
     --info-foreground: oklch(0.1963 0.0092 285.53);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
+    /* Black over a near-black page separates less, so the dark scrim dims further. */
+    --overlay: oklch(0 0 0 / 0.7);
 
     --sidebar: oklch(0.3138 0.0102 285.63);
     --sidebar-foreground: oklch(0.985 0 0);

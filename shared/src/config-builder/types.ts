@@ -206,11 +206,15 @@ export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;
 /** Every placement surface of an app whose channel types are `C`. */
 export type SlotOf<C extends string> = ChannelSlotOf<C> | SingletonSlot;
 
-/**
- * What the desktop nav rail leads with: `menu` is one button whose sheet lists every channel, `organizations` a button
- * per organization whose sheet holds that organization alone, with an organization switcher in the mobile menu.
- */
-export type NavSidebarMode = 'menu' | 'organizations';
+/** How the app navigates; `C` is the app's channel types. */
+export interface NavigationConfig<C extends string = string> {
+  /** The strip of nav buttons, left on desktop and at the bottom on phones. `false`: the menu stays open beside the page on desktop, and a floating button opens it on phones. */
+  navBar: boolean;
+  /** `all`: every menu section in one menu. `perOrganization`: one organization at a time, picked with a nav bar button each, or a switcher in the menu header. */
+  menu: 'all' | 'perOrganization';
+  /** Channel types whose page tabs show in the menu, under the channel, in place of the page header's tab bar. */
+  pageTabs: Partial<Record<C, 'menu'>>;
+}
 
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   entityTypes: T['entityTypes'];
@@ -222,7 +226,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   resourceTypes: T['resourceTypes'];
   productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
-  navSidebarMode: NavSidebarMode;
+  navigation: NavigationConfig<T['channelEntityTypes'][number] & string>;
   /**
    * Placement ids per surface, in display order. A listed surface is total: an id left out has no
    * placement there. An unlisted surface renders every registered placement in its declared order.

@@ -19,7 +19,7 @@ export {
 export type { ResolvedAncestor } from './src/config-builder/resolve-row-channel.ts';
 export { entityIdColumnKey, entityIdColumnName } from './src/config-builder/resolve-row-channel.ts';
 export { pathHomeId, pathSegments, pathStartsWith } from './src/config-builder/row-path.ts';
-export type { FederationConfig, NavSidebarMode, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types.ts';
+export type { FederationConfig, NavigationConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types.ts';
 export { nonEmpty, recordFromKeys, typedEntries } from './src/config-builder/utils.ts';
 export type {
   AccessMembership,

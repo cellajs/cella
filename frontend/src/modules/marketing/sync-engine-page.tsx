@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { AboutSection } from '~/modules/marketing/about/section';
+import { AboutSection, AboutStatement } from '~/modules/marketing/about/section';
 import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { InfoGrid } from '~/modules/marketing/info-grid';
 import { MarketingLayout } from '~/modules/marketing/layout';
@@ -14,7 +14,9 @@ export function SyncEnginePage() {
 
   return (
     <MarketingLayout title="about:selective_sync.title">
-      <AboutSection text="about:selective_sync.text" textComponents={{ em: <em /> }}>
+      <AboutSection>
+        <AboutStatement text="about:selective_sync.text" className="mb-12 md:mb-20" />
+
         <p className="mx-auto mb-6 max-w-3xl">
           <Trans
             t={t}
@@ -34,7 +36,7 @@ export function SyncEnginePage() {
         </div>
       </AboutSection>
 
-      <AboutSection title="about:how.title" text="about:how.text" alternate>
+      <AboutSection title="about:how.title" alternate>
         <p className={cn(pillClass, '-mt-8')}>{t('about:how.concept_1')}</p>
         <p className={cn(pillClass, 'mt-2 mb-10')}>{t('about:how.concept_2')}</p>
         <SyncDiagram />

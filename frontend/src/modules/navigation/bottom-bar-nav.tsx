@@ -4,7 +4,8 @@ import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 
-const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
+// The footer items end the row, as they end the desktop nav bar
+const barNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base' || item.type === 'footer');
 
 interface BottomBarNavProps {
   onNavItemClick: TriggerNavItemFn;
@@ -24,7 +25,7 @@ export function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
       className="fixed bottom-0 z-100 w-full chrome-hidden:translate-y-full select-none bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out [-webkit-touch-callout:none] focus-view:hidden data-[started=false]:translate-y-full"
     >
       <ul className="flex w-full justify-between px-2 py-1">
-        {baseNavItems.map((navItem) => (
+        {barNavItems.map((navItem) => (
           <li key={navItem.id}>
             <BottomBarNavItemButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={onNavItemClick} />
           </li>

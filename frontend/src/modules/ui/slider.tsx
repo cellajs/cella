@@ -38,7 +38,7 @@ export function Slider({ className, defaultValue, value, min = 0, max = 100, thu
             // biome-ignore lint/suspicious/noArrayIndexKey: slider thumbs are positional and never reordered.
             key={index}
             {...thumbProps}
-            className="focus-effect block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 hover:ring-ring/30 data-disabled:pointer-events-none data-disabled:opacity-50"
+            className="focus-within-effect block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 hover:ring-ring/30 data-disabled:pointer-events-none data-disabled:opacity-50"
           />
         ))}
       </SliderPrimitive.Control>

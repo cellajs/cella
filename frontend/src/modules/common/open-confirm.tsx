@@ -66,18 +66,22 @@ interface DeleteDialogOptions {
   count: number;
   /** A `Delete*` form; it closes the dialog itself. */
   content: ReactNode;
-  /** Replaces the counted question, e.g. to name the items. */
+  /** Replaces "Delete 3 projects", e.g. for a removal. */
+  title?: ReactNode;
+  /** Replaces the counted question, e.g. a `NamedText` that lists the items. */
   description?: ReactNode;
 }
 
-/** Opens a dialog that confirms deleting `count` items: "Delete 3 projects". */
-export function openDeleteDialog({ id, triggerRef, resource, count, content, description }: DeleteDialogOptions) {
+/** Opens a dialog that confirms deleting `count` items: "Delete 3 projects". From a selection bar it docks in the bar's place. */
+export function openDeleteDialog({ id, triggerRef, resource, count, content, title, description }: DeleteDialogOptions) {
   const resourceName = i18n.t(resource, { count }).toLowerCase();
+  const dock = triggerRef.current?.closest('[data-selection-bar]') ? 'bottom' : undefined;
   dialoger.getState().create(content, {
     id,
     triggerRef,
-    className: 'max-w-xl',
-    title: i18n.t('c:delete_resource', { resource: resourceName }),
+    dock,
+    className: dock ? 'max-w-md' : 'max-w-xl',
+    title: title ?? i18n.t('c:delete_resource', { resource: resourceName }),
     description: description ?? <NamedText i18nKey="c:confirm.delete_counted_resource" values={{ count, resource: resourceName }} />,
   });
 }

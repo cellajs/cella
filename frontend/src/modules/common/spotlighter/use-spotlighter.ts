@@ -16,7 +16,7 @@ interface SpotlighterState {
   close: (id: string) => void;
 }
 
-/** The open spotlights of the one page-dim overlay (`Spotlighter`): an expanded composer, a card in edit mode, a focused panel. */
+/** The open spotlights of the one page-dim overlay (`Spotlighter`): an expanded composer, a card in edit mode, a focused panel, an inline dialog. */
 export const useSpotlighter = create<SpotlighterState>((set) => ({
   stack: [],
   open: (entry) => set((state) => ({ stack: [...state.stack.filter((existing) => existing.id !== entry.id), entry] })),
@@ -37,9 +37,9 @@ export function useSpotlight(id: string, active: boolean, onClose: () => void) {
 }
 
 /**
- * Raises a spotlit region to z-111: above the overlay (110, over all page and navigation chrome), below dialogs, sheets and dropdowns (113+),
- * so pickers opened from it stay usable. Apply it to the outermost element of the region: an ancestor with a stacking context (transform,
- * filter, opacity, contain, positioned z-index) traps it under the overlay.
+ * Raises a spotlit region to z-111: above the overlay (110, over all page and navigation chrome and the selection bar), below dialogs,
+ * sheets and dropdowns (113+), so pickers opened from it stay usable. Apply it to the outermost element of the region: an ancestor with
+ * a stacking context (transform, filter, opacity, contain, positioned z-index) traps it under the overlay.
  * @public
  */
 export const spotlightLift = tw('relative z-111');

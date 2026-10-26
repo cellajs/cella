@@ -1,7 +1,7 @@
 import { BellIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
-import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
+import { AppIcon, AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
 import { startSearchAction } from '~/modules/navigation/start-search-action';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
@@ -10,21 +10,15 @@ import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 
 /** The main navigation items, in the nav bars and as floating buttons on mobile; an app with its own set pins this file in `cella/cella.config.ts`. */
 export const navItems = [
-  // Home lives in the menu sheet header, so the menu button also carries the brand intro and the loading spinner.
-  {
-    id: 'menu',
-    type: 'base',
-    icon: MenuIcon,
-    sheet: () => <MenuSheet />,
-    iconSlot: AppNavLoader,
-    badgeSlot: UnseenNavBadge,
-  },
+  // The app icon leads every nav bar and goes home; it also carries the brand intro and the loading spinner.
+  { id: 'home', type: 'base', icon: AppIcon, href: '/home', iconSlot: AppNavLoader },
+  { id: 'menu', type: 'base', icon: MenuIcon, sheet: () => <MenuSheet />, badgeSlot: UnseenNavBadge },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   // Mentions and addressed activity; ambient posts stay on the menu badge above.
   { id: 'notifications', type: 'base', icon: BellIcon, sheet: () => <NotificationsSheet />, badgeSlot: UnreadNavBadge },
   {
     id: 'account',
-    type: 'base',
+    type: 'footer',
     icon: UserIcon,
     sheet: () => <AccountSheet />,
     mirrorOnMobile: true,

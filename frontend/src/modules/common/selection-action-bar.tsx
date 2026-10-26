@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { CountBadge } from '~/modules/common/count-badge';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 
@@ -20,10 +21,12 @@ interface SelectionActionBarProps {
 /**
  * Floating action bar for the current selection, fixed at the bottom of the viewport. Portaled to
  * body so sticky or transformed ancestors cannot trap it. While visible it sets the
- * `selection-active` body class, which moves FABs and the mobile bottom nav out of its way.
+ * `selection-active` body class, which moves FABs and the mobile bottom nav out of its way. A
+ * confirmation opened from it docks in its place (`openDeleteDialog`), and the bar steps down meanwhile.
  */
 export function SelectionActionBar({ count, onClear, children }: SelectionActionBarProps) {
   const { t } = useTranslation();
+  const confirming = useDialoger((state) => state.dialogs.some((dialog) => dialog.dock && dialog.open));
 
   useBodyClass({ 'selection-active': count > 0 });
 
@@ -31,11 +34,13 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
     <AnimatePresence>
       {count > 0 && (
         <motion.div
+          data-selection-bar
           initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={confirming ? { opacity: 0, y: 16 } : { opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
-          className="fixed inset-x-0 bottom-4 z-110 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-lg backdrop-blur-xs"
+          // z-108 keeps it under the spotlight's dim (110), with the rest of the page
+          className="fixed inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-lg backdrop-blur-xs"
         >
           <CountBadge count={count} className="absolute -top-2 -right-2" />
 

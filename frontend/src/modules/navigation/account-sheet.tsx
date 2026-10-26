@@ -90,7 +90,7 @@ export function AccountSheet() {
           label={t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
           onClick={openProfile}
         />
-        <NavSheetRow offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} to="/account" />
+        <NavSheetRow offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:account_settings')} to="/account" />
         {isSystemAdmin && (
           <NavSheetRow offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />
         )}

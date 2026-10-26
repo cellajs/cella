@@ -37,6 +37,9 @@ type ChannelRoute = { to: EntityRoute['to']; params: Record<string, string>; sea
  */
 export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): EntityRoute => resolveChannelRoute(item, isSubitem);
 
+/** The route params of an entity's own page, for links to its other routes (its page tabs). */
+export const getChannelRouteParams = (item: EnrichedChannel): Record<string, string> => resolveChannelRoute(item).params;
+
 function resolveChannelRoute(item: EnrichedChannel, isSubitem?: boolean): ChannelRoute {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 

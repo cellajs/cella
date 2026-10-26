@@ -140,7 +140,7 @@ describe('csv export', () => {
     // Channel counts are absent from the row, so their cells are dashes.
     expect(await csvLines(columns, rows)).toEqual([
       `c:name,c:email,c:role,c:mfa_short,c:created_at,c:last_seen_at,c:last_post,${cells(memberCountTypes, (type) => `c:${type}`)}`,
-      `Tenant 48,ada@example.com,member,c:enabled,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
+      `Tenant 48,ada@example.com,member,c:mfa_on,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
       `Organization 12,-,-,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
     ]);
 

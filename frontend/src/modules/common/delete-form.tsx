@@ -57,7 +57,7 @@ export function DeleteForm({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex flex-col in-data-dock:justify-center gap-2 sm:flex-row">
       <SubmitButton variant="destructive" icon={<Icon />} allowOfflineDelete={allowOfflineDelete} onClick={onDelete} loading={pending}>
         {t(label)}
       </SubmitButton>

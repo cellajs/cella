@@ -45,10 +45,11 @@ export function removeAndNotify<T extends Closable>(commit: (remaining: T[]) => 
 
 /**
  * The `initialFocus` of an overlay opened from code, which Base UI cannot see as a touch open: on touch the popup
- * takes focus, as Base UI's own touch default does.
+ * takes focus, as Base UI's own touch default does. Otherwise a `data-autofocus` element wins, so a confirmation
+ * starts on its safe option.
  */
 export function touchInitialFocus(popupRef: RefObject<HTMLElement | null>) {
-  return () => (isTouchInteraction() ? popupRef.current : true);
+  return () => (isTouchInteraction() ? popupRef.current : (popupRef.current?.querySelector<HTMLElement>('[data-autofocus]') ?? true));
 }
 
 /**

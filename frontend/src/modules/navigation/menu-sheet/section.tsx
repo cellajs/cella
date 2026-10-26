@@ -2,7 +2,7 @@ import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, type ChannelEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
@@ -20,46 +20,46 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 export type MenuSectionOptions = {
   label: TKey;
   entityType: ChannelEntityType;
-  createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
+  /** Opens the create flow; `organizationId` is set when it starts from one organization's menu sheet. */
+  createAction?: (ref: RefObject<HTMLButtonElement | null>, organizationId?: string) => void;
   icon?: IconComponent;
 };
 
 interface MenuSheetSectionProps {
   items: UserMenuItem[];
   options: MenuSectionOptions;
-  /** Opens in manage mode, as the organization switcher's Manage does. */
-  initialEditing?: boolean;
-  /** Called when manage mode is turned off. */
-  onEditingEnd?: () => void;
+  /** False for a lone section: collapsing it would hide the whole sheet. */
+  isCollapsible: boolean;
+  /** The organization whose menu sheet holds the section, handed to its create action. */
+  organizationId?: string;
 }
 
-export function MenuSheetSection({ items, options, initialEditing = false, onEditingEnd }: MenuSheetSectionProps) {
+export function MenuSheetSection({ items, options, isCollapsible, organizationId }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
-  const [isEditing, setIsEditing] = useState(initialEditing);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Own entries only: toggling one section re-renders that section alone
   const archivedSectionKey = `${options.entityType}-archived`;
   const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? true);
   // Beside other sections the organization one starts collapsed: users seldom navigate there
-  const isOpenByDefault = options.entityType !== 'organization' || appConfig.menuStructure.length === 1;
-  const isSectionVisible = useNavigationStore((state) => state.activeSections?.[options.entityType] ?? isOpenByDefault);
+  const isOpenByDefault = options.entityType !== 'organization';
+  const isSectionVisible = useNavigationStore((state) => !isCollapsible || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
   const archivedItems = items.filter((item) => item.membership.archived);
   const archivedCount = archivedItems.length;
   const activeChannelIds = collectChannelIds(items, { archived: false });
   const archivedChannelIds = collectChannelIds(items, { archived: true });
 
-  const handleCreate = (ref: RefObject<HTMLButtonElement | null>) => {
-    if (isMobile) closeNavSheet();
-    options.createAction?.(ref);
-  };
+  const handleCreate = options.createAction
+    ? (ref: RefObject<HTMLButtonElement | null>) => {
+        if (isMobile) closeNavSheet();
+        options.createAction?.(ref, organizationId);
+      }
+    : undefined;
 
-  const handleToggleEditing = () => {
-    setIsEditing(!isEditing);
-    if (isEditing) onEditingEnd?.();
-  };
+  const handleToggleEditing = () => setIsEditing(!isEditing);
 
   const handleToggleArchived = () => setSectionOpen(archivedSectionKey, !isArchivedVisible);
 
@@ -70,6 +70,7 @@ export function MenuSheetSection({ items, options, initialEditing = false, onEdi
         channelIds={activeChannelIds}
         options={options}
         isEditing={isEditing}
+        isCollapsible={isCollapsible}
         isSectionVisible={isSectionVisible}
         onToggleEditing={handleToggleEditing}
         onCreate={handleCreate}
@@ -94,7 +95,7 @@ export function MenuSheetSection({ items, options, initialEditing = false, onEdi
             {isEditing ? (
               <MenuSheetItemsListEdit items={items} isArchived={false} options={options} />
             ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} onCreate={handleCreate} />
             )}
             {!!items.length && (
               <li className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
