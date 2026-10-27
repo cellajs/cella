@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb, type Tx } from '#/db/db';
@@ -10,6 +9,7 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
 import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import {
+  bindTokenToUser,
   deleteBoundToken,
   deleteReplacedTokens,
   findBoundToken,
@@ -18,11 +18,10 @@ import {
   insertTokens,
   type TokenRecord,
   updateTokenRedeemed,
-  updateTokenUser,
 } from '#/modules/auth/tokens/tokens-queries';
 import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
-import { hashToken } from '#/utils/hash-token';
+import { newHashedToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
 
@@ -58,9 +57,9 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
 
   await deleteReplacedTokens(ctx, { tokens });
 
-  const issued = tokens.map((token) => ({ token, id: generateId(), rawToken: nanoid(40) }));
+  const issued = tokens.map((token) => ({ token, id: generateId(), ...newHashedToken() }));
   const rows = await insertTokens(ctx, {
-    values: issued.map(({ token, id, rawToken }) => ({
+    values: issued.map(({ token, id, hash }) => ({
       id,
       type: token.type,
       email: token.email,
@@ -73,16 +72,16 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       sessionId: token.sessionId ?? null,
       authStrategy: token.authStrategy ?? null,
       connectionId: token.connectionId ?? null,
-      secret: hashToken(rawToken),
+      secret: hash,
       expiresAt: isoDateIn(tokenPolicies[token.type].ttl),
     })),
   });
 
   const rowsById = new Map(rows.map((row) => [row.id, row]));
-  return issued.map(({ id, rawToken }) => {
+  return issued.map(({ id, raw }) => {
     const token = rowsById.get(id);
     if (!token) throw new AppError(500, 'server_error', 'error', { meta: { reason: 'token_not_stored' } });
-    return { token, rawToken };
+    return { token, rawToken: raw };
   });
 };
 
@@ -117,8 +116,8 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
   if (!signedIn) return;
 
   const { user } = signedIn;
-  const ownerId = token.userId ?? (await findUserByEmail(dbCtx, { email: token.email }))?.id;
-  if (ownerId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
+  const holderId = token.userId ?? (await findUserByEmail(dbCtx, { email: token.email }))?.id;
+  if (holderId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
 };
 
 /**
@@ -137,14 +136,14 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
  * Settles the account of a link issued without one, in the transaction that redeems it, and returns its user id: the
  * token is bound to that user. A throw rolls the redemption back, so the link stays unopened.
  */
-export type ClaimTokenOwner = (tx: Tx, token: TokenRecord) => Promise<string>;
+type ClaimTokenHolder = (tx: Tx, token: TokenRecord) => Promise<string>;
 
 interface InvokeTokenOpts {
   type: LinkTokenType;
-  /** The raw value from the link. */
+  /** The raw value in the link's URL; the database holds only its hash. */
   rawToken: string;
   /** For a link issued without an account (a sign-up link); runs only in the redemption that wins. */
-  claimOwner?: ClaimTokenOwner;
+  claimHolder?: ClaimTokenHolder;
 }
 
 /**
@@ -152,12 +151,12 @@ interface InvokeTokenOpts {
  * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
  * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
- * its owner from `claimOwner`, committed with the redemption.
+ * its holder from `claimHolder`, committed with the redemption.
  * @returns The redeemed token.
  * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 409
- *   `user_mismatch` while signed in to another account, or what `claimOwner` throws.
+ *   `user_mismatch` while signed in to another account, or what `claimHolder` throws.
  */
-export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwner }: InvokeTokenOpts): Promise<TokenRecord> => {
+export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
 
   const token = await findLinkToken(dbCtx, { type, rawToken });
@@ -174,24 +173,23 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
   }
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
-  const rawSingleUse = nanoid(40);
+  const singleUse = newHashedToken();
   const redeem = (redeemCtx: DbContext) =>
-    // Hash at rest: the raw value lives only in the browser's cookie.
-    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: hashToken(rawSingleUse), expiresAt: isoDateIn(singleUseWindow) });
+    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: singleUse.hash, expiresAt: isoDateIn(singleUseWindow) });
 
   const redeemed =
-    token.userId || !claimOwner
+    token.userId || !claimHolder
       ? await redeem(dbCtx)
       : await baseDb.transaction(async (tx) => {
           const txCtx = { var: { db: tx } };
           const won = await redeem(txCtx);
           if (!won) return won;
-          const userId = await claimOwner(tx, won);
-          return updateTokenUser(txCtx, { id: won.id, userId });
+          const userId = await claimHolder(tx, won);
+          return bindTokenToUser(txCtx, { tokenId: won.id, userId });
         });
 
   if (redeemed) {
-    await setAuthCookie(ctx, type, rawSingleUse, singleUseWindow);
+    await setAuthCookie(ctx, type, singleUse.raw, singleUseWindow);
     return redeemed;
   }
 

@@ -12,9 +12,9 @@ import { slugFromEmail } from '#/utils/slug';
  * address by now, or a new one. The click proves the inbox, so a new account starts with its address verified via
  * `magic` and claims the invitations waiting for it. Registration is checked again, since it may have closed, or the
  * invitation that allowed the sign-up may have gone, after the link went out.
- * @throws AppError 403 `sign_up_restricted` when the address may no longer sign up.
+ * @throws AppError 403 `sign_up_restricted` when the address may not sign up at the click.
  */
-export const claimMagicLinkOwner = async (tx: Tx, token: TokenRecord): Promise<string> => {
+export const claimMagicLinkHolder = async (tx: Tx, token: TokenRecord): Promise<string> => {
   const txCtx = { var: { db: tx } };
 
   const holder = await findUserByEmail(txCtx, { email: token.email });

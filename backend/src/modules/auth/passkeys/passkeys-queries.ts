@@ -1,13 +1,17 @@
 import { and, eq, getColumns, lt, or } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { getIsoDate } from '#/utils/iso-date';
+
+/** Every column but the credential id, public key and signature counter: what a response carries of a passkey. */
+const { credentialId: _credentialId, publicKey: _publicKey, counter: _counter, ...passkeyColumns } = getColumns(passkeysTable);
 
 interface FindCredentialIdsByUserOpts {
   userId: string;
 }
 
+/** The credential ids of the user's passkeys, which an MFA or step-up challenge offers the browser. */
 export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCredentialIdsByUserOpts) => {
   return ctx.var.db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 };
@@ -16,10 +20,9 @@ interface FindPasskeysByUserOpts {
   userId: string;
 }
 
-/** The user's passkeys without their credential id and public key, for the account page. */
+/** The user's passkeys as a response carries them ({@link passkeyColumns}), for the account page. */
 export const findPasskeysByUser = async (ctx: DbContext, { userId }: FindPasskeysByUserOpts) => {
-  const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
-  return ctx.var.db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, userId));
+  return ctx.var.db.select(passkeyColumns).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 };
 
 interface FindPasskeyByCredentialIdOpts {
@@ -28,6 +31,7 @@ interface FindPasskeyByCredentialIdOpts {
   userId?: string;
 }
 
+/** The passkey a credential id names, public key and counter included: for verifying an assertion, never for a response. */
 export const findPasskeyByCredentialId = async (ctx: DbContext, { credentialId, userId }: FindPasskeyByCredentialIdOpts) => {
   const [passkey] = await ctx.var.db
     .select()
@@ -38,20 +42,19 @@ export const findPasskeyByCredentialId = async (ctx: DbContext, { credentialId, 
 };
 
 interface InsertPasskeyOpts {
-  values: typeof passkeysTable.$inferInsert;
+  values: InsertPasskeyModel;
 }
 
 /**
- * Insert a passkey and return the created row (excluding credentialId and publicKey), or undefined when its credential
- * id is registered already, to this account or another.
+ * Stores a passkey and returns it as a response carries it ({@link passkeyColumns}); undefined when its credential id is
+ * registered already, to this account or another.
  */
 export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpts) => {
-  const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);
   const [newPasskey] = await ctx.var.db
     .insert(passkeysTable)
     .values(values)
     .onConflictDoNothing({ target: passkeysTable.credentialId })
-    .returning(passkeySelect);
+    .returning(passkeyColumns);
   return newPasskey;
 };
 
@@ -79,14 +82,20 @@ interface DeletePasskeyOpts {
   id: string;
 }
 
+/** Deletes the user's passkey with this id; undefined when the user holds none by that id. */
 export const deletePasskey = async (ctx: DbContext, { userId, id }: DeletePasskeyOpts) => {
-  await ctx.var.db.delete(passkeysTable).where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.id, id)));
+  const [deleted] = await ctx.var.db
+    .delete(passkeysTable)
+    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.id, id)))
+    .returning({ id: passkeysTable.id });
+  return deleted;
 };
 
 interface InsertPasskeyChallengeOpts {
   values: typeof passkeyChallengesTable.$inferInsert;
 }
 
+/** Stores a challenge handed out to a browser. */
 export const insertPasskeyChallenge = async (ctx: DbContext, { values }: InsertPasskeyChallengeOpts) => {
   await ctx.var.db.insert(passkeyChallengesTable).values(values);
 };

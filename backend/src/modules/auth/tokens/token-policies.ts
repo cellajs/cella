@@ -31,11 +31,11 @@ export type TokenPolicy =
       sameSite: SameSite;
       replaces: TokenReplacement;
       /**
-       * Who a link issued without an account belongs to when a signed-in browser opens it: `address-owner`, the
+       * Who a link issued without an account belongs to when a signed-in browser opens it: `address-holder`, the
        * account holding its address by now (a new account when nobody does); `any-account`, whoever is signed in, as
        * their own account (an invitation not yet bound to a user).
        */
-      unboundOpener: 'address-owner' | 'any-account';
+      unboundOpener: 'address-holder' | 'any-account';
     }
   | {
       carrier: 'cookie';
@@ -70,7 +70,7 @@ export const tokenPolicies = {
     singleUseWindow: new TimeSpan(5, 'm'),
     sameSite: 'strict',
     replaces: 'address-or-account',
-    unboundOpener: 'address-owner',
+    unboundOpener: 'address-holder',
   },
   'oauth-verification': {
     carrier: 'link',
@@ -78,7 +78,7 @@ export const tokenPolicies = {
     singleUseWindow: new TimeSpan(5, 'm'),
     sameSite: 'lax',
     replaces: 'identity',
-    unboundOpener: 'address-owner',
+    unboundOpener: 'address-holder',
   },
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict', replaces: 'none' },
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax', replaces: 'account' },
@@ -88,7 +88,7 @@ export const tokenPolicies = {
     singleUseWindow: new TimeSpan(5, 'm'),
     sameSite: 'strict',
     replaces: 'session',
-    unboundOpener: 'address-owner',
+    unboundOpener: 'address-holder',
   },
 } as const satisfies Record<TokenType, TokenPolicy>;
 

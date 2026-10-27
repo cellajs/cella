@@ -735,7 +735,7 @@ export const zGetPendingMagicLinkResponse = z.object({
 });
 
 /**
- * Challenge created
+ * TOTP key generated
  */
 export const zGenerateTotpKeyResponse = z.object({
   totpUri: z.string(),

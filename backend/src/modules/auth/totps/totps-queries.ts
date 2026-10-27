@@ -24,8 +24,9 @@ interface InsertTotpOpts {
   lastUsedStep: number;
 }
 
+/** Stores the account's authenticator app, its Base32 secret encrypted at rest. */
 export const insertTotp = async (ctx: DbContext, { userId, secret, lastUsedStep }: InsertTotpOpts) => {
-  return ctx.var.db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret), lastUsedStep });
+  await ctx.var.db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret), lastUsedStep });
 };
 
 interface UpdateTotpLastUsedStepOpts {
@@ -50,6 +51,8 @@ interface DeleteTotpOpts {
   userId: string;
 }
 
+/** Deletes the account's authenticator app; undefined when it holds none. */
 export const deleteTotp = async (ctx: DbContext, { userId }: DeleteTotpOpts) => {
-  await ctx.var.db.delete(totpsTable).where(eq(totpsTable.userId, userId));
+  const [deleted] = await ctx.var.db.delete(totpsTable).where(eq(totpsTable.userId, userId)).returning({ id: totpsTable.id });
+  return deleted;
 };

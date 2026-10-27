@@ -4,9 +4,10 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal, mailsTo, rawJsonRequest } from '../helpers';
 import { insertPasskey, passkeyChallenge, passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
@@ -83,6 +84,39 @@ describe('Passkey Authentication', async () => {
       assertion.response.clientDataJSON = clientDataJSON;
 
       await expectRefusal(await passkeySignIn(assertion, cookie), 401, 'passkey_verification_failed');
+    });
+  });
+
+  describe('Passkey Responses', () => {
+    // The schema leaves out the credential id, public key and signature counter; nothing strips a body at runtime.
+    it('should answer a new passkey and the account page with the passkey schema fields only', async () => {
+      const user = await createUser(signUpUser.email);
+      const sessionCookie = await createTestSession(user);
+      const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('registration', sessionCookie);
+
+      const created = await rawJsonRequest('/auth/passkey', `${sessionCookie}; ${challengeCookie}`, {
+        method: 'POST',
+        body: { attestation: softwarePasskey().attest(value), nameOnDevice: 'Test device' },
+      });
+      expect(created.status).toBe(201);
+      const listed = await rawJsonRequest('/me/auth', sessionCookie);
+
+      const fields = Object.keys(passkeySchema.shape).sort();
+      expect(Object.keys(created.body).sort()).toEqual(fields);
+      expect(listed.body.passkeys.map((passkey: object) => Object.keys(passkey).sort())).toEqual([fields]);
+    });
+  });
+
+  describe('Passkey Deletion Notice', () => {
+    it('should mail a passkey deletion once, for the delete that removed it', async () => {
+      const { user, passkey } = await userWithPasskey();
+      const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+      const deletionMails = () => mailsTo(user.email).filter(({ statics }) => statics.type === 'passkey-deleted');
+
+      // A second click on delete finds no passkey by that id: still 204, and no second mail.
+      expect((await call(deletePasskey, { path: { id: passkey.id }, headers })).response.status).toBe(204);
+      expect((await call(deletePasskey, { path: { id: passkey.id }, headers })).response.status).toBe(204);
+      expect(deletionMails()).toHaveLength(1);
     });
   });
 

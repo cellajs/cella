@@ -7,15 +7,16 @@ import { baseDb } from '#/db/db';
 import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/devices/operations/notify-sign-in';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
+import { deviceColumns } from '#/modules/auth/sessions/helpers/device-info';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import type { AuthStrategy, SessionTypes, StepUpProof } from '#/modules/auth/sessions/sessions-db';
-import { findLiveOwnSessions, insertSession } from '#/modules/auth/sessions/sessions-queries';
+import type { AuthStrategy, SessionType, StepUpProof } from '#/modules/auth/sessions/sessions-db';
+import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/sessions/sessions-queries';
 import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
+import { newHashedToken } from '#/utils/hash-token';
 import { toSubnet } from '#/utils/ip-subnet';
 import { getIsoDate, isoDateIn } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -25,16 +26,22 @@ import { TimeSpan } from '#/utils/time-span';
 /** Sessions are written on the base pool: tests and scripts create them without a request. */
 const dbCtx = { var: { db: baseDb } };
 
+/** How long a session lasts; the cookie that carries it expires with it. */
+const sessionLifetime = new TimeSpan(1, 'w');
+
+/** How long an impersonation lasts at most: it also ends with the admin session it is layered on. */
+const impersonationLifetime = new TimeSpan(1, 'h');
+
 /**
  * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
  * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
  * sign-ins may exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
-  const excess = await findLiveOwnSessions(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
+  const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
   if (excess.length === 0) return;
 
-  const sessionIds = excess.map((s) => s.id);
+  const sessionIds = excess.map(({ id }) => id);
   await revokeSessions(dbCtx, { userId, sessionIds, reason: 'session_cap', by: null });
 };
 
@@ -74,7 +81,7 @@ export const createSession = async (
   user: Pick<UserModel, 'id'>,
   context: SignInContext,
   strategy: AuthStrategy,
-  type: SessionTypes = 'regular',
+  type: SessionType = 'regular',
   impersonatorSessionId: string | null = null,
   { steppedUpVia = null, connectionId = null }: SessionExtras = {},
 ) => {
@@ -83,9 +90,9 @@ export const createSession = async (
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
-  const { token: sessionToken, secret } = newSessionToken();
+  const { raw: sessionToken, hash: secret } = newHashedToken();
 
-  const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
+  const timeSpan = type === 'impersonation' ? impersonationLifetime : sessionLifetime;
 
   const sessionId = generateId();
   const now = getIsoDate();
@@ -94,10 +101,7 @@ export const createSession = async (
     secret,
     userId: user.id,
     type,
-    deviceName: device.name,
-    deviceType: device.type,
-    deviceOs: device.os,
-    browser: device.browser,
+    ...deviceColumns(device),
     authStrategy: strategy,
     ipHash: rawIp ? hashIpForUser(rawIp, user.id) : null,
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
@@ -113,9 +117,10 @@ export const createSession = async (
   };
 
   if (type !== 'impersonation') {
-    // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
+    // A browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
-      const sessionIds = (await findLiveOwnSessions(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash })).map((s) => s.id);
+      const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash });
+      const sessionIds = replaced.map(({ id }) => id);
       await revokeSessions(dbCtx, { userId: user.id, sessionIds, reason: 'replaced', by: null });
     }
     await evictExcessSessions(user.id);
@@ -140,7 +145,7 @@ export const setUserSession = async (
   ctx: Context<Env>,
   user: UserModel,
   strategy: AuthStrategy,
-  type: SessionTypes = 'regular',
+  type: SessionType = 'regular',
   extras: SessionExtras = {},
 ): Promise<void> => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));

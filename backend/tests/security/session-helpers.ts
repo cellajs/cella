@@ -5,7 +5,7 @@ import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream';
@@ -25,7 +25,7 @@ export const asSession = (id: string, cookie: string): TestSession => ({ id, coo
 /** A live session row and the signed cookie that presents it; the options are `insertTestSession`'s. */
 export async function insertSession(
   user: { id: string },
-  opts: { type?: SessionTypes; ageMs?: number; expiresInMs?: number } = {},
+  opts: { type?: SessionType; ageMs?: number; expiresInMs?: number } = {},
 ): Promise<TestSession> {
   const { id, cookie } = await insertTestSession(user, opts);
   return asSession(id, cookie);

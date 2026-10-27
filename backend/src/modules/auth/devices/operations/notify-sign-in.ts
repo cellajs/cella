@@ -6,7 +6,7 @@ import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { getIsoDate, utcStamp } from '#/utils/iso-date';
+import { getIsoDate, isoDateAgo, utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -51,8 +51,9 @@ export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice
 };
 
 /**
- * Tells the user their account was signed in to from a browser they had not used before. Silent for a first-ever sign-in (it
- * would land next to the welcome mail), for sign-ins through the inbox, and once the daily budget is spent. Never throws.
+ * Tells the user their account was signed in to from a browser they had not used before. Sends nothing for an account's
+ * first sign-in, which has no earlier browser to differ from, for sign-ins through the inbox, and once the daily budget
+ * is spent. Never throws.
  */
 export const notifyNewSignIn = async ({
   user,
@@ -63,8 +64,7 @@ export const notifyNewSignIn = async ({
   if (!newDevice.previousSignInAt || inboxStrategies.includes(strategy)) return;
 
   try {
-    const since = new Date(Date.now() - noticeWindow.milliseconds()).toISOString();
-    const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since });
+    const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since: isoDateAgo(noticeWindow) });
 
     if (sent >= noticeBudget) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });

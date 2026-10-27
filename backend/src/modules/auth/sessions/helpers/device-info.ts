@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 
+/** A browser as {@link parseDevice} reads it: fixed labels, null where the headers do not tell. */
 export type DeviceInfo = { name: string | null; type: 'mobile' | 'desktop'; os: string | null; browser: string | null };
 
 /** The raw low-entropy client hint headers Chromium browsers send on every HTTPS request: Sec-CH-UA, -Mobile and -Platform. */
@@ -83,3 +84,11 @@ export const deviceInfo = (ctx: Context<Env>) =>
     mobile: ctx.req.header('Sec-CH-UA-Mobile'),
     platform: ctx.req.header('Sec-CH-UA-Platform'),
   });
+
+/** A device as the session and passkey rows snapshot it, in the four columns both tables share. */
+export const deviceColumns = (device: DeviceInfo) => ({
+  deviceName: device.name,
+  deviceType: device.type,
+  deviceOs: device.os,
+  browser: device.browser,
+});

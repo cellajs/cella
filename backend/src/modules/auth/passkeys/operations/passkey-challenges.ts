@@ -19,6 +19,7 @@ import {
   insertPasskeyChallenge,
   updatePasskeyCounter,
 } from '#/modules/auth/passkeys/passkeys-queries';
+import type { WebAuthnAttestation } from '#/modules/auth/passkeys/passkeys-schema';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
@@ -27,7 +28,7 @@ import { TimeSpan } from '#/utils/time-span';
 const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
 const expectedOrigin = appConfig.frontendUrl;
 
-/** Factor checks read and write on the base pool, whatever the route's context holds. */
+/** Challenges and passkeys are read and written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /** How long a challenge can be answered; its cookie and its row expire together. */
@@ -37,9 +38,13 @@ const challengeLifetime = new TimeSpan(5, 'm');
 const verificationFailed = (error?: unknown) =>
   new AppError(401, 'passkey_verification_failed', 'warn', error instanceof Error ? { originalError: error } : {});
 
+/** A registration response that does not verify is the request's fault: a 400, never a server error. */
+const registrationFailed = (error?: unknown) =>
+  new AppError(400, 'passkey_registration_failed', 'warn', error instanceof Error ? { originalError: error } : {});
+
 interface IssuePasskeyChallengeOpts {
   purpose: PasskeyChallengePurpose;
-  /** For an mfa challenge: the account whose passkey must answer it. */
+  /** For an mfa or step-up challenge: the account whose passkey must answer it. */
   userId?: string;
 }
 
@@ -87,14 +92,12 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
  * @throws AppError 401 `passkey_verification_failed` without a live registration challenge, 400
  *   `passkey_registration_failed` for a response that does not verify.
  */
-export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: RegistrationResponseJSON) => {
+export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation) => {
   const challenge = await consumeChallenge(ctx, 'registration');
 
-  const registrationFailed = (error?: unknown) =>
-    new AppError(400, 'passkey_registration_failed', 'warn', error instanceof Error ? { originalError: error } : {});
-
   const { verified, registrationInfo } = await verifyRegistrationResponse({
-    response: attestation,
+    // The request schema types `clientExtensionResults` as unknown, the library as extension outputs it never reads.
+    response: attestation as RegistrationResponseJSON,
     expectedChallenge: challenge,
     expectedOrigin,
     expectedRPID: relyingPartyId,
