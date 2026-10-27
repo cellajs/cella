@@ -92,7 +92,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
-              className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background pl-8'),
+              className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background'),
               baseFilePanelProps: canUploadAttachments(organization)
                 ? {
                     mediaMode: 'private-attachment',

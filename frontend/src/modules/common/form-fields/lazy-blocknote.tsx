@@ -7,8 +7,8 @@ import { tw } from '~/utils/tw';
 // biome-ignore lint/suspicious/noExplicitAny: `lazy` loses the field's type parameter, which the wrapper below restores.
 const LazyField: ComponentType<any> = lazyNamed(() => import('~/modules/common/form-fields/blocknote'), 'BlockNoteContentFormField');
 
-/** The input frame for an editor field's root (`baseBlockNoteProps.className`), ringed while focus is inside; each form adds its own left padding. */
-export const blockNoteFieldClass = tw('focus-within-effect min-h-20 rounded-md border border-input field-hover:border-input-hover p-3 pr-6 text-sm');
+/** The input frame for an editor field's root (`baseBlockNoteProps.className`), ringed while focus is inside; a form sets its side-menu gutter with `--bn-field-inset`. */
+export const blockNoteFieldClass = tw('bn-field focus-within-effect rounded-md border border-input field-hover:border-input-hover text-sm');
 
 /** The editor field behind a lazy import. Render it under a `Suspense`, once the form's draft has loaded: the editor keeps the value it mounts on. */
 export function LazyBlockNoteContentFormField<TFieldValues extends FieldValues>(props: BlockNoteContentFormFieldProps<TFieldValues>) {
