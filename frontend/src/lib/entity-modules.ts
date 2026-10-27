@@ -2,7 +2,7 @@ import { appConfig, type ChannelEntityType, isChannel, isProduct, type ProductEn
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import type { ChannelListQueryFactory, ChannelListQueryMap } from '~/query/types';
+import type { ChannelListParams, ChannelListQuery, ChannelListQueryMap, ChannelListQueryOptions, QueryOptionsWithKey } from '~/query/types';
 
 /** A channel entity's frontend registration, declared by its module: an app adding a channel edits no central map. */
 export interface ChannelModuleConfig {
@@ -13,7 +13,7 @@ export interface ChannelModuleConfig {
    * List query behind the menu, the search sheet and parent pickers. Wrap the factory in an arrow so the binding is read at
    * call time: a direct reference throws "Cannot access X before initialization" when the file evaluates mid-cycle (Vite HMR).
    */
-  listQuery?: ChannelListQueryFactory;
+  listQuery?: (params: ChannelListParams) => QueryOptionsWithKey;
   /** Keeps this channel's member-count column out of the members table until a user toggles it on. */
   hiddenMemberCount?: boolean;
 }
@@ -62,20 +62,21 @@ onFrontendModuleRegister(({ name, channel, product }) => {
 /** The channel's menu sheet section, undefined when its module declares none. */
 export const getMenuSection = (entityType: ChannelEntityType): MenuSectionOptions | undefined => menuSections.get(entityType);
 
-/** The channel's list query factory, undefined when its module declares none. */
-export const getChannelListQuery = (entityType: ChannelEntityType): ChannelListQueryFactory | undefined => channels.get(entityType)?.listQuery;
+/** The channel's list query, undefined when its module declares none. */
+export const getChannelListQuery = (entityType: ChannelEntityType): ChannelListQuery | undefined => getChannelListQueries()[entityType];
 
 /**
- * Every declared channel list query, keyed by entity type in `appConfig.channelEntityTypes` order.
- * The search sheet calls one hook per entry, so both the order and the map's identity hold between
- * renders; registration happens before first render and rebuilds the map when it does.
+ * Every declared channel list query, keyed by entity type in `appConfig.channelEntityTypes` order. Registration
+ * happens before first render and rebuilds the map when it does, so a caller that runs one hook per entry keeps
+ * its hook count between renders.
  */
 export function getChannelListQueries(): ChannelListQueryMap {
   if (listQueries) return listQueries;
   const map: ChannelListQueryMap = {};
   for (const entityType of appConfig.channelEntityTypes) {
     const listQuery = channels.get(entityType)?.listQuery;
-    if (listQuery) map[entityType] = listQuery;
+    // A module's own key and row types are not assignable to the shared shape, so its options are cast where they are read.
+    if (listQuery) map[entityType] = (params) => listQuery(params) as ChannelListQueryOptions;
   }
   listQueries = map;
   return map;

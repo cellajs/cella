@@ -1,11 +1,6 @@
-/** Accepts InfiniteData (`{ pages }`), standard list data (`{ items }`), or undefined. */
-// biome-ignore lint/suspicious/noExplicitAny: accepts heterogeneous query data shapes without requiring callers to cast
-export function flattenInfiniteData<T>(data: any): T[] {
-  if (!data) return [];
+import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 
-  if ('pages' in data) {
-    return (data.pages as Array<{ items?: T[] }>).flatMap((page) => page.items ?? []);
-  }
-
-  return data.items ?? [];
+/** Rows of flat (`{ items, total }`) or paged (`{ pages }`) list data; anything else, undefined included, has none. */
+export function flattenInfiniteData<T>(data: unknown): T[] {
+  return isQueryData<T>(data) || isInfiniteQueryData<T>(data) ? getQueryItems(data) : [];
 }

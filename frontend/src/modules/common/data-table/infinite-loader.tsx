@@ -7,13 +7,11 @@ interface InfiniteLoaderProps {
   hasNextPage: boolean;
   isFetching?: boolean;
   isFetchMoreError?: boolean;
-  /** Skip the all-loaded dot trail, for embedded tables where the end marker is noise. */
-  hideEndIndicator?: boolean;
   /** When set, an intersection observer calls it as the loader enters the viewport. Omit with DataGrid, which uses onNearEndChange. */
   fetchMore?: () => Promise<unknown>;
 }
 
-export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hideEndIndicator, fetchMore }: InfiniteLoaderProps) {
+export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetchMore }: InfiniteLoaderProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
@@ -30,7 +28,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
       {fetchMore && hasNextPage && <div ref={measureRef} className="h-8 w-full" />}
 
       {isFetching && hasNextPage && <Loading />}
-      {!isFetching && !hasNextPage && !hideEndIndicator && <AllLoaded />}
+      {!isFetching && !hasNextPage && <AllLoaded />}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import type { StepItem } from '~/modules/common/stepper/types';
@@ -14,12 +14,8 @@ const steps: StepItem[] = [
 ];
 
 /** Stands in for the onboarding footer: reads the stepper state and moves on from inside a step. */
-function StepFooter({ onComplete }: { onComplete: () => void }) {
-  const { nextStep, currentStep, isOptionalStep, hasCompletedAllSteps } = useStepper();
-
-  useEffect(() => {
-    if (hasCompletedAllSteps) onComplete();
-  }, [hasCompletedAllSteps]);
+function StepFooter() {
+  const { nextStep, currentStep, isOptionalStep } = useStepper();
 
   return (
     <div className="flex items-center gap-2 py-2">
@@ -36,12 +32,12 @@ function OnboardingLikeStepper({ items, initialStep = 0 }: { items: StepItem[]; 
 
   return (
     <div className="w-[36rem]">
-      <Stepper initialStep={initialStep} steps={items} onClickStep={(newStep, setStep) => setStep(newStep)}>
+      <Stepper initialStep={initialStep} steps={items} onClickStep={(newStep, setStep) => setStep(newStep)} onComplete={() => setCompleted(true)}>
         {items.map(({ id, label }) => (
           <Step key={id} label={label} checkIcon={id === 'organization' ? XIcon : undefined}>
             <div className="rounded-md border p-4">
               <p>{label} content</p>
-              <StepFooter onComplete={() => setCompleted(true)} />
+              <StepFooter />
             </div>
           </Step>
         ))}

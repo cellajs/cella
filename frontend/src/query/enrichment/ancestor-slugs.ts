@@ -3,6 +3,7 @@ import { appConfig, type ChannelEntityType } from 'shared';
 import type { AncestorSlugs } from '~/modules/entities/types';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 import { getField } from '~/utils/get-field';
+import { objectKeys } from '~/utils/object-keys';
 
 /** entityType -> entityId -> slug */
 export type SlugIndex = Map<string, Map<string, string>>;
@@ -10,7 +11,7 @@ export type SlugIndex = Map<string, Map<string, string>>;
 function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | null): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
-  const aKeys = Object.keys(a) as ChannelEntityType[];
+  const aKeys = objectKeys(a);
   if (aKeys.length !== Object.keys(b).length) return true;
   return aKeys.some((type) => a[type] !== b[type]);
 }

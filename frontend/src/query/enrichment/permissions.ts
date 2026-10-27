@@ -1,25 +1,25 @@
 import type { MembershipBase } from 'sdk';
-import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
+import type { ChannelEntityType, EntityCanMap } from 'shared';
 import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { userStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
+import { objectKeys } from '~/utils/object-keys';
 
 /** Deep compare over the can states (booleans and condition names). */
 function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
 
-  const aKeys = Object.keys(a) as EntityType[];
-  const bKeys = Object.keys(b) as EntityType[];
-  if (aKeys.length !== bKeys.length) return true;
+  const aKeys = objectKeys(a);
+  if (aKeys.length !== Object.keys(b).length) return true;
 
   return aKeys.some((key) => {
     const aActions = a[key];
     const bActions = b[key];
     if (!aActions && !bActions) return false;
     if (!aActions || !bActions) return true;
-    return (Object.keys(aActions) as EntityActionType[]).some((action) => aActions[action] !== bActions[action]);
+    return objectKeys(aActions).some((action) => aActions[action] !== bActions[action]);
   });
 }
 

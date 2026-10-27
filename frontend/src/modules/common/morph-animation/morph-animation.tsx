@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useLatestRef } from '~/hooks/use-latest-ref';
 import { MorphRenderer, type MorphStamp, type MorphVariant } from '~/modules/common/morph-animation/renderer';
 import { fragmentSource } from '~/modules/common/morph-animation/shader';
-import { uiStore, useUIStore } from '~/modules/ui/ui-store';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface MorphAnimationProps {
@@ -27,7 +26,16 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
   const [isFadedIn, setIsFadedIn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MorphRenderer | null>(null);
-  const propsRef = useLatestRef({ grid, speed, overscan, stamp, isPhone });
+
+  // A new renderer starts from the current props; the effects below keep it in step after that
+  const seed = useEffectEvent((renderer: MorphRenderer) => {
+    renderer.setDark(mode === 'dark');
+    renderer.setGrid(grid);
+    renderer.setPhone(isPhone);
+    renderer.setOverscan(overscan);
+    renderer.setStamp(stamp);
+    renderer.setSpeed(speed);
+  });
 
   // fragmentSource in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
   useEffect(() => {
@@ -36,12 +44,7 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
 
     const renderer = new MorphRenderer(canvas, variant);
     rendererRef.current = renderer;
-    renderer.setDark(uiStore.getState().mode === 'dark');
-    renderer.setGrid(propsRef.current.grid);
-    renderer.setPhone(propsRef.current.isPhone);
-    renderer.setOverscan(propsRef.current.overscan);
-    renderer.setStamp(propsRef.current.stamp);
-    renderer.setSpeed(propsRef.current.speed);
+    seed(renderer);
 
     const observer = new IntersectionObserver(([entry]) => renderer.setPaused(!entry.isIntersecting));
     observer.observe(canvas);

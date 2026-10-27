@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getEdgeOrder, getRelativeOrder } from 'shared/utils/display-order';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { buildTree, type TreeItem, type TreeRow } from '~/modules/common/data-table/tree/build-tree';
 import type { TreeContextValue } from '~/modules/common/data-table/tree/tree-context';
 import type { ReorderPosition } from '~/modules/common/reorder-handle/reorder-handle';
@@ -59,9 +60,8 @@ const sortedChildren = <T extends TreeItem>(items: readonly T[], parentId: strin
 /** Owns expansion, drop validation, reordering, and reparenting; pair its context with `TreeProvider` and `ExpandToggleColumn`. */
 export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
-  // A ref keeps the callbacks below stable while they read the current options.
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
+  // The handlers below stay stable and read the current options through this ref; render reads `options` itself
+  const optionsRef = useLatestRef(options);
 
   const onToggle = useCallback((id: string) => {
     setToggledIds((prev) => {
@@ -73,27 +73,30 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
   }, []);
 
   const buildRows = useCallback(
-    (items: T[]): TreeRow<T>[] => buildTree(items, { toggledIds, defaultExpanded: optionsRef.current.defaultExpanded }),
-    [toggledIds],
+    (items: T[]): TreeRow<T>[] => buildTree(items, { toggledIds, defaultExpanded: options.defaultExpanded }),
+    [toggledIds, options.defaultExpanded],
   );
 
-  const canDrop = useCallback((rows: readonly TreeRow<T>[] | undefined, { fromIdx, toIdx, zone }: CanDropArgs): boolean => {
-    if (!rows) return false;
-    const dragged = rows[fromIdx];
-    const target = rows[toIdx];
-    if (!dragged || !target) return false;
-    const { maxDepth } = optionsRef.current;
+  const canDrop = useCallback(
+    (rows: readonly TreeRow<T>[] | undefined, { fromIdx, toIdx, zone }: CanDropArgs): boolean => {
+      if (!rows) return false;
+      const dragged = rows[fromIdx];
+      const target = rows[toIdx];
+      if (!dragged || !target) return false;
+      const { maxDepth } = optionsRef.current;
 
-    // Cycle prevention: target must not be the dragged row or any descendant.
-    const byId = new Map(rows.map((row) => [row.id, row] as const));
-    if (isSelfOrDescendantOf(dragged.id, target.id, byId)) return false;
+      // Cycle prevention: target must not be the dragged row or any descendant.
+      const byId = new Map(rows.map((row) => [row.id, row] as const));
+      if (isSelfOrDescendantOf(dragged.id, target.id, byId)) return false;
 
-    // 'center' makes a child, as does 'bottom' on an expanded parent; otherwise the target's depth is reused.
-    const becomesChild = zone === 'center' || (zone === 'bottom' && target._hasChildren && target._isExpanded);
-    const targetDepth = becomesChild ? target._depth + 1 : target._depth;
-    if (maxDepth !== undefined && targetDepth + dragged._subtreeHeight > maxDepth - 1) return false;
-    return true;
-  }, []);
+      // 'center' makes a child, as does 'bottom' on an expanded parent; otherwise the target's depth is reused.
+      const becomesChild = zone === 'center' || (zone === 'bottom' && target._hasChildren && target._isExpanded);
+      const targetDepth = becomesChild ? target._depth + 1 : target._depth;
+      if (maxDepth !== undefined && targetDepth + dragged._subtreeHeight > maxDepth - 1) return false;
+      return true;
+    },
+    [optionsRef],
+  );
 
   const onReorder = useCallback(
     (rows: readonly TreeRow<T>[] | undefined, fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => {
@@ -119,21 +122,24 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
       if (parentChanged) ops.parentId = targetParentId;
       optionsRef.current.mutate(dragged.id, ops);
     },
-    [canDrop],
+    [canDrop, optionsRef],
   );
 
   // A new parent expands, so the row that moved into it stays visible
-  const expand = useCallback((id: string) => {
-    const { defaultExpanded = false } = optionsRef.current;
-    setToggledIds((prev) => {
-      const isExpanded = defaultExpanded ? !prev.has(id) : prev.has(id);
-      if (isExpanded) return prev;
-      const next = new Set(prev);
-      if (defaultExpanded) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const expand = useCallback(
+    (id: string) => {
+      const { defaultExpanded = false } = optionsRef.current;
+      setToggledIds((prev) => {
+        const isExpanded = defaultExpanded ? !prev.has(id) : prev.has(id);
+        if (isExpanded) return prev;
+        const next = new Set(prev);
+        if (defaultExpanded) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [optionsRef],
+  );
 
   const onReparent = useCallback(
     (rows: readonly TreeRow<T>[] | undefined, fromIdx: number, toIdx: number) => {
@@ -147,19 +153,22 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
       optionsRef.current.mutate(dragged.id, { parentId: target.id });
       expand(target.id);
     },
-    [canDrop, expand],
+    [canDrop, expand, optionsRef],
   );
 
   /** Moves the row one place among its visible siblings, its subtree along; a reorder grip's ↑/↓. */
-  const onStep = useCallback((rows: readonly TreeRow<T>[], rowIdx: number, step: -1 | 1) => {
-    const row = rows[rowIdx];
-    if (!row) return;
-    const siblings = rows.filter((sibling) => sibling.parentId === row.parentId);
-    const target = siblings[siblings.indexOf(row) + step];
-    if (!target) return;
-    const displayOrder = getRelativeOrder(siblings, target.displayOrder, row.id, step < 0 ? 'top' : 'bottom');
-    if (displayOrder !== row.displayOrder) optionsRef.current.mutate(row.id, { displayOrder });
-  }, []);
+  const onStep = useCallback(
+    (rows: readonly TreeRow<T>[], rowIdx: number, step: -1 | 1) => {
+      const row = rows[rowIdx];
+      if (!row) return;
+      const siblings = rows.filter((sibling) => sibling.parentId === row.parentId);
+      const target = siblings[siblings.indexOf(row) + step];
+      if (!target) return;
+      const displayOrder = getRelativeOrder(siblings, target.displayOrder, row.id, step < 0 ? 'top' : 'bottom');
+      if (displayOrder !== row.displayOrder) optionsRef.current.mutate(row.id, { displayOrder });
+    },
+    [optionsRef],
+  );
 
   /**
    * A reorder grip's ←/→: outdent (-1) puts the row right after its parent, indent (1) makes it the last child of the
@@ -195,7 +204,7 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
       mutate(row.id, { parentId: parent.parentId, displayOrder: getRelativeOrder(parentSiblings, parent.displayOrder, row.id, 'bottom') });
       return { index: parentSiblings.indexOf(parent) + 1, total: parentSiblings.length + 1 };
     },
-    [expand],
+    [expand, optionsRef],
   );
 
   const context: TreeContextValue = useMemo(

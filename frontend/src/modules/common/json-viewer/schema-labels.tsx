@@ -8,7 +8,7 @@ export interface SchemaConstraints {
   minimum?: number;
 }
 
-interface SchemaLabelsProps {
+export interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
   contentTypeValue?: string | null;

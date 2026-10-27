@@ -14,7 +14,9 @@ Development builds add `docs-editor.ts`, which lets the pages table rewrite fron
 
 `locales-plugin.ts` is separate from the docs pipeline: it builds and serves the merged locale namespaces (`../../locales/README.md`) and sends `i18next-hmr:update` on locale changes so the client reloads resources without a full refresh.
 
-`react-compiler-guard.ts` fails a production build when no module imports `react/compiler-runtime`, so a babel `include` that stops matching files cannot switch the React Compiler off unnoticed.
+`react-compiler-guard.ts` makes the React Compiler's silent choices visible. The compiler skips a component or hook that breaks a rule of React or that it cannot handle yet, and that function then runs without memoization. A production build fails on every skipped function that no allowlist names, printing each one with the compiler's reason and line, and the dev server warns once per file. The build also fails when nothing compiled at all, so a babel `include` that stops matching files cannot switch the compiler off unnoticed.
+
+An allowlist maps `<file>:<function>` (the file relative to `frontend/`) to a one-line reason why it stays. `react-compiler-allowlist.json` holds the template's entries and reaches every app with the sync. `react-compiler-allowlist.app.json` is app-owned: an app lists its own files there, and has no file while it needs none. An entry that compiles again only warns, so a fix in the template never breaks an app's build. The build sees only the modules the app imports: a template file the template itself never imports, such as the board layout, is checked in the apps that use it. A function the compiler never tries, such as a hook that calls hooks only inside a loop, raises nothing; it states that with `'use no memo'` and its reason.
 
 `jspdf-optional-stub.ts` is what jspdf's `.html()` and SVG image paths import: the table export uses neither, so their packages (`canvg`, `html2canvas`) are not installed and `vite.config.ts` aliases them here.
 

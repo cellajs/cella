@@ -13,7 +13,7 @@ import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candid
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
-import type { UploadResults } from '~/modules/common/uploader/types';
+import { uploadResultsOf } from '~/modules/common/uploader/types';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { getLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
@@ -141,7 +141,7 @@ class AttachmentUploadService {
       }
 
       if (result.successful && result.successful.length > 0) {
-        const results = completed.assembly?.results as UploadResults<'attachment'> | undefined;
+        const results = completed.assembly && uploadResultsOf<'attachment'>(completed.assembly);
         const [original] = results?.[':original'] ?? [];
         // Only the attachment template has a row to link; other templates' files are referenced by their own forms.
         if (templateId !== 'attachment' || !results || !original) {

@@ -1,6 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 import { blurAndStashTrigger, removeAndNotify, type TriggerRef, updateById, withDefaults } from '~/modules/common/overlay-store-helpers';
+import { sheetLayerOf } from '~/modules/common/sheeter/sheet-layer';
 
 export type { TriggerRef } from '~/modules/common/overlay-store-helpers';
 
@@ -36,7 +37,8 @@ export type DialogData = {
   onClose?: (isCleanup?: boolean) => void;
 };
 
-export type InternalDialog = DialogData & { open?: boolean; content: ReactNode };
+/** `containerElement` and `layer` are read from the DOM once, when the dialog is created. */
+export type InternalDialog = DialogData & { open?: boolean; content: ReactNode; containerElement?: HTMLDivElement; layer: HTMLElement | null };
 
 interface DialogStoreState {
   dialogs: InternalDialog[];
@@ -56,9 +58,11 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     blurAndStashTrigger();
 
     const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
+    const containerElement = data.container?.ref.current ?? undefined;
+    const layer = data.dock ? sheetLayerOf(data.triggerRef.current) : null;
 
     set((state) => ({
-      dialogs: [...state.dialogs.filter((dialog) => dialog.id !== data.id), { ...withDefaults(defaults, data), content }],
+      dialogs: [...state.dialogs.filter((dialog) => dialog.id !== data.id), { ...withDefaults(defaults, data), content, containerElement, layer }],
     }));
 
     return data.id;

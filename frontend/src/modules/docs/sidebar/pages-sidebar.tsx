@@ -1,5 +1,5 @@
-import { useRouterState } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useMatch } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/docs/sidebar/page-branch';
 import { visibleDocPages } from '~/modules/page/content';
@@ -29,18 +29,17 @@ function expandAncestors(expandedIds: Set<string>, pageId: string | undefined) {
 /** Sidebar listing docs pages as a hierarchical tree, sorted by display order. */
 export function PagesSidebar() {
   const { t } = useTranslation();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-
-  // Active page slug from URL (e.g. /docs/page/<slug>, slug may contain slashes)
-  const activeMatch = pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
-  const activePageId = activeMatch ? decodeURIComponent(activeMatch) : undefined;
+  // The docs page's slug, which may contain slashes (architecture/sync-engine); undefined off a docs page
+  const activePageId = useMatch({ from: '/_public/_content/docs/page/$', shouldThrow: false, select: (match) => match.params._splat }) || undefined;
 
   // The active page's ancestors are open from the first render, so the sheet opens expanded and Base UI skips the mount keyframe
   const [expandedIds, setExpandedIds] = useState(() => expandAncestors(new Set(), activePageId));
-  // A route change opens the new page's ancestors; a collapse sticks until the next one
-  useEffect(() => {
-    setExpandedIds((prev) => expandAncestors(prev, activePageId));
-  }, [activePageId]);
+  const [prevPageId, setPrevPageId] = useState(activePageId);
+  // A route change opens the new page's ancestors in the same render; a collapse sticks until the next one
+  if (prevPageId !== activePageId) {
+    setPrevPageId(activePageId);
+    setExpandedIds(expandAncestors(expandedIds, activePageId));
+  }
 
   const togglePageExpanded = (id: string) => {
     setExpandedIds((prev) => {

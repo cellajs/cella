@@ -2,8 +2,9 @@ import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
 import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
+import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Logo } from '~/modules/common/logo';
 import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
@@ -86,14 +87,8 @@ export function AppIcon({ className }: { className?: string }) {
 /** Brand intro on first load, then the item's icon, swapped for a spinner while queries or navigation are in flight. */
 export function AppNavLoader({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
   const queryClient = useQueryClient();
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [breakerOpen, setBreakerOpen] = useState(false);
+  const hasLoaded = useDelayedFlag(true, 3000);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setHasLoaded(true), 3000);
-    return () => clearTimeout(timeout);
-  }, []);
 
   const isFetching = useIsFetching();
 
@@ -102,21 +97,17 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
   const isLoadingRaw = isFetching > 0 || navLoading;
 
   // Back to the icon after loadingBreakerMs of unbroken loading; the spinner returns once everything has settled.
+  const breakerOpen = useDelayedFlag(isLoadingRaw, loadingBreakerMs);
+  const warnStuck = useEffectEvent(() => {
+    const stuckQueries = queryClient
+      .getQueryCache()
+      .findAll({ fetchStatus: 'fetching' })
+      .map((query) => query.queryKey);
+    console.warn(`[AppNavLoader] Still loading after ${loadingBreakerMs / 1000}s, spinner hidden`, { navLoading, stuckQueries });
+  });
   useEffect(() => {
-    if (!isLoadingRaw) {
-      setBreakerOpen(false);
-      return;
-    }
-    const timeout = setTimeout(() => {
-      setBreakerOpen(true);
-      const stuckQueries = queryClient
-        .getQueryCache()
-        .findAll({ fetchStatus: 'fetching' })
-        .map((query) => query.queryKey);
-      console.warn(`[AppNavLoader] Still loading after ${loadingBreakerMs / 1000}s, spinner hidden`, { navLoading, stuckQueries });
-    }, loadingBreakerMs);
-    return () => clearTimeout(timeout);
-  }, [isLoadingRaw, navLoading, queryClient]);
+    if (breakerOpen) warnStuck();
+  }, [breakerOpen]);
 
   // Delays showing the spinner, hides it instantly.
   const isLoading = useDebounce(isLoadingRaw && !breakerOpen, 300, { immediateValue: false });

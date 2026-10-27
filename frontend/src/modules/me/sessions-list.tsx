@@ -2,17 +2,16 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { TileListHeading, useOpenTile } from '~/modules/common/expandable-tile';
+import { TileListHeading } from '~/modules/common/expandable-tile';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useRevokeSessionsMutation } from '~/modules/me/query';
 import { isLiveSession, SessionTile, sessionEndedAt } from '~/modules/me/session-tile';
 import type { Session } from '~/modules/me/types';
+import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 
 export function SessionsList() {
   const { t } = useTranslation();
-  // One tile open at a time, across both lists
-  const { openId, toggle } = useOpenTile();
 
   const {
     data: { sessions: allSessions },
@@ -38,7 +37,7 @@ export function SessionsList() {
   };
 
   return (
-    <>
+    <Accordion>
       <TileListHeading title={t('c:active')} count={sessions.length}>
         {revocable.length > 0 && (
           <Button
@@ -59,12 +58,9 @@ export function SessionsList() {
           renderItem={(session) => (
             <SessionTile
               session={session}
-              key={session.id}
               isCurrentDevice={isCurrentDevice(session)}
               onRevoke={handleRevoke}
               loading={isPending && variables?.includes(session.id)}
-              expanded={openId === session.id}
-              onToggle={() => toggle(session.id)}
             />
           )}
           initialDisplayCount={3}
@@ -74,16 +70,10 @@ export function SessionsList() {
         <>
           <TileListHeading className="mt-6 mb-3" title={t('c:ended')} count={history.length} />
           <div className="flex flex-col gap-2">
-            <ExpandableList
-              items={history}
-              renderItem={(session) => (
-                <SessionTile session={session} key={session.id} expanded={openId === session.id} onToggle={() => toggle(session.id)} />
-              )}
-              initialDisplayCount={2}
-            />
+            <ExpandableList items={history} renderItem={(session) => <SessionTile session={session} />} initialDisplayCount={2} />
           </div>
         </>
       )}
-    </>
+    </Accordion>
   );
 }

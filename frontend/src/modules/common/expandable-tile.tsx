@@ -1,7 +1,7 @@
+import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
 import { ChevronDownIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useState } from 'react';
-import { collapseMotion } from '~/modules/common/collapse-motion';
+import type { ReactNode } from 'react';
+import { AccordionContent } from '~/modules/ui/accordion';
 import { Card } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 
@@ -17,6 +17,8 @@ const tones = {
 export type TileTone = keyof typeof tones;
 
 export interface ExpandableTileProps {
+  /** The tile's id in its `Accordion`; unique among the tiles there. */
+  value: string;
   /** An icon or image element, sized by the tile. */
   icon: ReactNode;
   /** Names the icon for assistive technology; without it the icon is decorative. */
@@ -34,20 +36,13 @@ export interface ExpandableTileProps {
   details: ReactNode;
   /** Buttons under the details. */
   actions?: ReactNode;
-  expanded: boolean;
-  onToggle: () => void;
 }
 
-/** A list item as a card that opens to its details and actions. Its list keeps one tile open at a time. */
-export function ExpandableTile({ icon, iconLabel, title, badges, status, meta, lead, details, actions, expanded, onToggle }: ExpandableTileProps) {
+/** A list item as a card that opens to its details and actions. An `Accordion` holds its tiles and keeps one of them open at a time. */
+export function ExpandableTile({ value, icon, iconLabel, title, badges, status, meta, lead, details, actions }: ExpandableTileProps) {
   return (
-    <Card className="gap-0 py-0 sm:gap-0 sm:py-0">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={onToggle}
-        className="focus-effect flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2 text-left"
-      >
+    <AccordionPrimitive.Item value={value} render={<Card className="gap-0 py-0 sm:gap-0 sm:py-0" />}>
+      <AccordionPrimitive.Trigger className="group/expandable-tile focus-effect flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2 text-left">
         {iconLabel && <span className="sr-only">{iconLabel}</span>}
         <span className="relative shrink-0 [&>img]:size-6 [&>svg]:size-6" aria-hidden="true">
           {icon}
@@ -68,29 +63,16 @@ export function ExpandableTile({ icon, iconLabel, title, badges, status, meta, l
             {meta}
           </span>
         </span>
-        <ChevronDownIcon className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200', expanded && 'rotate-180')} />
-      </button>
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div {...collapseMotion} className="overflow-hidden">
-            {/* pl-12 lines the panel up with the title: px-3, the size-6 icon and gap-3 */}
-            <div className="flex flex-col gap-3 pr-3 pb-3 pl-12">
-              {lead}
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{details}</dl>
-              {actions && <div className="flex flex-wrap items-center gap-x-3 gap-y-2">{actions}</div>}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Card>
+        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-panel-open/expandable-tile:rotate-180" />
+      </AccordionPrimitive.Trigger>
+      {/* pl-12 lines the panel up with the title: px-3, the size-6 icon and gap-3 */}
+      <AccordionContent className="flex flex-col gap-3 pr-3 pb-3 pl-12">
+        {lead}
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{details}</dl>
+        {actions && <div className="flex flex-wrap items-center gap-x-3 gap-y-2">{actions}</div>}
+      </AccordionContent>
+    </AccordionPrimitive.Item>
   );
-}
-
-/** One open tile at a time: the open tile's id, and a toggle that opens another or closes the open one. */
-export function useOpenTile() {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const toggle = (id: string) => setOpenId((open) => (open === id ? null : id));
-  return { openId, setOpenId, toggle };
 }
 
 interface ExpandableTileDetailProps {

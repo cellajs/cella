@@ -9,6 +9,8 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const Devtools = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/devtools/devtools'), 'Devtools') : () => null;
 
+const loadChatSupport = () => import('~/modules/common/gleap-support');
+
 function NoChatSupport() {
   return null;
 }
@@ -17,7 +19,7 @@ export function Root() {
   const isOnline = useOnlineManager();
 
   const GleapSupport = useLazyComponent(
-    () => (appConfig.has.chatSupport && isOnline ? import('~/modules/common/gleap-support') : Promise.resolve({ GleapSupport: NoChatSupport })),
+    () => (appConfig.has.chatSupport && isOnline ? loadChatSupport() : Promise.resolve({ GleapSupport: NoChatSupport })),
     'GleapSupport',
     5000,
   );

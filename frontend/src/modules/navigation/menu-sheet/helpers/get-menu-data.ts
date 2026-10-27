@@ -31,12 +31,11 @@ export async function getMenuData() {
   // Fetch entity lists; the subscriber enriches them with memberships on cache write.
   await Promise.all(
     appConfig.channelEntityTypes.map(async (entityType) => {
-      const factory = getChannelListQuery(entityType);
-      if (!factory) return;
-      // biome-ignore lint/suspicious/noExplicitAny: heterogeneous infinite query options across entity types.
-      const queryOpts = factory({ relatableUserId: userId }) as any;
-      await queryClient.infiniteQuery({ ...queryOpts, staleTime: 'static' });
-      void queryClient.infiniteQuery(queryOpts).catch(() => {});
+      const listQuery = getChannelListQuery(entityType);
+      if (!listQuery) return;
+      const options = listQuery({ relatableUserId: userId });
+      await queryClient.infiniteQuery({ ...options, staleTime: 'static' });
+      void queryClient.infiniteQuery(options).catch(() => {});
     }),
   );
 

@@ -11,6 +11,7 @@ import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { channelRouteConfig } from '~/routes-config';
 import { setSkipPageEnter } from '~/utils/nav-transition';
+import { objectEntries } from '~/utils/object-entries';
 
 /** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
 export const router = createRouter({
@@ -62,9 +63,7 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
 });
 
 const subchannelPaths = new Map<string, ChannelEntityType>(
-  Object.entries(channelRouteConfig).flatMap(([entityType, { path }]) =>
-    entityType === 'organization' ? [] : [[path, entityType as ChannelEntityType]],
-  ),
+  objectEntries(channelRouteConfig).flatMap(([entityType, { path }]) => (entityType === 'organization' ? [] : [[path, entityType]])),
 );
 
 // A channel page's beforeLoad puts the channel in context under its entity type, below the organization layout's own

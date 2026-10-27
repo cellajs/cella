@@ -27,7 +27,6 @@ export function InvitationsTable() {
       <DataTable<Invitation>
         {...{
           rows: data?.items,
-          rowHeight: 52,
           rowKeyGetter,
           columns,
           enableVirtualization: true,

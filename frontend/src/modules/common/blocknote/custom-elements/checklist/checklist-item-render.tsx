@@ -41,8 +41,10 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
         return false;
       });
     }
+    if (!needsId) return;
     // Defer to avoid flushSync inside React lifecycle
-    if (needsId) setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: newCheckboxId() } }), 0);
+    const timer = setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: newCheckboxId() } }), 0);
+    return () => clearTimeout(timer);
   }, [block.id, block.props.checkboxId, editor]);
 
   const { persisted } = useExtensionState(checkedExtension, { editor });

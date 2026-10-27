@@ -1,5 +1,6 @@
 import '~/lib/history-bind'; // Must run before otel/maple/router: they all patch history
 import { LucideProvider } from 'lucide-react';
+import { MotionConfig } from 'motion/react';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
@@ -72,15 +73,18 @@ if (canonicalUrl) {
   }).render(
     <StrictMode>
       <Themer />
-      {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
-      <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
-        <QueryClientProvider>
-          <AppRouter />
-          {/* Outside the router: the root error page replaces the root route's component, and both outlive it */}
-          <ReloadPrompt />
-          <ToasterProvider />
-        </QueryClientProvider>
-      </LucideProvider>
+      {/* With reduced motion asked for, motion/react jumps height, position, transform and layout changes; opacity still fades. */}
+      <MotionConfig reducedMotion="user">
+        {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
+        <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
+          <QueryClientProvider>
+            <AppRouter />
+            {/* Outside the router: the root error page replaces the root route's component, and both outlive it */}
+            <ReloadPrompt />
+            <ToasterProvider />
+          </QueryClientProvider>
+        </LucideProvider>
+      </MotionConfig>
     </StrictMode>,
   );
 }

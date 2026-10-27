@@ -1,5 +1,5 @@
 import type { KeyboardEventHandler, PointerEventHandler, ReactNode } from 'react';
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
@@ -316,7 +316,6 @@ export function ResizablePanelGroup({
   const containerRef = useRef<HTMLDivElement>(null);
   const onLayoutChangedRef = useLatestRef(onLayoutChanged);
   const onCollapseChangeRef = useLatestRef(onCollapseChange);
-  const onReadyRef = useLatestRef(onReady);
   const defaultLayoutRef = useLatestRef(defaultLayout);
 
   const widthOf = (panel: PanelConfig) => widthsRef.current[panel.id] ?? panel.minWidth;
@@ -680,8 +679,9 @@ export function ResizablePanelGroup({
     return () => observer.disconnect();
   }, []);
 
+  const notifyReady = useEffectEvent(() => onReady?.({ expandPanel, togglePanel }));
   useEffect(() => {
-    onReadyRef.current?.({ expandPanel, togglePanel });
+    notifyReady();
   }, []);
 
   // A reorder re-renders the group but registers nothing

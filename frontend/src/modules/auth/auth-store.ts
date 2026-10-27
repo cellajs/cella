@@ -7,7 +7,7 @@ interface AuthStoreState {
   step: AuthStep;
   /** The address the step is for; empty until the visitor gives one. */
   email: string;
-  /** The neutral step, which does not tell whether the address has an account (an unknown browser or a limited IP). */
+  /** The neutral step for an address this browser is not recognized for; `useRestrictedMode` adds the limited-IP case from health. */
   restrictedMode: boolean;
   /** Set by an in-page sign-in: the auth pages show a spinner until the route changes. */
   signedIn: boolean;

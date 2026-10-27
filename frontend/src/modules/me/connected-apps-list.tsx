@@ -2,17 +2,17 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { PlugZapIcon, UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { ExpandableTile, ExpandableTileDetail, useOpenTile } from '~/modules/common/expandable-tile';
+import { ExpandableTile, ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { meConnectedAppsQueryOptions, useRevokeConnectedAppMutation } from '~/modules/me/query';
+import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { dateShort } from '~/utils/date-short';
 
 /** The OAuth consents of the current user: MCP clients and registered apps. */
 export function ConnectedAppsList() {
   const { t } = useTranslation();
-  const { openId, toggle } = useOpenTile();
   const {
     data: { items },
   } = useSuspenseQuery(meConnectedAppsQueryOptions());
@@ -29,15 +29,14 @@ export function ConnectedAppsList() {
     );
 
   return (
-    <div className="flex flex-col gap-2">
+    <Accordion className="flex flex-col gap-2">
       {items.map((app) => (
         <ExpandableTile
           key={app.id}
+          value={app.id}
           icon={<PlugZapIcon />}
           title={app.clientName}
           meta={t('c:connected_on', { date: dateShort(app.createdAt) })}
-          expanded={openId === app.id}
-          onToggle={() => toggle(app.id)}
           details={
             <>
               {app.expiresAt && <ExpandableTileDetail label={t('c:expires_at')}>{dateShort(app.expiresAt)}</ExpandableTileDetail>}
@@ -60,6 +59,6 @@ export function ConnectedAppsList() {
           }
         />
       ))}
-    </div>
+    </Accordion>
   );
 }

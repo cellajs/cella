@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { FieldPath, FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { useForm, useFormState } from 'react-hook-form';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { flushKvWrites } from '~/query/idb-kv-storage';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { onPageHide } from '~/utils/on-page-hide';
 
 /**
  * Form state that keeps a draft: restores it on mount, saves edits debounced and at once when the form turns dirty, and
@@ -30,43 +31,39 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   // Only subscribes to isDirty, a binary state change with minimal re-renders.
   const { isDirty } = useFormState({ control: form.control });
 
-  // Keep formId fresh for use in subscription callbacks
-  const formIdRef = useRef(formId);
-  formIdRef.current = formId;
-
-  // The subscribed isDirty, for timers and cleanups. They never branch on `form.formState.isDirty`: it lags the
-  // subscription both ways (false right after the first edit, true right after a reset).
-  const isDirtyRef = useRef(isDirty);
-  isDirtyRef.current = isDirty;
-
   const toggleUnsavedBadge = (show: boolean) => {
     const container = document.getElementById(formContainerId || formId);
     if (!container) return;
     container.classList.toggle('unsaved-changes', show);
   };
 
-  /** Save the current values (or clear the draft when clean). Reads only refs and stable store actions. */
-  const saveDraft = () => {
-    const id = formIdRef.current;
-    if (isDirtyRef.current) {
+  // Save the current values, or clear the draft when clean. It branches on the subscribed isDirty, never on
+  // `form.formState.isDirty`: that lags the subscription both ways (false right after the first edit, true right after a reset).
+  const saveDraft = useEffectEvent(() => {
+    if (isDirty) {
       const values = form.getValues();
       const cleaned = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined));
-      if (Object.keys(cleaned).length > 0) setDraftForm(id, cleaned);
+      if (Object.keys(cleaned).length > 0) setDraftForm(formId, cleaned);
     } else {
-      resetDraftForm(id);
+      resetDraftForm(formId);
     }
-  };
+    // Past the storage debounce: this hook debounces edits already, and a write still waiting there is lost to a reload
+    flushKvWrites();
+  });
 
   // Subscribe directly to form changes so debounced persistence does not rerender the form tree.
   useEffect(() => {
-    const subscription = form.watch(() => {
-      if (isResettingRef.current) return;
+    const unsubscribe = form.subscribe({
+      formState: { values: true },
+      callback: () => {
+        if (isResettingRef.current) return;
 
-      clearTimeout(draftTimeoutRef.current);
-      draftTimeoutRef.current = setTimeout(() => {
-        draftTimeoutRef.current = undefined;
-        saveDraft();
-      }, 300);
+        clearTimeout(draftTimeoutRef.current);
+        draftTimeoutRef.current = setTimeout(() => {
+          draftTimeoutRef.current = undefined;
+          saveDraft();
+        }, 300);
+      },
     });
 
     // Saves the edits a pending debounce holds; with no timer armed the store is already current.
@@ -77,26 +74,16 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       saveDraft();
     };
 
-    // For a backgrounded tab: writes issued while a page unloads never commit, which the dirty effect below covers.
-    // flushKvWrites, because the storage layer's own hide flush has already run when this later listener adds its write.
-    const flushOnHide = () => {
-      if (draftTimeoutRef.current === undefined) return;
-      flushPendingDraft();
-      flushKvWrites();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flushOnHide();
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', flushOnHide);
+    // A hidden tab still commits the pending edits. A write issued while the page unloads never commits, so a reload
+    // loses the edits made since the last 300 ms pause.
+    const stopHideFlush = onPageHide(flushPendingDraft);
 
     return () => {
-      subscription.unsubscribe();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pagehide', flushOnHide);
+      unsubscribe();
+      stopHideFlush();
       flushPendingDraft();
     };
-  }, [form, setDraftForm, resetDraftForm]);
+  }, [form]);
 
   useEffect(() => {
     toggleUnsavedBadge(isDirty);
@@ -104,6 +91,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     // a clean mount must not clear the stored draft before the restore below reads it.
     if (isDirty) saveDraft();
     setFormDirty(formId, isDirty);
+    // The flag too: a reader of `dirtyForms` after a reload learns of the draft before its form mounts
+    flushKvWrites();
   }, [isDirty]);
 
   useEffect(() => {
@@ -127,6 +116,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       clearTimeout(draftTimeoutRef.current);
       draftTimeoutRef.current = undefined;
       resetDraftForm(formId);
+      flushKvWrites();
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);
       // reset() has notified its watchers synchronously; re-arm so later edits persist again.

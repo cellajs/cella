@@ -22,7 +22,7 @@ export function HomePage() {
 
   return (
     <div className="container">
-      <SimpleHeader heading={t('c:home')} text={t('c:home.text', { appName: appConfig.name })} className="pt-4 md:pt-6" />
+      <SimpleHeader heading="c:home" text="c:home.text" textOptions={{ appName: appConfig.name }} className="pt-4 md:pt-6" />
       {!user.mfaRequired && (
         <AlertBanner
           id="enable_mfa"

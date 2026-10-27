@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { spotlighter, useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
@@ -19,15 +20,14 @@ export function Spotlighter() {
   const [shownScope, setShownScope] = useState(scope);
   if (hasSpotlight && scope !== shownScope) setShownScope(scope);
 
-  useEffect(() => {
-    if (!hasSpotlight) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
+  useEventListener(
+    'keydown',
+    (event) => {
       // Leave Esc to whatever is layered on top (dropdowns, dialogs, the editor's own handling, an open tooltip or hover card)
       if (event.key === 'Escape' && !event.defaultPrevented && !isHoverContentOpen()) closeTop();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasSpotlight]);
+    },
+    { enabled: hasSpotlight },
+  );
 
   const layer = (
     <AnimatePresence>

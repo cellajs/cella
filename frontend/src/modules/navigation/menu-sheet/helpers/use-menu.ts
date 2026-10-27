@@ -1,10 +1,8 @@
-import { useQueries } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
-import { getChannelListQuery } from '~/lib/entity-modules';
 import type { UserMenuItem } from '~/modules/me/types';
 import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { menuEntityTypes, menuItemsFromList } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
+import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
 
 /**
  * The menu, rebuilt whenever one of its entity lists changes: the cache subscriber enriches those lists with the
@@ -13,24 +11,14 @@ import { menuEntityTypes, menuItemsFromList } from '~/modules/navigation/menu-sh
  * after a mute, an archive or a reorder.
  */
 export function useMenu(userId: string | undefined) {
-  // Entity types without a registered list query are dropped here, so no entry reaches useQueries without a queryKey.
-  const lists = menuEntityTypes.flatMap((entityType) => {
-    const factory = getChannelListQuery(entityType);
-    return factory ? [{ entityType, options: { ...factory({ relatableUserId: userId ?? '' }), enabled: !!userId } }] : [];
-  });
+  const lists = useChannelListQueries(menuEntityTypes, { relatableUserId: userId ?? '' }, !!userId);
 
-  const results = useQueries({
-    queries: lists.map(({ options }) => options),
-  });
+  const itemsByType = new Map<ChannelEntityType, UserMenuItem[]>(menuEntityTypes.map((entityType) => [entityType, []]));
+  for (const list of lists) itemsByType.set(list.entityType, menuItemsFromList(list.query.data));
+  const menu = buildMenu(itemsByType, appConfig.menuStructure);
 
-  const menu = useMemo(() => {
-    const itemsByType = new Map<ChannelEntityType, UserMenuItem[]>(menuEntityTypes.map((entityType) => [entityType, []]));
-    for (const [index, { entityType }] of lists.entries()) itemsByType.set(entityType, menuItemsFromList(results[index]?.data));
-    return buildMenu(itemsByType, appConfig.menuStructure);
-  }, [lists, results]);
-
-  const isLoading = results.some((result) => result.isLoading || result.isPending);
-  const error = results.find((result) => result.error)?.error;
+  const isLoading = lists.some(({ query }) => query.isPending);
+  const error = lists.find(({ query }) => query.error)?.query.error;
 
   return { menu, isLoading, error };
 }

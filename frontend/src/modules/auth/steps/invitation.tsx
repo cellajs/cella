@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { type GetAuthHealthResponse, sendMagicLink } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
+import { ApiError } from '~/lib/api';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
@@ -55,7 +56,10 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
       // An account may hold the invited address by now: the link then signs in.
       setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup');
     },
-    onError: () => toaster.error(t('error:reported_try_later')),
+    // The global handler toasts an ApiError; a failure without a server answer gets this toast
+    onError: (error) => {
+      if (!(error instanceof ApiError)) toaster.error(t('error:reported_try_later'));
+    },
   });
 
   if (isEntryLoading) return <Spinner size="lg" />;

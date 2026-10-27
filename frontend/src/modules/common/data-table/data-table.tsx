@@ -1,5 +1,5 @@
 import { ServerCrashIcon } from 'lucide-react';
-import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type Key, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import {
@@ -20,6 +20,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 
 const maxSelectableRows = 1000;
+const noWidths: ColumnWidths = new Map();
 
 /** DataGrid props forwarded unchanged through `gridProps`, retaining their source types and docs. */
 type ForwardedGridProps<TData> = Pick<
@@ -55,7 +56,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   /** The empty state while nothing is filtered, usually a ContentPlaceholder. */
   NoRowsComponent?: ReactNode;
   fetchMore?: () => Promise<unknown>;
-  /** When this value changes, internal column widths are reset (re-measured from column defaults). */
+  /** The last column resize belongs to this value: while another value holds, columns take their default widths. */
   resetWidthsKey?: string | number | boolean;
   className?: string;
   /** When true, hides infinite loader (for static/non-paginated tables). Also forwarded to the grid. */
@@ -104,12 +105,10 @@ export function DataTable<TData>({
 
   // The grid div remounts after an empty state; held in state, each new element gets the tooltip listeners
   const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
-  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
   useTableTooltip(gridElement);
 
-  useEffect(() => {
-    setColumnWidths(new Map());
-  }, [resetWidthsKey]);
+  const [widths, setWidths] = useState({ key: resetWidthsKey, map: noWidths });
+  const columnWidths = widths.key === resetWidthsKey ? widths.map : noWidths;
 
   // Virtualized tables use the grid's near-end state; fully rendered tables use InfiniteLoader observation.
   const [nearEnd, setNearEnd] = useState(false);
@@ -137,50 +136,64 @@ export function DataTable<TData>({
   // A fresh `{ renderRow, renderCell }` literal each render would invalidate Row's memo.
   const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
-  return (
-    <div className={cn('mb-4 size-full md:mb-8', className)}>
-      {/* A failed first load has no rows, so the skeleton shows only while no error is known. */}
-      {(isLoading || !rows) && !error ? (
+  const frameClass = cn('mb-4 size-full md:mb-8', className);
+
+  // A failed first load has no rows, so the skeleton shows only while no error is known.
+  if ((isLoading || !rows) && !error) {
+    return (
+      <div className={frameClass}>
         <DataTableSkeleton
           cellWidths={['3rem', '10rem', '4rem']}
           cellHeight={rowHeight}
           // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
-      ) : error && !rows?.length ? (
-        <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed">
-          <p className="text-destructive text-sm">{error.message}</p>
-        </ContentPlaceholder>
-      ) : !rows?.length ? (
-        <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
-      ) : (
-        <div className="relative grid" ref={setGridElement}>
-          <DataGrid
-            {...gridProps}
-            columns={columns}
-            rows={rows}
-            rowKeyGetter={rowKeyGetter}
-            rowHeight={rowHeight}
-            enableVirtualization={enableVirtualization}
-            readOnly={readOnly}
-            columnWidths={columnWidths}
-            onColumnWidthsChange={setColumnWidths}
-            selectedRows={selectedRows}
-            onSelectedRowsChange={handleSelectedRowsChange}
-            onNearEndChange={enableVirtualization ? setNearEnd : undefined}
-            cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
-            renderers={renderers}
+      </div>
+    );
+  }
+
+  if (!rows?.length) {
+    return (
+      <div className={frameClass}>
+        {error ? (
+          <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed">
+            <p className="text-destructive text-sm">{error.message}</p>
+          </ContentPlaceholder>
+        ) : (
+          <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={frameClass}>
+      <div className="relative grid" ref={setGridElement}>
+        <DataGrid
+          {...gridProps}
+          columns={columns}
+          rows={rows}
+          rowKeyGetter={rowKeyGetter}
+          rowHeight={rowHeight}
+          enableVirtualization={enableVirtualization}
+          readOnly={readOnly}
+          columnWidths={columnWidths}
+          onColumnWidthsChange={(map) => setWidths({ key: resetWidthsKey, map })}
+          selectedRows={selectedRows}
+          onSelectedRowsChange={handleSelectedRowsChange}
+          onNearEndChange={enableVirtualization ? setNearEnd : undefined}
+          cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
+          renderers={renderers}
+        />
+        {!readOnly && (
+          <InfiniteLoader
+            hasNextPage={hasNextPage}
+            isFetching={isFetching}
+            isFetchMoreError={!!error}
+            fetchMore={!enableVirtualization ? fetchMore : undefined}
           />
-          {!readOnly && (
-            <InfiniteLoader
-              hasNextPage={hasNextPage}
-              isFetching={isFetching}
-              isFetchMoreError={!!error}
-              fetchMore={!enableVirtualization ? fetchMore : undefined}
-            />
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

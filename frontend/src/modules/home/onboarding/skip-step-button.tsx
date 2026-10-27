@@ -1,5 +1,5 @@
 import { RedoIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
@@ -10,16 +10,12 @@ interface SkipStepButtonProps {
   onComplete: () => void;
 }
 
-/** Skips an optional step, the organization step after a confirmation; calls `onComplete` once every step is done. */
+/** Skips an optional step; skipping the organization step asks first, and the confirmed skip ends onboarding through `onComplete`. */
 export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
-  const { nextStep, isOptionalStep, currentStep, hasCompletedAllSteps } = useStepper();
+  const { nextStep, isOptionalStep, currentStep } = useStepper();
   const { t } = useTranslation();
 
   const skipButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (hasCompletedAllSteps) onComplete();
-  }, [hasCompletedAllSteps]);
 
   const skipStep = () => {
     if (currentStep?.id === 'organization') {

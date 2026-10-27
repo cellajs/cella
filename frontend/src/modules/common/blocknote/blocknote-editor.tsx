@@ -5,13 +5,13 @@ import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.cs
 import { withCollaboration } from '@blocknote/core/yjs';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type CSSProperties, type MouseEventHandler, type RefObject, useEffect, useImperativeHandle, useRef } from 'react';
+import { type CSSProperties, type MouseEventHandler, type RefObject, useEffect, useEffectEvent, useImperativeHandle, useRef } from 'react';
 import { appConfig } from 'shared';
 import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { Awareness } from 'y-protocols/awareness';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useLatestRef } from '~/hooks/use-latest-ref';
+import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
@@ -33,6 +33,7 @@ import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-u
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import { syntaxHighlighter } from '~/modules/common/blocknote/syntax-highlighter';
 import {
+  type BaseUppyFilePanelProps,
   type CommonBlockNoteProps,
   type CustomBlock,
   type CustomBlockNoteEditor,
@@ -113,15 +114,13 @@ export function BlockNote({
 }: BlockNoteProps) {
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpointBelow('sm');
-  // Set only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
-  const uploadHost = useUploadHost();
 
   const collaborative = !!collaboration;
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const uppyUpload = !!baseFilePanelProps && appConfig.has.uploadEnabled;
+  const uppyPanelProps = appConfig.has.uploadEnabled ? baseFilePanelProps : undefined;
   // Without an upload path the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
-  const canUpload = !!filePanel || uppyUpload;
+  const canUpload = !!filePanel || !!uppyPanelProps;
   const allowedBlockTypes = blockTypes.filter((type) =>
     isMediaBlockType(type) ? canUpload && !excludeMediaBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
   );
@@ -182,13 +181,13 @@ export function BlockNote({
   const handleKeyDown = useEditorKeyboard({ editor, onEscape, onCmdEnter, commit: commitDocument });
 
   // A host dismissed by an outside press (a sheet) unmounts the editor while it has focus, so no blur fires: the cleanup commits.
-  const commitDocumentRef = useLatestRef(commitDocument);
+  const commit = useLatestCallback(commitDocument);
   useEffect(() => {
     if (!editable || commitOnEveryChange) return;
     return () => {
-      if (touchedRef.current) commitDocumentRef.current();
+      if (touchedRef.current) commit();
     };
-  }, [editable, commitOnEveryChange, commitDocumentRef]);
+  }, [editable, commitOnEveryChange, commit]);
 
   useImperativeHandle(
     contentApiRef,
@@ -215,19 +214,20 @@ export function BlockNote({
         });
         return toggled;
       },
-      commit: () => commitDocumentRef.current(),
+      commit,
     }),
-    [editor, commitDocumentRef],
+    [editor, commit],
   );
 
   // It runs after the change subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
-  const onEditorReadyRef = useLatestRef(onEditorReady);
+  const notifyEditorReady = useEffectEvent(() => onEditorReady?.());
   useEffect(() => {
-    onEditorReadyRef.current?.();
-  }, [editor, onEditorReadyRef]);
+    notifyEditorReady();
+  }, [editor]);
 
-  // The latest callback, so a navigation compares with the props current then.
-  const onBeforeLoadRef = useLatestRef(onBeforeLoad);
+  const notifyBeforeLoad = useEffectEvent(() => {
+    if (touchedRef.current) onBeforeLoad?.(editor);
+  });
   const hasOnBeforeLoad = !!onBeforeLoad;
 
   const handleBlur = useSmartBlur({
@@ -251,10 +251,8 @@ export function BlockNote({
 
   useEffect(() => {
     if (!hasOnBeforeLoad || !editable) return;
-    return getRouter().subscribe('onBeforeLoad', () => {
-      if (touchedRef.current) onBeforeLoadRef.current?.(editor);
-    });
-  }, [hasOnBeforeLoad, editable, editor, onBeforeLoadRef]);
+    return getRouter().subscribe('onBeforeLoad', () => notifyBeforeLoad());
+  }, [hasOnBeforeLoad, editable]);
 
   return (
     <BlockNoteView
@@ -289,16 +287,27 @@ export function BlockNote({
 
       {emojis && <GridSuggestionMenuController triggerCharacter=":" columns={8} minQueryLength={1} />}
 
-      {uppyUpload ? (
-        // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
-        uploadHost ? (
-          <FilePanelBridge host={uploadHost} />
-        ) : (
-          <FilePanelController filePanel={({ blockId }) => <InlineUppyFilePanel base={baseFilePanelProps} blockId={blockId} />} />
-        )
-      ) : filePanel ? (
-        <FilePanelController filePanel={filePanel} />
-      ) : null}
+      <EditorFilePanel uppyPanelProps={uppyPanelProps} filePanel={filePanel} />
     </BlockNoteView>
   );
+}
+
+interface EditorFilePanelProps {
+  /** Set while uploads are on: the panel is the Uppy dialog. */
+  uppyPanelProps?: BaseUppyFilePanelProps;
+  filePanel?: CommonBlockNoteProps['filePanel'];
+}
+
+/** The panel a media block opens: the Uppy dialog, a caller's own panel, or none. */
+function EditorFilePanel({ uppyPanelProps, filePanel }: EditorFilePanelProps) {
+  // Set only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
+  const uploadHost = useUploadHost();
+
+  if (uppyPanelProps) {
+    // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
+    if (uploadHost) return <FilePanelBridge host={uploadHost} />;
+    return <FilePanelController filePanel={({ blockId }) => <InlineUppyFilePanel base={uppyPanelProps} blockId={blockId} />} />;
+  }
+  if (filePanel) return <FilePanelController filePanel={filePanel} />;
+  return null;
 }

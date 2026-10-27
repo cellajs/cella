@@ -1,5 +1,4 @@
-import { type ComponentType, type LazyExoticComponent, useEffect, useState } from 'react';
-import { useLatestRef } from '~/hooks/use-latest-ref';
+import { type ComponentType, type LazyExoticComponent, useEffect, useEffectEvent, useState } from 'react';
 import { lazyNamed } from '~/utils/lazy-named';
 
 /** Lazily loads `exportName` from a dynamic import `delay` ms after mount, through the latest render's `loader`; null until then. */
@@ -9,10 +8,10 @@ export function useLazyComponent<
   TKey extends keyof TModule,
 >(loader: () => Promise<TModule>, exportName: TKey, delay: number): LazyExoticComponent<TModule[TKey]> | null {
   const [Component, setComponent] = useState<LazyExoticComponent<TModule[TKey]> | null>(null);
-  const loaderRef = useLatestRef(loader);
+  const load = useEffectEvent(() => lazyNamed(loader, exportName));
 
   useEffect(() => {
-    const timer = setTimeout(() => setComponent(lazyNamed(loaderRef.current, exportName)), delay);
+    const timer = setTimeout(() => setComponent(load()), delay);
     return () => clearTimeout(timer);
   }, [delay, exportName]);
 

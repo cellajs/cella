@@ -44,12 +44,10 @@ interface ApiKeyTileProps {
   secret?: string;
   /** Shows the account's last use, which the account records: on its newest live key only. */
   showActivity?: boolean;
-  expanded: boolean;
-  onToggle: () => void;
 }
 
 /** One API key; a key created in this visit opens with its secret to copy. */
-export function ApiKeyTile({ apiKey, account, path, secret, showActivity, expanded, onToggle }: ApiKeyTileProps) {
+export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiKeyTileProps) {
   const { t } = useTranslation();
   const { mutate: revoke, isPending } = useRevokeApiKeyMutation();
   // A revoked key cannot be restored and whatever uses it stops working, so the panel asks first
@@ -75,12 +73,11 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity, expand
 
   return (
     <ExpandableTile
+      value={apiKey.id}
       icon={<KeyRoundIcon />}
       title={apiKey.name}
       status={{ tone: statusTones[status], label: t(`c:${status}`) }}
       meta={meta}
-      expanded={expanded}
-      onToggle={onToggle}
       lead={secret && <NewKeySecret secret={secret} />}
       details={
         <>
@@ -140,23 +137,20 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity, expand
 
 interface KeylessAccountTileProps {
   account: ServiceAccount;
-  expanded: boolean;
-  onToggle: () => void;
 }
 
 /** A service account without a live key: it stays listed, so an account nothing uses does not dangle unseen. */
-export function KeylessAccountTile({ account, expanded, onToggle }: KeylessAccountTileProps) {
+export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
   const { t } = useTranslation();
   const role = account.bindings[0]?.role;
 
   return (
     <ExpandableTile
+      value={account.id}
       icon={<KeyRoundIcon />}
       title={account.name}
       status={account.status === 'active' ? undefined : { tone: 'muted', label: t('c:disabled') }}
       meta={t('c:no_resource_yet', { resource: t('c:api_key_other') })}
-      expanded={expanded}
-      onToggle={onToggle}
       details={
         <>
           {role && <ExpandableTileDetail label={t('c:role')}>{t(`c:${role}`)}</ExpandableTileDetail>}

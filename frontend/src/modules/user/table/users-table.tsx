@@ -21,8 +21,8 @@ export function UsersTable() {
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = usersListQueryOptions(search);
-  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
-  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
+  const list = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(list.rows);
 
   return (
     <>
@@ -37,17 +37,11 @@ export function UsersTable() {
       />
       <DataTable<BaseUser>
         {...{
-          rows,
-          rowHeight: 52,
+          ...list,
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
           isFiltered: role !== undefined || !!q,
-          hasNextPage,
-          fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,

@@ -8,24 +8,25 @@ import { appConfig } from 'shared';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { getChannelListQueries } from '~/lib/entity-modules';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Combobox, ComboboxEmpty, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
+import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { isTouchInteraction } from '~/utils/input-modality';
-import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from '~/utils/recent-searches';
+import { resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
+type SearchableEntityType = (typeof searchableEntityTypes)[number];
 
 function SearchResultsSkeleton() {
   // Stays hidden briefly, so a fast response never flashes the skeleton.
@@ -54,51 +55,28 @@ export function AppSearch() {
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
   // Collapse state lives here, so it survives result reloads while typing; it resets with the dialog.
-  const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<string, boolean>>>({});
-  const toggleCollapsed = (entityType: string) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
+  const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<SearchableEntityType, boolean>>>({});
+  const toggleCollapsed = (entityType: SearchableEntityType) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
   const recentSearches = useNavigationStore((state) => state.recentSearches);
+  const saveRecentSearch = useNavigationStore((state) => state.saveRecentSearch);
+  const removeRecentSearch = useNavigationStore((state) => state.removeRecentSearch);
 
   const { focusRef } = useFocusByRef();
-
-  const removeRecentSearch = (search: string) => {
-    navigationStore.setState((state) => {
-      const searches = withoutRecentSearch(state.recentSearches, search);
-      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
-    });
-  };
-
-  const saveRecentSearch = (value: string) => {
-    navigationStore.setState((state) => {
-      const searches = addRecentSearch(state.recentSearches, value);
-      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
-    });
-  };
 
   const hasQuery = debouncedSearchValue.length > 0;
 
   const userQuery = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: hasQuery });
 
-  const channelQueries = Object.entries(getChannelListQueries()).map(([entityType, queryOptions]) => ({
-    entityType,
-    query: useInfiniteQuery({
-      // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.
-      ...(queryOptions as any)({ q: debouncedSearchValue }),
-      enabled: hasQuery,
-    }),
-  }));
+  const channelQueries = useChannelListQueries(appConfig.channelEntityTypes, { q: debouncedSearchValue }, hasQuery);
   const queries = [userQuery, ...channelQueries.map(({ query }) => query)];
 
-  const resultsByType: Record<string, (EnrichedChannel | UserBase)[]> = {
+  const resultsByType: Partial<Record<SearchableEntityType, (EnrichedChannel | UserBase)[]>> = {
     user: hasQuery ? (userQuery.data?.pages.flatMap((page) => page.items) ?? []) : [],
-    ...Object.fromEntries(
-      channelQueries.map(({ entityType, query }) => [
-        entityType,
-        // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
-        hasQuery ? ((query.data as any)?.pages.flatMap((page: any) => page.items) ?? []) : [],
-      ]),
-    ),
   };
+  for (const { entityType, query } of channelQueries) {
+    resultsByType[entityType] = hasQuery ? (query.data?.pages.flatMap((page) => page.items) ?? []) : [];
+  }
   const notFound = Object.values(resultsByType).every((items) => items.length === 0);
   const firstTypeWithResults = searchableEntityTypes.find((entityType) => (resultsByType[entityType] ?? []).length > 0);
   // The debounce gap counts as loading, so the skeleton shows in place of the empty state.

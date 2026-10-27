@@ -10,8 +10,13 @@ import { UserTheme } from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
+/** A key of the common namespace, without its `c:` prefix (a type parameter, so the condition runs per key). */
+type CommonKeyOf<K> = K extends `c:${infer Key}` ? Key : never;
+type CommonKey = CommonKeyOf<TKey>;
+
 export interface FooterLinkProps {
-  id: string;
+  /** The link's `c:` locale key, which names it. */
+  id: CommonKey;
   href: string;
 }
 
@@ -27,7 +32,7 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
   return (
     <li>
       <Button size="xs" variant="ghost" render={<Link to={href} />}>
-        {t(`c:${id}` as TKey)}
+        {t(`c:${id}`)}
       </Button>
     </li>
   );
@@ -42,7 +47,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
   const { t } = useTranslation();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
   const statusUrl = appConfig.statusUrl?.trim();
-  const footerLinks = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
+  const footerLinks: FooterLinkProps[] = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
 
   return (
     <ul className={cn('flex flex-wrap gap-4 text-center', className)}>

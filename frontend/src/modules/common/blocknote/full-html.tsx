@@ -3,10 +3,9 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import DOMPurify from 'dompurify';
-import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
+import { type MouseEventHandler, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { MediaRefContext } from 'shared/utils/media-ref';
 import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
-import { useLatestRef } from '~/hooks/use-latest-ref';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { getBlockPendingUpload, subscribePendingUploads } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
@@ -155,14 +154,14 @@ export function BlockNoteFullHtml({
   const [uploadsArrived, setUploadsArrived] = useState(0);
   useEffect(() => subscribePendingUploads(() => setUploadsArrived((count) => count + 1)), []);
 
-  const onReadyRef = useLatestRef(onReady);
+  const fireReady = useEffectEvent(() => onReady?.());
   const readyFiredRef = useRef(false);
   useEffect(() => {
     if (renderState.ready && !readyFiredRef.current) {
       readyFiredRef.current = true;
-      onReadyRef.current?.();
+      fireReady();
     }
-  }, [renderState.ready, onReadyRef]);
+  }, [renderState.ready]);
 
   // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
   useEffect(() => {

@@ -5,8 +5,7 @@ import type { ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
-import { useCurrentUser } from '~/modules/user/user-store';
-import { flattenInfiniteData } from '~/query/basic/flatten';
+import { getQueryItems } from '~/query/basic/mutate-query';
 
 type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ChannelEntityType;
@@ -20,13 +19,11 @@ type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFiel
 
 /** Channels the user can pick as a parent; shares its cache with the picker's own list query. */
 export function useParentChannels(parentType: ChannelEntityType, organizationId?: string, enabled = true) {
-  const user = useCurrentUser();
-
-  const queryFactory = getChannelListQuery(parentType);
-  // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
-  const query = useInfiniteQuery({ ...(queryFactory as any)({ userId: user.id, organizationId }), enabled });
-  // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
-  const items = flattenInfiniteData<ChannelBase>(query.data as any);
+  // No user filter: a list endpoint answers with the caller's channels, and `relatableUserId` would narrow those to their own memberships
+  const listQuery = getChannelListQuery(parentType);
+  if (!listQuery) throw new Error(`Channel '${parentType}' declares no list query to pick a parent from`);
+  const query = useInfiniteQuery({ ...listQuery({ organizationId }), enabled });
+  const items = query.data ? getQueryItems(query.data) : [];
 
   return { items, isLoaded: query.isSuccess };
 }

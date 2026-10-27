@@ -1,5 +1,5 @@
 import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
-import type { AssemblyResult } from '@uppy/transloadit';
+import type { AssemblyResponse, AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'shared';
 import type { uploadTemplates } from 'shared/transloadit-config';
 
@@ -19,6 +19,9 @@ export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 
 export type UploadResults<T extends UploadTemplateId, K = UserMeta> = {
   [key in TemplateStepKeys<T>]: UploadedFile<K>[];
 };
+
+/** An assembly's results, typed by the steps of the template that ran it: Transloadit types them as files of any step. */
+export const uploadResultsOf = <T extends UploadTemplateId>(assembly: AssemblyResponse) => assembly.results as UploadResults<T>;
 
 type Stringified<T> = {
   [K in keyof T]: string;

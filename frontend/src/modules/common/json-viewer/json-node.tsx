@@ -1,15 +1,16 @@
 import i18n from 'i18next';
 import { ChevronRightIcon } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo } from 'react';
 import { isRecord } from 'shared/utils/as-record';
 import { CollapsedPreview } from '~/modules/common/json-viewer/collapsed-preview';
 import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
 import { CopyNodeButton } from '~/modules/common/json-viewer/copy-node-button';
 import { NodeKey } from '~/modules/common/json-viewer/node-key';
 import { InlinePrimitiveValue, PrimitiveValue } from '~/modules/common/json-viewer/primitive-value';
-import { type SchemaConstraints, SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
+import { SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
-import { getValueType, isPathPrefix, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
+import { useNodeExpansion } from '~/modules/common/json-viewer/use-node-expansion';
+import { describeNode, getValueType, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { cn } from '~/utils/cn';
 
 interface JsonNodeProps {
@@ -21,42 +22,11 @@ interface JsonNodeProps {
   visualDepth?: number;
 }
 
-// Schema keywords that render as labels or inline constraints, so their own entries are hidden
-const labelKeys = new Set<string | number>([
-  'required',
-  'maxLength',
-  'minLength',
-  'maximum',
-  'minimum',
-  'type',
-  'ref',
-  'contentType',
-  'additionalProperties',
-]);
-
-// The $ref target's key: amber with a 2px ring, held for 70% of the time, then fading out
-const refTargetFlash: Keyframe[] = [
-  { backgroundColor: 'rgb(251 191 36)', boxShadow: '0 0 0 2px rgb(251 191 36)', borderRadius: '4px' },
-  { backgroundColor: 'rgb(251 191 36)', boxShadow: '0 0 0 2px rgb(251 191 36)', borderRadius: '4px', offset: 0.7, easing: 'ease-out' },
-  { backgroundColor: 'transparent', boxShadow: 'none', borderRadius: '4px' },
-];
-
 function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProps) {
   const effectiveVisualDepth = visualDepth ?? depth;
 
-  const {
-    indentWidth,
-    defaultInspectDepth,
-    enableClipboard,
-    valueTypes,
-    collapseStringsAfterLength,
-    targetPath,
-    searchMatchPath,
-    searchText,
-    expandAll,
-    showKeyQuotes,
-    openapiMode,
-  } = useJsonViewerContext();
+  const { indentWidth, defaultInspectDepth, enableClipboard, valueTypes, collapseStringsAfterLength, searchText, showKeyQuotes, openapiMode } =
+    useJsonViewerContext();
 
   // Flattened nodes render always expanded and without a key.
   const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
@@ -66,49 +36,17 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
   // 'items' nodes keep their header, so the array item structure stays visible.
   const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
-  const [isExpanded, setIsExpanded] = useState(hideExpandHeader || expandAll || depth < defaultInspectDepth);
-
-  const isOnTargetPath = isPathPrefix(path, targetPath);
-  const isOnSearchMatchPath = isPathPrefix(path, searchMatchPath);
-
-  useEffect(() => {
-    if (expandAll) setIsExpanded(true);
-  }, [expandAll]);
-
-  useEffect(() => {
-    if (isOnTargetPath) setIsExpanded(true);
-  }, [isOnTargetPath, targetPath]);
-
-  useEffect(() => {
-    if (isOnSearchMatchPath) setIsExpanded(true);
-  }, [isOnSearchMatchPath, searchMatchPath]);
-
-  const isCurrentMatch = isOnSearchMatchPath && path.length === searchMatchPath?.length;
-  const rowRef = useRef<HTMLDivElement>(null);
-  // Also runs on mount: a row inside a collapsed node exists only after its ancestors expanded.
-  useEffect(() => {
-    if (isCurrentMatch) rowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [isCurrentMatch, searchMatchPath]);
-
-  // targetPath is a new array per navigation, so following the same $ref again flashes again
-  const isRefTarget = isOnTargetPath && path.length === targetPath?.length;
-  const keyRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!isRefTarget) return;
-    keyRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    keyRef.current?.animate(refTargetFlash, 3000);
-  }, [isRefTarget, targetPath]);
+  const { isExpanded, setIsExpanded, isCurrentMatch, rowRef, keyRef } = useNodeExpansion(path, hideExpandHeader || depth < defaultInspectDepth);
 
   const paddingLeft = effectiveVisualDepth * indentWidth * 8;
   const rowProps = { ref: rowRef, 'data-match-current': isCurrentMatch || undefined, style: { paddingLeft } };
 
   const valueType = getValueType(value);
-  const schemaRecord = openapiMode === 'schema' && isRecord(value) ? value : null;
   const keyProps = {
     keyName,
     showKeyQuotes,
     isObjectValue: valueType === 'object',
-    hasSelfRequired: schemaRecord?.required === true,
+    hasSelfRequired: openapiMode === 'schema' && isRecord(value) && value.required === true,
     openapiMode,
     ref: keyRef,
   };
@@ -132,112 +70,23 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
     );
   }
 
+  const { labels, entries, schemaPropertiesCount, isExpandable, isPrimitiveArray } = describeNode(value, openapiMode, isPropertiesNode);
   const isArray = Array.isArray(value);
-
-  // A 'properties' node's keys are property names, so none of them is read or hidden as a schema keyword.
-  const keywords = isPropertiesNode ? null : schemaRecord;
-
-  // 'type' renders as a label: a string, or an array such as ["string", "null"] for nullable.
-  const typeValue = (() => {
-    const typeField = keywords?.type;
-    if (typeof typeField === 'string') return typeField;
-    if (Array.isArray(typeField) && typeField.every((type): type is string => typeof type === 'string')) return typeField;
-    return null;
-  })();
-
-  // anyOf/oneOf render as a type label.
-  const hasAnyOf = Array.isArray(keywords?.anyOf);
-  const hasOneOf = Array.isArray(keywords?.oneOf);
-
-  // 'ref' renders as a label holding only the schema name: '#/components/schemas/User' becomes 'User'.
-  const refField = keywords?.ref;
-  const refValue = typeof refField === 'string' ? refField.split('/').pop() || refField : null;
-
-  // Rendered as a label and filtered out of the entries below.
-  const contentTypeField = keywords?.contentType;
-  const contentTypeValue = typeof contentTypeField === 'string' ? contentTypeField : null;
-
-  // Rendered inline and filtered out of the entries below.
-  const constraints = (() => {
-    if (!schemaRecord) return null;
-    const found: SchemaConstraints = {};
-    if (typeof schemaRecord.maxLength === 'number') found.maxLength = schemaRecord.maxLength;
-    if (typeof schemaRecord.minLength === 'number') found.minLength = schemaRecord.minLength;
-    if (typeof schemaRecord.maximum === 'number') found.maximum = schemaRecord.maximum;
-    if (typeof schemaRecord.minimum === 'number') found.minimum = schemaRecord.minimum;
-    return Object.keys(found).length > 0 ? found : null;
-  })();
-
-  // Rendered as a synthetic [key] entry.
-  const additionalProperties = keywords?.additionalProperties;
-  const additionalPropertiesSchema = additionalProperties && typeof additionalProperties === 'object' ? additionalProperties : null;
-
-  const isArraySchema = schemaRecord?.type === 'array';
-
-  const rawEntries: [string | number, unknown][] = isArray ? value.map((item, index) => [index, item]) : Object.entries(value);
-
-  // Hide schema keys promoted into labels and hoist array-item properties.
-  const filteredEntries =
-    openapiMode === 'schema' && !isArray
-      ? rawEntries.filter(([key]) => (isPropertiesNode || !labelKeys.has(key)) && !(isArraySchema && key === 'items'))
-      : rawEntries;
-
-  const items = schemaRecord?.items;
-  const hoistedItemsEntries = isArraySchema && isRecord(items) && isRecord(items.properties) ? Object.entries(items.properties) : [];
-
-  const combinedEntries = [...filteredEntries, ...hoistedItemsEntries];
-
-  // Primitives sort before objects and arrays.
-  const entries =
-    openapiMode === 'schema' && !isArray
-      ? [...combinedEntries].sort(([, a], [, b]) => {
-          const aIsObject = a !== null && typeof a === 'object';
-          const bIsObject = b !== null && typeof b === 'object';
-          if (aIsObject === bIsObject) return 0;
-          return aIsObject ? 1 : -1;
-        })
-      : filteredEntries;
-
-  if (additionalPropertiesSchema) {
-    entries.push(['[key]', additionalPropertiesSchema]);
-  }
-
-  // Counts the children a reader actually sees.
-  const schemaPropertiesCount = (() => {
-    if (isArraySchema) return hoistedItemsEntries.length;
-    const properties = schemaRecord?.properties;
-    return properties && typeof properties === 'object' ? Object.keys(properties).length : entries.length;
-  })();
-
   const openBracket = isArray ? '[' : '{';
   const closeBracket = isArray ? ']' : '}';
-  const isEmpty = entries.length === 0;
 
-  // Schema mode: an object is expandable only if it has nested object (not array) children; arrays are always expandable.
-  const isExpandable = openapiMode === 'schema' && !isArray ? entries.some(([, child]) => isRecord(child)) : true;
-
-  if (isEmpty) {
+  if (entries.length === 0) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
         <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>{openBracket}</span>
-        <SchemaLabels
-          typeValue={typeValue}
-          refValue={refValue}
-          contentTypeValue={contentTypeValue}
-          hasAnyOf={hasAnyOf}
-          hasOneOf={hasOneOf}
-          constraints={constraints}
-        />
+        <SchemaLabels {...labels} />
         <span className={jsonViewerTheme.bracket}>{closeBracket}</span>
       </div>
     );
   }
 
-  const isPrimitiveArray =
-    isArray && openapiMode === 'schema' && value.every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
-
-  if (isPrimitiveArray) {
+  if (isArray && isPrimitiveArray) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
         <NodeKey {...keyProps} />
@@ -284,14 +133,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
           )}
           <NodeKey {...keyProps} />
           <span className={jsonViewerTheme.bracket}>{openBracket}</span>
-          <SchemaLabels
-            typeValue={typeValue}
-            refValue={refValue}
-            contentTypeValue={contentTypeValue}
-            hasAnyOf={hasAnyOf}
-            hasOneOf={hasOneOf}
-            constraints={constraints}
-          />
+          <SchemaLabels {...labels} />
           {!isExpanded && isExpandable && (
             <CollapsedPreview itemCount={schemaPropertiesCount} closeBracket={closeBracket} hiddenMatchCount={hiddenMatchCount} />
           )}

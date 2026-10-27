@@ -2,6 +2,7 @@ import { liveQuery, type Subscription } from 'dexie';
 import { useSyncExternalStore } from 'react';
 import { type AttachmentBlob, attachmentsDb, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
+import { objectKeys } from '~/utils/object-keys';
 
 interface BlobUploadInfo {
   /** False when no local blob exists for this attachment, meaning it lives only in the cloud. */
@@ -36,7 +37,7 @@ function toUploadInfo(uploadStatus: UploadStatus): BlobUploadInfo {
 
 const uploadedInfo = toUploadInfo('uploaded');
 
-const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => (Object.keys(a) as (keyof BlobUploadInfo)[]).every((key) => a[key] === b[key]);
+const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => objectKeys(a).every((key) => a[key] === b[key]);
 
 /**
  * Upload info per attachment id. Primary keys come from the index alone, so cached downloads are never deserialized;

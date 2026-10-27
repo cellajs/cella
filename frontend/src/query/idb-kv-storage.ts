@@ -1,5 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 import { getLocalUserDb, type LocalUserDatabase } from '~/query/local-user-db';
+import { onPageHide } from '~/utils/on-page-hide';
 
 /** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one transaction. */
 const writeDebounceMs = 250;
@@ -8,20 +9,15 @@ const writeDebounceMs = 250;
 const flushers = new Set<() => void>();
 
 /**
- * Issue every store's pending write immediately. For last-chance writes during unload (a reload
- * fires only pagehide, where this module's own listener has already run before later-registered
- * ones): write to the store, then call this so the put is issued in the same task.
+ * Issue every store's pending write now. A put issued while the page unloads (a reload's pagehide) does not commit,
+ * so a write that has to survive a reload calls this when it is made. A hide listener registered after this module's
+ * own calls it after its write.
  */
 export const flushKvWrites = () => {
   for (const flush of flushers) flush();
 };
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushKvWrites();
-  });
-  window.addEventListener('pagehide', flushKvWrites);
-}
+onPageHide(flushKvWrites);
 
 /** Per-user Zustand storage over the live app database: writes are trailing-debounced per store, signed-out operations no-op, and every operation re-resolves the bound database. */
 export function idbKvStorage(key: string): StateStorage {

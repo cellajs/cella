@@ -47,6 +47,7 @@ import { getAndSetMe } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
 import { userStore } from '~/modules/user/user-store';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
 
@@ -211,14 +212,24 @@ const applyUpdatedSelf = (updatedUser: User) => {
 export const myMembershipsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }), staleTime: 0 });
 
-/** Once an invitation is answered: refresh memberships so the menu rebuilds, drop the invite from cache, and say so. */
-const applySettledInvitation = async (settledEntity: { id: string }, action: 'accept' | 'reject') => {
+/**
+ * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,
+ * drop the invite from cache, and say so. The answer names the organization, also for an invitation to a channel below
+ * it, so the invite is found by its own id; a token answer carries none, and the list reloads.
+ */
+const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'reject') => {
+  // Stale before the invite leaves the cache: the onboarding's completed screen opens on that and waits for the list
+  if (action === 'accept') queryClient.invalidateQueries({ queryKey: getEntityQueryKeys('organization').list.base });
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
-  queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
-    if (!oldData) return oldData;
-    return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
-  });
+  if (inactiveMembershipId) {
+    queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
+      if (!oldData) return oldData;
+      return { ...oldData, items: oldData.items.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId) };
+    });
+  } else {
+    queryClient.invalidateQueries({ queryKey: meKeys.invites });
+  }
 
   toaster.success(t('c:invitation_settled', { action: action === 'accept' ? 'accepted' : 'rejected' }));
 };
@@ -228,7 +239,7 @@ export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
     mutationKey: meKeys.handleInvitation,
     mutationFn: ({ path }) => handleMembershipInvitation({ path }),
-    onSuccess: (settledEntity, { path: { acceptOrReject } }) => applySettledInvitation(settledEntity, acceptOrReject),
+    onSuccess: (_organization, { path: { id, acceptOrReject } }) => applySettledInvitation(id, acceptOrReject),
   });
 
 /** Accepts the invitation behind the single-use token cookie, as the signed-in account. */
@@ -236,7 +247,7 @@ export const useAcceptInvitationTokenMutation = () =>
   useMutation<AcceptInvitationTokenResponse, ApiError, void>({
     mutationKey: meKeys.acceptInvitationToken,
     mutationFn: () => acceptInvitationToken(),
-    onSuccess: (settledEntity) => applySettledInvitation(settledEntity, 'accept'),
+    onSuccess: () => applySettledInvitation(null, 'accept'),
   });
 
 /** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */

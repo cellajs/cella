@@ -48,7 +48,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
         {state === 'stepper' && (
           <div className="mx-auto flex max-w-3xl starting:translate-y-4 starting:scale-95 flex-col gap-4 px-4 py-8 starting:opacity-0 transition-[opacity,translate,scale] duration-500 ease-out sm:w-10/12">
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
-            <Stepper steps={steps} onClickStep={(step, setStep) => setStep(step)}>
+            <Stepper steps={steps} onClickStep={(step, setStep) => setStep(step)} onComplete={onComplete}>
               {steps.map(({ description, label, id }) => (
                 <Step key={id} label={label} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
                   <Card>

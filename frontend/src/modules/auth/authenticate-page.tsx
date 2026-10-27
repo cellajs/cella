@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowLeftIcon, ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
+import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
@@ -18,6 +19,7 @@ import { SignInStep } from '~/modules/auth/steps/sign-in';
 import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { TokenData } from '~/modules/auth/types';
+import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -36,17 +38,16 @@ export function AuthenticatePage() {
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const lastUser = useUserStore((state) => state.lastUser);
-  const { step, setStep, restrictedMode, setRestrictedMode, signedIn, inviteOtherAccount, setInviteOtherAccount } = useAuthStore(
+  const { step, setStep, signedIn, inviteOtherAccount, setInviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       step: state.step,
       setStep: state.setStep,
-      restrictedMode: state.restrictedMode,
-      setRestrictedMode: state.setRestrictedMode,
       signedIn: state.signedIn,
       inviteOtherAccount: state.inviteOtherAccount,
       setInviteOtherAccount: state.setInviteOtherAccount,
     })),
   );
+  const restrictedMode = useRestrictedMode();
 
   // Cache-only: the route guard probes the session whenever a tokenId is present.
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
@@ -61,20 +62,7 @@ export function AuthenticatePage() {
 
   const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
-  const [showSlowWarning, setShowSlowWarning] = useState(false);
-  useEffect(() => {
-    if (!isHealthLoading) {
-      setShowSlowWarning(false);
-      return;
-    }
-    const timer = setTimeout(() => setShowSlowWarning(true), healthSlowMs);
-    return () => clearTimeout(timer);
-  }, [isHealthLoading]);
-
-  // Only ever switches the neutral step on: an address this browser is not recognized for switches it on as well.
-  useEffect(() => {
-    if (healthData?.restrictedMode) setRestrictedMode(true);
-  }, [healthData, setRestrictedMode]);
+  const showSlowWarning = useDelayedFlag(isHealthLoading, healthSlowMs);
 
   useEffect(() => {
     // The link-sent step stays until the visitor leaves it.

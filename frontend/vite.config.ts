@@ -22,7 +22,7 @@ import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { indexHtml } from './vite/index-html.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
-import { reactCompilerGuard } from './vite/react-compiler-guard.ts';
+import { reactCompilerGuard, reactCompilerLogger } from './vite/react-compiler-guard.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
 import { sdkStatic } from './vite/sdk-static.ts';
@@ -399,7 +399,7 @@ const viteConfig = {
     svgr({ include: '**/*.svg?react' }),
     react(),
     // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.
-    babel({ presets: [reactCompilerPreset()], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
+    babel({ presets: [reactCompilerPreset({ logger: reactCompilerLogger })], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
     reactCompilerGuard(),
     tailwindcss(),
     // Locales pipeline: merges common.json + app.json into the runtime `c` namespace,
