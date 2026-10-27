@@ -292,7 +292,7 @@ interface CatchupChangeSummary {
 
 `signals.membership` moves with every membership and invitation change in the organization; a client whose stored value differs invalidates its member queries.
 
-`afterSeq=50&untilSeq=150` reads the rows stamped after position 50 up to and including 150, deleted rows included, in sequence order. Both bounds are required, and a range read takes no search and no offset: a response capped by `limit` is a prefix of the range, and the next request starts after the last position received. A row returned outside the range means the server ignored it, and the client invalidates its lists. `channelId` narrows a range read to one subtree on top of the permission scope, never folded into it ([New entity](./ADD_ENTITY.md)).
+`afterSeq=50&untilSeq=150` reads the rows stamped after position 50 up to and including 150, deleted rows included, in sequence order. Both bounds are required, and a range read takes no search and no offset: a response capped by `limit` is a prefix of the range, and the next request starts after the last position received. A row returned outside the range means the server ignored it, and the client invalidates its lists. `channelId` narrows a range read to one subtree on top of the permission scope, never folded into it ([add-entity skill](./skills/add-entity/SKILL.md)).
 
 ### Detail cache
 

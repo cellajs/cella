@@ -114,7 +114,6 @@ const repoDocRoutes = {
   'mcp/README.md': '/docs/page/interoperability/mcp',
   'cella/OTEL.md': '/docs/page/observability',
   'jobs/README.md': '/docs/page/jobs',
-  'cella/ADD_ENTITY.md': '/docs/page/guides/new-entity',
   'cella/TESTING.md': '/docs/page/guides/testing',
   'bench/README.md': '/docs/page/guides/load-testing',
   'cella/RELEASES.md': '/docs/page/guides/releases',

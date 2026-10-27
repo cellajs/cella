@@ -16,7 +16,7 @@ and answers 201 only when it inserted a row. App-owned product creates copied th
 
 A replay of a batch larger than the tenant quota answered 403 although every row existed, the hand-written quota
 check answered `restrict_by_org` without `meta` and refused system admins, and an item skipped by the insert
-vanished from the answer. `ADD_ENTITY.md` already documents the corrected order.
+vanished from the answer. The `add-entity` skill documents the corrected order.
 
 ## Blast radius
 
