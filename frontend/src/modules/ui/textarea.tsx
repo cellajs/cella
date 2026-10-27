@@ -1,5 +1,6 @@
 import type * as React from 'react';
 import { useAutoResize } from '~/hooks/use-auto-resize';
+import { inputClass } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 
 export interface TextareaProps extends React.ComponentProps<'textarea'> {
@@ -19,11 +20,7 @@ export function Textarea({ className, autoResize = false, ref, ...props }: Texta
   return (
     <textarea
       data-slot="textarea"
-      className={cn(
-        'field-sizing-content focus-effect flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-md outline-hidden transition-[color,box-shadow] placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 sm:text-sm dark:aria-invalid:ring-destructive/40',
-        autoResize && 'resize-none overflow-hidden',
-        className,
-      )}
+      className={cn(inputClass, 'field-sizing-content flex min-h-16', autoResize && 'resize-none overflow-hidden', className)}
       ref={setRefs}
       {...props}
     />

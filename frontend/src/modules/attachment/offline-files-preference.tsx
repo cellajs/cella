@@ -5,6 +5,7 @@ import { defaultOfflineFilesTier, offlineFilesRules, useOfflineFilesStore } from
 import { isAlmostFull, percentFull, useOfflineFootprint } from '~/modules/attachment/offline/use-offline-footprint';
 import { OfflineFilesSetting } from '~/modules/attachment/offline-files-setting';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { StatusDot } from '~/modules/common/status-dot';
 import { PreferenceRow, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -58,5 +59,5 @@ export function OfflineFilesIndicator() {
   const footprint = useOfflineFootprint();
 
   if (!footprint || !isAlmostFull(footprint.bytes, offlineFilesRules(tier).budget)) return null;
-  return <span role="img" aria-label={t('c:offline_files.almost_full')} className="size-2 rounded-full bg-destructive" />;
+  return <StatusDot variant="destructive" label={t('c:offline_files.almost_full')} />;
 }

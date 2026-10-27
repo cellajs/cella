@@ -2,11 +2,7 @@ import i18n from 'i18next';
 import { Children, type ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-
-// A cut name keeps its end whole: the last 12 characters (a file extension, the domain of an address), from the
-// start of their first word while that keeps at most 20 (a surname)
-const keptEndLength = 12;
-const maxKeptEndLength = 20;
+import { MiddleCut } from '~/modules/common/middle-cut';
 
 // A confirmation spells out this many names and counts the rest, so a large selection keeps its question short
 const maxListedNames = 3;
@@ -23,21 +19,12 @@ function listParts(names: string[]) {
 
 type ListParts = ReturnType<typeof listParts>;
 
-/** A name on one line: when it overflows the line its middle gives way to an ellipsis, so its start and end stay readable. */
+/** A name on one line, cut in the middle when it overflows the line. */
 function CutName({ text }: { text: string }) {
-  const endStart = Math.max(text.length - keptEndLength, Math.ceil(text.length / 2));
-  const wordStart = text.lastIndexOf(' ', endStart) + 1;
-  const splitAt = wordStart > 0 && text.length - wordStart <= maxKeptEndLength ? wordStart : endStart;
   return (
-    // 1ch less than the line leaves room for the mark that ends the sentence, so a "?" never wraps alone
-    <strong className="inline-flex max-w-[calc(100%-1ch)] font-semibold text-foreground">
-      <span className="sr-only">{text}</span>
-      <span aria-hidden className="overflow-hidden text-ellipsis whitespace-pre">
-        {text.slice(0, splitAt)}
-      </span>
-      <span aria-hidden className="whitespace-pre">
-        {text.slice(splitAt)}
-      </span>
+    <strong className="font-semibold text-foreground">
+      {/* 1ch less than the line leaves room for the mark that ends the sentence, so a cut name keeps its "?" on its line */}
+      <MiddleCut text={text} className="max-w-[calc(100%-1ch)]" />
     </strong>
   );
 }

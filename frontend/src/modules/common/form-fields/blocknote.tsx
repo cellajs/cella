@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
@@ -13,6 +14,10 @@ export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = B
   autoFocus?: boolean;
   containerClassName?: string;
 };
+
+// A contenteditable is no `htmlFor` target, so a click on the label focuses the editor itself
+const focusEditor = (event: MouseEvent<HTMLLabelElement>) =>
+  event.currentTarget.closest('[data-slot=form-item]')?.querySelector<HTMLElement>('[contenteditable=true]')?.focus();
 
 export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   control,
@@ -40,7 +45,11 @@ export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
         };
         return (
           <FormItem name={name} disabled={disabled} className={containerClassName}>
-            {label && <FormLabel required={required}>{label}</FormLabel>}
+            {label && (
+              <FormLabel required={required} onClick={focusEditor}>
+                {label}
+              </FormLabel>
+            )}
             {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
             {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
             <FormMessage />

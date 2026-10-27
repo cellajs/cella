@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -43,6 +44,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const nameLabel = t('c:name').toLowerCase();
   const shortNameLabel = t('c:short_name').toLowerCase();
   const notificationEmailLabel = t('c:notification_email').toLowerCase();
+  const languagesId = useId();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -114,8 +116,10 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           name="languages"
           render={({ field }) => (
             <FormItem name="languages">
-              <FormLabel required>{t('c:languages')}</FormLabel>
-              <SelectLanguages value={field.value ?? []} onChange={field.onChange} />
+              <FormLabel htmlFor={languagesId} required>
+                {t('c:languages')}
+              </FormLabel>
+              <SelectLanguages id={languagesId} value={field.value ?? []} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
           )}

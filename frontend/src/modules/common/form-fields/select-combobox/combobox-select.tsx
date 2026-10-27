@@ -96,7 +96,7 @@ export function ComboboxSelect({
         <ComboboxList>
           {(item) => (
             <ComboboxItem key={item.value} value={item}>
-              <div className="flex items-center gap-2">{optionLabel(item)}</div>
+              <div className="flex min-w-0 items-center gap-2">{optionLabel(item)}</div>
             </ComboboxItem>
           )}
         </ComboboxList>

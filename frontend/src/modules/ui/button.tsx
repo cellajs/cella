@@ -23,8 +23,7 @@ export const buttonVariants = cva(
         link: 'link-inline text-primary',
         cell: 'group/cell-button flex w-full justify-start font-normal opacity-75 hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'intent-primary soft-bg soft-border hover:soft-bg-strong hover:soft-border-medium border text-primary',
-        input:
-          'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
+        input: 'border border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive',
         warning: 'intent-warning',
         none: 'border-none bg-transparent',
         // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it; only a DrawerRowSeparator between groups draws a line

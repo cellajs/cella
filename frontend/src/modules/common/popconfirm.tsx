@@ -19,9 +19,10 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
 
   if (surface === 'menu') {
     return (
-      // contain-inline-size keeps a long question from widening the popup: it grows only to the popup's min-width
-      <DropdownMenuGroup className="min-w-60 contain-inline-size">
-        <DropdownMenuLabel className="py-2 font-normal">{title}</DropdownMenuLabel>
+      // contain-inline-size keeps a long question from widening the popup: it grows only to the popup's min-width.
+      // text-balance carries a name that fits but leaves no room for its "?" down to the line of that mark
+      <DropdownMenuGroup className="min-w-80 contain-inline-size">
+        <DropdownMenuLabel className="text-balance py-2 font-normal">{title}</DropdownMenuLabel>
         {children}
       </DropdownMenuGroup>
     );
@@ -30,15 +31,15 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
   if (surface === 'drawer') {
     return (
       <div className="flex flex-col gap-3">
-        <p className="py-3 text-center text-sm">{title}</p>
+        <p className="text-balance py-3 text-center text-sm">{title}</p>
         <DrawerRowGroup>{children}</DrawerRowGroup>
       </div>
     );
   }
 
   return (
-    <div className="flex w-max max-w-72 flex-col gap-3 p-3">
-      <p className="text-sm">{title}</p>
+    <div className="flex w-max max-w-80 flex-col gap-3 p-3">
+      <p className="text-balance text-sm">{title}</p>
       {children}
     </div>
   );

@@ -10,7 +10,7 @@ export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) 
       className={cn(
         // Transparent ::before extends the hit area just past the 4px focus/selection ring so edge clicks register.
         // Opaque fill: on a hovered row a see-through box takes the row's muted fill, which is how a disabled checkbox looks.
-        'peer focus-effect relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-input bg-background transition-shadow before:absolute before:-inset-1.25 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground data-disabled:opacity-50 data-unchecked:not-data-disabled:hover:border-foreground/50 more-contrast:data-unchecked:not-data-disabled:hover:border-foreground dark:aria-invalid:ring-destructive/40',
+        'peer focus-effect relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-input field-hover:border-input-hover bg-background transition-shadow before:absolute before:-inset-1.25 aria-invalid:border-destructive data-disabled:cursor-not-allowed data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground data-disabled:opacity-50',
         className,
       )}
       {...props}

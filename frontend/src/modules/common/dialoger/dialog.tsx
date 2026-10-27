@@ -79,7 +79,7 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
         {(title || description) && (
           <DialogHeader sticky className={dock ? 'text-center' : headerClassName}>
-            {title && <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>}
+            {title && <DialogTitle className="h-6 truncate leading-6">{titleContent}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}

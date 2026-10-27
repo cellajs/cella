@@ -9,6 +9,7 @@ import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/mo
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { DeleteQuestion } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
@@ -114,7 +115,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       resizable: true,
       minWidth: 140,
       placeholderValue: '-',
-      renderCell: ({ row }) => (row.filename ? <span className="truncate">{row.filename}</span> : null),
+      renderCell: ({ row }) => (row.filename ? <MiddleCut text={row.filename} /> : null),
     },
     {
       key: 'size',

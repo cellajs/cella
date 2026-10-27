@@ -1091,10 +1091,19 @@
       "level": "AA",
       "en301549": null,
       "status": "partially-supports",
-      "remarks": "Two widths can only be set freely by dragging: the docs sidebar and table columns. Without dragging, a double-click resets the sidebar or fits a column to its content, and the keyboard resizes both. Everything else that used dragging has buttons: changing the order of tabs in organization settings and of items in the menu's edit mode, moving blocks in the text editor, and moving a zoomed image.",
+      "remarks": "Two widths can only be set freely by dragging: the docs sidebar and table columns. Without dragging, a double-click resets the sidebar or fits a column to its content, and the keyboard resizes both. Everything else that used dragging has buttons: changing the order of tabs in organization settings and of items in the menu's edit mode, and moving blocks in the text editor. A zoomed image moves by clicking: the clicked point comes to the centre.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Attachment viewer, driven by Playwright in the dialog opened from the /about device mockups at 1280x800. The four pan buttons and the pan toggle are gone: zoomed in, a click 100px right and 70px below the centre moved the image by -100px and -74px (the stage centre sits 4px above the panel's), with no drag. The arrow keys pan the zoomed image by 120px and page the carousel at fit (attachment/render/image.tsx, use-pan-zoom.ts).",
+          "where": [
+            "about"
+          ],
+          "date": "2026-10-27"
+        },
         {
           "check": "review:agent",
           "result": "fail",

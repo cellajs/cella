@@ -9,7 +9,9 @@ import {
   DataGrid,
   type DataGridProps,
   type RenderRowProps,
+  type RowsChangeData,
 } from '~/modules/common/data-grid';
+import { EditStatusContext, useEditStatus } from '~/modules/common/data-grid/cell-renderers';
 import { DataTableSkeleton } from '~/modules/common/data-table/data-table-skeleton';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
@@ -39,13 +41,14 @@ type ForwardedGridProps<TData> = Pick<
   | 'rowClass'
   | 'enableStickyHeader'
   | 'enableDragAutoScroll'
-  | 'onRowsChange'
 >;
 
 interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[] | undefined;
   rowKeyGetter: (row: TData) => string;
+  /** Returning the save's promise shows the edited cells saving in a `RenderEditStatus` until it settles. */
+  onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => unknown;
 
   // Query state, from which DataTable renders the skeleton, the error, the empty state and the infinite scroll
   hasNextPage: boolean;
@@ -87,6 +90,7 @@ export function DataTable<TData>({
   columns,
   rows,
   rowKeyGetter,
+  onRowsChange,
   hasNextPage,
   error,
   isLoading,
@@ -141,6 +145,8 @@ export function DataTable<TData>({
   // A fresh `{ renderRow, renderCell }` literal each render would invalidate Row's memo.
   const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
+  const edits = useEditStatus(rows ?? [], rowKeyGetter, onRowsChange);
+
   const frameClass = cn('mb-4 size-full md:mb-8', className);
 
   // A failed first load has no rows, so the skeleton shows only while no error is known.
@@ -174,22 +180,25 @@ export function DataTable<TData>({
   return (
     <div className={frameClass}>
       <div className="relative grid" ref={setGridElement}>
-        <DataGrid
-          {...gridProps}
-          columns={columns}
-          rows={rows}
-          rowKeyGetter={rowKeyGetter}
-          rowHeight={rowHeight}
-          enableVirtualization={enableVirtualization}
-          readOnly={readOnly}
-          columnWidths={columnWidths}
-          onColumnWidthsChange={(map) => setWidths({ key: resetWidthsKey, map })}
-          selectedRows={selectedRows}
-          onSelectedRowsChange={handleSelectedRowsChange}
-          onNearEndChange={enableVirtualization ? setNearEnd : undefined}
-          cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
-          renderers={renderers}
-        />
+        <EditStatusContext value={edits.statusOf}>
+          <DataGrid
+            {...gridProps}
+            columns={columns}
+            rows={edits.rows}
+            rowKeyGetter={rowKeyGetter}
+            onRowsChange={edits.onRowsChange}
+            rowHeight={rowHeight}
+            enableVirtualization={enableVirtualization}
+            readOnly={readOnly}
+            columnWidths={columnWidths}
+            onColumnWidthsChange={(map) => setWidths({ key: resetWidthsKey, map })}
+            selectedRows={selectedRows}
+            onSelectedRowsChange={handleSelectedRowsChange}
+            onNearEndChange={enableVirtualization ? setNearEnd : undefined}
+            cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
+            renderers={renderers}
+          />
+        </EditStatusContext>
         {!readOnly && (
           <InfiniteLoader
             hasNextPage={hasNextPage}

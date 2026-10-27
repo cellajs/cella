@@ -102,6 +102,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
       triggerId: 'organization-switcher',
       triggerRef,
       kind: 'menu',
+      popupClassName: 'max-w-80',
     });
   };
 

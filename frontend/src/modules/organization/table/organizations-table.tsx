@@ -32,11 +32,12 @@ export function OrganizationsTable() {
   const onRowsChange = (changedRows: EnrichedOrganization[], { column, indexes }: RowsChangeData<EnrichedOrganization>) => {
     if (column.key !== 'role') return;
 
-    for (const index of indexes) {
-      const entity = changedRows[index];
-      if (!entity.membership?.role) continue;
-      changeRole.mutate({ entity, role: entity.membership.role });
-    }
+    return Promise.all(
+      indexes.map((index) => {
+        const entity = changedRows[index];
+        return entity.membership?.role && changeRole.mutateAsync({ entity, role: entity.membership.role });
+      }),
+    );
   };
 
   return (

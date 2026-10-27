@@ -13,6 +13,7 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
 import { type CommonBlockNoteProps, type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
+import { useMentionLinks } from '~/modules/user/use-mention-links';
 import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
@@ -149,6 +150,8 @@ export function BlockNoteFullHtml({
     const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, organizationId));
     return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
   });
+
+  useMentionLinks(containerRef, renderState.html);
 
   // Bumped when a pending upload's file arrives, so the resolved pass swaps its placeholder for the file.
   const [uploadsArrived, setUploadsArrived] = useState(0);

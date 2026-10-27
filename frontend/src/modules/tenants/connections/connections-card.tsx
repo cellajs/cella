@@ -137,7 +137,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                 </Select>
               </div>
               <div className="grid gap-1 text-muted-foreground">
-                <span>
+                <span className="wrap-anywhere">
                   {t('c:claim_values')}: {connection.claimValues.join(', ')}
                 </span>
                 <span className="break-all">

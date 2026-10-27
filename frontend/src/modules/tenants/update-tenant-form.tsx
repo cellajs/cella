@@ -111,7 +111,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: UpdateTen
               {/* Each checkbox sits in a `Field.Item`, so it gets its own id and label. */}
               <CheckboxGroup value={field.value ?? []} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {signInMethods.map((method) => (
-                  <FieldLabel key={method.value} className="cursor-pointer">
+                  <FieldLabel key={method.value} card>
                     <Field.Item render={<FieldLayout orientation="horizontal" />}>
                       <Checkbox value={method.value} />
                       <FieldContent>

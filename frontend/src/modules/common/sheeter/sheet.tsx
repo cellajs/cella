@@ -90,7 +90,7 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
       >
         {(title || description) && (
           <SheetHeader sticky className={headerClassName}>
-            {title && <SheetTitle className="h-6 leading-6">{titleContent}</SheetTitle>}
+            {title && <SheetTitle className="h-6 truncate leading-6">{titleContent}</SheetTitle>}
             {description && <SheetDescription>{description}</SheetDescription>}
           </SheetHeader>
         )}

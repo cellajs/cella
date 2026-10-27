@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
 import { useRef } from 'react';
@@ -6,35 +6,19 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { askForHelp } from '~/modules/common/error-helpers';
+import { StatusDot, type StatusDotVariant } from '~/modules/common/status-dot';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
 import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/panels/query';
-import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/panels/status-entries';
+import { type GradedStatusEntry, gradeStatusEntries, worstStatus } from '~/modules/navigation/panels/status-entries';
 import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
-  healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_30%,transparent)]' },
-  degraded: { dot: 'bg-warning', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--warning)_30%,transparent)]' },
-  unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_30%,transparent)]' },
-};
+const statusVariant: Record<HealthStatus, StatusDotVariant> = { healthy: 'success', degraded: 'warning', unhealthy: 'destructive' };
 
 const statusCardClass = tw('flex items-center gap-2 rounded-md border border-input border-dashed px-4 py-2 text-left text-xs');
-
-function StatusDot({ status }: { status: HealthStatus }) {
-  return (
-    <span
-      className={cn(
-        'inline-block size-2 shrink-0 animate-status-pulse rounded-full motion-reduce:animate-none',
-        statusStyleMap[status].dot,
-        statusStyleMap[status].pulse,
-      )}
-      aria-hidden="true"
-    />
-  );
-}
 
 /** One status entry; hover or focus shows what it covers and, when not healthy, which check failed and why. */
 function StatusEntryCard({ graded: { entry, status, component, reason } }: { graded: GradedStatusEntry }) {
@@ -43,7 +27,7 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
   return (
     <HoverCard>
       <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect border-input')}>
-        <StatusDot status={status} />
+        <StatusDot variant={statusVariant[status]} />
         <span className="min-w-0">{t(entry.label)}</span>
       </HoverCardTrigger>
       <HoverCardContent side="top" className="flex w-60 flex-col gap-1 p-3">
@@ -51,7 +35,7 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
         <p className="text-muted-foreground text-xs">{t(entry.description)}</p>
         {status !== 'healthy' && (
           <p className="mt-1 flex items-center gap-2 text-xs">
-            <StatusDot status={status} />
+            <StatusDot variant={statusVariant[status]} />
             {t(`c:${status}`)}
             {component && <span className="truncate font-mono text-muted-foreground">{reason ? `${component}: ${reason}` : component}</span>}
           </p>
@@ -61,12 +45,23 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
   );
 }
 
+/** A dot after the closed info panel's label while a service is degraded or unhealthy, in that status's color. */
+export function InfoIndicator() {
+  const { t } = useTranslation();
+  // Checks when the sheet opens and the last result is older than the poll interval; only the open panel polls
+  const { data: health } = useQuery({ ...healthQueryOptions(), refetchInterval: false });
+
+  const status = health === undefined ? 'healthy' : worstStatus(gradeStatusEntries(health));
+  if (status === 'healthy') return null;
+  return <StatusDot variant={statusVariant[status]} label={t(`c:${status}`)} />;
+}
+
 export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement>(null);
   const contactRef = useRef<HTMLButtonElement>(null);
-  const { data: health, isError, isPending } = useQuery(healthQueryOptions());
-  const statusEntries = isPending ? [] : gradeStatusEntries(isError ? undefined : health);
+  const { data: health } = useSuspenseQuery(healthQueryOptions());
+  const statusEntries = gradeStatusEntries(health);
   const allHealthy = statusEntries.length > 0 && statusEntries.every(({ status }) => status === 'healthy');
 
   const hasStatusPage = !!appConfig.statusUrl?.trim();
@@ -98,16 +93,10 @@ export function InfoContent() {
             </Button>
           )}
         </div>
-        <div className={cn('gap-2 pt-1', allHealthy || isPending ? 'flex flex-col' : 'grid grid-cols-2')}>
-          {/* The first check holds the healthy card's height, so the panel doesn't grow while it opens */}
-          {isPending ? (
-            <div className={cn(statusCardClass, 'text-muted-foreground')}>
-              <span className="inline-block size-2 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />
-              {t('c:loading')}
-            </div>
-          ) : allHealthy ? (
+        <div className={cn('gap-2 pt-1', allHealthy ? 'flex flex-col' : 'grid grid-cols-2')}>
+          {allHealthy ? (
             <div className={statusCardClass}>
-              <StatusDot status="healthy" />
+              <StatusDot variant="success" />
               {t('c:all_systems_healthy')}
             </div>
           ) : (

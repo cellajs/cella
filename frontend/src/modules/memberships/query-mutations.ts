@@ -282,7 +282,5 @@ export const useChangeEntityRoleMutation = () =>
 
       const updatedEntity = { ...entity, membership };
       cacheUpdate(getEntityQueryKeys(entity.entityType).list.base, [updatedEntity]);
-
-      toaster.success(t('c:success.role_updated'));
     },
   });

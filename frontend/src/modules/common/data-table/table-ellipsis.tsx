@@ -55,7 +55,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
       variant="cell"
       size="cell"
       tabIndex={tabIndex}
-      className="justify-center data-dropdowner-active:bg-accent/50 data-dropdowner-active:opacity-100"
+      className="justify-center data-dropdowner-active:opacity-100"
       aria-label={t('c:actions')}
       onClick={openDropdown}
     >

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { pendingMagicLinkQueryOptions } from '~/modules/auth/query';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { NamedText } from '~/modules/common/named-text';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
@@ -45,7 +46,7 @@ export function ConfirmSignInPage() {
       <form method="post" action={`${appConfig.backendAuthUrl}/magic/confirm`}>
         <Button type="submit" className="w-full">
           <LogInIcon />
-          {t('c:continue_as', { email: data.email })}
+          <MiddleCut text={t('c:continue_as', { email: data.email })} />
         </Button>
       </form>
     </>

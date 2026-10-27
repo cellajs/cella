@@ -1,5 +1,6 @@
 import { ChevronRightIcon, ClockIcon, UserCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { inviteNote, type useInviteCheck } from '~/modules/user/use-invite-check';
 
 interface InviteGroupsProps {
@@ -35,7 +36,7 @@ export function InviteGroups({ emails, check }: InviteGroupsProps) {
           <ul className="pr-3 pb-2 pl-9 text-muted-foreground">
             {items.map((email) => (
               <li key={email} className="flex justify-between gap-3 py-1">
-                <span className="truncate text-foreground">{email}</span>
+                <MiddleCut text={email} className="text-foreground" />
                 <span className="shrink-0">{inviteNote(check.outcomeOf(email), t)}</span>
               </li>
             ))}

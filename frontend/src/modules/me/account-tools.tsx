@@ -164,12 +164,12 @@ export function AccountAuthenticationCard() {
                   <Button
                     key={connectionId}
                     variant={connectionId === toConnect?.connectionId ? 'default' : 'plain'}
-                    className="sm:self-start"
+                    className="max-w-full sm:self-start"
                     loading={connecting === connectionId}
                     onClick={() => connectTo(connectionId, (search) => ssoStartUrl({ connectionId }, search))}
                   >
                     <BuildingIcon />
-                    {t('c:connect_institution', { institution: displayName })}
+                    <span className="truncate">{t('c:connect_institution', { institution: displayName })}</span>
                   </Button>
                 );
               })}
