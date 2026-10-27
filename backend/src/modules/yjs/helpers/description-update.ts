@@ -3,7 +3,7 @@ import { blocksToYDoc, blocksToYXmlFragment, yDocToBlocks } from '@blocknote/cor
 import { serverBlockNoteSchema } from 'shared/utils/blocknote-server-schema';
 import * as Y from 'yjs';
 
-/** Fragment name the client editor binds to: must match yjs-connections.ts in the frontend. */
+/** Fragment name the client editor binds to: must match `yDocFragment` in the frontend's `blocknote/ydoc-label.ts`. */
 export const yjsFragmentName = 'document-store';
 
 const createServerEditor = () => BlockNoteEditor.create({ schema: serverBlockNoteSchema });

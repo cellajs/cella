@@ -11,8 +11,7 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productColumns('attachment'),
-    // Storage placement only: bytes in the public S3 bucket, served from the CDN. Row
-    // readability for non-members is the separate `public` flag.
+    /** Storage placement only: bytes in the public S3 bucket, served from the CDN. Row readability for non-members is the separate `public` flag. */
     publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */
@@ -21,8 +20,7 @@ export const attachmentsTable = snakeCase.table(
     contentType: varchar({ length: maxLength.field }).notNull(),
     convertedContentType: varchar({ length: maxLength.field }),
     size: varchar({ length: maxLength.field }).notNull(),
-    // Storage object keys per variant. `original` is always present; other variants appear only
-    // once the upload pipeline generates them.
+    /** Storage object keys per variant. `original` is always present; other variants appear only once the upload pipeline generates them. */
     keys: jsonb()
       .$type<AttachmentKeys>()
       .notNull()

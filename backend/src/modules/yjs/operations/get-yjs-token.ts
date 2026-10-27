@@ -1,7 +1,7 @@
 import type { ProductEntityType } from 'shared';
 import type { OrgContext } from '#/core/context';
+import { signYjsToken } from '#/modules/yjs/helpers/sign-yjs-token';
 import { authorizeYjsEditor } from '#/modules/yjs/operations/authorize-yjs-editor';
-import { signYjsToken } from '../helpers/token-signer';
 
 /**
  * Signs a Yjs token for one product entity the caller may collaboratively edit (`authorizeYjsEditor`). The claims are

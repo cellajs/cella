@@ -221,7 +221,7 @@
     },
     {
       "name": "attachments",
-      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities. The description is edited collaboratively\n    and is a notification source for mentions.",
+      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) in an\n    organization or one of its channels. Files are uploaded directly by the client, while the API registers their\n    metadata, links the stored files and signs download URLs. The description is edited collaboratively and is a\n    notification source for mentions.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -11048,10 +11048,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:write"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:write"]
           }
         ],
         "operationId": "createAttachments",
@@ -11169,7 +11169,7 @@
         },
         "responses": {
           "200": {
-            "description": "Attachments already created (idempotent)",
+            "description": "Nothing created: rows an earlier attempt created (idempotent), and rejected ids",
             "content": {
               "application/json": {
                 "example": {
@@ -11461,9 +11461,9 @@
         "operationId": "deleteAttachments",
         "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
-        "description": "Deletes one or more attachment records by ID. This does not delete the underlying file in storage.",
+        "description": "Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.",
         "x-tool": {
-          "description": "Delete attachments by id. The stored files stay in storage.",
+          "description": "Delete attachments by id. Their stored files are kept for the deleted-items period, then deleted with the rows.",
           "approvalRequired": true,
           "entity": "attachment"
         },
@@ -11854,7 +11854,7 @@
         "operationId": "updateAttachment",
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",
-        "description": "Updates metadata of an attachment, such as its name or associated entity.",
+        "description": "Renames an attachment or replaces its description.",
         "x-tool": {
           "description": "Rename an attachment or replace its description.",
           "approvalRequired": true,
@@ -11890,23 +11890,6 @@
             "required": true,
             "name": "id",
             "in": "path"
-          },
-          {
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "enum": ["true", "false"]
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "default": "false"
-            },
-            "required": false,
-            "name": "fullResponse",
-            "in": "query"
           }
         ],
         "requestBody": {

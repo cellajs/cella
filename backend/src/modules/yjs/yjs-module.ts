@@ -1,11 +1,11 @@
 import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
-import { assertMaterializeWindow } from './operations/assert-materialize-window';
-import { recordYjsOutsideWrite, type YjsWrittenRow } from './operations/record-outside-write';
-import { retireYjsDocuments } from './operations/retire-yjs-documents';
-import { yjsHandlers } from './yjs-handlers';
-import { getYjsMaterializer } from './yjs-materializers';
+import { assertMaterializeWindow } from '#/modules/yjs/operations/assert-materialize-window';
+import { recordYjsOutsideWrite, type YjsWrittenRow } from '#/modules/yjs/operations/record-outside-write';
+import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
+import { yjsHandlers } from '#/modules/yjs/yjs-handlers';
+import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
 type PayloadRow = NonNullable<MutationPayload['before']>[number];
 

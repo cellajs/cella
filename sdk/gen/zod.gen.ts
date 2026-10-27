@@ -2025,13 +2025,6 @@ export const zUpdateAttachmentPath = z.object({
   id: z.string().max(50),
 });
 
-export const zUpdateAttachmentQuery = z.object({
-  fullResponse: z
-    .union([z.enum(['true', 'false']), z.boolean()])
-    .optional()
-    .default('false'),
-});
-
 /**
  * Attachment was updated
  */

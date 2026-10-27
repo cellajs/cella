@@ -42,7 +42,7 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
 
   await updateMe(ctx, { values: updateData as UpdateMeOpts['values'] });
   invalidateCache.user(user.id);
-  await releaseReplacedImages({ owner: { userId: user.id }, before: user, after: input });
+  await releaseReplacedImages({ holder: { userId: user.id }, before: user, after: input });
 
   const userWithActivity = await findCurrentUser(ctx);
   return userWithActivity;

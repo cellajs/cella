@@ -80,4 +80,17 @@ describe('Replaced images', async () => {
 
     expect(deletedKeys()).toEqual([own]);
   });
+
+  it("deletes an organization's cleared image even when a row it does not hold names it", async () => {
+    const path = { tenantId: tenant.tenantId, id: tenant.organization.id };
+    const banner = orgKey('banner.webp');
+    expect((await call(updateOrganization, { path, body: { bannerUrl: urlOf(banner) }, headers })).response.status).toBe(200);
+    // Any row may name an image on the CDN: here the member's own cover, which must not keep the organization's upload.
+    expect((await call(updateMe, { body: { bannerUrl: urlOf(banner) }, headers })).response.status).toBe(200);
+    vi.mocked(deleteStoredObjects).mockClear();
+
+    expect((await call(updateOrganization, { path, body: { bannerUrl: null }, headers })).response.status).toBe(200);
+
+    expect(deletedKeys()).toEqual([banner]);
+  });
 });

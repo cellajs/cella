@@ -18,7 +18,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-type Created = { data: { id: string; createdBy: { id: string } | null }[] };
+type Created = { data: { id: string; createdBy: { id: string } | null }[]; rejectedIds: string[] };
 
 /**
  * A create names its rows by client-chosen ids, and a replay answers with the rows the first attempt wrote, before the
@@ -52,10 +52,23 @@ describe('Idempotent attachment creates', async () => {
       body: (Array.isArray(body) ? body : [body]) as never,
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
-    return { status: response.status, data: (data as Created | undefined)?.data ?? [] };
+    const created = data as Created | undefined;
+    return { status: response.status, data: created?.data ?? [], rejectedIds: created?.rejectedIds ?? [] };
   };
 
   const storedRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+
+  /** Sets the tenant's attachment quota for the rest of the test. */
+  const limitAttachments = async (quota: number) => {
+    const { tenantId } = organization;
+    const [tenant] = await adminDb.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    const setRestrictions = async (restrictions: typeof tenant.restrictions) => {
+      await adminDb.update(tenantsTable).set({ restrictions }).where(eq(tenantsTable.id, tenantId));
+      invalidateTenantCache(tenantId);
+    };
+    onTestFinished(() => setRestrictions(tenant.restrictions));
+    await setRestrictions({ ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, attachment: quota } });
+  };
 
   beforeAll(async () => {
     organization = await createTestOrganization();
@@ -106,8 +119,11 @@ describe('Idempotent attachment creates', async () => {
     const ownersId = generateId();
     expect((await create(owner, bodyFor(ownersId, generateId()))).status).toBe(201);
 
-    const { data } = await create(other, bodyFor(ownersId, generateId()));
+    // The id is refused as any taken id is: nothing created, nothing of the row returned.
+    const { status, data, rejectedIds } = await create(other, bodyFor(ownersId, generateId()));
+    expect(status).toBe(200);
     expect(data).toEqual([]);
+    expect(rejectedIds).toEqual([ownersId]);
     expect((await storedRow(ownersId))?.createdBy).toBe(owner.id);
   });
 
@@ -174,32 +190,37 @@ describe('Idempotent attachment creates', async () => {
     expect((await create(owner, body)).status).toBe(201);
     await adminDb.update(attachmentsTable).set({ deletedAt: new Date().toISOString(), deletedBy: owner.id }).where(eq(attachmentsTable.id, id));
 
-    const { data } = await create(owner, body);
+    const { status, data, rejectedIds } = await create(owner, body);
+    expect(status).toBe(200);
     expect(data).toEqual([]);
+    expect(rejectedIds).toEqual([id]);
     expect((await storedRow(id))?.deletedAt).not.toBeNull();
   });
 
-  it('refuses a create past the tenant quota with 403 restrict_by_org, and still answers a replay of rows it wrote', async () => {
+  it('refuses a create past the tenant quota with 403 restrict_by_app, and still answers a replay of rows it wrote', async () => {
     const body = bodyFor(generateId(), generateId());
     expect((await create(owner, body)).status).toBe(201);
-
-    const { tenantId } = organization;
-    const [tenant] = await adminDb.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
-    const setRestrictions = async (restrictions: typeof tenant.restrictions) => {
-      await adminDb.update(tenantsTable).set({ restrictions }).where(eq(tenantsTable.id, tenantId));
-      invalidateTenantCache(tenantId);
-    };
-    onTestFinished(() => setRestrictions(tenant.restrictions));
-    await setRestrictions({ ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, attachment: 1 } });
+    await limitAttachments(1);
 
     const overQuota = await call(createAttachments, {
-      path: { tenantId, organizationId: organization.id },
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: [bodyFor(generateId(), generateId()), bodyFor(generateId(), generateId())] as never,
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });
-    await expectRefusal(overQuota, 403, 'restrict_by_org');
+    await expectRefusal(overQuota, 403, 'restrict_by_app');
 
     // Positive control: a replay creates nothing, so the full quota lets it through.
     expect((await create(owner, body)).status).toBe(200);
+  });
+
+  it('answers a replay of a batch larger than the tenant quota with its rows', async () => {
+    const batch = [bodyFor(generateId(), generateId()), bodyFor(generateId(), generateId())];
+    expect((await create(owner, batch)).status).toBe(201);
+    await limitAttachments(1);
+
+    // The batch outgrew the quota after it was written; its replay creates nothing, so no quota applies.
+    const { status, data } = await create(owner, batch);
+    expect(status).toBe(200);
+    expect(data.map((row) => row.id).sort()).toEqual(batch.map((item) => item.id).sort());
   });
 });

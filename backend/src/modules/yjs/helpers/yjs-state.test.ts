@@ -28,7 +28,7 @@ vi.mock('yjs', async (importOriginal) => {
   };
 });
 
-const { classifyUpdate, collectGarbage, isIntegrable, mergeLog, mergeState } = await import('./yjs-state');
+const { classifyUpdate, collectGarbage, mergeLog, mergeState } = await import('./yjs-state');
 
 const row = (id: number, payload: Uint8Array) => ({ id, payload, userId: `user-${id}` });
 
@@ -61,7 +61,6 @@ describe('mergeState', () => {
     const verify = new Y.Doc();
     Y.applyUpdate(verify, merged);
     expect(verify.getText('t').toString()).toBe('abc');
-    expect(isIntegrable(merged)).toBe(true);
   });
 });
 
@@ -111,18 +110,6 @@ describe('mergeLog', () => {
     const { state, rejected } = mergeLog(null, [row(1, mapUpdate('a', 1)), row(2, mapUpdate('b', 2))]);
     expect(rejected).toEqual([]);
     expect(readMap(state!)).toEqual({ a: 1, b: 2 });
-  });
-});
-
-describe('isIntegrable', () => {
-  it('is false when a later update is stored without the one it depends on', () => {
-    const doc = new Y.Doc();
-    const updates: Uint8Array[] = [];
-    doc.on('update', (u: Uint8Array) => updates.push(u));
-    doc.getText('t').insert(0, 'a');
-    doc.getText('t').insert(1, 'b');
-    expect(isIntegrable(updates[1])).toBe(false);
-    expect(isIntegrable(Y.mergeUpdates(updates))).toBe(true);
   });
 });
 

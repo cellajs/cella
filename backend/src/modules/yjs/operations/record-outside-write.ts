@@ -30,8 +30,8 @@ interface RecordYjsOutsideWriteOpts {
  * where the write differs and a later one merges. The yjs module's `<type>.updated` handler calls it for every write
  * whose stored stx names the description; an app write path that dispatches no `<type>.updated` calls it itself, after
  * its UPDATE.
- * @throws AppError 400 when a document exists and the description is one the editor schema cannot hold; the write
- * then rolls back, so row and document never part.
+ * @throws AppError 400 when a document exists and the description is one the editor schema cannot hold, or its change
+ * is larger than the log takes; the write then rolls back, so row and document never part.
  */
 export async function recordYjsOutsideWrite(ctx: DbContext, { entityType, rows }: RecordYjsOutsideWriteOpts): Promise<void> {
   for (const row of rows) {
@@ -53,7 +53,7 @@ export async function recordYjsOutsideWrite(ctx: DbContext, { entityType, rows }
     }
     if (!update) continue;
 
-    const result = await appendYjsUpdate(ctx, { doc, update, userId: null, generation: document.generation, notify: true });
+    const result = await appendYjsUpdate(ctx, { doc, update, userId: null, generation: document.generation });
     if (result.status === 'appended' || result.status === 'empty') continue;
     if (result.status === 'too-large') {
       throw new AppError(400, 'invalid_request', 'warn', {

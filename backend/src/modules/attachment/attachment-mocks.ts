@@ -13,7 +13,6 @@ import {
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockActorRefs } from '#/schemas/entity-base-mocks';
 
-/** Deterministic: the same key produces the same data. */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
     const filename = faker.system.fileName();

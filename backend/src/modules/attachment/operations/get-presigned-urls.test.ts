@@ -87,7 +87,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
-    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, { bucketName: appConfig.s3.privateBucket, publicBucket: false });
+    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, { bucketName: appConfig.s3.privateBucket });
     expect(res.data[0]?.variant).toBe('converted');
   });
 

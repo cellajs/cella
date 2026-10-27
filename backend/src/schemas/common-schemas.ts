@@ -123,7 +123,10 @@ export const excludeArchivedQuerySchema = z
   .optional()
   .transform((val) => val === 'true');
 
-/** True returns fully hydrated relations. */
+/**
+ * True returns fully hydrated relations. App product routes read it.
+ * @public
+ */
 export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransformSchema.optional() });
 
 const includeOptions = ['counts', 'membership', 'members', 'mfa'] as const;

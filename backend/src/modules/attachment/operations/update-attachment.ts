@@ -15,21 +15,22 @@ import { log } from '#/utils/logger';
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
 /**
- * Also the attachment's Yjs materializer: the relay calls it with `materialized` for a collaborative description.
- * `serverOrigin` stamps the fields with the server clock, for a transaction the server built (the Yjs relay).
+ * Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it with `materialized` for a collaborative
+ * description the relay posts. `serverOrigin` stamps the fields with the server clock, for a transaction the server
+ * built (the Yjs relay).
  */
 export async function updateAttachmentOp(
   ctx: ActorContext,
   id: string,
   input: UpdateAttachmentInput,
-  opts: { serverOrigin?: boolean; materialized?: boolean },
+  opts: { serverOrigin?: boolean; materialized?: boolean } = {},
 ) {
   const { ops: rawOps, stx } = input;
   const { serverOrigin, materialized } = opts;
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
-    // Locked: the merge below starts from this row, so no other write may land between the read and the update.
+    // Locked: the merge below starts from this row, so no other write may commit between the read and the update.
     const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update', { forUpdate: true });
 
     attachmentContract.assertBlockFields(rawOps, entity.organizationId);
@@ -42,9 +43,7 @@ export async function updateAttachmentOp(
     const values = {
       ...(resolved.changed ? resolved.values : {}),
       // A changed document re-derives the search column, on client edits and Yjs materializations alike.
-      ...(resolved.changed && resolved.values.description !== undefined
-        ? { keywords: deriveDocument(resolved.values.description as string | null).keywords }
-        : {}),
+      ...(resolved.changed && resolved.values.description !== undefined ? { keywords: deriveDocument(resolved.values.description).keywords } : {}),
       ...updateStamps(actorId),
       // The stx names the fields this write wrote, for CDC and the yjs module's handler: a write that changes none keeps
       // the stored stx without the earlier write's set.
@@ -58,6 +57,6 @@ export async function updateAttachmentOp(
 
   log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-  // Resolved by id for every response shape: the context carries an actor id, not a user row to stub from.
+  // Writers resolved by id: the context carries an actor id, not a user row to stub from.
   return withActorRef(ctx, updatedAttachmentRecord);
 }

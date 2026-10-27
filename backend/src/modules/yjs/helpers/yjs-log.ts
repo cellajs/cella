@@ -55,7 +55,7 @@ export type LogNotice =
 
 /**
  * The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. One row travels
- * as `id`; more as `ids`, with the newest also as `id`, which a relay that reads `id` alone (release 2) still acts on.
+ * as `id`; more as `ids`, with the newest also as `id`, which a relay that reads `id` alone still acts on.
  */
 export function encodeLogNotice(notice: LogNotice): string {
   const key = { t: notice.tenantId, e: notice.entityType, i: notice.entityId };

@@ -68,17 +68,3 @@ export function classifyUpdate(update: Uint8Array): 'malformed' | 'empty' | 'upd
     return 'malformed';
   }
 }
-
-/** True when the update integrates into an empty doc without leaving structs parked on a missing dependency. */
-export function isIntegrable(update: Uint8Array): boolean {
-  try {
-    const doc = new Y.Doc();
-    Y.applyUpdate(doc, update);
-    const store = doc.store as unknown as { pendingStructs: unknown };
-    const integrable = store.pendingStructs === null;
-    doc.destroy();
-    return integrable;
-  } catch {
-    return false;
-  }
-}

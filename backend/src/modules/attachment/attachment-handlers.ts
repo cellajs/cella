@@ -30,14 +30,13 @@ app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
-  const { replayed, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
-  return ctx.json(result, replayed ? 200 : 201);
+  const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
+  return ctx.json(result, created ? 201 : 200);
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
-  // `fullResponse` in the query is accepted and ignored: audit fields are resolved for every response shape.
-  const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'), {});
+  const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'));
   return ctx.json(result, 200);
 });
 
@@ -49,7 +48,7 @@ app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
 
 app.openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const result = await deleteAttachmentsOp(ctx, Array.isArray(ids) ? ids : [ids]);
+  const result = await deleteAttachmentsOp(ctx, ids);
   return ctx.json(result, 200);
 });
 

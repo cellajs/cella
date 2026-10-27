@@ -3,24 +3,6 @@ import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { productCache } from '#/middlewares/product-cache';
 import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
-  attachmentCreateManyStxBodySchema,
-  attachmentCreateResponseSchema,
-  attachmentLinkKeysBodySchema,
-  attachmentListQuerySchema,
-  attachmentSchema,
-  attachmentUpdateStxBodySchema,
-  presignedUrlItemSchema,
-  presignedUrlsBodySchema,
-} from '#/modules/attachment/attachment-schema';
-import {
-  batchResponseSchema,
-  fullResponseQuerySchema,
-  idInTenantOrgParamSchema,
-  idsWithStxBodySchema,
-  paginationSchema,
-  tenantOrgParamSchema,
-} from '#/schemas';
-import {
   mockBatchAttachmentsResponse,
   mockCreateAttachmentsBody,
   mockDeleteAttachmentsBody,
@@ -29,7 +11,18 @@ import {
   mockPresignedUrlsBody,
   mockPresignedUrlsResponse,
   mockUpdateAttachmentBody,
-} from './attachment-mocks';
+} from '#/modules/attachment/attachment-mocks';
+import {
+  attachmentCreateManyStxBodySchema,
+  attachmentCreateResponseSchema,
+  attachmentLinkKeysBodySchema,
+  attachmentListQuerySchema,
+  attachmentPresignedUrlSchema,
+  attachmentPresignedUrlsBodySchema,
+  attachmentSchema,
+  attachmentUpdateStxBodySchema,
+} from '#/modules/attachment/attachment-schema';
+import { batchResponseSchema, idInTenantOrgParamSchema, idsWithStxBodySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   getAttachments: xRoute({
@@ -52,13 +45,18 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     method: 'post',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
+    xScope: 'attachment:write',
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Create attachments',
     description:
       "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema, mockCreateAttachmentsBody()) },
     responses: {
-      200: json('Attachments already created (idempotent)', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
+      200: json(
+        'Nothing created: rows an earlier attempt created (idempotent), and rejected ids',
+        attachmentCreateResponseSchema,
+        mockBatchAttachmentsResponse(),
+      ),
       201: json('Attachments created', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
     },
   }),
@@ -88,12 +86,8 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       entity: 'attachment',
     },
     summary: 'Update attachment',
-    description: 'Updates metadata of an attachment, such as its name or associated entity.',
-    request: {
-      params: idInTenantOrgParamSchema,
-      query: fullResponseQuerySchema,
-      body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()),
-    },
+    description: 'Renames an attachment or replaces its description.',
+    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()) },
     responses: { 200: json('Attachment was updated', attachmentSchema) },
   }),
   linkAttachmentKeys: xRoute({
@@ -115,12 +109,13 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     xTool: {
-      description: 'Delete attachments by id. The stored files stay in storage.',
+      description: 'Delete attachments by id. Their stored files are kept for the deleted-items period, then deleted with the rows.',
       approvalRequired: true,
       entity: 'attachment',
     },
     summary: 'Delete attachments',
-    description: 'Deletes one or more attachment records by ID. This does not delete the underlying file in storage.',
+    description:
+      'Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.',
     request: { params: tenantOrgParamSchema, body: jsonBody(idsWithStxBodySchema(), mockDeleteAttachmentsBody()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
@@ -134,9 +129,9 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     summary: 'Get presigned URLs',
     description:
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
-    request: { params: tenantOrgParamSchema, body: jsonBody(presignedUrlsBodySchema, mockPresignedUrlsBody()) },
+    request: { params: tenantOrgParamSchema, body: jsonBody(attachmentPresignedUrlsBodySchema, mockPresignedUrlsBody()) },
     responses: {
-      200: json('Presigned URLs', batchResponseSchema(presignedUrlItemSchema), mockPresignedUrlsResponse()),
+      200: json('Presigned URLs', batchResponseSchema(attachmentPresignedUrlSchema), mockPresignedUrlsResponse()),
     },
   }),
 });

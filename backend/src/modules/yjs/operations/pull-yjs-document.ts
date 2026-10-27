@@ -22,14 +22,14 @@ function isStateVector(bytes: Uint8Array): boolean {
   }
 }
 
-export interface PullYjsDocumentOpts {
+interface PullYjsDocumentOpts {
   entityType: ProductEntityType;
   entityId: string;
   /** The caller's state vector: the answer carries what it lacks. */
   stateVector: Uint8Array;
 }
 
-export interface PulledYjsDocument {
+interface PulledYjsDocument {
   generation: string;
   /** What the caller's state vector lacks, as one update: every struct it misses, and the whole delete set. */
   update: Uint8Array;

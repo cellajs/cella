@@ -5372,7 +5372,7 @@ export type CreateAttachmentsError = CreateAttachmentsErrors[keyof CreateAttachm
 
 export type CreateAttachmentsResponses = {
   /**
-   * Attachments already created (idempotent)
+   * Nothing created: rows an earlier attempt created (idempotent), and rejected ids
    */
   200: {
     data: Array<Attachment>;
@@ -5538,9 +5538,7 @@ export type UpdateAttachmentData = {
     organizationId: string;
     id: string;
   };
-  query?: {
-    fullResponse?: 'true' | 'false' | boolean;
-  };
+  query?: never;
   url: '/{tenantId}/{organizationId}/attachments/{id}';
 };
 

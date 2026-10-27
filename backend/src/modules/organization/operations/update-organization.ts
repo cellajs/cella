@@ -43,7 +43,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });
 
   invalidateCache.org(organization.tenantId, organization.id);
-  await releaseReplacedImages({ owner: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
+  await releaseReplacedImages({ holder: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
