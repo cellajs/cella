@@ -4,7 +4,8 @@ export type OtlpSignal = 'traces' | 'metrics' | 'logs';
 /** Exporter options for one signal. Empty when the exporter reads the standard `OTEL_EXPORTER_OTLP_*` variables itself. */
 export type OtlpSink = (signal: OtlpSignal) => { url?: string; headers?: Record<string, string> };
 
-interface OtlpSinkEnv {
+/** The variables `resolveOtlpSink` reads. */
+export interface OtlpSinkEnv {
   OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   MAPLE_SECRET_INGEST_KEY?: string;
 }

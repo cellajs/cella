@@ -17,7 +17,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
-import { appConfig } from '../shared/index.ts';
+import { appConfig, urlEnvNames } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { indexHtml } from './vite/index-html.ts';
@@ -445,9 +445,7 @@ const viteConfig = {
     // The dev port offset is passed as resolved here: the browser cannot derive it from the checkout.
     'process.env': {
       ...Object.fromEntries(
-        (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
-          .filter((key) => process.env[key] !== undefined)
-          .map((key) => [key, process.env[key]]),
+        ['NODE_ENV', 'APP_MODE', ...Object.values(urlEnvNames)].filter((key) => process.env[key] !== undefined).map((key) => [key, process.env[key]]),
       ),
       ...(appConfig.devPortOffset ? { DEV_PORT_OFFSET: String(appConfig.devPortOffset) } : {}),
     },

@@ -23,10 +23,6 @@ export type RenameDelta = { rename: { from: string; to: string } };
  */
 export type AddDelta = { add: { field: string; default: unknown } };
 
-export function resolveAddDefault(add: AddDelta['add'], row: Record<string, unknown>): unknown {
-  return typeof add.default === 'function' ? (add.default as (row: Record<string, unknown>) => unknown)(row) : add.default;
-}
-
 /** Drop a field. Backward migration cannot restore the value (lossy). */
 export type DropDelta = { drop: { field: string } };
 
@@ -55,7 +51,7 @@ export interface LensCustom {
 }
 
 export interface LensDefinition {
-  /** Stable, date-prefixed, globally-unique id, e.g. `2026-07-01-task-name-to-title`. */
+  /** Stable, date-prefixed, globally-unique id, e.g. `2026-07-01-attachment-name-to-title`. */
   id: string;
   /** Lens-module format version. Omit to get the current `lensFormatVersion`; frozen with the module. */
   formatVersion?: number;
@@ -76,7 +72,7 @@ const idPattern = /^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/;
 /** Returns a frozen definition. Throws on malformed input, at module load and in tests. */
 export function defineLens(def: LensDefinition): LensDefinition {
   if (!idPattern.test(def.id)) {
-    throw new Error(`Lens id "${def.id}" must be date-prefixed kebab-case, e.g. 2026-07-01-task-name-to-title`);
+    throw new Error(`Lens id "${def.id}" must be date-prefixed kebab-case, e.g. 2026-07-01-attachment-name-to-title`);
   }
   const formatVersion = def.formatVersion ?? lensFormatVersion;
   if (!Number.isInteger(formatVersion) || formatVersion < 1 || formatVersion > lensFormatVersion) {

@@ -1,11 +1,14 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
+
+type FullHealth = { httpStatus: number; body: unknown };
 
 interface HealthAppOptions {
   /** Release identifier reported in the `X-App-Version` header on every response. */
   version: string;
   /** Full-depth diagnostics: HTTP status (200 or 503) plus the JSON body. */
-  full: () => Promise<{ httpStatus: number; body: unknown }> | { httpStatus: number; body: unknown };
+  full: () => Promise<FullHealth> | FullHealth;
 }
 
 /**
@@ -31,7 +34,7 @@ export const createHealthApp = ({ version, full }: HealthAppOptions): Hono => {
     if (c.req.query('depth') !== 'full') return c.body(null, 204);
 
     const { httpStatus, body } = await full();
-    return c.json(body, httpStatus as 200);
+    return c.json(body, httpStatus as ContentfulStatusCode);
   });
 
   app.notFound((c) => c.body(null, 404));

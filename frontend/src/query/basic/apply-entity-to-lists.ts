@@ -6,7 +6,7 @@ import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
 
-/** Deepest non-null ancestor, or the org for org-homed rows. Matches resolve-row-channel, so cache placement and stream routing cannot disagree. */
+/** Deepest non-null ancestor, or the org for org-homed rows. Matches `hierarchy.resolveDeepestAncestorId`, so cache placement and stream routing cannot disagree. */
 export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
   const entityRecord = asRecord(entity);
   const home = hierarchy.resolveDeepestAncestorId(entityType, entityRecord);

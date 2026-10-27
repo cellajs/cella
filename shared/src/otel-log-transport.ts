@@ -1,24 +1,10 @@
-/**
- * pino transport that ships log lines to the OTLP sink over HTTP. `createLogger` (./pino.ts) starts it in pino's
- * worker thread with the sink's exporter options and the service's resource attributes; a service build emits it as
- * its own bundle entry next to the service bundle.
- */
-
 import type { Transform } from 'node:stream';
 import type { Attributes } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import {
-  detectResources,
-  envDetector,
-  hostDetector,
-  osDetector,
-  processDetector,
-  resourceFromAttributes,
-  serviceInstanceIdDetector,
-} from '@opentelemetry/resources';
 import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
 import build from 'pino-abstract-transport';
+import { serviceResource } from './otel-resource.ts';
 
 export interface OtelLogTransportOptions {
   resourceAttributes: Attributes;
@@ -54,11 +40,14 @@ export function toLogRecord(line: Record<string, unknown>, { messageKey, levels 
   };
 }
 
+/**
+ * The pino transport that ships log lines to the OTLP sink over HTTP. `createLogger` (./pino.ts) starts it in pino's
+ * worker thread with the sink's exporter options and the service's resource attributes; a service build emits it as
+ * its own bundle entry next to the service bundle.
+ */
 export default async function otelLogTransport({ resourceAttributes, exporterOptions }: OtelLogTransportOptions) {
   const provider = new LoggerProvider({
-    resource: detectResources({ detectors: [envDetector, hostDetector, osDetector, processDetector, serviceInstanceIdDetector] }).merge(
-      resourceFromAttributes(resourceAttributes),
-    ),
+    resource: serviceResource(resourceAttributes),
     processors: [new BatchLogRecordProcessor({ exporter: new OTLPLogExporter(exporterOptions) })],
   });
   // An empty name keeps the SDK's default scope (`unknown`), the scope pino's records carry in the sink.

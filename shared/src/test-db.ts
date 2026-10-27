@@ -1,11 +1,9 @@
-// Load backend/.env so DB_TEST_PORT (app-specific) is available; in CI it's set directly in process.env.
 import process from 'node:process';
 
+// DB_TEST_PORT (app-specific) comes from backend/.env, or from the environment where there is no .env, as in CI.
 try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
-} catch {
-  // CI and other environments without .env must provide DB_TEST_PORT through process.env.
-}
+} catch {}
 
 // biome-ignore lint/style/noProcessEnv: test bootstrap runs before any env module exists; CI provides DB_TEST_PORT directly
 const port = process.env.DB_TEST_PORT;
@@ -34,9 +32,10 @@ export const testDatabaseName = poolId ? testWorkerDatabase(poolId) : 'postgres'
  * which no other suite should find done to the database it reads. The backend's global setup creates and migrates it.
  */
 export const cdcTestDatabase = 'cdc_integration';
-export const testCdcDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${cdcTestDatabase}`;
 
-// URLs are derived from the required port and the standard dev role credentials (mirrors backend/compose.yaml).
-export const testDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${testDatabaseName}`;
-export const testRuntimeDatabaseUrl = `postgres://runtime_role:dev_password@0.0.0.0:${port}/${testDatabaseName}`;
-export const testAdminRoleDatabaseUrl = `postgres://admin_role:dev_password@0.0.0.0:${port}/${testDatabaseName}`;
+// URLs are derived from the required port and the dev roles' names and passwords (mirrors backend/compose.yaml).
+const databaseUrl = (role: string, password: string, database: string) => `postgres://${role}:${password}@0.0.0.0:${port}/${database}`;
+export const testCdcDatabaseUrl = databaseUrl('postgres', 'postgres', cdcTestDatabase);
+export const testDatabaseUrl = databaseUrl('postgres', 'postgres', testDatabaseName);
+export const testRuntimeDatabaseUrl = databaseUrl('runtime_role', 'dev_password', testDatabaseName);
+export const testAdminRoleDatabaseUrl = databaseUrl('admin_role', 'dev_password', testDatabaseName);

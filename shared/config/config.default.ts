@@ -75,7 +75,7 @@ export const config = {
    * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
    * profile page. A surface listed here is total, so an id left out has no placement on it; a
    * surface left out renders every registered placement in its declared order. The first id of a
-   * tab bar is also the tab a channel link lands on. cella lists none.
+   * tab bar is also the tab a channel link opens on. The template lists none.
    */
   surfaces: {} as Partial<Record<SlotOf<(typeof hierarchy.channelTypes)[number]>, readonly string[]>>,
 
@@ -196,9 +196,7 @@ export const config = {
 
   has: {
     pwa: true as boolean,
-    /** Web Push delivery for notifications; also needs VAPID_* backend env vars. */
     push: false as boolean,
-    /** Comment and reply emails: shows the preference in the account settings and mails those who turn it on. */
     commentEmail: false as boolean,
     selfRegistration: false as boolean,
     waitlist: false as boolean,
@@ -243,7 +241,7 @@ export const config = {
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
    * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
-   * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
+   * bloat/abuse protection (bursts of sign-ins with stolen passwords, unbounded session accumulation), not a UX
    * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
    */
   maxSessionsPerUser: 10,

@@ -3,6 +3,10 @@ import type { DeepPartial } from './types.ts';
 
 const forbiddenKeys = new Set(['__proto__', 'constructor', 'prototype']);
 
+/**
+ * Merges `sources` into `target`, left to right, and returns `target`, which it mutates. A record merges key by key; any
+ * other value, an array included, replaces the target's. `__proto__`, `constructor` and `prototype` keys are skipped.
+ */
 export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
   if (!sources.length) return target;
   const source = sources.shift();
@@ -22,8 +26,9 @@ export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...
   return mergeDeep(target, ...sources);
 }
 
+/** A record with an entry per key, its value computed by `valueFn`. */
 export function recordFromKeys<K extends string, V>(keys: readonly K[], valueFn: (key: K) => V): Record<K, V> {
-  return Object.fromEntries(keys.map((k) => [k, valueFn(k)])) as Record<K, V>;
+  return Object.fromEntries(keys.map((key) => [key, valueFn(key)])) as Record<K, V>;
 }
 
 /** Object.entries with key literal types preserved. */

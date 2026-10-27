@@ -51,7 +51,10 @@ export interface WidePolicyConfiguration {
 
 export type WidePolicyCallback = (config: WidePolicyConfiguration) => void;
 
-/** Keeps the app-config casts in this file. */
+// The permission engine is typed by the app's entities and roles; the helpers below cast the wide vocabulary to those
+// types, so the tests that use them stay cast-free.
+
+/** `configurePermissions` over the wide hierarchy. */
 export const configureWidePermissions = (callback: WidePolicyCallback): PermissionsConfigResult =>
   configurePermissions(wideEntityTypes as unknown as readonly EntityType[], callback as unknown as PolicyCallback, wideOverrides);
 

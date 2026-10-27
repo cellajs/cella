@@ -10,7 +10,6 @@ import type {
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
-// Re-export for external consumers
 export { hierarchy, roles } from './hierarchy-config.ts';
 
 export const config = {
@@ -47,10 +46,12 @@ export const config = {
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 
-  /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
-  /** Resource types that are not entities but have activities logged */
+  /**
+   * Not entities, but activities are logged for them. Tenant- or system-owned rows only: rows a user owns
+   * (sessions, identities, passkeys, emails) are self-audited through the account pages and notifications.
+   */
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
 
   /**
@@ -74,11 +75,10 @@ export const config = {
    * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
    * profile page. A surface listed here is total, so an id left out has no placement on it; a
    * surface left out renders every registered placement in its declared order. The first id of a
-   * tab bar is also the tab a channel link lands on. cella lists none.
+   * tab bar is also the tab a channel link opens on. The template lists none.
    */
   surfaces: {} as Partial<Record<SlotOf<(typeof hierarchy.channelTypes)[number]>, readonly string[]>>,
 
-  /** Default restrictions for tenants (entity quotas and rate limits) */
   defaultRestrictions: {
     quotas: {
       // 1 tenant = 1 organization. Matches the hard structural cap (unique index on
@@ -115,37 +115,73 @@ export const config = {
 
   // App identity
 
-  /** App display name shown in UI and emails */
   name: '__project_name__',
-  /** URL-safe identifier used in paths and storage */
   slug: '__project_slug__',
-  /** Primary domain for the app */
   domain: '__project_slug__.example.com',
-  /** App description for SEO and meta tags */
-  description: '__project_name__ — powered by Cella.',
-  /** SEO keywords for search engines */
+  description: '__project_name__: powered by Cella.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
   // URLs & endpoints
 
-  /** Frontend SPA base URL (the app origin: every service is a path under it) */
+  // Same-origin: every service is a path under the app origin, so cookies stay
+  // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
+  // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
+  // These URLs are the single source: the config builder derives `services.<slug>.publicUrl`
+  // from them, so mode configs override the URLs here and never the `services` block.
   frontendUrl: 'https://__project_slug__.example.com',
-  /** Backend API base URL */
   backendUrl: 'https://__project_slug__.example.com/api',
-  /** OAuth callback base URL */
   backendAuthUrl: 'https://__project_slug__.example.com/api/auth',
-  /** Yjs realtime relay URL */
   yjsUrl: 'wss://__project_slug__.example.com/yjs',
-  /** MCP endpoint base URL */
   mcpUrl: 'https://__project_slug__.example.com/mcp',
-  /** Authorization server base URL (same origin as the API) */
+  /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
   oauthUrl: 'https://__project_slug__.example.com/oauth',
+  // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
+  services: {
+    frontend: { enabled: true as boolean },
+    backend: { enabled: true as boolean },
+    cdc: { enabled: true as boolean },
+    yjs: { enabled: false as boolean },
+    mcp: { enabled: false as boolean },
+    oauth: { enabled: false as boolean },
+    // The job store's maintainer (cron and queue supervision); off means no sweeps or queues run anywhere.
+    jobs: { enabled: true as boolean },
+  },
+
+  // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
+  // service in-process: one VM for previews/small apps. Default false keeps the
+  // split (one service per process). HTTP keeps its LB overlap on a deploy; the
+  // co-hosted cdc and jobs wait for the old VM's slot and scheduler, so live
+  // updates pause until it is reaped.
+  singleVM: false as boolean,
+
+  aboutUrl: '/about',
+  statusUrl: 'https://status.__project_slug__.example.com',
+  productionUrl: 'https://__project_slug__.example.com',
+
+  defaultRedirectPath: '/home',
+  welcomeRedirectPath: '/welcome',
+
+  // Email
+
+  senderEmail: 'notifications@__project_slug__.example.com',
+  supportEmail: 'support@__project_slug__.example.com',
+  securityEmail: 'security@__project_slug__.example.com',
+
+  // Mode & flags
+
+  mode: 'development' as ConfigMode,
+  maintenance: false,
+
   /**
-   * Local dev service listen ports and Vite proxy targets. Offset the whole block together
-   * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
-   * Keep that offset in the tens: a linked git worktree adds 100 per worktree on its own.
-   * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
+   * Local dev listen ports, also the Vite proxy targets. Ports are machine-global, so an app must
+   * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
+   * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy. Keep the
+   * app's offset in the tens: a linked git worktree adds 100 per worktree on its own, or
+   * `DEV_PORT_OFFSET` sets that by hand (shared/README.md).
+   * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
+   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
+   * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
    */
   devPorts: {
     frontend: 3000,
@@ -157,122 +193,59 @@ export const config = {
     internal: 4005,
     jobs: 4006,
   },
-  /**
-   * Per-service toggles: `enabled` controls whether the service is wired up. Each service's
-   * public URL is derived from the URL family above.
-   */
-  services: {
-    frontend: { enabled: true as boolean },
-    backend: { enabled: true as boolean },
-    cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean },
-    mcp: { enabled: false as boolean },
-    oauth: { enabled: false as boolean },
-    jobs: { enabled: true as boolean },
-  },
 
-  // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
-  // service in-process: one VM for previews/small apps. Default false keeps the
-  // split (one service per process). HTTP keeps its LB overlap on a deploy; the
-  // co-hosted cdc and jobs wait for the old VM's slot and scheduler, so live
-  // updates pause until it is reaped.
-  singleVM: false as boolean,
-
-  /** About page URL */
-  aboutUrl: '/about',
-  /** Status page URL for uptime monitoring */
-  statusUrl: 'https://status.__project_slug__.example.com',
-  /** Canonical production URL */
-  productionUrl: 'https://__project_slug__.example.com',
-
-  /** Default redirect path after login */
-  defaultRedirectPath: '/home',
-  /** Redirect path for first-time users */
-  welcomeRedirectPath: '/welcome',
-
-  // Email
-
-  /** From address for system notifications */
-  senderEmail: 'notifications@__project_slug__.example.com',
-  /** Email address for user support inquiries */
-  supportEmail: 'support@__project_slug__.example.com',
-  /** Receive security warnings */
-  securityEmail: 'security@__project_slug__.example.com',
-
-  // Mode & flags
-
-  /** Runtime mode - overridden per environment file */
-  mode: 'development' as ConfigMode,
-  /** Enable maintenance mode (blocks all requests) */
-  maintenance: false,
-  /** Cookie version - increment when changing cookie structure to invalidate old cookies */
-  cookieVersion: 'v1',
-  /** Persisted client query-cache shape - bump on a breaking change to a cached entity so clients wipe stale cache */
-  clientCacheVersion: 'v1',
-
-  // Feature flags
-
-  /**
-   * Feature toggles for app capabilities.
-   * Use to enable/disable major features without code changes.
-   */
   has: {
-    /** Progressive Web App support for preloading static assets and offline support */
     pwa: true as boolean,
-    /** Web Push delivery for notifications; sending also needs VAPID_* backend env vars */
     push: false as boolean,
-    /** Comment and reply emails: shows the preference in the account settings and mails those who turn it on */
     commentEmail: false as boolean,
-    /** Allow users to sign up. If false, the app is by invitation only */
     selfRegistration: false as boolean,
-    /** Suggest a waitlist for unknown emails when sign up is disabled */
     waitlist: false as boolean,
-    /** S3 fully configured - if false, files will be stored in local browser (IndexedDB) */
+    /** Off until S3 is configured: files stay in the browser (IndexedDB). */
     uploadEnabled: false as boolean,
-    /** Customer support chat widget (Gleap). Unrelated to the AI module. */
     chatSupport: false as boolean,
   },
 
+  // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
+  // clientCacheVersion clears incompatible cached entities while preserving queued mutations.
+  // Bump the relevant token with its change; CI requires cache bumps not covered by an evolution lens.
+
+  apiVersion: 'v1',
+  // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
+  cookieVersion: 'v1',
+  clientCacheVersion: 'v1',
+
   // Authentication
 
-  /**
-   * Enabled authentication strategies.
-   * TOTP can only be used as MFA fallback with passkey as primary.
-   */
+  /** No `sso` until the app declares a federation. */
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
-
-  /** Enabled OAuth providers - currently supports: github, google, microsoft */
   enabledOAuthProviders: ['github'] as const,
-
   /**
-   * Identity federations institutions sign in through, keyed by federation (the `sso` strategy). Empty here; the
-   * cella default declares `surfconext` as the worked example of the shape.
+   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities
+   * issuer slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a
+   * federation is live when those are set. Mode configs point a key at its test issuer. A tenant's connection names
+   * one entry and the institution behind it. A new app starts with none; the template's own config declares
+   * `surfconext` as a worked example.
    */
   federations: {} as Record<string, FederationConfig>,
-
-  /** Token types used for verification flows */
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
-  /** Max concurrent sessions per user (regular and mfa); oldest beyond it are evicted on sign-in (bloat/abuse guard). */
+  /**
+   * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
+   * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
+   * bloat/abuse protection (bursts of sign-ins with stolen passwords, unbounded session accumulation), not a UX
+   * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
+   */
   maxSessionsPerUser: 10,
 
-  /** TOTP configuration for MFA */
   totp: { intervalInSeconds: 30, gracePeriodInSeconds: 60, digits: 6 },
 
   // API configuration
 
-  /** API version prefix for endpoints */
-  apiVersion: 'v1',
-  /** API documentation description */
   apiDescription: `⚠️ ATTENTION: PRERELEASE!
                   This API is organized into modules based on logical domains.`,
 
   // Request limits
 
-  /**
-   * Default page sizes for list endpoints. Backend enforces max 1000.
-   * Must include 'default' key as fallback.
-   */
   requestLimits: {
     default: 40,
     users: 100,
@@ -283,25 +256,22 @@ export const config = {
     pendingMemberships: 20,
   },
 
-  /** Max JSON body size in bytes */
   jsonBodyLimit: 1 * 1024 * 1024,
-  /** Max file upload size in bytes */
   fileUploadLimit: 20 * 1024 * 1024,
-  /** Default body size limit in bytes */
   defaultBodyLimit: 1 * 1024 * 1024,
 
   // Storage & uploads (S3)
 
-  /** S3-compatible storage configuration. Only region and host are required; the rest is derived from the slug. */
   s3: { region: '', host: '' } as S3ConfigInput,
 
-  /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
 
-  /** Media asset CDN origin (re-hosted images referenced by URL); empty while no asset service is configured */
+  /**
+   * Origin of the media asset CDN, which serves re-hosted images as immutable content-hash objects. A media block may
+   * reference an asset by URL there. Empty while no asset service is configured, so no URL passes as an asset.
+   */
   mediaAssetOrigin: '',
 
-  /** Uppy upload widget default restrictions */
   uppy: {
     defaultRestrictions: {
       maxFileSize: 10 * 1024 * 1024,
@@ -314,10 +284,6 @@ export const config = {
     },
   },
 
-  /**
-   * Local blob storage restrictions (IndexedDB/Dexie).
-   * Controls which attachments are cached locally for offline access.
-   */
   localBlobStorage: {
     enabled: true,
     maxFileSize: 10 * 1024 * 1024,
@@ -332,7 +298,6 @@ export const config = {
 
   // Third-party services
 
-  /** Gleap token for customer support widget */
   gleapToken: '',
   /**
    * MapLibre style URL per color mode for the contact map; empty hides the map. OpenFreeMap needs no key:
@@ -340,9 +305,8 @@ export const config = {
    * The CSP allows each style's origin; tiles, fonts and icons must come from that same origin.
    */
   mapStyleUrls: { light: '', dark: '' },
-  /** Matrix homeserver URL for chat integration */
   matrixURL: 'https://matrix-client.matrix.org',
-  /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
+  /** Maple.dev public ingest key, safe to embed in the frontend bundle; empty turns frontend export off. */
   maplePublicIngestKey: '',
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
@@ -353,14 +317,12 @@ export const config = {
 
   // Theming & UI
 
-  /** Theme configuration for UI components */
   theme: {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
     strokeWidth: 1.5,
     screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
   } as const,
-  /** Placeholder background colors for avatars without images */
   placeholderColors: [
     'bg-blue-300',
     'bg-lime-300',
@@ -376,16 +338,12 @@ export const config = {
 
   // Localization
 
-  /** Default language code */
   defaultLanguage: 'en' as const,
-  /** Available language codes - first is fallback */
   languages: ['en', 'nl'] as const,
-  /** Common reference data */
   c: { countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'], timezones: [] },
 
   // Company details
 
-  /** Company/organization details for footer, legal pages, and contact info */
   company: {
     name: '__project_name__',
     shortName: '__project_name__',
@@ -398,30 +356,23 @@ export const config = {
     country: '',
     registration: '',
     vatNumber: '',
-    /** Link behind "Get directions" and the address on the contact page */
     directionsUrl: '',
     scheduleCallUrl: '',
     socialUrl: '',
     blueskyHandle: '',
     element: '',
     githubUrl: '',
-    /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets */
     mapZoom: 3,
     coordinates: { lat: 0, lng: 0 },
   },
 
   // User defaults
 
-  /** Default user flags applied to new users */
   defaultUserFlags: { finishedOnboarding: false },
 
   // Organization defaults
 
-  /** Per-organization feature flags with their default values. Cella ships none; apps declare
-   *  theirs here (e.g. `coursesEnabled: true`) and read them from `organization.organizationFlags`. */
   defaultOrganizationFlags: {},
 
-  /** Per-organization setup config defaults, layered under each org's stored jsonb. Cella ships {};
-   *  apps widen the value (e.g. `{ primaryLabels: [...] }`) and read `organization.setupConfig`. */
   defaultSetupConfig: {},
 } satisfies RequiredConfig;

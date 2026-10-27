@@ -90,7 +90,7 @@ A lens module, illustrated (no lens has shipped, so no such file exists yet):
 ```ts
 // shared/src/schema-evolution/2026-07-01-attachment-name-to-title.ts
 // FROZEN once shipped: CI fails on edits. Append-only.
-import { defineLens } from './define';
+import { defineLens } from './define.ts';
 
 export default defineLens({
   id: '2026-07-01-attachment-name-to-title',

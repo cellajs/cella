@@ -1,11 +1,12 @@
 export type ModuleScope = 'backend' | 'frontend';
 
+/** A module's manifest: its name, who maintains it and where it runs. The cella CLI never syncs an `app` module. */
 export interface ModuleConfig {
   name: string;
   owner: 'cella' | 'app';
   description: string;
   scope: ModuleScope[];
-  /** When true, the module is opt-in at scaffold time; its folder is removed if deselected. */
+  /** When true, the module is opt-in when an app is created (`create-cella`); its folder is removed if deselected. */
   optional?: boolean;
   /** When true, the module's operations drop from the generated docs and search, but stay in openapi.json and the SDK. */
   hidden?: boolean;
@@ -14,19 +15,16 @@ export interface ModuleConfig {
 const modules: ModuleConfig[] = [];
 const listeners: ((config: ModuleConfig) => void)[] = [];
 
+/** Records a module's manifest and hands it to every listener. */
 export const registerModule = (config: ModuleConfig) => {
   modules.push(config);
-  listeners.forEach((fn) => {
-    fn(config);
+  listeners.forEach((listener) => {
+    listener(config);
   });
 };
 
-export const getModules = (filter?: { scope?: ModuleScope }): ModuleConfig[] => {
-  if (!filter) return [...modules];
-  return modules.filter((m) => !filter.scope || m.scope.includes(filter.scope));
-};
-
-export const onModuleRegister = (fn: (config: ModuleConfig) => void) => {
-  listeners.push(fn);
-  modules.forEach(fn);
+/** Calls `listener` for every module, those registered before it included. */
+export const onModuleRegister = (listener: (config: ModuleConfig) => void) => {
+  listeners.push(listener);
+  modules.forEach(listener);
 };

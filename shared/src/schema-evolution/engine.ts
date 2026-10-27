@@ -1,6 +1,7 @@
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
+import { isRecord } from '../utils/as-record.ts';
 import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
-import { deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType, resolveAddDefault } from './define.ts';
+import { type AddDelta, deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType } from './define.ts';
 import { lenses } from './lens-list.ts';
 
 /** Re-exported so telemetry callers need no direct dobajs import. */
@@ -10,7 +11,7 @@ type AnyRecord = Record<string, unknown>;
 
 /** Permissive Standard Schema node: transforms always run with `validate: 'none'`. */
 const passthroughSchema = {
-  '~standard': { version: 1 as const, vendor: 'cella', validate: (value: unknown) => ({ value }) },
+  '~standard': { version: 1 as const, vendor: 'schema-evolution', validate: (value: unknown) => ({ value }) },
 };
 
 /** Injected by the host: the server passes otel hooks, the client passes none. */
@@ -27,8 +28,8 @@ export const currentSchemaVersion: number = lenses.length;
 /** Paired with their 1-based global ordinal, in order. */
 function lensesFor(entityType: LensEntityType): { lens: LensDefinition; ordinal: number }[] {
   const result: { lens: LensDefinition; ordinal: number }[] = [];
-  lenses.forEach((lens, i) => {
-    if (lens.entityType === entityType) result.push({ lens, ordinal: i + 1 });
+  lenses.forEach((lens, index) => {
+    if (lens.entityType === entityType) result.push({ lens, ordinal: index + 1 });
   });
   return result;
 }
@@ -44,71 +45,73 @@ export function versionNodeFor(entityType: LensEntityType, globalVersion: number
   return node;
 }
 
-function currentNode(entityType: LensEntityType): string {
-  const last = lensesFor(entityType).at(-1);
-  return last === undefined ? 'v0' : `v${last.ordinal}`;
+/** `record` with `from` renamed to `to`; the same object when it has no `from`. */
+function renameKey(record: AnyRecord, from: string, to: string): AnyRecord {
+  if (!(from in record)) return record;
+  const { [from]: value, ...rest } = record;
+  return { ...rest, [to]: value };
 }
 
-// ── Entity (whole-row) migrations, including stx.fieldTimestamps key rewrites ──
+/** `record` without `field`; the same object when it has none. */
+function dropKey(record: AnyRecord, field: string): AnyRecord {
+  if (!(field in record)) return record;
+  const { [field]: _omit, ...rest } = record;
+  return rest;
+}
+
+/** `record` with `change` applied to its `stx.fieldTimestamps`; the same object when that changes nothing. */
+function changeFieldTimestamps(record: AnyRecord, change: (fieldTimestamps: AnyRecord) => AnyRecord): AnyRecord {
+  const stx = record.stx as AnyRecord | undefined;
+  const fieldTimestamps = stx?.fieldTimestamps as AnyRecord | undefined;
+  if (!fieldTimestamps) return record;
+  const changed = change(fieldTimestamps);
+  return changed === fieldTimestamps ? record : { ...record, stx: { ...stx, fieldTimestamps: changed } };
+}
 
 function renameKeyDeep(entity: AnyRecord, from: string, to: string): AnyRecord {
-  let next = entity;
-  if (from in next) {
-    const { [from]: value, ...rest } = next;
-    next = { ...rest, [to]: value };
-  }
-  const stx = next.stx as AnyRecord | undefined;
-  const ft = stx?.fieldTimestamps as AnyRecord | undefined;
-  if (ft && from in ft) {
-    const { [from]: ts, ...restFt } = ft;
-    next = { ...next, stx: { ...stx, fieldTimestamps: { ...restFt, [to]: ts } } };
-  }
-  return next;
+  return changeFieldTimestamps(renameKey(entity, from, to), (fieldTimestamps) => renameKey(fieldTimestamps, from, to));
 }
 
 function dropKeyDeep(entity: AnyRecord, field: string): AnyRecord {
-  let next = entity;
-  if (field in next) {
-    const { [field]: _omit, ...rest } = next;
-    next = rest;
-  }
-  const stx = next.stx as AnyRecord | undefined;
-  const ft = stx?.fieldTimestamps as AnyRecord | undefined;
-  if (ft && field in ft) {
-    const { [field]: _omitTs, ...restFt } = ft;
-    next = { ...next, stx: { ...stx, fieldTimestamps: restFt } };
-  }
-  return next;
+  return changeFieldTimestamps(dropKey(entity, field), (fieldTimestamps) => dropKey(fieldTimestamps, field));
 }
 
-type DobaCtx = LensContext & { from: string; to: string };
+/** An `add` lens's value for a row: its plain default, or what its default function computes from the row. */
+function resolveAddDefault(add: AddDelta['add'], row: AnyRecord): unknown {
+  return typeof add.default === 'function' ? (add.default as (row: AnyRecord) => unknown)(row) : add.default;
+}
+
+type DobaContext = LensContext & { from: string; to: string };
+
+const unchanged = (entity: AnyRecord): AnyRecord => entity;
 
 function buildEntityMigration(lens: LensDefinition): {
-  forward: (value: AnyRecord, ctx: DobaCtx) => AnyRecord;
-  backward: (value: AnyRecord, ctx: DobaCtx) => AnyRecord;
+  forward: (entity: AnyRecord, ctx: DobaContext) => AnyRecord;
+  backward: (entity: AnyRecord, ctx: DobaContext) => AnyRecord;
 } {
   const { delta, custom } = lens;
   const rename = deltaRenameMap(delta);
 
   if (custom?.entityForward || custom?.entityBackward) {
-    const fwd = custom.entityForward ?? ((v: AnyRecord) => v);
-    const bwd = custom.entityBackward ?? ((v: AnyRecord) => v);
-    return { forward: (v, ctx) => fwd(v, ctx), backward: (v, ctx) => bwd(v, ctx) };
+    return { forward: custom.entityForward ?? unchanged, backward: custom.entityBackward ?? unchanged };
   }
 
   if (rename) {
-    return { forward: (v) => renameKeyDeep(v, rename.from, rename.to), backward: (v) => renameKeyDeep(v, rename.to, rename.from) };
+    return {
+      forward: (entity) => renameKeyDeep(entity, rename.from, rename.to),
+      backward: (entity) => renameKeyDeep(entity, rename.to, rename.from),
+    };
   }
 
   if ('add' in delta) {
     const add = delta.add;
     return {
-      forward: (v, ctx) => {
-        if (add.field in v) return v;
+      forward: (entity, ctx) => {
+        if (add.field in entity) return entity;
         ctx.defaulted([add.field], `lens ${lens.id}: filled "${add.field}" with default`);
-        return { ...v, [add.field]: resolveAddDefault(add, v) };
+        return { ...entity, [add.field]: resolveAddDefault(add, entity) };
       },
-      backward: (v) => dropKeyDeep(v, add.field),
+      backward: (entity) => dropKeyDeep(entity, add.field),
     };
   }
 
@@ -116,20 +119,18 @@ function buildEntityMigration(lens: LensDefinition): {
     const { field } = delta.drop;
     return {
       // backward is lossy by construction: the value is gone.
-      forward: (v) => dropKeyDeep(v, field),
-      backward: (v, ctx) => {
-        if (lens.lossyBackward) return v;
+      forward: (entity) => dropKeyDeep(entity, field),
+      backward: (entity, ctx) => {
+        if (lens.lossyBackward) return entity;
         ctx.warn(`lens ${lens.id}: cannot restore dropped field "${field}"`);
-        return v;
+        return entity;
       },
     };
   }
 
   // retype without custom converters is rejected at defineLens time.
-  return { forward: (v) => v, backward: (v) => v };
+  return { forward: unchanged, backward: unchanged };
 }
-
-// ── Lazy per-entity doba registry ──
 
 const registryCache = new Map<LensEntityType, Registry<Record<string, typeof passthroughSchema>> | null>();
 
@@ -144,13 +145,12 @@ function getRegistry(entityType: LensEntityType): Registry<Record<string, typeof
 
   const schemas: Record<string, typeof passthroughSchema> = { v0: passthroughSchema };
   const migrations: Record<string, { forward: unknown; backward: unknown }> = {};
-  let prev = 'v0';
+  let previousNode = 'v0';
   for (const { lens, ordinal } of entityLenses) {
     const node = `v${ordinal}`;
     schemas[node] = passthroughSchema;
-    const { forward, backward } = buildEntityMigration(lens);
-    migrations[`${prev}<->${node}`] = { forward, backward };
-    prev = node;
+    migrations[`${previousNode}<->${node}`] = buildEntityMigration(lens);
+    previousNode = node;
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: doba's generic migration map is keyed dynamically.
@@ -166,28 +166,22 @@ export function resetLensEngine(): void {
   registryCache.clear();
 }
 
-// ── Public API ──
-
-/** Idempotent: re-running over already-migrated rows changes nothing. */
-export async function migrateCachedEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, fromVersion: number): Promise<T> {
+/** Moves a row between two version nodes; the row as given when the entity has no lenses or the transform fails. */
+async function transformEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, from: string, to: string): Promise<T> {
   const registry = getRegistry(entityType);
-  if (!registry) return entity;
-  const from = versionNodeFor(entityType, fromVersion);
-  const to = currentNode(entityType);
-  if (from === to) return entity;
+  if (!registry || from === to) return entity;
   const result = await registry.transform(entity, from, to, { validate: 'none' });
   return result.ok ? (result.value as T) : entity;
 }
 
+/** Idempotent: re-running over already-migrated rows changes nothing. */
+export function migrateCachedEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, fromVersion: number): Promise<T> {
+  return transformEntity(entityType, entity, versionNodeFor(entityType, fromVersion), versionNodeFor(entityType, currentSchemaVersion));
+}
+
 /** Phase 2 only. `lossyBackward` lenses keep removed fields absent going backward. */
-export async function downgradeEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, toVersion: number): Promise<T> {
-  const registry = getRegistry(entityType);
-  if (!registry) return entity;
-  const from = currentNode(entityType);
-  const to = versionNodeFor(entityType, toVersion);
-  if (from === to) return entity;
-  const result = await registry.transform(entity, from, to, { validate: 'none' });
-  return result.ok ? (result.value as T) : entity;
+export function downgradeEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, toVersion: number): Promise<T> {
+  return transformEntity(entityType, entity, versionNodeFor(entityType, currentSchemaVersion), versionNodeFor(entityType, toVersion));
 }
 
 interface StxLike {
@@ -195,6 +189,7 @@ interface StxLike {
   [key: string]: unknown;
 }
 
+/** Phase 1 machinery for lens #1: the server callers pass no options yet, so `normalizeOps` reports and strips nothing. */
 export interface NormalizeOpsOptions {
   /**
    * Canonical field names of the entity's current ops schema. When given, ops keys that are
@@ -221,8 +216,8 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
   if (entityLenses.length === 0) return { ops, stx, unknownFields: [] };
 
   let nextOps: AnyRecord = { ...ops };
-  const ft: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
-  let ftTouched = false;
+  const fieldTimestamps: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
+  let fieldTimestampsChanged = false;
 
   for (const { lens } of entityLenses) {
     const rename = deltaRenameMap(lens.delta);
@@ -231,25 +226,25 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
         nextOps[rename.to] = nextOps[rename.from];
         delete nextOps[rename.from];
       }
-      if (ft && rename.from in ft) {
-        ft[rename.to] = ft[rename.from];
-        delete ft[rename.from];
-        ftTouched = true;
+      if (fieldTimestamps && rename.from in fieldTimestamps) {
+        fieldTimestamps[rename.to] = fieldTimestamps[rename.from];
+        delete fieldTimestamps[rename.from];
+        fieldTimestampsChanged = true;
       }
       // Mirror-write the old twin during expand so old bundles keep reading fresh data.
       if (lens.phase === 'expand') {
         if (rename.to in nextOps) nextOps[rename.from] = nextOps[rename.to];
-        if (ft && rename.to in ft) {
-          ft[rename.from] = ft[rename.to];
-          ftTouched = true;
+        if (fieldTimestamps && rename.to in fieldTimestamps) {
+          fieldTimestamps[rename.from] = fieldTimestamps[rename.to];
+          fieldTimestampsChanged = true;
         }
       }
     } else if ('drop' in lens.delta) {
       const field = lens.delta.drop.field;
-      if (field in nextOps) delete nextOps[field];
-      if (ft && field in ft) {
-        delete ft[field];
-        ftTouched = true;
+      delete nextOps[field];
+      if (fieldTimestamps && field in fieldTimestamps) {
+        delete fieldTimestamps[field];
+        fieldTimestampsChanged = true;
       }
     } else if ('retype' in lens.delta && lens.custom?.opsConvert) {
       nextOps = lens.custom.opsConvert(nextOps);
@@ -259,12 +254,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
   // Keys surviving lens mapping that are neither canonical nor an expand-window twin.
   const unknownFields: string[] = [];
   if (options?.canonicalKeys) {
-    const expandAliases = new Set<string>();
-    for (const { lens } of entityLenses) {
-      if (lens.phase !== 'expand') continue;
-      const rename = deltaRenameMap(lens.delta);
-      if (rename) expandAliases.add(rename.from);
-    }
+    const expandAliases = new Set(Object.keys(widenedOpsKeyMap(entityType)));
     for (const key of Object.keys(nextOps)) {
       if (!options.canonicalKeys.has(key) && !expandAliases.has(key)) unknownFields.push(key);
     }
@@ -276,16 +266,16 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
       if (handling === 'strip') {
         for (const key of unknownFields) {
           delete nextOps[key];
-          if (ft && key in ft) {
-            delete ft[key];
-            ftTouched = true;
+          if (fieldTimestamps && key in fieldTimestamps) {
+            delete fieldTimestamps[key];
+            fieldTimestampsChanged = true;
           }
         }
       }
     }
   }
 
-  const nextStx = ftTouched && ft ? ({ ...stx, fieldTimestamps: ft } as S) : stx;
+  const nextStx = fieldTimestampsChanged && fieldTimestamps ? ({ ...stx, fieldTimestamps } as S) : stx;
   return { ops: nextOps as O, stx: nextStx, unknownFields };
 }
 
@@ -298,17 +288,6 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
   const pending = lensesFor(entityType).filter(({ ordinal }) => ordinal > fromVersion);
   if (pending.length === 0) return variables;
 
-  const renameRecord = (record: AnyRecord, from: string, to: string): AnyRecord => {
-    if (!(from in record)) return record;
-    const { [from]: value, ...rest } = record;
-    return { ...rest, [to]: value };
-  };
-  const dropField = (record: AnyRecord, field: string): AnyRecord => {
-    if (!(field in record)) return record;
-    const { [field]: _omit, ...rest } = record;
-    return rest;
-  };
-  const isRow = (value: unknown): value is AnyRecord => typeof value === 'object' && value !== null && !Array.isArray(value);
   /** Applies a change to each row the variables hold. A holder keeps its key, whatever a column of that name becomes. */
   const inRows = (record: AnyRecord, change: (row: AnyRecord) => AnyRecord): AnyRecord => {
     // A top-level id without ops: the variables are one row themselves, and `data` or `rows` are its columns.
@@ -316,8 +295,8 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
     const changed = { ...record };
     for (const key of ['data', 'rows']) {
       const held = record[key];
-      if (Array.isArray(held)) changed[key] = held.map((row) => (isRow(row) ? change(row) : row));
-      else if (isRow(held)) changed[key] = change(held);
+      if (Array.isArray(held)) changed[key] = held.map((row) => (isRecord(row) ? change(row) : row));
+      else if (isRecord(held)) changed[key] = change(held);
     }
     return changed;
   };
@@ -328,19 +307,15 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
     if (!rename) {
       if ('drop' in lens.delta) {
         const field = lens.delta.drop.field;
-        next = inRows(next, (row) => dropField(row, field));
+        next = inRows(next, (row) => dropKey(row, field));
       }
       continue;
     }
-    next = inRows(next, (row) => renameRecord(row, rename.from, rename.to));
+    next = inRows(next, (row) => renameKey(row, rename.from, rename.to));
     if (next.ops && typeof next.ops === 'object') {
-      next = { ...next, ops: renameRecord(next.ops as AnyRecord, rename.from, rename.to) };
+      next = { ...next, ops: renameKey(next.ops as AnyRecord, rename.from, rename.to) };
     }
-    const stx = next.stx as AnyRecord | undefined;
-    const ft = stx?.fieldTimestamps as AnyRecord | undefined;
-    if (ft && rename.from in ft) {
-      next = { ...next, stx: { ...stx, fieldTimestamps: renameRecord(ft, rename.from, rename.to) } };
-    }
+    next = changeFieldTimestamps(next, (fieldTimestamps) => renameKey(fieldTimestamps, rename.from, rename.to));
   }
   return next as V;
 }
