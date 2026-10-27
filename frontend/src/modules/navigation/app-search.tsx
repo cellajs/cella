@@ -14,7 +14,7 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Combobox, ComboboxEmpty, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -23,7 +23,7 @@ import { usersListQueryOptions } from '~/modules/user/query';
 import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { isTouchInteraction } from '~/utils/input-modality';
-import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from '~/utils/recent-searches';
+import { resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 type SearchableEntityType = (typeof searchableEntityTypes)[number];
@@ -59,22 +59,10 @@ export function AppSearch() {
   const toggleCollapsed = (entityType: SearchableEntityType) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
   const recentSearches = useNavigationStore((state) => state.recentSearches);
+  const saveRecentSearch = useNavigationStore((state) => state.saveRecentSearch);
+  const removeRecentSearch = useNavigationStore((state) => state.removeRecentSearch);
 
   const { focusRef } = useFocusByRef();
-
-  const removeRecentSearch = (search: string) => {
-    navigationStore.setState((state) => {
-      const searches = withoutRecentSearch(state.recentSearches, search);
-      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
-    });
-  };
-
-  const saveRecentSearch = (value: string) => {
-    navigationStore.setState((state) => {
-      const searches = addRecentSearch(state.recentSearches, value);
-      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
-    });
-  };
 
   const hasQuery = debouncedSearchValue.length > 0;
 
