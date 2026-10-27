@@ -3,21 +3,15 @@ import type { EntityType } from 'shared';
 import { backendSpanNames, eventAttrs, remoteParentContext, type TraceContext } from 'shared/tracing';
 import { otel } from '#/lib/tracing';
 
-const meterProvider = otel.meterProvider;
-
 export { backendSpanNames as syncSpanNames, eventAttrs };
 export type SyncTraceContext = TraceContext;
 
-// OTel metrics
-
-const meter = meterProvider.getMeter('app-sync');
+const meter = otel.meterProvider.getMeter('app-sync');
 
 const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
   description: 'Messages received from CDC Worker via WebSocket',
   unit: '{message}',
 });
-
-// OTel tracer
 
 const tracer = trace.getTracer('app-sync');
 
@@ -40,8 +34,7 @@ export function startSyncSpan(name: string, attributes?: Record<string, string |
   return span;
 }
 
-// Metric recording
-
+/** Counts one CDC message the activity bus distributes, by its entity type. */
 export function recordMessageReceived(entityType: EntityType | 'unknown'): void {
   cdcMessagesReceived.add(1, { entity_type: entityType });
 }

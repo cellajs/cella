@@ -17,10 +17,10 @@ import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
 import { toSubnet } from '#/utils/ip-subnet';
-import { getIsoDate } from '#/utils/iso-date';
+import { getIsoDate, isoDateIn } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
-import { createDate, TimeSpan } from '#/utils/time-span';
+import { TimeSpan } from '#/utils/time-span';
 
 /** Sessions are written on the base pool: tests and scripts create them without a request. */
 const dbCtx = { var: { db: baseDb } };
@@ -105,7 +105,7 @@ export const createSession = async (
     ipAsn: asn,
     deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
     createdAt: now,
-    expiresAt: createDate(timeSpan),
+    expiresAt: isoDateIn(timeSpan),
     impersonatorSessionId,
     steppedUpAt: steppedUpVia ? now : null,
     steppedUpVia,

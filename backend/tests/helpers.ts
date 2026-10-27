@@ -58,7 +58,7 @@ export async function expectRefusal(answer: Answer, status: number, type: string
 
 /** Every mail the app handed the mailer in this test, one per recipient, in the order sent. */
 export const sentMails = () =>
-  vi.mocked(mailer.prepareEmails).mock.calls.flatMap(([template, statics, recipients]) =>
+  vi.mocked(mailer.sendEmails).mock.calls.flatMap(([template, statics, recipients]) =>
     recipients.map((recipient) => ({
       template,
       statics: statics as Record<string, unknown>,

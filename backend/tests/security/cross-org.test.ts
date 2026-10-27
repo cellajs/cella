@@ -249,7 +249,7 @@ describe('Cross-organization API isolation', async () => {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: invitationB.id },
           headers: headers(as),
         }),
-      unchanged: async () => expect(mailer.prepareEmails).not.toHaveBeenCalled(),
+      unchanged: async () => expect(mailer.sendEmails).not.toHaveBeenCalled(),
     },
   ];
 

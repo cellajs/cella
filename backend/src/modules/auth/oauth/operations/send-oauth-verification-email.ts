@@ -80,7 +80,7 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
   const staticProps = { verificationLink, name, providerEmail: tokenRecord.email, providerName, isNewUser };
   const recipients = [{ email: tokenRecord.email, lng }];
 
-  mailer.prepareEmails(oauthVerificationEmail, staticProps, recipients).catch((err) => log.error('Failed to send OAuth verification email', { err }));
+  mailer.sendEmails(oauthVerificationEmail, staticProps, recipients).catch((err) => log.error('Failed to send OAuth verification email', { err }));
 
   if (appConfig.mode === 'development') {
     console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);

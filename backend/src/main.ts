@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { env } from './env';
+import { env } from '#/env';
 
 /** Writes why a worker could not start to stderr, then exits once the line had time to flush. */
 const exitOnStartFailure = (name: string) => (error: unknown) => {
@@ -9,7 +9,7 @@ const exitOnStartFailure = (name: string) => (error: unknown) => {
 
 // Load exactly one runtime entry. Workers skip API initialization and wait for the API to complete migrations.
 if (env.MODE === 'migrate') {
-  await import('./main.migrate');
+  await import('#/main.migrate');
 } else if (env.MODE === 'mcp') {
   (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker().catch(exitOnStartFailure('mcp-worker'));
 } else if (env.MODE === 'oauth') {
@@ -17,5 +17,5 @@ if (env.MODE === 'migrate') {
 } else if (env.MODE === 'jobs') {
   (await import('#/lib/jobs-worker')).startJobsWorker().catch(exitOnStartFailure('jobs'));
 } else {
-  await import('./main.api');
+  await import('#/main.api');
 }

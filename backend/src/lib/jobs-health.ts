@@ -7,7 +7,7 @@ import { jobsSchema } from '#/lib/pg-boss';
 /** The maintainer stamps `cron_on` every half minute; older than this and no process is scheduling. */
 const cronStaleMs = 5 * 60 * 1000;
 
-export interface JobsQueueHealth {
+interface JobsQueueHealth {
   name: string;
   policy: string;
   queued: number;
@@ -22,7 +22,7 @@ export interface JobsQueueHealth {
   deadLetterDepth: number | null;
 }
 
-export interface JobsHealthSnapshot {
+interface JobsHealthSnapshot {
   installed: boolean;
   schema: string;
   cronOn: string | null;

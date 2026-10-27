@@ -120,7 +120,7 @@ describe('Member escalation over HTTP', async () => {
       act: 're-send a pending invitation',
       attempt: ({ org, invitation }, actor) =>
         call(resendPendingInvitation, { path: { tenantId: org.tenantId, organizationId: org.id, id: invitation }, headers: headers(actor) }),
-      unchanged: async () => expect(mailer.prepareEmails).not.toHaveBeenCalled(),
+      unchanged: async () => expect(mailer.sendEmails).not.toHaveBeenCalled(),
       okStatus: 204,
     },
     {

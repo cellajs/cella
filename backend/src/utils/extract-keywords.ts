@@ -20,6 +20,7 @@ export const extractKeywords = (...inputs: (string | null | undefined)[]): strin
   return Array.from(words).join(' ');
 };
 
+/** The keywords of a stored BlockNote document (blocks as a JSON string) and of `extras`. */
 export const extractKeywordsFromBlocks = (blocksJson: string, ...extras: (string | null | undefined)[]): string => {
   const blocks = JSON.parse(blocksJson) as Block[];
   const fullText = blocks.map(getTextFromBlock).join(' ').trim();

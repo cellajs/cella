@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
-import type { ChannelEntityType, EntityIdColumns, EntityType, ProductEntityType } from 'shared';
-import { hierarchy } from 'shared';
+import { type ChannelEntityType, type EntityIdColumns, type EntityType, hierarchy, type ProductEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
+import { mockTenantId, mockUuid } from '#/mocks/mock-ids';
+import { mockPastIsoDate } from '#/mocks/mock-past-iso-date';
+import { mockStx } from '#/mocks/mock-stx';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { slugFromName } from '#/utils/slug';
-import { mockTenantId, mockUuid } from './mock-nanoid';
-import { mockPastIsoDate } from './mock-past-iso-date';
-import { mockStx } from './mock-stx';
 
 type TenantEntityType = Exclude<EntityType, 'user'>;
 

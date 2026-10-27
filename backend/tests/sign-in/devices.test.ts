@@ -163,7 +163,7 @@ describe('new sign-in notice', () => {
   it('does not let a mailer failure surface', async () => {
     const user = await createTestUser(signUpUser.email);
     await seedEarlierSignIn(user.id);
-    vi.mocked(mailer.prepareEmails).mockRejectedValueOnce(new Error('mail provider down'));
+    vi.mocked(mailer.sendEmails).mockRejectedValueOnce(new Error('mail provider down'));
 
     await expect(signIn(user, browser())).resolves.toBeTruthy();
   });

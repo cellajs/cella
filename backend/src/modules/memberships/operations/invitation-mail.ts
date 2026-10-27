@@ -48,7 +48,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const senderProps = { senderName: sender.name };
 
   if (!channel) {
-    if (withToken.length) await mailer.prepareEmails(systemInviteEmail, senderProps, withToken, sender.email);
+    if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email);
     return;
   }
 
@@ -57,7 +57,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }]));
   const addedRecipients = added.map((address) => ({ ...recipient(address), entityLink: page }));
 
-  if (withToken.length) await mailer.prepareEmails(memberInviteWithTokenEmail, statics, withToken, sender.email);
-  if (withoutToken.length) await mailer.prepareEmails(memberInviteEmail, statics, withoutToken, sender.email);
-  if (addedRecipients.length) await mailer.prepareEmails(memberAddedEmail, statics, addedRecipients, sender.email);
+  if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email);
+  if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email);
+  if (addedRecipients.length) await mailer.sendEmails(memberAddedEmail, statics, addedRecipients, sender.email);
 }

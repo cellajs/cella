@@ -19,8 +19,14 @@ const deriveKey = (purpose: string): Buffer => {
   return Buffer.from(hkdfSync('sha256', secret, salt, info, keyBytes));
 };
 
+/** Whether a value carries this format's version prefix. */
 export const isEncryptedData = (value: string): boolean => value.startsWith(`${formatVersion}:`);
 
+/**
+ * AES-256-GCM under a key derived from `DATA_ENCRYPTION_KEY` for `purpose`, so a value of one purpose never decrypts
+ * as another.
+ * @returns `v1:<iv>:<ciphertext>:<tag>`, base64url parts.
+ */
 export const encryptData = (plaintext: string, purpose: string): string => {
   const iv = randomBytes(ivBytes);
   const cipher = createCipheriv(algorithm, deriveKey(purpose), iv, { authTagLength: authTagBytes });
@@ -30,6 +36,10 @@ export const encryptData = (plaintext: string, purpose: string): string => {
   return [formatVersion, encode(iv), encode(ciphertext), encode(authTag)].join(':');
 };
 
+/**
+ * Reverses `encryptData` for the same `purpose`.
+ * @throws When the value is not of this format, or was encrypted for another purpose or with another key, or altered.
+ */
 export const decryptData = (encryptedValue: string, purpose: string): string => {
   const [version, encodedIv, encodedCiphertext, encodedAuthTag, ...extra] = encryptedValue.split(':');
   if (version !== formatVersion || !encodedIv || !encodedCiphertext || !encodedAuthTag || extra.length) {

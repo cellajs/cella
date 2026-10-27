@@ -24,7 +24,7 @@ import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { createDate } from '#/utils/time-span';
+import { isoDateIn } from '#/utils/iso-date';
 
 /** Token reads and writes without a caller's transaction run on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
@@ -74,7 +74,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       authStrategy: token.authStrategy ?? null,
       connectionId: token.connectionId ?? null,
       secret: hashToken(rawToken),
-      expiresAt: createDate(tokenPolicies[token.type].ttl),
+      expiresAt: isoDateIn(tokenPolicies[token.type].ttl),
     })),
   });
 
@@ -177,7 +177,7 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
   const rawSingleUse = nanoid(40);
   const redeem = (redeemCtx: DbContext) =>
     // Hash at rest: the raw value lives only in the browser's cookie.
-    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: hashToken(rawSingleUse), expiresAt: createDate(singleUseWindow) });
+    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: hashToken(rawSingleUse), expiresAt: isoDateIn(singleUseWindow) });
 
   const redeemed =
     token.userId || !claimOwner

@@ -1,15 +1,15 @@
 import type { EntityType } from 'shared';
 import type { MediaRefContext } from 'shared/utils/media-ref';
-import { validateBlockMediaUrls as validateUrls } from 'shared/utils/validate-block-media-urls';
+import { validateBlockMediaUrls } from 'shared/utils/validate-block-media-urls';
 import { AppError } from '#/core/error';
 
-type ValidationResult = ReturnType<typeof validateUrls>;
+type ValidationResult = ReturnType<typeof validateBlockMediaUrls>;
 
 /**
  * Checks the media blocks of a stored document (blocks as a JSON string) against the media grammar.
  * @param ctx - the document's organization, whose upload prefix storage keys must lie under.
  */
-export const validateBlockMediaUrls = (blocksJson: string, ctx: MediaRefContext): ValidationResult => {
+export const validateBlockMediaJson = (blocksJson: string, ctx: MediaRefContext): ValidationResult => {
   let blocks: unknown;
 
   try {
@@ -22,7 +22,7 @@ export const validateBlockMediaUrls = (blocksJson: string, ctx: MediaRefContext)
     return { valid: false, invalidUrls: ['[invalid block structure]'] };
   }
 
-  return validateUrls(blocks, ctx);
+  return validateBlockMediaUrls(blocks, ctx);
 };
 
 /**
@@ -30,7 +30,7 @@ export const validateBlockMediaUrls = (blocksJson: string, ctx: MediaRefContext)
  * `organizationId` or a re-hosted asset.
  */
 export const assertBlockMediaUrls = (blocksJson: string, organizationId: string, entityType: EntityType, fieldName: string) => {
-  const result = validateBlockMediaUrls(blocksJson, { organizationId });
+  const result = validateBlockMediaJson(blocksJson, { organizationId });
   if (!result.valid) {
     throw new AppError(400, 'invalid_request', 'warn', {
       entityType,

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 
 /** New users (never signed in) are sent to the welcome page. */
 const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
@@ -14,7 +14,7 @@ export const resolvePostAuthRedirectPath = (
   user: { lastSignInAt: string | null },
   { redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null } = {},
 ) => {
-  const explicitRedirect = isValidRedirectPath(redirectPath);
+  const explicitRedirect = frontendRedirectPath(redirectPath);
 
   // MFA interrupts the flow; hand the redirect to the MFA page so it survives the challenge.
   if (mfaPath) {

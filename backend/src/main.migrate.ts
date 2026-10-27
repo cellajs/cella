@@ -19,7 +19,7 @@ try {
 } catch (error) {
   const msg = error instanceof Error ? error.message : String(error);
   console.error(pc.red(`${timestamp()} [migrate] ✗ Migrate companion failed: ${msg}`));
-  // Surface wrapped driver errors so serial-only production failures retain TLS/auth detail.
+  // Print the wrapped driver error, so a production failure seen only on the serial console keeps its TLS or auth detail.
   const cause = error instanceof Error ? error.cause : undefined;
   if (cause) {
     const causeMsg = cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);

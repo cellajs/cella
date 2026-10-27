@@ -48,16 +48,17 @@ export function neutralizeBrevoTags(content: string, { params, htmlParams = [] }
  * local render would apply, and with no tag opener left in it: pongo2 never parses a printed value, and nothing here
  * depends on that.
  */
-const withSafeHtmlParams = (params: Record<string, unknown>, htmlParams: Partial<Record<string, SafeHtmlPolicy>>): Record<string, unknown> =>
-  Object.fromEntries(
+function withSafeHtmlParams(params: Record<string, unknown>, htmlParams: Partial<Record<string, SafeHtmlPolicy>>): Record<string, unknown> {
+  return Object.fromEntries(
     Object.entries(params).map(([key, value]) => {
       const policy = htmlParams[key];
       if (!policy) return [key, value];
       return [key, neutralizeBrevoTags(sanitizeEmailHtml(String(value ?? ''), policy), { params: [] }, 'html')];
     }),
   );
+}
 
-/** Posts to Brevo's transactional endpoint, retrying 408, 429 and 5xx with backoff (Retry-After wins), as its SDK did. */
+/** Posts to Brevo's transactional endpoint, retrying 408, 429 and 5xx with backoff (Retry-After wins). */
 async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(brevoSendUrl, {
@@ -108,12 +109,13 @@ async function sendBatch(
   }
 }
 
+/** Sends the app's mail through Brevo's transactional API. */
 export const mailer = {
   /**
    * Renders once per language group with Brevo placeholders (`brevoPlaceholder`) whose keys carry a nonce drawn for the
-   * send, then sends in batches of 99.
+   * send, then sends in batches of `maxVersionsPerCall`.
    */
-  async prepareEmails<TStatic, TRecipient extends EmailRecipient>(
+  async sendEmails<TStatic, TRecipient extends EmailRecipient>(
     template: EmailTemplateDef<TStatic, TRecipient>,
     staticProps: TStatic,
     recipients: TRecipient[],
@@ -129,18 +131,11 @@ export const mailer = {
       const htmlParams: Partial<Record<string, SafeHtmlPolicy>> = {};
       for (const [key, policy] of Object.entries<SafeHtmlPolicy | undefined>(template.htmlParams ?? {})) htmlParams[paramKey(key)] = policy;
 
-      // Translate once per language
-      const translated = template.translate(lng, staticProps, (key) => brevoPlaceholder(paramKey(String(key)), htmlParams));
-      const { subject, ...componentProps } = translated;
+      const { subject, ...componentProps } = template.translate(lng, staticProps, (key) => brevoPlaceholder(paramKey(String(key)), htmlParams));
 
-      // Determine per-recipient keys (everything beyond email/lng)
-      const recipientKeys = Object.keys(lngRecipients[0]).filter((k) => k !== 'email' && k !== 'lng');
-
-      // Placeholder values for rendering: { name: '{{params.name_<nonce>}}', ... }
+      const recipientKeys = Object.keys(lngRecipients[0]).filter((key) => key !== 'email' && key !== 'lng');
       const placeholderProps: Record<string, string> = {};
-      for (const k of recipientKeys) {
-        placeholderProps[k] = brevoPlaceholder(paramKey(k), htmlParams);
-      }
+      for (const key of recipientKeys) placeholderProps[key] = brevoPlaceholder(paramKey(key), htmlParams);
 
       const html = await render(template.component({ ...componentProps, ...placeholderProps }));
 
@@ -149,9 +144,7 @@ export const mailer = {
 
         const versions = batch.map((recipient) => {
           const params: Record<string, unknown> = {};
-          for (const k of recipientKeys) {
-            params[paramKey(k)] = (recipient as Record<string, unknown>)[k];
-          }
+          for (const key of recipientKeys) params[paramKey(key)] = (recipient as Record<string, unknown>)[key];
           // The recipient's address, which a template names through `param('email')`
           params[paramKey('email')] = recipient.email;
           return { to: [{ email: env.SEND_ALL_TO_EMAIL || recipient.email }], params };

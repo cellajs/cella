@@ -1,9 +1,9 @@
 import { TTLCache as BaseTTLCache } from '@isaacs/ttlcache';
 import { coalesce } from '#/utils/request-coalescing';
 
-export type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
+type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
 
-export interface TTLCacheOptions<T> {
+interface TTLCacheOptions<T> {
   /** Maximum number of entries */
   maxSize: number;
   defaultTtl: number;

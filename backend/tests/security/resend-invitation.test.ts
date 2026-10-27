@@ -76,7 +76,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
     expect(response.status).toBe(204);
 
-    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
     const recipient = expect.objectContaining({ email: invitedEmail });
     expect(sentMails()).toEqual([expect.objectContaining({ template: memberInviteWithTokenEmail, recipient })]);
 
@@ -117,7 +117,7 @@ describe('Resend an invitation', async () => {
     // The page's resend button sends that id.
     const { response } = await resend({ tokenId: errorPage.searchParams.get('tokenId') ?? '' });
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
   });
 
   it('re-sends a pending system invitation with one fresh link', async () => {
@@ -127,7 +127,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
     expect(response.status).toBe(204);
 
-    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
     const recipient = expect.objectContaining({ email: 'newcomer@example.com' });
     expect(sentMails()).toEqual([expect.objectContaining({ template: systemInviteEmail, recipient })]);
 
@@ -145,7 +145,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
 
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });
 
@@ -157,7 +157,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
 
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });
 
@@ -170,7 +170,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
 
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
   });
 
@@ -183,7 +183,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: token.id });
 
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf('newcomer@example.com')).toEqual([token]);
   });
 
@@ -203,7 +203,7 @@ describe('Resend an invitation', async () => {
     const { response } = await resend({ tokenId: generateId() });
     expect(response.status).toBe(204);
 
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });
 });
@@ -226,7 +226,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     const { response } = await call(resendPendingInvitation, { path, headers });
 
     expect(response.status).toBe(204);
-    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
     const tokens = await invitationTokensOf(invitedEmail);
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
@@ -244,7 +244,7 @@ describe('Resend a pending invitation from the pending list', async () => {
 
     // A rejected invitation is no longer pending: it answers like a missing one.
     await expectRefusal({ response, error }, 404, 'not_found');
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });
 });

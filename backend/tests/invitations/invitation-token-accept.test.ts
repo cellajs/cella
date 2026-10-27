@@ -61,7 +61,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(await db.select().from(tokensTable).where(eq(tokensTable.id, token.id))).toHaveLength(0);
 
     // The invited inbox may not belong to the accepting account, so it hears about the acceptance.
-    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
     const mails = sentMails();
     expect(mails.map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
     expect(mails[0].statics).toMatchObject({ type: 'invitation-accepted-elsewhere', details: { accountEmail: 'my-account@example.com' } });
@@ -133,7 +133,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     expect(response.status).toBe(200);
     expect(await membershipsOf(me.id)).toHaveLength(1);
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
   });
 
   it('requires the single-use invitation cookie', async () => {

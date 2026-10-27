@@ -13,7 +13,7 @@ import { clearSecurityTestData, insertPasskey, passkeyChallenge } from './helper
 
 // The team notification a stored request sends never answers here: the form must not wait for it, or its latency would
 // tell a stored request from the one an account's address gets.
-vi.mock('#/lib/notifications/send-matrix-message', () => ({ sendMatrixMessage: () => new Promise(() => {}) }));
+vi.mock('#/modules/requests/helpers/send-matrix-message', () => ({ sendMatrixMessage: () => new Promise(() => {}) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 

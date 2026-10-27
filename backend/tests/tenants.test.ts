@@ -133,7 +133,7 @@ describe('archived-tenant sweep', () => {
     const expired = await archivedDaysAgo(period + 1);
     const recent = await archivedDaysAgo(period - 1);
     const active = await archivedDaysAgo(period + 1, 'active');
-    vi.mocked(mailer.prepareEmails).mockClear();
+    vi.mocked(mailer.sendEmails).mockClear();
 
     await removeArchivedTenants();
 
@@ -142,7 +142,7 @@ describe('archived-tenant sweep', () => {
     expect(await db.select().from(deletedStorageTable).where(eq(deletedStorageTable.entityId, expired.id))).toHaveLength(1);
     expect(await tenantExists(recent.tenantId)).toBe(true);
     expect(await tenantExists(active.tenantId)).toBe(true);
-    const mailed = vi.mocked(mailer.prepareEmails).mock.calls.map(([, statics]) => (statics as { tenantId: string }).tenantId);
+    const mailed = vi.mocked(mailer.sendEmails).mock.calls.map(([, statics]) => (statics as { tenantId: string }).tenantId);
     expect(mailed).toEqual([expired.tenantId]);
   });
 });

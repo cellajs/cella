@@ -1,3 +1,4 @@
+/** A one-line subject: control characters become spaces, whitespace runs one space, and a longer one ends in `…` at `max`. */
 export function sanitizeEmailSubject(value: string, max = 150): string {
   if (!value) return '';
   let s = value

@@ -15,22 +15,18 @@ export interface MutationPayload {
   materialized?: boolean;
 }
 
+/** A module's reaction to one event, awaited inside the request that dispatched it. */
 export type MutationHandler = (ctx: ActorContext, payload: MutationPayload) => Promise<void>;
 
 const handlers = new Map<TrackedEventType, MutationHandler[]>();
-
-/** Direct registration, for cross-module handlers derived from other modules' declarations. */
-function registerMutationHandler(event: TrackedEventType, handler: MutationHandler): void {
-  const existing = handlers.get(event);
-  if (existing) existing.push(handler);
-  else handlers.set(event, [handler]);
-}
 
 // Index the `onMutation` handlers each backend module declares (see defineBackendModule).
 onBackendModuleRegister((module) => {
   for (const entry of Object.entries(module.onMutation ?? {})) {
     const [event, handler] = entry as [TrackedEventType, MutationHandler];
-    registerMutationHandler(event, handler);
+    const existing = handlers.get(event);
+    if (existing) existing.push(handler);
+    else handlers.set(event, [handler]);
   }
 });
 

@@ -49,6 +49,7 @@ export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
   return 'healthy';
 }
 
+/** The `api` component: this process graded by its event-loop lag, with its memory in MB. */
 export function mapApiComponent(eventLoopLagMs: number, memory: NodeJS.MemoryUsage): HealthComponent {
   return {
     status: gradeEventLoop(eventLoopLagMs),
@@ -62,6 +63,7 @@ export function mapApiComponent(eventLoopLagMs: number, memory: NodeJS.MemoryUsa
   };
 }
 
+/** The `database` component from the connectivity check; an unreachable database is unhealthy. */
 export function mapDatabaseComponent(connected: boolean, latencyMs: number | null): HealthComponent {
   return connected
     ? { status: 'healthy', checkedVia: 'local', latencyMs }
@@ -87,7 +89,7 @@ export interface CdcWorkerReport {
 
 /**
  * The `cdc` component. The worker grades itself, and the API passes that grade and its reasons on unchanged. The API
- * adds only what the worker cannot tell: no socket (`worker_disconnected`), no report within 45 seconds
+ * adds only what the worker cannot tell: no socket (`worker_disconnected`), no report within `workerHealthStaleMs`
  * (`worker_report_stale`), or one it cannot read (`worker_report_unreadable`). The last two degrade at least, and a
  * stale report still shows what it said.
  * @param socket - The worker socket as the API holds it.

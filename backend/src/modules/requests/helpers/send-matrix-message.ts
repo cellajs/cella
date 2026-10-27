@@ -13,7 +13,7 @@ const matrixTimeoutMs = 10_000;
  */
 export const sendMatrixMessage = async (textMessage: string): Promise<boolean> => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
-    log.info('Missing required Element env values (roomId and/or  botAccessToken).');
+    log.info('Missing required Element env values (roomId and/or botAccessToken).');
     return false;
   }
 

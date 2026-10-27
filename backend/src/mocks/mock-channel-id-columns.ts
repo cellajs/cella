@@ -8,7 +8,7 @@ import {
   type ProductEntityType,
   type RelatedChannelType,
 } from 'shared';
-import { mockUuid } from './mock-nanoid';
+import { mockUuid } from '#/mocks/mock-ids';
 
 type MockChannelIdColumns = EntityIdColumns<ChannelEntityType, string>;
 
@@ -22,6 +22,7 @@ const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   return columns;
 };
 
+/** One mock id per configured channel type's id column. */
 export const generateMockChannelIdColumns = (): MockChannelIdColumns => mockIdColumns(appConfig.channelEntityTypes) as MockChannelIdColumns;
 
 /** Generates the hierarchy-derived channel ID columns carried by one product entity. */

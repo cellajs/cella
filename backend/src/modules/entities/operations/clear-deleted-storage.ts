@@ -5,7 +5,7 @@ import { isLocalStorageKey } from 'shared/utils/storage-key';
 import { baseDb } from '#/db/db';
 import { imageColumns } from '#/db/storage-columns';
 import { tenantContextById } from '#/db/tenant-context';
-import { deleteStoredObjects, deleteStoredPrefix, objectStorageConfigured } from '#/lib/object-storage';
+import { deleteStoredObjects, deleteStoredPrefix, isObjectStorageConfigured } from '#/lib/object-storage';
 import { findLiveAttachmentKeys } from '#/modules/attachment/attachment-queries';
 import { isSignableKey, publicKeyOf } from '#/modules/attachment/helpers/storage-key';
 import { type DeletedStorageModel, deletedStorageTable } from '#/modules/entities/deleted-storage-db';
@@ -65,7 +65,7 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
     });
   }
 
-  if (!objectStorageConfigured()) return;
+  if (!isObjectStorageConfigured()) return;
   for (const bucketName of new Set(released.map((object) => object.bucketName))) {
     await deleteStoredObjects(
       bucketName,

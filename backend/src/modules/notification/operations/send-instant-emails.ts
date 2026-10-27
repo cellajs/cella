@@ -90,9 +90,9 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     };
 
     if (notification.type === 'mention') {
-      await mailer.prepareEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
+      await mailer.sendEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
     } else {
-      await mailer.prepareEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
+      await mailer.sendEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
         { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
       ]);
     }

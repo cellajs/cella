@@ -7,6 +7,7 @@ const probeCacheTtlMs = 10_000;
 
 const cache = new Map<string, { at: number; result: ProbeResult }>();
 
+/** Probes a sibling worker's `/health?depth=full`, answering from a per-URL cache for `probeCacheTtlMs`. */
 export async function probeWorker(baseUrl: string): Promise<ProbeResult> {
   const cached = cache.get(baseUrl);
   if (cached && Date.now() - cached.at < probeCacheTtlMs) return cached.result;
@@ -17,23 +18,22 @@ export async function probeWorker(baseUrl: string): Promise<ProbeResult> {
 }
 
 async function runProbe(baseUrl: string): Promise<ProbeResult> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), probeTimeoutMs);
   const startedAt = Date.now();
   try {
     // WebSocket workers advertise ws(s):// URLs, but /health speaks plain HTTP and fetch() rejects the ws scheme
     const httpBase = baseUrl.replace(/^ws(s?):/, 'http$1:');
-    const res = await fetch(`${httpBase}/health?depth=full`, { signal: controller.signal, headers: { accept: 'application/json' } });
+    const res = await fetch(`${httpBase}/health?depth=full`, {
+      signal: AbortSignal.timeout(probeTimeoutMs),
+      headers: { accept: 'application/json' },
+    });
     const latencyMs = Date.now() - startedAt;
     if (!res.ok) return { ok: false, latencyMs, reason: `http_${res.status}` };
     const body = (await res.json()) as Record<string, unknown>;
     return { ok: true, latencyMs, body };
   } catch (err) {
     const latencyMs = Date.now() - startedAt;
-    const reason = err instanceof Error && err.name === 'AbortError' ? 'timeout' : 'unreachable';
+    const reason = err instanceof Error && err.name === 'TimeoutError' ? 'timeout' : 'unreachable';
     return { ok: false, latencyMs, reason };
-  } finally {
-    clearTimeout(timer);
   }
 }
 

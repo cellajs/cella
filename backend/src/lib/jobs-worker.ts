@@ -47,7 +47,7 @@ async function startMaintainer() {
  * carries the jobs component and its shutdown stops the store.
  */
 export async function startJobsWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
-  if (appConfig.services.jobs.enabled === false) {
+  if (!appConfig.services.jobs.enabled) {
     baseLog.info('Jobs worker disabled by appConfig');
     return;
   }

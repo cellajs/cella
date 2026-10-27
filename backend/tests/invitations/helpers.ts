@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { createDate } from '#/utils/time-span';
+import { isoDateIn } from '#/utils/iso-date';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { authCookie, insertTestToken } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -61,7 +61,7 @@ export async function createInvitation({
       createdAt: mockPastIsoDate(),
       // Opening the link swaps the week-long lifetime for the single-use window.
       ...(tokenState === 'invoked'
-        ? { openedWith: rawSingleUseToken, expiresAt: createDate(tokenPolicies.invitation.singleUseWindow) }
+        ? { openedWith: rawSingleUseToken, expiresAt: isoDateIn(tokenPolicies.invitation.singleUseWindow) }
         : { expiresInMs: 7 * 24 * 60 * 60 * 1000 }),
     },
   );

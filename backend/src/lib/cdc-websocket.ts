@@ -51,7 +51,7 @@ function contentOf(message: CdcMessage): Pick<ActivityEvent, 'rows' | 'rowData'>
   return 'rows' in message ? { rows: message.rows, rowData: null } : { rows: null, rowData: message.rowData };
 }
 
-/** The worker's health push arrives every 15 seconds, so a connection this long without a message is dead. */
+/** The worker pushes its health report several times within this span, so a connection that sends nothing this long is dead. */
 const idleTimeoutMs = 90_000;
 
 /**
@@ -74,7 +74,11 @@ export function cdcSecretRefusal(presented: string | string[] | undefined): stri
 export interface CdcWorkerHealth {
   /** The worker's own grade. */
   status: HealthStatus;
-  /** Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`, `worker_stuck`, `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`, `event_loop_lag`. */
+  /**
+   * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`,
+   * `reading_again`, `worker_stuck`, `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`,
+   * `event_loop_lag`.
+   */
   reasons: string[];
   /** Diagnosis for a person: replication status and positions, lag, the failure it reads again from, setup problems, the slot. */
   details: Record<string, unknown>;
@@ -95,20 +99,18 @@ const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] sa
 type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
 
 /**
- * The CDC worker's channel: one live connection, closed after 90 seconds without a message. The internal listener
+ * The CDC worker's channel: one live connection, closed after `idleTimeoutMs` without a message. The internal listener
  * (lib/listeners.ts) routes and authenticates the upgrade before handing it over.
  */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;
   private idleTimer: NodeJS.Timeout | null = null;
-
-  // Health metrics
-  private _lastMessageAt: Date | null = null;
-  private _messagesReceived = 0;
-  private _parseErrors = 0;
-  private _workerHealth: WorkerHealthReport | null = null;
-  private _generation: number | null = null;
+  private lastMessageAt: Date | null = null;
+  private messagesReceived = 0;
+  private parseErrors = 0;
+  private workerHealth: WorkerHealthReport | null = null;
+  private generation: number | null = null;
   private generationListeners: ((generation: number) => void)[] = [];
   /**
    * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read
@@ -130,7 +132,7 @@ class CdcWebSocketServer {
     const replaced = this.currentConnection;
     this.currentConnection = ws;
     // A health report belongs to the connection it arrived on, and so does the word that its worker reads.
-    this._workerHealth = null;
+    this.workerHealth = null;
     this.noteReading(false);
     this.resetIdleTimer();
 
@@ -173,19 +175,19 @@ class CdcWebSocketServer {
       const result = cdcMessageSchema.safeParse(parsed);
 
       if (!result.success) {
-        this._parseErrors++;
+        this.parseErrors++;
         const preview = { type: parsed?.activity?.type, subjectId: parsed?.activity?.subjectId, action: parsed?.activity?.action };
         log.error('CDC message schema validation failed - message dropped', { errors: result.error.issues, preview });
         return;
       }
 
       const message = result.data;
-      this._messagesReceived++;
-      this._lastMessageAt = new Date();
+      this.messagesReceived++;
+      this.lastMessageAt = new Date();
 
       const { type } = message.activity;
       if (!isValidEventType(type)) {
-        this._parseErrors++;
+        this.parseErrors++;
         log.error('Unknown event type in CDC message - message dropped', { type, subjectId: message.activity.subjectId });
         return;
       }
@@ -204,7 +206,7 @@ class CdcWebSocketServer {
 
       activityBus.emit(activityEvent);
     } catch (err) {
-      this._parseErrors++;
+      this.parseErrors++;
       log.error('Failed to parse CDC message', { err });
     }
   }
@@ -214,9 +216,9 @@ class CdcWebSocketServer {
    * corrected or rebuilt while clients were connected.
    */
   private noteGeneration(generation: number | undefined): void {
-    if (typeof generation !== 'number' || generation === this._generation) return;
-    const moved = this._generation !== null;
-    this._generation = generation;
+    if (typeof generation !== 'number' || generation === this.generation) return;
+    const moved = this.generation !== null;
+    this.generation = generation;
     if (moved) for (const listener of this.generationListeners) listener(generation);
   }
 
@@ -238,7 +240,7 @@ class CdcWebSocketServer {
 
     const payload = (message.payload ?? {}) as Partial<CdcWorkerHealth>;
     const readable = workerGrades.includes(payload.status) && Array.isArray(payload.reasons);
-    this._workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
+    this.workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
     // A report this process cannot read says nothing of reading: it is taken as none, like the messages beside it.
     this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active');
     this.noteGeneration(payload.generation);
@@ -259,7 +261,7 @@ class CdcWebSocketServer {
     return this.notReadingSince !== null && Date.now() - this.notReadingSince >= workerAwayAfterMs;
   }
 
-  /** Starts the idle time anew; a connection that sends no message for 90 seconds is closed. */
+  /** Starts the idle time anew. */
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
@@ -275,22 +277,22 @@ class CdcWebSocketServer {
       this.idleTimer = null;
     }
     this.currentConnection = null;
-    this._workerHealth = null;
+    this.workerHealth = null;
     this.noteReading(false);
   }
 
   /** The worker's latest health report on the live connection. */
   getWorkerHealth(): WorkerHealthReport | null {
-    return this._workerHealth;
+    return this.workerHealth;
   }
 
   /** The socket as this process sees it: whether a worker is connected, and what arrived over it. */
   getHealthStatus(): CdcSocketSnapshot {
     return {
       cdcConnected: this.currentConnection !== null,
-      lastMessageAt: this._lastMessageAt?.toISOString() ?? null,
-      messagesReceived: this._messagesReceived,
-      parseErrors: this._parseErrors,
+      lastMessageAt: this.lastMessageAt?.toISOString() ?? null,
+      messagesReceived: this.messagesReceived,
+      parseErrors: this.parseErrors,
     };
   }
 
@@ -301,4 +303,5 @@ class CdcWebSocketServer {
   }
 }
 
+/** The process's one CDC socket: the internal listener hands it the worker's upgrade, `/health` reads its state. */
 export const cdcWebSocketServer = new CdcWebSocketServer();

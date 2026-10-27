@@ -2,14 +2,14 @@ import { appConfig } from 'shared';
 import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
 import { otlpSink, serviceName } from '#/lib/otel-env';
-import { redactedFields } from '#/lib/redact-keys';
+import { redactPaths } from '#/lib/redact-keys';
 
 // NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
 const isTest = appConfig.mode === 'test';
 
 /** Censored in every backend log line: secret columns and transport keys, plus the auth headers of a logged request. */
-export const backendRedactPaths = [...redactedFields, 'req.headers.authorization', 'req.headers.cookie'];
+export const backendRedactPaths = [...redactPaths, 'req.headers.authorization', 'req.headers.cookie'];
 
 /** What both loggers share: a level, sink or redaction list set here reaches each. */
 const loggerOptions = {
@@ -34,8 +34,8 @@ export const requestLogger = createLogger({
   },
 });
 
-/** Not exported: all logging passes through `baseLog` or the request-aware `log`, keeping the err convention. */
-const eventLogger = createLogger(loggerOptions);
-
-// Context-free log facade; most backend code should use `log` from #/utils/logger, which adds request context.
-export const baseLog = createLog(eventLogger);
+/**
+ * The context-free log facade, the only way to the event logger, so every line keeps the `err` convention. Code that
+ * runs in a request or a job uses `log` from #/utils/logger, which adds the ambient ids.
+ */
+export const baseLog = createLog(createLogger(loggerOptions));

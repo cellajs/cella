@@ -239,7 +239,7 @@ interface WorkerLogEnv {
 
 /**
  * For cdc and yjs: same construction, with the OTel service name `<app-slug>-<suffix>`. `redactPaths` is the
- * backend's `redactedFields` (lib/redact-keys.ts), so a worker censors the same keys the API does.
+ * backend export of that name (lib/redact-keys.ts), so a worker censors the same keys the API does.
  */
 export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redactPaths: readonly string[]): Log =>
   createLog(

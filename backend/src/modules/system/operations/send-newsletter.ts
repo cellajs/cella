@@ -36,7 +36,7 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
   const newContent = withPublicImageUrls(content);
 
   const staticProps = { content: newContent, subject, testEmail: toSelf };
-  await mailer.prepareEmails(newsletterEmail, staticProps, recipients, user.email);
+  await mailer.sendEmails(newsletterEmail, staticProps, recipients, user.email);
 
   log.info('Newsletter sent', { count: recipients.length });
 }

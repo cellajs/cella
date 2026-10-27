@@ -10,9 +10,7 @@ import nlCommon from '../../../locales/nl/common.json';
 import nlError from '../../../locales/nl/error.json';
 
 /** Configure the locales you need in backend. `app.json` merges into `c`, matching the frontend; `appError.json` holds the app's own error types. */
-const locales = {
+export const locales = {
   en: { backend: enBackend, c: { ...enCommon, ...enApp }, error: enError, appError: enAppError },
   nl: { backend: nlBackend, c: { ...nlCommon, ...nlApp }, error: nlError, appError: nlAppError },
 };
-
-export { locales };

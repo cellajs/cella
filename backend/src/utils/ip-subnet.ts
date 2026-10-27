@@ -42,7 +42,7 @@ const expandIPv6 = (ip: string): string[] | null => {
   const tailGroups = tail ? tail.split(':') : [];
   const missing = 8 - headGroups.length - tailGroups.length;
   if (missing < 0) return null;
-  return [...headGroups, ...Array(missing).fill('0'), ...tailGroups].map((g) => g.toLowerCase().replace(/^0+(?=.)/, ''));
+  return [...headGroups, ...Array(missing).fill('0'), ...tailGroups].map((group) => group.toLowerCase().replace(/^0+(?=.)/, ''));
 };
 
 /**
@@ -65,8 +65,8 @@ export const isPublicIp = (ip: string): boolean => {
     const groups = expandIPv6(normalized);
     if (!groups) return false;
     const first = Number.parseInt(groups[0], 16);
-    if (groups.every((g) => g === '0')) return false; // ::
-    if (groups.slice(0, 7).every((g) => g === '0') && groups[7] === '1') return false; // ::1
+    if (groups.every((group) => group === '0')) return false; // ::
+    if (groups.slice(0, 7).every((group) => group === '0') && groups[7] === '1') return false; // ::1
     if ((first & 0xfe00) === 0xfc00) return false; // fc00::/7 unique local
     if ((first & 0xffc0) === 0xfe80) return false; // fe80::/10 link local
     return true;

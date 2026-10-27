@@ -77,15 +77,15 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   } else if (env.MODE === 'jobs') {
     components.jobs = await buildJobsComponent();
   } else {
-    if (appConfig.services.cdc.enabled !== false) components.cdc = buildCdcComponent();
+    if (appConfig.services.cdc.enabled) components.cdc = buildCdcComponent();
 
-    const enabledWorkers = probedWorkers.filter(({ name }) => appConfig.services[name].enabled !== false);
+    const enabledWorkers = probedWorkers.filter(({ name }) => appConfig.services[name].enabled);
     const workerChecks = await Promise.all(
       enabledWorkers.map(async ({ name, url, details }) => [name, mapProbeComponent(await probeWorker(url), details)] as const),
     );
     for (const [name, component] of workerChecks) components[name] = component;
 
-    if (appConfig.services.jobs.enabled !== false) components.jobs = await buildJobsComponent();
+    if (appConfig.services.jobs.enabled) components.jobs = await buildJobsComponent();
   }
 
   const status = rollupStatus(components, criticalComponents);

@@ -1,19 +1,14 @@
 import { faker } from '@faker-js/faker';
 
-/** Context for mock ID generation - determines prefix behavior */
-export type MockContext = 'example' | 'script' | 'loadtest';
+/** What mock ids are drawn for: OpenAPI examples, seed scripts or load-test data. */
+type MockContext = 'example' | 'script' | 'loadtest';
 
 export const scriptIdPrefix = 'gen-';
 export const scriptUuidPrefix = '00000000';
 
 let currentMockContext: MockContext = 'example';
 
-/**
- * ID prefix per context:
- * - 'example': none (OpenAPI examples)
- * - 'script': 'gen-' (seed scripts)
- * - 'loadtest': 'lt-' (load-test data, never collides with real/seed data)
- */
+/** Sets the context every later mock id is prefixed for (`idPrefixes`, `uuidPrefixes`). */
 export const setMockContext = (context: MockContext) => {
   currentMockContext = context;
 };
@@ -29,14 +24,17 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   }
 };
 
+/** Examples carry no prefix; seeded and load-test rows carry their own, so load-test data never collides with real or seed data. */
 const idPrefixes: Record<MockContext, string> = { example: '', script: scriptIdPrefix, loadtest: 'lt-' };
 const uuidPrefixes: Record<MockContext, string> = { example: '', script: scriptUuidPrefix, loadtest: '00000001' };
 
+/** A lowercase alphanumeric id of `length` characters, the context's prefix included. */
 export const mockNanoid = (length = 24) => {
   const prefix = idPrefixes[currentMockContext];
   return `${prefix}${faker.string.alphanumeric({ length: length - prefix.length, casing: 'lower' })}`;
 };
 
+/** A uuid whose first characters are the context's prefix. */
 export const mockUuid = () => {
   const prefix = uuidPrefixes[currentMockContext];
   return `${prefix}${faker.string.uuid().slice(prefix.length)}`;

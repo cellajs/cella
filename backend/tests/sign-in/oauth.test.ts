@@ -718,7 +718,7 @@ describe('OAuth Authentication', async () => {
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).not.toContain('/auth/email-verification');
       expect(cookieChange(res, 'session')).toBe('set');
-      expect(mailer.prepareEmails).not.toHaveBeenCalled();
+      expect(mailer.sendEmails).not.toHaveBeenCalled();
 
       const [account] = await db.select().from(usersTable).where(eq(usersTable.email, providerEmail));
       // The account starts with the provider's names. Its avatar is not taken over: avatars come from the app's CDN only.

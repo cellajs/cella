@@ -7,18 +7,18 @@ import { registerOpenApiDocs } from '#/core/openapi-registration';
 import { baseDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
+import { env } from '#/env';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
-import { env } from './env';
 
 otel.start();
 otel.verifyConnection();
 
-let server: import('@hono/node-server').ServerType | undefined;
+let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
 /** Stops what this process starts besides its listeners: the GeoIP refresh. */
 const stops: (() => unknown)[] = [];
@@ -102,16 +102,14 @@ setupGracefulShutdown({
   cleanup: async () => {
     for (const stop of stops) await stop();
     await stopPgBoss();
-    if (server) {
-      server.close();
-    }
+    server?.close();
     internalListener?.close();
     await otel.shutdown();
   },
   log: (msg) => process.stderr.write(`[api] ${msg}\n`),
 });
 
-main().catch((e) => {
-  process.stderr.write(`[startup] Failed to start server: ${e instanceof Error ? e.stack : e}\n`);
+main().catch((error) => {
+  process.stderr.write(`[startup] Failed to start server: ${error instanceof Error ? error.stack : error}\n`);
   setTimeout(() => process.exit(1), 500);
 });
