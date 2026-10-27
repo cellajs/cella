@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
@@ -7,8 +7,8 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
   items: FloatingNavItem[];
-  /** Defaults to window. */
-  scrollContainerRef?: RefObject<HTMLElement | null>;
+  /** Defaults to window: the element a callback ref stores, null until it is attached. */
+  scrollContainer?: HTMLElement | null;
   bodyClass?: string;
   /** Any change to this value resets visibility to visible: pass a page key, sidebar state, etc. */
   resetTrigger?: unknown;
@@ -16,9 +16,9 @@ interface FloatingNavProps {
 
 const labelCollapseMs = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
 
-export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
+export function FloatingNav({ items, scrollContainer, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
-  const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);
+  const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainer);
   const setFloatingNavActive = useNavigationStore((state) => state.setFloatingNavActive);
 
   useEffect(() => {
