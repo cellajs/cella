@@ -36,8 +36,6 @@ const keys = createEntityKeys<OrganizationFilters>('organization');
 // Register query keys for dynamic lookup in stream handlers
 registerEntityQueryKeys('organization', keys);
 
-export const organizationQueryKeys = keys;
-
 const findOrganizationInCache = createCacheFinder<Organization>('organization');
 
 /** Find an organization in cache by id or slug. Slug matches are scoped to the given tenant. */
