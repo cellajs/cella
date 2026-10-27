@@ -228,7 +228,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       await copySharedSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
         (error) =>
           console.warn(
-            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next deploy tries again.`,
+            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next apply tries again.`,
           ),
       );
       // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any

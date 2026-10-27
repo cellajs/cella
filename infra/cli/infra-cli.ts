@@ -55,7 +55,7 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(`\n  ${pc.dim('A release is deployed by its own command: pnpm --filter infra run deploy --mode <mode> --sha <sha>')}`);
+  console.info(`\n  ${pc.dim('Releases are deployed by the runner, as runs of the main job; start-deploy starts one now.')}`);
 }
 
 /**
@@ -244,7 +244,7 @@ if (!pulumiVersion) {
     description: 'the infra CLI needs Pulumi for every stack operation',
   });
 }
-// CI runs the CLI at the SDK version (.github/actions/pulumi-cli); a laptop that trails it sees a nag from Pulumi and, in the worst case, a state written by a newer engine.
+// The main job runs the CLI at the SDK version; a laptop that trails it sees a nag from Pulumi and, in the worst case, a state written by a newer engine.
 const pulumiLag = pulumiCliLagWarning(pulumiVersion, sdkPulumiVersion());
 if (pulumiLag) console.warn(`${warningMark} ${pulumiLag}`);
 

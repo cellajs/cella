@@ -69,7 +69,7 @@ pnpm cella
 
 ## Infra CLI
 
-Provisions and deploys a full stack on Scaleway ([infra guide](../infra/README.md)).
+Sets up a full stack on Scaleway, which a runner in your Scaleway organization then deploys ([infra guide](../infra/README.md)).
 
 ```bash
 pnpm infra

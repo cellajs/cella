@@ -3,14 +3,7 @@ import { deriveInfra } from '../../lib/naming';
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import {
-  backupName,
-  ResetIrrecoverableError,
-  type ResetTarget,
-  restoreHint,
-  sequenceDatabaseReset,
-  serialConsoleSteps,
-} from '../../tasks/reset-database';
+import { backupName, ResetIrrecoverableError, type ResetTarget, rebuildSteps, restoreHint, sequenceDatabaseReset } from '../../tasks/reset-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { acquirePrivilegedKey } from './operator-unlock';
 
@@ -91,7 +84,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
 
     console.info(`\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`);
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
-    console.info(serialConsoleSteps(databaseName));
+    console.info(rebuildSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
   } catch (error) {
     if (endsAction(error)) throw error;

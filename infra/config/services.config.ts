@@ -24,7 +24,7 @@ export const appServices = defineServices({
     // to it, so in-network consumers dial a stable address that follows every cutover and the public pool never can.
     // The synth passes it to the container as INTERNAL_PORT.
     internalPort: 4005,
-    // Attachment uploads and presigned URLs are signed with the backend's own per-deploy service key.
+    // Attachment uploads and presigned URLs are signed with the backend's own standing service key.
     s3Access: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },

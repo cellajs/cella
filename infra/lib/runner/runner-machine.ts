@@ -1,7 +1,7 @@
 import type { RunnerEnvironment } from '../../runner/src/config';
 import { type CloudConfigFile, cloudConfigDocument } from '../utils/cloud-config';
 
-/** The name of the runner's project, application, address, security group and machine: one runner per organization (D5), the app's (D30). */
+/** The name of the runner's project, application, address, security group and machine: one runner per app, named after it. */
 export function runnerName(appSlug: string): string {
   return `${appSlug}-runner`;
 }

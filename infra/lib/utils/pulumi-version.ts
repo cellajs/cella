@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
-/** The `@pulumi/pulumi` SDK version the program is written against. CI installs the CLI at exactly this version (.github/actions/pulumi-cli). */
+/** The `@pulumi/pulumi` SDK version the program is written against. The main job installs the CLI at exactly this version. */
 export function sdkPulumiVersion(): string {
   return (createRequire(import.meta.url)('@pulumi/pulumi/package.json') as { version: string }).version;
 }

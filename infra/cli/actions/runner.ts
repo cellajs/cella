@@ -61,7 +61,7 @@ function checkoutCommit(): string {
 }
 
 /**
- * Set up the runner, at an Owner moment (D5, D28-D30): the organization's runner project and its reserved address, the runner application
+ * Set up the runner, at an Owner moment (D28-D30): the app's runner project and its reserved address, the runner application
  * with the right to start and read job runs in every environment it serves from that address only, the runner key in its project, and the
  * app operator's reach over the runner project; then this environment in `infra/runner.json`. The first run makes the key; a later one
  * extends the policy in place, so the key the running machine holds keeps working, unless `--rotate-key` asks for a new key, which deletes
@@ -92,7 +92,7 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
       (await createProject(ownerKey.secretKey, {
         organizationId,
         name,
-        description: "The organization's runner: it starts each environment's deploy",
+        description: "The app's runner: it starts each environment's deploy",
       }));
     let address = await findRunnerAddress(auth, { zone, projectId: project.id, name });
     if (!address) {
@@ -113,7 +113,7 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
         { callerSecretKey: ownerKey.secretKey, organizationId, projectId: project.id, slug: appConfig.appSlug },
         {
           suffix: 'runner',
-          appDescription: "The organization's runner: starts each environment's main job, from its reserved address only",
+          appDescription: "The app's runner: starts each environment's main job, from its reserved address only",
           policyDescription: 'Runner policy: Serverless Jobs in every environment it serves, conditioned on its reserved address (auto-generated)',
           buildRules: () => runnerRules({ projectIds, cidrs }),
         },

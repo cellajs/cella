@@ -39,8 +39,8 @@ export function readOperatorLock(rules: readonly Pick<GrantedRule, 'condition'>[
 }
 
 /**
- * Whether the stack has an operator application and which addresses its policy names, read with the admin application key (IAM read). Kept
- * for the run: an action that changes it calls `forgetOperatorLock`. Without an admin key on this machine the answer is `unknown`.
+ * Whether the stack has an operator application and which addresses its policy names, read with the observer key (IAM read). Kept for
+ * the run: an action that changes it calls `forgetOperatorLock`. Without an observer key on this machine the answer is `unknown`.
  */
 export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
   const known = rememberedOperatorLock();

@@ -79,7 +79,7 @@ export interface ServiceMeta {
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box. */
   instanceType: ServiceInstanceType;
-  /** This service signs S3 requests with its own per-deploy service key (REQ-20). */
+  /** This service signs S3 requests with its own standing service key (REQ-20). */
   s3Access?: boolean;
   /** Deploy-time env bindings resolved by the compute module; see {@link AppServiceConfig.bindings}. */
   bindings?: Readonly<Record<string, string>>;
@@ -117,7 +117,7 @@ export interface ComposeFile {
  * Entry presence determines whether the service belongs to the fleet.
  */
 export interface AppServiceConfig {
-  /** This service signs S3 requests (uploads, presigned URLs) with its own per-deploy service key: IAM grants, bucket policy, and S3_ACCESS_KEY_ID/SECRET in its runtime env. */
+  /** This service signs S3 requests (uploads, presigned URLs) with its own standing service key: IAM grants, bucket policy, and S3_ACCESS_KEY_ID/SECRET in its runtime env. */
   s3Access?: boolean;
   /** Container image ref, e.g. `'${REGISTRY}/yjs:${YJS_TAG:-latest}'`. */
   image: string;

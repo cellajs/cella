@@ -137,7 +137,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
   }
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  // The admin application key serves the state backend; nothing here calls a Scaleway API beyond the state bucket.
+  // The operator key serves the state backend; nothing here calls a Scaleway API beyond the state bucket.
   const env = buildProviderEnv(infraDir, { ...opts.key, projectId: context.projectId, passphrase });
   pulumiLoginAndSelect(infraDir, env, context.appConfig, opts.stack);
   const lease = await acquireStackLockOrExit({ appConfig: context.appConfig, ...opts.key, stack: opts.stack, operation: 'clear-pending' });
