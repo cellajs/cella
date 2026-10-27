@@ -108,14 +108,14 @@ function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPref
               onClick={onClick}
               className={cn(
                 buttonVariants({ variant: 'ghost' }),
-                'group/api-reference-group w-full justify-start lowercase',
+                'group/api-reference-group w-full justify-start',
                 isActive && 'bg-accent font-semibold',
               )}
             />
           }
         >
           <span>{label}</span>
-          {!isOpen && <span className="text-muted-foreground text-xs">{count}</span>}
+          {!isOpen && <span className="text-faint-foreground text-xs">{count}</span>}
           <ChevronDownIcon className="ml-auto opacity-40 transition-transform duration-200 group-data-panel-open/api-reference-group:rotate-180" />
         </CollapsibleTrigger>
       </div>

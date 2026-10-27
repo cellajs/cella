@@ -27,7 +27,7 @@ export const badgeVariants = cva(
       },
       context: {
         button: 'zoom-in absolute -top-1.5 -right-1.5 min-w-5 animate-in px-1 py-0 shadow-md',
-        none: 'lowercase',
+        none: '',
       },
     },
     compoundVariants: [

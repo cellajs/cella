@@ -91,6 +91,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-foreground-soft: var(--foreground-soft);
+  --color-faint-foreground: var(--faint-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -273,6 +274,12 @@
   :root &:focus-within {
     color: var(--foreground);
   }
+}
+
+/* A label that heads content: a grid column, a table head, a tile list, a menu or select group, a nav panel, the key of a
+   key/value pair. A field label names an input and stays at the content step. A one-property utility next to it wins. */
+@utility group-label {
+  @apply font-medium text-muted-foreground text-sm;
 }
 
 /* A field framed by what it sits in, such as a filter bar, draws no edge of its own, at rest or under the pointer: its
@@ -492,21 +499,26 @@
   /* Theme tokens */
   :root {
     --background: oklch(1 0 0);
+    /* Text takes one of four steps by role. Content: titles, values, cell text, field labels, active items. */
     --foreground: oklch(0.2067 0.01 285.49);
-    /* Running text a step below --foreground and above --muted-foreground: prose body and resting cards. */
+    /* Reading: running text, prose body and resting cards. */
     --foreground-soft: oklch(0.37 0.013 285.8);
+    /* Support: group labels, column headers, keys, descriptions, metadata. */
+    --muted-foreground: oklch(0.4571 0.0112 285.63);
+    /* Hint: placeholders, empty states, counts, separators, the required star. */
+    --faint-foreground: oklch(0.52 0.014 285.8);
+    /* Text on a neutral surface (card, popover, secondary, accent, sidebar) is content text; the names stay for shadcn ports. */
     --card: oklch(0.987 0.0013 285.76);
-    --card-foreground: oklch(0.2067 0.01 285.49);
+    --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.2067 0.01 285.49);
+    --popover-foreground: var(--foreground);
     --primary: oklch(0.2061 0.006 285.56);
     --primary-foreground: oklch(0.9627 0 0);
     --secondary: oklch(0.9575 0.0044 285.76);
-    --secondary-foreground: oklch(0.3138 0.0102 285.63);
+    --secondary-foreground: var(--foreground);
     --muted: oklch(0.9575 0.0044 285.76);
-    --muted-foreground: oklch(0.4571 0.0112 285.63);
     --accent: oklch(0.9575 0.0044 285.76);
-    --accent-foreground: oklch(0.2067 0.01 285.49);
+    --accent-foreground: var(--foreground);
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.92 0.004 285.75);
@@ -548,9 +560,9 @@
     --chart-5: oklch(0.274 0.006 286.033);
 
     --sidebar: oklch(0.9575 0.0044 285.76);
-    --sidebar-foreground: oklch(0.145 0.01 285.49);
+    --sidebar-foreground: var(--foreground);
     --sidebar-accent: oklch(0.97 0.003 285.76);
-    --sidebar-accent-foreground: oklch(0.205 0.01 285.49);
+    --sidebar-accent-foreground: var(--foreground);
     --sidebar-border: oklch(0.922 0.004 285.75);
     --sidebar-ring: var(--ring);
   }
@@ -559,18 +571,20 @@
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
     --foreground-soft: oklch(0.871 0.006 286.3);
+    --muted-foreground: oklch(0.72 0.0128 285.86);
+    /* 4.5:1 on --muted, --secondary and --accent too, where a highlighted row puts a hint. */
+    --faint-foreground: oklch(0.68 0.0128 285.86);
     --card: oklch(0.232 0.0095 285.56);
-    --card-foreground: oklch(0.9627 0 0);
+    --card-foreground: var(--foreground);
     --popover: oklch(0.1963 0.0092 285.53);
-    --popover-foreground: oklch(0.9627 0 0);
+    --popover-foreground: var(--foreground);
     --primary: oklch(0.9851 0 0);
     --primary-foreground: oklch(0.3138 0.0102 285.63);
     --secondary: oklch(0.3138 0.0102 285.63);
-    --secondary-foreground: oklch(0.9851 0 0);
+    --secondary-foreground: var(--foreground);
     --muted: oklch(0.3138 0.0102 285.63);
-    --muted-foreground: oklch(0.8089 0.0128 285.86);
     --accent: oklch(0.3138 0.0102 285.63);
-    --accent-foreground: oklch(0.9851 0 0);
+    --accent-foreground: var(--foreground);
     --destructive: oklch(0.72 0.17 29.23);
     --destructive-foreground: oklch(0.1963 0.0092 285.53);
     --border: oklch(0.27 0.011 285.63);
@@ -590,15 +604,15 @@
     --overlay: oklch(0 0 0 / 0.7);
 
     --sidebar: oklch(0.3138 0.0102 285.63);
-    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-foreground: var(--foreground);
     --sidebar-accent: oklch(0.269 0.0098 285.6);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-accent-foreground: var(--foreground);
     --sidebar-border: oklch(0.269 0.0098 285.6);
   }
 
   /* Increased contrast (WCAG 1.4.11): every edge steps up together, since raising only the fields is what made
-     them read as a different family. Link underlines step up one tier. Soft text reads at full strength; status and the
-     other text tokens never move. */
+     them read as a different family. Link underlines step up one tier. Soft text reads at full strength and hints at the
+     support step; status and the other text tokens never move. */
   @media (prefers-contrast: more) {
     :root {
       --border: var(--edge-raised);
@@ -608,6 +622,7 @@
       --edge-overlay: var(--edge-raised);
       --edge-floating: 30%;
       --foreground-soft: var(--foreground);
+      --faint-foreground: var(--muted-foreground);
       --link-decoration: 65%;
       --link-decoration-strong: 100%;
     }
@@ -622,6 +637,7 @@
     --edge-overlay: var(--edge-raised);
     --edge-floating: 30%;
     --foreground-soft: var(--foreground);
+    --faint-foreground: var(--muted-foreground);
     --link-decoration: 65%;
     --link-decoration-strong: 100%;
   }

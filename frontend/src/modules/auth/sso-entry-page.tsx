@@ -41,7 +41,7 @@ export function SsoEntryPage() {
       {status === 'active' ? (
         <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
           <span className="truncate">{t('c:continue_to_institution', { institution: institution.displayName })}</span>
-          <span className="shrink-0 opacity-70">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
+          <span className="shrink-0 font-normal">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
         </Button>
       ) : (
         <Alert variant="warning">

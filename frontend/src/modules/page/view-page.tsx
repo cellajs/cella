@@ -64,7 +64,7 @@ export function ViewPage({ slug }: ViewPageProps) {
 function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
   const { t } = useTranslation();
   return (
-    <p className="text-muted-foreground text-sm lowercase">
+    <p className="text-muted-foreground text-sm">
       {t('c:last_edited')} {dateShort(updatedAt)}
     </p>
   );

@@ -206,7 +206,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           fill="none"
           stroke="currentColor"
           strokeWidth={backgroundStroke}
-          className="text-muted-foreground/70 transition-[stroke-width] duration-150 ease-out"
+          className="text-faint-foreground transition-[stroke-width] duration-150 ease-out"
         />
         <circle
           cx="20"

@@ -48,10 +48,10 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
     sections: sectionsBySlug.get(page.id) ?? [],
   }));
 
-  // Tier-1 breadcrumb labels match the sidebar's lowercase section rows.
+  // Tier-1 breadcrumb labels match the sidebar's section rows.
   const engine = createEngine(pages, operations, schemas, {
-    operations: t('c:operation', { count: 2 }).toLowerCase(),
-    schemas: t('c:schema', { count: 2 }).toLowerCase(),
+    operations: t('c:operation', { count: 2 }),
+    schemas: t('c:schema', { count: 2 }),
   });
   let hasOperations = operations !== null;
   let hasSchemas = schemas !== null;

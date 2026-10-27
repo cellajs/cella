@@ -124,7 +124,7 @@ function DropdownMenuLabel({ className, inset, ...props }: MenuPrimitive.GroupLa
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn('px-2 py-1.5 font-medium text-sm data-inset:pl-8', className)}
+      className={cn('group-label px-2 py-1.5 data-inset:pl-8', className)}
       {...props}
     />
   );

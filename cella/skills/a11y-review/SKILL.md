@@ -38,7 +38,7 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 - **Dragging (2.5.7)**: every drag (reorder, resize, move) has a button or key that does the same. A reorder grip (`ReorderHandle`) opens a move menu on a click when increased contrast is on, which the audit always runs with; its arrow keys cover the keyboard.
 - **Character keys (2.1.4)**: every hotkey needs Ctrl, Alt or Meta (`Mod`), as in `app-nav.tsx`. There is no switch to turn shortcuts off, so a character alone or with Shift is never registered.
 - **Motion (2.2.2)**: animation follows the reduced-motion preference: `motion-reduce:` on CSS transitions and animations, `<MotionConfig reducedMotion="user">` or `useReducedMotion()` for `motion` components.
-- **Dimmed text (1.4.3)**: dim text with a color token such as `text-muted-foreground`. `opacity-*` on text lowers its contrast below what the token was measured at.
+- **Dimmed text (1.4.3)**: dim text with a step: `text-muted-foreground` for support text, `text-faint-foreground` for hints. `opacity-*` or a modifier such as `/70` on text lowers its contrast below what the token was measured at.
 
 ## The fix loop
 

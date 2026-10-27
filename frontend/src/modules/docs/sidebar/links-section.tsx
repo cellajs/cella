@@ -13,7 +13,7 @@ interface LinksSectionProps {
   label: string;
 }
 
-const rowClass = tw('w-full justify-start lowercase');
+const rowClass = tw('w-full justify-start');
 
 export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();

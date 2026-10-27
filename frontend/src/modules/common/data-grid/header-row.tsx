@@ -19,7 +19,7 @@ export interface HeaderRowProps<R, SR> {
   headerRowClass: Maybe<string>;
 }
 
-export const headerRowClassname = 'rdg-header-row contents font-semibold text-muted-foreground';
+export const headerRowClassname = 'rdg-header-row contents group-label';
 
 function HeaderRow<R, SR>({
   headerRowClass,

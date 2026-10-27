@@ -12,7 +12,7 @@ interface NodeKeyProps {
   ref?: Ref<HTMLSpanElement>;
 }
 
-const colon = <span className="mr-1 opacity-70">:</span>;
+const colon = <span className="mr-1 text-faint-foreground">:</span>;
 
 export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: NodeKeyProps) {
   if (keyName === false) return null;

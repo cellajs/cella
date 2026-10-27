@@ -85,7 +85,7 @@ export function InfoContent() {
             <Button
               variant="link"
               size="auto"
-              className="gap-1 text-xs opacity-50 hover:opacity-70"
+              className="gap-1 text-faint-foreground text-xs hover:text-muted-foreground"
               onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
             >
               <ExternalLinkIcon className="size-3" />

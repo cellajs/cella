@@ -6,7 +6,7 @@ interface PanelHeadingProps {
   className?: string;
 }
 
-/** The muted lowercase heading over a block in a nav sheet panel. */
+/** The heading over a block in a nav sheet panel. */
 export function PanelHeading({ children, className }: PanelHeadingProps) {
-  return <h3 className={cn('font-medium text-muted-foreground text-sm lowercase', className)}>{children}</h3>;
+  return <h3 className={cn('group-label', className)}>{children}</h3>;
 }

@@ -43,7 +43,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="py-2 opacity-80 hover:opacity-100 group-data-open/accordion-header:opacity-100">
+            <AccordionTrigger className="py-2 text-foreground-soft hover:text-foreground group-data-open/accordion-header:text-foreground">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
                 <div className={cn('rounded px-2 py-0.5 font-mono font-semibold', getStatusColor(response.status))}>{response.status}</div>
                 <div

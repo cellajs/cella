@@ -31,7 +31,7 @@ function LabelList({ items }: { items: LabelItem[] }) {
     <div className="truncate text-muted-foreground text-xs">
       {items.map(({ key, label, tooltip }, index) => (
         <Fragment key={key}>
-          {index > 0 && <span className="text-muted-foreground/70">, </span>}
+          {index > 0 && <span className="text-faint-foreground">, </span>}
           <span
             className={cn(
               'cursor-default',

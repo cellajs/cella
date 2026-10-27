@@ -49,9 +49,9 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
               'w-full justify-start hover:bg-accent/50',
               // The ghost hover swaps the text color, so a destructive row restates its own
               destructive && 'text-destructive hover:text-destructive',
-              // Rows at rest sit back like the page tabs; hover, focus and the active row come forward. Dimmed, destructive text drops below 4.5:1
-              !destructive && 'opacity-70',
-              'more-contrast:opacity-100 transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
+              // Rows at rest sit back like the page tabs; hover, focus and the active row come forward
+              !destructive && 'text-muted-foreground focus-visible:text-foreground data-spy-active:text-foreground',
+              'transition-[color,background-color]',
               // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
               'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
               tabClassName,

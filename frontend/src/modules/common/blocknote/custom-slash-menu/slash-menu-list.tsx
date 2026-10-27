@@ -72,7 +72,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
               {item.title}
             </div>
             {items.length === originalItemCount && index < indexedItemCount && (
-              <span className="flex min-w-4 py-0.5 pl-1 text-[0.8rem] text-muted-foreground/70">{index + 1}</span>
+              <span className="flex min-w-4 py-0.5 pl-1 text-[0.8rem] text-faint-foreground">{index + 1}</span>
             )}
           </button>
         </div>

@@ -37,9 +37,9 @@ interface SwitcherOrganizationItemProps {
 function SwitcherOrganizationItem({ organization, selected, unseenCount }: SwitcherOrganizationItemProps) {
   return (
     <DropdownSelectItem selected={selected} onSelect={() => showMenuOrganization(organization)}>
-      <span className={cn('flex min-w-0 items-center gap-3', organization.membership.archived && 'opacity-70')}>
+      <span className={cn('flex min-w-0 items-center gap-3', organization.membership.archived && 'text-muted-foreground')}>
         <EntityAvatar
-          className="size-6 shrink-0"
+          className={cn('size-6 shrink-0', organization.membership.archived && 'opacity-70')}
           type={organization.entityType}
           id={organization.id}
           name={organization.name}
@@ -76,7 +76,7 @@ function OrganizationSwitcherMenu({ organization }: OrganizationSwitcherProps) {
         : archived.length > 0 && (
             <DropdownActionItem icon={ArchiveIcon} closeOnSelect={false} onSelect={() => setShowsArchived(true)}>
               {t('c:show_archived')}
-              <span className="ml-auto text-muted-foreground text-xs">{archived.length}</span>
+              <span className="ml-auto text-faint-foreground text-xs">{archived.length}</span>
             </DropdownActionItem>
           )}
     </>

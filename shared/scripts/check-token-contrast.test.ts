@@ -50,6 +50,16 @@ describe('tokenContrastFindings', () => {
     expect(dark.map(({ message }) => message)).toContainEqual(expect.stringContaining('status color as text'));
   });
 
+  it('measures an alias with the color it names in each mode, so a token that points elsewhere is not skipped', () => {
+    const source = theme(
+      ['--foreground: oklch(0.2 0.01 285);', '--secondary: oklch(0.96 0.004 285);', '--secondary-foreground: var(--foreground);'],
+      ['--foreground: oklch(0.35 0.01 285);', '--secondary: oklch(0.31 0.01 285);'],
+    );
+    const messages = tokenContrastFindings(file, source).map(({ message }) => message);
+    expect(messages).toContainEqual(expect.stringMatching(/in dark mode, below 4\.5:1 \(--secondary-foreground on --secondary\)$/));
+    expect(messages).not.toContainEqual(expect.stringContaining('light mode, below 4.5:1 (--secondary-foreground'));
+  });
+
   it('reports a raised control edge below 3:1', () => {
     const source = theme(['--edge-raised: oklch(0.88 0.005 285);'], ['--edge-raised: oklch(0.54 0.011 285);']);
     const findings = tokenContrastFindings(file, source);

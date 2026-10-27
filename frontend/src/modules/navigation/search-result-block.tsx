@@ -31,11 +31,11 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
       <ComboboxGroup>
         <button
           type="button"
-          className="sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-4 py-2 font-medium text-muted-foreground text-sm backdrop-blur-sm hover:text-foreground"
+          className="group-label sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-4 py-2 backdrop-blur-sm hover:text-foreground"
           onClick={onToggleCollapsed}
         >
           {t(entityType)}
-          {collapsed && <span className="ml-3 text-muted-foreground text-xs">{results.length}</span>}
+          {collapsed && <span className="ml-3 font-normal text-faint-foreground">{results.length}</span>}
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>

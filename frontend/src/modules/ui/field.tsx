@@ -248,7 +248,7 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
 
 /** The star after a required field's label or legend. */
 export function RequiredMark() {
-  return <span className="ml-1 text-muted-foreground/70">*</span>;
+  return <span className="ml-1 text-faint-foreground">*</span>;
 }
 
 export function FormLabel({
