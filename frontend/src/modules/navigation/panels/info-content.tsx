@@ -21,7 +21,7 @@ const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_30%,transparent)]' },
 };
 
-const statusCardClass = tw('flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs');
+const statusCardClass = tw('flex items-center gap-2 rounded-md border border-input border-dashed px-4 py-2 text-left text-xs');
 
 function StatusDot({ status }: { status: HealthStatus }) {
   return (

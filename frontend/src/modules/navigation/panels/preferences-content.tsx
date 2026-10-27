@@ -1,13 +1,15 @@
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { getTools, resolvePlacementList } from '~/lib/placements';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { OfflineAccessSwitch } from '~/modules/navigation/panels/offline-access-switch';
 import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-const pwaEnabled = appConfig.has.pwa;
+const slot = 'account.preferences';
 
+/** The appearance switches, then a group per tool of the `account.preferences` slot. */
 export function PreferencesContent() {
   const { t } = useTranslation();
 
@@ -24,6 +26,7 @@ export function PreferencesContent() {
   const setContrast = useUIStore((state) => state.setContrast);
 
   const { mutate: updateSelf } = useUpdateSelfMutation();
+  const tools = resolvePlacementList(slot, getTools(slot));
 
   // Applied before the round trip, so the page answers the switch at once; the column is what makes it follow the user.
   const handleContrastChange = (checked: boolean) => {
@@ -69,11 +72,23 @@ export function PreferencesContent() {
         )}
       </PreferencesGroup>
 
-      {pwaEnabled && (
-        <PreferencesGroup title={t('c:offline')} help className="pb-8">
-          <OfflineAccessSwitch />
-        </PreferencesGroup>
-      )}
+      {tools.map((tool) => (
+        <Suspense key={tool.id} fallback={null}>
+          {tool.render(undefined)}
+        </Suspense>
+      ))}
     </>
+  );
+}
+
+/** The indicators of the `account.preferences` slot's tools, for the closed panel's toggle. */
+export function PreferencesIndicators() {
+  return resolvePlacementList(slot, getTools(slot)).map(
+    (tool) =>
+      tool.indicator && (
+        <Suspense key={tool.id} fallback={null}>
+          {tool.indicator()}
+        </Suspense>
+      ),
   );
 }

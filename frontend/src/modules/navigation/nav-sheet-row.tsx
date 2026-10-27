@@ -6,18 +6,18 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
-/** `onClick` acts in place and `render` is the row's element; `to` links, and while offline it warns and stays put unless `offlineAccess`. */
+/** `onClick` acts in place and `render` is the row's element; `to` links, and while offline it warns and stays put. */
 type NavSheetRowProps = { icon: IconComponent; label: string; id?: string; destructive?: boolean; ref?: Ref<HTMLButtonElement> } & (
   | { onClick: () => void }
   | { render: ButtonProps['render'] }
-  | ({ to: string } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never }))
+  | { to: string; isOnline: boolean }
 );
 
 /** A full-width row of a nav sheet list; a `to` row closes the sheets unless the nav is pinned. */
 export function NavSheetRow(props: NavSheetRowProps) {
   const { icon: Icon, label, id, destructive, ref } = props;
 
-  const isDisabled = 'to' in props && !props.offlineAccess && !props.isOnline;
+  const isDisabled = 'to' in props && !props.isOnline;
 
   const linkElement =
     'to' in props ? (

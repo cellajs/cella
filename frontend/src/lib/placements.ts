@@ -57,6 +57,8 @@ export interface UserProfileContext {
 export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSlotContexts {
   /** The current user's account settings page (the consumer passes no grants or pairs). */
   'account.settings': MeUser;
+  /** The account sheet's preferences panel, a group per tool below the appearance group: settings of this device, so no context. */
+  'account.preferences': undefined;
   /** The home page's stacked sections below the built-in content (no grants or pairs). */
   'home.sections': MeUser;
   /** A user's profile page body below the header, stacked (no grants or pairs); each tool owns its container. */
@@ -70,8 +72,19 @@ type _SlotsCovered = [keyof SlotContexts] extends [Slot] ? ([Slot] extends [keyo
 const _slotsCovered: _SlotsCovered = true;
 void _slotsCovered;
 
+/** Fields a slot's tools add to the descriptor, for a consumer that reads more than `render`. */
+interface SlotToolFields {
+  'account.preferences': {
+    /** Rendered after the panel toggle's label while the panel is closed, such as a dot when something needs attention. */
+    indicator?: () => ReactNode;
+  };
+}
+
 /** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */
-export type ToolFor<S extends Slot> = PlacementDescriptor & { slot: S; render: (context: SlotContexts[S]) => ReactNode };
+export type ToolFor<S extends Slot> = PlacementDescriptor & {
+  slot: S;
+  render: (context: SlotContexts[S]) => ReactNode;
+} & (S extends keyof SlotToolFields ? SlotToolFields[S] : unknown);
 
 export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 

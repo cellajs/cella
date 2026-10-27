@@ -112,7 +112,7 @@ Apps derive per-user state from `query/realtime/sync-signals.ts`, never from que
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream, a delivery shortfall or an absent CDC worker drops them to a five-minute stale time until a clean catchup or the worker's return ([REST fallback](#rest-fallback)). Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream, a delivery shortfall or an absent CDC worker drops them to a five-minute stale time until a clean catchup or the worker's return ([REST fallback](#rest-fallback)). Other queries keep the global 30-second default, infinite while offline.
 
 ### Unseen tracking
 

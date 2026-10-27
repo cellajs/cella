@@ -19,7 +19,7 @@ const title = 'Attachment could not be updated. Try again later.';
 describe('createResourceError', () => {
   it('shows the reason the server gave for refusing the request, in the words of an app type no key describes too', () => {
     handleError('update', new ApiError({ status: 403, type: 'forbidden', entityType: 'attachment', severity: 'warn' }));
-    expect(toaster.error).toHaveBeenLastCalledWith(title, { description: 'You do not have enough permission to access this attachment.' });
+    expect(toaster.error).toHaveBeenLastCalledWith(title, { description: "You don't have access to this attachment." });
 
     const refusal = { status: 409, type: 'label_mode_locked', name: 'Mode is fixed', message: 'A primary label keeps its mode.' } as const;
     handleError('update', new ApiError({ ...refusal, severity: 'warn' }));

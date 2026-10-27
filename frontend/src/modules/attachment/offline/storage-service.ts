@@ -332,10 +332,17 @@ class AttachmentStorageService {
     };
   }
 
-  /** Bytes the evictable blobs take on this device, and per entry of `tiers` the bytes `trimToTier` would drop for it. */
-  async tierFootprint(tiers: OfflineFilesRules[]): Promise<{ bytes: number; dropped: number[] }> {
+  /**
+   * Bytes the evictable blobs take on this device, per entry of `tiers` the bytes `trimToTier` would drop for it, and
+   * when the newest of them was stored (ms), null while none is.
+   */
+  async tierFootprint(tiers: OfflineFilesRules[]): Promise<{ bytes: number; dropped: number[]; lastStoredAt: number | null }> {
     const blobs = (await attachmentsDb.blobs.toArray()).filter(isEvictable);
-    return { bytes: sumBytes(blobs), dropped: tiers.map((rules) => sumBytes(blobsOverTier(blobs, rules))) };
+    return {
+      bytes: sumBytes(blobs),
+      dropped: tiers.map((rules) => sumBytes(blobsOverTier(blobs, rules))),
+      lastStoredAt: blobs.length ? blobs.reduce((latest, blob) => Math.max(latest, blob.storedAt.getTime()), 0) : null,
+    };
   }
 
   /** Deletes what `blobsOverTier` picks for these rules. */

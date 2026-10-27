@@ -69,7 +69,7 @@ describe('AppError', () => {
       'An organization always keeps at least one admin. Make someone else an admin first.',
     );
     // A type without a `.text` falls back to its title.
-    expect(new AppError(409, 'slug_exists', 'warn').message).toBe('Slug already exists');
+    expect(new AppError(400, 'passkey_registration_failed', 'warn').message).toBe('Passkey registration failed. Try again later.');
   });
 
   it('keeps the message written at the throw, which a client outside development never sees for a 5xx', () => {

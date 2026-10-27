@@ -6,7 +6,6 @@ import { isRecord } from 'shared/utils/as-record';
 import type * as Y from 'yjs';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
 import { postTabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
-import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
   type LocalUserDatabase,
@@ -33,8 +32,6 @@ const maxStoredBytes = 50 * 1024 * 1024;
 const evictMinAgeMs = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
 const evictIntervalMs = 60_000;
-/** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
-const sessionKeepMs = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
 const resumeConcurrency = 3;
 
@@ -599,16 +596,15 @@ function scheduleEviction() {
 const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => yDocKeyString(writer.key)));
 
 /**
- * Deletes the least recently opened documents past `maxStoredDocs` or `maxStoredBytes`, and in session mode past
- * `sessionKeepMs`: never one with unsynced edits, open in this tab or opened within `evictMinAgeMs`, and never parked
- * edits. Then warns when the device's storage runs low, or the limits stay reached.
+ * Deletes the least recently opened documents past `maxStoredDocs` or `maxStoredBytes`: never one with unsynced edits,
+ * open in this tab or opened within `evictMinAgeMs`, and never parked edits. Then warns when the device's storage runs
+ * low, or the limits stay reached.
  */
 export async function evictYDocs(): Promise<void> {
   const db = getLocalUserDb();
   if (!db) return;
   lastEvictionAt = Date.now();
   const now = Date.now();
-  const sessionMode = !uiStore.getState().offlineAccess;
   const open = openKeys();
   const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(yDocKeyString(record)) && now - record.lastOpenedAt > evictMinAgeMs;
 
@@ -618,8 +614,7 @@ export async function evictYDocs(): Promise<void> {
   const victims: YDocRecord[] = [];
   for (const record of records) {
     if (!evictable(record)) continue;
-    const expired = sessionMode && now - record.lastOpenedAt > sessionKeepMs;
-    if (!expired && count <= maxStoredDocs && bytes <= maxStoredBytes) continue;
+    if (count <= maxStoredDocs && bytes <= maxStoredBytes) break;
     victims.push(record);
     count--;
     bytes -= record.bytes;

@@ -1,5 +1,4 @@
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
-import { uiStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { deleteLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
@@ -16,9 +15,6 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
 
   // Hard sign-out only: destroy all per-user persisted data while the owner is still known. Other tabs see the delete and sign out too.
   if (wipe) await deleteLocalUserDb();
-
-  // Reset the bootstrap UI session flag (offline access); theme/mode persist.
-  uiStore.getState().reset();
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
   if (wipe) userStore.getState().reset();

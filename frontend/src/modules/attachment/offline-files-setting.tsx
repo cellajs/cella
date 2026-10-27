@@ -1,7 +1,7 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
-import { liveQuery } from 'dexie';
+import dayjs from 'dayjs';
 import { TriangleAlertIcon } from 'lucide-react';
-import { type PointerEvent, useEffect, useId, useRef, useState } from 'react';
+import { type PointerEvent, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   defaultOfflineFilesTier,
@@ -10,11 +10,9 @@ import {
   offlineFilesTiers,
   useOfflineFilesStore,
 } from '~/modules/attachment/offline/offline-files-store';
-import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { percentFull, useOfflineFootprint } from '~/modules/attachment/offline/use-offline-footprint';
 import { NamedText } from '~/modules/common/named-text';
-import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
-import { getLocalUserDb } from '~/query/local-user-db';
 import { cn } from '~/utils/cn';
 import { formatBytes } from '~/utils/format-bytes';
 
@@ -43,33 +41,12 @@ function trackPercent(bytes: number) {
   return 100;
 }
 
-interface OfflineFootprint {
-  /** Bytes the offline budget counts on this device. */
-  bytes: number;
-  /** Per tier in slider order, the bytes choosing it removes from this device. */
-  dropped: number[];
-}
-
-/** What this device stores for offline use, live while the card is open; null while signed out. */
-function useOfflineFootprint() {
-  const [footprint, setFootprint] = useState<OfflineFootprint | null>(null);
-  useEffect(() => {
-    if (!getLocalUserDb()) return;
-    const rules = offlineFilesTiers.map(offlineFilesRules);
-    const subscription = liveQuery(() => attachmentStorage.tierFootprint(rules)).subscribe({
-      next: setFootprint,
-      error: () => setFootprint(null),
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-  return footprint;
-}
-
 /**
- * The offline files tier of this device. The track draws what is stored against each tier's budget. Hovering or dragging
- * a stop previews it below; a tier that removes stored files waits for a confirmation, any other applies at once.
+ * The offline files tier of this device. The track draws what is stored against each tier's budget. At rest the balloon
+ * below says how full the tier is; while the slider is hovered, dragged or focused, it explains the stop it points at. A
+ * tier that removes stored files waits for a confirmation, any other applies at once.
  */
-export function OfflineFilesCard() {
+export function OfflineFilesSetting() {
   const { t } = useTranslation();
   const descriptionId = useId();
   const confirmId = useId();
@@ -80,6 +57,7 @@ export function OfflineFilesCard() {
   const [dragged, setDragged] = useState<number | null>(null);
   const [pending, setPending] = useState<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
   // The confirmation keeps its amount while it fades out
   const [askedBytes, setAskedBytes] = useState(0);
 
@@ -89,6 +67,11 @@ export function OfflineFilesCard() {
   const droppedBy = (index: number) => footprint?.dropped[index] ?? 0;
   const keptPercent = trackPercent(stored - droppedBy(explored));
   const asked = pending === null ? askedBytes : droppedBy(pending);
+  // Shown once the thumb rests on the tier it asks about; a drag explains the tiers it passes
+  const confirming = pending !== null && dragged === null;
+  // Off has no budget to fill, so its own explanation stays
+  const showStatus = dragged === null && pending === null && hovered === null && !keyboardFocus && budgets[current] > 0;
+  const showsTier = (index: number) => !showStatus && !confirming && index === explored;
 
   const apply = (index: number) => {
     const next = offlineFilesTiers[index];
@@ -138,7 +121,7 @@ export function OfflineFilesCard() {
     );
 
   return (
-    <ToolCard label="c:offline_files" description={t('c:offline_files.text')}>
+    <div>
       <SliderPrimitive.Root
         value={dragged ?? pending ?? current}
         min={0}
@@ -147,12 +130,16 @@ export function OfflineFilesCard() {
         onValueChange={(value) => {
           setDragged(value);
           setHovered(null);
+          // An open confirmation follows the thumb among tiers that remove files and closes on one that removes none
+          if (value === current || droppedBy(value) === 0) setPending(null);
         }}
         onValueCommitted={choose}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && pending !== null) cancel();
         }}
-        className="group/slider touch-none select-none [--tick-cut:var(--card)] max-sm:[--tick-cut:var(--background)]"
+        onFocus={(event) => setKeyboardFocus(event.target.matches(':focus-visible'))}
+        onBlur={() => setKeyboardFocus(false)}
+        className="group/slider touch-none select-none [--tick-cut:var(--background)]"
       >
         <SliderPrimitive.Control
           onPointerMove={hover}
@@ -210,7 +197,7 @@ export function OfflineFilesCard() {
             <SliderPrimitive.Thumb
               inputRef={thumbInputRef}
               aria-label={t('c:offline_files')}
-              aria-describedby={pending === null ? descriptionId : `${descriptionId} ${confirmId}`}
+              aria-describedby={confirming ? confirmId : descriptionId}
               getAriaValueText={(_, value) => valueText(value)}
               className={cn(
                 'focus-within-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 has-focus-visible:ring-offset-(--tick-cut) data-dragging:duration-150 motion-reduce:transition-none',
@@ -222,63 +209,74 @@ export function OfflineFilesCard() {
         </SliderPrimitive.Control>
       </SliderPrimitive.Root>
 
-      <div className={cn('relative mt-4 rounded-lg border bg-card p-4 transition-colors', pending !== null && 'border-destructive/50')}>
+      <div className={cn('relative mt-4 rounded-lg border bg-background p-4 transition-colors', pending !== null && 'border-destructive/50')}>
         <span
           aria-hidden="true"
           className={cn(
-            'absolute -top-1.75 size-3 -translate-x-1/2 rotate-45 rounded-tl-[3px] border-t border-l bg-card transition-[left,border-color] duration-300 motion-reduce:transition-none',
+            'absolute -top-1.75 size-3 -translate-x-1/2 rotate-45 rounded-tl-[3px] border-t border-l bg-background transition-[left,border-color] duration-300 motion-reduce:transition-none',
             snapEase,
             pending !== null && 'border-destructive/50',
           )}
           style={{ left: `clamp(1rem, ${stopPercent(explored)}%, calc(100% - 1rem))` }}
         />
+        {/* Every state stacks in one cell, so the balloon keeps the height of the tallest and the dialog never resizes */}
         <div className="grid text-sm">
+          <p
+            id={showStatus ? descriptionId : undefined}
+            aria-hidden={!showStatus}
+            className={cn(
+              'col-start-1 row-start-1 transition-opacity duration-300 ease-out motion-reduce:transition-none',
+              !showStatus && 'pointer-events-none opacity-0',
+            )}
+          >
+            {t('c:offline_files.status', {
+              percent: percentFull(stored, budgets[current]),
+              used: formatBytes(stored),
+              budget: formatBytes(budgets[current]),
+            })}
+            {footprint?.lastStoredAt && ` ${t('c:offline_files.last_saved', { time: dayjs(footprint.lastStoredAt).fromNow() })}`}
+          </p>
           {offlineFilesTiers.map((value, index) => (
             <p
               key={value}
-              id={index === explored ? descriptionId : undefined}
-              aria-hidden={index !== explored}
-              className={panelClass(index, index === explored)}
+              id={showsTier(index) ? descriptionId : undefined}
+              aria-hidden={!showsTier(index)}
+              className={panelClass(index, showsTier(index))}
             >
               {t(tierText[value].text, { budget: formatBytes(budgets[index]) })}
             </p>
           ))}
-        </div>
-        {/* Mounted and empty until a confirmation, so each one is announced */}
-        <p id={confirmId} role="status" className="sr-only">
-          {pending !== null && <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />}
-        </p>
-        <div
-          inert={pending === null}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') cancel();
-          }}
-          className={cn(
-            'grid transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none',
-            pending === null ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]',
-          )}
-        >
-          {/* -m-1 p-1 keeps the buttons' focus rings inside the clip */}
-          <div className="-m-1 overflow-hidden p-1">
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-3">
-              <p className="flex min-w-48 flex-1 gap-2 text-sm" aria-hidden="true">
-                <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-                <span>
-                  <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />
-                </span>
-              </p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={cancel}>
-                  {t('c:cancel')}
-                </Button>
-                <Button size="sm" variant="destructive" onClick={confirm}>
-                  {t('c:remove_resource', { resource: formatBytes(asked) })}
-                </Button>
-              </div>
+          <div
+            inert={!confirming}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') cancel();
+            }}
+            className={cn(
+              'col-start-1 row-start-1 flex flex-wrap items-center gap-x-3 gap-y-2 transition-opacity duration-300 ease-out motion-reduce:transition-none',
+              !confirming && 'pointer-events-none opacity-0',
+            )}
+          >
+            <p className="flex min-w-48 flex-1 gap-2" aria-hidden="true">
+              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <span>
+                <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />
+              </span>
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={cancel}>
+                {t('c:cancel')}
+              </Button>
+              <Button size="sm" variant="destructive" onClick={confirm}>
+                {t('c:remove_resource', { resource: formatBytes(asked) })}
+              </Button>
             </div>
           </div>
         </div>
+        {/* Mounted and empty until a confirmation, so each one is announced */}
+        <p id={confirmId} role="status" className="sr-only">
+          {confirming && <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />}
+        </p>
       </div>
-    </ToolCard>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useStore } from 'zustand';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import { runSyncService } from '~/query/realtime/sync-service';
 
@@ -10,7 +9,6 @@ const debugLabel = 'AppStream';
 export function AppStream() {
   // Only the connection state: the cursor advances on every event and nothing here renders it.
   const streamState = useStore(appStreamManager.store, (state) => state.state);
-  const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   // Route beforeLoad owns the disconnect lifecycle.
   useEffect(() => {
@@ -26,11 +24,11 @@ export function AppStream() {
   useEffect(() => {
     if (streamState !== 'live') return;
     const controller = new AbortController();
-    runSyncService(offlineAccess, controller.signal).catch((error) => {
+    runSyncService(controller.signal).catch((error) => {
       if (!controller.signal.aborted) console.debug(`[${debugLabel}] Sync service error:`, error);
     });
     return () => controller.abort();
-  }, [streamState, offlineAccess]);
+  }, [streamState]);
 
   return null;
 }

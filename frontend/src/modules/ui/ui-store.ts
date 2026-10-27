@@ -11,10 +11,6 @@ export type Mode = 'light' | 'dark';
 export type Contrast = User['contrast'];
 
 interface UIStoreState {
-  /** Persists the query cache to IndexedDB, so it survives a restart; a build without `appConfig.has.pwa` turns it off. */
-  offlineAccess: boolean;
-  toggleOfflineAccess: () => void;
-
   /** Defaults to the browser's `prefers-color-scheme`. */
   mode: Mode;
   setMode: (mode: Mode) => void;
@@ -43,36 +39,27 @@ interface UIStoreState {
   uiLocks: string[];
   lockUI: (source: string) => void;
   unlockUI: (source: string) => void;
-
-  /** Clears `offlineAccess` only; every other field keeps its value. */
-  reset: () => void;
 }
 
 // Guarded so tests in a node environment can import modules that reach this store
 const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'contrast' | 'offlineAccess' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'contrast' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   contrast: 'system',
-  offlineAccess: false,
   publicAlertsSeen: [],
   hintsSeen: [],
   focusView: false,
   uiLocks: [],
 };
 
-/** UI store for non-user-identifiable state: offline access, theme. */
+/** UI store for non-user-identifiable state: theme, mode, contrast. */
 export const useUIStore = create<UIStoreState>()(
   devtools(
     persist(
       immer((set) => ({
         ...initStore,
-        toggleOfflineAccess: () => {
-          set((state) => {
-            state.offlineAccess = !state.offlineAccess;
-          });
-        },
         setMode: (mode) => {
           set((state) => {
             state.mode = mode;
@@ -118,13 +105,11 @@ export const useUIStore = create<UIStoreState>()(
             }
           });
         },
-        reset: () => set(() => ({ offlineAccess: false })),
       })),
       {
         version: 1,
         name: `${appConfig.slug}-ui`,
         partialize: (state) => ({
-          offlineAccess: state.offlineAccess,
           mode: state.mode,
           theme: state.theme,
           contrast: state.contrast,
