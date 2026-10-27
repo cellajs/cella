@@ -8,6 +8,7 @@ import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from
 import { getLocalUserDb, type LocalUserDatabase, type PersistedMetaRecord, type PersistedQueryRecord } from '~/query/local-user-db';
 import { upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
+import { onPageHide } from '~/utils/on-page-hide';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 type DehydratedMutation = DehydratedState['mutations'][number];
@@ -407,16 +408,10 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 };
 
 // The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
-if (typeof document !== 'undefined') {
-  const flushPersisters = () => {
-    void persister.flush();
-    void sessionPersister.flush();
-  };
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushPersisters();
-  });
-  window.addEventListener('pagehide', flushPersisters);
-}
+onPageHide(() => {
+  void persister.flush();
+  void sessionPersister.flush();
+});
 
 /** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
 export function resetPersisters(): void {

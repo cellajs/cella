@@ -1,5 +1,6 @@
 import type { StateStorage } from 'zustand/middleware';
 import { getLocalUserDb, type LocalUserDatabase } from '~/query/local-user-db';
+import { onPageHide } from '~/utils/on-page-hide';
 
 /** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one transaction. */
 const writeDebounceMs = 250;
@@ -16,12 +17,7 @@ export const flushKvWrites = () => {
   for (const flush of flushers) flush();
 };
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushKvWrites();
-  });
-  window.addEventListener('pagehide', flushKvWrites);
-}
+onPageHide(flushKvWrites);
 
 /** Per-user Zustand storage over the live app database: writes are trailing-debounced per store, signed-out operations no-op, and every operation re-resolves the bound database. */
 export function idbKvStorage(key: string): StateStorage {
