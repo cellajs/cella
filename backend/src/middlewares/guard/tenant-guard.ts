@@ -5,7 +5,7 @@ import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { findConnectionBindingUser } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
-import { loadTenant } from '#/modules/tenants/operations/load-tenant';
+import { loadTenant } from '#/modules/tenants/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 
 type Actor = NonNullable<Env['Variables']['actor']>;

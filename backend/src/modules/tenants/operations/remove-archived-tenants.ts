@@ -1,31 +1,29 @@
-import { count, eq, getTableName, sql } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { productTables } from '#/db/product-tables';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { deleteTenantWithOrganization, findArchivedTenants } from '#/modules/tenants/tenants-queries';
-import { getIsoDate } from '#/utils/iso-date';
+import { deleteArchivedTenant, findArchivedTenants } from '#/modules/tenants/tenants-queries';
+import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
+import { TimeSpan } from '#/utils/time-span';
 import { tenantRemovedEmail } from '../../../../emails';
-
-const dayMs = 24 * 60 * 60 * 1000;
 
 /** What a tenant holds, one line per kind: its members and its live rows of every product type. */
 async function countTenantRows(tenantId: string): Promise<string[]> {
   const [members] = await baseDb.select({ total: count() }).from(membershipsTable).where(eq(membershipsTable.tenantId, tenantId));
   const products = await tenantReadById(tenantId, async (db) => {
     const lines: string[] = [];
-    for (const [entityType, table] of Object.entries(productTables)) {
-      const { rows } = await db.execute<{ total: number }>(
-        sql`SELECT count(*)::int AS total FROM ${sql.identifier(getTableName(table()))} WHERE tenant_id = ${tenantId}`,
-      );
-      lines.push(`${entityType}: ${rows[0]?.total ?? 0}`);
+    for (const [entityType, getTable] of Object.entries(productTables)) {
+      const table = getTable();
+      const [{ total }] = await db.select({ total: count() }).from(table).where(eq(table.tenantId, tenantId));
+      lines.push(`${entityType}: ${total}`);
     }
     return lines;
   });
-  return [`members: ${members?.total ?? 0}`, ...products];
+  return [`members: ${members.total}`, ...products];
 }
 
 /**
@@ -36,8 +34,8 @@ async function countTenantRows(tenantId: string): Promise<string[]> {
  * @returns The number of tenants removed.
  * @throws After every tenant ran, when any of them failed, so the jobs worker records a failed run.
  */
-export async function removeArchivedTenants(now = Date.now()): Promise<number> {
-  const archivedBefore = new Date(now - appConfig.retention.archivedTenantDays * dayMs).toISOString();
+export async function removeArchivedTenants(): Promise<number> {
+  const archivedBefore = isoDateAgo(new TimeSpan(appConfig.retention.archivedTenantDays, 'd'));
   const due = await findArchivedTenants({ var: { db: baseDb } }, { archivedBefore });
 
   let removed = 0;
@@ -45,7 +43,9 @@ export async function removeArchivedTenants(now = Date.now()): Promise<number> {
   for (const tenant of due) {
     try {
       const counts = await countTenantRows(tenant.id);
-      await deleteTenantWithOrganization({ var: { db: baseDb } }, { tenantId: tenant.id });
+      const deleted = await deleteArchivedTenant({ var: { db: baseDb } }, { tenantId: tenant.id, archivedBefore });
+      // Restored or archived again since the listing: kept, and no mail.
+      if (!deleted) continue;
       removed += 1;
       log.info('Archived tenant removed', { tenantId: tenant.id, counts });
       const statics = { tenantId: tenant.id, tenantName: tenant.name, archivedAt: tenant.statusChangedAt, removedAt: getIsoDate(), counts };

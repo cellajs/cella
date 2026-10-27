@@ -4,8 +4,8 @@ import { maxLength } from '#/db/utils/constraints';
 
 /**
  * Pre-registered OAuth apps (a student portfolio, a partner integration): deployment-wide, installed per tenant by a
- * `service_accounts` row carrying `clientId`. MCP clients need no row: they identify themselves with a Client ID
- * Metadata Document and the user's consent is the gate. Service accounts are not rows here either; their
+ * `service_accounts` row carrying its id in `oauthClientId`. MCP clients need no row: they identify themselves with a
+ * Client ID Metadata Document and the user's consent is the gate. Service accounts are not rows here either; their
  * `client_credentials` client is the account itself, authenticated with its secret key.
  */
 export const oauthClientsTable = snakeCase.table('oauth_clients', {

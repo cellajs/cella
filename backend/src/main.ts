@@ -13,7 +13,7 @@ if (env.MODE === 'migrate') {
 } else if (env.MODE === 'mcp') {
   (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker().catch(exitOnStartFailure('mcp-worker'));
 } else if (env.MODE === 'oauth') {
-  (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthServer().catch(exitOnStartFailure('oauth-server'));
+  (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthWorker().catch(exitOnStartFailure('oauth-worker'));
 } else if (env.MODE === 'jobs') {
   (await import('#/lib/jobs-worker')).startJobsWorker().catch(exitOnStartFailure('jobs'));
 } else {

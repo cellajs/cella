@@ -3,9 +3,10 @@ import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
-import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
+import { textSearchFilter } from '#/utils/sql';
 
 /** Tenant columns a response carries. */
 const tenantColumns = pick(tenantsTable, [
@@ -31,10 +32,12 @@ const selectTenants = (ctx: DbContext) => {
   return db
     .select({
       ...tenantColumns,
-      organizationId: organizationsTable.id,
-      organizationName: organizationsTable.name,
-      organizationSlug: organizationsTable.slug,
-      organizationThumbnailUrl: organizationsTable.thumbnailUrl,
+      organization: {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        slug: organizationsTable.slug,
+        thumbnailUrl: organizationsTable.thumbnailUrl,
+      },
     })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
@@ -44,36 +47,31 @@ const selectTenants = (ctx: DbContext) => {
 type TenantRow = Awaited<ReturnType<typeof selectTenants>>[number];
 
 /**
- * Folds the flat org columns into `organization` (null for an orphan tenant) and gives a stored row the
- * restriction fields it predates, so one such row cannot fail a whole list.
+ * Marks the organization (null for an orphan tenant) with its entity type and gives a stored row the restriction
+ * fields it predates, so one such row cannot fail a whole list.
  */
-const toTenant = ({ organizationId, organizationName, organizationSlug, organizationThumbnailUrl, ...tenant }: TenantRow) => ({
+const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   ...tenant,
   restrictions: normalizeRestrictions(tenant.restrictions),
-  organization: organizationId
-    ? {
-        id: organizationId,
-        // Non-null within this branch: the left join returns them on the same row as the id.
-        name: organizationName as string,
-        slug: organizationSlug as string,
-        thumbnailUrl: organizationThumbnailUrl,
-        entityType: 'organization' as const,
-      }
-    : null,
+  organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
 interface FindTenantsPaginatedOpts {
-  filters: SQL[];
+  /** Searches the name. */
+  q?: string;
+  status?: TenantModel['status'];
   sort?: 'name' | 'createdAt';
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
 
+/** A page of tenants, each with its organization, and the total. */
 export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { filters, sort, order, limit, offset } = opts;
-  const whereClause = and(...filters);
+  const { q, status, sort, order, limit, offset } = opts;
+
+  const filter = and(q ? textSearchFilter(tenantsTable.name, q) : undefined, status ? eq(tenantsTable.status, status) : undefined);
 
   const orderBy = getOrderColumns({
     sort,
@@ -84,7 +82,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   });
 
   const itemsQuery = selectTenants(ctx)
-    .where(whereClause)
+    .where(filter)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset)
@@ -93,14 +91,18 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
     getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(whereClause);
+      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(filter);
       return total;
     },
   });
 };
 
+interface FindTenantOpts {
+  where: SQL | undefined;
+}
+
 /** The first tenant matching `where`, in its response shape; undefined when none matches. */
-export const findTenant = async (ctx: DbContext, { where }: { where: SQL | undefined }) => {
+export const findTenant = async (ctx: DbContext, { where }: FindTenantOpts) => {
   const [row] = await selectTenants(ctx).where(where).limit(1);
   return row ? toTenant(row) : undefined;
 };
@@ -115,11 +117,22 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: FindOrphan
   return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
 };
 
-interface UpdateTenantOpts {
-  targetTenantId: string;
-  values: Partial<typeof tenantsTable.$inferInsert>;
+interface InsertTenantOpts {
+  values: InsertTenantModel;
 }
 
+/** Inserts a tenant; status, restrictions and subscription take their column defaults. */
+export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts): Promise<TenantModel> => {
+  const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
+  return tenant;
+};
+
+interface UpdateTenantOpts {
+  targetTenantId: string;
+  values: Partial<InsertTenantModel>;
+}
+
+/** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
 export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: UpdateTenantOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, targetTenantId)).returning(tenantColumns);
@@ -131,22 +144,39 @@ interface FindArchivedTenantsOpts {
   archivedBefore: string;
 }
 
+/** The sweep's condition: read when it lists the tenants, and again under the row lock before each delete. */
+const dueForRemoval = (archivedBefore: string) => and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore));
+
 /** Tenants archived before `archivedBefore`, the ones the archived-tenant sweep removes. */
 export const findArchivedTenants = async (ctx: DbContext, { archivedBefore }: FindArchivedTenantsOpts) => {
   return ctx.var.db
     .select({ id: tenantsTable.id, name: tenantsTable.name, statusChangedAt: tenantsTable.statusChangedAt })
     .from(tenantsTable)
-    .where(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)));
+    .where(dueForRemoval(archivedBefore));
 };
 
+interface DeleteArchivedTenantOpts extends FindArchivedTenantsOpts {
+  tenantId: string;
+}
+
 /**
- * Deletes a tenant and its organization in one transaction. The organization goes first: its cascade takes the
- * channels, products, memberships and collaborative documents, and their delete triggers queue the stored files. The
- * tenant row then takes its service accounts, API keys and connections.
+ * Deletes a tenant archived before `archivedBefore` and its organization in one transaction. It first locks the tenant
+ * row and reads it again: a tenant restored, or archived again, since the sweep listed it stays, and a restore that
+ * comes later waits for the delete and then finds no row. The organization goes first: its cascade takes the channels,
+ * products, memberships and collaborative documents, and their delete triggers queue the stored files. The tenant row
+ * then takes its service accounts, API keys and connections.
+ * @returns Whether the tenant was still due and is deleted.
  */
-export const deleteTenantWithOrganization = async (ctx: DbContext, { tenantId }: { tenantId: string }): Promise<void> => {
-  await ctx.var.db.transaction(async (tx) => {
+export const deleteArchivedTenant = async (ctx: DbContext, { tenantId, archivedBefore }: DeleteArchivedTenantOpts): Promise<boolean> => {
+  return ctx.var.db.transaction(async (tx) => {
+    const [due] = await tx
+      .select({ id: tenantsTable.id })
+      .from(tenantsTable)
+      .where(and(eq(tenantsTable.id, tenantId), dueForRemoval(archivedBefore)))
+      .for('update');
+    if (!due) return false;
     await tx.delete(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
     await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    return true;
   });
 };

@@ -37,7 +37,7 @@ export const isFederationConfigured = (key: FederationKey): boolean => {
  */
 export const getFederation = (key: FederationKey): Federation => {
   const { clientId, clientSecret } = clientOf(key);
-  if (!clientId || !clientSecret) throw new AppError(400, 'sso_not_configured', 'error', { meta: { federation: key } });
+  if (!clientId || !clientSecret) throw new AppError(400, 'sso_not_configured', 'error', { meta: { strategy: key } });
 
   return { ...appConfig.federations[key], key, clientId, clientSecret, redirectUri: `${appConfig.backendAuthUrl}/sso/callback` };
 };

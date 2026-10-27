@@ -3,13 +3,15 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { withActorRef } from '#/modules/actors/actor-refs';
-import { findConnectionById, findConnectionsClaiming, updateConnection } from '#/modules/connections/connections-queries';
+import { findConnectionById, updateConnection } from '#/modules/connections/connections-queries';
 import type { updateConnectionBodySchema } from '#/modules/connections/connections-schema';
+import { assertClaimValuesFree } from '#/modules/connections/operations/assert-claim-values-free';
+import { log } from '#/utils/logger';
 
 type UpdateConnectionInput = z.infer<typeof updateConnectionBodySchema>;
 
 /**
- * Changes a tenant's connection: name, domains, IdP entity ids, status, provisioning. The federation stays what it was.
+ * Changes a tenant's connection: name, domains, IdP entity ids, logo, status, provisioning. The federation stays what it was.
  * @throws AppError 404 `not_found`, 409 `resource_already_exists` when a new domain is accepted by another connection.
  */
 export async function updateConnectionOp(ctx: UserContext, id: string, input: UpdateConnectionInput) {
@@ -18,20 +20,18 @@ export async function updateConnectionOp(ctx: UserContext, id: string, input: Up
 
   const { displayName, claimValues, idpEntityIds, status, jitProvisioning, logoUrl } = input;
 
-  if (claimValues) {
-    const taken = await findConnectionsClaiming(ctx, { issuer: existing.issuer, claimValues, excludeId: existing.id });
-    if (taken.length) throw new AppError(409, 'resource_already_exists', 'warn', { meta: { resource: 'connection', claimValues } });
-  }
+  if (claimValues) await assertClaimValuesFree(ctx, { issuer: existing.issuer, claimValues, excludeId: existing.id });
 
   const config =
-    idpEntityIds || logoUrl !== undefined
-      ? { ...existing.config, ...(idpEntityIds ? { idpEntityIds } : {}), ...(logoUrl ? { logoUrl } : {}) }
-      : undefined;
+    idpEntityIds || logoUrl ? { ...existing.config, ...(idpEntityIds ? { idpEntityIds } : {}), ...(logoUrl ? { logoUrl } : {}) } : undefined;
 
   const updated = await updateConnection(ctx, {
     id: existing.id,
     tenantId: ctx.var.tenantId,
     values: { displayName, claimValues, status, jitProvisioning, config, ...updateStamps(ctx.var.actor.id) },
   });
+
+  log.info('Connection updated', { connectionId: id, tenantId: ctx.var.tenantId, status });
+
   return withActorRef(ctx, updated);
 }

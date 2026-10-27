@@ -891,6 +891,26 @@ describe('OAuth grants', async () => {
       expect(allowed.code).toBeTruthy();
     });
 
+    it('must not grant consent via a decision whose accept is not a boolean', async () => {
+      const ctx = await tenantWithApp();
+      const origin = new URL(oauth.issuer).origin;
+
+      for (const body of ['{"accept":"false"}', '{"accept":1}', '{']) {
+        const { browser, uid } = await startAuthorization(oauth.issuer, authorization(ctx));
+        const decision = await fetch(`${origin}/oauth/interaction/${uid}/consent`, {
+          method: 'POST',
+          headers: { Cookie: browser.header(), 'Content-Type': 'application/json' },
+          body,
+        });
+        expect(decision.status, body).toBe(400);
+        expect(await decision.json()).toMatchObject({ type: 'invalid_request' });
+      }
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+
+      // Positive control: a boolean accept from the same member yields a code.
+      expect((await authorizationCode(oauth.issuer, authorization(ctx))).code).toBeTruthy();
+    });
+
     it('must not show a logo or name via the metadata document of an unregistered client', async () => {
       const ctx = await tenantWithApp();
 

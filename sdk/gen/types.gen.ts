@@ -464,14 +464,14 @@ export type Tenant = {
   statusChangedAt: string;
   restrictions: {
     /**
-     * Entity quotas (0 = unlimited)
+     * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
      */
     quotas: {
       [key: string]: number;
     };
     rateLimits: {
       /**
-       * Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)
+       * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
        */
       apiPointsPerHour: number;
     };
@@ -4332,7 +4332,7 @@ export type UpdateTenantData = {
      */
     restrictions?: {
       /**
-       * Entity quotas (0 = unlimited)
+       * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
        */
       quotas?: {
         user?: number;

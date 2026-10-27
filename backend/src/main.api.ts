@@ -76,7 +76,7 @@ const main = async () => {
           inProcess: true,
         });
       if (appConfig.services.oauth.enabled)
-        await (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthServer({
+        await (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthWorker({
           port: appConfig.devPorts.oauth,
           inProcess: true,
         });

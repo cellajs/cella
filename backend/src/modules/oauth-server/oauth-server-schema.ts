@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockProtectedResourceResponse } from './oauth-server-mocks';
+import { mockProtectedResourceResponse } from '#/modules/oauth-server/oauth-server-mocks';
 
 /** RFC 9728 protected resource metadata: what a client reads to find the authorization server of a resource. */
 export const protectedResourceSchema = z

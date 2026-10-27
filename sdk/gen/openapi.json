@@ -319,7 +319,7 @@
     },
     {
       "name": "tenants",
-      "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level\n    Security (RLS) to partition data. Only system administrators can manage tenants.",
+      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds\n    one organization and carries its quotas, rate limits and sign-in policy. System admins list and update tenants, a\n    signed-in user creates one of their own, and an archived tenant is removed after the archived period.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1978,7 +1978,7 @@
                   "type": "integer",
                   "minimum": 0
                 },
-                "description": "Entity quotas (0 = unlimited)"
+                "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
               },
               "rateLimits": {
                 "type": "object",
@@ -1986,7 +1986,7 @@
                   "apiPointsPerHour": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                    "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                   }
                 },
                 "required": ["apiPointsPerHour"]
@@ -8685,7 +8685,7 @@
                             "minimum": 0
                           }
                         },
-                        "description": "Entity quotas (0 = unlimited)"
+                        "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
                       },
                       "allowUnregisteredClients": {
                         "type": "boolean"
@@ -8905,8 +8905,7 @@
                   },
                   "logoUrl": {
                     "type": "string",
-                    "maxLength": 255,
-                    "format": "uri"
+                    "maxLength": 255
                   }
                 },
                 "required": ["issuer", "displayName", "claimValues", "idpEntityIds"]
@@ -9030,8 +9029,7 @@
                   },
                   "logoUrl": {
                     "type": "string",
-                    "maxLength": 255,
-                    "format": "uri"
+                    "maxLength": 255
                   }
                 }
               }

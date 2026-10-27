@@ -3,21 +3,24 @@ import { appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
-import { entityIdParamSchema, tenantOnlyParamSchema, validDomainSchema, validNameSchema } from '#/schemas';
+import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
+import { validDomainSchema, validNameSchema, validUrlSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
-import { mockConnectionResponse } from './connections-mocks';
 
 const federationKeys = Object.keys(appConfig.federations);
 
 /** A federation key of this app's config; the enum is listed when the app declares any. */
 const federationKeySchema = z
   .string()
-  .refine((key) => federationKeys.includes(key), { message: 'Unknown federation' })
+  .refine(isFederationKey, { message: 'Unknown federation' })
   .openapi({ description: 'A federation key in appConfig.federations', ...(federationKeys.length ? { enum: federationKeys } : {}) });
 
+const idpEntityIdSchema = z.string().min(1).max(maxLength.field);
+
 const connectionConfigSchema = z.object({
-  idpEntityIds: z.array(z.string().min(1).max(maxLength.field)).optional().describe("The institution's IdP entity ids, passed as login_hint"),
+  idpEntityIds: z.array(idpEntityIdSchema).optional().describe("The institution's IdP entity ids, passed as login_hint"),
   logoUrl: z.string().url().max(maxLength.field).optional().describe("The institution's logo, for the entry page"),
 });
 
@@ -46,12 +49,11 @@ export const createConnectionBodySchema = z.object({
     .min(1)
     .max(20)
     .describe("The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them"),
-  idpEntityIds: z.array(z.string().min(1).max(maxLength.field)).min(1).max(10).describe("The institution's IdP entity ids, all passed as login_hint"),
+  idpEntityIds: z.array(idpEntityIdSchema).min(1).max(10).describe("The institution's IdP entity ids, all passed as login_hint"),
   status: z.enum(connectionStatuses).optional(),
   jitProvisioning: z.boolean().optional(),
-  logoUrl: z.string().url().max(maxLength.field).optional(),
+  // The response keeps the field limit, and the frontend validates responses: a longer stored URL would fail every read.
+  logoUrl: z.string().max(maxLength.field).pipe(validUrlSchema).optional(),
 });
 
 export const updateConnectionBodySchema = createConnectionBodySchema.omit({ issuer: true }).partial();
-
-export const connectionParamSchema = tenantOnlyParamSchema.merge(entityIdParamSchema);

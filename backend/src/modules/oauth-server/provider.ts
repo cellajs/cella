@@ -108,10 +108,10 @@ function allowClient(_ctx: KoaContextWithOIDC, client: object): boolean {
 }
 
 /**
- * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
- * need. Grant types: authorization code + PKCE, refresh, client credentials (service accounts only). Client auth: none
- * (CIMD public clients) and client_secret_basic (registered apps; service accounts with their secret keys). Client
- * registration by Client ID Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
+ * The authorization server: `node-oidc-provider` fed the app's keystore and store. Grant types: authorization code +
+ * PKCE, refresh, client credentials (service accounts only). Client auth: none (CIMD public clients) and
+ * client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
+ * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
  */
 export async function createProvider(): Promise<Provider> {
   const jwks = await loadSigningJwks();
@@ -124,7 +124,7 @@ export async function createProvider(): Promise<Provider> {
     // Keeps the adapter's `client_kind` on its clients; `allowClient` refuses a metadata document that sets one.
     extraClientMetadata: { properties: ['client_kind'] },
     responseTypes: ['code'],
-    // Entity scopes plus what a machine client asks for; `openid` stays out: this AS issues no id_tokens.
+    // The entity scopes only; `openid` stays out: this server issues no ID tokens.
     scopes: [...accessScopes.all],
     pkce: { required: () => true },
     // Subjects are public, so a sector identifier means nothing here; the provider would fetch one on every use of a
@@ -180,22 +180,20 @@ export async function createProvider(): Promise<Provider> {
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
       if (!resource) throw new errors.InvalidTarget();
       if ('accountId' in token && token.accountId) {
-        // The method and connection of the session that consented (D8): a tenant's sign-in policy reads them.
+        // The method and connection of the session that consented: a tenant's sign-in policy reads them.
         const signIn = await findGrantSignIn({ var: { db: baseDb } }, { grantId: token.grantId });
-        const claims: IssuedTokenClaims = {
+        return {
           actor_kind: 'user',
           tenant_id: resource.tenantId,
           gid: token.grantId,
           auth_strategy: signIn.authStrategy,
           connection_id: signIn.connectionId,
-        };
-        return claims;
+        } satisfies IssuedTokenClaims;
       }
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.
       const key = presentedKeys.get(ctx);
       if (!key) throw new errors.UnauthorizedClient('client_credentials is for service accounts and their API keys');
-      const claims: IssuedTokenClaims = { actor_kind: 'service', tenant_id: resource.tenantId, key_id: key.id };
-      return claims;
+      return { actor_kind: 'service', tenant_id: resource.tenantId, key_id: key.id } satisfies IssuedTokenClaims;
     },
     renderError: async (ctx, out, error) => {
       // A client's own mistake (bad PKCE, expired code, refusal) is request noise; only the server's faults are warnings.
@@ -239,5 +237,3 @@ class TooManyFetches extends Error {
     this.name = 'TooManyFetches';
   }
 }
-
-export type ProviderContext = KoaContextWithOIDC;

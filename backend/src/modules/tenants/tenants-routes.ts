@@ -1,16 +1,11 @@
-/**
- * Tenant CRUD routes for system administrators (see {@link sysAdminGuard}).
- * @see cella/ARCHITECTURE.md
- */
-
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockPaginatedTenantsResponse } from '#/modules/tenants/tenants-mocks';
+import { selfCreateTenantBodySchema, tenantListQuerySchema, tenantSchema, updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
 import { paginationSchema, tenantOnlyParamSchema } from '#/schemas';
-import { mockPaginatedTenantsResponse } from './tenants-mocks';
-import { selfCreateTenantBodySchema, tenantListQuerySchema, tenantSchema, updateTenantBodySchema } from './tenants-schema';
 
-export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
+const tenantRoutes = createXRoutes(['tenants', 'cella'], {
   getTenants: xRoute({
     method: 'get',
     path: '/',
@@ -44,3 +39,5 @@ export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     responses: { 200: json('Updated tenant', tenantSchema) },
   }),
 });
+
+export { tenantRoutes };

@@ -1,6 +1,6 @@
 import type { DbContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { deleteConsentWithTokens, deleteGrant } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteGrant, deleteGrantWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 
 interface RevokeGrantOpts {
   grantId: string;
@@ -17,7 +17,7 @@ interface RevokeGrantOpts {
 export async function revokeGrant(ctx: DbContext, { grantId, withTokens = true }: RevokeGrantOpts): Promise<void> {
   const accountId = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    return withTokens ? await deleteConsentWithTokens(txCtx, { grantId }) : await deleteGrant(txCtx, { grantId });
+    return withTokens ? deleteGrantWithTokens(txCtx, { grantId }) : deleteGrant(txCtx, { grantId });
   });
   if (accountId) invalidateCache.grant(accountId, grantId);
 }

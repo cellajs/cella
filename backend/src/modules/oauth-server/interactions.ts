@@ -1,5 +1,5 @@
-import type { HttpBindings } from '@hono/node-server';
-import { type Context, type ErrorHandler, Hono } from 'hono';
+import { z } from '@hono/zod-openapi';
+import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { errors } from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
@@ -12,10 +12,11 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
-import { deleteProviderSession, getConsentTargetNames, stampGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderSession, findConsentTargetNames, stampGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
-type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
+/** The consent page's decision; a missing `accept` refuses. */
+const decisionBodySchema = z.object({ accept: z.boolean().optional() });
 
 interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
@@ -27,26 +28,23 @@ interface ConsentDetails {
   user: { id: string; name: string } | null;
   /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
   prompt: { name: string; reasons: string[] };
-  /** Why the consent screen must refuse (the grant policy's answer); null when the user may accept. */
+  /** Why the consent page must refuse (the grant policy's answer); null when the user may accept. */
   refusal: Exclude<UserGrantRefusal, 'unknown_user'> | null;
 }
 
-/** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
-export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> {
-  const app = new Hono<InteractionEnv>();
-  // The interactions app binds Node's request objects; the handler reads only what every Hono context has. An
-  // interaction this browser no longer holds (expired, or ended with a sign-out) is the request's refusal, not a fault.
-  app.onError((err, c) =>
-    (appErrorHandler as never as ErrorHandler<InteractionEnv>)(
-      err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err,
-      c,
-    ),
-  );
+/**
+ * The consent routes the app serves beside the provider: the details and the decision, behind the app session. The
+ * interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it.
+ */
+export function createInteractionsApp(provider: Provider): Hono<Env> {
+  const app = new Hono<Env>();
+  // An interaction this browser does not hold (expired, or ended with a sign-out) is the request's refusal, not a fault.
+  app.onError((err, c) => appErrorHandler(err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err, c));
   // Consent resolves the client again, which may fetch its metadata document: that fetch draws on the budget the
   // provider's own routes charge (`server.ts`).
   app.use(limiterScope);
 
-  /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
+  /** The provider sends the browser here; the React consent page takes over and calls the JSON routes below. */
   app.get('/oauth/interaction/:uid', (c) => c.redirect(`${appConfig.frontendUrl}/auth/consent?uid=${c.req.param('uid')}`));
 
   app.get('/oauth/interaction/:uid/details', async (c) => {
@@ -56,9 +54,11 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 
   app.post('/oauth/interaction/:uid/consent', async (c) => {
     const { signedIn, details, interaction, clientId } = await loadInteraction(provider, c);
-    if (!signedIn) throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+    if (!signedIn) throw new AppError(401, 'no_session', 'warn');
     const { user, session } = signedIn;
-    const { accept } = (await c.req.json()) as { accept?: boolean };
+    const decision = decisionBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!decision.success) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Invalid body' } });
+    const { accept } = decision.data;
 
     if (!accept || details.refusal) {
       const redirectTo = await provider.interactionResult(
@@ -86,11 +86,11 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
     const existing = interaction.grantId ? await provider.Grant.find(interaction.grantId) : undefined;
     const grant = existing?.accountId === user.id && existing.clientId === clientId ? existing : new provider.Grant({ accountId: user.id, clientId });
     // Entity scopes are both the provider's scopes and the resource's: the grant records them in both forms.
-    const resource = String(interaction.params.resource);
-    grant.addOIDCScope(details.scopes.join(' '));
-    grant.addResourceScope(resource, details.scopes.join(' '));
+    const scope = details.scopes.join(' ');
+    grant.addOIDCScope(scope);
+    grant.addResourceScope(String(interaction.params.resource), scope);
     const grantId = await grant.save();
-    // The tokens issued under this grant carry how this session signed in (D8).
+    // The tokens issued under this grant carry how this session signed in.
     await stampGrantSignIn({ var: { db: baseDb } }, { grantId, authStrategy: session.authStrategy, connectionId: session.connectionId });
 
     const redirectTo = await provider.interactionResult(
@@ -105,7 +105,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
   return app;
 }
 
-async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
+async function loadInteraction(provider: Provider, c: Context<Env>) {
   const interaction = await provider.interactionDetails(c.env.incoming, c.env.outgoing);
   const clientId = String(interaction.params.client_id);
   const client = await provider.Client.find(clientId);
@@ -120,12 +120,12 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const user = signedIn?.user ?? null;
   const refusal = user ? await grantRefusal({ userId: user.id, clientId, tenantId: resource.tenantId }) : null;
   // The session's user is gone since the session was read: consent starts over from sign-in.
-  if (refusal === 'unknown_user') throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+  if (refusal === 'unknown_user') throw new AppError(401, 'no_session', 'warn');
 
   // Where the grant reaches is named by the server, as the client is, and never to someone outside it.
   const target =
     user && refusal !== 'not_a_member'
-      ? await getConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
+      ? await findConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
       : { tenant: null, organization: null };
 
   const details: ConsentDetails = {

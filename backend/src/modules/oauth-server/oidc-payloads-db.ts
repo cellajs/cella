@@ -6,7 +6,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
  * The authorization server's store, one row per model instance (Grant, Session, Interaction, AuthorizationCode,
  * RefreshToken, ClientCredentials, ReplayDetection, …), as `node-oidc-provider`'s adapter contract wants it. Consent
  * grants and refresh tokens live here; "Connected apps" is a read over the Grant rows. `apply_retention()` deletes
- * what `expiresAt` says the provider no longer reads, and used rows after `appConfig.retention`.
+ * rows past `expiresAt`, and spent ones after `appConfig.retention`.
  */
 export const oidcPayloadsTable = snakeCase.table(
   'oidc_payloads',
