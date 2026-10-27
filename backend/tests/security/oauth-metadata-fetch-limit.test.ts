@@ -6,7 +6,7 @@ import { adminRole } from '../fixtures';
 import { CookieJar, createTestOrganization, expectRefusal } from '../helpers';
 import { authorizationCodeToken, installApp, registerApp, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
 vi.unmock('#/middlewares/rate-limiter/core');
 
@@ -103,10 +103,10 @@ describe('authorization server fetch budget', async () => {
   /** A person's grant to `clientId` in a fresh tenant, from the consent page; returns its refresh token. */
   async function grantTo(clientId: string) {
     const org = await createTestOrganization();
-    const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
+    const member = await createFactorOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
     if (clientId === APP_ID) {
       // A registered app acts in a tenant only where an admin installed it.
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
       await registerApp({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] });
       await installApp(org, admin.sessionCookie, APP_ID);
     }
@@ -160,7 +160,7 @@ describe('authorization server fetch budget', async () => {
 
   it('must not fetch client metadata documents without limit via the consent page', async () => {
     const org = await createTestOrganization();
-    const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
+    const member = await createFactorOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
     const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
     const ip = randomIp();
 

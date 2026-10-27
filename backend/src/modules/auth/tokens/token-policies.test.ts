@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { setCookieOf } from '../../../../tests/helpers';
 
 const linkTypes = appConfig.tokenTypes.filter((type) => tokenPolicies[type].carrier === 'link');
@@ -31,8 +31,11 @@ describe('token policies', () => {
     });
 
     for (const type of appConfig.tokenTypes) {
+      const policy: TokenPolicy = tokenPolicies[type];
+      // A code travels in a mail only: no cookie carries it.
+      if (policy.carrier === 'code') continue;
       const response = await app.request(`/${type}`);
-      const expected = tokenPolicies[type].sameSite === 'lax' ? 'SameSite=Lax' : 'SameSite=Strict';
+      const expected = policy.sameSite === 'lax' ? 'SameSite=Lax' : 'SameSite=Strict';
       expect(setCookieOf(response, type).line, type).toContain(expected);
     }
   });

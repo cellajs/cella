@@ -372,7 +372,7 @@ export type MeAuthData = {
     revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
     impersonatorSessionId: string | null;
     steppedUpAt: string | null;
-    steppedUpVia: 'passkey' | 'totp' | 'email' | null;
+    steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -869,7 +869,7 @@ export type GetPendingMfaResponse = GetPendingMfaResponses[keyof GetPendingMfaRe
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
+    type: 'oauth-verification' | 'invitation' | 'magic';
     token: string;
   };
   query?: never;
@@ -908,7 +908,7 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
+    type: 'oauth-verification' | 'invitation' | 'magic';
     id: string;
   };
   query?: never;
@@ -2246,7 +2246,12 @@ export type SendSsoRecoveryLinkResponse = SendSsoRecoveryLinkResponses[keyof Sen
 export type GetStepUpData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The kind of action asked about: `factor` hands out lasting access, `account` changes or ends the account, `enroll` sets up a second factor.
+     */
+    tier?: 'factor' | 'account' | 'enroll';
+  };
   url: '/auth/step-up';
 };
 
@@ -2285,13 +2290,13 @@ export type GetStepUpResponses = {
    */
   200: {
     /**
-     * The session proved its user presence recently enough for account-security actions.
+     * The session proved its user present recently enough for the tier.
      */
     steppedUp: boolean;
     /**
-     * What the user can offer to step up; empty while impersonating.
+     * What the user can offer to step up for the tier; empty while impersonating.
      */
-    methods: Array<'passkey' | 'totp' | 'email' | 'sign_in'>;
+    methods: Array<'passkey' | 'totp' | 'email' | 'enroll'>;
   };
 };
 
@@ -2313,6 +2318,7 @@ export type StepUpData = {
       type: 'public-key';
     };
     totpCode?: string;
+    emailCode?: string;
   };
   path?: never;
   query?: never;
@@ -2405,16 +2411,14 @@ export type GetStepUpPasskeyChallengeResponses = {
 
 export type GetStepUpPasskeyChallengeResponse = GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
 
-export type SendStepUpLinkData = {
-  body: {
-    redirect?: string;
-  };
+export type SendStepUpCodeData = {
+  body?: never;
   path?: never;
   query?: never;
-  url: '/auth/step-up/link';
+  url: '/auth/step-up/code';
 };
 
-export type SendStepUpLinkErrors = {
+export type SendStepUpCodeErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2441,16 +2445,16 @@ export type SendStepUpLinkErrors = {
   429: TooManyRequestsError;
 };
 
-export type SendStepUpLinkError = SendStepUpLinkErrors[keyof SendStepUpLinkErrors];
+export type SendStepUpCodeError = SendStepUpCodeErrors[keyof SendStepUpCodeErrors];
 
-export type SendStepUpLinkResponses = {
+export type SendStepUpCodeResponses = {
   /**
-   * Link sent
+   * Code sent
    */
   204: void;
 };
 
-export type SendStepUpLinkResponse = SendStepUpLinkResponses[keyof SendStepUpLinkResponses];
+export type SendStepUpCodeResponse = SendStepUpCodeResponses[keyof SendStepUpCodeResponses];
 
 export type CheckSlugData = {
   body: {
@@ -3037,7 +3041,7 @@ export type RevokeMySessionsResponses = {
       revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
       impersonatorSessionId: string | null;
       steppedUpAt: string | null;
-      steppedUpVia: 'passkey' | 'totp' | 'email' | null;
+      steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     }>;
     /**
      * Identifiers of items that could not be processed

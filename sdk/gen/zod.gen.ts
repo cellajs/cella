@@ -318,7 +318,7 @@ export const zMeAuthData = z.object({
       revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
       impersonatorSessionId: z.uuid().nullable(),
       steppedUpAt: z.string().nullable(),
-      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
       isCurrent: z.boolean(),
       isNewDevice: z.boolean(),
     }),
@@ -660,12 +660,12 @@ export const zGetPendingMfaResponse = z.object({
 });
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic']),
   token: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
 });
 
@@ -925,12 +925,16 @@ export const zSendSsoRecoveryLinkResponse = z.object({
   email: z.string(),
 });
 
+export const zGetStepUpQuery = z.object({
+  tier: z.enum(['factor', 'account', 'enroll']).optional().default('account'),
+});
+
 /**
  * Step-up state
  */
 export const zGetStepUpResponse = z.object({
   steppedUp: z.boolean(),
-  methods: z.array(z.enum(['passkey', 'totp', 'email', 'sign_in'])),
+  methods: z.array(z.enum(['passkey', 'totp', 'email', 'enroll'])),
 });
 
 export const zStepUpBody = z.object({
@@ -953,6 +957,10 @@ export const zStepUpBody = z.object({
     .string()
     .regex(/^\d{6}$/)
     .optional(),
+  emailCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
 });
 
 /**
@@ -968,14 +976,10 @@ export const zGetStepUpPasskeyChallengeResponse = z.object({
   credentialIds: z.array(z.string()),
 });
 
-export const zSendStepUpLinkBody = z.object({
-  redirect: z.string().optional(),
-});
-
 /**
- * Link sent
+ * Code sent
  */
-export const zSendStepUpLinkResponse = z.void();
+export const zSendStepUpCodeResponse = z.void();
 
 export const zCheckSlugBody = z.object({
   slug: z
@@ -1159,7 +1163,7 @@ export const zRevokeMySessionsResponse = z.object({
       revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
       impersonatorSessionId: z.uuid().nullable(),
       steppedUpAt: z.string().nullable(),
-      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
     }),
   ),
   rejectedIds: z.array(z.string()),

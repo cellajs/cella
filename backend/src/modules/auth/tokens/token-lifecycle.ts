@@ -1,5 +1,6 @@
+import { randomInt } from 'node:crypto';
 import type { Context } from 'hono';
-import type { TokenType } from 'shared';
+import { appConfig, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -7,11 +8,12 @@ import { baseDb, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
-import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenType, type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import {
   bindTokenToUser,
   deleteBoundToken,
   deleteReplacedTokens,
+  deleteSessionCodeToken,
   findBoundToken,
   findLinkToken,
   findTokenBySingleUse,
@@ -21,12 +23,20 @@ import {
 } from '#/modules/auth/tokens/tokens-queries';
 import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
-import { newHashedToken } from '#/utils/hash-token';
+import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
 
 /** Token reads and writes without a caller's transaction run on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
+
+/** A code token's raw value and its hash: as many digits as an authenticator code, so the client enters both in one input. */
+const newHashedCode = () => {
+  const raw = randomInt(0, 10 ** appConfig.totp.digits)
+    .toString()
+    .padStart(appConfig.totp.digits, '0');
+  return { raw, hash: hashToken(raw) };
+};
 
 /** What a new token records besides its secret and expiry, which issuing sets. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
@@ -57,7 +67,11 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
 
   await deleteReplacedTokens(ctx, { tokens });
 
-  const issued = tokens.map((token) => ({ token, id: generateId(), ...newHashedToken() }));
+  const issued = tokens.map((token) => ({
+    token,
+    id: generateId(),
+    ...(tokenPolicies[token.type].carrier === 'code' ? newHashedCode() : newHashedToken()),
+  }));
   const rows = await insertTokens(ctx, {
     values: issued.map(({ token, id, hash }) => ({
       id,
@@ -200,7 +214,7 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
 };
 
 /** The link types whose request the asking browser remembers, in a cookie named after the type. */
-type RequestedLinkType = 'magic' | 'step-up';
+type RequestedLinkType = 'magic';
 
 /**
  * Remembers, in the browser that asked, which link it asked for, as long as the link lives: opening the link there
@@ -232,6 +246,36 @@ export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promis
 
   return token;
 };
+
+interface IssueCodeTokenOpts {
+  type: CodeTokenType;
+  userId: string;
+  email: string;
+  /** The session that enters the code: the only one it serves. */
+  sessionId: string;
+}
+
+/**
+ * Issues an emailed code for one session, replacing the session's earlier code of the type.
+ * @returns The stored row and the code, which exists only here and in the mail.
+ */
+export const issueCodeToken = async ({ type, userId, email, sessionId }: IssueCodeTokenOpts) => {
+  const { token, rawToken } = await issueToken(dbCtx, { type, userId, email, createdBy: userId, sessionId });
+  return { token, code: rawToken };
+};
+
+interface SpendCodeTokenOpts {
+  type: CodeTokenType;
+  sessionId: string;
+  code: string;
+}
+
+/**
+ * Spends the session's emailed code of `type` when `code` matches it. A wrong code leaves the token for the next try;
+ * the caller's rate limiter counts the misses.
+ * @returns The spent token, or null for a wrong, expired or never issued code.
+ */
+export const spendCodeToken = async (opts: SpendCodeTokenOpts): Promise<TokenRecord | null> => (await deleteSessionCodeToken(dbCtx, opts)) ?? null;
 
 /**
  * When the spend deletes this browser's cookie. `now`: the spend runs on the pool and is final at once. `after-commit`:

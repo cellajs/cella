@@ -5,12 +5,11 @@ import { withStepUp } from '~/modules/auth/step-up';
 
 type TokenType = GetTokenDataData['path']['type'];
 
-export const authKeys = {
+const authKeys = {
   health: ['auth', 'health'] as const,
   token: (type: TokenType, tokenId?: string) => ['auth', 'token', type, tokenId] as const,
   pendingMagicLink: ['auth', 'magic', 'pending'] as const,
   pendingMfa: ['auth', 'mfa', 'pending'] as const,
-  stepUp: (sentAt: number | null) => ['auth', 'step-up', sentAt] as const,
   ssoEntry: (connectionId?: string) => ['auth', 'sso-entry', connectionId] as const,
   consent: { details: (uid: string) => ['auth', 'consent', uid] as const, decide: ['auth', 'consent', 'decide'] as const },
 };

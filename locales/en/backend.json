@@ -24,6 +24,8 @@
   "email.account_security.totp-added.title": "Authenticator added",
   "email.account_security.totp-deleted.text": "The TOTP authenticator has been deleted from your {{appName}} account.",
   "email.account_security.totp-deleted.title": "Authenticator deleted",
+  "email.account_security.provider-connected.text": "A {{provider}} account has been connected to your {{appName}} account, so it can be used to sign in. If this was not you, remove it from your account and sign out your other sessions.",
+  "email.account_security.provider-connected.title": "{{provider}} account connected",
   "email.account_security.tenant-created.text": "A new tenant <strong>{{tenantName}}</strong> was created on {{appName}} by {{userEmail}} at {{timestamp}}.",
   "email.account_security.tenant-created.title": "New tenant created",
   "email.account_security.system-role-granted.text": "System role <strong>{{role}}</strong> was granted to {{userEmail}} on {{appName}} at {{timestamp}}.",
@@ -70,10 +72,12 @@
   "email.oauth_verification.signup.text": "To finish creating your account on {{appName}} with {{providerName}}, confirm that {{email}} is your email address by clicking the link below. The link expires in 2 hours.",
   "email.oauth_verification.signup.verify": "Sign up with {{providerName}}",
   "email.request.subject": "We've received your {{requestType}} request for {{appName}}",
-  "email.step_up.preview": "Confirm a change to your {{appName}} account",
+  "email.step_up.preview": "Your code to confirm a change to your {{appName}} account",
   "email.step_up.subject": "Confirm it's you",
-  "email.step_up.text": "You asked to change how your {{appName}} account is protected. Open this link in the same browser to confirm it's you. The link expires in 10 minutes. If you did not ask for this, ignore this email and sign out your other sessions.",
+  "email.step_up.text": "Enter this code in the {{appName}} dialog that asked for it, to confirm a change to how your account is protected. It works for 10 minutes.",
   "email.step_up.title": "Confirm it's you",
+  "email.step_up.warning": "Asked for from {{browser}} on {{os}}. If this was not you, do not share the code with anyone: ignore this email and sign out your other sessions.",
+  "email.step_up.warning_unknown_browser": "If you did not ask for it, do not share the code with anyone: ignore this email and sign out your other sessions.",
   "email.support_email": "Contact support",
   "email.system_invite.preview": "You've been invited to {{appName}}",
   "email.system_invite.subject": "Invitation",
@@ -84,5 +88,4 @@
   "email.waitlist_request.title": "You're on the waitlist!",
   "email.received_request.title": "{{appName}} received new {{type}} request",
   "email.tenant_removed.title": "{{appName}} removed the tenant {{name}}"
-
 }

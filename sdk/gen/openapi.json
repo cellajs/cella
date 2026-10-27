@@ -49,7 +49,15 @@
           },
           "stepUpGuard": {
             "name": "stepUp",
-            "description": "Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or emailed link; refuses impersonation"
+            "description": "Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or an emailed code; refuses impersonation"
+          },
+          "stepUpFactorGuard": {
+            "name": "stepUpFactor",
+            "description": "Requires a recent proof of a second factor the user holds, or an SSO sign-in whose institution asserted MFA; refuses impersonation"
+          },
+          "stepUpEnrollGuard": {
+            "name": "stepUpEnroll",
+            "description": "Requires a recent proof of presence on this session: a passkey or TOTP the user holds, a fresh sign-in or an emailed code; refuses impersonation"
           },
           "sysAdminGuard": {
             "name": "sysAdmin",
@@ -1594,7 +1602,7 @@
                 },
                 "steppedUpVia": {
                   "type": ["string", "null"],
-                  "enum": ["passkey", "totp", "email", null]
+                  "enum": ["passkey", "totp", "email", "sso", null]
                 },
                 "isCurrent": {
                   "type": "boolean"
@@ -3260,7 +3268,7 @@
         "operationId": "invokeToken",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
-        "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
+        "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
@@ -3268,7 +3276,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -3330,7 +3338,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -3826,7 +3834,7 @@
         "x-enabled-by": {
           "strategy": "totp"
         },
-        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3888,7 +3896,7 @@
         "x-enabled-by": {
           "strategy": "totp"
         },
-        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -4048,7 +4056,7 @@
         "x-enabled-by": {
           "strategy": "passkey"
         },
-        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5299,10 +5307,24 @@
         "operationId": "getStepUp",
         "tags": ["auth", "cella"],
         "summary": "Get step-up state",
-        "description": "Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.",
+        "description": "Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["factor", "account", "enroll"],
+              "default": "account",
+              "description": "The kind of action asked about: `factor` hands out lasting access, `account` changes or ends the account, `enroll` sets up a second factor."
+            },
+            "required": false,
+            "description": "The kind of action asked about: `factor` hands out lasting access, `account` changes or ends the account, `enroll` sets up a second factor.",
+            "name": "tier",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Step-up state",
@@ -5313,15 +5335,15 @@
                   "properties": {
                     "steppedUp": {
                       "type": "boolean",
-                      "description": "The session proved its user presence recently enough for account-security actions."
+                      "description": "The session proved its user present recently enough for the tier."
                     },
                     "methods": {
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "enum": ["passkey", "totp", "email", "sign_in"]
+                        "enum": ["passkey", "totp", "email", "enroll"]
                       },
-                      "description": "What the user can offer to step up; empty while impersonating."
+                      "description": "What the user can offer to step up for the tier; empty while impersonating."
                     }
                   },
                   "required": ["steppedUp", "methods"]
@@ -5357,8 +5379,8 @@
         ],
         "operationId": "stepUp",
         "tags": ["auth", "cella"],
-        "summary": "Step up with a second factor",
-        "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.",
+        "summary": "Step up",
+        "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge), a TOTP code of a factor they hold, or the code a step-up mail carried. The proof counts for ten minutes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["stepUpLimiter"],
         "x-cache": [],
@@ -5409,6 +5431,10 @@
                     "required": ["id", "rawId", "response", "type"]
                   },
                   "totpCode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "emailCode": {
                     "type": "string",
                     "pattern": "^\\d{6}$"
                   }
@@ -5503,38 +5529,23 @@
         }
       }
     },
-    "/auth/step-up/link": {
+    "/auth/step-up/code": {
       "post": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "sendStepUpLink",
+        "operationId": "sendStepUpCode",
         "tags": ["auth", "cella"],
-        "summary": "Email a step-up link",
-        "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.",
+        "summary": "Email a step-up code",
+        "description": "For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "redirect": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "204": {
-            "description": "Link sent"
+            "description": "Code sent"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -6455,7 +6466,7 @@
                           },
                           "steppedUpVia": {
                             "type": ["string", "null"],
-                            "enum": ["passkey", "totp", "email", null]
+                            "enum": ["passkey", "totp", "email", "sso", null]
                           }
                         },
                         "required": [
@@ -13764,7 +13775,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create service account",
         "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -14321,7 +14332,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [

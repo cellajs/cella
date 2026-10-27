@@ -6,7 +6,6 @@ import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-li
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/operations/handle-oauth-verification';
-import { openStepUpLink } from '#/modules/auth/step-up/operations/open-step-up-link';
 import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { LinkTokenType } from '#/modules/auth/tokens/token-policies';
 import { log } from '#/utils/logger';
@@ -38,7 +37,6 @@ const linkHandlers = {
     log.info('Token invoked, redirecting with single use token in cookie', { tokenId: token.id, userId: token.userId });
     return ctx.redirect(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`, 302);
   },
-  'step-up': openStepUpLink,
 } satisfies Record<LinkTokenType, LinkHandler>;
 
 /** Opens an emailed link of `type` from the raw value in its URL, by what that type's link does. */

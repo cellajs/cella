@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpEnrollGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
@@ -11,7 +11,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     method: 'post',
     path: '/totp/generate-key',
     xEnabledBy: { strategy: 'totp' },
-    xGuard: [userGuard, stepUpGuard],
+    xGuard: [userGuard, stepUpEnrollGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -21,7 +21,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     method: 'post',
     path: '/totp',
     xEnabledBy: { strategy: 'totp' },
-    xGuard: [userGuard, stepUpGuard],
+    xGuard: [userGuard, stepUpEnrollGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Set TOTP',
     description:

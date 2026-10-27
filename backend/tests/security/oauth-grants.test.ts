@@ -63,7 +63,7 @@ import {
   type TestOauthServer,
 } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 import { insertStaleSession } from './session-helpers';
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
@@ -114,8 +114,8 @@ describe('OAuth grants', async () => {
   /** A tenant with an admin and a member; the registered app is installed there unless `installed` is false. */
   async function tenantWithApp({ installed = true } = {}) {
     const org = await createTestOrganization();
-    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
-    const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
+    const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+    const member = await createFactorOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
     const adminHeaders = { ...defaultHeaders, Cookie: admin.sessionCookie };
     await registerApp({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI], logoUri: APP_LOGO });
     const installationId = installed ? await installApp(org, admin.sessionCookie, APP_ID) : '';
@@ -382,7 +382,7 @@ describe('OAuth grants', async () => {
     /** An admin service account with one live key, and what the key does at the token endpoint and at the API. */
     async function botWithKey() {
       const org = await createTestOrganization();
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
       const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
       const orgPath = { tenantId: org.tenantId, organizationId: org.id };
       const { clientId: accountId, clientSecret, keyId } = await serviceAccountWithKey(org, admin.sessionCookie);
@@ -585,7 +585,7 @@ describe('OAuth grants', async () => {
 
     it('must not issue a code for the previous person via a browser now signed in as someone else', async () => {
       const ctx = await tenantWithApp();
-      const other = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
+      const other = await createFactorOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
       const browser = new CookieJar([ctx.member.sessionCookie]);
       const memberTokens = await consentIn(ctx, browser);
 
@@ -632,7 +632,7 @@ describe('OAuth grants', async () => {
       // Positive control: with the member signed in here, a silent request gets a code.
       expect((await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, prompt: 'none' })).code).toBeTruthy();
 
-      const other = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
+      const other = await createFactorOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
       browser.add(other.sessionCookie);
       const silent = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, prompt: 'none' });
       expect(silent.code).toBeNull();
@@ -810,7 +810,7 @@ describe('OAuth grants', async () => {
       expect(refused.body.error).toBe('invalid_request');
 
       // Positive control: a service account's key still mints one.
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
       const client = await serviceAccountWithKey(org, admin.sessionCookie);
       const minted = await clientCredentialsToken(oauth.issuer, client, { scope: 'organization:write', resource });
       expect(minted.status).toBe(200);
@@ -819,7 +819,7 @@ describe('OAuth grants', async () => {
     it("must not mint a service token via client_credentials for another tenant's resource", async () => {
       const org = await createTestOrganization();
       const other = await createTestOrganization();
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
       const client = await serviceAccountWithKey(org, admin.sessionCookie);
       const mint = (resource: string) => clientCredentialsToken(oauth.issuer, client, { scope: 'attachment:read', resource });
 
@@ -933,7 +933,7 @@ describe('OAuth grants', async () => {
     it("must not act as a system admin via a system admin's access token", async () => {
       const ctx = await tenantWithApp();
       // A system admin who is an ordinary member of the organization: only the system role lets them rename it.
-      const admin = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `sysadmin-${nanoid(8)}`);
+      const admin = await createFactorOrgUser(call, ctx.org.tenantId, ctx.org.id, `sysadmin-${nanoid(8)}`);
       await getAdminDb('test arrange')
         .insert(systemRolesTable)
         .values({ id: admin.id, userId: admin.id, role: 'admin', createdAt: new Date().toISOString() });
@@ -975,8 +975,13 @@ describe('OAuth grants', async () => {
       expect(asAdmin.failure).toMatchObject({ status: 403, body: { type: 'impersonation_forbidden' } });
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
 
-      // Positive control: the same session once stepped up gets its code.
+      // An emailed code proves presence, not the second factor a grant needs.
       await updateSessionSteppedUp({ var: { db } }, { id: stale.id, userId: ctx.member.id, via: 'email' });
+      const viaMail = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
+      expect(viaMail.failure).toMatchObject({ status: 403, body: { type: 'step_up_required' } });
+
+      // Positive control: the same session once stepped up with the member's passkey gets its code.
+      await updateSessionSteppedUp({ var: { db } }, { id: stale.id, userId: ctx.member.id, via: 'passkey' });
       const granted = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
       expect(granted.code).toBeTruthy();
     });

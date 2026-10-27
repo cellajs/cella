@@ -3,6 +3,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import { spendConnectPin } from '#/modules/auth/oauth/operations/spend-connect-pin';
@@ -79,6 +80,7 @@ export const connectSsoIdentity = async (
   });
 
   invalidateCache.user(user.id);
+  sendAccountSecurityEmail(user, 'provider-connected', { provider: federation.label });
   log.info('SSO identity connected', { userId: user.id, strategy: federation.key, connectionId: connection.id });
 
   return user;

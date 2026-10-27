@@ -85,7 +85,7 @@ export const totpKeyQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.totpKey,
     queryFn: () => withStepUp(() => generateTotpKey()),
-    // Only the setup's refresh asks again: a key requested after the step-up window opens the re-auth dialog, which mails a link.
+    // Only the setup's refresh asks again: a key requested after the step-up window opens the re-auth dialog.
     staleTime: 'static',
     gcTime: 0,
     meta: { persist: false },
@@ -130,7 +130,7 @@ export const useCreatePasskeyMutation = () =>
     mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
       // Stepped up before the ceremony, so the authenticator prompts once.
-      await ensureStepUp();
+      await ensureStepUp('enroll');
       return withStepUp(async () => {
         const credentialData = await getPasskeyRegistrationCredential();
         return createPasskey({ body: credentialData });

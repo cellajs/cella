@@ -98,7 +98,7 @@ Every auth cookie is signed, in every mode. The signature covers the cookie's ve
 | `session` | The session token | Strict |
 | `impersonation` | An impersonation's session token, on top of `session` | Strict |
 | `device-id` | The browser's device id, 400 days | Lax |
-| `magic-requested`, `step-up-requested` | The id of the link this browser asked for | Lax |
+| `magic-requested` | The id of the magic link this browser asked for | Lax |
 | `magic-pending` | A link opened here that waits for confirmation | Strict |
 | `oauth-state-<state>` | The provider round trip: flow type, PKCE verifier and nonce, five minutes | Lax |
 | `sso-recovery` | An institution's refused sign-in: the asserted address and the connection, ten minutes | Strict |
@@ -109,18 +109,18 @@ Lax cookies are the ones a navigation from another site must carry: the click fr
 
 ## Tokens
 
-One module, `auth/tokens/`, issues, opens and spends every token. `tokens.secret` stores a hash of the raw value, which exists only in the link or the cookie that carries it. `tokenPolicies` declares one policy per type in `appConfig.tokenTypes`:
+One module, `auth/tokens/`, issues, opens and spends every token. `tokens.secret` stores a hash of the raw value, which exists only in the link, the cookie or the mailed code that carries it. `tokenPolicies` declares one policy per type in `appConfig.tokenTypes`:
 
 | Type | Carrier | Lives | Replaces earlier tokens of | A link without an account belongs to |
 | --- | --- | --- | --- | --- |
 | `magic` | link | 15 minutes, then 5 minutes single-use | the address or the account | the address's holder, else a new account |
 | `invitation` | link | 7 days, then 30 minutes | the invitation | whoever is signed in |
 | `oauth-verification` | link | 2 hours, then 5 minutes | the identity | the address's holder, else a new account |
-| `step-up` | link | 10 minutes, then 5 minutes | the session | always bound to its session's user |
 | `confirm-mfa` | cookie | 10 minutes | nothing | |
 | `oauth-connect` | cookie | 10 minutes | the account | |
+| `step-up` | code | 10 minutes | the session | |
 
-Opening a link redeems it: the first redemption wins, the token's lifetime becomes its single-use window, and the browser gets a cookie that binds the token to it. A bound token is spent once, so of two concurrent completions one passes. A token issued for a session serves that session alone and dies with it. Each link type has its handler in `linkHandlers`; a type without one does not compile.
+Opening a link redeems it: the first redemption wins, the token's lifetime becomes its single-use window, and the browser gets a cookie that binds the token to it. A bound token is spent once, so of two concurrent completions one passes. A token issued for a session serves that session alone and dies with it. Each link type has its handler in `linkHandlers`; a type without one does not compile. A code is looked up by the session that enters it, never by its value, so a guess can only ever match that session's own code; a wrong one leaves it for the next try.
 
 A magic link signs in directly only in the browser that asked for it. Opened anywhere else, the link is held and the holder confirms on a page that names the address: a link planted in someone's browser, or fetched by a mail scanner, signs nobody in and is not used up. A link of another account than the one signed in is refused, and an expired one leads to an error page that offers a new link.
 
@@ -134,11 +134,21 @@ MFA (`users.mfaRequired`) needs both a passkey and an authenticator app, so a lo
 
 ## Step-up
 
-The routes that change how an account is protected carry `stepUpGuard` after `userGuard`: factors, the MFA toggle, provider connect, account deletion, and creating a service account or minting an API key. OAuth consent runs the same check.
+An account-security action needs more than a session: the session must have proven its user present within the last ten minutes, and an impersonation never does. How much proof an action asks depends on what it does:
 
-The session must have proven its user within the last ten minutes: with a passkey or TOTP the user holds, by a step-up or by the sign-in itself, or, holding none, by any sign-in within the window or an emailed link opened in this browser. The refusal is 403 `step_up_required` with the methods the user can offer in `meta.methods`. An impersonation never steps up.
+| Action | Holds a passkey or TOTP | No factor, signed in < 10 min ago | No factor, later |
+| --- | --- | --- | --- |
+| Mint an API key, create or re-enable a service account, consent to an OAuth client | factor | set up a factor | set up a factor |
+| Set up a passkey or authenticator app, connect a provider, delete the account | factor | passes | emailed code |
+| Delete a passkey or the authenticator app, turn MFA on or off | factor | | |
+| Revoke a key, a session or a connected app, disable a service account, leave an organization | passes | passes | passes |
 
-On the frontend, `withStepUp(action)` runs the action, opens the "Confirm it's you" dialog on that refusal and runs the action once more. For a user without a passkey or TOTP the dialog mails the confirmation link as it opens, and offers a new sign-in for when that mail cannot be opened in this browser. The link opens in a tab of its own, and the tab that asked carries on by itself.
+- **Factor**: a passkey or TOTP the user holds, proven on this session within the window by a step-up, by setting it up, by the MFA completion that started the session or by a passkey sign-in. An SSO sign-in counts as a factor when the institution asserted MFA (the federation's `mfaAcr`), for every row.
+- **Set up a factor**: the dialog offers to add a passkey or an authenticator app, which follows the second row. Setting it up proves it on the session, so the action runs right after. An app with neither method on treats the first row like the second.
+- **Emailed code**: six digits, mailed to the account's address for the session that asked and typed into the same dialog, so it works when the mail is read on a phone or in another browser. A new code replaces the last one, a wrong one draws on the step-up budget ([Rate limits](#rate-limits)). The mail names the browser that asked and keeps the code out of its subject.
+- **A lost factor**: with MFA off the mailbox signs the account in anyway, so a user who lost their passkey or authenticator may set up a new one with an emailed code. The code opens nothing else. With MFA on the other factor replaces the lost one.
+
+The refusal is 403 `step_up_required` with what the user can offer in `meta.methods`. On the frontend, `withStepUp(action)` runs the action, opens the "Confirm it's you" dialog on that refusal and runs the action once more. Setting up a factor and connecting a provider each send a security mail to the account's address.
 
 ## The authorization server
 
@@ -158,7 +168,7 @@ A limiter either counts every request and refuses a spent key until its window e
 | `tokenLimiter` | Failed link, callback and passkey sign-ins per IP; a success ends the series | 10, then 30 minutes blocked |
 | `totpVerificationLimiter` | Failed TOTP codes per IP; a code that verifies ends the series | 5 per hour, then 30 minutes blocked |
 | The TOTP account budget | Failed TOTP codes per account, whatever the IP | 5 per hour, then 30 minutes locked and a mail |
-| `stepUpLimiter` | Failed second-factor checks on step-up, per account | 5 per hour, then 30 minutes blocked |
+| `stepUpLimiter` | Failed step-up proofs (a factor or an emailed code), per account | 5 per hour, then 30 minutes blocked |
 | `passkeyChallengeLimiter` | Passkey challenges per IP | 30 per 5 minutes |
 | Every failure budget | Failures in 24 hours | 100, then three hours blocked |
 
