@@ -937,6 +937,8 @@
   "welcome_back": "Welcome back",
   "withdraw": "Withdraw",
   "without_color": "Without color",
+  "word_count": "{{words}} word",
+  "word_count_other": "{{words}} words",
   "write": "Write",
   "year": "year",
   "your_email_address": "Your email address",

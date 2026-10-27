@@ -3,9 +3,16 @@ import { t } from 'i18next';
 import { operationsQueryOptions, schemasQueryOptions } from '~/modules/docs/query';
 import type { EnginePage } from '~/modules/docs/search/engine';
 import type { DocsSearchClient } from '~/modules/docs/search/types';
-import { getDocPage, pathToSlug, visibleDocPages } from '~/modules/page/content';
+import { getDocPage, getVisibleDocPages, pathToSlug } from '~/modules/page/content';
 
 let clientPromise: Promise<DocsSearchClient> | null = null;
+
+// A page edit in development swaps the page index; the next search builds its client from the new one
+if (import.meta.hot) {
+  import.meta.hot.on('docs:index', () => {
+    clientPromise = null;
+  });
+}
 
 /** Creates the docs search client once per session; Orama and the body-text corpus load on first use. */
 export function getDocsSearchClient(queryClient: QueryClient): Promise<DocsSearchClient> {
@@ -37,7 +44,7 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
   ]);
 
   const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, sections]) => [pathToSlug(path), sections]));
-  const pages: EnginePage[] = visibleDocPages.map((page) => ({
+  const pages: EnginePage[] = getVisibleDocPages().map((page) => ({
     slug: page.id,
     title: page.name,
     description: page.description,

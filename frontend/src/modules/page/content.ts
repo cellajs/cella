@@ -1,7 +1,10 @@
 import { docsIndex } from 'virtual:docs-frontmatter';
 import { type ComponentType, lazy } from 'react';
 import { z } from 'zod';
+import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { spyPrefix } from '~/hooks/scroll-spy-store';
+import { docComponentModules } from '~/modules/page/doc-components';
 
 const contentRoot = '/src/content/docs/';
 
@@ -83,8 +86,6 @@ export type DocPage = {
 /** The page's own spy section, current until the first heading; heading slugs hold no slash, so this id never clashes with one. */
 export const pageSectionId = 'page/intro';
 
-const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
-
 /** File path to slug: `architecture/index.md` becomes `architecture`. */
 export function pathToSlug(path: string): string {
   const slug = path
@@ -94,13 +95,15 @@ export function pathToSlug(path: string): string {
   return slug.replace(/\/$/, '');
 }
 
-function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<ComponentType>>; config: DocsConfig } {
+type DocsIndex = typeof docsIndex;
+
+function parseIndex(index: DocsIndex): { pages: DocPage[]; config: DocsConfig | null } {
   const slugs = new Set<string>();
   const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
   let config: DocsConfig | null = null;
 
   // Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
-  for (const [path, entry] of Object.entries(docsIndex)) {
+  for (const [path, entry] of Object.entries(index)) {
     const slug = pathToSlug(path);
     if (!slug) {
       // Root index holds the global docs config and the /docs landing body.
@@ -137,33 +140,50 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
   });
   pages.sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 
-  const loaders = new Map<string, () => Promise<ComponentType>>();
-  for (const [path, loader] of Object.entries(componentModules)) loaders.set(pathToSlug(path), loader);
-
-  if (!config) {
-    console.warn('Docs content: no root index.mdx found; using the default docs config.');
-    config = defaultDocsConfig;
-  }
-
-  return { pages, loaders, config };
+  return { pages, config };
 }
 
-const { pages, loaders, config } = buildIndex();
+const loadersFrom = (modules: typeof docComponentModules) => new Map(Object.entries(modules).map(([path, loader]) => [pathToSlug(path), loader]));
 
-export const docsConfig: DocsConfig = config;
+// The visible list is kept beside the full one so selectors return a stable array between swaps.
+const indexState = (pages: DocPage[]) => ({ pages, visiblePages: pages.filter((page) => !page.draft && !page.hidden) });
+
+const initial = parseIndex(docsIndex);
+if (!initial.config) console.warn('Docs content: no root index.mdx found; using the default docs config.');
+
+export const docsConfig: DocsConfig = initial.config ?? defaultDocsConfig;
+
+/** The page index; in development the dev server's `docs:index` event swaps it in place after a page edit. */
+const useDocsIndexStore = create(() => indexState(initial.pages));
+
+let loaders = loadersFrom(docComponentModules);
+
+if (import.meta.hot) {
+  import.meta.hot.on('docs:index', (index: DocsIndex) => useDocsIndexStore.setState(indexState(parseIndex(index).pages)));
+  // Adding, moving or removing a page changes the glob; accepting the update here keeps it from reloading the app
+  import.meta.hot.accept('~/modules/page/doc-components', (module) => {
+    if (module) loaders = loadersFrom(module.docComponentModules);
+  });
+}
 
 /** All docs pages, sorted by display order, drafts and hidden pages included. */
-export const docPages: DocPage[] = pages;
+export const useDocPages = () => useDocsIndexStore((state) => state.pages);
 
 /** The pages the sidebar, the search and the child page lists show: no drafts, no hidden pages. */
-export const visibleDocPages = docPages.filter((page) => !page.draft && !page.hidden);
+export const useVisibleDocPages = () => useDocsIndexStore((state) => state.visiblePages);
+
+export const useDocPage = (slug: string) => useDocsIndexStore((state) => state.pages.find((page) => page.id === slug));
+
+export const useChildDocPages = (slug: string) =>
+  useDocsIndexStore(useShallow((state) => state.visiblePages.filter((page) => page.parentId === slug)));
+
+/** The current pages outside React; a component reads them through the hooks above to follow an edit. */
+export const getDocPages = () => useDocsIndexStore.getState().pages;
+
+export const getVisibleDocPages = () => useDocsIndexStore.getState().visiblePages;
 
 export function getDocPage(slug: string): DocPage | undefined {
-  return docPages.find((page) => page.id === slug);
-}
-
-export function getChildDocPages(slug: string): DocPage[] {
-  return visibleDocPages.filter((page) => page.parentId === slug);
+  return getDocPages().find((page) => page.id === slug);
 }
 
 // Resolved ahead of render (docs route loader) so the body renders synchronously: a fresh Suspense boundary commits its fallback for a frame even on a cached chunk.
