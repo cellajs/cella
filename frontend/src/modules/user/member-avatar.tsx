@@ -12,7 +12,7 @@ interface MemberAvatarProps {
 }
 
 /** A user's avatar as a button that opens their user sheet, with the name as tooltip. */
-export function MemberAvatar({ member, className }: MemberAvatarProps) {
+function MemberAvatar({ member, className }: MemberAvatarProps) {
   const openUserSheet = useOpenUserSheet();
 
   return (
