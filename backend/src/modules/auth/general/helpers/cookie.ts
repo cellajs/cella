@@ -46,10 +46,10 @@ const laxCookies = new Set<CookieName>(['device-id', 'magic-requested', 'step-up
 const isLaxCookie = (name: CookieName) =>
   isTokenType(name) ? tokenPolicies[name].sameSite === 'lax' : laxCookies.has(name) || name.startsWith('oauth-state-');
 
-/** Effective wire name: hono prepends `__Host-` when the prefix option is active. For consumers naming the cookie outside this helper. */
-export const authCookieName = (name: CookieName) => `${prefix === 'host' ? '__Host-' : ''}${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
-
 const versionedCookieName = (name: CookieName) => `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
+
+/** Effective wire name: hono prepends `__Host-` when the prefix option is active. For consumers naming the cookie outside this helper. */
+export const authCookieName = (name: CookieName) => `${prefix === 'host' ? '__Host-' : ''}${versionedCookieName(name)}`;
 
 /** The MAC covers the cookie's name and expiry with its content: a value signed for one cookie never reads as another. */
 const cookieMac = (secret: string, versionedName: string, expiresAt: number, content: string) =>

@@ -46,9 +46,13 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
   // An account may have taken this address since the invite was sent; every account's address is a proven inbox.
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
   if (existingUser) {
-    await bindTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
-    // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
-    await bindInactiveMemberships(ctx, { ids: [tokenRecord.inactiveMembershipId], userId: existingUser.id });
+    const { inactiveMembershipId } = tokenRecord;
+    await ctx.var.db.transaction(async (tx) => {
+      const txCtx = { var: { db: tx } };
+      await bindTokenToUser(txCtx, { tokenId: tokenRecord.id, userId: existingUser.id });
+      // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
+      await bindInactiveMemberships(txCtx, { ids: [inactiveMembershipId], userId: existingUser.id });
+    });
     tokenData.userId = existingUser.id;
   }
 

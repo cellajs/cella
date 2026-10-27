@@ -1,5 +1,6 @@
 import * as oauth from 'oauth4webapi';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
+import { authorizationUrl, isProviderRefusal } from '#/modules/auth/oauth/helpers/code-flow';
 import { env } from '../../../../env';
 
 /** Thrown when the provider rejects the authorization response or code exchange (bad, expired, or replayed code). */
@@ -50,19 +51,8 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
 
   return {
     /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
-    async createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
-      const url = new URL(as.authorization_endpoint as string);
-      url.searchParams.set('client_id', clientId);
-      url.searchParams.set('redirect_uri', redirectUri);
-      url.searchParams.set('response_type', 'code');
-      url.searchParams.set('scope', scopes.join(' '));
-      url.searchParams.set('state', state);
-      if (codeVerifier) {
-        url.searchParams.set('code_challenge', await oauth.calculatePKCECodeChallenge(codeVerifier));
-        url.searchParams.set('code_challenge_method', 'S256');
-      }
-      if (nonce) url.searchParams.set('nonce', nonce);
-      return url;
+    createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
+      return authorizationUrl(as.authorization_endpoint as string, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
     },
 
     /**
@@ -87,14 +77,7 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
 
         return { accessToken: tokens.access_token };
       } catch (error) {
-        if (
-          error instanceof oauth.ResponseBodyError ||
-          error instanceof oauth.AuthorizationResponseError ||
-          error instanceof oauth.WWWAuthenticateChallengeError ||
-          error instanceof oauth.OperationProcessingError
-        ) {
-          throw new OAuthCodeExchangeError(error);
-        }
+        if (isProviderRefusal(error)) throw new OAuthCodeExchangeError(error);
         throw error;
       }
     },

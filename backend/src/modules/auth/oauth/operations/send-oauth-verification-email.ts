@@ -48,9 +48,7 @@ const verificationFor = async (props: Props) => {
   // The address under verification is the provider's, which may differ from the account's own.
   const email = identity.email ?? user.email;
 
-  const emailInUse = await findEmail(dbCtx, { email });
-
-  if (emailInUse && identity.verified) {
+  if (identity.verified && (await findEmail(dbCtx, { email }))) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 

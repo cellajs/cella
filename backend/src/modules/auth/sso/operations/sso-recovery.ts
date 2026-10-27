@@ -3,7 +3,8 @@ import { z } from 'zod';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { assertSwitchOn } from '#/middlewares/config-switch';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { readJsonCookie } from '#/modules/auth/general/helpers/read-json-cookie';
 import { sendMagicLinkOp } from '#/modules/auth/magic/operations/send-magic-link';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -38,22 +39,13 @@ const ssoConnectPath = (connectionId: string) => `/account?connect=${connectionI
 export const sendSsoRecoveryLinkOp = async (ctx: Context<Env>) => {
   assertSwitchOn({ strategy: 'magic' });
 
-  const remembered = await getAuthCookie(ctx, 'sso-recovery');
-  const collision = remembered ? recoverySchema.safeParse(safeJson(remembered)) : undefined;
-  if (!collision?.success) throw new AppError(401, 'sso_recovery_expired', 'warn');
+  const collision = await readJsonCookie(ctx, 'sso-recovery', recoverySchema);
+  if (!collision) throw new AppError(401, 'sso_recovery_expired', 'warn');
 
   deleteAuthCookie(ctx, 'sso-recovery');
 
-  const { email, connectionId } = collision.data;
+  const { email, connectionId } = collision;
   await sendMagicLinkOp(ctx, { email, redirect: ssoConnectPath(connectionId), assertedThrough: connectionId });
 
   return { email };
-};
-
-const safeJson = (value: string): unknown => {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return undefined;
-  }
 };

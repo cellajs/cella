@@ -1,9 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Context } from 'hono';
 import { generateRandomCodeVerifier, generateRandomNonce, generateRandomState } from 'oauth4webapi';
 import type { EnabledOAuthProvider } from 'shared';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
-import type z from 'zod';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { readOAuthCookie } from '#/modules/auth/oauth/helpers/oauth-cookie';
@@ -19,7 +17,7 @@ import {
 } from '#/modules/auth/oauth/helpers/providers';
 import { type TransformedUser, transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
-import type { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import type { OAuthCallbackContext, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
 import { handleOAuthCallback } from '#/modules/auth/oauth/operations/callback';
 import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/initiation';
 import { issueCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -30,13 +28,16 @@ interface OAuthProviderEntry {
   scopes: string[];
   /** Round trips carry a PKCE verifier and an OIDC nonce; the callback refuses a state stored without a verifier. */
   pkce: boolean;
-  /** The provider's profile, read with the access token the code exchange returned. */
-  fetchUser: (headers: Record<string, string>) => Promise<TransformedUser>;
+  /** The provider's profile, read with the access token the code exchange returned; `init` carries it and the deadline. */
+  fetchUser: (init: RequestInit) => Promise<TransformedUser>;
 }
 
+/** How long the provider may take to hand over the profile: the browser waits on the callback meanwhile. */
+const profileTimeoutMs = 10_000;
+
 /** An OIDC provider's profile from its userinfo endpoint. */
-const readUserinfo = (url: string) => async (headers: Record<string, string>) => {
-  const response = await fetch(url, { headers });
+const readUserinfo = (url: string) => async (init: RequestInit) => {
+  const response = await fetch(url, init);
   return transformSocialUserData((await response.json()) as GoogleUserProps | MicrosoftUserProps);
 };
 
@@ -46,10 +47,10 @@ const oauthProviders = {
     client: githubAuth,
     scopes: ['user:email'],
     pkce: false,
-    fetchUser: async (headers) => {
+    fetchUser: async (init) => {
       const [userResponse, emailsResponse] = await Promise.all([
-        fetch('https://api.github.com/user', { headers }),
-        fetch('https://api.github.com/user/emails', { headers }),
+        fetch('https://api.github.com/user', init),
+        fetch('https://api.github.com/user/emails', init),
       ]);
       const user = (await userResponse.json()) as GithubUserProps;
       const emails = (await emailsResponse.json()) as GithubUserEmailProps[];
@@ -71,20 +72,20 @@ const oauthProviders = {
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
 /** Sends the browser to the provider with a fresh `state`, plus a PKCE verifier and a nonce for a `pkce` provider. */
-const startOAuth = async (ctx: Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>, provider: BaseOAuthProviders) => {
+const startOAuth = async (ctx: OAuthStartContext, provider: BaseOAuthProviders) => {
   const { client, scopes, pkce } = oauthProviders[provider];
   const state = generateRandomState();
   const flow = pkce ? { codeVerifier: generateRandomCodeVerifier(), nonce: generateRandomNonce() } : undefined;
   const url = await client.createAuthorizationURL(state, scopes, flow);
 
-  return await handleOAuthInitiation(ctx, provider, url, state, flow?.codeVerifier, flow?.nonce);
+  return await handleOAuthInitiation(ctx, { provider, url, state, ...flow });
 };
 
 /**
  * Resumes the round trip `state` names: exchanges the code (with the stored verifier and nonce for a `pkce` provider),
  * reads the provider's profile and hands it to the flow the state cookie holds.
  */
-const finishOAuth = async (ctx: Context<Env, string, { out: { query: z.infer<typeof oauthCallbackQuerySchema> } }>, provider: BaseOAuthProviders) => {
+const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuthProviders) => {
   const { code, state, error } = ctx.req.valid('query');
   const { client, pkce, fetchUser } = oauthProviders[provider];
   const strategy = provider as EnabledOAuthProvider;
@@ -108,7 +109,7 @@ const finishOAuth = async (ctx: Context<Env, string, { out: { query: z.infer<typ
       pkce ? { codeVerifier: cookiePayload.codeVerifier, nonce: cookiePayload.nonce } : undefined,
     );
 
-    const providerUser = await fetchUser({ Authorization: `Bearer ${accessToken}` });
+    const providerUser = await fetchUser({ headers: { Authorization: `Bearer ${accessToken}` }, signal: AbortSignal.timeout(profileTimeoutMs) });
 
     return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
   } catch (error) {

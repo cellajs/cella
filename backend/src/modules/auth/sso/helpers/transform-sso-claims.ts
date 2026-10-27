@@ -14,7 +14,6 @@ export const assertedInstitution = (federation: Federation, claims: SsoClaims): 
 
 /** The profile a sign-in asserts. `email` is undefined when the institution released none: a new account needs it, a returning identity does not. */
 export interface SsoProfile {
-  subject: string;
   email?: string;
   name: string;
   firstName: string;
@@ -26,7 +25,7 @@ export const transformSsoClaims = (claims: SsoClaims): SsoProfile => {
   const firstName = firstString(claims.given_name) ?? '';
   const lastName = firstString(claims.family_name) ?? '';
   const name = firstString(claims.name) ?? `${firstName} ${lastName}`.trim();
-  return { subject: claims.sub, email, firstName, lastName, name: name || (email ? slugFromEmail(email) : claims.sub) };
+  return { email, firstName, lastName, name: name || (email ? slugFromEmail(email) : claims.sub) };
 };
 
 /** The account a first sign-in creates: the profile with the slug its address gives. */

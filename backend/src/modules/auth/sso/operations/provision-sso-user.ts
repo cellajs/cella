@@ -8,11 +8,10 @@ import { insertIdentity } from '#/modules/auth/oauth/identities-queries';
 import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
 import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { newUserFromProfile, type SsoProfile } from '#/modules/auth/sso/helpers/transform-sso-claims';
+import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
 import { rememberSsoCollision } from '#/modules/auth/sso/operations/sso-recovery';
-import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
 import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { findPendingOrganizationInvitation } from '#/modules/memberships/memberships-queries';
-import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
@@ -74,10 +73,7 @@ export const provisionSsoUser = async (
     });
 
     if (organization && !(await findPendingOrganizationInvitation(txCtx, { email, organizationId: organization.id }))) {
-      const role = roleFromClaims({ federation: federation.key, connection, claims });
-      await insertMemberships(txCtx, {
-        items: [{ userId: user.id, role, entity: { ...organization, tenantId: connection.tenantId }, createdBy: user.id }],
-      });
+      await insertSsoMembership(txCtx, { userId: user.id, organization, federation, connection, claims });
     }
 
     return user;

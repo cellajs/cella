@@ -345,12 +345,14 @@ describe('OAuth Authentication', async () => {
     });
 
     it("sends a provider's refusal of a connect back to the account page, with the error to show", async () => {
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type: 'connect' }));
-      const denied = () =>
-        call(githubCallback, {
+      const denied = () => {
+        // Each callback reads, and so ends, the round trip its state cookie holds.
+        mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type: 'connect' }));
+        return call(githubCallback, {
           query: { state, code: 'error-code', error: 'access_denied', error_description: 'User denied access' },
           headers: defaultHeaders,
         });
+      };
 
       // Tests read the refusal as JSON, like every other error.
       await expectRefusal(await denied(), 400, 'oauth_failed');
@@ -495,6 +497,22 @@ describe('OAuth Authentication', async () => {
       // The primary is untouched.
       const [primary] = await db.select().from(emailsTable).where(eq(emailsTable.email, 'local-account@example.com'));
       expect(primary.userId).toBe(user.id);
+    });
+
+    it('must not sign in twice via one verification link', async () => {
+      await connectedUnverified();
+      // The cookies of the opened link and its round trip, which a replay presents again.
+      const heldCookies = [...mockCookieStore];
+
+      const first = await call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+      expect(cookieChange(first.response, 'session')).toBe('set');
+
+      for (const [name, value] of heldCookies) mockCookieStore.set(name, value);
+      const replay = await call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+
+      await expectRefusal(replay, 401, 'oauth-verification_not_found');
+      expect(cookieChange(replay.response, 'session')).toBeUndefined();
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'))).toHaveLength(0);
     });
 
     it('refuses when another account took the address after the connect started', async () => {
@@ -743,7 +761,6 @@ describe('OAuth Authentication', async () => {
         email: providerEmail,
         name: 'Test User',
         emailVerified: false,
-        thumbnailUrl: 'https://avatar.url',
         firstName: 'Test',
         lastName: 'User',
       });
@@ -880,7 +897,6 @@ describe('OAuth Authentication', async () => {
         email: providerEmail,
         name: 'Someone',
         emailVerified: true,
-        thumbnailUrl: 'https://avatar.url',
         firstName: 'Some',
         lastName: 'One',
       });

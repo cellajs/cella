@@ -8,7 +8,6 @@ export type TransformedUser = {
   email: string;
   name: string;
   emailVerified: boolean;
-  thumbnailUrl: string;
   firstName: string;
   lastName: string;
 };
@@ -29,7 +28,6 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
     email: normalizedEmail,
     name: name,
     emailVerified: 'email_verified' in user ? user.email_verified : false,
-    thumbnailUrl: user.picture,
     firstName: givenName,
     lastName: familyName,
   };
@@ -50,7 +48,6 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
     email: normalizedEmail,
     name: user.name || user.login,
     emailVerified: primaryEmail.verified,
-    thumbnailUrl: user.avatar_url,
     firstName,
     lastName,
   };

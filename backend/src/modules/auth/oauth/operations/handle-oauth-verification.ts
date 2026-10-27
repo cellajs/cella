@@ -22,8 +22,6 @@ const verificationIssuer = async (token: TokenRecord) => {
 /** Opens a redeemed verification link: back to the provider, to sign in again with the account under verification. */
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenRecord) => {
   const verificationURL = new URL(`${appConfig.backendAuthUrl}/${await verificationIssuer(token)}`);
-
-  verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');
 
   // The post-auth redirect stays on the token row; the verify initiation reads it from there.

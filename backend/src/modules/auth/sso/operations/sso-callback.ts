@@ -1,14 +1,9 @@
-import type { Context } from 'hono';
-import type z from 'zod';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { readOAuthCookie } from '#/modules/auth/oauth/helpers/oauth-cookie';
-import type { oauthCallbackQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import type { OAuthCallbackContext } from '#/modules/auth/oauth/oauth-schema';
 import { exchangeFederationCode } from '#/modules/auth/sso/helpers/federation-client';
 import { getFederation, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { completeSsoSignIn } from '#/modules/auth/sso/operations/complete-sso-sign-in';
-
-type CallbackContext = Context<Env, string, { out: { query: z.infer<typeof oauthCallbackQuerySchema> } }>;
 
 /**
  * Resumes the round trip `state` names: the state cookie says which federation and connection it belongs to and holds
@@ -16,7 +11,7 @@ type CallbackContext = Context<Env, string, { out: { query: z.infer<typeof oauth
  * @throws AppError 400 `oauth_failed` when the federation answered an error, 401 `invalid_state` without a matching
  *   state cookie, and what the exchange and the completion throw.
  */
-export const handleSsoCallback = async (ctx: CallbackContext) => {
+export const handleSsoCallback = async (ctx: OAuthCallbackContext) => {
   const { code, state, error } = ctx.req.valid('query');
 
   // Read before the federation's answer is judged: a connect's refusals from here on go back to the account page.

@@ -91,7 +91,6 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Accept invitation token as current user',
     description:
       'Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.',
-    request: {},
     responses: { 200: json('Invitation was accepted', channelBaseSchema) },
   }),
   resendInvitationWithToken: xRoute({

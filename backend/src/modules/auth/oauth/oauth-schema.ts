@@ -1,5 +1,7 @@
 import { z } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import { appConfig, type FederationKey } from 'shared';
+import type { Env } from '#/core/context';
 import { supportedOAuthProviders } from '#/modules/auth/oauth/identities-db';
 
 const federationKeys = Object.keys(appConfig.federations) as FederationKey[];
@@ -8,6 +10,9 @@ const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
 export type OAuthFlowType = (typeof oauthFlowTypes)[number];
 
 export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().optional() });
+
+/** The request of a route that starts a round trip, its query validated by `oauthQuerySchema`. */
+export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
 
 /**
  * The state cookie of one round trip; `provider` is the OAuth provider or SSO federation whose start minted the
@@ -32,3 +37,6 @@ export const oauthCallbackQuerySchema = z.object({
   error_description: z.string().optional(),
   error_uri: z.string().optional(),
 });
+
+/** The request of a provider or federation callback, its query validated by `oauthCallbackQuerySchema`. */
+export type OAuthCallbackContext = Context<Env, string, { out: { query: z.infer<typeof oauthCallbackQuerySchema> } }>;

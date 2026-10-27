@@ -1,5 +1,6 @@
 import * as oauth from 'oauth4webapi';
 import { AppError } from '#/core/error';
+import { authorizationUrl, isProviderRefusal } from '#/modules/auth/oauth/helpers/code-flow';
 import { log } from '#/utils/logger';
 import type { Federation } from './federations';
 
@@ -19,7 +20,7 @@ const discovered = new Map<string, Promise<oauth.AuthorizationServer>>();
  * The federation's server metadata from its discovery document, fetched once per process at first use. One object per
  * federation, so oauth4webapi's JWKS cache (keyed on it) applies; forgotten on failure, so the next sign-in rediscovers.
  */
-const discoverFederation = async (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
+const discoverFederation = (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
   const pending = discovered.get(federation.key);
   if (pending) return pending;
 
@@ -50,17 +51,8 @@ export const createFederationAuthorizationUrl = async (
   const as = await discoverFederation(federation, options);
   if (!as.authorization_endpoint) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy: federation.key } });
 
-  const url = new URL(as.authorization_endpoint);
-  url.searchParams.set('client_id', federation.clientId);
-  url.searchParams.set('redirect_uri', federation.redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', federation.scopes.join(' '));
-  url.searchParams.set('state', state);
-  url.searchParams.set('nonce', nonce);
-  url.searchParams.set('code_challenge', await oauth.calculatePKCECodeChallenge(codeVerifier));
-  url.searchParams.set('code_challenge_method', 'S256');
-  if (loginHint) url.searchParams.set('login_hint', loginHint);
-  return url;
+  const { clientId, redirectUri, scopes } = federation;
+  return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce, loginHint });
 };
 
 interface CodeExchangeInput {
@@ -113,12 +105,7 @@ export const exchangeFederationCode = async (
     return { ...idClaims, ...userinfo, sub: idClaims.sub, iss: idClaims.iss };
   } catch (error) {
     if (error instanceof AppError) throw error;
-    if (
-      error instanceof oauth.ResponseBodyError ||
-      error instanceof oauth.AuthorizationResponseError ||
-      error instanceof oauth.WWWAuthenticateChallengeError ||
-      error instanceof oauth.OperationProcessingError
-    ) {
+    if (isProviderRefusal(error)) {
       // Stale metadata or keys can fail a valid sign-in: the next one rediscovers.
       forgetFederation(federation.key);
       log.warn('Federation code exchange failed', { strategy: federation.key, error: error.message });

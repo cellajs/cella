@@ -1,29 +1,22 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { type CookieName, deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { readJsonCookie } from '#/modules/auth/general/helpers/read-json-cookie';
 import { type OAuthCookiePayload, oauthCookiePayloadSchema } from '#/modules/auth/oauth/oauth-schema';
 
 /**
- * Returns null when the cookie is missing, malformed, or fails schema validation.
- * @public
- */
-export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthCookiePayload | null => {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    const result = oauthCookiePayloadSchema.safeParse(parsed);
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * The state cookie a callback resumes, or null when it is missing or unreadable. A connect's refusals from this read
- * on go back to the account page, the provider's own and a failed code exchange included.
+ * The state cookie a callback resumes, or null when it is missing or unreadable. A state serves one round trip, so the
+ * cookie is deleted once read. A connect's refusals from this read on go back to the account page, the provider's own
+ * and a failed code exchange included.
  */
 export const readOAuthCookie = async (ctx: Context<Env>, state: string): Promise<OAuthCookiePayload | null> => {
-  const payload = state ? parseOAuthCookie(await getAuthCookie(ctx, `oauth-state-${state}`)) : null;
-  if (payload?.type === 'connect') ctx.set('errorPagePath', '/account');
+  if (!state) return null;
+
+  const name: CookieName = `oauth-state-${state}`;
+  const payload = await readJsonCookie(ctx, name, oauthCookiePayloadSchema);
+  if (!payload) return null;
+
+  deleteAuthCookie(ctx, name);
+  if (payload.type === 'connect') ctx.set('errorPagePath', '/account');
   return payload;
 };
