@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { hierarchy, isChannel, type ProductEntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
+import { homeChannelOf } from '#/db/utils/home-channel';
 import type { NotificationSubjectRow } from '#/lib/module';
 import type { InsertNotificationModel } from '#/modules/notification/notification-db';
 import type { NotificationType } from '#/modules/notification/notification-types';
@@ -10,15 +11,14 @@ const dayMs = 24 * 60 * 60 * 1000;
 const readProbability = 0.4;
 
 /**
- * A seed notification dated shortly after its subject but never older than 14 days: old-seeded
- * subjects still produce a recent-looking inbox, and rows land in live partitions
- * well inside the 90-day retention.
+ * A seed notification dated shortly after its subject but never older than 14 days: old-seeded subjects still produce
+ * a recent-looking inbox, and rows fall in live partitions, well inside `retention.activityDays` (90 by default).
  */
-const seedNotificationDate = (subjectAt: string) => {
+function seedNotificationDate(subjectAt: string): string {
   const base = Math.max(Date.parse(subjectAt), Date.now() - 14 * dayMs);
   const jitter = faker.number.int({ min: 60_000, max: 6 * 60 * 60_000 });
   return new Date(Math.min(base + jitter, Date.now())).toISOString();
-};
+}
 
 /**
  * An inbox row for a seeded subject, shaped as the fan-out would write it: home channel is the
@@ -33,9 +33,7 @@ export function mockSeedNotification(
   userId: string,
   actorId: string | null,
 ): InsertNotificationModel {
-  const [deepest] = hierarchy.resolveNonNullAncestors(entityType, subject);
-  const home =
-    deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : { id: subject.organizationId, type: 'organization' as const };
+  const home = homeChannelOf(entityType, subject);
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,

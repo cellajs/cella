@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
-import { validIdSchema } from '#/schemas';
+import { digestFrequencies } from '#/modules/notification/notification-db';
+import { notificationTypes } from '#/modules/notification/notification-types';
+import { booleanTransformSchema, integerQuerySchema, translatedError, validIdSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
-import { digestFrequencies } from './notification-db';
-import { notificationTypes } from './notification-types';
 
 export const notificationSchema = z.object({
   id: z.string(),
@@ -15,22 +15,23 @@ export const notificationSchema = z.object({
   channelId: z.string(),
   channelType: z.enum(appConfig.channelEntityTypes),
   organizationId: z.string(),
-  // Route params accept ids in place of slugs (beforeLoad rewrites), so these three are all the
-  // client needs to deep-link without resolving slugs first.
+  // Route params accept ids in place of slugs (beforeLoad rewrites), so `tenantId`, `organizationId` and `channelId`
+  // deep-link without resolving slugs first.
   tenantId: z.string(),
   actorId: z.string().nullable(),
-  /** Who caused it, for the card's avatar and sentence; null once the actor is deleted. */
+  /** Who caused it, for the card's avatar and sentence; null when the actor is no user or the user is gone. */
   actor: nullableUserMinimalBaseSchema,
-  /** Display names for the card's sentence; empty when the row is gone. */
+  /** Display names for the card's sentence; empty when the subject is gone or the user may not read it. */
   channelName: z.string(),
+  /** The context's name, as the digest names it: the thread for a comment or reply, else the subject's own. */
   subjectTitle: z.string(),
   readAt: z.string().nullable(),
 });
 
 export const notificationListQuerySchema = z.object({
-  unread: z.enum(['true', 'false']).optional().describe('Return only unread notifications'),
-  limit: z.coerce.number().int().min(1).max(100).default(30),
-  before: z.string().optional().describe('createdAt of the last row of the previous page'),
+  unread: booleanTransformSchema.describe('Return only unread notifications'),
+  limit: integerQuerySchema({ min: 1, max: 100, error: translatedError('error:invalid_limit', { max: 100 }) }).default(30),
+  before: z.iso.datetime().optional().describe('createdAt of the last row of the previous page'),
 });
 
 export const notificationListResponseSchema = z.object({ items: notificationSchema.array(), unreadCount: z.number().int().min(0) });

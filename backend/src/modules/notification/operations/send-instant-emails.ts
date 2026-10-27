@@ -3,21 +3,21 @@ import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
-import { log } from '#/utils/logger';
-import { commentEmail } from '../emails/comment-email';
-import { mentionEmail } from '../emails/mention-email';
-import { buildUnsubscribeLink } from '../helpers/category-token';
-import { htmlToExcerpt } from '../helpers/render-digest-html';
+import { commentEmail } from '#/modules/notification/emails/comment-email';
+import { mentionEmail } from '#/modules/notification/emails/mention-email';
+import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
+import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import {
   findChannelNames,
   findPendingInstantEmails,
-  findUserNames,
+  findUsersMinimal,
   findVerifiedRecipients,
   getUserAccess,
   stampEmailed,
-} from '../notification-queries';
-import { getNotificationSource, loadSubjectPreview } from '../notification-sources';
-import { findReadableSubjectIds } from './readable-subjects';
+} from '#/modules/notification/notification-queries';
+import { getNotificationSource, loadSubjectPreview } from '#/modules/notification/notification-sources';
+import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
+import { log } from '#/utils/logger';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const excerptLength = 250;
@@ -52,8 +52,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const readableByUser = await findReadableByUser(pending);
 
-  const actorIds = [...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))];
-  const actorNames = await findUserNames(dbCtx, { userIds: actorIds });
+  const actors = await findUsersMinimal(dbCtx, { userIds: pending.map((row) => row.actorId).filter((id): id is string => id !== null) });
   const channelNames = await findChannelNames(dbCtx, { channelIds: pending.map((row) => row.channelId) });
 
   let sent = 0;
@@ -70,12 +69,11 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     if (!preview) continue;
 
     const statics = {
-      actorName: notification.actorId ? (actorNames.get(notification.actorId) ?? '') : '',
+      actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
       channelName: channelNames.get(notification.channelId) ?? '',
     };
     const recipient = {
       email: user.email,
-      // Per recipient, unlike the newsletter path which mails everyone in the sender's language.
       lng: user.language,
       subjectTitle: preview.title,
       excerpt: htmlToExcerpt(preview.body, excerptLength),
@@ -120,10 +118,10 @@ function oneRowPerSubject(pending: PendingEmail[]): PendingEmail[] {
 /** Per recipient, the subjects of their pending rows they may read now. */
 async function findReadableByUser(pending: PendingEmail[]) {
   const accessByUser = await getUserAccess(dbCtx, { userIds: pending.map((row) => row.userId) });
+  const pendingByUser = Map.groupBy(pending, (row) => row.userId);
   const readableByUser = new Map<string, Set<string>>();
   for (const [userId, access] of accessByUser) {
-    const refs = pending.filter((row) => row.userId === userId);
-    readableByUser.set(userId, await findReadableSubjectIds(access, refs));
+    readableByUser.set(userId, await findReadableSubjectIds(access, pendingByUser.get(userId) ?? []));
   }
   return readableByUser;
 }

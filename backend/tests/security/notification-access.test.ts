@@ -62,10 +62,10 @@ describe('Notification access', async () => {
     return data as GetNotificationsResponse;
   };
 
-  /** A digest run at noon today, local time, so the send hour has passed whenever the suite runs. */
+  /** A digest run at noon UTC today, so the send hour has passed whenever the suite runs. */
   const noon = () => {
     const now = new Date();
-    now.setHours(12, 0, 0, 0);
+    now.setUTCHours(12, 0, 0, 0);
     return now;
   };
 

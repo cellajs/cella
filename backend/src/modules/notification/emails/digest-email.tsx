@@ -13,6 +13,7 @@ interface DigestStatic {
  */
 type DigestRecipient = EmailRecipient & { sectionsHtml: string; unsubscribeLink: string };
 
+/** The daily or weekly digest: a recipient's unread notifications in sections per channel. */
 export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()({
   translate(lng, { daily }) {
     const key = daily ? 'daily' : 'weekly';

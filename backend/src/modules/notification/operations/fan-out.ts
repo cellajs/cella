@@ -1,22 +1,32 @@
-import { appConfig, type ChannelEntityType, hierarchy, isChannel, isProduct, type ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
+import { homeChannelOf } from '#/db/utils/home-channel';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
+import {
+  findNotifiedUserIds,
+  getUserAccess,
+  insertNotificationsIgnoringDuplicates,
+  type NotificationInsert,
+} from '#/modules/notification/notification-queries';
+import { getNotificationSource, loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
+import { instantEmailTypes, type NotificationType } from '#/modules/notification/notification-types';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import { findNotifiedUserIds, getUserAccess, insertNotificationsIgnoringDuplicates, type NotificationInsert } from '../notification-queries';
-import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
-import { instantEmailTypes, type NotificationType, notificationTypes } from '../notification-types';
-
-/** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
-const mutedTypes = new Set<NotificationType>(notificationTypes.filter((type) => type !== 'mention'));
 
 type Candidate = { userId: string; type: NotificationType };
+
+/** The ids every row of one event shares. */
+interface EventIds {
+  organizationId: string;
+  tenantId: string;
+  activityId: string;
+}
 
 /** Runs off the activity bus, outside any request. */
 const dbCtx = { var: { db: baseDb } };
@@ -33,12 +43,10 @@ const dbCtx = { var: { db: baseDb } };
  * or a comment or reply while the app sets `has.commentEmail`.
  */
 export async function fanOutNotifications(event: ActivityEvent): Promise<boolean> {
-  const entityType = event.entityType;
-  if (!entityType || !isProduct(entityType)) return false;
-  const source = getNotificationSource(entityType);
+  const source = event.entityType && getNotificationSource(event.entityType);
   if (!source) return false;
   const { organizationId, tenantId, id: activityId } = event;
-  if (!organizationId || !tenantId || !activityId) return false;
+  if (!organizationId || !tenantId) return false;
 
   const subjectIds = (event.rows ?? []).flatMap(({ rowData }) => (typeof rowData.id === 'string' ? [rowData.id] : []));
   if (subjectIds.length === 0) return false;
@@ -50,10 +58,11 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
   // An event carries only the permission columns of its rows, never the body, so the rows are re-read.
   const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: readsMentions }));
 
+  const ids: EventIds = { organizationId, tenantId, activityId };
   let mailable = false;
   for (const row of rows) {
     try {
-      if (await fanOutRow(event, entityType, source, row, tenantId, readsMentions)) mailable = true;
+      if (await fanOutRow(event, ids, source, row, readsMentions)) mailable = true;
     } catch (error) {
       log.error('Notification fan-out failed for row', { error, activityId, subjectId: row.id });
     }
@@ -79,12 +88,12 @@ function mayAddMentions(event: ActivityEvent): boolean {
 /** Writes one row's notifications; true when one is mailable (a redelivered one too, so its email pass reruns). */
 async function fanOutRow(
   event: ActivityEvent,
-  entityType: ProductEntityType,
+  { organizationId, tenantId, activityId }: EventIds,
   source: NotificationSource,
   row: NotificationSubjectRow,
-  tenantId: string,
   readsMentions: boolean,
 ): Promise<boolean> {
+  const { entityType } = source;
   const actorId = event.userId ?? row.createdBy ?? null;
 
   const candidates = new Map<string, Candidate>();
@@ -109,11 +118,10 @@ async function fanOutRow(
   const fresh = [...candidates.values()].filter((candidate) => !notified.has(candidate.userId));
   if (fresh.length === 0) return false;
 
-  const allowed = await filterByReadAccess(entityType, row, fresh);
+  const channel = homeChannelOf(entityType, row);
+  const allowed = await filterByReadAccess(entityType, row, channel.id, fresh);
   if (allowed.length === 0) return false;
 
-  const channel = resolveChannel(entityType, row);
-  const organizationId = event.organizationId as string;
   const contextId = resolveContextId ? resolveContextId(row) : row.id;
   await insertNotificationsIgnoringDuplicates(dbCtx, {
     rows: allowed.map<NotificationInsert>((recipient) => ({
@@ -126,15 +134,15 @@ async function fanOutRow(
       channelType: channel.type,
       organizationId,
       tenantId,
-      activityId: event.id as string,
+      activityId,
       actorId,
     })),
   });
 
-  log.debug('Notifications created', { activityId: event.id, subjectId: row.id, recipientCount: allowed.length });
+  log.debug('Notifications created', { activityId, subjectId: row.id, recipientCount: allowed.length });
 
-  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this
-  // costs one subscription lookup. Never awaited into the fan-out's failure path.
+  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this costs one subscription
+  // lookup. `sendNotificationPush` never throws; the instant email pass runs once it returns.
   if (isPushSendConfigured()) {
     const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
     const url = buildNotificationLink(appConfig.frontendUrl, {
@@ -148,7 +156,7 @@ async function fanOutRow(
     });
     await sendNotificationPush(
       allowed.map((recipient) => recipient.userId),
-      { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType, url },
+      { t: 'notif', activityId, channelId: channel.id, type: primaryType, url },
     );
   }
   const mailed = instantEmailTypes();
@@ -156,10 +164,15 @@ async function fanOutRow(
 }
 
 /**
- * Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted.
+ * Keep only recipients who may read the row, then drop candidates other than mentions whose home membership is muted.
  * A candidate that names no user is left out alone: a public row reads for any id, and the inbox holds users only.
  */
-async function filterByReadAccess(entityType: ProductEntityType, row: NotificationSubjectRow, candidates: Candidate[]): Promise<Candidate[]> {
+async function filterByReadAccess(
+  entityType: ProductEntityType,
+  row: NotificationSubjectRow,
+  channelId: string,
+  candidates: Candidate[],
+): Promise<Candidate[]> {
   const accessByUser = await getUserAccess(dbCtx, { userIds: candidates.map((candidate) => candidate.userId) });
   const known = candidates.flatMap((candidate) => {
     const access = accessByUser.get(candidate.userId);
@@ -168,20 +181,13 @@ async function filterByReadAccess(entityType: ProductEntityType, row: Notificati
 
   const accesses = known.map(({ access }) => access);
   const decisions = checkAccessFanout(accesses, 'read', buildSubjectFromEntity(entityType, row), { onInvalidMembership: 'deny' });
-  const { id: channelId } = resolveChannel(entityType, row);
 
   return known.flatMap(({ candidate, access }, index) => {
     if (!decisions[index]?.allowed) return [];
-    if (!mutedTypes.has(candidate.type)) return [candidate];
+    // A mention is addressed to the user, so a muted membership never silences it.
+    if (candidate.type === 'mention') return [candidate];
 
     const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
     return muted ? [] : [candidate];
   });
-}
-
-/** The row's home channel, row-side twin of `homeChannelIdSql`. */
-function resolveChannel(entityType: ProductEntityType, row: NotificationSubjectRow): { id: string; type: ChannelEntityType } {
-  const [deepest] = hierarchy.resolveNonNullAncestors(entityType, row);
-  if (deepest && isChannel(deepest.type)) return { id: deepest.id, type: deepest.type };
-  return { id: row.organizationId, type: 'organization' };
 }

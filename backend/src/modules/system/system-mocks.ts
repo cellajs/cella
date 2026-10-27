@@ -12,4 +12,4 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
     return { id: mockUuid(), userId: mockUuid(), role: 'admin' as const, createdAt, updatedAt: createdAt };
   });
 
-export const mockSystemInviteResponse = () => ({ data: [] as never[], rejectedIds: [] as string[], invitesSentCount: 2 });
+export const mockSystemInviteResponse = () => ({ data: [], rejectedIds: [], invitesSentCount: 2 });

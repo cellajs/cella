@@ -2,8 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, userGuard } from '#/middlewares/guard';
 import { syncReadLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { locationSchema, validIdSchema } from '#/schemas';
-import { unsubscribeCategories } from './helpers/category-token';
+import { unsubscribeCategories } from '#/modules/notification/helpers/category-token';
 import {
   markReadBodySchema,
   markReadResponseSchema,
@@ -11,9 +10,10 @@ import {
   notificationListResponseSchema,
   preferencesSchema,
   updatePreferencesBodySchema,
-} from './notification-schema';
+} from '#/modules/notification/notification-schema';
+import { locationSchema, validIdSchema } from '#/schemas';
 
-const notificationRoutes = createXRoutes(['notifications'], {
+const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   getNotifications: xRoute({
     method: 'get',
     path: '/',
@@ -64,7 +64,7 @@ const notificationRoutes = createXRoutes(['notifications'], {
       'Turns off one email category from a link in an email. The token identifies the user and ' +
       'the category, so unsubscribing from the digest leaves other email untouched. No auth.',
     request: { query: z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string() }) },
-    responses: { 302: { description: 'Redirect to FE', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to the frontend', headers: locationSchema } },
   }),
 });
 

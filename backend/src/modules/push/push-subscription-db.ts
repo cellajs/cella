@@ -30,7 +30,7 @@ export const pushSubscriptionsTable = snakeCase.table(
     /** Coarse device hint for the user's own subscription list; never parsed. */
     userAgent: varchar({ length: maxLength.field }),
     createdAt: timestampColumns.createdAt,
-    /** Bumped on re-subscribe, so stale rows are identifiable if pruning ever needs it. */
+    /** Bumped on every re-subscribe; the retention sweep removes rows unseen for `retention.pushSubscriptionDaysUnseen`. */
     lastSeenAt: isoTimestamp(),
   },
   (table) => [index('push_subscriptions_user_index').on(table.userId)],

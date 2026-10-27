@@ -18,7 +18,7 @@ app.openapi(systemRoutes.createInvite, async (ctx) => {
 
 app.openapi(systemRoutes.deleteUsers, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const data = await deleteUsersOp(ctx, Array.isArray(ids) ? ids : [ids]);
+  const data = await deleteUsersOp(ctx, ids);
   return ctx.json(data, 200);
 });
 

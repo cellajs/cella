@@ -269,7 +269,7 @@
     },
     {
       "name": "notifications",
-      "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state rather than synced content.",
+      "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state, not synced content.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -305,7 +305,7 @@
     },
     {
       "name": "system",
-      "description": "System level endpoints for administrative actions and platform wide functionality, such as user\n    invitations, file uploads, and webhook handling.",
+      "description": "System level endpoints for system admins: inviting users to the app by email, updating and deleting\n    any user, and sending a newsletter to the members of chosen organizations.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -6914,7 +6914,7 @@
           }
         ],
         "operationId": "getNotifications",
-        "tags": ["notifications"],
+        "tags": ["notifications", "cella"],
         "summary": "List notifications",
         "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
         "x-guard": ["userGuard"],
@@ -6923,8 +6923,16 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "enum": ["true", "false"],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false",
               "description": "Return only unread notifications"
             },
             "required": false,
@@ -6946,6 +6954,7 @@
           {
             "schema": {
               "type": "string",
+              "format": "date-time",
               "description": "createdAt of the last row of the previous page"
             },
             "required": false,
@@ -7081,7 +7090,7 @@
           }
         ],
         "operationId": "markNotificationsRead",
-        "tags": ["notifications"],
+        "tags": ["notifications", "cella"],
         "summary": "Mark notifications as read",
         "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
         "x-guard": ["userGuard"],
@@ -7159,7 +7168,7 @@
           }
         ],
         "operationId": "getNotificationPreferences",
-        "tags": ["notifications"],
+        "tags": ["notifications", "cella"],
         "summary": "Get notification preferences",
         "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
         "x-guard": ["userGuard"],
@@ -7216,7 +7225,7 @@
           }
         ],
         "operationId": "updateNotificationPreferences",
-        "tags": ["notifications"],
+        "tags": ["notifications", "cella"],
         "summary": "Update notification preferences",
         "description": "Partial update; unspecified keys keep their stored value.",
         "x-guard": ["userGuard"],
@@ -7293,7 +7302,7 @@
       "get": {
         "security": [],
         "operationId": "unsubscribeNotifications",
-        "tags": ["notifications"],
+        "tags": ["notifications", "cella"],
         "summary": "Unsubscribe from a notification category",
         "description": "Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.",
         "x-guard": ["publicGuard"],
@@ -7329,7 +7338,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Redirect to FE",
+            "description": "Redirect to the frontend",
             "headers": {
               "Location": {
                 "schema": {
@@ -7368,9 +7377,9 @@
           }
         ],
         "operationId": "getPushVapid",
-        "tags": ["push"],
+        "tags": ["push", "cella"],
         "summary": "Get the Web Push application server key",
-        "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
+        "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -7420,7 +7429,7 @@
           }
         ],
         "operationId": "createPushSubscription",
-        "tags": ["push"],
+        "tags": ["push", "cella"],
         "summary": "Register a Web Push subscription",
         "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.",
         "x-guard": ["userGuard"],
@@ -7510,7 +7519,7 @@
           }
         ],
         "operationId": "deletePushSubscription",
-        "tags": ["push"],
+        "tags": ["push", "cella"],
         "summary": "Remove a Web Push subscription",
         "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
         "x-guard": ["userGuard"],
@@ -8128,10 +8137,6 @@
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
-                  },
-                  "contrast": {
-                    "type": "string",
-                    "enum": ["system", "more"]
                   },
                   "description": {
                     "type": ["string", "null"],

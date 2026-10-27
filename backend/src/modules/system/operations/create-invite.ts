@@ -6,53 +6,28 @@ import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
+/**
+ * Invites addresses to the app by mail, outside any organization. An address a verified account holds, or one with an
+ * unexpired invitation, is refused and comes back in `rejectedIds`.
+ */
 export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
-
-  const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
-
+  // The body schema trims and lowercases each address; the set drops repeats.
+  const uniqueEmails = [...new Set(emails)];
   const now = new Date();
 
-  // Emails already belonging to a verified user
-  const existingEmailRecords = await findVerifiedEmails(ctx, { emails: normalizedEmails });
-  const existingEmails = new Set(existingEmailRecords.map((r) => r.email));
+  const verifiedEmails = await findVerifiedEmails(ctx, { emails: uniqueEmails });
+  const pendingTokens = await findSystemInvitationTokens(ctx, { emails: uniqueEmails });
 
-  const pendingTokens = await findSystemInvitationTokens(ctx, { emails: normalizedEmails });
+  // An address a verified account holds, or one with an unexpired invitation, is rejected; an expired one is invited again.
+  const taken = new Set([
+    ...verifiedEmails.map((row) => row.email),
+    ...pendingTokens.filter((token) => new Date(token.expiresAt) > now).map((token) => token.email),
+  ]);
+  const recipientEmails = uniqueEmails.filter((email) => !taken.has(email));
+  const rejectedIds = uniqueEmails.filter((email) => taken.has(email));
 
-  const activeTokenByEmail = new Map<string, { id: string }>();
-  const expiredTokenIdsByEmail = new Map<string, string[]>();
-
-  for (const t of pendingTokens) {
-    const isActive = new Date(t.expiresAt) > now;
-    if (isActive) activeTokenByEmail.set(t.email, { id: t.id });
-    else {
-      const arr = expiredTokenIdsByEmail.get(t.email) ?? [];
-      arr.push(t.id);
-      expiredTokenIdsByEmail.set(t.email, arr);
-    }
-  }
-
-  const recipientEmails: string[] = [];
-  const rejectedIds: string[] = [];
-
-  for (const email of normalizedEmails) {
-    if (existingEmails.has(email)) {
-      rejectedIds.push(email);
-      continue;
-    }
-
-    if (activeTokenByEmail.has(email)) {
-      rejectedIds.push(email);
-      continue;
-    }
-
-    // Either no token at all OR expired token(s)
-    recipientEmails.push(email);
-  }
-
-  if (recipientEmails.length === 0) {
-    return { data: [] as never[], rejectedIds, invitesSentCount: 0 };
-  }
+  if (recipientEmails.length === 0) return { data: [], rejectedIds, invitesSentCount: 0 };
 
   // One independent random secret per recipient, so one link never authenticates another's invitation. Each replaces
   // the earlier system invitations of its address.
@@ -70,5 +45,5 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
 
   log.info('Users invited on system level', { count: issued.length });
 
-  return { data: [] as never[], rejectedIds, invitesSentCount: issued.length };
+  return { data: [], rejectedIds, invitesSentCount: issued.length };
 }

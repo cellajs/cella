@@ -6,17 +6,17 @@ import {
   pushSubscriptionBodySchema,
   pushSubscriptionResponseSchema,
   pushVapidResponseSchema,
-} from './push-schema';
+} from '#/modules/push/push-schema';
 
-const pushRoutes = createXRoutes(['push'], {
+const pushRoutes = createXRoutes(['push', 'cella'], {
   getPushVapid: xRoute({
     method: 'get',
     path: '/vapid',
     xGuard: [userGuard],
     summary: 'Get the Web Push application server key',
     description:
-      'Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment ' +
-      'has no push keys configured; the client then offers no push toggle.',
+      'Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off ' +
+      '(push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.',
     responses: { 200: json('VAPID public key', pushVapidResponseSchema) },
   }),
   createPushSubscription: xRoute({

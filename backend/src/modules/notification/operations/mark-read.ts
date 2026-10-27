@@ -1,19 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
-import { markContextNotificationsRead, markNotificationsRead } from '../notification-queries';
+import { markNotificationsRead } from '#/modules/notification/notification-queries';
+import type { markReadBodySchema } from '#/modules/notification/notification-schema';
 
-export interface MarkReadInput {
-  ids?: string[];
-  contextId?: string;
-}
+type MarkReadInput = z.infer<typeof markReadBodySchema>;
 
-/**
- * Mark notifications read. Scoped to the caller's own rows in the query, so an id belonging to
- * someone else is a silent no-op.
- */
+/** Mark notifications read. Scoped to the caller's own rows in the query, so an id of someone else's row updates nothing. */
 export async function markReadOp(ctx: UserContext, input: MarkReadInput) {
-  const userId = ctx.var.user.id;
-
-  if (input.contextId) return { updated: await markContextNotificationsRead(ctx, { userId, contextId: input.contextId }) };
-
-  return { updated: await markNotificationsRead(ctx, { userId, ids: input.ids }) };
+  return { updated: await markNotificationsRead(ctx, { userId: ctx.var.user.id, ...input }) };
 }

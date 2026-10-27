@@ -1643,10 +1643,10 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  *
  * Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.
  *
- * **GET /notifications** ·· [getNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications_
+ * **GET /notifications** ·· [getNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications · cella_
  *
  * @param {getNotificationsData} options
- * @param {enum=} options.query.unread - `enum` (optional)
+ * @param {enum | boolean=} options.query.unread - `enum | boolean` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string=} options.query.before - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1666,7 +1666,7 @@ export const getNotifications = <ThrowOnError extends boolean = true>(
  *
  * Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.
  *
- * **POST /notifications/read** ·· [markNotificationsRead](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/read) ·· _notifications_
+ * **POST /notifications/read** ·· [markNotificationsRead](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/read) ·· _notifications · cella_
  *
  * @param {markNotificationsReadData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1692,7 +1692,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
  *
  * Email and digest preferences for the current user. In-app delivery is not opt-out.
  *
- * **GET /notifications/preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/preferences) ·· _notifications_
+ * **GET /notifications/preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/preferences) ·· _notifications · cella_
  *
  * @param {getNotificationPreferencesData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1712,7 +1712,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  *
  * Partial update; unspecified keys keep their stored value.
  *
- * **PATCH /notifications/preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/notifications/preferences) ·· _notifications_
+ * **PATCH /notifications/preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/notifications/preferences) ·· _notifications · cella_
  *
  * @param {updateNotificationPreferencesData} options
  * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
@@ -1739,7 +1739,7 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
  *
  * Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.
  *
- * **GET /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications_
+ * **GET /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications · cella_
  *
  * @param {unsubscribeNotificationsData} options
  * @param {string} options.query.user - `string`
@@ -1759,9 +1759,9 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
 /**
  * Get the Web Push application server key
  *
- * Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.
+ * Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.
  *
- * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push_
+ * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push · cella_
  *
  * @param {getPushVapidData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1781,7 +1781,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  *
  * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
  *
- * **DELETE /push/subscriptions** ·· [deletePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/DELETE/push/subscriptions) ·· _push_
+ * **DELETE /push/subscriptions** ·· [deletePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/DELETE/push/subscriptions) ·· _push · cella_
  *
  * @param {deletePushSubscriptionData} options
  * @param {string} options.query.endpoint - `string`
@@ -1802,7 +1802,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
  *
  * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.
  *
- * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push_
+ * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push · cella_
  *
  * @param {createPushSubscriptionData} options
  * @param {string=} options.body.endpoint - `string` (optional)
@@ -1981,7 +1981,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {enum=} options.body.contrast - `enum` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)

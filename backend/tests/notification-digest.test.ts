@@ -15,12 +15,12 @@ import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-/** Noon, local time, on the next `isoWeekday` (1 = Monday … 7 = Sunday) after today: past the send hour. */
+/** Noon UTC on the next `isoWeekday` (1 = Monday … 7 = Sunday) after today: past the send hour. */
 const nextNoonOn = (isoWeekday: number) => {
   const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  do date.setDate(date.getDate() + 1);
-  while ((date.getDay() || 7) !== isoWeekday);
+  date.setUTCHours(12, 0, 0, 0);
+  do date.setUTCDate(date.getUTCDate() + 1);
+  while ((date.getUTCDay() || 7) !== isoWeekday);
   return date;
 };
 

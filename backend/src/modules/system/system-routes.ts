@@ -2,12 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
+import { mockSystemInviteResponse } from '#/modules/system/system-mocks';
+import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema, systemUserUpdateBodySchema } from '#/modules/system/system-schema';
+import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBodySchema } from '#/schemas';
-import { userSchema, userUpdateBodySchema } from '../user/user-schema';
-import { mockSystemInviteResponse } from './system-mocks';
-
-const systemInviteResponseSchema = batchResponseSchema().extend({ invitesSentCount: z.number() });
 
 const systemRoutes = createXRoutes(['system', 'cella'], {
   createInvite: xRoute({
@@ -39,7 +37,7 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update user',
     description: 'Updates a user identified by ID.',
-    request: { params: entityIdParamSchema, body: jsonBody(userUpdateBodySchema) },
+    request: { params: entityIdParamSchema, body: jsonBody(systemUserUpdateBodySchema) },
     responses: { 200: json('User', userSchema) },
   }),
   sendNewsletter: xRoute({
