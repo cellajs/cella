@@ -57,6 +57,8 @@ vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
       clientId: 'test.projectcampus.com',
       clientSecret: 'test-secret',
       redirectUri: `${appConfig.backendAuthUrl}/sso/callback`,
+      // A new app's config names no federation, so the MFA test's acr comes from here.
+      mfaAcr: ['https://refeds.org/profile/mfa'],
     }),
   };
 });
