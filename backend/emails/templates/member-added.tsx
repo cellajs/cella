@@ -1,10 +1,13 @@
 import { appConfig, type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { senderEndingFor, senderHtml } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface MemberAddedStatic {
   senderName: string;
+  /** The address of whoever added the member, which replies reach; shown beside the name. */
+  senderEmail?: string;
   entityName: string;
   role: EntityRole;
 }
@@ -14,19 +17,20 @@ type MemberAddedRecipient = EmailRecipient & { name: string; entityLink: string 
 const appName = appConfig.name;
 
 export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAddedRecipient>()({
-  translate(lng, { senderName, entityName, role }, param = plainParam) {
+  translate(lng, { senderName, senderEmail, entityName, role }, param = plainParam) {
     return {
-      subject: i18n.t('backend:email.member_added.subject', { lng, entityName, ...plainText }),
+      subject: i18n.t('backend:email.member_added.subject', { lng, senderName, entityName, appName, ...plainText }),
       previewText: i18n.t('backend:email.member_added.preview', { lng, entityName, appName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_added.title', { lng, entityName }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      bodyHtml: i18n.t('backend:email.member_added.text', { lng, entityName, appName, senderName, role }),
+      bodyHtml: i18n.t('backend:email.member_added.text', { lng, entityName, appName, sender: senderHtml(lng, senderName, senderEmail), role }),
       buttonText: i18n.t('c:view', { lng }),
+      endingHtml: senderEndingFor(lng, { senderName, senderEmail, ignorable: false }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, entityLink, frame }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, endingHtml, supportText, senderName, entityLink, frame }) {
     return (
       <EmailMessage
         frame={frame}
@@ -36,12 +40,18 @@ export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAdd
         greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: entityLink }}
+        endingHtml={endingHtml || undefined}
         supportText={supportText}
       />
     );
   },
   preview: {
-    statics: { senderName: 'John', entityName: 'Acme', role: hierarchy.getLeastPrivilegedRole('organization') },
+    statics: {
+      senderName: 'John Doe',
+      senderEmail: 'john.doe@acme.example',
+      entityName: 'Acme',
+      role: hierarchy.getLeastPrivilegedRole('organization'),
+    },
     recipient: { name: 'Emily', entityLink: 'https://example.com/acme' },
   },
 });

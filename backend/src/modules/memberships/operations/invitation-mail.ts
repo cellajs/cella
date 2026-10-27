@@ -46,7 +46,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const withToken = invited.flatMap((address) =>
     address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
   );
-  const senderProps = { senderName: sender.name };
+  const senderProps = { senderName: sender.name, senderEmail: sender.email };
 
   if (!channel) {
     if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email);

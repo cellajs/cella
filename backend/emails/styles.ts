@@ -6,6 +6,11 @@ export const greetingStyle: React.CSSProperties = { marginBottom: '4px' };
 
 export const smallTextStyle: React.CSSProperties = { fontSize: '0.75rem', lineHeight: '1.125rem' };
 
+/** Head styles every mail carries: inline styles cannot reach a link inside translated HTML. */
+export const headStyles = `
+  .email-ending a { color: #666666; text-decoration: underline; }
+`;
+
 const finePrintStyle: React.CSSProperties = { ...smallTextStyle, textAlign: 'center' };
 
 export const noteStyle: React.CSSProperties = { ...finePrintStyle, margin: '0.5rem 0 0 0' };

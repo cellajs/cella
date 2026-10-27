@@ -1,10 +1,13 @@
 import { appConfig, type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface MemberInviteWithTokenStatic {
   senderName: string;
+  /** The inviter's address, which replies reach; shown beside the name. */
+  senderEmail?: string;
   entityName: string;
   role: EntityRole;
 }
@@ -15,20 +18,21 @@ const appName = appConfig.name;
 
 /** For new users, who need the token; existing users get member-invite. */
 export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTokenStatic, MemberInviteWithTokenRecipient>()({
-  translate(lng, { senderName, entityName, role }, param = plainParam) {
+  translate(lng, { senderName, senderEmail, entityName, role }, param = plainParam) {
     return {
-      subject: i18n.t('backend:email.member_invite.subject', { lng, entityName, ...plainText }),
+      subject: i18n.t('backend:email.member_invite.subject', { lng, senderName, entityName, appName, ...plainText }),
       previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, appName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_invite.title', { lng, entityName }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      bodyHtml: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
-      inviteExpires: i18n.t('backend:email.invite_expires', { lng }),
+      bodyHtml: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, sender: senderHtml(lng, senderName, senderEmail), role }),
+      expiresText: linkExpiresText(lng, 'invitation'),
       buttonText: i18n.t('c:join', { lng }),
+      endingHtml: senderEndingFor(lng, { senderName, senderEmail, ignorable: true }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, inviteExpires, buttonText, supportText, senderName, inviteLink, frame }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, expiresText, buttonText, endingHtml, supportText, senderName, inviteLink, frame }) {
     return (
       <EmailMessage
         frame={frame}
@@ -38,13 +42,19 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTo
         greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: inviteLink }}
-        note={inviteExpires}
+        note={expiresText}
+        endingHtml={endingHtml}
         supportText={supportText}
       />
     );
   },
   preview: {
-    statics: { senderName: 'John', entityName: 'Acme', role: hierarchy.getLeastPrivilegedRole('organization') },
+    statics: {
+      senderName: 'John Doe',
+      senderEmail: 'john.doe@acme.example',
+      entityName: 'Acme',
+      role: hierarchy.getLeastPrivilegedRole('organization'),
+    },
     recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
   },
 });

@@ -70,7 +70,7 @@ describe('account security email escapes its details', () => {
   const hostile = '<a href="https://evil.test">click</a>';
 
   it('renders markup in a detail as text, never as a link', async () => {
-    const details = { tenantName: hostile, userEmail: 'a@b.test', timestamp: 'now' };
+    const details = { tenantName: hostile, userEmail: 'a@b.test' };
     const statics = { name: 'Emily', type: 'tenant-created', details } as const;
     const translated = accountSecurityEmail.translate('en', statics);
     const html = await render(accountSecurityEmail.component({ ...translated, frame: {} }));
@@ -82,12 +82,10 @@ describe('account security email escapes its details', () => {
     expect(html).toContain('<strong>');
   });
 
-  it('keeps the account link of a new sign-in notice working after escaping', async () => {
-    const details = { strategy: 'Passkey', accountUrl: 'https://app.example.test/account' };
-    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
+  it('ends a new sign-in notice with a working link to the account', async () => {
+    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details: { strategy: 'Passkey' } });
     const html = await render(accountSecurityEmail.component({ ...translated, frame: {} }));
 
-    expect(html).toContain('href="https://app.example.test/account"');
-    expect(html).toContain('<br');
+    expect(html).toContain(`href="${appConfig.frontendUrl}/account"`);
   });
 });

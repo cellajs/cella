@@ -75,6 +75,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     const recipient = {
       email: user.email,
       lng: user.language,
+      name: user.name,
       subjectTitle: preview.title,
       excerpt: htmlToExcerpt(preview.body, excerptLength),
       link: buildNotificationLink(appConfig.frontendUrl, {

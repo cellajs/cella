@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { endingFor } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
 
 const appName = appConfig.name;
@@ -23,10 +24,11 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
       bodyHtml: i18n.t('backend:email.account_exists.text', { lng, appName }),
       buttonText: i18n.t('c:sign_in', { lng }),
       signInUrl: `${appConfig.frontendUrl}/auth/authenticate`,
+      endingHtml: endingFor(lng, 'ignore'),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, signInUrl, supportText, frame }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, signInUrl, endingHtml, supportText, frame }) {
     return (
       <EmailMessage
         frame={frame}
@@ -35,6 +37,7 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
         greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: signInUrl }}
+        endingHtml={endingHtml}
         supportText={supportText}
       />
     );

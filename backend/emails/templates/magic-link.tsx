@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 const appName = appConfig.name;
@@ -21,11 +22,13 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName }),
       buttonText: i18n.t(isNewUser ? 'c:sign_up' : 'c:sign_in', { lng }),
+      expiresText: linkExpiresText(lng, 'magic'),
+      endingHtml: `${endingFor(lng, 'ignore')} ${i18n.t('backend:email.ending.no_forward', { lng })}`,
       supportText: i18n.t('backend:email.support_email', { lng }),
       magicLinkUrl,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, magicLinkUrl, supportText, frame }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, expiresText, endingHtml, magicLinkUrl, supportText, frame }) {
     return (
       <EmailMessage
         frame={frame}
@@ -34,6 +37,8 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
         greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: magicLinkUrl }}
+        note={expiresText}
+        endingHtml={endingHtml}
         supportText={supportText}
       />
     );

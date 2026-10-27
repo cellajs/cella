@@ -106,7 +106,7 @@ async function sendBatch({ subject, html, versions, replyTo, htmlParams, request
     await postToBrevo(env.BREVO_API_KEY, {
       subject: neutralizeBrevoTags(sanitizeEmailSubject(subject || `${appConfig.name} message`), { params }, 'text'),
       htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
-      sender: { email: appConfig.senderEmail },
+      sender: { name: appConfig.name, email: appConfig.senderEmail },
       replyTo: { email: replyTo || appConfig.supportEmail },
       ...(requestId ? { headers: { 'X-Request-Id': requestId } } : {}),
       messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
@@ -141,13 +141,14 @@ export const mailer = {
       const htmlParams: Partial<Record<string, SafeHtmlPolicy>> = {};
       for (const [key, policy] of Object.entries<SafeHtmlPolicy | undefined>(template.htmlParams ?? {})) htmlParams[paramKey(key)] = policy;
 
-      const { subject, ...componentProps } = template.translate(lng, staticProps, (key) => brevoPlaceholder(paramKey(String(key)), htmlParams));
+      const param = (key: string) => brevoPlaceholder(paramKey(key), htmlParams);
+      const { subject, ...componentProps } = template.translate(lng, staticProps, (key) => param(String(key)));
 
       const recipientKeys = Object.keys(lngRecipients[0]).filter((key) => key !== 'email' && key !== 'lng');
       const placeholderProps: Record<string, string> = {};
       for (const key of recipientKeys) placeholderProps[key] = brevoPlaceholder(paramKey(key), htmlParams);
 
-      const frame = emailFrame(template, staticProps, lng, details);
+      const frame = emailFrame(template, staticProps, lng, details, param);
       const html = await render(template.component({ ...componentProps, ...placeholderProps, frame }));
 
       for (let i = 0; i < lngRecipients.length; i += maxVersionsPerCall) {

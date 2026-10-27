@@ -103,8 +103,7 @@ describe('new sign-in notice', () => {
     await signIn(user, browser());
 
     expect(notices()).toHaveLength(1);
-    expect(notices()[0].details).toMatchObject({ strategy: 'Passkey' });
-    expect(notices()[0].details.accountUrl).toMatch(/\/account$/);
+    expect(notices()[0].details).toEqual({ strategy: 'Passkey' });
 
     const [row] = await devicesOf(user.id);
     expect(row.notifiedAt).toBeTruthy();

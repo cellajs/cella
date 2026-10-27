@@ -126,7 +126,7 @@ describe('step-up', async () => {
   });
 
   it('must not put the code where a lock screen or a mail list shows it', () => {
-    const { subject, previewText } = stepUpEmail.translate('en', { code: '482913', name: 'Emily', browser: 'Firefox', os: 'macOS' });
+    const { subject, previewText } = stepUpEmail.translate('en', { code: '482913', name: 'Emily' });
     expect(`${subject} ${previewText}`).not.toContain('482913');
   });
 

@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
 import { EmailLayout, EmailText } from '../components';
+import { formatMailTime } from '../frame';
 import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
@@ -21,6 +22,8 @@ export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
       headerHtml: i18n.t('backend:email.tenant_removed.title', { appName: appConfig.name, name: statics.tenantName, lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       ...statics,
+      archivedAt: formatMailTime(statics.archivedAt, lng),
+      removedAt: formatMailTime(statics.removedAt, lng),
     };
   },
   component({ subject, headerHtml, supportText, tenantId, archivedAt, removedAt, counts, frame }) {

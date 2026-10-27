@@ -60,7 +60,7 @@ export const notifyNewSignIn = async ({ user, strategy, newDevice }: Pick<SignIn
     await updateDeviceNotifiedAt(dbCtx, { userId: user.id, deviceIdHash: newDevice.deviceIdHash });
 
     // Country, browser and time come with the mail's request details: this runs inside the sign-in's request.
-    sendAccountSecurityEmail(user, 'new-sign-in', { strategy: strategyLabels[strategy], accountUrl: `${appConfig.frontendUrl}/account` });
+    sendAccountSecurityEmail(user, 'new-sign-in', { strategy: strategyLabels[strategy] });
   } catch (err) {
     log.error('Failed to send new sign-in notice', { userId: user.id, err });
   }

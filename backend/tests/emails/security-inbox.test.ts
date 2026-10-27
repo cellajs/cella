@@ -14,7 +14,7 @@ afterEach(async () => {
   await clearDatabase();
 });
 
-const utcTime = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$/;
+const isoTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 /** The security mails handed to the mailer for the security inbox, with the recipient's language. */
 const inboxMails = () => mailsTo(appConfig.securityEmail).map(({ statics, recipient }) => ({ ...statics, lng: recipient.lng }));
@@ -51,7 +51,7 @@ describe('security inbox mails', async () => {
     ]);
   });
 
-  it('reports a system role change with a readable UTC time', async () => {
+  it('reports a system role change with its ISO time, which the mail formats for the reader', async () => {
     await import('#/modules/system/system-listeners');
     const user = await createTestUser(signUpUser.email);
 
@@ -70,7 +70,7 @@ describe('security inbox mails', async () => {
           name: 'Security',
           type: 'system-role-granted',
           lng: appConfig.defaultLanguage,
-          details: { role: 'admin', userEmail: user.email, timestamp: expect.stringMatching(utcTime) },
+          details: { role: 'admin', userEmail: user.email, timestamp: expect.stringMatching(isoTime) },
         },
       ]),
     );

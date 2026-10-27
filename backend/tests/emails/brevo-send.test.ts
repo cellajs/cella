@@ -67,13 +67,21 @@ afterEach(() => {
  * `{{params.x}}` escaped, and a param declared as app-built HTML through `{{params.x|safe}}`.
  */
 describe('Mails as Brevo fills them', () => {
-  const mentionRecipient = { email: 'mentioned@example.test', lng: 'en', subjectTitle: 'Roadmap', excerpt: 'See this', link, unsubscribeLink };
+  const mentionRecipient = {
+    email: 'mentioned@example.test',
+    lng: 'en',
+    name: 'Mia',
+    subjectTitle: 'Roadmap',
+    excerpt: 'See this',
+    link,
+    unsubscribeLink,
+  };
 
   it('must not open a Brevo template tag via a name rendered into the mail', async () => {
     const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';
     const { body } = await send(mentionEmail, { actorName: hostileName, channelName: hostileName }, mentionRecipient);
 
-    const ownPlaceholders = /\{\{params\.(?:subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
+    const ownPlaceholders = /\{\{params\.(?:name|email|subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
     expect(body.htmlContent.replace(ownPlaceholders, '')).not.toMatch(tagOpener);
     expect(body.subject).not.toMatch(tagOpener);
     // The name still reads as typed: only the brace that opens a tag is written as a character reference.
@@ -95,8 +103,9 @@ describe('Mails as Brevo fills them', () => {
     const typed = '{{params.email}} {{params.unsubscribeLink}} {{params.link}}';
     const { body, html } = await send(mentionEmail, { actorName: typed, channelName: typed }, mentionRecipient);
 
-    // No param key can be named without the send's nonce: the typed placeholders read as typed.
-    expect(html).not.toContain(mentionRecipient.email);
+    // No param key can be named without the send's nonce: the typed placeholders read as typed, and the address shows
+    // only where the footer names it.
+    expect(html.split(mentionRecipient.email)).toHaveLength(2);
     expect(html.split(unsubscribeLink)).toHaveLength(2);
     expect(body.htmlContent).toContain('&#123;{params.email}}');
     expect(body.subject).not.toMatch(tagOpener);
@@ -133,7 +142,11 @@ describe('Mails as Brevo fills them', () => {
       [{ channelId: 'c1', channelName: hostile, lines: [describeDigestRow('comment', hostile, 'en')], overflow: 0 }],
       'en',
     );
-    const { params, html } = await send(digestEmail, { daily: true }, { email: 'reader@example.test', lng: 'en', sectionsHtml, unsubscribeLink });
+    const { params, html } = await send(
+      digestEmail,
+      { daily: true },
+      { email: 'reader@example.test', lng: 'en', name: 'Reader', sectionsHtml, unsubscribeLink },
+    );
 
     expect(paramValue(params, 'sectionsHtml')).not.toMatch(tagOpener);
     expect(html).not.toMatch(anchorToEvil);
@@ -147,7 +160,11 @@ describe('Mails as Brevo fills them', () => {
       [{ channelId: 'c1', channelName: 'Design 101', lines: [describeDigestRow('comment', 'Roadmap', 'en')], overflow: 2 }],
       'en',
     );
-    const { html } = await send(digestEmail, { daily: false }, { email: 'reader@example.test', lng: 'en', sectionsHtml, unsubscribeLink });
+    const { html } = await send(
+      digestEmail,
+      { daily: false },
+      { email: 'reader@example.test', lng: 'en', name: 'Reader', sectionsHtml, unsubscribeLink },
+    );
 
     expect(html).toContain('<h3>Design 101</h3><ul><li>New comment on <strong>Roadmap</strong></li>');
     expect(html).toContain('<li>and 2 more</li></ul>');

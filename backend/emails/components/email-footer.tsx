@@ -7,9 +7,10 @@ import { Link } from './primitives';
 const lineStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textAlign: 'center', margin: '0 0 0.75rem' };
 const linkStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textDecoration: 'underline' };
 
-/** The app's name with the support link, then the postal address, each on a line of its own. */
-export const EmailFooter = ({ supportText }: { supportText: string }) => (
+/** The address the mail went to, the app's name with the support link, then the postal address, each on a line of its own. */
+export const EmailFooter = ({ supportText, sentTo }: { supportText: string; sentTo?: string }) => (
   <div style={{ marginTop: '2rem', maxWidth: '400px', padding: '0 1.5rem 2.5rem' }}>
+    {sentTo && <EmailText style={lineStyle}>{sentTo}</EmailText>}
     <EmailText style={lineStyle}>
       {appConfig.name}・
       <Link style={linkStyle} href={`mailto:${appConfig.supportEmail}`}>

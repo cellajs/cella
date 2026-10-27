@@ -7,6 +7,7 @@ import { EmailFooter } from './email-footer';
 import { EmailHeader } from './email-header';
 import { EmailLogo } from './email-logo';
 import { EmailRequestDetails } from './email-request-details';
+import { EmailText } from './email-text';
 import { Column, Link, Row } from './primitives';
 import { SafeHtml } from './safe-html';
 
@@ -22,6 +23,11 @@ export interface EmailLayoutProps {
   /** Rendered as the last line of the body panel. */
   unsubscribe?: { label: string; href: string };
   supportText: string;
+  /**
+   * Translated HTML under the body's divider, after any request details: what a reader does when the mail was not their
+   * doing, or who sent it and how to reach them.
+   */
+  endingHtml?: string;
   frame: EmailFrame;
   children: React.ReactNode;
 }
@@ -35,6 +41,7 @@ export const EmailLayout = ({
   headChildren,
   unsubscribe,
   supportText,
+  endingHtml,
   frame,
   children,
 }: EmailLayoutProps) => (
@@ -49,9 +56,14 @@ export const EmailLayout = ({
     {headerHtml && <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />}
     <EmailBody>
       {children}
-      {frame.requestDetails && (
+      {(frame.requestDetails || endingHtml) && (
         <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #eaeaea' }}>
-          <EmailRequestDetails rows={frame.requestDetails} />
+          {frame.requestDetails && <EmailRequestDetails rows={frame.requestDetails} />}
+          {endingHtml && (
+            <EmailText className="email-ending" style={{ ...smallTextStyle, color: '#666', margin: frame.requestDetails ? '0.5rem 0 0' : 0 }}>
+              <SafeHtml html={endingHtml} policy="inline" />
+            </EmailText>
+          )}
         </div>
       )}
       {unsubscribe && (
@@ -63,6 +75,6 @@ export const EmailLayout = ({
       )}
     </EmailBody>
     <EmailLogo />
-    <EmailFooter supportText={supportText} />
+    <EmailFooter supportText={supportText} sentTo={frame.sentTo} />
   </EmailContainer>
 );

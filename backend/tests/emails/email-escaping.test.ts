@@ -83,7 +83,7 @@ describe('email plain-text parts keep names as typed', () => {
 
   it('leaves the subject and preview unescaped, and the rendered mail escapes them once', async () => {
     const translated = memberInviteEmail.translate('en', statics);
-    expect(translated.subject).toBe('Invitation to R&D <Lab>');
+    expect(translated.subject).toContain('Jane invited you to R&D <Lab>');
     expect(translated.previewText).toContain('R&D <Lab>');
 
     const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link, frame: {} }));

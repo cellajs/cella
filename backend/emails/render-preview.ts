@@ -1,5 +1,5 @@
 import { emailFrame } from './frame';
-import { type EmailPreviewName, emailPreviews, previewRequestDetails } from './preview-fixtures';
+import { type EmailPreviewName, emailPreviews, previewRecipientEmail, previewRequestDetails } from './preview-fixtures';
 import { render } from './renderer/render';
 import { brevoPlaceholder } from './types';
 
@@ -18,7 +18,9 @@ export async function renderEmailPreview(name: EmailPreviewName, { lng, placehol
     ? Object.fromEntries(Object.keys(def.preview.recipient).map((key) => [key, brevoPlaceholder(key, { ...def.htmlParams })]))
     : def.preview.recipient;
 
-  const frame = emailFrame(def, def.preview.statics, lng, previewRequestDetails);
+  // The footer's address: a sample, or the placeholder the mailer would leave.
+  const param = (key: string) => (key === 'email' && !placeholders ? previewRecipientEmail : brevoPlaceholder(key));
+  const frame = emailFrame(def, def.preview.statics, lng, previewRequestDetails, param);
   const html = await render(def.component({ ...componentProps, ...recipientProps, frame }));
   return { subject, html };
 }

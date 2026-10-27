@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
 
 const appName = appConfig.name;
@@ -23,13 +24,14 @@ export const invitationAddressEmail = defineEmailTemplate<InvitationAddressStati
       previewText: i18n.t('backend:email.invitation_address.preview', { lng, entityName, ...plainText }),
       headerHtml: i18n.t('backend:email.invitation_address.title', { lng, entityName }),
       bodyHtml: i18n.t('backend:email.invitation_address.text', { lng, entityName, appName, accountEmail }),
-      inviteExpires: i18n.t('backend:email.invite_expires', { lng }),
+      expiresText: linkExpiresText(lng, 'invitation'),
+      endingHtml: endingFor(lng, 'ignore'),
       buttonText: i18n.t('c:confirm', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       confirmUrl,
     };
   },
-  component({ previewText, headerHtml, bodyHtml, inviteExpires, buttonText, supportText, confirmUrl, frame }) {
+  component({ previewText, headerHtml, bodyHtml, expiresText, endingHtml, buttonText, supportText, confirmUrl, frame }) {
     return (
       <EmailMessage
         frame={frame}
@@ -37,7 +39,8 @@ export const invitationAddressEmail = defineEmailTemplate<InvitationAddressStati
         headerHtml={headerHtml}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: confirmUrl }}
-        note={inviteExpires}
+        note={expiresText}
+        endingHtml={endingHtml}
         supportText={supportText}
       />
     );

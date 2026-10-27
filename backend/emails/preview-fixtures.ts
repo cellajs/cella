@@ -21,6 +21,9 @@ import {
 } from './index';
 import type { EmailTemplateDef } from './types';
 
+/** The address a preview names in its footer. */
+export const previewRecipientEmail = 'emily@example.com';
+
 /** The request a preview pretends to run in, so templates that declare request details show them. */
 export const previewRequestDetails: RequestDetails = {
   requestId: 'd97be30c-c253-470d-948f-f2983733c77f',

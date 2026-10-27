@@ -87,7 +87,7 @@ export const deletePasskey = async (ctx: DbContext, { userId, id }: DeletePasske
   const [deleted] = await ctx.var.db
     .delete(passkeysTable)
     .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.id, id)))
-    .returning({ id: passkeysTable.id });
+    .returning({ id: passkeysTable.id, nameOnDevice: passkeysTable.nameOnDevice });
   return deleted;
 };
 

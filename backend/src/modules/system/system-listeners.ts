@@ -2,7 +2,7 @@ import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { findUserById } from '#/modules/user/user-queries';
-import { utcStamp } from '#/utils/iso-date';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const securityEmailType = { create: 'system-role-granted', update: 'system-role-changed', delete: 'system-role-revoked' } as const;
@@ -22,7 +22,7 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
     sendSecurityInboxEmail(securityEmailType[event.action], {
       role: systemRole.role,
       userEmail: user?.email ?? systemRole.userId,
-      timestamp: utcStamp(),
+      timestamp: getIsoDate(),
     });
   } catch (error) {
     log.error('Failed to handle a system role change', { error, activityId: event.id });

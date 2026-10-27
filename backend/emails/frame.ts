@@ -1,7 +1,7 @@
 import { countryName } from '#/lib/geoip';
 import type { RequestDetails } from '#/lib/request-details';
 import { i18n, plainText } from './i18n';
-import type { EmailTemplateDef } from './types';
+import { type EmailTemplateDef, type ParamPlaceholder, plainParam } from './types';
 
 /** One row of the request details: a label and its value, both plain text. */
 export interface RequestDetailRow {
@@ -13,6 +13,8 @@ export interface RequestDetailRow {
 export interface EmailFrame {
   /** Rows at the end of the body panel; set only for a template that declares them and a send inside a request. */
   requestDetails?: RequestDetailRow[];
+  /** "Sent to <address>", the recipient's address as the mailer's placeholder fills it per recipient. */
+  sentTo?: string;
 }
 
 const mailTimeFormat = (lng: string) =>
@@ -27,8 +29,14 @@ const mailTimeFormat = (lng: string) =>
     timeZoneName: 'short',
   });
 
-/** A moment for a mail reader in `lng`, always in UTC: no user row stores a timezone. "October 27, 2026 at 09:30 UTC". */
-export const formatMailTime = (iso: string, lng: string) => mailTimeFormat(lng).format(new Date(iso));
+/**
+ * A moment for a mail reader in `lng`, always in UTC: no user row stores a timezone. "October 27, 2026 at 09:30 UTC". A
+ * value that is no date stays as it is: a mail never fails on one detail.
+ */
+export const formatMailTime = (iso: string, lng: string) => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : mailTimeFormat(lng).format(date);
+};
 
 /** The request details as rows in `lng`. A row whose value is unknown is left out; the time is always known. */
 const requestDetailRows = (lng: string, { at, country, browser, os }: RequestDetails): RequestDetailRow[] => {
@@ -51,7 +59,11 @@ export function emailFrame<TStatic>(
   statics: TStatic,
   lng: string,
   details: RequestDetails | null,
+  param: ParamPlaceholder = plainParam,
 ): EmailFrame {
   const declared = typeof template.requestDetails === 'function' ? template.requestDetails(statics) : template.requestDetails === true;
-  return { requestDetails: details && declared ? requestDetailRows(lng, details) : undefined };
+  return {
+    requestDetails: details && declared ? requestDetailRows(lng, details) : undefined,
+    sentTo: i18n.t('backend:email.sent_to', { lng, email: param('email'), ...plainText }),
+  };
 }
