@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Logo } from '~/modules/common/logo';
 import { UserLanguage } from '~/modules/me/user-language';
@@ -9,9 +10,13 @@ import { UserTheme } from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
+/** A key of the common namespace, without its `c:` prefix (a type parameter, so the condition runs per key). */
+type CommonKeyOf<K> = K extends `c:${infer Key}` ? Key : never;
+type CommonKey = CommonKeyOf<TKey>;
+
 export interface FooterLinkProps {
   /** The link's `c:` locale key, which names it. */
-  id: 'about' | 'legal' | 'sign_in' | 'status';
+  id: CommonKey;
   href: string;
 }
 
