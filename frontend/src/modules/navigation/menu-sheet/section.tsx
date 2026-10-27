@@ -10,8 +10,8 @@ import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
-import { collectChannelIds } from '~/modules/navigation/menu-sheet/helpers/collect-channel-ids';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
+import { menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
 import { MenuSheetSectionButton } from '~/modules/navigation/menu-sheet/section-button';
@@ -50,8 +50,8 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   const isSectionVisible = useNavigationStore((state) => !isCollapsible || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
   const archivedItems = items.filter((item) => item.membership.archived);
   const archivedCount = archivedItems.length;
-  const activeChannelIds = collectChannelIds(items, { archived: false });
-  const archivedChannelIds = collectChannelIds(items, { archived: true });
+  const activeChannelIds = items.filter((item) => !item.membership.archived).flatMap((item) => menuUnseenChannelIds(item, true));
+  const archivedChannelIds = archivedItems.flatMap((item) => menuUnseenChannelIds(item, true));
 
   const handleCreate = options.createAction
     ? (ref: RefObject<HTMLButtonElement | null>) => {

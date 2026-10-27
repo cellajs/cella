@@ -1,10 +1,9 @@
-import { onlineManager } from '@tanstack/react-query';
 import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getRelativeOrder } from 'shared/utils/display-order';
 import { env } from '~/env';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
@@ -13,6 +12,7 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -46,6 +46,8 @@ interface MenuSheetItemEditProps {
   item: UserMenuItem;
   /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
   siblings: UserMenuItem[];
+  /** It is a row of a submenu: a smaller row on the submenu's dotted line. */
+  isSubitem: boolean;
   icon?: IconComponent;
   /** Its submenu shows below it, so the submenu's dotted line starts at its avatar. */
   hasSubmenuBelow?: boolean;
@@ -55,15 +57,24 @@ interface MenuSheetItemEditProps {
   onArchive?: () => boolean;
 }
 
-export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow = false, isArriving = false, onArchive }: MenuSheetItemEditProps) {
+export function MenuSheetItemEdit({
+  item,
+  siblings,
+  isSubitem,
+  icon: Icon,
+  hasSubmenuBelow = false,
+  isArriving = false,
+  onArchive,
+}: MenuSheetItemEditProps) {
   const { t } = useTranslation();
+  const isOnline = useOnlineManager();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
   const [isTravelling, setIsTravelling] = useState(isArriving);
 
   const toggleMembershipFlag = (key: 'archived' | 'muted') => {
     if (key === 'muted') return updateMembership(buildMembershipUpdate(item, { muted: !item.membership.muted }));
-    if (item.membership.archived && !onlineManager.isOnline()) return toastOffline();
+    if (item.membership.archived && !isOnline) return toastOffline();
 
     const update = buildMembershipUpdate(item, { archived: !item.membership.archived });
     // One step at a time: a closed archive opens and a submenu folds before the row travels
@@ -77,8 +88,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow 
   const move = (step: -1 | 1) => {
     const target = siblings[index + step];
     if (!target) return;
-    const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
-    const displayOrder = getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom');
+    const displayOrder = menuItemOrder(siblings, item, target, step < 0 ? 'top' : 'bottom');
     updateMembership(buildMembershipUpdate(item, { displayOrder }));
   };
 
@@ -101,7 +111,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow 
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
       onLayoutAnimationComplete={() => setIsTravelling(false)}
-      data-subitem={!item.submenu}
+      data-subitem={isSubitem}
       data-archived={item.membership.archived}
       // The ghost button's hover tint (8% foreground) mixed into the fill, opaque so the grip box can repaint it. The fill
       // is muted/70 on the card made opaque, so a row travelling past covers the rows under it.
@@ -112,7 +122,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow 
       )}
     >
       {/* The view mode's dotted submenu line, drawn per row so it travels with the row and stays under its avatar while a move animates */}
-      {(hasSubmenuBelow || (!item.submenu && !item.membership.archived)) && (
+      {(hasSubmenuBelow || (isSubitem && !item.membership.archived)) && (
         <span
           aria-hidden
           className={cn(
@@ -121,7 +131,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon, hasSubmenuBelow 
           )}
         />
       )}
-      {status === 'pending' && onlineManager.isOnline() && (
+      {status === 'pending' && isOnline && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
         </div>

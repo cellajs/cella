@@ -6,6 +6,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
+import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -53,23 +54,27 @@ interface MenuSheetItemsListProps {
   options?: MenuSectionOptions;
   /** The section's create handler, offered under the empty-list placeholder. */
   onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
-  className?: string;
+  /** It lists a row's submenu, so its rows render as sub-rows. */
+  isSubmenu?: boolean;
 }
 
-export function MenuSheetItemsList({ items, entityType, isArchived, options, onCreate, className }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, isArchived, options, onCreate, isSubmenu = false }: MenuSheetItemsListProps) {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} onCreate={onCreate} />;
 
-  return sortAndFilterMenu(items, isArchived).map((item) => (
-    <li className={cn(!!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
-      <MenuSheetItem item={item} className={className} icon={options?.icon} />
-      {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
-      {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
-        <ul>
-          <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} />
-        </ul>
-      )}
-    </li>
-  ));
+  return sortAndFilterMenu(items, isArchived).map((item) => {
+    const hasSubmenu = isSubmenuShown(item, detailedMenu);
+    return (
+      <li className={cn(hasSubmenu && 'submenu-section relative')} key={item.id}>
+        <MenuSheetItem item={item} isSubitem={isSubmenu} icon={options?.icon} />
+        {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
+        {hasSubmenu && (
+          <ul>
+            <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} isSubmenu />
+          </ul>
+        )}
+      </li>
+    );
+  });
 }
