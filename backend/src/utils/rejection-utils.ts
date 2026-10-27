@@ -1,4 +1,4 @@
-export type RejectionState = { rejectedIds: string[]; rejectionReasons: Record<string, string[]> };
+type RejectionState = { rejectedIds: string[]; rejectionReasons: Record<string, string[]> };
 
 /** @public */
 export const createRejectionState = (): RejectionState => ({ rejectedIds: [], rejectionReasons: {} });
@@ -15,6 +15,7 @@ const rejectMany = (rejectionState: RejectionState, ids: string[], reason: strin
   };
 };
 
+/** Keeps the items `predicate` accepts and rejects the rest under `reason`. */
 export const filterWithRejection = <T extends { id: string }>(
   items: T[],
   predicate: (item: T) => boolean,

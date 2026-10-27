@@ -8,6 +8,6 @@ import { maxLength } from '#/db/utils/constraints';
  * @param path - Untrusted input: a request field, a stored token value or a cookie payload.
  * @returns The path to redirect to, or null when it is unsafe.
  */
-export function isValidRedirectPath(path: unknown): string | null {
+export function frontendRedirectPath(path: unknown): string | null {
   return toSafeRedirectPath(path, { origin: appConfig.frontendUrl, maxLength: maxLength.field });
 }

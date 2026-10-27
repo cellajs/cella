@@ -17,7 +17,7 @@ import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { getIsoDate } from '#/utils/iso-date';
 
 /** Reads and writes outside a flow's transaction run on the base pool, whatever the route's context holds. */
@@ -316,7 +316,7 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
   const { ctx, provider, redirectAfter } = info;
   // Stored on the verification token; null means "use the default path" at the final hop.
-  const redirectAfterPath = isValidRedirectPath(redirectAfter);
+  const redirectAfterPath = frontendRedirectPath(redirectAfter);
 
   if (info.type === 'verified') {
     return finishSignIn(ctx, info.user, provider, redirectAfter);

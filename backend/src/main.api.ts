@@ -1,25 +1,24 @@
 import { sql } from 'drizzle-orm';
-import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/utils/ascii';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { registerOpenApiDocs } from '#/core/openapi-registration';
-import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
+import { baseDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
+import { env } from '#/env';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
-import { env } from './env';
 
 otel.start();
 otel.verifyConnection();
 
-let server: import('@hono/node-server').ServerType | undefined;
+let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
 /** Stops what this process starts besides its listeners: the GeoIP refresh. */
 const stops: (() => unknown)[] = [];
@@ -29,7 +28,7 @@ const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/star
 await registerOpenApiDocs(app);
 
 const main = async () => {
-  const port = Number(env.PORT ?? '4000');
+  const port = env.PORT;
   console.info(`${timestamp()} [startup] mode=${appConfig.mode} nodb=${env.NODB} port=${port}`);
 
   try {
@@ -41,17 +40,9 @@ const main = async () => {
 
   if (env.RUN_MIGRATIONS_ON_BOOT) {
     // The only API path that touches the admin credential; production runs migrations as MODE=migrate.
-    const migrationDb = getAdminDb('boot-time migrations (RUN_MIGRATIONS_ON_BOOT)');
-    const { createDbRoles } = await import('../scripts/db/create-db-roles');
-    await createDbRoles();
-
+    const { migrateDatabase } = await import('../scripts/db/migrate-database');
     console.info(`${timestamp()} [startup] Running migrations...`);
-    await pgMigrate(migrationDb, migrateConfig);
-    const { scheduleRetention } = await import('../scripts/db/schedule-retention');
-    await scheduleRetention();
-    // The job store (pg-boss) is installed by the same owner that migrates; the jobs worker runs it.
-    const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
-    await installJobsSchema();
+    await migrateDatabase('boot-time migrations (RUN_MIGRATIONS_ON_BOOT)');
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
   } else {
@@ -62,7 +53,7 @@ const main = async () => {
   stops.push(startGeoipRefresh());
 
   // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
-  internalListener = serveInternal({ port: Number(env.INTERNAL_PORT) });
+  internalListener = serveInternal({ port: env.INTERNAL_PORT });
 
   server = serveApi({ fetch: app.fetch, port }, async () => {
     // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
@@ -111,16 +102,14 @@ setupGracefulShutdown({
   cleanup: async () => {
     for (const stop of stops) await stop();
     await stopPgBoss();
-    if (server) {
-      server.close();
-    }
+    server?.close();
     internalListener?.close();
     await otel.shutdown();
   },
   log: (msg) => process.stderr.write(`[api] ${msg}\n`),
 });
 
-main().catch((e) => {
-  process.stderr.write(`[startup] Failed to start server: ${e instanceof Error ? e.stack : e}\n`);
+main().catch((error) => {
+  process.stderr.write(`[startup] Failed to start server: ${error instanceof Error ? error.stack : error}\n`);
   setTimeout(() => process.exit(1), 500);
 });

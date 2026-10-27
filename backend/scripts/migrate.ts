@@ -1,16 +1,7 @@
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
-import { getAdminDb, migrateConfig } from '#/db/db';
-import { createDbRoles } from './db/create-db-roles';
-import { installJobsSchema } from './db/install-jobs-schema';
-import { scheduleRetention } from './db/schedule-retention';
+import { migrateDatabase } from './db/migrate-database';
 
-const migrationDb = getAdminDb('migrations');
-
-await createDbRoles();
-await migrate(migrationDb, migrateConfig);
-await scheduleRetention();
-await installJobsSchema();
+await migrateDatabase('migrations');
 
 console.info(pc.green('✓ Migrations complete'));
 process.exit(0);

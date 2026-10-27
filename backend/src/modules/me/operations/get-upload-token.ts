@@ -3,7 +3,7 @@ import { isSystemUploadTemplate, systemUploadPrefix, uploadStorage } from 'share
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
-import { getParams, getSignature } from '#/lib/transloadit';
+import { signedUploadParams } from '#/lib/transloadit';
 
 interface GetUploadTokenOpts {
   organizationId?: string;
@@ -38,17 +38,6 @@ export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId 
 
   const sub = isSystemUploadTemplate(templateId) ? systemUploadSub(ctx) : organizationUploadSub(ctx, organizationId);
 
-  if (!env.TRANSLOADIT_KEY || !env.TRANSLOADIT_SECRET) {
-    return { sub, publicBucket, s3: !!env.S3_ACCESS_KEY_ID, params: null, signature: null };
-  }
-
-  try {
-    const params = getParams(templateId, sub);
-    const paramsString = JSON.stringify(params);
-    const signature = getSignature(paramsString);
-    return { sub, publicBucket, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, 'auth_key_not_found', 'error', error instanceof Error ? { originalError: error } : {});
-  }
+  const signed = signedUploadParams(templateId, sub);
+  return { sub, publicBucket, s3: !!env.S3_ACCESS_KEY_ID, params: signed?.params ?? null, signature: signed?.signature ?? null };
 }

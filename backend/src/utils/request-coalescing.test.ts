@@ -1,11 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearInFlight, coalesce, inFlightCount, isInFlight } from '#/utils/request-coalescing';
+import { describe, expect, it, vi } from 'vitest';
+import { coalesce, isInFlight } from '#/utils/request-coalescing';
 
 describe('request-coalescing', () => {
-  beforeEach(() => {
-    clearInFlight();
-  });
-
   describe('coalesce', () => {
     it('should execute fetcher on first call', async () => {
       const fetcher = vi.fn().mockResolvedValue('result');
@@ -55,7 +51,6 @@ describe('request-coalescing', () => {
       await coalesce('key1', async () => 'result');
 
       expect(isInFlight('key1')).toBe(false);
-      expect(inFlightCount()).toBe(0);
     });
 
     it('should clean up after error', async () => {
@@ -80,38 +75,6 @@ describe('request-coalescing', () => {
 
       await expect(promise1).rejects.toThrow('shared-error');
       await expect(promise2).rejects.toThrow('shared-error');
-    });
-  });
-
-  describe('helpers', () => {
-    it('should track in-flight count', async () => {
-      let resolve1: () => void;
-      let resolve2: () => void;
-
-      const promise1 = coalesce(
-        'key1',
-        () =>
-          new Promise<void>((r) => {
-            resolve1 = r;
-          }),
-      );
-      const promise2 = coalesce(
-        'key2',
-        () =>
-          new Promise<void>((r) => {
-            resolve2 = r;
-          }),
-      );
-
-      expect(inFlightCount()).toBe(2);
-
-      resolve1!();
-      await promise1;
-      expect(inFlightCount()).toBe(1);
-
-      resolve2!();
-      await promise2;
-      expect(inFlightCount()).toBe(0);
     });
   });
 });

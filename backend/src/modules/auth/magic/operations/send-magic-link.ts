@@ -10,7 +10,7 @@ import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lif
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAddressGovernance } from '#/modules/connections/connections-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug';
 import { magicLinkEmail } from '../../../../../emails';
@@ -33,7 +33,7 @@ interface SendMagicLinkOpts {
  */
 export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, assertedThrough }: SendMagicLinkOpts) => {
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
-  const redirectPath = isValidRedirectPath(redirect);
+  const redirectPath = frontendRedirectPath(redirect);
 
   const normalizedEmail = email.toLowerCase().trim();
 
@@ -80,7 +80,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
   const staticProps = { magicLinkUrl, name: existingUser?.name ?? slugFromEmail(normalizedEmail), isNewUser: !existingUser };
   const recipients = [{ email: normalizedEmail, lng: existingUser?.language ?? appConfig.defaultLanguage }];
 
-  mailer.prepareEmails(magicLinkEmail, staticProps, recipients);
+  mailer.sendEmails(magicLinkEmail, staticProps, recipients);
 
   if (appConfig.mode === 'development') {
     console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl}`);

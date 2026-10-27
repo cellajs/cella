@@ -12,7 +12,7 @@ for (const phase of phases) {
   }
 }
 
-// Dev-only email preview (local authoring + Storybook email stories)
+// The email preview (local authoring, the Storybook email stories) is served in every mode but production; it renders fixtures only.
 if (appConfig.mode !== 'production') baseApp.route('/dev/emails', emailPreviewHandlers);
 
 export { baseApp };

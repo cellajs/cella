@@ -17,6 +17,13 @@ const minSecretLength = 16;
 /** A secret of at least `min` characters, refused with a message that names it. */
 const secretString = (name: string, min = minSecretLength) => z.string().min(min, `${name} must be at least ${min} characters`);
 
+/** A flag that only the string `true` turns on; unset, it reads as `fallback`. */
+const envFlag = (fallback: 'true' | 'false') =>
+  z
+    .string()
+    .default(fallback)
+    .transform((value) => value === 'true');
+
 /** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
 
@@ -34,27 +41,24 @@ const federationSecrets = Object.fromEntries(
   }),
 ) as Record<string, z.ZodOptional<z.ZodString>>;
 
+/** The backend's validated environment: outside Vitest, a process whose env fails the schema stops at import. */
 export const env = createEnv({
   server: {
-    NODB: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
-    DEBUG: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
+    NODB: envFlag('false'),
+    DEBUG: envFlag('false'),
     DATABASE_URL: z.url(),
     // Admin credential (table owner, BYPASSRLS): only the migrate, seed and maintenance paths need it; the request-serving API boots without it.
     DATABASE_ADMIN_URL: z.url().optional(),
-    // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it. See jobs/README.md, Connection budget.
+    // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots
+    // superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it.
+    // See jobs/README.md, Connection budget.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('staging'), z.literal('tunnel'), z.literal('test')]),
-    PORT: z.string().default(String(appConfig.devPorts.api)),
+    PORT: z.coerce.number().default(appConfig.devPorts.api),
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
-    INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
+    INTERNAL_PORT: z.coerce.number().default(appConfig.devPorts.internal),
     // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
@@ -132,10 +136,7 @@ export const env = createEnv({
     MODE: z.enum(processModes).default('api'),
 
     // Apply migrations and roles before binding the API port. Production runs migrations in a separate mode.
-    RUN_MIGRATIONS_ON_BOOT: z
-      .string()
-      .default('true')
-      .transform((v) => v === 'true'),
+    RUN_MIGRATIONS_ON_BOOT: envFlag('true'),
 
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])

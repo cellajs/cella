@@ -9,7 +9,7 @@ import { baseLog } from '#/lib/pino';
  * handlers, `maintainer` additionally owns cron and queue supervision: one process per deployment,
  * the jobs worker. Each role is a superset of the one before it.
  */
-export type JobsRole = 'producer' | 'consumer' | 'maintainer';
+type JobsRole = 'producer' | 'consumer' | 'maintainer';
 
 const roleRank: Record<JobsRole, number> = { producer: 0, consumer: 1, maintainer: 2 };
 

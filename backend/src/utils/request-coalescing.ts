@@ -15,15 +15,7 @@ export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promi
   return promise;
 }
 
+/** Whether a fetch under `key` is running now. */
 export function isInFlight(key: string): boolean {
   return inFlight.has(key);
-}
-
-export function inFlightCount(): number {
-  return inFlight.size;
-}
-
-/** For testing. */
-export function clearInFlight(): void {
-  inFlight.clear();
 }

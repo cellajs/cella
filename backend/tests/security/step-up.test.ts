@@ -95,7 +95,7 @@ describe('step-up', async () => {
     expect(viaPasskey.response.status).toBe(403);
     expect(await stateOf(impersonation)).toEqual({ steppedUp: false, methods: [] });
     expect((await sessionRow(impersonation.id)).steppedUpAt).toBeNull();
-    expect(vi.mocked(mailer.prepareEmails)).not.toHaveBeenCalled();
+    expect(vi.mocked(mailer.sendEmails)).not.toHaveBeenCalled();
   });
 
   it('must not step up via an emailed link a user with a second factor asks for', async () => {
@@ -104,7 +104,7 @@ describe('step-up', async () => {
 
     const { error, response } = await call(sendStepUpLink, { body: {}, headers: session.headers });
     await expectRefusal({ response, error }, 400, 'invalid_request');
-    expect(vi.mocked(mailer.prepareEmails)).not.toHaveBeenCalled();
+    expect(vi.mocked(mailer.sendEmails)).not.toHaveBeenCalled();
   });
 
   it('offers the emailed link to a user without a second factor while other accounts hold factors (positive control)', async () => {
@@ -116,7 +116,7 @@ describe('step-up', async () => {
     // Only the user's own factors count: other accounts' passkeys and authenticator apps are not the user's to prove.
     expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['email', 'sign_in'] });
     expect((await call(sendStepUpLink, { body: {}, headers: session.headers })).response.status).toBe(204);
-    expect(vi.mocked(mailer.prepareEmails)).toHaveBeenCalledOnce();
+    expect(vi.mocked(mailer.sendEmails)).toHaveBeenCalledOnce();
   });
 
   describe('emailed link', () => {

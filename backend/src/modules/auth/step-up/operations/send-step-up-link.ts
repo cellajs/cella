@@ -8,7 +8,7 @@ import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { stepUpEmail } from '../../../../../emails';
 
@@ -39,14 +39,14 @@ export const sendStepUpLinkOp = async (ctx: Context<Env>, { redirect }: SendStep
       email: user.email,
       createdBy: user.id,
       sessionId: session.id,
-      redirectPath: isValidRedirectPath(redirect),
+      redirectPath: frontendRedirectPath(redirect),
     },
   );
   // Opening the link stamps this session only in this browser.
   await rememberLinkRequest(ctx, 'step-up', token.id);
 
   const stepUpUrl = tokenLinkUrl('step-up', rawToken);
-  mailer.prepareEmails(stepUpEmail, { stepUpUrl, name: user.name }, [{ email: user.email, lng: user.language ?? appConfig.defaultLanguage }]);
+  mailer.sendEmails(stepUpEmail, { stepUpUrl, name: user.name }, [{ email: user.email, lng: user.language ?? appConfig.defaultLanguage }]);
 
   if (appConfig.mode === 'development') console.info(`[step-up] ${user.email} ${stepUpUrl}`);
   log.info('Step-up link sent', { tokenId: token.id });

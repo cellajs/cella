@@ -1,16 +1,14 @@
 import type { PgBoss, Queue } from 'pg-boss';
-import { type BackendJob, type BackendQueue, getBackendJobs, getBackendQueues } from '#/lib/module';
+import { type BackendJob, type BackendQueue, type BackendQueueHandler, getBackendJobs, getBackendQueues } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
 
 /** Queue options a cron job's singleton queue is created with; `expireInSeconds` comes from the job. */
-const cronQueueOptions = (job: BackendJob): Omit<Queue, 'name'> => ({
-  policy: 'singleton',
-  retryLimit: 0,
-  ...(job.expireInSeconds ? { expireInSeconds: job.expireInSeconds } : {}),
-});
+function cronQueueOptions(job: BackendJob): Omit<Queue, 'name'> {
+  return { policy: 'singleton', retryLimit: 0, ...(job.expireInSeconds ? { expireInSeconds: job.expireInSeconds } : {}) };
+}
 
 /** The registry by default; tests pass their own. */
-export interface JobDeclarations {
+interface JobDeclarations {
   jobs?: readonly BackendJob[];
   queues?: readonly BackendQueue[];
 }
@@ -50,7 +48,8 @@ export function validateJobDeclarations(
     try {
       preview(job.cron);
     } catch (error) {
-      throw new Error(`jobs: "${job.name}" has an invalid cron "${job.cron}": ${(error as Error).message}`);
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(`jobs: "${job.name}" has an invalid cron "${job.cron}": ${reason}`);
     }
   }
 }
@@ -59,12 +58,12 @@ export function validateJobDeclarations(
  * Creates every declared queue that is missing and converges the options of the ones that exist,
  * dead-letter targets first because pg-boss requires them to exist. Creating a partitioned queue
  * needs the table owner (the admin DSN of the migrate companion); as the runtime role the
- * error surfaces here, so the service never runs without a declared queue.
+ * creation fails here, so the service never runs without a declared queue.
  */
 export async function ensureQueues(boss: PgBoss): Promise<void> {
   const queues = declaredQueues();
   const existing = new Map((await boss.getQueues()).map((queue) => [queue.name, queue]));
-  const ordered = [...queues.filter((q) => !q.options.deadLetter), ...queues.filter((q) => q.options.deadLetter)];
+  const ordered = [...queues.filter((queue) => !queue.options.deadLetter), ...queues.filter((queue) => queue.options.deadLetter)];
   for (const { name, options } of ordered) {
     const current = existing.get(name);
     if (!current) {
@@ -114,18 +113,17 @@ export async function workDeclared(boss: PgBoss): Promise<void> {
   }
   for (const queue of getBackendQueues()) {
     if (!queue.handler) continue;
-    await boss.work(queue.name, queue.work ?? {}, workHandler(queue));
+    await boss.work(queue.name, queue.work ?? {}, workHandler(queue.name, queue.handler));
   }
 }
 
-function workHandler(queue: BackendQueue): NonNullable<BackendQueue['handler']> {
-  const handler = queue.handler;
-  if (!handler) throw new Error(`jobs: queue ${queue.name} has no handler`);
+/** Wraps a queue's handler so a failure is logged with the ids of its jobs before it fails them. */
+function workHandler(name: string, handler: BackendQueueHandler): BackendQueueHandler {
   return async (jobs) => {
     try {
       return await handler(jobs);
     } catch (error) {
-      baseLog.error(`jobs: ${queue.name} handler failed`, { err: error, jobs: jobs.map((job) => job.id) });
+      baseLog.error(`jobs: ${name} handler failed`, { err: error, jobs: jobs.map((job) => job.id) });
       throw error;
     }
   };

@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
-import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
 import { getRateLimiterInstance, subjectSegment } from '#/middlewares/rate-limiter/helpers';
+import { sendMatrixMessage } from '#/modules/requests/helpers/send-matrix-message';
 import type { RequestModel } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -41,7 +41,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
       );
       if (mailToday) {
         mailer
-          .prepareEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.language }])
+          .sendEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.language }])
           .catch((err) => log.error('Failed to send account-exists email', { err }));
       }
       return;
@@ -75,16 +75,16 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
 
   const staticProps = { type, message };
 
-  sendMatrixMessage({ msgtype: 'm.notice', textMessage })
-    .then((matrixResp) => {
-      if (matrixResp?.ok) return;
-      return mailer.prepareEmails(requestInfoEmail, { ...staticProps, email: normalizedEmail, subject: title }, [
+  sendMatrixMessage(textMessage)
+    .then((sent) => {
+      if (sent) return;
+      return mailer.sendEmails(requestInfoEmail, { ...staticProps, email: normalizedEmail, subject: title }, [
         { email: appConfig.company.email, lng },
       ]);
     })
     .catch((err) => log.error('Failed to notify the team of a request', { err }));
 
   mailer
-    .prepareEmails(requestResponseEmail, staticProps, [{ email: normalizedEmail, lng }])
+    .sendEmails(requestResponseEmail, staticProps, [{ email: normalizedEmail, lng }])
     .catch((err) => log.error('Failed to send request confirmation', { err }));
 }

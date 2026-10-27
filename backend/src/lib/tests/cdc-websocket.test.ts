@@ -141,17 +141,6 @@ describe('CDC socket: a change drops the detail cache entry of its row', () => {
     for (const id of ['att-1', 'att-2', 'att-3']) expect(cached(id), id).toBeUndefined();
     expect(cached('att-other')).toEqual({ id: 'att-other' });
   });
-
-  it('drops the entries of the rows of an older worker, sent alone or as `batchRows`', () => {
-    const worker = connect();
-    const batchRows = ['att-2', 'att-3'].map((id) => ({ rowData: { id } }));
-
-    worker.send({ activity: attachmentActivity('att-1'), rowData: { id: 'att-1', name: 'gone' } });
-    worker.send({ activity: { ...attachmentActivity('att-2'), count: 2 }, rowData: { id: 'att-2', name: 'gone' }, batchRows });
-
-    for (const id of ['att-1', 'att-2', 'att-3']) expect(cached(id), id).toBeUndefined();
-    expect(cached('att-other')).toEqual({ id: 'att-other' });
-  });
 });
 
 describe('CDC socket: a message as the bus receives it', () => {
@@ -193,35 +182,6 @@ describe('CDC socket: a message as the bus receives it', () => {
 
     expect(event.rowData).toEqual(membership);
     expect(event.rows).toBeNull();
-  });
-
-  it('reads the one whole product row an older worker sends as a list of that row', () => {
-    const worker = connect();
-    const wholeRow = { ...permissionFields('att-1'), name: 'renamed', filename: 'a.png' };
-    const movedFrom = permissionFields('att-1', 'org-0');
-
-    const [event] = updatesOnBus(() =>
-      worker.send({ activity: { ...attachmentActivity('att-1', 'update'), seq: 12 }, rowData: wholeRow, movedFrom }),
-    );
-
-    // The row's seq travelled on the activity and its old location beside the row.
-    expect(event.rows).toEqual([{ seq: 12, rowData: wholeRow, movedFrom }]);
-    expect(event.rowData).toBeNull();
-  });
-
-  it('reads the `batchRows` an older worker sends as the list of rows', () => {
-    const worker = connect();
-    const batchRows = [
-      { seq: 12, rowData: permissionFields('att-1') },
-      { seq: 14, rowData: permissionFields('att-2'), movedFrom: permissionFields('att-2', 'org-0') },
-    ];
-    const activity = { ...attachmentActivity('att-1', 'update'), seq: 12, batchUntilSeq: 14, count: 2 };
-
-    const [event] = updatesOnBus(() => worker.send({ activity, rowData: { ...permissionFields('att-1'), name: 'first of two' }, batchRows }));
-
-    // The same event a `rows` message of these rows gives: everything behind the socket reads the list alone.
-    expect(event.rows).toEqual(batchRows);
-    expect(event.rowData).toBeNull();
   });
 
   it('must not hand a product message without a row to the bus', () => {

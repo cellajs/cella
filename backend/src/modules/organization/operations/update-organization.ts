@@ -13,7 +13,7 @@ import { updateOrganization } from '#/modules/organization/organization-queries'
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
-import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
+import { assertBlockMediaUrls } from '#/utils/validate-block-media';
 
 export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInput: Record<string, unknown>) {
   // Normalize old-shape field names to their current names before any body access

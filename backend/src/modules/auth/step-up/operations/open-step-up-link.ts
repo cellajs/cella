@@ -6,7 +6,7 @@ import { baseDb } from '#/db/db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { forgetLinkRequest, invokeToken, requestedHere } from '#/modules/auth/tokens/token-lifecycle';
 import { findLinkToken } from '#/modules/auth/tokens/tokens-queries';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 
 /** The link is read and the stamp written on the base pool, whatever the route's context holds. */
@@ -38,7 +38,7 @@ export const openStepUpLink = async (ctx: Context<Env>, rawToken: string) => {
   log.info('Session stepped up', { via: 'email', sessionId });
 
   const confirmedUrl = new URL(stepUpConfirmedPath, appConfig.frontendUrl);
-  const redirectPath = isValidRedirectPath(redeemed.redirectPath);
+  const redirectPath = frontendRedirectPath(redeemed.redirectPath);
   if (redirectPath) confirmedUrl.searchParams.set('redirect', redirectPath);
   return ctx.redirect(confirmedUrl, 302);
 };

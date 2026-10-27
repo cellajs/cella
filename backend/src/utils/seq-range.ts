@@ -20,7 +20,7 @@ interface SyncedTable {
 /**
  * The rows a product list reads, and their order. A range read keeps deleted rows so caches drop them, and orders by seq
  * then id so a capped page is a complete prefix of the range. A normal read hides deleted rows and leaves `orderBy` to
- * the list's own sort. AND each `where` term with the other filters: inside an OR group a bound no longer bounds.
+ * the list's own sort. AND each `where` term with the other filters: a bound inside an OR group bounds nothing.
  */
 export function seqRangeRead(table: SyncedTable, range: SeqRange | undefined): { where: SQL[]; orderBy?: SQL[] } {
   if (!range) return { where: [isNull(table.deletedAt)] };

@@ -1,4 +1,3 @@
-import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ResourceType } from 'shared';
 import { channelTables } from '#/db/channel-tables';
@@ -13,16 +12,15 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
-// Base table shape constraints for generic resolvers
-export type TableWithId = AnyPgTable & { id: PgColumn };
+type TableWithId = AnyPgTable & { id: PgColumn };
 export type TableWithIdAndSlug = TableWithId & { slug: PgColumn };
+/** A table the entity resolvers read by id, or by slug when it has one. */
 export type ResolvableTable = TableWithId | TableWithIdAndSlug;
 
 /** Resolves a pinned map of lazy table getters, keeping each key's exact table type. */
-const resolveTables = <T extends Record<string, () => AnyPgTable>>(getters: T) =>
-  Object.fromEntries(Object.entries(getters).map(([type, get]) => [type, get()])) as {
-    [K in keyof T]: ReturnType<T[K]>;
-  };
+function resolveTables<T extends Record<string, () => AnyPgTable>>(getters: T) {
+  return Object.fromEntries(Object.entries(getters).map(([type, get]) => [type, get()])) as { [K in keyof T]: ReturnType<T[K]> };
+}
 
 /**
  * Entity-to-table mapping, derived from the pinned `channel-tables.ts` and `product-tables.ts`
@@ -46,22 +44,16 @@ export const resourceTables = {
   oauth_client: oauthClientsTable,
 } as const satisfies Record<ResourceType, TableWithId>;
 
-export type EntityType = keyof typeof entityTables;
-export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
+export type EntityModel<T extends keyof typeof entityTables> = (typeof entityTables)[T]['$inferSelect'];
 
 type AllTrackedTables = typeof entityTables & typeof resourceTables;
 export type TrackedType = keyof AllTrackedTables;
 export type TrackedModel<T extends TrackedType> = AllTrackedTables[T]['$inferSelect'];
 
+/** The table of an entity type, typed to that type's own table. */
 export function getEntityTable<T extends keyof typeof entityTables>(entityType: T): (typeof entityTables)[T] {
   return entityTables[entityType];
 }
-
-// Derived table name arrays for activity/CDC
-/** @public */
-export const entityTableNames = Object.values(entityTables).map((t) => getTableName(t));
-/** @public */
-export const resourceTableNames = Object.values(resourceTables).map((t) => getTableName(t));
 
 /** One table converted to native range partitions by the retention side-effect migration; `apply_retention()` drops what is past its retention. */
 export interface PartitionConfig {
@@ -74,5 +66,8 @@ export interface PartitionConfig {
   retention: string | null;
 }
 
-/** App partition entry (`appPartitionConfigs` in product-tables.ts): the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
+/**
+ * App partition entry (`appPartitionConfigs` in product-tables.ts): the Drizzle table stands in for `name`, so the
+ * parity test checks the same schema the migration converts.
+ */
 export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };

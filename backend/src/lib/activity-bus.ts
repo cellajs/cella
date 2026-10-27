@@ -43,14 +43,9 @@ export function getEventData<T extends Exclude<TrackedType, ProductEntityType>>(
 
 type EventHandler = (event: ActivityEvent) => void | Promise<void>;
 
-/** Receives CDC messages over the WebSocket and distributes them to internal handlers and stream subscribers. */
+/** Distributes the CDC events the socket receives to in-process handlers and stream subscribers. */
 class ActivityBus {
-  private emitter = new EventEmitter();
-
-  constructor() {
-    // Increase max listeners to avoid warnings with many subscribers
-    this.emitter.setMaxListeners(100);
-  }
+  private emitter = new EventEmitter().setMaxListeners(100);
 
   on(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.on(eventType, handler);
@@ -86,4 +81,5 @@ class ActivityBus {
   }
 }
 
+/** The process's one activity bus: the CDC socket emits on it, and the modules' listeners subscribe to it. */
 export const activityBus = new ActivityBus();

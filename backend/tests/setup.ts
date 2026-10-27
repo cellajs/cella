@@ -32,7 +32,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await i
 // before each test (`clearMocks`).
 vi.mock('#/lib/mailer', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/lib/mailer')>();
-  return { ...actual, mailer: { ...actual.mailer, prepareEmails: vi.fn(actual.mailer.prepareEmails) } };
+  return { ...actual, mailer: { ...actual.mailer, sendEmails: vi.fn(actual.mailer.sendEmails) } };
 });
 
 // No test reaches object storage, whose client sends over node:https: every key names a stored 1-byte object, and a

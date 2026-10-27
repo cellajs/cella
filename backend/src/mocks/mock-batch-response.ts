@@ -1,4 +1,4 @@
-export interface BatchResponse<T> {
+interface BatchResponse<T> {
   data: T[];
   rejectedIds: string[];
   rejectionReasons?: Record<string, string[]>;

@@ -21,7 +21,8 @@ import {
 } from '#/modules/auth/passkeys/passkeys-queries';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { createDate, TimeSpan } from '#/utils/time-span';
+import { isoDateIn } from '#/utils/iso-date';
+import { TimeSpan } from '#/utils/time-span';
 
 const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
 const expectedOrigin = appConfig.frontendUrl;
@@ -53,7 +54,7 @@ export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId
 
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
   await insertPasskeyChallenge(dbCtx, {
-    values: { challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: createDate(challengeLifetime) },
+    values: { challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: isoDateIn(challengeLifetime) },
   });
   await setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
 

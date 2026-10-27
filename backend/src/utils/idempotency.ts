@@ -15,11 +15,10 @@ type ProductTable = PgTable & { id: PgColumn; createdBy: PgColumn; deletedAt: Pg
  * @returns The rows found, empty for a new create. A create inserts only the items not among them.
  */
 export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, ids: string[]): Promise<InferSelectModel<T>[]> {
-  const rows = await tenantRead(ctx, (readCtx) =>
+  return tenantRead(ctx, (readCtx) =>
     readCtx.var.db
       .select()
       .from(table)
       .where(and(inArray(table.id, ids), eq(table.createdBy, ctx.var.actor.id), isNull(table.deletedAt), requestScopeWhere(ctx, table))),
   );
-  return rows;
 }

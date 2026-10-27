@@ -43,7 +43,7 @@ export function createBaseApp() {
   mountPrefix(app, '/api');
   mountPrefix(app, '/mcp');
 
-  app.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
+  app.get('/favicon.ico', (ctx) => ctx.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
 
   app.route('/', middlewares);
 
@@ -59,6 +59,4 @@ export function createBaseApp() {
 }
 
 /** The API's app; `#/routes` mounts every module's routes on it. */
-const baseApp = createBaseApp();
-
-export { baseApp };
+export const baseApp = createBaseApp();

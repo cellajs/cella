@@ -70,7 +70,7 @@ describe('Draft context invite deferral', async () => {
     expect(row.role).toBe(memberRole);
     expect(await linksOf(row.id)).toHaveLength(1); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
-    expect(mailer.prepareEmails).not.toHaveBeenCalled();
+    expect(mailer.sendEmails).not.toHaveBeenCalled();
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, organization.id));
     expect(memberships).toHaveLength(1); // only the inviting admin
@@ -86,7 +86,7 @@ describe('Draft context invite deferral', async () => {
     expect(row).toBeDefined();
     expect(row.role).toBe('admin');
     expect(row.remindedAt).not.toBeNull(); // the mail went out, so the invitation is not held
-    expect(mailer.prepareEmails).toHaveBeenCalledOnce();
+    expect(mailer.sendEmails).toHaveBeenCalledOnce();
   });
 
   it('lists a prepare-role invitation to an account while the context is a draft, so the emailed invitee can answer it', async () => {

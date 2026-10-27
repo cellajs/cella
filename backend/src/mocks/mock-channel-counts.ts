@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType } from 'shared';
-import { withFakerSeed } from './faker-seed';
-import { generateMockMembershipCounts } from './mock-membership-counts';
-import { mockRefDate } from './mock-timestamps';
+import { withFakerSeed } from '#/mocks/faker-seed';
+import { generateMockMembershipCounts } from '#/mocks/mock-membership-counts';
+import { mockRefDate } from '#/mocks/mock-timestamps';
 
 /** Scoped to the channel's configured descendants, matching `channelIncludedSchema`. The hierarchy controls the keys. */
 export const generateMockChannelCounts = (channelType: ChannelEntityType, key: string) => {

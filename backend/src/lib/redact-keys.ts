@@ -16,6 +16,8 @@ const transportKeys = [
 /** Every secret column name plus the transport keys, deduplicated. Keep `code` visible: it is the WebSocket close code. */
 const sensitiveLogKeys: string[] = [...new Set([...Object.values(secretColumns).flat(), ...transportKeys])];
 
-// fast-redact lacks recursive wildcards, so sensitive keys are listed at root and one level deep. Env-free on purpose,
-// so the cdc and yjs workers can import it without loading the backend env.
-export const redactedFields: string[] = sensitiveLogKeys.flatMap((key) => [key, `*.${key}`]);
+/**
+ * The pino redaction paths of every sensitive key, at the root and one level deep: fast-redact has no recursive
+ * wildcard. This file reads no env, so the cdc and yjs workers import it without loading the backend env.
+ */
+export const redactPaths: string[] = sensitiveLogKeys.flatMap((key) => [key, `*.${key}`]);

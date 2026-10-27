@@ -1,5 +1,5 @@
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
-import { type ChannelEntityType, hierarchy, isProduct, roles, type EntityType as SharedEntityType } from 'shared';
+import { type ChannelEntityType, type EntityType, hierarchy, isProduct, roles } from 'shared';
 import type z from 'zod';
 import type { ActorContext, DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
@@ -11,7 +11,7 @@ import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { syncStateTable } from '#/modules/entities/sync-state-db';
 import type { membershipCountSchema } from '#/schemas';
-import type { EntityModel, EntityType, ResolvableTable, TableWithIdAndSlug } from '#/tables';
+import type { EntityModel, ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { getEntityTable } from '#/tables';
 
 function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
@@ -166,7 +166,7 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
 
 interface FindLatestUserActivityIdOpts {
   organizationIds: string[];
-  entityTypes: SharedEntityType[];
+  entityTypes: EntityType[];
 }
 
 export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestUserActivityIdOpts) => {

@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { isOrganizationKey } from 'shared/utils/media-ref';
 import { tenantReadById } from '#/db/tenant-context';
-import { deleteStoredObjects, objectStorageConfigured } from '#/lib/object-storage';
+import { deleteStoredObjects, isObjectStorageConfigured } from '#/lib/object-storage';
 import { findLiveAttachmentKeys } from '#/modules/attachment/attachment-queries';
 import { publicKeyOf } from '#/modules/attachment/helpers/storage-key';
 import { log } from '#/utils/logger';
@@ -26,7 +26,7 @@ interface ReleaseReplacedImagesOpts {
  * is logged, never thrown: the write already holds.
  */
 export async function releaseReplacedImages({ owner, before, after }: ReleaseReplacedImagesOpts): Promise<void> {
-  if (!objectStorageConfigured()) return;
+  if (!isObjectStorageConfigured()) return;
   const stillNamed = new Set(imageColumns.map((column) => (after[column] === undefined ? before[column] : after[column])));
   const ownerPrefix = 'userId' in owner ? owner.userId : owner.organizationId;
   const keys = imageColumns.flatMap((column) => {

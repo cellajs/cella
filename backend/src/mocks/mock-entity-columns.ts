@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
-import type { ChannelEntityType, EntityIdColumns, EntityType, ProductEntityType } from 'shared';
-import { hierarchy } from 'shared';
+import { type ChannelEntityType, type EntityIdColumns, type EntityType, hierarchy, type ProductEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import slugify from 'slugify';
+import { mockTenantId, mockUuid } from '#/mocks/mock-ids';
+import { mockPastIsoDate } from '#/mocks/mock-past-iso-date';
+import { mockStx } from '#/mocks/mock-stx';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { mockTenantId, mockUuid } from './mock-nanoid';
-import { mockPastIsoDate } from './mock-past-iso-date';
-import { mockStx } from './mock-stx';
+import { slugFromName } from '#/utils/slug';
 
 type TenantEntityType = Exclude<EntityType, 'user'>;
 
@@ -89,7 +88,7 @@ export const mockChannelColumns = <T extends ChannelEntityType>(entityType: T, o
   const base = mockTenantEntityColumns(entityType, options);
   return {
     ...base,
-    slug: options.slug ?? slugify(base.name, { lower: true, strict: true }),
+    slug: options.slug ?? slugFromName(base.name),
     thumbnailUrl: options.thumbnailUrl ?? null,
     bannerUrl: options.bannerUrl ?? null,
     createdBy: options.createdBy ?? null,

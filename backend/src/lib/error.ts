@@ -50,12 +50,12 @@ type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
 export function extractPgError(err: unknown): PgErrorInfo | null {
   // Direct PG error (e.g., raw pg client)
-  if (err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string') {
+  if (err instanceof Error && 'code' in err && typeof err.code === 'string') {
     return err as Error & PgErrorInfo;
   }
   // Drizzle-wrapped PG error (original PG error stored on .cause)
   const cause = err instanceof Error ? err.cause : undefined;
-  if (cause && typeof cause === 'object' && 'code' in cause && typeof (cause as { code: unknown }).code === 'string') {
+  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') {
     return cause as PgErrorInfo;
   }
   return null;
@@ -72,7 +72,7 @@ function isPoolTimeoutError(err: unknown): boolean {
 const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server_error' : status === 403 ? 'forbidden' : 'invalid_request');
 
 /** What a client may see of a thrown value: status, type and a message that never carries server internals. */
-export interface ClientError {
+interface ClientError {
   message: string;
   name: string;
   status: number;
@@ -86,9 +86,9 @@ export interface ClientError {
 }
 
 /** Request facts for the error's log line (`path`, `method`, `userId`, `organizationId`, an MCP `tool`); unset ones are left out. */
-export type ErrorLogFields = Record<string, string | undefined>;
+type ErrorLogFields = Record<string, string | undefined>;
 
-export interface ToClientErrorOptions {
+interface ToClientErrorOptions {
   /** Keep a 5xx error's own message. Default: development and test only; a caller answering a third party passes false. */
   exposeServerMessage?: boolean;
 }

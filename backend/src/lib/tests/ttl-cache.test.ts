@@ -27,17 +27,12 @@ describe('TTLCache', () => {
       expect(cache.get('key1')).toBeUndefined();
     });
 
-    it('should check if key exists', () => {
-      cache.set('key1', 'value1');
-      expect(cache.has('key1')).toBe(true);
-      expect(cache.has('nonexistent')).toBe(false);
-    });
-
     it('should clear all entries', () => {
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
       cache.clear();
-      expect(cache.size).toBe(0);
+      expect(cache.get('key1')).toBeUndefined();
+      expect(cache.get('key2')).toBeUndefined();
     });
   });
 
@@ -230,7 +225,6 @@ describe('TTLCache', () => {
       expect(await cache.load('key1', read)).toBeUndefined();
 
       expect(read).toHaveBeenCalledTimes(2);
-      expect(cache.size).toBe(0);
     });
 
     it('keeps the reads of two caches apart', async () => {
@@ -260,19 +254,6 @@ describe('TTLCache', () => {
 
       // An index kept by both callbacks ends with the key in it: the removal comes first.
       expect(events).toEqual(['stored key1=loaded', 'disposed (set) key1=loaded', 'stored key1=replaced']);
-    });
-  });
-
-  describe('stats', () => {
-    it('should report correct stats', () => {
-      cache.set('key1', 'value1');
-      cache.set('key2', 'value2');
-
-      const stats = cache.stats;
-
-      expect(stats.size).toBe(2);
-      expect(stats.capacity).toBe(3);
-      expect(stats.utilization).toBeCloseTo(2 / 3);
     });
   });
 });

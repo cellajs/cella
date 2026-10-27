@@ -3,8 +3,6 @@ import i18n, { type InitOptions } from 'i18next';
 import { appConfig } from 'shared';
 import { locales } from '#/lib/i18n-locales';
 
-export type { ParseKeys } from 'i18next';
-
 /** All backend translations load at once during server start. */
 const initOptions: InitOptions = {
   resources: locales,
@@ -17,7 +15,8 @@ const initOptions: InitOptions = {
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
   interpolation: {
-    escapeValue: false, // Texts land in JSON responses; the email templates escape through their own instance
+    // Texts go into JSON responses; the email templates escape through their own instance.
+    escapeValue: false,
   },
   defaultNS: 'backend',
   // The locale files are flat: a dot is part of a key, never a path into nested objects

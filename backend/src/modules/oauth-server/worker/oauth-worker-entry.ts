@@ -18,7 +18,7 @@ export async function startOauthServer(options: { port?: number; inProcess?: boo
     baseLog.info('OAuth server disabled by appConfig');
     return;
   }
-  const port = options.port ?? Number(env.PORT);
+  const port = options.port ?? env.PORT;
 
   if (!options.inProcess) {
     otel.start();

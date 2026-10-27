@@ -4,45 +4,42 @@ import { warningMark } from 'shared/utils/console';
 
 export { checkMark, crossMark, tildeMark, timestamp } from 'shared/utils/console';
 
-// Spinner utilities
-
 let activeSpinner: Ora | null = null;
 let spinnerStartedAt = 0;
 
 /** Compact elapsed time: 340ms, 12.3s, 4m 07s. */
-function formatDuration(ms: number): string {
+const formatDuration = (ms: number): string => {
   if (ms < 1000) return `${Math.round(ms)}ms`;
   if (ms < 59_950) return `${(ms / 1000).toFixed(1)}s`;
   const totalSeconds = Math.round(ms / 1000);
   return `${Math.floor(totalSeconds / 60)}m ${String(totalSeconds % 60).padStart(2, '0')}s`;
-}
+};
 
 /** Dimmed elapsed-time suffix for a closing line, so slow steps stand out in the script output. */
 export const durationSuffix = (startedAt: number) => pc.dim(` (${formatDuration(performance.now() - startedAt)})`);
 
 /** Stops any previous spinner. */
-export function startSpinner(message: string): Ora {
+export const startSpinner = (message: string): Ora => {
   if (activeSpinner) activeSpinner.stop();
   activeSpinner = ora({ text: message, color: 'cyan' }).start();
   spinnerStartedAt = performance.now();
   return activeSpinner;
-}
+};
 
 /** Ends the spinner with the message, or its running text, plus the time since it started. */
-function closeSpinner(method: 'succeed' | 'fail' | 'warn', message?: string): void {
+const closeSpinner = (method: 'succeed' | 'warn', message?: string): void => {
   if (!activeSpinner) return;
   activeSpinner[method](`${message ?? activeSpinner.text}${durationSuffix(spinnerStartedAt)}`);
   activeSpinner = null;
-}
+};
 
+/** Ends the spinner with a check mark. */
 export const succeedSpinner = (message?: string) => closeSpinner('succeed', message);
-/** @public */
-export const failSpinner = (message?: string) => closeSpinner('fail', message);
 /** Ends the spinner. For a warning while the step continues, use {@link noteSpinnerWarning}. */
 export const warnSpinner = (message?: string) => closeSpinner('warn', message);
 
 /** Prints a warning line and keeps the spinner running, so the step still reports its own closing line. */
-export function noteSpinnerWarning(message: string): void {
+export const noteSpinnerWarning = (message: string): void => {
   if (!activeSpinner) {
     console.warn(`${warningMark} ${message}`);
     return;
@@ -50,4 +47,4 @@ export function noteSpinnerWarning(message: string): void {
   const text = activeSpinner.text;
   activeSpinner.stopAndPersist({ symbol: warningMark, text: message });
   activeSpinner.start(text);
-}
+};

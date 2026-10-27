@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { type EntityRole, roles } from 'shared';
-import { withFakerSeed } from './faker-seed';
+import { withFakerSeed } from '#/mocks/faker-seed';
 
 /** Generates deterministic membership counts for every configured role. */
 export const generateMockMembershipCounts = (key: string) =>

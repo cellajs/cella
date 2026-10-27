@@ -8,13 +8,13 @@ import { baseLog } from '#/lib/pino';
 const isProduction = appConfig.mode === 'production';
 
 /** Check if traffic originates from bench/load testing (dev only). */
-export const isBenchTraffic = (userId?: string, tenantId?: string) => {
+export const isBenchTraffic = (userId?: string, tenantId?: string): boolean => {
   if (isProduction) return false;
-  return tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix);
+  return tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix) === true;
 };
 
 /** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
-export type LogContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> } | null;
+type LogContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> } | null;
 
 const logContextStorage = new AsyncLocalStorage<LogContext>();
 

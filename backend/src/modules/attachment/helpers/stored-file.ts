@@ -1,6 +1,6 @@
 import { hasCloudFile, isLocalStorageKey } from 'shared/utils/storage-key';
 import { AppError } from '#/core/error';
-import { objectStorageConfigured, storedObjectSize } from '#/lib/object-storage';
+import { isObjectStorageConfigured, storedObjectSize } from '#/lib/object-storage';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 
 /**
@@ -10,7 +10,7 @@ import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
  * @throws AppError 400 when a variant key names no stored object.
  */
 export async function storedFileSize(keys: AttachmentKeys, bucketName: string): Promise<number | null> {
-  if (!hasCloudFile(keys) || !objectStorageConfigured()) return null;
+  if (!hasCloudFile(keys) || !isObjectStorageConfigured()) return null;
 
   const variants = Object.entries(keys).flatMap(([variant, key]) => (key && !isLocalStorageKey(key) ? [{ variant, key }] : []));
   const sizes = await Promise.all(variants.map(({ key }) => storedObjectSize(bucketName, key)));

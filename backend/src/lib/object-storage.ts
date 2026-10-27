@@ -6,7 +6,9 @@ import { env } from '#/env';
 let s3Client: S3Client | undefined;
 
 /** Whether the backend holds S3 keys: without them it can neither sign, check nor delete stored objects. */
-export const objectStorageConfigured = (): boolean => !!env.S3_ACCESS_KEY_ID && !!env.S3_ACCESS_KEY_SECRET;
+export function isObjectStorageConfigured(): boolean {
+  return !!env.S3_ACCESS_KEY_ID && !!env.S3_ACCESS_KEY_SECRET;
+}
 
 /**
  * The backend's client for Scaleway Object Storage.
@@ -16,7 +18,7 @@ export function getS3Client(): S3Client {
   if (s3Client) return s3Client;
 
   // Blank keys reach the signer as invalid credentials and return an opaque 500.
-  if (!objectStorageConfigured()) {
+  if (!isObjectStorageConfigured()) {
     throw new AppError(503, 'server_error', 'error', {
       name: 'S3NotConfigured',
       message: 'S3 credentials are not configured, cannot reach stored objects',

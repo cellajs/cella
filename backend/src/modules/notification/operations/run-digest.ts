@@ -73,7 +73,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
         continue;
       }
 
-      await mailer.prepareEmails(digestEmail, { daily: recipient.digest === 'daily' }, [
+      await mailer.sendEmails(digestEmail, { daily: recipient.digest === 'daily' }, [
         {
           email: recipient.email,
           lng: recipient.language,

@@ -1,4 +1,6 @@
-export type TimeSpanUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
+type TimeSpanUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
+
+const unitMs: Record<TimeSpanUnit, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000, w: 604_800_000 };
 
 /**
  * A duration of time, convertible between units.
@@ -17,34 +19,10 @@ export class TimeSpan {
   public unit: TimeSpanUnit;
 
   public milliseconds(): number {
-    if (this.unit === 'ms') {
-      return this.value;
-    }
-    if (this.unit === 's') {
-      return this.value * 1000;
-    }
-    if (this.unit === 'm') {
-      return this.value * 1000 * 60;
-    }
-    if (this.unit === 'h') {
-      return this.value * 1000 * 60 * 60;
-    }
-    if (this.unit === 'd') {
-      return this.value * 1000 * 60 * 60 * 24;
-    }
-    return this.value * 1000 * 60 * 60 * 24 * 7;
+    return this.value * unitMs[this.unit];
   }
 
   public seconds(): number {
     return this.milliseconds() / 1000;
   }
-
-  public transform(x: number): TimeSpan {
-    return new TimeSpan(Math.round(this.milliseconds() * x), 'ms');
-  }
-}
-
-/** ISO date string offset from now by the time span. */
-export function createDate(timeSpan: TimeSpan): string {
-  return new Date(Date.now() + timeSpan.milliseconds()).toISOString();
 }
