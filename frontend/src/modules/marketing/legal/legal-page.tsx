@@ -28,7 +28,7 @@ export function LegalPage() {
     <MarketingLayout title="c:legal">
       <div className="container my-4 gap-4 md:mt-8 md:flex">
         <div className="mx-auto md:mt-3 md:w-1/4 md:min-w-48">
-          <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} />
+          <SimpleHeader className="p-3" text="c:legal_text" textOptions={{ appName: appConfig.name }} />
           {/* Only the nav pins: a sticky intro ate the short viewport of a phone, where the aside stacks above the text */}
           <div className="sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto">
             <LegalAside subjects={subjects} currentSubject={currentSubject} className="py-2" />

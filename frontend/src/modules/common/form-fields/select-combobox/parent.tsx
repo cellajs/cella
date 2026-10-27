@@ -5,7 +5,6 @@ import type { ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
-import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
 type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
@@ -20,11 +19,10 @@ type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFiel
 
 /** Channels the user can pick as a parent; shares its cache with the picker's own list query. */
 export function useParentChannels(parentType: ChannelEntityType, organizationId?: string, enabled = true) {
-  const user = useCurrentUser();
-
+  // No user filter: a list endpoint answers with the caller's channels, and `relatableUserId` would narrow those to their own memberships
   const queryFactory = getChannelListQuery(parentType);
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
-  const query = useInfiniteQuery({ ...(queryFactory as any)({ userId: user.id, organizationId }), enabled });
+  const query = useInfiniteQuery({ ...(queryFactory as any)({ organizationId }), enabled });
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
   const items = flattenInfiniteData<ChannelBase>(query.data as any);
 

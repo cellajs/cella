@@ -7,8 +7,13 @@ import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
 /** Vertical stepper: every step shows a numbered button and its label, only the current step's content is open. */
-export function Stepper({ children, className, initialStep = 0, steps, onClickStep }: StepperProps) {
+export function Stepper({ children, className, initialStep = 0, steps, onClickStep, onComplete }: StepperProps) {
   const [activeStep, setActiveStep] = useState(initialStep);
+
+  const nextStep = () => {
+    setActiveStep(activeStep + 1);
+    if (activeStep === steps.length - 1) onComplete?.();
+  };
 
   const items = Children.toArray(children).map((child, index) => (isValidElement<StepProps>(child) ? cloneElement(child, { index }) : child));
 
@@ -18,7 +23,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
         steps,
         activeStep,
         onClickStep,
-        nextStep: () => setActiveStep((prev) => prev + 1),
+        nextStep,
         setStep: setActiveStep,
       }}
     >

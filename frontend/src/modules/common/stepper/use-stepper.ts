@@ -26,6 +26,5 @@ export const useStepper = () => {
     currentStep,
     isOptionalStep: !!currentStep?.optional,
     isLastStep: context.activeStep === context.steps.length - 1,
-    hasCompletedAllSteps: context.activeStep === context.steps.length,
   };
 };

@@ -15,6 +15,8 @@ export interface StepperProps {
   steps: StepItem[];
   /** Makes the step buttons clickable; the handler decides whether to call `setStep`. */
   onClickStep?: (step: number, setStep: (step: number) => void) => void;
+  /** Called when `nextStep` moves on from the last step. */
+  onComplete?: () => void;
 }
 
 export interface StepProps {

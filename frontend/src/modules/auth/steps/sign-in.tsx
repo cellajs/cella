@@ -47,6 +47,7 @@ export function SignInStep() {
   const navigate = useNavigate();
 
   const abortRef = useRef<AbortController | null>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email } });
@@ -99,7 +100,7 @@ export function SignInStep() {
   const onSubmit = () => {
     if (magicLinkEnabled) return sendMagic();
     startMediation();
-    setTimeout(() => document.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus(), 0);
+    setTimeout(() => submitButtonRef.current?.focus(), 0);
   };
 
   const resetAuth = () => {
@@ -131,7 +132,7 @@ export function SignInStep() {
         <form noValidate onSubmit={(event) => form.handleSubmit(onSubmit, defaultOnInvalid)(event)} className="flex flex-col gap-4">
           <EmailField control={form.control} hidden={!restrictedMode} />
 
-          <SubmitButton loading={isSending} className="w-full">
+          <SubmitButton ref={submitButtonRef} loading={isSending} className="w-full">
             {magicLinkEnabled ? (
               <>
                 <MailIcon />
