@@ -1,3 +1,5 @@
+import type { SubjectForPermission } from './engine/types.ts';
+
 /**
  * Closed vocabulary shared by JS, SQL and frontend enforcement. `own` requires the actor to match
  * `createdBy`; `public` requires the row's `public` flag.
@@ -7,9 +9,16 @@ export type RowConditionName = 'own' | 'public';
 /** The actor for condition evaluation. `actorId` is absent for anonymous actors. */
 export type ConditionActor = { actorId?: string };
 
-/** `createdBy` comes from `SubjectForPermission`; other fields from its `row`. */
+/** The row fields a condition reads. */
 export type RowForCondition = { createdBy?: string | null } & Record<string, unknown>;
 
+/**
+ * The row a subject's conditions read: `createdBy` comes from the subject, other fields from its `row`. The single-row
+ * path and the fan-out both read this row, so actors the fan-out groups by it get the decision the single path makes.
+ */
+export const conditionRowOf = (subject: SubjectForPermission): RowForCondition => ({ ...subject.row, createdBy: subject.createdBy });
+
+/** Whether a policy cell is a row condition name. */
 export const isRowCondition = (value: unknown): value is RowConditionName => value === 'own' || value === 'public';
 
 /**

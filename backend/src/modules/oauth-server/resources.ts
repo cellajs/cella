@@ -1,4 +1,5 @@
 import { accessScopes, appConfig } from 'shared';
+import { escapeRegExp } from 'shared/utils/escape-regexp';
 
 /** The two audiences a token from this server can carry: the MCP server of an organization, or the REST API of a tenant. */
 export type ResourceRef = { face: 'mcp'; tenantId: string; organizationId: string } | { face: 'api'; tenantId: string };
@@ -14,7 +15,6 @@ export function resourceUri(ref: ResourceRef): string {
     : `${appConfig.backendUrl}/t/${tenantId}`;
 }
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const mcpResource = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/([^/]+)/([^/]+)/mcp$`);
 const apiResource = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/t/([^/]+)$`);
 

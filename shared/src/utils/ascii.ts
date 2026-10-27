@@ -1,3 +1,4 @@
+/** Prints the template's logo as ASCII art, for a startup banner. */
 export const renderAscii = () => {
   console.info(
     '                         _ _            \n   ▒▓█████▓▒     ___ ___| | | __ _      \n   ▒▓█   █▓▒    / __/ _ \\ | |/ _` |    \n   ▒▓█   █▓▒   | (_|  __/ | | (_| |     \n   ▒▓█████▓▒    \\___\\___|_|_|\\__,_|  \n ',

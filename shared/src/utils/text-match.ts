@@ -1,18 +1,14 @@
-/**
- * Substring matching for search boxes: the same rule for a list filter, a database search and the
- * highlight painted over the result, so the three never disagree about what matched.
- */
-
 export type MatchMode = 'all' | 'any';
 
 /** `[start, end)` in the original string's code units. */
 export type MatchRange = [start: number, end: number];
 
-const combiningMarks = /[̀-ͯ]/g;
+const combiningMarks = /[\u0300-\u036f]/g;
 
 /**
- * Lowercase with accents removed: "Renée" folds to "renee". Mirrors the SQL `fold_search`
- * function, so a term folded here matches a column folded there. Idempotent.
+ * Lowercase with accents removed: "Renée" folds to "renee". Idempotent. Mirrors the SQL `fold_search` function, so a
+ * term folded here matches a column folded there: a list filter, a database search and the highlight painted over a
+ * result never disagree about what matched.
  */
 export const foldText = (text: string): string => text.toLowerCase().normalize('NFD').replace(combiningMarks, '');
 

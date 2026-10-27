@@ -17,8 +17,7 @@ export const buildSubject = (
   const channelIds: AncestorChannelIds = {};
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    const idKey = appConfig.entityIdColumnKeys[ancestor];
-    const value = ancestorChannelIds[idKey as keyof ChannelIdColumns];
+    const value = ancestorChannelIds[appConfig.entityIdColumnKeys[ancestor]];
     if (value !== undefined) {
       channelIds[ancestor] = value;
     }
@@ -41,4 +40,4 @@ export const buildSubject = (
 export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
   entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns> & Record<string, unknown>,
-): SubjectForPermission => buildSubject(entityType, entity, { id: entity.id, createdBy: entity.createdBy, row: entity as Record<string, unknown> });
+): SubjectForPermission => buildSubject(entityType, entity, { id: entity.id, createdBy: entity.createdBy, row: entity });

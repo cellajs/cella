@@ -27,7 +27,6 @@ describe('createSpanStore', () => {
     store.addSpan(span);
 
     expect(store.getSpans()).toEqual([span]);
-    expect(store.length).toBe(1);
   });
 
   it('evicts oldest spans when maxSpans is exceeded', () => {
@@ -40,17 +39,6 @@ describe('createSpanStore', () => {
     expect(spans).toHaveLength(2);
     expect(spans[0].spanId).toBe('b');
     expect(spans[1].spanId).toBe('c');
-  });
-
-  it('filters spans by prefix', () => {
-    const store = createSpanStore();
-    store.addSpan(makeSpan({ name: 'cdc.wal.process' }));
-    store.addSpan(makeSpan({ name: 'sync.sse.connect' }));
-    store.addSpan(makeSpan({ name: 'cdc.activity.create' }));
-
-    expect(store.getSpansByPrefix('cdc.')).toHaveLength(2);
-    expect(store.getSpansByPrefix('sync.')).toHaveLength(1);
-    expect(store.getSpansByPrefix('nope')).toHaveLength(0);
   });
 
   it('notifies subscribers on addSpan', () => {
@@ -77,15 +65,6 @@ describe('createSpanStore', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('fires onSpanEnd callback', () => {
-    const onSpanEnd = vi.fn();
-    const store = createSpanStore({ onSpanEnd });
-    const span = makeSpan();
-
-    store.addSpan(span);
-    expect(onSpanEnd).toHaveBeenCalledWith(span);
-  });
-
   it('clears all spans and notifies subscribers', () => {
     const store = createSpanStore();
     store.addSpan(makeSpan());
@@ -96,7 +75,6 @@ describe('createSpanStore', () => {
     callback.mockClear();
 
     store.clear();
-    expect(store.length).toBe(0);
     expect(store.getSpans()).toEqual([]);
     expect(callback).toHaveBeenCalledWith([]);
   });

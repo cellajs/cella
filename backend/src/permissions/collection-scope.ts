@@ -20,7 +20,7 @@ import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 
 const roleReadValue = (policies: PolicyMatrix, entityType: ProductEntityType, channelType: ChannelEntityType, role: EntityRole): PolicyCell => {
-  const entityPolicies = getEntityPolicies(entityType, policies);
+  const entityPolicies = getEntityPolicies(policies, entityType);
   const permissions = getPolicyPermissions(entityPolicies, channelType, role);
   return permissions?.read ?? 0;
 };

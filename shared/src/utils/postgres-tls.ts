@@ -6,8 +6,10 @@ export interface VerifiedPostgresSslOptions {
   checkServerIdentity?: (host: string, cert: PeerCertificate) => Error | undefined;
 }
 
-// Scaleway connection strings carry libpq ssl params that node-postgres may let override an
-// explicit verified `ssl` object, so strip them before handing the string to pg.
+/**
+ * The connection string without its libpq ssl params: Scaleway's carry them, and node-postgres may let them override an
+ * explicit verified `ssl` object. An unparseable string is returned as it is.
+ */
 export const stripPostgresSslParams = (url: string): string => {
   try {
     const parsed = new URL(url);
@@ -19,8 +21,12 @@ export const stripPostgresSslParams = (url: string): string => {
   }
 };
 
-// Production requires the Pulumi-provisioned database CA and verified TLS. Decodes the
-// single-line base64 runtime secret back to PEM; callers pass the raw env value.
+/**
+ * The database CA as PEM, decoded from the single-line base64 runtime secret; callers pass the raw env value. Production
+ * requires the Pulumi-provisioned CA and verified TLS.
+ * @returns undefined without a CA when none is required.
+ * @throws Error when the CA is required and absent.
+ */
 export const resolvePostgresSslCa = (ca: string | undefined, required: boolean): string | undefined => {
   if (!ca) {
     if (!required) return undefined;
@@ -35,14 +41,17 @@ export const resolvePostgresSslCa = (ca: string | undefined, required: boolean):
 
 const postgresHost = (connectionString: string): string | undefined => {
   try {
-    return new URL(stripPostgresSslParams(connectionString)).hostname || undefined;
+    return new URL(connectionString).hostname || undefined;
   } catch {
     return undefined;
   }
 };
 
-// node-postgres omits the connection host from TLS identity checking, so Node would verify
-// against `localhost`. Pins verification to the dialed host, keeping CA-chain verification.
+/**
+ * The `ssl` option for a verified connection, or undefined without a CA. node-postgres omits the connection host from TLS
+ * identity checking, so Node would verify against `localhost`: this pins verification to the dialed host and keeps
+ * CA-chain verification.
+ */
 export const verifiedPostgresSsl = (connectionString: string, ca: string | undefined): VerifiedPostgresSslOptions | undefined => {
   if (!ca) return undefined;
   const host = postgresHost(connectionString);

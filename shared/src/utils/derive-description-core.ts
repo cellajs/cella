@@ -7,6 +7,7 @@ import { getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } 
 export type DescriptionBlock = { type: string; props?: Record<string, unknown>; content?: unknown[]; children?: DescriptionBlock[] };
 
 export type DescriptionCounts = {
+  /** True with more than one top-level block. */
   expandable: boolean;
   checkboxCount: number;
   checkedCount: number;
@@ -15,7 +16,7 @@ export type DescriptionCounts = {
   attachments: string[];
 };
 
-export const emptyDescriptionCounts = (): DescriptionCounts => ({
+const emptyDescriptionCounts = (): DescriptionCounts => ({
   expandable: false,
   checkboxCount: 0,
   checkedCount: 0,
@@ -76,10 +77,6 @@ export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => 
 
   return { source, summaryLength };
 };
-
-/** Fallback for summary sources the per-side HTML converters cannot render. */
-export const blockPlainText = (block: DescriptionBlock): string =>
-  Array.isArray(block.content) ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('') : '';
 
 /** Everything the app derives from one stored description. */
 export type DerivedDocument = {

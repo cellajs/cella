@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
+import { escapeRegExp } from 'shared/utils/escape-regexp';
 
 declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry | string)[] };
 
@@ -7,7 +8,7 @@ declare const __BACKEND_URL__: string;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
-const navigationDenylist = apiPathPrefix ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)] : [];
+const navigationDenylist = apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : [];
 
 /** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
 const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/static/zod.gen.ts']);

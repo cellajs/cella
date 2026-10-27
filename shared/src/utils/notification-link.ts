@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { appConfig } from '../config-builder/app-config.ts';
 
 /** Frontend route that resolves a notification link to its subject's channel route. */
-export const notificationLinkPath = '/n';
+const notificationLinkPath = '/n';
 
 /**
  * Search params of the notification link: the subject's location as the backend snapshots it on

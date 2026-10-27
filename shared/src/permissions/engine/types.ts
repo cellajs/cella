@@ -1,12 +1,13 @@
 import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types.ts';
-import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { PublicReadGrants } from '../public-read.ts';
+import type { HierarchyOverrides } from './resolve-hierarchy.ts';
 
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 
 /** Ancestor channel IDs by type. `null` marks an intentionally unused level. */
 export type AncestorChannelIds = Partial<Record<ChannelEntityType, string | null>>;
 
+/** The channel ids a decision read, by type; a level without an id is absent. */
 export type ResolvedChannelIds = Partial<Record<ChannelEntityType, string>>;
 
 /** Tier models may carry extra fields; these are the ones the engine reads. */
@@ -46,10 +47,11 @@ export interface PermissionDecision<T extends AccessMembership = AccessMembershi
   subject: { entityType: ChannelEntityType | ProductEntityType; id?: string; channelIds: ResolvedChannelIds };
   actions: Record<EntityActionType, ActionAttribution>;
   can: Record<EntityActionType, boolean>;
+  /** The actor's first membership on the subject's primary channel, null without one. */
   membership: T | null;
 }
 
-export interface PermissionCheckOptions {
+export interface PermissionCheckOptions extends HierarchyOverrides {
   isSystemAdmin?: boolean;
   /** Acting actor id (a user or a service account). Required by `own` conditions. */
   actorId?: string;
@@ -62,8 +64,4 @@ export interface PermissionCheckOptions {
    * subtree-wide) for callers driving the engine with synthetic policies.
    */
   elevatedGrants?: ReadonlySet<string>;
-  /** Synthetic hierarchy override; defaults to the app singleton. */
-  hierarchy?: EntityHierarchy;
-  /** Action set override; defaults to `appConfig.entityActions`. */
-  entityActions?: readonly EntityActionType[];
 }

@@ -1,10 +1,6 @@
 import { createPrivateKey, createPublicKey, hkdfSync, type KeyObject, sign, verify } from 'node:crypto';
 import { z } from 'zod';
 
-// The Yjs auth token scheme: the backend signs with an Ed25519 private key, the relay verifies with the
-// public key alone, so neither the relay nor anything it holds can mint a token. Format is
-// base64url(JSON payload) + '.' + base64url(the Ed25519 signature over the encoded payload).
-
 const delimiter = '.';
 const signatureBytes = 64;
 /** DER prefix that wraps a raw 32-byte Ed25519 seed as a PKCS#8 private key (RFC 8410). */
@@ -12,12 +8,13 @@ const pkcs8Ed25519Prefix = Buffer.from('302e020100300506032b657004220420', 'hex'
 /** HKDF info label, so the key material yields this signing key and no other. */
 const keyDerivationInfo = 'yjs-token-ed25519';
 
-export const yjsTokenPayloadSchema = z.object({
+const yjsTokenPayloadSchema = z.object({
   userId: z.string(),
   entityType: z.string(),
   entityId: z.string(),
   tenantId: z.string(),
   organizationId: z.string().nullable(),
+  /** Expiry in epoch milliseconds. */
   exp: z.number(),
 });
 
@@ -53,7 +50,9 @@ export function yjsTokenVerifyKey(publicKey: string): KeyObject {
 
 /**
  * The token names the one entity the user may edit and its tenant scope, so the relay verifies
- * access locally with no call back to the backend.
+ * access locally with no call back to the backend. The backend signs with the Ed25519 private key and the relay
+ * verifies with the public key alone, so neither the relay nor anything it holds can mint a token. Format:
+ * base64url(JSON payload) + '.' + base64url(the Ed25519 signature over the encoded payload).
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>, signingKey: KeyObject, ttlMs: number): string {
   const payload: YjsTokenPayload = { ...params, exp: Date.now() + ttlMs };

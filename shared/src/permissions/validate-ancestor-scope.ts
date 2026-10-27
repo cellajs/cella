@@ -7,14 +7,10 @@ import { MissingAncestorError } from './missing-ancestor-error.ts';
  * `null` marks an unused ancestor; `undefined` is missing.
  * @throws MissingAncestorError when an ancestor channel id is `undefined`
  */
-export const validateAncestorScope = (entity: SubjectForPermission) => {
-  const ancestors = hierarchy.getOrderedAncestors(entity.entityType);
-
-  for (const ancestor of ancestors) {
-    const value = entity.channelIds[ancestor];
-
-    if (value === undefined) {
-      throw new MissingAncestorError(entity.entityType, ancestor, appConfig.entityIdColumnKeys[ancestor]);
+export const validateAncestorScope = (subject: SubjectForPermission): void => {
+  for (const ancestor of hierarchy.getOrderedAncestors(subject.entityType)) {
+    if (subject.channelIds[ancestor] === undefined) {
+      throw new MissingAncestorError(subject.entityType, ancestor, appConfig.entityIdColumnKeys[ancestor]);
     }
   }
 };

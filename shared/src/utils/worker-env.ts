@@ -26,5 +26,5 @@ export const workerEnvBase = z.object({
   DEBUG: z
     .string()
     .default('false')
-    .transform((v) => v === 'true'),
+    .transform((value) => value === 'true'),
 });

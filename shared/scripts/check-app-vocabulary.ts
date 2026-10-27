@@ -14,7 +14,7 @@ const productNameInLogic = /cella_[a-z0-9]|\bCella[A-Z]|cellajs\.com|_cella-/g;
 /** Logic roots the product-name rule covers; tests, config, docs and the marketing site are the template's own voice. */
 const logicRoots = ['backend/src/', 'shared/src/', 'frontend/src/'];
 const productNameAllowlist: VocabularyAllowlist = {
-  files: ['shared/src/cli-utils/display.ts'],
+  files: [],
   prefixes: ['frontend/src/modules/marketing/', 'frontend/src/content/'],
 };
 /**

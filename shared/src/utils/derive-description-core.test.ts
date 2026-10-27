@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blockPlainText, countDescriptionBlocks, type DescriptionBlock, deriveDocument, findSummarySource } from './derive-description-core.ts';
+import { countDescriptionBlocks, type DescriptionBlock, deriveDocument, findSummarySource } from './derive-description-core.ts';
 
 const paragraph = (text: string): DescriptionBlock => ({
   type: 'paragraph',
@@ -60,7 +60,6 @@ describe('findSummarySource', () => {
   it('falls back to the first block when nothing else has text', () => {
     const { source } = findSummarySource([checklist(false, 'only checklist')]);
     expect(source?.type).toBe('checklistItem');
-    expect(blockPlainText(source as DescriptionBlock)).toBe('only checklist');
   });
 });
 

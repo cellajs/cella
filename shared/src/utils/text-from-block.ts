@@ -1,6 +1,7 @@
 import type { Block } from '@blocknote/core';
 import { isRecord } from './as-record.ts';
 
+/** Block types that hold one file: its reference in the `url` prop, its file name in `name`. */
 export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
 type InlineContentLike = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: unknown };
@@ -67,18 +68,15 @@ const inlineText = (item: unknown): string => {
 
 const inlineContentText = (content: unknown[]): string => collapseWhitespace(content.map(inlineText).join(' '));
 
+/** The inline content of every cell of a table block, row by row; none for any other content. */
+const tableCellContents = (content: Exclude<Block['content'], unknown[]>): unknown[][] =>
+  content?.type === 'tableContent' && Array.isArray(content.rows)
+    ? content.rows.flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? cell.content : [])))
+    : [];
+
 /** Text of inline content, or of every cell when the block holds a table. */
-const contentText = (content: Block['content']): string => {
-  if (Array.isArray(content)) return inlineContentText(content);
-  if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    return collapseWhitespace(
-      content.rows
-        .flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? inlineContentText(cell.content) : '')))
-        .join(' '),
-    );
-  }
-  return '';
-};
+const contentText = (content: Block['content']): string =>
+  Array.isArray(content) ? inlineContentText(content) : collapseWhitespace(tableCellContents(content).map(inlineContentText).join(' '));
 
 /** Covers inline content, table content, file-based blocks and children. */
 export const getTextFromBlock = (block: Block): string => {
@@ -98,8 +96,8 @@ export const getTextFromBlock = (block: Block): string => {
 };
 
 /** `inlineText` plus link URL metadata, so the domain and slug of a link are searchable too. */
-const getSearchableTextFromInlineContent = (content: unknown[]): string => {
-  return collapseWhitespace(
+const getSearchableTextFromInlineContent = (content: unknown[]): string =>
+  collapseWhitespace(
     content
       .map((item) => {
         const inline = item as InlineContentLike;
@@ -108,25 +106,14 @@ const getSearchableTextFromInlineContent = (content: unknown[]): string => {
       })
       .join(' '),
   );
-};
 
 /** For search indexing: adds URL metadata from link and media URLs to `getTextFromBlock`. */
 export const getSearchableTextFromBlock = (block: Block): string => {
   const { content, children } = block;
   const parts: string[] = [];
 
-  if (Array.isArray(content)) {
-    parts.push(getSearchableTextFromInlineContent(content));
-  } else if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    parts.push(
-      content.rows
-        .flatMap((row) =>
-          row.cells.flatMap((cell) => ('content' in cell && Array.isArray(cell.content) ? getSearchableTextFromInlineContent(cell.content) : '')),
-        )
-        .filter(Boolean)
-        .join(' '),
-    );
-  }
+  if (Array.isArray(content)) parts.push(getSearchableTextFromInlineContent(content));
+  else parts.push(tableCellContents(content).map(getSearchableTextFromInlineContent).filter(Boolean).join(' '));
 
   const props: unknown = block.props;
   if (mediaBlockTypes.has(block.type) && isRecord(props)) {
@@ -142,9 +129,10 @@ export const getSearchableTextFromBlock = (block: Block): string => {
     .trim();
 };
 
+/** {@link getSearchableTextFromBlock} of every block, joined by spaces. */
 export const getSearchableTextFromBlocks = (blocks: Block[]): string => blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
 
-/** Blocks of a stored document (`description` as composer output); null for absent, legacy HTML or malformed input. */
+/** Blocks of a stored document (`description` as composer output); null for an absent, HTML or malformed body. */
 export const parseBlocks = (description: string | null | undefined): Block[] | null => {
   if (!description) return null;
   try {

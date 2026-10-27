@@ -1,3 +1,4 @@
+import { escapeRegExp } from './escape-regexp.ts';
 import { redactFailedQuery } from './failed-query.ts';
 
 const redacted = '[REDACTED]';
@@ -27,8 +28,6 @@ const sensitiveQueryKeys = [
 
 /** Route templates whose `{token}` segment is a secret. They match anywhere in a path, so a mount prefix such as `/api` may precede them. */
 const secretPathTemplates = ['/auth/invoke-token/{type}/{token}'];
-
-const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Group 1 keeps the route up to the secret segment; any other `{param}` matches one segment, empty included. */
 const toSecretPathPattern = (template: string): RegExp => {

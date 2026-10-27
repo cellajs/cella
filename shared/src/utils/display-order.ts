@@ -14,9 +14,8 @@ interface OrderedItem {
 
 /** Extends by `orderGap` at the list edges. Null means too little space: rebalance the siblings. */
 export const getOrderBetween = (prev: number | undefined, next: number | undefined): number | null => {
-  if (prev === undefined && next === undefined) return defaultOrder;
-  if (prev === undefined) return (next as number) - orderGap;
-  if (next === undefined) return prev + orderGap;
+  if (next === undefined) return prev === undefined ? defaultOrder : prev + orderGap;
+  if (prev === undefined) return next - orderGap;
   if (next - prev < minOrderGap) return null;
   return (prev + next) / 2;
 };
@@ -24,15 +23,13 @@ export const getOrderBetween = (prev: number | undefined, next: number | undefin
 /** With `ascending` (the default) the visual top is the lowest order, descending the highest. */
 export const getEdgeOrder = (existingOrders: number[], edge: 'top' | 'bottom', ascending = true): number => {
   if (existingOrders.length === 0) return defaultOrder;
-  const visualTopIsMin = ascending;
-  const placeAtVisualTop = edge === 'top';
-  const useMin = placeAtVisualTop ? visualTopIsMin : !visualTopIsMin;
+  const useMin = (edge === 'top') === ascending;
   return useMin ? Math.min(...existingOrders) - orderGap : Math.max(...existingOrders) + orderGap;
 };
 
 /**
  * Order of a membership an archive or restore moves: the bottom of the list it joins. The server writes it and the client
- * predicts it, so a moved menu row lands once.
+ * predicts it, so a moved menu row moves once.
  */
 export const getArchiveMoveOrder = (
   memberships: { channelType: string; archived: boolean; displayOrder: number }[],
@@ -77,32 +74,27 @@ export const getRelativeOrder = (items: OrderedItem[], targetOrder: number, sour
 
   const sourceOrder = items.find((item) => item.id === sourceId)?.displayOrder;
   const sorted = items.filter((item) => item.id !== sourceId).toSorted((a, b) => a.displayOrder - b.displayOrder);
-  const taken = new Set(sorted.map((i) => i.displayOrder));
+  const taken = new Set(sorted.map((item) => item.displayOrder));
+
+  // Past the target on the drop side, snapped to a clean integer even when targetOrder is fractional.
+  const pastTarget = () => (insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap);
 
   const targetIdx = sorted.findIndex((item) => item.displayOrder === targetOrder);
   if (targetIdx === -1) {
     // Dropped on itself
     if (sourceOrder === targetOrder) return sourceOrder;
-    // Target absent: extend past it on the requested side, snapped to an integer.
-    return insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap;
+    return pastTarget();
   }
 
-  const [prev, next] = insertBefore ? [sorted[targetIdx - 1]?.displayOrder, targetOrder] : [targetOrder, sorted[targetIdx + 1]?.displayOrder];
+  const neighbor = sorted[insertBefore ? targetIdx - 1 : targetIdx + 1]?.displayOrder;
+  const [prev, next] = insertBefore ? [neighbor, targetOrder] : [targetOrder, neighbor];
 
   // Dropped on the edge facing it: the slot is unchanged, so a new order would only churn a write
   const staysInSlot = sourceOrder !== undefined && (prev === undefined || prev < sourceOrder) && (next === undefined || sourceOrder < next);
   if (staysInSlot) return sourceOrder;
 
-  // One neighbor: extend past it to a clean integer, even when targetOrder is fractional.
-  if (prev === undefined && next !== undefined) return Math.floor(next) - orderGap;
-  if (next === undefined && prev !== undefined) return Math.ceil(prev) + orderGap;
-
-  if (prev === undefined || next === undefined) return getOrderBetween(prev, next) ?? targetOrder;
-  if (next - prev < Number.EPSILON * 8) return targetOrder + (insertBefore ? -orderGap : orderGap);
+  // No neighbor on the drop side.
+  if (prev === undefined || next === undefined) return pastTarget();
+  if (next - prev < minOrderGap) return targetOrder + (insertBefore ? -orderGap : orderGap);
   return pickCleanOrder(prev, next, taken);
-};
-
-/** The visual bottom of an ascending list. */
-export const getNewItemOrder = (existingOrders: number[]): number => {
-  return getEdgeOrder(existingOrders, 'bottom', true);
 };

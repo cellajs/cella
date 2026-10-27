@@ -1,17 +1,18 @@
 import type { EntityActionType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
+import { matchesRowCondition } from './row-conditions.ts';
 import type { CanState } from './types.ts';
 
-export function createActionRecord<T>(valueFn: (action: EntityActionType) => T): Record<EntityActionType, T> {
-  return recordFromKeys(appConfig.entityActions, valueFn);
-}
+/** A record over `appConfig.entityActions`, in its order, with each action's value from `valueFn`. */
+export const createActionRecord = <T>(valueFn: (action: EntityActionType) => T): Record<EntityActionType, T> =>
+  recordFromKeys(appConfig.entityActions, valueFn);
 
 /** The secure-by-default base for building a permission record. */
-export const allActionsDenied = Object.freeze(createActionRecord(() => false as const)) as Readonly<Record<EntityActionType, false>>;
+export const allActionsDenied = Object.freeze(createActionRecord(() => false as const));
 
 /** For system admin and other full-access cases. */
-export const allActionsAllowed = Object.freeze(createActionRecord(() => true as const)) as Readonly<Record<EntityActionType, true>>;
+export const allActionsAllowed = Object.freeze(createActionRecord(() => true as const));
 
 /** The row's home channel id (its deepest non-null ancestor id) and the channel the can-map was computed for. */
 export type CanHome = { row: string | null; channel: string };
@@ -24,7 +25,7 @@ export type CanHome = { row: string | null; channel: string };
  */
 export const resolveCan = (permission: CanState | undefined, entityCreatedBy?: string | null, actorId?: string, home?: CanHome): boolean => {
   if (typeof permission !== 'string') return permission === true;
-  const own = !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
+  const own = matchesRowCondition('own', { createdBy: entityCreatedBy }, { actorId });
   const atHome = !!home?.row && home.row === home.channel;
   switch (permission) {
     case 'own':
