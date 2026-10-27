@@ -32,7 +32,7 @@ export function AccordionContent({ className, children, ...props }: AccordionPri
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"
-      className="not-data-open:animate-accordion-up overflow-hidden text-sm data-open:animate-accordion-down"
+      className="overflow-hidden text-sm motion-safe:not-data-open:animate-accordion-up motion-safe:data-open:animate-accordion-down"
       {...props}
     >
       <div className={cn('pt-0 pb-4', className)}>{children}</div>
