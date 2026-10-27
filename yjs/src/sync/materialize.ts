@@ -1,5 +1,6 @@
 import { stateToBlocksJson as blocksJsonOf } from '#/modules/yjs/helpers/description-update';
-import type { DocScope } from '../constants';
+import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { docKey } from '../constants';
 import { env } from '../env';
 import { log } from '../lib/pino';
 
@@ -24,7 +25,12 @@ const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409,
  * `editors` are the window's senders, newest first; `serverRowIds` the server-origin rows its merge holds, none
  * usually. The backend answers 409 when the log holds a server row the merge lacks: a retry.
  */
-export async function postMaterialize(scope: DocScope, editors: string[], description: string, serverRowIds: number[]): Promise<MaterializeResult> {
+export async function postMaterialize(
+  scope: YjsDocScope,
+  editors: string[],
+  description: string,
+  serverRowIds: number[],
+): Promise<MaterializeResult> {
   try {
     const res = await fetch(`${env.BACKEND_INTERNAL_URL}/internal/yjs/materialize`, {
       method: 'POST',
@@ -41,26 +47,26 @@ export async function postMaterialize(scope: DocScope, editors: string[], descri
     });
     if (res.ok) return 'ok';
     if (res.status === 410) {
-      log.warn(`Materialize: ${scope.entityType}:${scope.entityId} no longer exists, dropping its log`);
+      log.warn(`Materialize: ${docKey(scope)} no longer exists, dropping its log`);
       return 'gone';
     }
 
     const rejected = res.status >= 400 && res.status < 500 && !retryableStatuses.has(res.status);
     const kind: MaterializeResult = rejected ? 'permanent' : 'retry';
-    log.warn(`Materialize ${kind} failure for ${scope.entityType}:${scope.entityId}`, { status: res.status });
+    log.warn(`Materialize ${kind} failure for ${docKey(scope)}`, { status: res.status });
     return kind;
   } catch (err) {
-    log.warn(`Materialize unreachable for ${scope.entityType}:${scope.entityId}`, { err });
+    log.warn(`Materialize unreachable for ${docKey(scope)}`, { err });
     return 'retry';
   }
 }
 
-/** Convert a Y.Doc state to blocks JSON with the backend's headless converter; null when the state can't be parsed. */
-export function stateToBlocksJson(state: Uint8Array): string | null {
+/** Convert a Y.Doc state to blocks JSON with the backend's headless converter; null, logged with `doc`, when it can't be parsed. */
+export function stateToBlocksJson(state: Uint8Array, doc: YjsDocKey): string | null {
   try {
     return blocksJsonOf(state);
   } catch (err) {
-    log.error('Failed to convert Y.Doc state to blocks', { err });
+    log.error(`Compaction: unparseable state for ${docKey(doc)}, keeping the log`, { err });
     return null;
   }
 }

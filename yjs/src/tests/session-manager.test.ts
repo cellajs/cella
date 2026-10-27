@@ -288,6 +288,18 @@ describe('joinCollab / leaveCollab', () => {
     expect(peer.sent).toHaveLength(1);
   });
 
+  it('holds sync frames for a socket mid-handshake and sends its awareness at once', () => {
+    const joining = mockWebSocket();
+    const collab = joinCollab(uniqueCtx(), joining as never);
+    const held: Uint8Array[] = [];
+    collab.handshakes.set(joining as never, held);
+    broadcastToCollab(collab, new Uint8Array([0, 2, 7]));
+    broadcastToCollab(collab, new Uint8Array([1, 9]));
+    // A client hearing nothing for 30 s drops its socket: awareness keeps a slow load's socket open.
+    expect(joining.sent).toEqual([new Uint8Array([1, 9])]);
+    expect(held).toEqual([new Uint8Array([0, 2, 7])]);
+  });
+
   it('leave for an unknown session is a no-op', () => {
     expect(() => leaveCollab(mockScope({ entityId: 'nope' }), mockWebSocket() as never)).not.toThrow();
   });

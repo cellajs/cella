@@ -9,7 +9,7 @@ export interface SerialQueue {
   readonly closed: boolean;
 }
 
-export function createSerialQueue(onError: (err: unknown) => void = () => {}): SerialQueue {
+export function createSerialQueue(onError: (err: unknown) => void): SerialQueue {
   let tail: Promise<void> = Promise.resolve();
   let waiting = 0;
   let closed = false;

@@ -69,8 +69,8 @@ describe('postMaterialize', () => {
 
 describe('stateToBlocksJson', () => {
   it('converts a seeded state back to the stored blocks and returns null for garbage', () => {
-    const blocks = JSON.parse(stateToBlocksJson(state)!) as { content: { text: string }[] }[];
+    const blocks = JSON.parse(stateToBlocksJson(state, ctx)!) as { content: { text: string }[] }[];
     expect(blocks[0].content[0].text).toBe('hello');
-    expect(stateToBlocksJson(new Uint8Array([255, 1, 2]))).toBeNull();
+    expect(stateToBlocksJson(new Uint8Array([255, 1, 2]), ctx)).toBeNull();
   });
 });

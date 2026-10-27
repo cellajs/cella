@@ -4,12 +4,11 @@ import type pg from 'pg';
 import { appConfig, hierarchy, toColumnName, toTableName } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
-import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
-import type { DocKey, DocScope } from '../../constants';
 import { db, withRlsTx } from '../../data/db';
 import { loadDocument } from '../../data/storage';
 
@@ -171,7 +170,7 @@ export async function cleanupSeed(
 }
 
 /** A document as the relay stored it: its base with every logged row merged in; null when it holds nothing. */
-export async function storedState(doc: DocKey): Promise<Uint8Array | null> {
+export async function storedState(doc: YjsDocKey): Promise<Uint8Array | null> {
   const document = await loadDocument(doc);
   return mergeState(
     document?.base ?? null,
@@ -180,7 +179,7 @@ export async function storedState(doc: DocKey): Promise<Uint8Array | null> {
 }
 
 /** Inserts a document row holding `state`, as a seed would, and returns its generation. */
-export async function insertDocument(client: pg.Client, scope: DocScope, state: Uint8Array): Promise<string> {
+export async function insertDocument(client: pg.Client, scope: YjsDocScope, state: Uint8Array): Promise<string> {
   const { rows } = await client.query<{ generation: string }>(
     `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
      VALUES ($1, $2, $3, $4, $5) RETURNING generation`,
@@ -197,7 +196,7 @@ export function outsideUpdate(read: YjsDocumentRead, description: string): Uint8
 }
 
 /** Appends an outside write's update as the backend does: a server-origin row, notified unless `notify` is false. */
-export function appendOutsideWrite(scope: DocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
+export function appendOutsideWrite(scope: YjsDocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
   return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
 }
 
@@ -206,7 +205,7 @@ export function appendOutsideWrite(scope: DocScope, update: Uint8Array, generati
  * notifies nothing, then, unless `notice` is false, announced in one notification after the commit.
  */
 export async function pushOverHttp(
-  scope: DocScope,
+  scope: YjsDocScope,
   update: Uint8Array,
   generation: string,
   userId: string,
@@ -228,7 +227,7 @@ export async function pushOverHttp(
  * it and appended as a server-origin row, notified unless `notify` is false. Null when no document row exists.
  */
 export function recordOutsideWrite(
-  scope: DocScope,
+  scope: YjsDocScope,
   description: string,
   { notify = true, updateEntity = false }: { notify?: boolean; updateEntity?: boolean } = {},
 ): Promise<AppendResult | null> {

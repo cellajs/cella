@@ -1,4 +1,4 @@
-import { yjsCleanupDelayMs } from '../constants';
+import { docKey, yjsCleanupDelayMs } from '../constants';
 import { listStaleDocs } from '../data/storage';
 import { log } from '../lib/pino';
 import { finishOrphan } from './session-manager';
@@ -38,7 +38,7 @@ async function sweepOnce(): Promise<void> {
   for (const doc of stale) {
     const outcome = await finishOrphan(doc);
     if (outcome === 'retry' || outcome === 'kept') {
-      log.warn(`Sweep: log not written for ${doc.entityType}:${doc.entityId} (${outcome}), keeping it`);
+      log.warn(`Sweep: log not written for ${docKey(doc)} (${outcome}), keeping it`);
     }
   }
 }

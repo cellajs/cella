@@ -12,7 +12,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { DocScope } from '../../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { createSignedToken, deferred, startRelayServer, until } from '../helpers';
 import {
   cleanupSeed,
@@ -93,10 +93,10 @@ afterAll(async () => {
   await admin.end();
 });
 
-const scopeOf = (entityId: string): DocScope => ({ entityType: 'attachment', entityId, tenantId, organizationId });
+const scopeOf = (entityId: string): YjsDocScope => ({ entityType: 'attachment', entityId, tenantId, organizationId });
 
 /** An attachment of the user's, with `description` stored. */
-async function attachment(description: string | null): Promise<DocScope> {
+async function attachment(description: string | null): Promise<YjsDocScope> {
   const entityId = randomUUID();
   entityIds.push(entityId);
   await seedAttachment(admin, entityId, tenantId, plan, userId);
@@ -105,7 +105,7 @@ async function attachment(description: string | null): Promise<DocScope> {
 }
 
 /** A y-websocket client of the user on the document, recording every generation it is told and every close code. */
-function openClient(baseUrl: string, scope: DocScope, doc = new Y.Doc()) {
+function openClient(baseUrl: string, scope: YjsDocScope, doc = new Y.Doc()) {
   const token = createSignedToken({ userId, entityType: scope.entityType, entityId: scope.entityId, tenantId, organizationId });
   const provider = new WebsocketProvider(baseUrl, scope.entityId, doc, {
     params: { token, entityType: scope.entityType, tenantId },
@@ -122,7 +122,7 @@ function openClient(baseUrl: string, scope: DocScope, doc = new Y.Doc()) {
   return { doc, provider, generations, closes, synced };
 }
 
-async function connectClient(baseUrl: string, scope: DocScope) {
+async function connectClient(baseUrl: string, scope: YjsDocScope) {
   const client = openClient(baseUrl, scope);
   await client.synced;
   return client;

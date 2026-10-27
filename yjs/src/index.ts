@@ -9,10 +9,14 @@ import { closeWsServer, startWsServer } from './server/ws-server';
 import { onLogNotice, relayUnseenEverywhere } from './sync/relay';
 import { runSweep, startPeriodicSweep } from './sync/sweep';
 
-export { closeWsServer };
+let stopSweep: (() => void) | undefined;
 
-/** Entrypoint for both the `yjs` package (split deploy) and the backend single-VM boot. */
-export async function startYjsWorker(): Promise<void> {
+/**
+ * Entrypoint for both the `yjs` package (split deploy) and the backend single-VM boot, with `inProcess`. In-process it
+ * waits for no API, starts no telemetry and registers no shutdown handler: the API's own cleanup calls
+ * `shutdownYjsWorker`.
+ */
+export async function startYjsWorker(options: { inProcess?: boolean } = {}): Promise<void> {
   if (appConfig.services.yjs.enabled === false) {
     log.info('Yjs server disabled by appConfig');
     return;
@@ -23,24 +27,28 @@ export async function startYjsWorker(): Promise<void> {
   // Outside writes and other relays' appends reach live sessions through the log channel; without a database, none come.
   if (!env.NODB) startLogListener(onLogNotice, relayUnseenEverywhere);
 
-  otel.start();
-  otel.verifyConnection();
+  if (!options.inProcess) {
+    otel.start();
+    otel.verifyConnection();
+  }
 
   // The logs no session holds, which a relay crash left or clients posted over HTTP, are written at boot and every
   // yjsCleanupDelayMs after; without a database, there are none.
-  const stopSweep = env.NODB ? undefined : startPeriodicSweep();
+  stopSweep = env.NODB ? undefined : startPeriodicSweep();
 
-  setupGracefulShutdown({
-    name: 'yjs',
-    cleanup: async () => {
-      stopSweep?.();
-      await closeWsServer();
-      await otel.shutdown();
-    },
-    log: (msg) => log.info(msg),
-  });
+  if (!options.inProcess) {
+    setupGracefulShutdown({
+      name: 'yjs',
+      cleanup: async () => {
+        await shutdownYjsWorker();
+        await otel.shutdown();
+      },
+      log: (msg) => log.info(msg),
+    });
+  }
 
-  if (env.NODE_ENV === 'development') {
+  if (env.NODB) return;
+  if (env.NODE_ENV === 'development' && !options.inProcess) {
     // A timeout here must not crash the process: the server already listens and serves once the backend is up.
     waitForBackend()
       .then(() => runSweep())
@@ -50,4 +58,13 @@ export async function startYjsWorker(): Promise<void> {
   } else {
     runSweep().catch((err) => log.warn('Startup sweep failed', { err }));
   }
+}
+
+/**
+ * Stops the periodic sweep, then closes every socket, the log listener, the notifier and the pool: its own process's
+ * shutdown, and the API's cleanup under `singleVM`.
+ */
+export async function shutdownYjsWorker(): Promise<void> {
+  stopSweep?.();
+  await closeWsServer();
 }

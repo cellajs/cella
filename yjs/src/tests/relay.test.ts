@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import type { DocScope } from '../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import {
   awarenessClientIds,
   awarenessEntries,
@@ -49,7 +49,7 @@ function decodeFrames(sent: Uint8Array[]) {
 
 let counter = 0;
 /** A session for a fresh document so the module-level session map never leaks between tests. */
-function session(overrides: Partial<DocScope> = {}) {
+function session(overrides: Partial<YjsDocScope> = {}) {
   const scope = mockScope({ entityId: `entity-${++counter}`, ...overrides });
   const c = mockSocketContext({ requested: scope });
   const ws = mockWebSocket();
@@ -246,6 +246,35 @@ describe('handleMessage: sync step 1', () => {
     leaveCollab(collab.scope, ws2 as never);
   });
 
+  it("must not lose a peer's update committed after a joining socket's read: it follows the handshake answer", async () => {
+    const { ctx: typist, scope, ws: typistWs } = seededSession();
+    await handleMessage(typist, typistWs as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(typist, typistWs as never, buildSyncStep2());
+    const joiner = mockWebSocket();
+    joinCollab(scope, joiner as never);
+
+    // The joiner's load has read the document and is still committing when the typist's update commits.
+    const read = storage.loadDocument.getMockImplementation()!;
+    const committing = deferred();
+    storage.loadDocument.mockImplementationOnce(async (doc) => {
+      const snapshot = await read(doc);
+      await committing.promise;
+      return snapshot;
+    });
+    const handshake = handleMessage(mockSocketContext({ requested: scope }), joiner as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await flushMicrotasks();
+    await handleMessage(typist, typistWs as never, buildSyncUpdate(mapUpdate('typed', 1)));
+    committing.release();
+    await handshake;
+
+    // A client drops every sync frame before the `Generation`: the update comes after the answer, which lacks it.
+    expect(joiner.sent.map(peekMessageType)).toEqual([4, 0, 0, 0]);
+    expect(joiner.sent.slice(1).map((frame) => frame[1])).toEqual([1, 0, 2]);
+    expect(readMap(decodeSyncStep2(joiner.sent[1]))).toEqual({});
+    expect(readMap(decodeSyncStep2(joiner.sent[3]))).toEqual({ typed: 1 });
+    leaveCollab(scope, joiner as never);
+  });
+
   it('existing base plus log: answers with the diff of the merged document and asks for the rest', async () => {
     const { ctx: c, scope, key, ws } = session();
     storage.bases.set(key, mapUpdate('base', true));
@@ -386,7 +415,7 @@ describe('handleMessage: sync update', () => {
     const gate = deferred();
     let slowed = false;
     gates.set('appendUpdate', gate.promise);
-    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string | null, payload: Uint8Array) => {
+    storage.appendUpdate.mockImplementationOnce(async (_scope: YjsDocScope, userId: string | null, payload: Uint8Array) => {
       slowed = true;
       await gate.promise;
       gates.delete('appendUpdate');
@@ -654,7 +683,7 @@ describe('handleMessage: awareness', () => {
 });
 
 /** A socket joined to the session under its own user. */
-function joined(scope: DocScope, userId: string) {
+function joined(scope: YjsDocScope, userId: string) {
   const ws = mockWebSocket();
   joinCollab(scope, ws as never);
   return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
@@ -1096,7 +1125,7 @@ describe('catch-up: log rows the session has not relayed', () => {
   const relayedTo = (ws: { sent: Uint8Array[] }) =>
     ws.sent.filter((frame) => frame[0] === 0 && frame[1] === 2).map((frame) => readMap(decodeSyncStep2(frame)));
   /** An outside write as the backend logs it: a server-origin row, appended with no relay involved. */
-  async function outsideWrite(scope: DocScope, key: string, value: number) {
+  async function outsideWrite(scope: YjsDocScope, key: string, value: number) {
     const appended = await storage.appendUpdate(scope, null, mapUpdate('outside', value));
     if (appended.status !== 'appended') throw new Error('not appended');
     expect(storage.logs.get(key)?.at(-1)?.userId).toBeNull();

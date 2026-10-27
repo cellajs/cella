@@ -20,7 +20,7 @@ otel.verifyConnection();
 
 let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-/** Stops what this process starts besides its listeners: the GeoIP refresh, and under `singleVM` the CDC worker. */
+/** Stops what this process starts besides its listeners: the GeoIP refresh, and under `singleVM` the CDC worker and the Yjs relay. */
 const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -69,7 +69,11 @@ const main = async () => {
           console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
         });
       }
-      if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
+      if (appConfig.services.yjs.enabled) {
+        const yjs = await import('yjs-worker');
+        stops.push(yjs.shutdownYjsWorker);
+        await yjs.startYjsWorker({ inProcess: true });
+      }
       // Folded workers listen on their own ports (the LB routes each path to the host VM on that port); the API
       // process keeps PORT for itself.
       if (appConfig.services.mcp.enabled)
@@ -103,8 +107,8 @@ Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}`);
 setupGracefulShutdown({
   name: 'api',
   cleanup: async () => {
-    for (const stop of stops) await stop();
-    await stopPgBoss();
+    // Side by side, so a slow drain never takes the job queue's grace period.
+    await Promise.all([...stops.map((stop) => stop()), stopPgBoss()]);
     server?.close();
     internalListener?.close();
     await otel.shutdown();

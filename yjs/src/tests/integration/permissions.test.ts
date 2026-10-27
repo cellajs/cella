@@ -7,7 +7,7 @@ import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/e
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
-import type { DocScope } from '../../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { authorizeDoc } from '../../data/permissions';
 import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
@@ -34,7 +34,7 @@ const hierarchyC = toStrictHomePlan(
 );
 
 /** The document a token asks for: attachmentA in its own scope unless overridden. */
-function requested(overrides: Partial<DocScope>): DocScope {
+function requested(overrides: Partial<YjsDocScope>): YjsDocScope {
   return { entityType: 'attachment', entityId: attachmentA, tenantId: tenantA, organizationId: orgA, ...overrides };
 }
 

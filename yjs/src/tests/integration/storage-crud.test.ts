@@ -5,9 +5,9 @@ import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DbOrTx } from '#/db/create-connection';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import type { DocScope } from '../../constants';
 import { db, withRlsTx } from '../../data/db';
 import { appendUpdate, compactState, deleteDoc, discardLogRows, loadDocument, readLogOf, seedDocument, touchDoc } from '../../data/storage';
 import { mapUpdate, readMap, undecodableUpdate } from '../helpers';
@@ -18,7 +18,7 @@ const testTenantId = 'yjs-integ-tenant';
 const testUserId = '00000000-0000-4000-a000-0000000000aa';
 const testOrgId = '00000000-0000-4000-a000-000000000001';
 
-function ctx(entityId: string): DocScope {
+function ctx(entityId: string): YjsDocScope {
   return {
     // The Yjs tables have no FK to the entity table, so any product type works.
     entityType: appConfig.productEntityTypes[0],
@@ -41,7 +41,7 @@ const ids = {
 };
 
 /** The id an append got; fails the test for any other outcome. */
-async function appended(doc: DocScope, userId: string | null, payload: Uint8Array, generation: string): Promise<number> {
+async function appended(doc: YjsDocScope, userId: string | null, payload: Uint8Array, generation: string): Promise<number> {
   const result = await appendUpdate(doc, userId, payload, generation);
   if (result.status !== 'appended') throw new Error(`append ${result.status}`);
   return result.id;

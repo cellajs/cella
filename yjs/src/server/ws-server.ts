@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { WebSocketServer } from 'ws';
+import { gradeEventLoop } from '#/lib/health-helpers';
 import { yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { closeDb } from '../data/db';
 import { logListenerStatus, stopLogListener } from '../data/listener';
@@ -26,7 +27,7 @@ export function buildHttpApp(): Hono {
       const eventLoopLagMs = getEventLoopLagMs();
       // A listener that is down leaves outside writes to the live stamp, up to a minute late: degraded, not down.
       const listener = logListenerStatus();
-      const lagging = eventLoopLagMs >= 1000 ? 'unhealthy' : eventLoopLagMs >= 100 ? 'degraded' : 'healthy';
+      const lagging = gradeEventLoop(eventLoopLagMs);
       const status = lagging === 'healthy' && listener === 'connecting' ? 'degraded' : lagging;
       return {
         httpStatus: 200,

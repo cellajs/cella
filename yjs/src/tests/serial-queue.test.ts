@@ -5,7 +5,7 @@ const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 describe('createSerialQueue', () => {
   it('runs tasks one at a time in enqueue order, even when enqueued without awaiting', async () => {
-    const queue = createSerialQueue();
+    const queue = createSerialQueue(() => {});
     const order: string[] = [];
     let running = 0;
     let maxRunning = 0;
@@ -46,7 +46,7 @@ describe('createSerialQueue', () => {
   });
 
   it('close drops tasks that have not started and lets the running one finish', async () => {
-    const queue = createSerialQueue();
+    const queue = createSerialQueue(() => {});
     const ran: string[] = [];
     let finish!: () => void;
     const first = queue.enqueue(async () => {

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { DocScope } from '../../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { createSignedToken, startRelayServer, until } from '../helpers';
 import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, storedState } from './seed';
 
@@ -18,14 +18,14 @@ vi.mock('../../constants', async (importOriginal) => ({
   yjsLiveTouchMs: 100,
   yjsCleanupDelayMs: 500,
 }));
-vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => ({ scope: requested })) }));
+vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: YjsDocScope) => ({ scope: requested })) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 const materialized: { entityId: string; editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../sync/materialize')>();
   return {
     ...actual,
-    postMaterialize: vi.fn(async (scope: DocScope, editors: string[], description: string) => {
+    postMaterialize: vi.fn(async (scope: YjsDocScope, editors: string[], description: string) => {
       materialized.push({ entityId: scope.entityId, editedBy: editors[0], description });
       return 'ok';
     }),
@@ -56,8 +56,8 @@ const { loadDocument } = await import('../../data/storage');
 const { descriptionToSeed, stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
 
 /** The document's base state, and the log rows not folded into it. */
-const baseOf = async (doc: DocScope) => (await loadDocument(doc))!.base;
-const readLog = async (doc: DocScope) => (await loadDocument(doc))?.rows ?? [];
+const baseOf = async (doc: YjsDocScope) => (await loadDocument(doc))!.base;
+const readLog = async (doc: YjsDocScope) => (await loadDocument(doc))?.rows ?? [];
 
 const tenantId = 'yjs-e2e-tenant';
 const organizationId = '00000000-0000-4000-a000-000000000031';
@@ -78,7 +78,7 @@ const ids = {
 /** Another user's client, which reaches the API but not the relay. */
 const pusherId = '00000000-0000-4000-a000-0000000000e3';
 
-function ctx(entityId: string): DocScope {
+function ctx(entityId: string): YjsDocScope {
   return { entityType, entityId, tenantId, organizationId };
 }
 

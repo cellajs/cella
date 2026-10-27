@@ -1,6 +1,7 @@
+import { type LogRow, type YjsDocScope, yjsMaxServerRowIds } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
-import { type DocScope, yjsMaxServerRowIds } from '../constants';
-import { compactState, discardLogRows, type LogRow, loadDocument } from '../data/storage';
+import { docKey } from '../constants';
+import { compactState, discardLogRows, loadDocument } from '../data/storage';
 import { log } from '../lib/pino';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
@@ -8,7 +9,7 @@ import { postMaterialize, stateToBlocksJson } from './materialize';
 const maxEditors = 20;
 
 /** The distinct senders of a window's rows, the most recent first; server-origin rows have none. */
-function editorsNewestFirst(rows: LogRow[]): string[] {
+function editorsNewestFirst(rows: readonly LogRow[]): string[] {
   const editors: string[] = [];
   for (let i = rows.length - 1; i >= 0 && editors.length < maxEditors; i--) {
     const userId = rows[i].userId;
@@ -23,7 +24,7 @@ export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' |
 /** What a live session learns from its compaction: the window read, before any of it folds, and the rows that left the log. */
 export interface CompactionObserver {
   /** The rows the merge holds, oldest first: the session relays the ones its sockets lack before they fold into the base. */
-  read(rows: LogRow[]): void;
+  read(rows: readonly LogRow[]): void;
   /** Rows deleted from the log: folded into the base, or discarded because no merge accepts them. */
   removed(ids: number[]): void;
 }
@@ -50,16 +51,16 @@ export interface CompactionObserver {
  * apply, and kept it would fail every window. A document gone, or of another `generation` than the session's, was
  * retired or reseeded: nothing is touched.
  */
-export async function compactDocument(scope: DocScope, generation: string | null = null, observer?: CompactionObserver): Promise<CompactionResult> {
+export async function compactDocument(scope: YjsDocScope, generation: string | null, observer?: CompactionObserver): Promise<CompactionResult> {
   const document = await loadDocument(scope);
   if (document === null) return generation === null ? 'empty' : 'retired';
   if (generation !== null && document.generation !== generation) return 'retired';
   if (document.rows.length === 0) return 'empty';
 
-  const { state, rejected } = mergeLog(document.base, document.rows);
+  const { state, accepted: rows, rejected } = mergeLog(document.base, document.rows);
   if (rejected.length > 0) {
     for (const row of rejected) {
-      log.error(`Compaction: discarding log row ${row.id} of ${scope.entityType}:${scope.entityId}, which does not merge`, {
+      log.error(`Compaction: discarding log row ${row.id} of ${docKey(scope)}, which does not merge`, {
         userId: row.userId,
         bytes: row.payload.length,
       });
@@ -68,7 +69,6 @@ export async function compactDocument(scope: DocScope, generation: string | null
     await discardLogRows(scope, discarded);
     observer?.removed(discarded);
   }
-  const rows = document.rows.filter((row) => !rejected.includes(row));
   if (rows.length === 0 || !state) return 'empty';
   observer?.read(rows);
   const ids = rows.map((row) => row.id);
@@ -78,7 +78,7 @@ export async function compactDocument(scope: DocScope, generation: string | null
     if (serverRows.length > yjsMaxServerRowIds) {
       // More outside writes than one request may name. Merges commute, so the oldest of them fold alone, unsaved,
       // and the window is compacted again: the rows it posts then name what the log still holds.
-      log.error(`Compaction: ${serverRows.length} outside writes in one window of ${scope.entityType}:${scope.entityId}, folding them first`);
+      log.error(`Compaction: ${serverRows.length} outside writes in one window of ${docKey(scope)}, folding them first`);
       const batch = serverRows.slice(0, yjsMaxServerRowIds);
       const merged = mergeState(
         document.base,
@@ -90,11 +90,8 @@ export async function compactDocument(scope: DocScope, generation: string | null
       observer?.removed(batchIds);
       return compactDocument(scope, document.generation, observer);
     }
-    const json = stateToBlocksJson(state);
-    if (json === null) {
-      log.error(`Compaction: unparseable state for ${scope.entityType}:${scope.entityId}, keeping the log`);
-      return 'permanent';
-    }
+    const json = stateToBlocksJson(state, scope);
+    if (json === null) return 'permanent';
     // The backend credits the newest of the window's editors who may still update the entity.
     const serverRowIds = serverRows.map((row) => row.id);
     const result = await postMaterialize(scope, editorsNewestFirst(rows), json, serverRowIds);
@@ -103,7 +100,7 @@ export async function compactDocument(scope: DocScope, generation: string | null
 
   const folded = await compactState(scope, state, ids, document.generation);
   if (folded === 'overlap') {
-    log.warn(`Compaction: another compaction folded rows of ${scope.entityType}:${scope.entityId}, retrying`);
+    log.warn(`Compaction: another compaction folded rows of ${docKey(scope)}, retrying`);
     return 'retry';
   }
   if (folded === 'retired') return 'retired';
