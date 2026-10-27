@@ -56,7 +56,7 @@ export function PasskeysList() {
             />
           </div>
         ) : (
-          <Button className="max-sm:w-full" variant="plain" onClick={() => createPasskey()}>
+          <Button className="max-sm:w-full" variant="secondary" onClick={() => createPasskey()}>
             <FingerprintPatternIcon />
             {t('c:create_resource', { resource })}
           </Button>

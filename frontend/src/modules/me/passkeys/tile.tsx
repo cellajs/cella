@@ -40,7 +40,7 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
       }
       actions={
         <>
-          <Button variant="plain" size="sm" className="max-sm:w-full" loading={loading} disabled={locked} onClick={() => onDelete(passkey.id)}>
+          <Button variant="secondary" size="sm" className="max-sm:w-full" loading={loading} disabled={locked} onClick={() => onDelete(passkey.id)}>
             <TrashIcon />
             {t('c:delete')}
           </Button>

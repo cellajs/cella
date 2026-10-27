@@ -124,7 +124,7 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
             />
           </div>
         ) : (
-          <Button variant="plain" size="sm" className="max-sm:w-full" onClick={() => setConfirming(true)}>
+          <Button variant="secondary" size="sm" className="max-sm:w-full" onClick={() => setConfirming(true)}>
             <UnplugIcon />
             {t('c:revoke')}
           </Button>
@@ -188,10 +188,14 @@ function CreatedBy({ actor }: { actor: NonNullable<ApiKey['createdBy']> }) {
   const openProfile = useOpenUserSheet();
 
   return (
-    <Button variant="none" size="auto" className="max-w-full justify-start gap-1.5 font-normal hover:underline" onClick={() => openProfile(actor.id)}>
+    <button
+      type="button"
+      className="focus-effect active:press inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-md text-sm hover:underline"
+      onClick={() => openProfile(actor.id)}
+    >
       <EntityAvatar type="user" className="size-5 shrink-0" id={actor.id} name={actor.name} url={actor.thumbnailUrl} />
       <span className="truncate">{actor.name}</span>
-    </Button>
+    </button>
   );
 }
 

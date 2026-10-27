@@ -23,7 +23,7 @@ export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
       aria-expanded={open}
       onClick={onToggle}
       press={false}
-      className={cn('size-6 opacity-50 hover:opacity-100', className)}
+      className={cn('size-6', className)}
     >
       <span className="relative size-4">
         <CircleQuestionMarkIcon

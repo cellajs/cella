@@ -1,6 +1,6 @@
 /**
  * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose, comment placement, frontend
- * conventions, Tailwind class names, text colors, token contrast and alignments in one pass. Exits non-zero on any finding.
+ * conventions, Tailwind class names, text colors, button recipes, token contrast and alignments in one pass. Exits non-zero on any finding.
  * `--audit` also prints review markers, which never fail; path arguments limit the files checked.
  */
 import { execFileSync } from 'node:child_process';
@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { alignmentFindings, owedAlignmentFindings } from './check-alignments.ts';
 import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
+import { buttonRecipeFindings } from './check-button-recipes.ts';
 import { commentFindings } from './check-comment-style.ts';
 import { docFindings } from './check-doc-style.ts';
 import { frontendFindings, frontendStores } from './check-frontend-style.ts';
@@ -59,6 +60,7 @@ for (const file of requested) {
     ...stampFindings(file, source),
     ...tailwindFindings(file, source, tailwind),
     ...textColorFindings(file, source),
+    ...buttonRecipeFindings(file, source),
     ...tokenContrastFindings(file, source),
   ];
   findings.push(...inFile.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0)));

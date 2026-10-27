@@ -20,7 +20,7 @@ export function CopyNodeButton({ value }: CopyNodeButtonProps) {
   return (
     <button
       type="button"
-      className="focus-effect ml-1 inline-flex cursor-pointer items-center justify-center rounded p-0.5 opacity-0 transition-opacity hover:bg-foreground/10 hover:opacity-100 focus-visible:opacity-100 group-hover/node:opacity-60"
+      className="focus-effect ml-1 inline-flex cursor-pointer items-center justify-center rounded p-0.5 opacity-0 transition-opacity hover:bg-muted hover:opacity-100 focus-visible:opacity-100 group-hover/node:opacity-60"
       onClick={handleCopy}
       aria-label={t('c:copy')}
       title={t('c:copy')}

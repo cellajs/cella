@@ -132,7 +132,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
           variant="outline"
           onClick={openMenu}
           aria-label={t('c:switch_organization', { name: organization.name })}
-          className="relative h-14 w-12 shrink-0 data-dropdowner-active:bg-accent"
+          className="relative h-14 w-12 shrink-0 data-dropdowner-active:bg-muted"
         >
           <ChevronsUpDownIcon className="size-4 opacity-50" />
           {/* On the corner, as on the nav buttons, so it reads as the other organizations' count and not this one's */}

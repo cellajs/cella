@@ -110,9 +110,7 @@ interface ChannelTileRowProps {
 /** A banner-less tile: one linked row holding `children`, by default the heading. */
 export function ChannelTileRow({ children }: ChannelTileRowProps) {
   return (
-    <TileLink className="flex w-full items-center gap-3 p-3 transition-colors hover:bg-accent/50 sm:p-6">
-      {children ?? <ChannelTileHeading />}
-    </TileLink>
+    <TileLink className="flex w-full items-center gap-3 p-3 transition-colors hover:bg-muted sm:p-6">{children ?? <ChannelTileHeading />}</TileLink>
   );
 }
 

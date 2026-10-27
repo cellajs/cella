@@ -2,6 +2,7 @@ import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -118,7 +119,8 @@ export function HeaderClose() {
   return (
     <DialogPrimitive.Close
       data-slot="dialog-close"
-      className="focus-effect absolute top-0 right-0 hidden rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 group-[.with-close-btn]/header:block data-disabled:pointer-events-none"
+      render={<Button variant="ghost" size="icon" />}
+      className="absolute top-0 right-0 hidden size-7 group-[.with-close-btn]/header:inline-flex"
     >
       <XIcon className="size-5" />
       <span className="sr-only">{t('c:close')}</span>

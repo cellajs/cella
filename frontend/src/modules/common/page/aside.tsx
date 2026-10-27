@@ -46,14 +46,14 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             size="lg"
             data-spy-link={id}
             className={cn(
-              'w-full justify-start hover:bg-accent/50',
+              'w-full justify-start',
               // The ghost hover swaps the text color, so a destructive row restates its own
               destructive && 'text-destructive hover:text-destructive',
               // Rows at rest sit back like the page tabs; hover, focus and the active row come forward
               !destructive && 'text-muted-foreground focus-visible:text-foreground data-spy-active:text-foreground',
               'transition-[color,background-color]',
               // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
-              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
+              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-accent data-spy-active:font-medium',
               tabClassName,
             )}
             render={

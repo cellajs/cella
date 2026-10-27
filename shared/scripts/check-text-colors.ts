@@ -23,7 +23,7 @@ const textHint = /^(?:text-(?:2xs|xs|sm|md|base|lg|\d?xl|\[[^\]]+\])|font-(?:lig
 const pictureTag = /(?:Icon|Avatar|Spinner)$|^(?:svg|img)$/;
 
 /** Sources under frontend/src, outside generated files, content, stories and tests. */
-const isFrontendSource = (file: string) =>
+export const isFrontendSource = (file: string) =>
   /^frontend\/src\/.*\.tsx?$/.test(file) &&
   !file.includes('.gen.') &&
   !file.includes('/content/') &&
@@ -31,7 +31,7 @@ const isFrontendSource = (file: string) =>
   !/\.(?:stories|test)\.tsx?$/.test(file);
 
 /** The variants and the utility of a class token: `md:hover:x!` gives `['md', 'hover']` and `x`. */
-function splitToken(token: string): { variants: string[]; base: string } {
+export function splitToken(token: string): { variants: string[]; base: string } {
   const parts = token.replace(/^!|!$/g, '').split(':');
   return { variants: parts.slice(0, -1), base: parts.at(-1) ?? '' };
 }
@@ -41,10 +41,10 @@ const isRestOpacity = (token: string) => {
   return restOpacity.test(base) && variants.every((variant) => restVariant.test(variant));
 };
 
-type Token = { token: string; offset: number };
+export type Token = { token: string; offset: number };
 
 /** Whitespace-separated tokens of every string and template piece in `node` and under it, with their source offsets. */
-function stringTokens(sourceFile: ts.SourceFile, node: ts.Node): Token[] {
+export function stringTokens(sourceFile: ts.SourceFile, node: ts.Node): Token[] {
   const found: Token[] = [];
   (function visit(child: ts.Node) {
     if (ts.isStringLiteralLike(child) || ts.isTemplateHead(child) || ts.isTemplateMiddle(child) || ts.isTemplateTail(child)) {

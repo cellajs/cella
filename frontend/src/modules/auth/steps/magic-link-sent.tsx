@@ -30,7 +30,7 @@ export function MagicLinkSentStep() {
         </p>
       </AuthHeader>
       {!isSignup && (
-        <Button variant="plain" onClick={resetAuthStore} className="mt-2">
+        <Button variant="secondary" onClick={resetAuthStore} className="mt-2">
           <ArrowLeftIcon />
           {t('c:try_another_way')}
         </Button>

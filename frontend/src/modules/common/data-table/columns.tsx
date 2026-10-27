@@ -129,7 +129,7 @@ export const ellipsisColumn = <T extends { id: string }>(
   ...(maxBreakpoint && { maxBreakpoint }),
   width: 32,
   // The whole cell marks the row whose menu is open, padding included
-  cellClass: 'has-data-dropdowner-active:bg-accent/50',
+  cellClass: 'has-data-dropdowner-active:bg-muted',
   renderHeaderCell: () => <SrOnlyHeader label="c:actions" />,
   renderCell: ({ row, tabIndex }) => {
     const options = getOptions(row);

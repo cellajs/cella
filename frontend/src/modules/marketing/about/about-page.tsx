@@ -46,7 +46,7 @@ export function AboutPage() {
         >
           <div className="mb-8 flex xs:flex-row flex-col items-center gap-4">
             <Button
-              variant="plain"
+              variant="secondary"
               size="lg"
               render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
               className="group h-14 rounded-full px-8 transition"

@@ -2,7 +2,6 @@ import { motion } from 'motion/react';
 import { type ReactNode, Suspense, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { Button } from '~/modules/ui/button';
 
 export type SheetTab = { id: string; label: TKey; element: ReactNode };
 
@@ -24,12 +23,11 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
       {tabs.length > 1 && (
         <nav className="flex justify-center gap-2 pb-4">
           {tabs.map((tab) => (
-            <Button
+            <button
               key={tab.id}
-              variant="none"
-              press={false}
+              type="button"
               data-current={currentTab.id === tab.id}
-              className="group/sheet-tab relative select-none text-muted-foreground hover:text-foreground data-[current=true]:text-foreground"
+              className="group/sheet-tab focus-effect relative inline-flex h-10 select-none items-center whitespace-nowrap rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground data-[current=true]:text-foreground"
               onClick={() => setCurrentId(tab.id)}
             >
               <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>
@@ -41,7 +39,7 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
                   className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
                 />
               )}
-            </Button>
+            </button>
           ))}
         </nav>
       )}

@@ -141,7 +141,7 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
           </Button>
         )}
         {isStrategyEnabled('totp') && (
-          <Button variant="plain" className="w-full" disabled={preparing || sending} onClick={() => startSetUp('totp')}>
+          <Button variant="secondary" className="w-full" disabled={preparing || sending} onClick={() => startSetUp('totp')}>
             <SmartphoneIcon />
             {t('c:step_up_add_totp')}
           </Button>
@@ -176,13 +176,13 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
   return (
     <div className="flex flex-col gap-2">
       {factors.includes('passkey') && (
-        <Button variant="plain" className="w-full" loading={proving} onClick={confirmWithPasskey}>
+        <Button variant="secondary" className="w-full" loading={proving} onClick={confirmWithPasskey}>
           <FingerprintPatternIcon />
           {t('c:passkey.confirm')}
         </Button>
       )}
       {factors.includes('totp') && (
-        <Button variant="plain" className="w-full" onClick={() => setView('totp')}>
+        <Button variant="secondary" className="w-full" onClick={() => setView('totp')}>
           <SmartphoneIcon />
           {t('c:authenticator_app.confirm')}
         </Button>

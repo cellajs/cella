@@ -46,7 +46,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
               params={params}
               search={search}
               draggable={false}
-              className="group/organization-link focus-effect focus-inset flex h-12 items-center gap-3 rounded-md px-3 transition-colors hover:bg-foreground/8"
+              className="group/organization-link focus-effect focus-inset flex h-12 items-center gap-3 rounded-md px-3 transition-colors hover:bg-accent"
             >
               <span className="flex min-w-0 grow flex-col gap-0.5">
                 <h2 className="truncate font-semibold text-base leading-5">{organization.name}</h2>

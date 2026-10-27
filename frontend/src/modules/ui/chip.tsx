@@ -42,11 +42,11 @@ export function Chip({ className, children, start, end, onRemove, removeLabel, .
         <Button
           type="button"
           variant="ghost"
-          size="micro"
+          size="icon"
           press={false}
           aria-label={removeLabel}
           onClick={onRemove}
-          className="focus-inset pointer-events-auto ml-0.5 size-5 shrink-0 rounded-full p-0 opacity-70 hover:opacity-100"
+          className="focus-inset pointer-events-auto ml-0.5 size-5 shrink-0 rounded-full"
         >
           <XIcon />
         </Button>

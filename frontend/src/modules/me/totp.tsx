@@ -57,7 +57,7 @@ export function Totp() {
   if (!totp)
     return (
       <div className="mb-6">
-        <Button ref={triggerRef} variant="plain" className="max-sm:w-full" onClick={openTotpSetup}>
+        <Button ref={triggerRef} variant="secondary" className="max-sm:w-full" onClick={openTotpSetup}>
           <RotateCcwKeyIcon />
           {t('c:totp_setup')}
         </Button>
@@ -87,7 +87,14 @@ export function Totp() {
         }
         actions={
           <>
-            <Button variant="plain" size="sm" className="max-sm:w-full" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="max-sm:w-full"
+              loading={isPending}
+              disabled={user.mfaRequired}
+              onClick={handleDeleteTotp}
+            >
               <TrashIcon />
               {t('c:delete')}
             </Button>

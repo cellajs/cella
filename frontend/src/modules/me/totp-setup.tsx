@@ -65,7 +65,7 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
       {expiredUri === data.totpUri ? (
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
-          <Button variant="plain" loading={isFetching} onClick={() => refetch()}>
+          <Button variant="secondary" loading={isFetching} onClick={() => refetch()}>
             <RefreshCwIcon className="size-3.5" />
             {t('c:refresh')}
           </Button>

@@ -38,12 +38,12 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
       isActive={isActive}
       isCurrent={isCurrent}
       onClick={() => onClick(organization, buttonRef)}
-      className="relative data-[active=true]:bg-background/50"
+      className="relative"
       itemClassName="pb-0"
       badge={unseenCount > 0 && <CountBadge count={unseenCount} className="absolute top-2 left-8" />}
     >
       <EntityAvatar
-        // An outline, not a ring: its offset stays transparent over the button's translucent hover and open fills
+        // An outline, not a ring: its offset stays transparent over the button's hover and open fills
         className={cn('size-8 shrink-0 transition-transform group-hover:scale-110', isCurrent && 'outline-2 outline-primary outline-offset-2')}
         type={organization.entityType}
         id={organization.id}

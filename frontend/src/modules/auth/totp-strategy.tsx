@@ -24,7 +24,7 @@ export function TotpStrategy({ active, onActiveChange }: TotpStrategyProps) {
   if (active) return <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => onActiveChange(false)} loading={isPending} />;
 
   return (
-    <Button onClick={() => onActiveChange(true)} variant="plain" className="w-full">
+    <Button onClick={() => onActiveChange(true)} variant="secondary" className="w-full">
       <SmartphoneIcon />
       <span className="truncate">{t('c:authenticator_app.sign_in')}</span>
     </Button>

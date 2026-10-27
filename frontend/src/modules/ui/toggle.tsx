@@ -3,15 +3,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
-  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm transition-colors hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:inset-ring data-pressed:inset-ring-input data-pressed:bg-accent data-pressed:text-accent-foreground',
+  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:inset-ring data-pressed:inset-ring-input data-pressed:bg-muted data-pressed:text-foreground',
   {
     variants: {
       variant: {
         default: 'bg-transparent',
-        outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
-        tile: 'group/toggle border border-input bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
-        merged:
-          'rounded-none border border-input border-r-0 bg-transparent first:rounded-l-md last:rounded-r-md last:border-r hover:bg-accent/50 hover:text-accent-foreground',
+        outline: 'border border-input bg-transparent',
+        tile: 'group/toggle border border-input bg-transparent p-3 text-left',
+        merged: 'rounded-none border border-input border-r-0 bg-transparent first:rounded-l-md last:rounded-r-md last:border-r',
       },
       size: {
         default: 'h-10 px-3',

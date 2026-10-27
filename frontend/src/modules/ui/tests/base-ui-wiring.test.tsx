@@ -55,7 +55,7 @@ describe('render prop', () => {
     const el = await render(
       <Button
         ref={outerRef as unknown as React.Ref<HTMLButtonElement>}
-        variant="plain"
+        variant="secondary"
         className="caller-class"
         onClick={onOuterClick}
         render={<a ref={innerRef} href="/docs" className="link-class" onClick={onInnerClick} />}

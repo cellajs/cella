@@ -101,7 +101,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       actions={
         status === 'active' &&
         onRevoke && (
-          <Button variant="plain" size="sm" className="max-sm:w-full" loading={loading} onClick={() => onRevoke([session.id])}>
+          <Button variant="secondary" size="sm" className="max-sm:w-full" loading={loading} onClick={() => onRevoke([session.id])}>
             <UnplugIcon />
             {t('c:revoke')}
           </Button>

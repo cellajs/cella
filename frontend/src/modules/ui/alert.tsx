@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 export const alertVariants = cva(
@@ -51,14 +52,15 @@ export function Alert({
   return (
     <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), onClose && 'pr-12', className)} {...props}>
       {onClose && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="focus-effect absolute top-2 right-2 rounded-sm p-1.5 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 disabled:pointer-events-none sm:group-has-[>[data-slot=alert-action]]/alert:top-1/2 sm:group-has-[>[data-slot=alert-action]]/alert:-translate-y-1/2"
+          className="absolute top-2.5 right-2.5 size-6 sm:group-has-[>[data-slot=alert-action]]/alert:top-1/2 sm:group-has-[>[data-slot=alert-action]]/alert:-translate-y-1/2"
         >
           <XIcon className="size-4" />
           <span className="sr-only">{t('c:close')}</span>
-        </button>
+        </Button>
       )}
       {children}
     </div>

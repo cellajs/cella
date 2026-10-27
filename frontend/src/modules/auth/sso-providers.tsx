@@ -81,7 +81,7 @@ export function SsoProviders({ connectionId, federations = [], primary = false }
   return (
     <div className="flex flex-col gap-2">
       {items.map((item) => (
-        <Button key={item.href} variant={item.main ? 'default' : 'plain'} render={<a href={item.href} />}>
+        <Button key={item.href} variant={item.main ? 'default' : 'secondary'} render={<a href={item.href} />}>
           {item.logo ? <img src={item.logo.src} alt={item.logo.alt} className="h-5 shrink-0" loading="lazy" draggable={false} /> : <BuildingIcon />}
           <span className="truncate">{item.label}</span>
         </Button>

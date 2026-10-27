@@ -63,7 +63,7 @@ export function OnboardingCompleted() {
             </Button>
           )}
           {/* Replaces the history entry: going back to welcome would only redirect forward again. */}
-          <Button variant="plain" render={<Link to="/home" replace />}>
+          <Button variant="secondary" render={<Link to="/home" replace />}>
             <HomeIcon />
             {t('c:home')}
           </Button>

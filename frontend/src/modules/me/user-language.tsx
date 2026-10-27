@@ -47,7 +47,7 @@ export function UserLanguage() {
       ref={triggerRef}
       variant="ghost"
       size="icon"
-      className="data-dropdowner-active:bg-foreground/8"
+      className="data-dropdowner-active:bg-muted"
       aria-label={`${currentLanguage.toUpperCase()}, ${t('c:change_language')}`}
       onClick={openDropdown}
     >

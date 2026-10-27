@@ -10,12 +10,7 @@ interface AuthEmailButtonProps {
 
 export function AuthEmailButton({ email, onClick, disabled }: AuthEmailButtonProps) {
   return (
-    <Button
-      variant="ghost"
-      onClick={onClick}
-      disabled={disabled}
-      className="group/email-button max-w-full bg-foreground/10 font-normal hover:bg-foreground/15 sm:text-lg"
-    >
+    <Button variant="secondary" onClick={onClick} disabled={disabled} className="group/email-button max-w-full font-normal sm:text-lg">
       <MiddleCut text={email} />
       <ChevronDownIcon className="group-disabled/email-button:hidden" />
     </Button>

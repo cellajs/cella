@@ -47,7 +47,7 @@ export function ConnectedAppsList() {
           }
           actions={
             <Button
-              variant="plain"
+              variant="secondary"
               size="sm"
               className="max-sm:w-full"
               loading={isPending && variables?.path.id === app.id}

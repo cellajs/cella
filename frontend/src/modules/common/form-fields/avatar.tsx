@@ -44,7 +44,7 @@ export function AvatarFormField({ form, label, name, entity, type }: AvatarFormF
               )}
               <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (
-                  <Button variant="plain" type="button" size="sm" onClick={openUploadDialog}>
+                  <Button variant="secondary" type="button" size="sm" onClick={openUploadDialog}>
                     <UploadIcon />
                     <span>{t('c:upload')}</span>
                   </Button>

@@ -97,11 +97,11 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
     </>
   );
 
-  // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode). Hover adds the ghost
-  // button's 8% foreground on top of whichever fill the row has.
+  // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode). A read row hovers as a
+  // navigable item does; an unread row's hover strengthens its fill as a secondary button's does.
   const className = cn(
     'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
-    notification.readAt ? 'hover:bg-foreground/8' : 'bg-accent hover:bg-[color-mix(in_oklab,var(--accent),var(--foreground)_8%)]',
+    notification.readAt ? 'hover:bg-accent' : 'bg-accent hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_5%)]',
   );
 
   return (

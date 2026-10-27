@@ -37,8 +37,7 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
 
   return (
     <div>
-      {/* Borderless in both states: the open variant's border would shift the label by a pixel on toggle. */}
-      <Button onClick={() => toggleNavSheetPanel(id)} className="w-full justify-between border-0" variant={isOpen ? 'secondary' : 'ghost'}>
+      <Button onClick={() => toggleNavSheetPanel(id)} className="w-full justify-between" variant={isOpen ? 'secondary' : 'ghost'}>
         <span className="flex items-center gap-2">
           {t(label)}
           {!isOpen && indicator}

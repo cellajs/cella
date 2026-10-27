@@ -512,11 +512,15 @@
     --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
     --popover-foreground: var(--foreground);
+    /* High-emphasis actions and on-states: solid buttons, checked controls, links, selection. */
     --primary: oklch(0.2061 0.006 285.56);
     --primary-foreground: oklch(0.9627 0 0);
+    /* Lower-emphasis filled actions, such as Cancel. */
     --secondary: oklch(0.9575 0.0044 285.76);
     --secondary-foreground: var(--foreground);
+    /* Subtle surfaces, and the hover and open fill of what a person presses (ghost, outline, toggle). */
     --muted: oklch(0.9575 0.0044 285.76);
+    /* The highlighted item among navigable items (menu, select and search options) and the current item of a nav list. */
     --accent: oklch(0.9575 0.0044 285.76);
     --accent-foreground: var(--foreground);
     --destructive: oklch(0.5137 0.2082 29.23);
@@ -548,8 +552,9 @@
     --warning-foreground: oklch(0.9851 0 0);
     --info: oklch(0.5 0.16 255);
     --info-foreground: oklch(0.9851 0 0);
-    --brand: oklch(0.2061 0.006 285.56);
-    --brand-foreground: oklch(0.9627 0 0);
+    /* An app's identity color for special buttons, defaulting to each mode's primary; an app may set it apart. */
+    --brand: var(--primary);
+    --brand-foreground: var(--primary-foreground);
     /* The scrim behind every dialog, sheet and drawer, never blurred, so the page stays readable under it. */
     --overlay: oklch(0 0 0 / 0.5);
     /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */
@@ -598,8 +603,8 @@
     --warning-foreground: oklch(0.1963 0.0092 285.53);
     --info: oklch(0.72 0.14 250);
     --info-foreground: oklch(0.1963 0.0092 285.53);
-    --brand: oklch(0.9851 0 0);
-    --brand-foreground: oklch(0.3138 0.0102 285.63);
+    --brand: var(--primary);
+    --brand-foreground: var(--primary-foreground);
     /* Black over a near-black page separates less, so the dark scrim dims further. */
     --overlay: oklch(0 0 0 / 0.7);
 
