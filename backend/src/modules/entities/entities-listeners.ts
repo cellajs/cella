@@ -2,22 +2,26 @@ import { appConfig } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
-import { type AppStreamSubscriber, dispatchMoveOuts, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
+import { type AppStreamSubscriber, dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { toUser } from '#/modules/entities/stream/audiences';
+import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamEvent, AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 
-// Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
+// Activity bus listeners: product events reach authenticated SSE subscribers as changes, membership events as signals.
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated', 'deleted'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {
       if (!event.subjectId || !event.organizationId) return;
       try {
-        await dispatchToAppStream(event as AppStreamEvent);
-        // Reparented rows also notify old-path readers who lost visibility.
-        if (action === 'updated') await dispatchMoveOuts(event as AppStreamProductEvent);
+        // The bus carries product events with their rows, so the narrowing holds for every event of a product type.
+        const productEvent = event as AppStreamProductEvent;
+        await dispatchChange(productEvent);
+        // Reparented rows also tell old-path readers who lost visibility.
+        if (action === 'updated') await dispatchMoveOuts(productEvent);
       } catch (error) {
         log.error('Failed to dispatch entity change event', { error, activityId: event.id });
       }
@@ -39,21 +43,16 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
   activityBus.on(`membership.${action}`, async (event) => {
     if (!event.organizationId) return;
 
-    // Refresh subscriber memberships before dispatch so SSE mirrors live API access.
+    // Refresh subscriber memberships before any signal so every later read decision mirrors live API access.
     const membership = getEventData(event, 'membership');
-    if (membership?.userId) {
-      const subscribers = streamSubscriberManager.getByTopic<AppStreamSubscriber>(userTopic(membership.userId));
-      for (const subscriber of subscribers) {
-        const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
-        subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership)];
-      }
+    if (!membership?.userId) return;
+    const subscribers = streamSubscriberManager.getByTopic<AppStreamSubscriber>(userTopic(membership.userId));
+    for (const subscriber of subscribers) {
+      const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
+      subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership)];
     }
 
-    try {
-      await dispatchToAppStream(event as AppStreamEvent);
-    } catch (error) {
-      log.error('Failed to dispatch membership change event', { error, activityId: event.id });
-    }
+    await sendSignal('membership.changed', toUser(membership.userId), { organizationId: event.organizationId, subjectId: membership.id });
   });
 }
 

@@ -13,12 +13,7 @@ export interface BaseStreamSubscriber {
 /** Event with subjectId and organizationId already narrowed to strings. */
 type EntityScopedEvent<E extends ActivityEvent = ActivityEvent> = E & { subjectId: string; organizationId: string };
 
-/** Product entity event routed via the app (authenticated) stream: it always has rows. */
+/** Product entity event routed via the app (authenticated) stream as a change: it always has rows. */
 export type AppStreamProductEvent = EntityScopedEvent<
   ActivityEvent & { entityType: ProductEntityType; rows: ActivityRow[] } & Partial<ChannelIdColumns>
 >;
-
-export type AppStreamMembershipEvent = EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
-
-/** Combined event type accepted by the app stream dispatcher. */
-export type AppStreamEvent = AppStreamProductEvent | AppStreamMembershipEvent;

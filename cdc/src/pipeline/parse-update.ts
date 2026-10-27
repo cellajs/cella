@@ -54,7 +54,7 @@ export function parseUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdat
 
   const activity = createActivity(tableMeta, rowData, 'update', userChangedFields);
 
-  // Move-out: when the location path changes, the old row's permission subset lets dispatch notify
+  // Move-out: when the location path changes, the old row's permission subset lets dispatch tell
   // subscribers who could read the old location but not the new one.
   const oldLocation = oldRowData ? rowLocationPath(tableMeta.type, oldRowData) : null;
   const newLocation = rowLocationPath(tableMeta.type, rowData);

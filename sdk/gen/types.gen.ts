@@ -114,26 +114,17 @@ export type StxBase = {
 };
 
 /**
- * A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
-export type StreamNotification = {
-  /**
-   * Discriminant for the notification: product-entity sync vs membership change
-   */
-  kind: 'product' | 'membership';
+export type StreamChange = {
   /**
    * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
-  productType: 'attachment' | null;
-  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | 'service_account' | 'api_key' | 'oauth_client' | null;
-  subjectId: string | null;
-  organizationId: string | null;
+  productType: 'attachment';
+  subjectId: string;
+  organizationId: string;
   tenantId: string | null;
-  /**
-   * Channel entity type for membership events (e.g. organization, project)
-   */
-  channelType: 'organization' | null;
   /**
    * Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
    */
@@ -148,7 +139,7 @@ export type StreamNotification = {
   channelId: string | null;
   stx: StxBase | null;
   /**
-   * Last sequence position for a batched notification: client should fetch range
+   * Last sequence position for a batched change: client should fetch range
    */
   batchUntilSeq: number | null;
   /**
@@ -184,6 +175,25 @@ export type StreamNotification = {
      */
     remove: Array<string>;
   } | null;
+};
+
+/**
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
+ */
+export type StreamSignal = {
+  /**
+   * Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)
+   */
+  type: string;
+  organizationId: string | null;
+  /**
+   * The one row the signal is about; null when it is about the organization as a whole
+   */
+  subjectId: string | null;
+  /**
+   * Counter value of a versioned signal, when the sender knows it; catchup returns the stored one
+   */
+  version: number | null;
 };
 
 /**
@@ -2664,12 +2674,15 @@ export type PostAppCatchupResponses = {
    */
   200: {
     /**
-     * Per-org change summary: { [organizationId]: { signals?, propagation? } }
+     * Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }
      */
-    changes: {
+    organizations: {
       [key: string]: {
+        /**
+         * Versions by signal type: bump-only counters a client compares with the ones it stored
+         */
         signals?: {
-          membership?: number;
+          [key: string]: number;
         };
         propagation?: Array<{
           /**

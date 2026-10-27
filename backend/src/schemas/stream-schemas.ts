@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockStreamNotification } from '#/schemas/stream-mocks';
+import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
 const propagationHintSchema = z.object({
@@ -12,24 +12,21 @@ const propagationHintSchema = z.object({
   remove: z.array(z.string()).describe('Host product IDs that need the embedded reference removed'),
 });
 
-/** Clients fetch the entity data separately. Membership events leave `seq` and `stx` null. */
-export const streamNotificationSchema = z
+/** Clients fetch the changed rows separately. */
+export const streamChangeSchema = z
   .object({
-    kind: z.enum(['product', 'membership']).describe('Discriminant for the notification: product-entity sync vs membership change'),
     action: z
       .enum([...activityActions, 'moveOut'] as const)
       .describe('Change kind; moveOut = the row left this path (reparent) and is no longer readable there'),
-    productType: z.enum(appConfig.productEntityTypes).nullable(),
-    resourceType: z.enum(appConfig.resourceTypes).nullable(),
-    subjectId: z.string().nullable(),
-    organizationId: z.string().nullable(),
+    productType: z.enum(appConfig.productEntityTypes),
+    subjectId: z.string(),
+    organizationId: z.string(),
     tenantId: z.string().nullable(),
-    channelType: z.enum(appConfig.channelEntityTypes).nullable().describe('Channel entity type for membership events (e.g. organization, project)'),
     path: z.string().nullable().describe('Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
     seq: z.number().int().nullable().describe('Org-sequence position (one order per organization, shared across product entity types)'),
     channelId: z.string().nullable().describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: nullableStxBaseSchema,
-    batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched notification: client should fetch range'),
+    batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched change: client should fetch range'),
     count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),
     spreadWindow: z
       .number()
@@ -40,14 +37,31 @@ export const streamNotificationSchema = z
       ),
     propagation: propagationHintSchema.nullable().describe('Embedded-product propagation hint for cross-product cache invalidation'),
   })
-  .openapi('StreamNotification', {
+  .openapi('StreamChange', {
     description:
-      'A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
-    example: mockStreamNotification(),
+      'A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
+    example: mockStreamChange(),
     'x-tags': schemaTags('data', 'entities', 'cella'),
   });
 
-export type StreamNotification = z.infer<typeof streamNotificationSchema>;
+export type StreamChange = z.infer<typeof streamChangeSchema>;
+
+/** Ids only: what a handler shows, it reads through the regular API. */
+export const streamSignalSchema = z
+  .object({
+    type: z.string().describe('Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)'),
+    organizationId: z.string().nullable(),
+    subjectId: z.string().nullable().describe('The one row the signal is about; null when it is about the organization as a whole'),
+    version: z.number().int().nullable().describe('Counter value of a versioned signal, when the sender knows it; catchup returns the stored one'),
+  })
+  .openapi('StreamSignal', {
+    description:
+      'A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.',
+    example: mockStreamSignal(),
+    'x-tags': schemaTags('data', 'entities', 'cella'),
+  });
+
+export type StreamSignal = z.infer<typeof streamSignalSchema>;
 
 /** One client view: a prefix set + entity types + the org-sequence cursor it has caught up to. */
 const catchupViewSchema = z.object({
@@ -78,14 +92,16 @@ export const streamCatchupBodySchema = z.object({
 });
 
 /** Product entity sync is answered per view (`catchupViewAnswerSchema`); this carries the org-level concerns. */
-const catchupChangeSummarySchema = z.object({
-  /** Org-level change signals: bump-only counters, no sequence semantics claimed. */
-  signals: z.object({ membership: z.number().int().optional() }).optional(),
+const catchupOrganizationSummarySchema = z.object({
+  signals: z
+    .record(z.string(), z.number().int())
+    .optional()
+    .openapi({ description: 'Versions by signal type: bump-only counters a client compares with the ones it stored' }),
   /** Embedded-product changes that require patching the host's cache. */
   propagation: z.array(propagationHintSchema).optional(),
 });
 
-export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
+export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSummarySchema>;
 
 /**
  * `frontiers` and `counts` are present only for `status: 'ok'` views (unconditional read of the whole prefix
@@ -106,11 +122,11 @@ const catchupViewAnswerSchema = z.object({
 
 export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;
 
-/** `views` answers the client-declared views; `changes` is the per-org summary for membership screening and propagation. */
+/** `views` answers the client-declared views; `organizations` holds per organization its signal versions and propagation hints. */
 export const appCatchupResponseSchema = z.object({
-  changes: z
-    .record(z.string(), catchupChangeSummarySchema)
-    .openapi({ description: 'Per-org change summary: { [organizationId]: { signals?, propagation? } }' }),
+  organizations: z
+    .record(z.string(), catchupOrganizationSummarySchema)
+    .openapi({ description: 'Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }' }),
   views: z
     .array(catchupViewAnswerSchema)
     .optional()

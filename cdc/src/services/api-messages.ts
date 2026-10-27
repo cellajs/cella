@@ -30,7 +30,7 @@ interface CdcRowMessage extends CdcMessageBase {
 }
 
 /**
- * The message of the product rows of one audience, one or more. The API derives the notification from the list: one row
+ * The message of the product rows of one audience, one or more. The API derives the change frame from the list: one row
  * gives its `seq` and the activity's `stx`, more rows give the range of their sequence values and their number.
  */
 interface CdcProductMessage extends CdcMessageBase {

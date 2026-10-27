@@ -1,15 +1,14 @@
 import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
-import { getEventData } from '#/lib/activity-bus';
-import { buildMoveOutNotification, buildStreamNotification, isMembershipEvent } from '#/modules/entities/stream/build-message';
+import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
-import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamEvent, AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
+import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import type { AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
-/** A signed-in user's stream: its own membership events on its user topic, product events on each of its organizations' topics. */
+/** A signed-in user's stream: its own signals on its user topic, changes and reader signals on each of its organizations' topics. */
 export interface AppStreamSubscriber extends BaseStreamSubscriber {
   userId: string;
   /** The session this connection authenticated with; its ending closes the stream. */
@@ -114,34 +113,21 @@ function productEventReaders(subscribers: AppStreamSubscriber[], event: AppStrea
 }
 
 /**
- * Tells the app streams that may see an event: a membership event goes to its user's streams, a product event to the
- * streams of its organization that may read any of its rows.
- * @param event - A product or membership change from the activity bus.
+ * Tells the app streams of a product event's organization that may read any of its rows.
+ * @param event - A product change from the activity bus.
  */
-export async function dispatchToAppStream(event: AppStreamEvent): Promise<void> {
-  let topic: string;
-  let eligible: AppStreamSubscriber[];
-  if (isMembershipEvent(event)) {
-    const userId = getEventData(event, 'membership')?.userId;
-    if (!userId) return;
-    topic = userTopic(userId);
-    // The user topic already targets the subject; this filter is the safety net.
-    eligible = streamSubscriberManager.getByTopic<AppStreamSubscriber>(topic).filter((subscriber) => subscriber.userId === userId);
-  } else {
-    topic = organizationTopic(event.organizationId);
-    eligible = productEventReaders(organizationSubscribers(event.organizationId), event);
-  }
+export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
+  const eligible = productEventReaders(organizationSubscribers(event.organizationId), event);
   if (eligible.length === 0) return;
 
-  log.trace('Dispatching stream event', {
+  log.trace('Dispatching stream change', {
     activityId: event.id,
     action: event.action,
     subjectId: event.subjectId,
-    topic,
     subscriberCount: eligible.length,
   });
 
-  await sendToSubscribers(eligible, event, buildStreamNotification(event), 'Failed to dispatch stream event');
+  await sendToSubscribers(eligible, { event: 'change', id: event.id, data: buildStreamChange(event) }, 'Failed to dispatch stream change');
 }
 
 /**
@@ -163,6 +149,6 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
     if (eligible.length === 0) continue;
 
     const oldEvent = rowScopedEvent(event, movedFrom);
-    await sendToSubscribers(eligible, oldEvent, buildMoveOutNotification(oldEvent, movedFrom), 'Failed to dispatch move-out');
+    await sendToSubscribers(eligible, { event: 'change', id: oldEvent.id, data: buildMoveOut(oldEvent, movedFrom) }, 'Failed to dispatch move-out');
   }
 }

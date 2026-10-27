@@ -12,7 +12,7 @@ vi.mock('~/query/realtime/sync-store', () => ({
     getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, getCatchupViews: () => [] }),
   },
 }));
-vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
+vi.mock('./app-stream-handler', () => ({ handleStreamChange: vi.fn() }));
 vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
 vi.mock('./catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
 vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEntityTypes: () => [] }));
@@ -60,13 +60,15 @@ const leaderControl = vi.hoisted(() => {
 
 vi.mock('./tab-coordinator', () => ({
   broadcastCatchup: vi.fn(),
-  broadcastNotification: vi.fn(),
+  broadcastStreamChange: vi.fn(),
+  broadcastStreamSignal: vi.fn(),
   broadcastSyncHealth: vi.fn(),
   onSyncHealth: leaderControl.onSyncHealth,
   initTabCoordinator: vi.fn(() => Promise.resolve()),
   isLeader: () => leaderControl.isLeader(),
   onCatchup: leaderControl.onCatchup,
-  onNotification: vi.fn(() => () => {}),
+  onStreamChange: vi.fn(() => () => {}),
+  onStreamSignal: vi.fn(() => () => {}),
   tabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
 }));
 vi.mock('sdk', () => ({ postAppCatchup: vi.fn() }));
@@ -115,7 +117,7 @@ vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.f
 
 const { postAppCatchup } = await import('sdk');
 const { processAppCatchup } = await import('./catchup-processor');
-const { broadcastCatchup, broadcastNotification, broadcastSyncHealth } = await import('./tab-coordinator');
+const { broadcastCatchup, broadcastStreamChange, broadcastSyncHealth } = await import('./tab-coordinator');
 const { setSyncStreamHealthy, setSyncWorkerAway } = await import('~/query/basic/sync-stale-state');
 const { StreamManager, appStreamManager } = await import('./stream-store');
 
@@ -144,10 +146,11 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
           };
         })),
     processLeaderCatchup: () => Promise.resolve(),
-    processNotification: (n: unknown) => {
+    processChange: (n: unknown) => {
       order.push(`process:${(n as { id: string }).id}`);
       processed.push(n);
     },
+    processSignal: () => {},
   });
 
   return {
@@ -189,7 +192,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1']);
     expect(h.manager.store.getState().state).toBe('live');
-    // Cursor advanced by the drained notification (its eventId is newer than the catchup cursor).
+    // Cursor advanced by the drained change (its eventId is newer than the catchup cursor).
     expect(h.manager.store.getState().cursor).toBe('101');
   });
 
@@ -269,7 +272,8 @@ describe('the gate that paused writes wait on', () => {
       useTabCoordination: true,
       fetchAndProcessCatchup: () => Promise.resolve(null),
       processLeaderCatchup: () => Promise.resolve(),
-      processNotification: () => {},
+      processChange: () => {},
+      processSignal: () => {},
     });
     const released = () => Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)]);
 
@@ -293,7 +297,8 @@ describe('the gate that paused writes wait on', () => {
       useTabCoordination: false,
       fetchAndProcessCatchup: () => Promise.resolve('c1'),
       processLeaderCatchup: () => Promise.resolve(),
-      processNotification: () => {},
+      processChange: () => {},
+      processSignal: () => {},
     });
     let released = false;
     void fresh.waitForActiveCatchup().then(() => {
@@ -398,7 +403,7 @@ describe('StreamManager silence watchdog', () => {
 });
 
 describe('a catchup answer, from the leader to its follower tabs', () => {
-  const answer: PostAppCatchupResponse = { cursor: 'c9', changes: {}, generation: 3 };
+  const answer: PostAppCatchupResponse = { cursor: 'c9', organizations: {}, generation: 3 };
 
   afterEach(() => appStreamManager.disconnect());
 
@@ -455,21 +460,21 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
   });
 });
 
-describe('StreamManager notifications to follower tabs', () => {
-  it('passes a notification on when the leader applies it: one that arrived during catchup follows the catchup answer', async () => {
+describe('StreamManager changes to follower tabs', () => {
+  it('passes a change on when the leader applies it: one that arrived during catchup follows the catchup answer', async () => {
     const h = createHarness({ useTabCoordination: true });
     await h.manager.connect();
     h.es.emit('offset', '100');
 
     h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
-    expect(broadcastNotification).not.toHaveBeenCalled();
+    expect(broadcastStreamChange).not.toHaveBeenCalled();
 
     h.resolveCatchup('c1');
     await tick();
-    expect(broadcastNotification).toHaveBeenCalledExactlyOnceWith({ id: 'a1' });
+    expect(broadcastStreamChange).toHaveBeenCalledExactlyOnceWith({ id: 'a1' });
 
     h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
-    expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' });
+    expect(broadcastStreamChange).toHaveBeenLastCalledWith({ id: 'b1' });
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);
     h.manager.disconnect();
   });
@@ -480,7 +485,7 @@ describe('the health of live delivery', () => {
 
   /** The app stream of a leader tab, open and past its catchup. */
   const connectLive = async () => {
-    vi.mocked(postAppCatchup).mockResolvedValueOnce({ cursor: 'c1', changes: {}, generation: 1 });
+    vi.mocked(postAppCatchup).mockResolvedValueOnce({ cursor: 'c1', organizations: {}, generation: 1 });
     await appStreamManager.connect();
     const stream = FakeEventSource.instances.at(-1) as FakeEventSource;
     stream.emit('offset', '1');

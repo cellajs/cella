@@ -10,4 +10,6 @@ defineBackendModule({
     status flags such as archived or muted. Memberships can also reference parent entities to easily have a
     hierarchical context available.`,
   routes: [{ path: '/:tenantId/:organizationId/memberships', app: membershipHandlers, phase: 'tenant' }],
+  // Sent by the entities stream listeners, which keep each open stream's memberships current in the same step.
+  signals: [{ type: 'membership.changed', audiences: ['user'] }],
 });

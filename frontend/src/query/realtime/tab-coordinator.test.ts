@@ -1,4 +1,4 @@
-import type { PostAppCatchupResponse } from 'sdk';
+import type { PostAppCatchupResponse, StreamSignal } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared/schema-evolution', () => ({ currentSchemaVersion: 1 }));
@@ -85,9 +85,17 @@ const fakeLocks = new FakeLocks();
 vi.stubGlobal('navigator', { locks: fakeLocks });
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
-const { broadcastCatchup, broadcastSyncHealth, initTabCoordinator, isLeader, onCatchup, onSyncHealth, releaseTabLeadership } = await import(
-  './tab-coordinator'
-);
+const {
+  broadcastCatchup,
+  broadcastStreamSignal,
+  broadcastSyncHealth,
+  initTabCoordinator,
+  isLeader,
+  onCatchup,
+  onStreamSignal,
+  onSyncHealth,
+  releaseTabLeadership,
+} = await import('./tab-coordinator');
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -140,14 +148,16 @@ describe('tab coordinator leadership', () => {
 describe('what the leader tells the other tabs', () => {
   const down = { streamHealthy: false, workerAway: true };
 
-  it('reaches the handlers of a follower tab as the leader posted it: a catchup answer and the health of its stream', async () => {
-    const answer: PostAppCatchupResponse = { cursor: 'c9', changes: {}, generation: 7 };
+  it('reaches the handlers of a follower tab as the leader posted it: a catchup answer, a signal and the health of its stream', async () => {
+    const answer: PostAppCatchupResponse = { cursor: 'c9', organizations: {}, generation: 7 };
+    const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null, version: null };
 
     // This tab leads, and posts.
     await initTabCoordinator();
     broadcastCatchup(answer, false);
+    broadcastStreamSignal(signal);
     broadcastSyncHealth(down);
-    const posted = FakeBroadcastChannel.opened?.posted.slice(-2) ?? [];
+    const posted = FakeBroadcastChannel.opened?.posted.slice(-3) ?? [];
 
     // Another tab leads now: this one follows, runs no catchup and has no stream, and hears what was posted.
     releaseTabLeadership();
@@ -156,15 +166,19 @@ describe('what the leader tells the other tabs', () => {
     await initTabCoordinator();
     expect(isLeader()).toBe(false);
     const catchups: unknown[] = [];
+    const signals: unknown[] = [];
     const healths: unknown[] = [];
     const stopCatchup = onCatchup(({ response, baselineOnly }) => catchups.push([response, baselineOnly]));
+    const stopSignal = onStreamSignal((received) => signals.push(received));
     const stopHealth = onSyncHealth((health) => healths.push(health));
 
     for (const message of posted) receive(message);
     stopCatchup();
+    stopSignal();
     stopHealth();
 
     expect(catchups).toEqual([[answer, false]]);
+    expect(signals).toEqual([signal]);
     expect(healths).toEqual([down]);
   });
 

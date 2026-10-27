@@ -1,10 +1,9 @@
-import { appConfig, hierarchy, isProduct, pathHomeId } from 'shared';
+import { appConfig, hierarchy, pathHomeId } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { dbPoolPressure } from '#/db/db';
-import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamEvent, AppStreamMembershipEvent } from '#/modules/entities/stream/types';
-import type { StreamNotification } from '#/schemas';
+import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import type { StreamChange } from '#/schemas';
 
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
 const spreadMsPerSubscriber = 20;
@@ -15,53 +14,32 @@ const maxSpreadWindowMs = 120_000;
  * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for
  * every subscriber, so it rides in the serialize-once body and each client picks a slot in it.
  */
-function computeSpreadWindow(organizationId: string | null): number | null {
-  if (!organizationId) return null;
+function computeSpreadWindow(organizationId: string): number {
   const audience = streamSubscriberManager.getByTopic(organizationTopic(organizationId)).length;
   if (audience <= 1) return 0;
   const pressure = Math.min(dbPoolPressure(), 2);
   return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
 }
 
-/** The single source of the `kind` discriminant: product entity sync, or membership change. */
-function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
-  return isProduct(event.entityType) ? 'product' : 'membership';
-}
-
-/** Type-guard form of {@link appNotificationKind}. */
-export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMembershipEvent {
-  return appNotificationKind(event) === 'membership';
-}
-
 /**
- * The notification of an event, with no entity data. A product event with one row carries that row's `seq` and the
- * activity's `stx`; one with more rows carries the range of their sequence values and their number. A membership event
- * leaves all of these null.
+ * The change frame of a product event, with no entity data. An event with one row carries that row's `seq` and the
+ * activity's `stx`; one with more rows carries the range of their sequence values and their number.
  * @param event - The event to tell subscribers about.
  * @returns What every eligible subscriber receives.
  */
-export function buildStreamNotification(event: ActivityEvent): StreamNotification {
+export function buildStreamChange(event: AppStreamProductEvent): StreamChange {
   const { entityType } = event;
-  const isProductEvent = isProduct(entityType);
-
-  const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
-  const channelType = membership?.channelType ?? null;
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
-  let channelId: string | null = null;
-  if (isProductEvent) {
-    channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
-  }
-
-  const stx = (isProductEvent && event.stx) || null;
+  const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
 
   // A message is the rows of one audience, so the first row's path speaks for all of them.
-  const rows = event.rows ?? [];
+  const rows = event.rows;
   const first = rows[0]?.rowData ?? null;
   const seqs = rows.flatMap(({ seq }) => (seq === undefined ? [] : [seq]));
   const several = rows.length > 1;
 
-  let propagation: StreamNotification['propagation'] = null;
+  let propagation: StreamChange['propagation'] = null;
   const embedding = appConfig.productEmbeddings.find(({ embeddedProduct }) => embeddedProduct === entityType);
   if (embedding) {
     // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
@@ -81,37 +59,32 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
       remove,
     };
   }
-  const path = isProductEvent && first ? hierarchy.computeProductPath(entityType, first) : null;
 
   return {
-    // Product entities take the seq sync path; everything else here is a membership change.
-    kind: appNotificationKind(event),
     action: event.action,
-    productType: isProductEvent ? entityType : null,
-    resourceType: event.resourceType,
+    productType: entityType,
     subjectId: event.subjectId,
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
-    channelType,
-    path,
+    path: first ? hierarchy.computeProductPath(entityType, first) : null,
     channelId,
     // Sequence values of one audience need not be contiguous: the range brackets them and `count` says how many rows it holds.
     seq: seqs.length > 0 ? Math.min(...seqs) : null,
-    stx,
+    stx: event.stx ?? null,
     batchUntilSeq: several && seqs.length > 0 ? Math.max(...seqs) : null,
     count: several ? rows.length : null,
-    spreadWindow: isProductEvent ? computeSpreadWindow(event.organizationId) : null,
+    spreadWindow: computeSpreadWindow(event.organizationId),
     propagation,
   };
 }
 
 /**
  * Sent only to subscribers who could read the old location but not the new one: no delta fetch
- * returns the row for them, so this notification is itself the removal instruction.
+ * returns the row for them, so this change is itself the removal instruction.
  */
-export function buildMoveOutNotification(event: ActivityEvent, movedFrom: Record<string, unknown>): StreamNotification {
-  const base = buildStreamNotification(event);
-  const oldPath = event.entityType ? hierarchy.computeProductPath(event.entityType, movedFrom) : null;
+export function buildMoveOut(event: AppStreamProductEvent, movedFrom: Record<string, unknown>): StreamChange {
+  const base = buildStreamChange(event);
+  const oldPath = hierarchy.computeProductPath(event.entityType, movedFrom);
   return {
     ...base,
     action: 'moveOut',

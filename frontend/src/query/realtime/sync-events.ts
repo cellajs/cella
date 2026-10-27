@@ -1,14 +1,13 @@
 import type { ProductEntityType } from 'shared';
-import type { AppStreamNotification } from '~/query/realtime/types';
+import type { AppStreamChange } from '~/query/realtime/types';
 
 /** A change the stream announced, in the fields of its envelope; no row data yet. */
 export interface AnnouncedChange {
-  kind: AppStreamNotification['kind'];
-  action: AppStreamNotification['action'];
-  entityType: string | null;
-  organizationId: string | null;
+  action: AppStreamChange['action'];
+  entityType: ProductEntityType;
+  organizationId: string;
   channelId: string | null;
-  subjectId: string | null;
+  subjectId: string;
 }
 
 /** Rows a sequence-range fetch just delivered. */
@@ -50,10 +49,10 @@ export function createEmitter<T>(name: string) {
 const changeEvent = createEmitter<AnnouncedChange>('AnnouncedChange');
 const syncedRows = createEmitter<SyncedRows>('SyncedRows');
 
-/** Subscribe to announced changes to trigger work: every readable notification, before any tier decision, muted and archived channels included. */
+/** Subscribe to announced changes to trigger work: every readable change, before any tier decision, muted and archived channels included. */
 export const onChangeEvent = changeEvent.subscribe;
 export const publishChangeEvent = changeEvent.publish;
 
-/** Subscribe to fetched rows to derive state from them: the fetch prioritizer publishes a range once it settles, a muted scope's notified ranges when it is opened. */
+/** Subscribe to fetched rows to derive state from them: the fetch prioritizer publishes a range once it settles, a muted scope's announced ranges when it is opened. */
 export const onSyncedRows = syncedRows.subscribe;
 export const publishSyncedRows = syncedRows.publish;

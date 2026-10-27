@@ -3,6 +3,7 @@ import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type ActivityEvent, type ActivityRow, activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
+import { defineBackendModule } from '#/lib/module';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../tests/fixtures';
@@ -10,6 +11,15 @@ import { streamSubscriberManager } from './stream/subscriber-manager';
 import './entities-listeners';
 
 const org = 'org-listeners';
+
+// The memberships module declares the signal; this file loads the listeners alone.
+defineBackendModule({
+  name: 'entities-listeners-test',
+  owner: 'cella',
+  description: 'Declares the membership signal the listeners send',
+  scope: ['backend'],
+  signals: [{ type: 'membership.changed', audiences: ['user'] }],
+});
 
 const membership = (role: EntityRole, userId: string): MembershipBaseModel =>
   ({ id: `mem-${org}-${userId}`, userId, channelType: 'organization', channelId: org, organizationId: org, role }) as unknown as MembershipBaseModel;
@@ -83,8 +93,10 @@ describe('entities listeners: a membership change on open streams', () => {
     // The stream's own copy of the memberships is what every later change is checked against.
     expect(removed.subscriber.memberships).toEqual([]);
     expect(staying.subscriber.memberships).toHaveLength(1);
-    // And the user hears of it on their own topic.
-    expect(removed.sent.map((message) => JSON.parse(message.data))).toEqual([expect.objectContaining({ kind: 'membership', action: 'delete' })]);
+    // And the user hears of it on their own topic, as a signal about that membership.
+    expect(removed.sent.map(({ event, data }) => [event, JSON.parse(data)])).toEqual([
+      ['signal', { type: 'membership.changed', organizationId: org, subjectId: `mem-${org}-removed-user`, version: null }],
+    ]);
     expect(staying.sent).toEqual([]);
   });
 

@@ -2,9 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { onChangeEvent, publishChangeEvent } from './sync-events';
 
 const change = {
-  kind: 'product' as const,
   action: 'create' as const,
-  entityType: 'attachment',
+  entityType: 'attachment' as const,
   organizationId: 'org-1',
   channelId: null,
   subjectId: 'attachment-1',

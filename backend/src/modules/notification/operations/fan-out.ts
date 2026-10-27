@@ -6,6 +6,8 @@ import { tenantReadById } from '#/db/tenant-context';
 import { homeChannelOf } from '#/db/utils/home-channel';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
+import { toUser } from '#/modules/entities/stream/audiences';
+import { sendSignal } from '#/modules/entities/stream/send-signal';
 import {
   findNotifiedUserIds,
   getUserAccess,
@@ -140,6 +142,9 @@ async function fanOutRow(
   });
 
   log.debug('Notifications created', { activityId, subjectId: row.id, recipientCount: allowed.length });
+
+  // An open stream hears of its inbox row at once; a recipient with none gets the push below (`isOnline` skips the rest).
+  await Promise.all(allowed.map(({ userId }) => sendSignal('notification.created', toUser(userId), { organizationId, subjectId: row.id })));
 
   // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this costs one subscription
   // lookup. `sendNotificationPush` never throws; the instant email pass runs once it returns.

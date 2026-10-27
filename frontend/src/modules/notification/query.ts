@@ -19,7 +19,7 @@ import { queryClient } from '~/query/query-client';
 
 export const notificationKeys = { list: ['me', 'notifications'] as const, preferences: ['me', 'notification-preferences'] as const };
 
-/** Each fetch replaces the cached list whole; `sync-listener` invalidates this key on change events, so nothing polls. */
+/** Each fetch replaces the cached list whole; the `notification.*` signals invalidate it, and the stale time and window focus cover a tab that missed one. */
 export const notificationsQueryOptions = () =>
   queryOptions({
     queryKey: notificationKeys.list,
