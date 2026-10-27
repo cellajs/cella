@@ -218,7 +218,7 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 | `serviceGuard` | A secret API key (its service account) or an access token (a service account, or the user who consented), masked by its scopes. Never system admin, never a browser `Origin` |
 | `tokenGuard` | An access token only, for the MCP face; without one, a 401 with the RFC 9728 challenge that tells an MCP client where to authorize |
 | `actorGuard` | Any of the three proofs: a key or token goes to `serviceGuard`, a cookie to `userGuard` |
-| `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./AUTHENTICATION.md#institutional-sign-in-sso) |
+| `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) |
 | `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin |
 | `stepUpGuard` | A session that recently proved its user's presence again, never an impersonation ([Step-up](./AUTHENTICATION.md#step-up)) |
 | `stepUpEnrollGuard` | As `stepUpGuard`, for setting up a factor: a user who lost theirs, with MFA off, may also pass with an emailed code |

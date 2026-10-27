@@ -105,6 +105,8 @@ const repoDocRoutes = {
   'yjs/README.md': '/docs/page/sync-engine/yjs',
   'cella/SCHEMA_EVOLUTION.md': '/docs/page/sync-engine/schema-evolution',
   'cella/AUTHENTICATION.md': '/docs/page/security/authentication',
+  'cella/authentication/SSO.md': '/docs/page/security/authentication/sso',
+  'cella/authentication/SESSIONS.md': '/docs/page/security/authentication/sessions',
   'cella/PERMISSIONS.md': '/docs/page/security/permissions',
   'cella/MULTI_TENANCY.md': '/docs/page/security/multi-tenancy',
   'cella/INTEROPERABILITY.md': '/docs/page/interoperability',
@@ -117,6 +119,11 @@ const repoDocRoutes = {
   'bench/README.md': '/docs/page/guides/load-testing',
   'cella/RELEASES.md': '/docs/page/guides/releases',
   'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
+  'cella/deployment/FRESH_INSTALLATION.md': '/docs/page/guides/deployment/fresh-installation',
+  'cella/deployment/KEYS.md': '/docs/page/guides/deployment/keys',
+  'cella/deployment/CHANGING_INFRASTRUCTURE.md': '/docs/page/guides/deployment/changing-infrastructure',
+  'cella/deployment/RUNBOOKS.md': '/docs/page/guides/deployment/runbooks',
+  'infra/README.md': '/docs/page/guides/deployment/infra-cli',
 } as const;
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
