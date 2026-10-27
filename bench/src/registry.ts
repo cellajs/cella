@@ -1,12 +1,12 @@
 import type pg from 'pg';
 import { benchUuidPrefix } from 'shared/utils/bench-identity';
-import type { PgDB } from '#/db/create-connection';
+import type { DB } from '#/db/create-connection';
 
 export interface BenchSeedContext {
   now: string;
   pool: pg.Pool;
   /** Backend Drizzle connection for seeds that must use transactional domain helpers. */
-  db: PgDB;
+  db: DB;
 }
 
 export interface BenchCleanupContext {

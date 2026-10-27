@@ -1,4 +1,4 @@
-export { apiErrorSchema } from './api-error-schemas';
+export { apiErrorSchema } from '#/schemas/api-error-schemas';
 export {
   booleanTransformSchema,
   channelEntityTypeSchema,
@@ -38,12 +38,11 @@ export {
   validTempIdSchema,
   validUrlSchema,
   validUuidSchema,
-} from './common-schemas';
-export { membershipCountSchema } from './count-schemas';
-export { productBaseSchema } from './entity-base';
-export { type ErrorCode, errorResponseRefs, registerAllErrorResponses } from './error-response-schemas';
-export { mapEntitiesToSchema } from './map-entities-to-schema';
-export { minimalBaseSchema } from './minimal-base';
+} from '#/schemas/common-schemas';
+export { membershipCountSchema } from '#/schemas/count-schemas';
+export { errorResponseRefs } from '#/schemas/error-response-schemas';
+export { mapEntitiesToSchema } from '#/schemas/map-entities-to-schema';
+export { minimalBaseSchema } from '#/schemas/minimal-base';
 export {
   type AppCatchupResponse,
   appCatchupResponseSchema,
@@ -52,10 +51,10 @@ export {
   type CatchupViewAnswer,
   type StreamNotification,
   streamCatchupBodySchema,
-} from './stream-schemas';
+} from '#/schemas/stream-schemas';
 export {
   type BatchResponseEmpty,
   batchResponseSchema,
   paginationSchema,
-} from './success-response-schemas';
-export { type StxBase, stxBaseSchema } from './sync-transaction-schemas';
+} from '#/schemas/success-response-schemas';
+export { type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';

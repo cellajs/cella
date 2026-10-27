@@ -8,9 +8,9 @@ import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openap
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { productBaseSchema, registerAllErrorResponses } from '#/schemas';
 import { actorRefSchema } from '#/schemas/actor-ref';
-import { channelBaseSchema } from '#/schemas/entity-base';
+import { channelBaseSchema, productBaseSchema } from '#/schemas/entity-base';
+import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
@@ -23,7 +23,7 @@ const scopeDescription = (scope: string): string => {
 };
 
 /** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint. */
-const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
+export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
 
   const extensions = buildExtensionEntries(getExtensionValueMetadata());
@@ -41,7 +41,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       ...(t.kind && { 'x-kind': t.kind }),
       ...(t.externalDocs && { externalDocs: t.externalDocs }),
       ...(t.default && { 'x-default': true }),
-    })) as { name: string; description: string }[],
+    })),
   };
 
   registry.registerComponent('securitySchemes', 'cookieAuth', {
@@ -59,7 +59,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`).',
   });
 
-  // The scope vocabulary is derived from the policy matrix (D19); the same ids feed discovery and the consent screen.
+  // The scope vocabulary is derived from the policy matrix; the same ids feed discovery and the consent screen.
   const scopeDescriptions = Object.fromEntries(accessScopes.all.map((scope) => [scope, scopeDescription(scope)]));
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
@@ -76,7 +76,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     },
   });
 
-  // Register base schemas (not auto-registered as they're only used for extending other schemas)
+  // Named bases and the stream payload: registered here, so the spec lists each one whether or not a route returns it.
   registry.register('ActorRef', actorRefSchema);
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
@@ -90,8 +90,8 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
 
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
 
-  validateOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
-  normalizeOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
+  validateOpenApiDocument(openApiDoc);
+  normalizeOpenApiDocument(openApiDoc);
 
   // The endpoint serves this normalized document: `app.doc31` would rebuild it per request and skip the normalization.
   app.get('/openapi.json', (ctx) => ctx.json(openApiDoc));
@@ -111,5 +111,3 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   await fs.writeFile(tmpPath, nextDoc);
   await fs.rename(tmpPath, cachePath);
 };
-
-export { registerOpenApiDocs };

@@ -1,8 +1,7 @@
 import { escapeLiteral } from 'pg';
 import type { ActorContext } from '#/core/context';
-import { transactionOpenedWith } from './create-connection';
-import type { DbOrTx, Tx } from './db';
-import { baseDb } from './db';
+import { transactionOpenedWith } from '#/db/create-connection';
+import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 
 /** The alphabet of tenant and actor ids: a value outside it never reaches the text that opens a tenant transaction. */
 const idAlphabet = /^[a-z0-9-]*$/i;
@@ -30,8 +29,13 @@ async function tenantTransaction<T>({ tenantId, userId, includeDeleted }: Sessio
 }
 
 /** A tenant transaction for a request: `fn` gets a clone of the context whose `db` is the transaction. */
-const requestTransaction = <T>(ctx: ActorContext, includeDeleted: boolean, readOnly: boolean, fn: (txCtx: ActorContext) => Promise<T>) =>
-  tenantTransaction({ tenantId: ctx.var.tenantId, userId: ctx.var.actor.id, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
+const requestTransaction = <T>(
+  ctx: ActorContext,
+  tenantId: string,
+  includeDeleted: boolean,
+  readOnly: boolean,
+  fn: (txCtx: ActorContext) => Promise<T>,
+) => tenantTransaction({ tenantId, userId: ctx.var.actor.id, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
 
 /**
  * Read-only RLS transaction for code with no request behind it, such as a CDC listener or a
@@ -41,12 +45,12 @@ const requestTransaction = <T>(ctx: ActorContext, includeDeleted: boolean, readO
  * `app.user_id` is set empty: product read policies are tenant-scoped, and any per-user rule must
  * be applied explicitly by the caller.
  */
-export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Promise<T>): Promise<T> {
+export function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Promise<T>): Promise<T> {
   return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, true, fn);
 }
 
 /** Read-write RLS transaction for a scheduled job that works one tenant's rows, with `app.user_id` empty as in {@link tenantReadById}. */
-export async function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, false, fn);
 }
 
@@ -56,24 +60,26 @@ export async function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Pro
  * list whose per-row subqueries read RLS-guarded product tables.
  * @public
  */
-export async function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
-  return tenantTransaction({ tenantId, userId: ctx.var.actor.id, includeDeleted: false }, true, (tx) => fn({ var: { ...ctx.var, db: tx } }));
+export function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, tenantId, false, true, fn);
 }
 
 /** Read-only tenant RLS transaction for normal product queries. */
-export async function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
-  return requestTransaction(ctx, false, true, fn);
+export function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, ctx.var.tenantId, false, true, fn);
 }
 
-export async function tenantReadIncludingDeleted<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
-  return requestTransaction(ctx, true, true, fn);
+/** `tenantRead` that also reads soft-deleted rows (`app.include_deleted`). */
+export function tenantReadIncludingDeleted<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, ctx.var.tenantId, true, true, fn);
 }
 
 /** Read-write RLS transaction for mutation handlers; session vars let RLS SELECT policies pass on RETURNING. */
-export async function tenantContext<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
-  return requestTransaction(ctx, false, false, fn);
+export function tenantContext<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, ctx.var.tenantId, false, false, fn);
 }
 
-export async function tenantContextIncludingDeleted<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
-  return requestTransaction(ctx, true, false, fn);
+/** `tenantContext` that also reads soft-deleted rows (`app.include_deleted`). */
+export function tenantContextIncludingDeleted<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, ctx.var.tenantId, true, false, fn);
 }

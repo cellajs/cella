@@ -135,7 +135,7 @@ export type StreamNotification = {
    */
   channelType: 'organization' | null;
   /**
-   * Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
+   * Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
    */
   path: string | null;
   /**
@@ -2558,7 +2558,7 @@ export type PostAppCatchupData = {
       key: string;
       organizationId: string;
       /**
-       * Materialized id-path prefixes this view covers (root-first ids, slash-joined)
+       * Id path prefixes this view covers (root-first ids, slash-joined)
        */
       prefixes: Array<string>;
       entityTypes: Array<'attachment'>;

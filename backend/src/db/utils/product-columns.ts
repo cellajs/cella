@@ -4,9 +4,10 @@ import type { ProductEntityType } from 'shared';
 import { tombstoneColumns } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { publicColumn } from '#/db/utils/public-column';
+import { stxColumns } from '#/db/utils/stx-columns';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
-import { stxColumns } from './stx-columns';
 
+/** The columns of every product table: the tenant entity columns, `stx`, description, keywords, the tombstone, `public` and `seq`. */
 export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   name: varchar({ length: maxLength.field }).notNull().default(`New ${entityType}`),
@@ -39,11 +40,3 @@ export const productIndexes = (
   index(`${tableName}_updated_by_index`).on(table.updatedBy),
   index(`${tableName}_deleted_at_index`).on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
 ];
-
-/**
- * @deprecated The fan-out reads mentions from `description`, so no column stores them. Empty, so a
- * table that still spreads it drops its `mentions` column on the next `pnpm generate`; removed in a
- * later release.
- * @public
- */
-export const mentionableColumns = {};

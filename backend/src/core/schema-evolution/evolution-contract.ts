@@ -1,11 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, ProductEntityType } from 'shared';
-import { stxBaseSchema } from '#/schemas';
-import type { StxBase } from '#/schemas/sync-transaction-schemas';
+import { normalizeBody, normalizeCreateItem, widenBodySchema } from '#/core/schema-evolution/lens-seam';
+import { createUpdateSchema } from '#/core/schema-evolution/update-schema';
+import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
+import { type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { assertBlockMediaUrls } from '#/utils/validate-block-media';
-import { resolveServerUpdateOps, resolveUpdateOps } from '../stx/resolve-update';
-import { normalizeBody, normalizeCreateItem, widenBodySchema } from './lens-seam';
-import { createUpdateSchema } from './update-schema';
 
 type AnyRecord = Record<string, unknown>;
 

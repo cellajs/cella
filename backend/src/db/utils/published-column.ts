@@ -3,7 +3,7 @@ import { isoTimestamp } from '#/db/utils/timestamp-columns';
 /**
  * Null is a draft, a timestamp the moment of publication. A draft channel holds its invitations and shows to its own
  * members; a draft product is its author's alone and stays out of sync. A channel is live at insert unless its create
- * passes null; a product table opts in by spreading this and starts as a draft. See AGENTS.md, Coding patterns.
+ * passes null; a product table opts in by spreading this and starts as a draft.
  */
 export const publishedColumn = { publishedAt: isoTimestamp() };
 

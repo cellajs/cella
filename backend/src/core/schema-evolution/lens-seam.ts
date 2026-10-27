@@ -36,5 +36,5 @@ export function widenBodySchema<T extends z.ZodObject<z.ZodRawShape>>(entityType
         ctx.addIssue({ code: 'custom', message: `Either "${to}" or its legacy alias "${from}" must be provided`, path: [to] });
       }
     }
-  }) as unknown as T;
+  }) as T;
 }

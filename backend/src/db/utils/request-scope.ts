@@ -5,8 +5,8 @@ import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
 /**
- * The tenant and organization ids the guard chain set for this request. A route that reaches
- * scoped code without both `tenantGuard` and `orgGuard` is a wiring bug, not a request error.
+ * The tenant and organization ids the guard chain set for this request. Scoped code reached without both
+ * `tenantGuard` and `orgGuard` means a route was defined without its guards: a server error, not a request error.
  */
 export const requestScope = (ctx: ActorContext, entityType?: EntityType): { tenantId: string; organizationId: string } => {
   const { tenantId, organizationId } = ctx.var;

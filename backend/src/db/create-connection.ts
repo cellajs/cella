@@ -14,12 +14,14 @@ import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgr
 
 // No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
 
-export type PgDB = NodePgDatabase & { $client: NodePgClient };
-export type DB = PgDB;
+/** A drizzle client on a node-postgres pool, as `createPgConnection` returns it. */
+export type DB = NodePgDatabase & { $client: NodePgClient };
 
 type TxOf<D extends { transaction: (...args: never[]) => unknown }> = Parameters<Parameters<D['transaction']>[0]>[0];
 
+/** A transaction of a `DB`, as its `transaction()` callback receives it. */
 export type Tx = TxOf<DB>;
+/** What a query runs on: a client or a transaction. */
 export type DbOrTx = DB | Tx;
 
 /** Server-side `lock_timeout` and `statement_timeout` for every session of a pool, in milliseconds. */
@@ -48,7 +50,7 @@ const keepAliveIdleMs = 30_000;
 const dialect = new PgDialect({ codecs: nodePgCodecs });
 
 /** The query logger of each client that has one, so a transaction opened on its pool logs alike. */
-const queryLoggers = new WeakMap<PgDB, Logger>();
+const queryLoggers = new WeakMap<DB, Logger>();
 
 /**
  * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
@@ -60,7 +62,7 @@ const queryLoggers = new WeakMap<PgDB, Logger>();
 export const createPgConnection = (
   url: string,
   { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts }: CreatePgConnectionOptions,
-): PgDB => {
+): DB => {
   const logger = debug && appConfig.mode === 'development' ? new DefaultLogger() : undefined;
   const db = pgDrizzle({
     connection: {
@@ -83,8 +85,8 @@ export const createPgConnection = (
   return db;
 };
 
-/** Only a pg Pool counts its clients; the NODB stub yields undefined. */
-const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
+/** Only a pg Pool counts its clients and hands out a connection of its own; the NODB stub yields undefined. */
+export const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
 
 /**
  * Runs `fn` in a transaction on a connection of its own from the client's pool, started by `opening`: BEGIN and the
@@ -94,7 +96,7 @@ const isPool = (client: unknown): client is Pool => typeof client === 'object' &
  * @param opening - Text with no bound parameters: every value in it is already escaped.
  * @throws When the client has no pool, or whatever the opening or `fn` throws.
  */
-export async function transactionOpenedWith<T>(db: PgDB, opening: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export async function transactionOpenedWith<T>(db: DB, opening: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   const pool = db.$client;
   if (!isPool(pool)) throw new Error('A transaction opened in one round trip needs a pg pool');
   const client = await pool.connect();

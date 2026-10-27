@@ -1,7 +1,7 @@
 import { uuidv7 } from 'uuidv7';
+import { isArrayDelta } from '#/core/stx/array-delta';
+import { generateServerHLC } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { isArrayDelta } from './array-delta';
-import { generateServerHLC } from './hlc';
 
 /** Trusted server mutation metadata. Creates use it directly; `resolveServerUpdateOps` adds field timestamps. */
 export function createServerStx(): StxBase {

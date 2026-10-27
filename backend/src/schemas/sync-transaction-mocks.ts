@@ -1,5 +1,5 @@
 import { generateId } from 'shared/utils/entity-id';
-import { generateServerHLC } from '#/core/stx';
+import { generateServerHLC } from '#/core/stx/hlc';
 import { mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockStxBase = (key = 'stx-base:default') =>

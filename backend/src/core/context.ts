@@ -9,11 +9,6 @@ import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 
-/** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */
-type Bindings = HttpBindings & {
-  /* ... */
-};
-
 /**
  * A user: its bindings are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's
  * scopes. `authStrategy` and `connectionId` say how the person signed in: the session's method and SSO connection, or
@@ -97,5 +92,6 @@ export type Env = {
     /** Where a refusal of this request redirects to: set for a route that answers 302, a handler may point it elsewhere. */
     errorPagePath?: string;
   };
-  Bindings: Bindings;
+  /** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */
+  Bindings: HttpBindings;
 };

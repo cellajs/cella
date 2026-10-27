@@ -1,6 +1,6 @@
 import type { AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { hasPublishedAt } from './published-predicate';
+import { hasPublishedAt } from '#/db/utils/published-predicate';
 
 /** The draft boundary. Must match `publishedRowsPredicate`; `publication-filter.test.ts` pins the two together. */
 export const publishedRowFilter = 'published_at IS NOT NULL';

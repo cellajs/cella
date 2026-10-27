@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import ora, { type Ora } from 'ora';
 import pg from 'pg';
 import pc from 'picocolors';
-import { createPgConnection, type PgDB } from '#/db/create-connection';
+import { createPgConnection, type DB } from '#/db/create-connection';
 import { setMockContext } from '#/mocks';
 import { DB_URL } from './config';
 import { type BenchSeed, getBenchSeedName, getBenchSeeds } from './registry';
@@ -55,7 +55,7 @@ function updateSpinner(text: string) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-async function runBenchSeed(pool: pg.Pool, db: PgDB, seed: BenchSeed, now: string): Promise<void> {
+async function runBenchSeed(pool: pg.Pool, db: DB, seed: BenchSeed, now: string): Promise<void> {
   const name = getBenchSeedName(seed);
 
   if (seed.kind === 'custom') {

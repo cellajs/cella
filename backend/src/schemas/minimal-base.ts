@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockUserMinimalBase } from './entity-base-mocks';
+import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
 
 /**
  * Only the fields needed to render an entity cell (avatar, name, link), discriminated by a literal

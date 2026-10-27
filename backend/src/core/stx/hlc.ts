@@ -2,7 +2,7 @@ import { hashSourceId } from 'shared/utils/hash-source-id';
 
 const hlcPattern = /^(\d+):(\d{4,}):([0-9a-z]{5})$/;
 
-export interface ParsedHLC {
+interface ParsedHLC {
   timestamp: bigint;
   counter: bigint;
   source: string;
@@ -19,6 +19,7 @@ export function parseHLC(value: string): ParsedHLC | null {
   return { timestamp: BigInt(match[1]), counter: BigInt(match[2]), source: match[3] };
 }
 
+/** Whether `value` is an HLC in the `millis:counter:sourceHash` form. */
 export function isValidHLC(value: string): boolean {
   return parseHLC(value) !== null;
 }

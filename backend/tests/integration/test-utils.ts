@@ -5,7 +5,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { testDatabaseUrl } from 'shared/test-db';
-import { baseDb as db, type PgDB } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { serveInternal } from '#/lib/listeners';
 import { activitiesTable } from '#/modules/activities/activities-db';
@@ -20,7 +20,7 @@ import { usersTable } from '#/modules/user/user-db';
 
 export async function migrateDatabase() {
   const migrationsFolder = path.resolve(process.cwd(), 'drizzle');
-  await migrate(db as PgDB, { migrationsFolder });
+  await migrate(db, { migrationsFolder });
 }
 
 /**

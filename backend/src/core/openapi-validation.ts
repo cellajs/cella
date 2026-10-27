@@ -2,23 +2,26 @@ import { appConfig } from 'shared';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 
 /** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
-const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
+export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
-const validateOpenApiDocument = (doc: Record<string, unknown>) => {
+/** The parts of a generated OpenAPI document these checks read. */
+type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
+
+/** The boot checks of the generated document: its schema tags, and its route examples where authoring rules are checked. */
+export const validateOpenApiDocument = (doc: OpenApiDocument) => {
   validateSchemaTags(doc);
   if (checksAuthoringRules) validateRouteExamples(doc);
 };
 
 /** Normalize generated OpenAPI fields that need source-library compatibility fixes. */
-const normalizeOpenApiDocument = (doc: Record<string, unknown>) => {
+export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
 };
 
 /** Every `x-tags` entry must name a registered tag. Throws at boot on the first violation. */
-const validateSchemaTags = (doc: Record<string, unknown>) => {
+const validateSchemaTags = (doc: OpenApiDocument) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));
-  const components = (doc.components as Record<string, unknown> | undefined) ?? {};
-  const schemas = (components.schemas as Record<string, Record<string, unknown>> | undefined) ?? {};
+  const schemas = (doc.components?.schemas ?? {}) as Record<string, Record<string, unknown>>;
 
   for (const [name, schema] of Object.entries(schemas)) {
     const tags = schema['x-tags'];
@@ -39,10 +42,9 @@ type Operation = { responses?: Record<string, { content?: Record<string, MediaTy
  * A route gives its own response example only where it differs from its schema's example, so the one that does stands
  * out (and wins in the docs). A copy of the schema's example throws on the first violation, in development and tests.
  */
-const validateRouteExamples = (doc: Record<string, unknown>) => {
-  const components = (doc.components as Record<string, unknown> | undefined) ?? {};
-  const schemas = (components.schemas as Record<string, { example?: unknown }> | undefined) ?? {};
-  const paths = (doc.paths as Record<string, Record<string, Operation>> | undefined) ?? {};
+const validateRouteExamples = (doc: OpenApiDocument) => {
+  const schemas = (doc.components?.schemas ?? {}) as Record<string, { example?: unknown }>;
+  const paths = (doc.paths ?? {}) as Record<string, Record<string, Operation>>;
 
   for (const [path, pathItem] of Object.entries(paths)) {
     for (const [method, operation] of Object.entries(pathItem)) {
@@ -76,5 +78,3 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   }
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };
-
-export { checksAuthoringRules, normalizeOpenApiDocument, validateOpenApiDocument };

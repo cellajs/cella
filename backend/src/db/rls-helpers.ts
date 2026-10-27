@@ -24,7 +24,7 @@ const tenantReadCondition = (t: { tenantId: unknown; deletedAt?: unknown }) => {
   `;
 };
 
-export interface RlsPolicyContract {
+interface RlsPolicyContract {
   name: string;
   /** `pg_policy.polcmd`: r = select, a = insert, w = update, d = delete. */
   command: 'r' | 'a' | 'w' | 'd';
@@ -44,6 +44,7 @@ export const rlsPolicyContract = (name: string) =>
     delete: { name: `${name}_delete_policy`, command: 'd', expression: 'true' },
   }) satisfies Record<string, RlsPolicyContract>;
 
+/** The select policy every RLS table carries: rows of the transaction's tenant, a soft-deleted one only with `app.include_deleted`. */
 export const tenantSelectPolicy = (name: string, table: { tenantId: unknown }) =>
   pgPolicy(rlsPolicyContract(name).select.name, { for: 'select', using: tenantReadCondition(table) });
 

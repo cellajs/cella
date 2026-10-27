@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockStreamNotification } from './stream-mocks';
-import { nullableStxBaseSchema } from './sync-transaction-schemas';
+import { mockStreamNotification } from '#/schemas/stream-mocks';
+import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
 const propagationHintSchema = z.object({
   embeddedProduct: z.enum(appConfig.productEntityTypes).describe('Product type whose change triggered the propagation (e.g. label)'),
@@ -25,7 +25,7 @@ export const streamNotificationSchema = z
     organizationId: z.string().nullable(),
     tenantId: z.string().nullable(),
     channelType: z.enum(appConfig.channelEntityTypes).nullable().describe('Channel entity type for membership events (e.g. organization, project)'),
-    path: z.string().nullable().describe('Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
+    path: z.string().nullable().describe('Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
     seq: z.number().int().nullable().describe('Org-sequence position (one order per organization, shared across product entity types)'),
     channelId: z.string().nullable().describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
     stx: nullableStxBaseSchema,
@@ -53,11 +53,7 @@ export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 const catchupViewSchema = z.object({
   key: z.string().max(512).openapi({ description: 'Client-chosen stable view key, echoed back verbatim to correlate responses' }),
   organizationId: z.string(),
-  prefixes: z
-    .array(z.string().max(512))
-    .min(1)
-    .max(64)
-    .openapi({ description: 'Materialized id-path prefixes this view covers (root-first ids, slash-joined)' }),
+  prefixes: z.array(z.string().max(512)).min(1).max(64).openapi({ description: 'Id path prefixes this view covers (root-first ids, slash-joined)' }),
   entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1).max(64),
   depth: z.enum(['self', 'subtree']).optional().openapi({
     description:

@@ -1,18 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import type { Severity } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockApiError } from './api-error-mocks';
-import { entityTypeSchema } from './common-schemas';
+import { mockApiError } from '#/schemas/api-error-mocks';
+import { entityTypeSchema } from '#/schemas/common-schemas';
 
+/** The severities of an error, most severe first. */
 export const severityLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const satisfies readonly Severity[];
 
 /** OpenAPI represents this as a number with min and max. */
-const errorStatusCodeSchema = z
-  .number()
-  .int()
-  .min(400)
-  .max(599)
-  .refine((val) => val >= 400 && val < 600, { message: 'Must be a valid error status code (400-599)' });
+const errorStatusCodeSchema = z.number().int().min(400).max(599);
 
 export const apiErrorSchema = z
   .object({
