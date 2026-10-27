@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
@@ -24,8 +24,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 // Hides a channel's invitations from the invite's plan, as when another request inserts one between the plan and the insert.
 const planSees = vi.hoisted(() => ({ invitations: true }));
-vi.mock('#/modules/memberships/memberships-queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/memberships/memberships-queries')>();
+vi.mock('#/modules/memberships/inactive-memberships-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/memberships/inactive-memberships-queries')>();
   return {
     ...actual,
     findInactiveMembershipsByEmails: async (...args: Parameters<typeof actual.findInactiveMembershipsByEmails>) =>

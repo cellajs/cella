@@ -4,7 +4,7 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';

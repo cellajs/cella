@@ -36,12 +36,12 @@ export async function findConsentTargetNames(
   return { tenant: tenant?.name ?? null, organization: organization?.name ?? null };
 }
 
-interface FindConsentsByUserOpts {
+interface FindGrantsByUserOpts {
   userId: string;
 }
 
-/** The consents (Grant rows) of one user (the provider's `accountId`) with the registered client's name when there is one, oldest first. */
-export async function findConsentsByUser(ctx: DbContext, { userId }: FindConsentsByUserOpts) {
+/** The grants of one user (the provider's `accountId`) with the registered client's name when there is one, oldest first. */
+export async function findGrantsByUser(ctx: DbContext, { userId }: FindGrantsByUserOpts) {
   return ctx.var.db
     .select({ row: oidcPayloadsTable, clientName: oauthClientsTable.name })
     .from(oidcPayloadsTable)
@@ -50,13 +50,13 @@ export async function findConsentsByUser(ctx: DbContext, { userId }: FindConsent
     .orderBy(oidcPayloadsTable.createdAt);
 }
 
-interface FindConsentOfUserOpts {
+interface FindGrantByUserOpts {
   grantId: string;
   userId: string;
 }
 
 /** The grant's id while the grant exists and belongs to the user; undefined otherwise. */
-export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: FindConsentOfUserOpts) {
+export async function findGrantByUser(ctx: DbContext, { grantId, userId }: FindGrantByUserOpts) {
   const [grant] = await ctx.var.db
     .select({ id: oidcPayloadsTable.id })
     .from(oidcPayloadsTable)
@@ -85,7 +85,7 @@ export async function findLiveGrantBindings(ctx: DbContext, { grantId, userId }:
   return live;
 }
 
-interface DeleteProviderSessionsOfUserOpts {
+interface DeleteProviderSessionsByUserOpts {
   userId: string;
 }
 
@@ -93,7 +93,7 @@ interface DeleteProviderSessionsOfUserOpts {
  * The authorization server's sessions of a user, in every browser: none answers a client for them any more until they
  * consent again. Their grants and refresh tokens stay.
  */
-export async function deleteProviderSessionsOfUser(ctx: DbContext, { userId }: DeleteProviderSessionsOfUserOpts): Promise<void> {
+export async function deleteProviderSessionsByUser(ctx: DbContext, { userId }: DeleteProviderSessionsByUserOpts): Promise<void> {
   await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
 }
 
@@ -107,12 +107,12 @@ export async function deleteProviderSession(ctx: DbContext, { id }: DeleteProvid
   await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
 }
 
-interface DeleteConsentsOfUsersOpts {
+interface DeleteProviderRowsByUsersOpts {
   userIds: string[];
 }
 
 /** Everything the authorization server holds for these users (grants, codes, refresh tokens, sessions): an account deletion. */
-export async function deleteConsentsOfUsers(ctx: DbContext, { userIds }: DeleteConsentsOfUsersOpts): Promise<void> {
+export async function deleteProviderRowsByUsers(ctx: DbContext, { userIds }: DeleteProviderRowsByUsersOpts): Promise<void> {
   if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));
 }
 

@@ -39,7 +39,7 @@ const ssoConnectPath = (connectionId: string) => `/account?connect=${connectionI
 export const sendSsoRecoveryLinkOp = async (ctx: Context<Env>) => {
   assertSwitchOn({ strategy: 'magic' });
 
-  const collision = await readJsonCookie(ctx, 'sso-recovery', recoverySchema);
+  const collision = readJsonCookie(ctx, 'sso-recovery', recoverySchema);
   if (!collision) throw new AppError(401, 'sso_recovery_expired', 'warn');
 
   deleteAuthCookie(ctx, 'sso-recovery');

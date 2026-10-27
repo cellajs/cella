@@ -14,7 +14,7 @@ import { completeSsoSignIn } from '#/modules/auth/sso/operations/complete-sso-si
 export const handleSsoCallback = async (ctx: OAuthCallbackContext) => {
   const { code, state, error } = ctx.req.valid('query');
 
-  const payload = await readOAuthCookie(ctx, state);
+  const payload = readOAuthCookie(ctx, state);
   const strategy = payload?.provider ?? 'sso';
 
   if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy, error: error ?? null } });

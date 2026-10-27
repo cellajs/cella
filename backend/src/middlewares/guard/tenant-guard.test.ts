@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
-import { findConnectionBindingUser } from '#/modules/connections/connections-queries';
+import { findUserSsoConnection } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { clearTenantCache, setTenantCache } from './tenant-cache';
 import { tenantGuard } from './tenant-guard';
@@ -8,7 +8,7 @@ import { tenantGuard } from './tenant-guard';
 // The creator's foothold depends on whether the tenant holds an organization yet.
 vi.mock('#/modules/organization/organization-queries', () => ({ countOrganizationsByTenant: vi.fn() }));
 // The sign-in policy binds a user who holds an identity through the tenant's connection.
-vi.mock('#/modules/connections/connections-queries', () => ({ findConnectionBindingUser: vi.fn() }));
+vi.mock('#/modules/connections/connections-queries', () => ({ findUserSsoConnection: vi.fn() }));
 
 // The tenant row is served from the cache; a miss would reach the prepared lookup, which these cases never do.
 const testTenantId = 'tenant1';
@@ -57,7 +57,7 @@ describe('tenantGuard', () => {
     clearTenantCache();
     setTenantCache(testTenantId, tenantRow());
     vi.mocked(countOrganizationsByTenant).mockReset().mockResolvedValue(0);
-    vi.mocked(findConnectionBindingUser)
+    vi.mocked(findUserSsoConnection)
       .mockReset()
       .mockResolvedValue(undefined as never);
   });
@@ -68,7 +68,7 @@ describe('tenantGuard', () => {
 
     it('refuses a member who holds an identity through the connection but signed in another way, naming the entry', async () => {
       setTenantCache(testTenantId, tenantRow('active', ['surfconext']));
-      vi.mocked(findConnectionBindingUser).mockResolvedValue(bound);
+      vi.mocked(findUserSsoConnection).mockResolvedValue(bound);
 
       const error = await runExpectingError(mockCtx({ actor: member('magic'), tenantId: testTenantId }));
       expect(error.status).toBe(403);
@@ -82,13 +82,13 @@ describe('tenantGuard', () => {
     it('admits an allowed method without a lookup, an external without an identity, a system admin as themselves or as a user, and every tenant without a policy', async () => {
       setTenantCache(testTenantId, tenantRow('active', ['surfconext']));
       expect(await run(mockCtx({ actor: member('surfconext'), tenantId: testTenantId }))).toHaveBeenCalled();
-      expect(findConnectionBindingUser).not.toHaveBeenCalled();
+      expect(findUserSsoConnection).not.toHaveBeenCalled();
 
-      vi.mocked(findConnectionBindingUser).mockResolvedValue(undefined as never);
+      vi.mocked(findUserSsoConnection).mockResolvedValue(undefined as never);
       expect(await run(mockCtx({ actor: member('magic'), tenantId: testTenantId }))).toHaveBeenCalled();
-      expect(findConnectionBindingUser).toHaveBeenCalledWith(expect.anything(), { userId: 'u1', tenantId: testTenantId });
+      expect(findUserSsoConnection).toHaveBeenCalledWith(expect.anything(), { userId: 'u1', tenantId: testTenantId });
 
-      vi.mocked(findConnectionBindingUser).mockResolvedValue(bound);
+      vi.mocked(findUserSsoConnection).mockResolvedValue(bound);
       expect(await run(mockCtx({ actor: member('magic'), isSystemAdmin: true, tenantId: testTenantId }))).toHaveBeenCalled();
       // An impersonation: the method is its admin's, who proved nothing as the bound member.
       expect(await run(mockCtx({ actor: member('magic'), impersonator: { id: 'admin' }, tenantId: testTenantId }))).toHaveBeenCalled();

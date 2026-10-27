@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getRequests, systemInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { hashToken } from '#/utils/hash-token';

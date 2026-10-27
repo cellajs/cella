@@ -1,8 +1,8 @@
 import type { OrgContext } from '#/core/context';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findPendingInactiveMembershipsByChannels, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
-import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
+import { findPendingInactiveMembershipsByChannels, stampInactiveMembershipsReminded } from '#/modules/memberships/inactive-memberships-queries';
+import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';

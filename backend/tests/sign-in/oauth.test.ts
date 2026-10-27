@@ -9,7 +9,7 @@ import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';

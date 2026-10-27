@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getMyInvitations, getTokenData } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';

@@ -4,7 +4,7 @@ import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
 import type { SessionEndReason, SessionModel, SessionType } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
-import { deleteProviderSessionsOfUser } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderSessionsByUser } from '#/modules/oauth-server/oauth-server-queries';
 import { log } from '#/utils/logger';
 
 /** Which of the user's live sessions are revoked: these ids, or all of them (optionally of one type). */
@@ -56,7 +56,7 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
       ? await updateSessionsRevoked(txCtx, { match: { impersonatorSessionIds: endedIds }, revokedBy: by, revocationReason: 'impersonation_stopped' })
       : [];
 
-    if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser(txCtx, { userId });
+    if (deletesProviderSessions.has(reason)) await deleteProviderSessionsByUser(txCtx, { userId });
     return { ended: stamped, layered: stopped };
   });
 

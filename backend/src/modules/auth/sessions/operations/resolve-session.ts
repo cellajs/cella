@@ -82,8 +82,8 @@ export const readBrowserSession = async (sessionToken: string | undefined): Prom
  *   this browser's own session does not back.
  */
 export const resolveSession = async (ctx: Context, { clearOnError = false }: { clearOnError?: boolean } = {}): Promise<PresentedSession> => {
-  const sessionToken = await getAuthCookie(ctx, 'session');
-  const impersonationToken = await getAuthCookie(ctx, 'impersonation');
+  const sessionToken = getAuthCookie(ctx, 'session');
+  const impersonationToken = getAuthCookie(ctx, 'impersonation');
 
   // Only a refusal clears the cookie: it holds the only copy of the token, so a failed read (the database away) keeps it.
   const clearIfRefused = async (cookie: 'session' | 'impersonation', read: () => Promise<PresentedSession>) => {

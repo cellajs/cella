@@ -1,9 +1,9 @@
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/operations/passkey-challenges';
+import type { WebAuthnAssertion } from '#/modules/auth/passkeys/passkeys-schema';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -44,7 +44,7 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<{ user
 };
 
 /** A second factor offered for an MFA challenge: a code from the authenticator app, or a passkey response. */
-export type MfaProof = { strategy: 'totp'; code: string } | { strategy: 'passkey'; assertion: AuthenticationResponseJSON };
+export type MfaProof = { strategy: 'totp'; code: string } | { strategy: 'passkey'; assertion: WebAuthnAssertion };
 
 /**
  * The only way out of an MFA challenge: reads the challenge this browser holds, verifies the offered factor for the

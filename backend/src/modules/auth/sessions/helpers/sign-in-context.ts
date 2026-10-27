@@ -12,10 +12,10 @@ import { TimeSpan } from '#/utils/time-span';
 const deviceIdLifetime = new TimeSpan(400, 'd');
 
 /** Get or mint the opaque per-browser device id: set only on successful sign-in and refreshed each sign-in, so active devices never expire. */
-const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
-  const existing = await getAuthCookie(ctx, 'device-id');
+const ensureDeviceId = (ctx: Context<Env>): string => {
+  const existing = getAuthCookie(ctx, 'device-id');
   const deviceId = existing || nanoid(24);
-  await setAuthCookie(ctx, 'device-id', deviceId, deviceIdLifetime);
+  setAuthCookie(ctx, 'device-id', deviceId, deviceIdLifetime);
   return deviceId;
 };
 
@@ -33,7 +33,7 @@ export type SignInContext = {
 export const collectSignInContext = async (ctx: Context<Env>, type: SessionType): Promise<SignInContext> => {
   const rawIp = getIp(ctx);
   const { country, asn } = await lookupIp(rawIp);
-  const deviceId = type === 'impersonation' ? null : await ensureDeviceId(ctx);
+  const deviceId = type === 'impersonation' ? null : ensureDeviceId(ctx);
 
   return { rawIp, country, asn, device: deviceInfo(ctx), deviceId };
 };

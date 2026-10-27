@@ -9,7 +9,7 @@ import { setUserSession } from '#/modules/auth/sessions/operations/create-sessio
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { exchangeFederationCode } from '#/modules/auth/sso/helpers/federation-client';
 import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';

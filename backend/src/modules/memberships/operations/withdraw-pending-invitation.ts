@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
-import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/memberships-queries';
+import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 

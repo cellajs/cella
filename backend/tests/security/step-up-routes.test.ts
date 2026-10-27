@@ -16,7 +16,7 @@ import {
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';

@@ -18,13 +18,13 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 });
 
 app.openapi(authMagicLinkRoutes.getPendingMagicLink, async (ctx) => {
-  const token = await findOpenableMagicLink(await readHeldMagicLink(ctx));
+  const token = await findOpenableMagicLink(readHeldMagicLink(ctx));
   // The full address: a masked one looks alike for two accounts on one domain, so a planted link would pass unnoticed.
   return ctx.json({ email: token.email }, 200);
 });
 
 app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
-  const rawToken = await readHeldMagicLink(ctx);
+  const rawToken = readHeldMagicLink(ctx);
 
   // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
   const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimHolder: claimMagicLinkHolder });

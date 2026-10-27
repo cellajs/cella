@@ -15,7 +15,7 @@ interface TableSpec {
 /**
  * Publication column lists are incompatible with REPLICA IDENTITY FULL (PG error 42P10).
  * Since the CDC worker needs REPLICA IDENTITY FULL for old-row diffs, we publish all columns.
- * Large columns are still stripped from WS payloads via cdcExcludeColumnLengthThreshold in the activity service.
+ * The CDC worker strips large columns from the row data it sends the API (`cdc/src/utils/compact-row-data.ts`).
  *
  * Draft-lifecycle product tables get a ROW FILTER (PG 17+, see infra/README): the
  * replication stream then contains only the synced world. Publish edges arrive as

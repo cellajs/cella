@@ -158,11 +158,11 @@ export const setUserSession = async (
   const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
   const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId, extras);
 
-  if (type === 'impersonation') await setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
+  if (type === 'impersonation') setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
   else {
-    await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+    setAuthCookie(ctx, 'session', sessionToken, timeSpan);
     // A sign-in replaces whatever this browser held, an impersonation included.
-    if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
+    if (getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
   }
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });

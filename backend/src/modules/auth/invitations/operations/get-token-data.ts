@@ -2,10 +2,10 @@ import type { z } from '@hono/zod-openapi';
 import type { DbContext } from '#/core/context';
 import type { tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/helpers/federations';
-import { bindTokenToUser, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
+import { type TokenRecord, updateTokenUser } from '#/modules/auth/tokens/tokens-queries';
 import { findSsoConnectionByTenant } from '#/modules/connections/connections-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { bindInactiveMemberships, findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
+import { bindInactiveMemberships, findInactiveMembershipById } from '#/modules/memberships/inactive-memberships-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 
 type TokenData = z.infer<typeof tokenWithDataSchema>;
@@ -50,7 +50,7 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     const { inactiveMembershipId } = tokenRecord;
     await ctx.var.db.transaction(async (tx) => {
       const txCtx = { var: { db: tx } };
-      await bindTokenToUser(txCtx, { tokenId: tokenRecord.id, userId: existingUser.id });
+      await updateTokenUser(txCtx, { id: tokenRecord.id, userId: existingUser.id });
       // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
       await bindInactiveMemberships(txCtx, { ids: [inactiveMembershipId], userId: existingUser.id });
     });

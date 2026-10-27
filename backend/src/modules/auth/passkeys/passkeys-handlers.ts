@@ -1,12 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
 import { completeMfaChallenge, validateConfirmMfaToken } from '#/modules/auth/mfa/operations/mfa-challenge';
 import { issuePasskeyChallenge, verifyPasskeyAssertion, verifyPasskeyRegistration } from '#/modules/auth/passkeys/operations/passkey-challenges';
-import { deletePasskey, findCredentialIdsByUser, insertPasskey } from '#/modules/auth/passkeys/passkeys-queries';
+import { deletePasskey, insertPasskey } from '#/modules/auth/passkeys/passkeys-queries';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { deviceColumns, deviceInfo } from '#/modules/auth/sessions/helpers/device-info';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
@@ -43,11 +42,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
   const { id } = ctx.req.valid('param');
 
   // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
-  const deleted = await mfaFactorRules.locked(user.id, async (tx) => {
-    const passkey = await deletePasskey({ var: { db: tx } }, { userId: user.id, id });
-    await mfaFactorRules.assertKeepsFactors(tx, user.id);
-    return passkey;
-  });
+  const deleted = await mfaFactorRules.removeFactor(user.id, (txCtx) => deletePasskey(txCtx, { userId: user.id, id }));
 
   // An id the user holds no passkey by answers 204 as well, but only a deletion mails the user.
   if (deleted) sendAccountSecurityEmail(user, 'passkey-deleted', { passkeyName: deleted.nameOnDevice });
@@ -62,24 +57,18 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
   // sign-in challenge names none: the passkey the browser picks names its account.
   const user = type === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : null;
 
-  const challenge = await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id });
-
-  const passkeys = user ? await findCredentialIdsByUser(ctx, { userId: user.id }) : [];
-  const credentialIds = passkeys.map((passkey) => passkey.credentialId);
-
-  return ctx.json({ challenge, credentialIds }, 200);
+  return ctx.json(await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id }), 200);
 });
 
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   const { type, assertion } = ctx.req.valid('json');
-  const response = assertion as AuthenticationResponseJSON;
 
   if (type === 'mfa') {
-    await completeMfaChallenge(ctx, { strategy: 'passkey', assertion: response });
+    await completeMfaChallenge(ctx, { strategy: 'passkey', assertion });
     return ctx.body(null, 204);
   }
 
-  const userId = await verifyPasskeyAssertion(ctx, { assertion: response, purpose: 'authentication' });
+  const userId = await verifyPasskeyAssertion(ctx, { assertion, purpose: 'authentication' });
   const user = await findUserById(ctx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 

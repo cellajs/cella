@@ -175,7 +175,7 @@ export const findActiveSsoFederations = async (ctx: DbContext) => {
   return rows.map(({ issuer }) => issuer);
 };
 
-interface FindConnectionBindingUserOpts {
+interface FindUserSsoConnectionOpts {
   userId: string;
   tenantId: string;
 }
@@ -184,7 +184,7 @@ interface FindConnectionBindingUserOpts {
  * The tenant's connection the user holds an identity through, if any: the fact that binds them to the tenant's
  * sign-in policy. Externals without such an identity are not bound.
  */
-export const findConnectionBindingUser = async (ctx: DbContext, { userId, tenantId }: FindConnectionBindingUserOpts) => {
+export const findUserSsoConnection = async (ctx: DbContext, { userId, tenantId }: FindUserSsoConnectionOpts) => {
   const [row] = await ctx.var.db
     .select({ id: connectionsTable.id })
     .from(identitiesTable)

@@ -93,7 +93,7 @@ Add observable gauges for runtime state, and counters and histograms for request
 
 ### Manual spans
 
-Use `@opentelemetry/api` directly in any service with OTel initialized: `tracer.startActiveSpan()`, set attributes and status, record exceptions, end the span. CDC wraps this in a `withSpan()` helper returning `{ traceId, spanId }` for trace propagation ([cdc/src/lib/tracing.ts](../cdc/src/lib/tracing.ts)).
+Use `@opentelemetry/api` directly in any service with OTel initialized: `tracer.startActiveSpan()`, set attributes and status, record exceptions, end the span. CDC wraps this in a `withSpan()` helper that runs a function in a span and hands it the span's trace context, which the worker sends as `_trace` so the API continues the trace ([cdc/src/lib/tracing.ts](../cdc/src/lib/tracing.ts)).
 
 ### Span names and attributes
 

@@ -1,6 +1,7 @@
 import { isStrategyEnabled } from 'shared';
+import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb, type DbOrTx, type Tx } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { findHeldFactors } from '#/modules/auth/mfa/mfa-queries';
 import { findUserForUpdate } from '#/modules/user/user-queries';
 
@@ -13,30 +14,38 @@ export const mfaFactorRules = {
   /**
    * Runs a change to the MFA switch or the factors in a transaction that first locks the user's row. Every such change
    * takes the lock, so they run one at a time and each check reads what the one before it committed; the checks below
-   * run inside `change`.
+   * run inside `change`, on the context it hands them.
    */
-  locked<T>(userId: string, change: (tx: Tx) => Promise<T>): Promise<T> {
+  locked<T>(userId: string, change: (txCtx: DbContext) => Promise<T>): Promise<T> {
     return baseDb.transaction(async (tx) => {
-      await findUserForUpdate({ var: { db: tx } }, { id: userId });
-      return change(tx);
+      const txCtx = { var: { db: tx } };
+      await findUserForUpdate(txCtx, { id: userId });
+      return change(txCtx);
     });
   },
 
   /** Refuses turning MFA on unless both methods are enabled for the app and enrolled by the user. */
-  async assertCanEnable(tx: DbOrTx, userId: string) {
+  async assertCanEnable(ctx: DbContext, userId: string) {
     const missing = (['passkey', 'totp'] as const).find((method) => !isStrategyEnabled(method));
     if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
 
-    const { passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
+    const { passkey, totp } = await findHeldFactors(ctx, { userId });
     if (!passkey || !totp) throw new AppError(400, 'mfa_factors_required', 'warn');
   },
 
   /**
-   * Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone.
-   * It reads the MFA switch without locking again: `locked` holds the user row, so no other transaction changes it.
+   * Deletes a factor through `remove` in a `locked` transaction, then refuses when MFA is on and a method is now gone,
+   * which rolls the delete back. It reads the MFA switch without locking again: `locked` holds the user row, so no
+   * other transaction changes it.
+   * @returns What `remove` returned.
+   * @throws AppError 400 `mfa_factor_in_use`.
    */
-  async assertKeepsFactors(tx: DbOrTx, userId: string) {
-    const { mfaRequired, passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
-    if (mfaRequired && (!passkey || !totp)) throw new AppError(400, 'mfa_factor_in_use', 'warn');
+  removeFactor<T>(userId: string, remove: (txCtx: DbContext) => Promise<T>): Promise<T> {
+    return mfaFactorRules.locked(userId, async (txCtx) => {
+      const removed = await remove(txCtx);
+      const { mfaRequired, passkey, totp } = await findHeldFactors(txCtx, { userId });
+      if (mfaRequired && (!passkey || !totp)) throw new AppError(400, 'mfa_factor_in_use', 'warn');
+      return removed;
+    });
   },
 };
