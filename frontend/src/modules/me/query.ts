@@ -47,6 +47,7 @@ import { getAndSetMe } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
 import { userStore } from '~/modules/user/user-store';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
 
@@ -212,11 +213,13 @@ export const myMembershipsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }), staleTime: 0 });
 
 /**
- * Once an invitation is answered: refresh memberships so the menu rebuilds, drop the invite from cache, and say so. The
- * answer names the organization, also for an invitation to a channel below it, so the invite is found by its own id; a
- * token answer carries none, and the list reloads.
+ * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,
+ * drop the invite from cache, and say so. The answer names the organization, also for an invitation to a channel below
+ * it, so the invite is found by its own id; a token answer carries none, and the list reloads.
  */
 const applySettledInvitation = async (inactiveMembershipId: string | null, action: 'accept' | 'reject') => {
+  // Stale before the invite leaves the cache: the onboarding's completed screen opens on that and waits for the list
+  if (action === 'accept') queryClient.invalidateQueries({ queryKey: getEntityQueryKeys('organization').list.base });
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
   if (inactiveMembershipId) {

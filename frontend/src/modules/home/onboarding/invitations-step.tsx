@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { meInvitationsQueryOptions, useHandleInvitationMutation } from '~/modules/me/query';
-import { organizationQueryKeys } from '~/modules/organization/query';
 import { Button } from '~/modules/ui/button';
-import { queryClient } from '~/query/query-client';
 
 interface InvitationsStepProps {
   children?: ReactNode;
@@ -29,14 +27,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
     previousCountRef.current = invitations.length;
   }, [invitations.length]);
 
-  const answer = (id: string, acceptOrReject: 'accept' | 'reject') =>
-    handleInvitation(
-      { path: { id, acceptOrReject } },
-      {
-        // The completed screen reads the organization list, which a new membership changes.
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: organizationQueryKeys.list.base }),
-      },
-    );
+  const answer = (id: string, acceptOrReject: 'accept' | 'reject') => handleInvitation({ path: { id, acceptOrReject } });
 
   return (
     <div className="flex flex-col gap-4">
