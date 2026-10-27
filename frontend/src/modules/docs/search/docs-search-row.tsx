@@ -40,7 +40,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
       <Breadcrumbs crumbs={item.breadcrumbs} />
       <div className="flex w-full min-w-0 items-center gap-2">
         {item.method ? <MethodLabel method={item.method} /> : <LeadingIcon className="text-muted-foreground" />}
-        <span className={cn('truncate font-medium', item.deprecated && 'line-through opacity-60')}>
+        <span className={cn('truncate font-medium', item.deprecated && 'text-muted-foreground line-through')}>
           <HighlightText text={item.title} />
         </span>
       </div>

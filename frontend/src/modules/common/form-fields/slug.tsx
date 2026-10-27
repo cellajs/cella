@@ -128,7 +128,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             </FormControl>
             {prefix && (
               <InputGroupAddon>
-                <InputGroupText className={cn('text-xs', !formFieldValue && 'opacity-50')}>{prefix}</InputGroupText>
+                <InputGroupText className={cn('text-xs', !formFieldValue && 'text-faint-foreground')}>{prefix}</InputGroupText>
               </InputGroupAddon>
             )}
 

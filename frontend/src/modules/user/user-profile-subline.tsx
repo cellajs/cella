@@ -20,7 +20,7 @@ export function UserProfileSubline({ user }: UserProfileSublineProps) {
       </a>
       {user.mfaRequired !== undefined && (
         <>
-          <span aria-hidden="true" className="text-muted-foreground/70">
+          <span aria-hidden="true" className="text-faint-foreground">
             ·
           </span>
           {/* A phone has room for the icon alone */}

@@ -141,7 +141,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
               'data-tooltip-content': t('c:views_retention_hint', { days: appConfig.retention.activityDays }),
             })}
           >
-            <UserIcon className="text-muted-foreground/70" />
+            <UserIcon className="text-faint-foreground" />
             <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>
           </span>
         );

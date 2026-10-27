@@ -48,8 +48,8 @@ export function OperationsPage() {
         <div className="container flex items-center gap-3 py-3">
           <ViewModeToggle />
 
-          <span className="text-muted-foreground text-sm lowercase">
-            {operationCount} {t('c:operation', { count: operationCount })}
+          <span className="text-muted-foreground text-sm">
+            {operationCount} {t('c:operation', { count: operationCount }).toLowerCase()}
           </span>
         </div>
       </StickyBox>

@@ -29,7 +29,7 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
-          <span className={cn(jsonViewerTheme.schemaType, getTypeColorClass(type), 'ml-0.5 px-1 py-0.5 text-xs opacity-70')}>{type}</span>
+          <span className={cn(jsonViewerTheme.schemaType, getTypeColorClass(type), 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
           {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
         </span>
       ))}

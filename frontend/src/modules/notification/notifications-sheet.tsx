@@ -85,7 +85,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
       />
       <span className="flex min-w-0 flex-col gap-0.5">
         {/* One `c:notification.<type>` sentence per vocabulary type, interpolating actor, subject and channel; apps add theirs to app.json */}
-        <span className={cn('wrap-break-word text-sm', notification.readAt && 'opacity-70')}>
+        <span className={cn('wrap-break-word text-sm', notification.readAt && 'text-muted-foreground')}>
           {t(`c:notification.${notification.type}`, {
             actor: actor?.name || t('c:someone'),
             subject: subjectTitle || t('c:unknown'),

@@ -22,7 +22,7 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
       // contain-inline-size keeps a long question from widening the popup: it grows only to the popup's min-width.
       // text-balance carries a name that fits but leaves no room for its "?" down to the line of that mark
       <DropdownMenuGroup className="min-w-80 contain-inline-size">
-        <DropdownMenuLabel className="text-balance py-2 font-normal">{title}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-balance py-2 font-normal text-foreground">{title}</DropdownMenuLabel>
         {children}
       </DropdownMenuGroup>
     );

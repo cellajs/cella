@@ -30,7 +30,7 @@ function getStatusColorClass(status: SpanData['status']): string {
     case 'error':
       return 'bg-red-500';
     default:
-      return 'bg-gray-500';
+      return 'bg-muted-foreground';
   }
 }
 
@@ -39,14 +39,14 @@ function getCategoryColorClass(name: string): string {
   if (name.startsWith('sync.message')) return 'text-violet-500';
   if (name.startsWith('sync.cache')) return 'text-amber-500';
   if (name.startsWith('sync.seq')) return 'text-pink-500';
-  return 'text-gray-500';
+  return 'text-muted-foreground';
 }
 
-const emptyClass = tw('p-6 text-center text-slate-500');
-const tabClass = tw('cursor-pointer rounded px-2 py-1 text-slate-400');
-const statCardClass = tw('mb-2 rounded-md bg-slate-800 p-3');
-const statLabelClass = tw('text-2xs text-slate-400 uppercase tracking-wider');
-const statValueClass = tw('mt-1 font-semibold text-slate-100 text-xl');
+const emptyClass = tw('p-6 text-center text-faint-foreground');
+const tabClass = tw('cursor-pointer rounded px-2 py-1 text-muted-foreground hover:text-foreground');
+const statCardClass = tw('mb-2 rounded-md bg-card p-3');
+const statLabelClass = tw('group-label');
+const statValueClass = tw('mt-1 font-semibold text-xl');
 
 interface SpanListProps {
   spans: SpanData[];
@@ -63,13 +63,13 @@ function SpanList({ spans, filter }: SpanListProps) {
   return (
     <div>
       {newestFirst(filtered, 50).map((span) => (
-        <div key={span.spanId} className="mb-1 flex items-center gap-2 rounded bg-slate-800 px-2 py-1.5">
+        <div key={span.spanId} className="mb-1 flex items-center gap-2 rounded bg-card px-2 py-1.5">
           <div className={cn('size-2 rounded-full', getStatusColorClass(span.status))} />
           <div className={cn('flex-1 truncate', getCategoryColorClass(span.name))} title={span.name}>
             {span.name.replace('sync.', '')}
           </div>
-          <div className="text-slate-400">{formatDuration(span.duration)}</div>
-          <div className="text-2xs text-slate-500">{formatTimeAgo(span.startTime)}</div>
+          <div className="text-muted-foreground">{formatDuration(span.duration)}</div>
+          <div className="text-2xs text-faint-foreground">{formatTimeAgo(span.startTime)}</div>
         </div>
       ))}
     </div>
@@ -85,7 +85,7 @@ function PrefixRows({ values, format = String }: PrefixRowsProps) {
   return (
     <div className="mt-2">
       {Object.entries(values).map(([prefix, value]) => (
-        <div key={prefix} className="flex justify-between py-1 text-slate-200">
+        <div key={prefix} className="flex justify-between py-1">
           <span className={getCategoryColorClass(prefix)}>{prefix}</span>
           <span>{format(value)}</span>
         </div>
@@ -105,7 +105,7 @@ function StatsView({ spans }: SpansViewProps) {
     <div>
       <div className="grid grid-cols-2 gap-2">
         <div className={statCardClass}>
-          <div className={statLabelClass}>Total Spans</div>
+          <div className={statLabelClass}>Total spans</div>
           <div className={statValueClass}>{stats.total}</div>
         </div>
         <div className={statCardClass}>
@@ -115,12 +115,12 @@ function StatsView({ spans }: SpansViewProps) {
       </div>
 
       <div className={statCardClass}>
-        <div className={statLabelClass}>Spans by Type</div>
+        <div className={statLabelClass}>Spans by type</div>
         <PrefixRows values={stats.byPrefix} />
       </div>
 
       <div className={statCardClass}>
-        <div className={statLabelClass}>Avg Duration by Type</div>
+        <div className={statLabelClass}>Avg duration by type</div>
         <PrefixRows values={stats.avgDurationMs} format={formatDuration} />
       </div>
     </div>
@@ -147,20 +147,20 @@ function TimelineView({ spans }: SpansViewProps) {
   return (
     <div>
       <div className={statCardClass}>
-        <div className={statLabelClass}>Avg E2E Latency</div>
+        <div className={statLabelClass}>Avg E2E latency</div>
         <div className={statValueClass}>{formatDuration(avgLatency)}</div>
       </div>
 
       <div className={statCardClass}>
-        <div className={statLabelClass}>Recent Messages (CDC → Frontend)</div>
+        <div className={statLabelClass}>Recent messages (CDC → frontend)</div>
         <div className="mt-3">
           {recent.map(({ span, latency }) => (
             <div key={span.spanId} className="mb-2">
-              <div className="mb-0.5 flex justify-between text-2xs text-slate-400">
+              <div className="mb-0.5 flex justify-between text-2xs text-muted-foreground">
                 <span>{String(span.attributes['sync.entity_type'] || 'unknown')}</span>
                 <span>{formatDuration(latency)}</span>
               </div>
-              <div className="h-1 overflow-hidden rounded-xs bg-slate-700">
+              <div className="h-1 overflow-hidden rounded-xs bg-muted">
                 <div
                   className={cn('h-full rounded-xs', latency > 500 ? 'bg-red-500' : latency > 200 ? 'bg-amber-500' : 'bg-green-500')}
                   style={{ width: `${(latency / maxLatency) * 100}%` }}
@@ -191,15 +191,16 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
   useEffect(() => subscribeToSpans(setSpans), []);
 
   return (
-    <div className="fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border border-slate-700 bg-slate-900 font-mono text-xs shadow-2xl">
-      <div className="flex items-center justify-between border-slate-700 border-b bg-slate-800 p-3">
-        <div className="font-semibold text-slate-100 text-sm">⚡ Sync Devtools</div>
+    // A dark scope: the panel reads the dark tokens over either theme
+    <div className="dark fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border bg-background font-mono text-foreground text-xs shadow-2xl">
+      <div className="flex items-center justify-between border-b bg-card p-3">
+        <div className="font-semibold text-sm">⚡ Sync devtools</div>
         <div className="flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab}
               type="button"
-              className={cn(tabClass, activeTab === tab && 'bg-slate-700 text-slate-100')}
+              className={cn(tabClass, activeTab === tab && 'bg-muted text-foreground')}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
@@ -217,15 +218,15 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
         {activeTab === 'timeline' && <TimelineView spans={spans} />}
       </div>
 
-      <div className="flex gap-2 border-slate-700 border-t p-2">
+      <div className="flex gap-2 border-t p-2">
         <input
           type="text"
           placeholder="Filter spans..."
-          className="flex-1 rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-slate-200 outline-none"
+          className="flex-1 rounded border bg-card px-2 py-1.5 outline-none placeholder:text-faint-foreground"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         />
-        <button type="button" className="cursor-pointer rounded bg-slate-700 px-3 py-1.5 text-slate-200" onClick={clearSpans}>
+        <button type="button" className="cursor-pointer rounded bg-muted px-3 py-1.5" onClick={clearSpans}>
           Clear
         </button>
       </div>

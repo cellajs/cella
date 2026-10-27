@@ -26,8 +26,8 @@ export function IndicatorBar({ layoutId, animate = true, className, style }: Ind
 
 // Tailwind reads group names from literal class strings
 const groupClassNames = {
-  toc: { row: 'group/toc', active: 'group-data-spy-active/toc:opacity-100' },
-  section: { row: 'group/section', active: 'group-data-spy-active/section:opacity-100' },
+  toc: { row: 'group/toc', active: 'group-data-spy-active/toc:text-foreground' },
+  section: { row: 'group/section', active: 'group-data-spy-active/section:text-foreground' },
 };
 
 interface SpyNavItemProps {
@@ -52,7 +52,7 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
         variant="ghost"
         size="sm"
         className={cn(
-          'focus-inset h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal opacity-75 hover:bg-accent/50',
+          'focus-inset h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal text-muted-foreground hover:bg-accent/50',
           groupClassName.active,
           className,
         )}

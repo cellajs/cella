@@ -27,7 +27,7 @@ export function SimpleHeader({ heading, text, textOptions, children, className =
       {text && (
         <p
           className={cn(
-            'text-md text-muted-foreground',
+            'text-muted-foreground text-sm',
             collapseText && 'mt-1 max-h-24 transition-[max-height,opacity,margin] duration-300 ease-in-out',
             collapseText &&
               hasScrolled &&

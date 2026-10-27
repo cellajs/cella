@@ -64,7 +64,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
           >
             {isCompletedStep ? <Check className="size-4" /> : <span className="text-md">{index + 1}</span>}
           </Button>
-          {!!label && <div className={cn('ms-2 text-sm', index > activeStep && 'opacity-80')}>{label}</div>}
+          {!!label && <div className={cn('ms-2 text-sm', index > activeStep && 'text-muted-foreground')}>{label}</div>}
         </div>
       )}
       <div className="group-not-last/step:min-h-4 max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)">

@@ -190,7 +190,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className={headerButtonClass}
                 onClick={() => download(currentItem.url, currentItem.filename)}
               >
-                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" />}
+                {isInProgress ? <Spinner className="size-5 text-foreground-soft" noDelay /> : <DownloadIcon className="size-5" />}
               </Button>
             )}
 

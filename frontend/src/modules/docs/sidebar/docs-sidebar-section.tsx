@@ -17,7 +17,7 @@ export function DocsSidebarSection({ label, action, children }: DocsSidebarSecti
   return (
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
+        <SidebarGroupLabel className="p-0">{label}</SidebarGroupLabel>
         {action}
       </div>
       <SidebarGroupContent>

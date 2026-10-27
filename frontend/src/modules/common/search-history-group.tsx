@@ -29,7 +29,7 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
             <span className="truncate font-medium">{search}</span>
           </div>
           <div className="flex items-center">
-            <span className="mx-3 text-muted-foreground text-xs max-sm:hidden">{index}</span>
+            <span className="mx-3 text-faint-foreground text-xs max-sm:hidden">{index}</span>
             <CloseButton
               size="sm"
               label="c:remove"

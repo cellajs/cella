@@ -129,7 +129,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       data-tooltip-content={tooltip}
       onClick={handleDownload}
     >
-      {isInProgress ? <Spinner size="sm" className="text-foreground/80" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
+      {isInProgress ? <Spinner size="sm" className="text-foreground-soft" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
     </Button>
   );
 }

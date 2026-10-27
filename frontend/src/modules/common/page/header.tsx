@@ -57,7 +57,7 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
                       <span className="sr-only">{t('c:home')}</span>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden" />
+                  <BreadcrumbSeparator className="text-faint-foreground max-sm:hidden" />
                   {crumbs.map((crumb) => {
                     const crumbRoute = getChannelRoute(crumb);
                     return (
@@ -70,7 +70,7 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
                             <span className="max-w-48 truncate">{crumb.name}</span>
                           </BreadcrumbLink>
                         </BreadcrumbItem>
-                        <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden" />
+                        <BreadcrumbSeparator className="text-faint-foreground max-sm:hidden" />
                       </Fragment>
                     );
                   })}

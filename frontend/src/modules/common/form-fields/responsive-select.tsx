@@ -59,11 +59,11 @@ export function ResponsiveSelect({
   const selectedLabel = selectedOption ? labelOf(selectedOption) : placeholder;
   const ariaLabel = title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined;
 
-  // The dimmed title stays above 4.5:1 on a field; the value takes the weight of the buttons beside it.
+  // The title is a hint; the value takes the weight of the buttons beside it.
   const triggerContent =
     showTitle && title ? (
       <span className="flex min-w-0 items-center gap-2">
-        <span className="more-contrast:text-muted-foreground more-contrast:opacity-100 opacity-60">{title}</span>
+        <span className="text-faint-foreground">{title}</span>
         <span className="truncate font-medium">{selectedLabel}</span>
       </span>
     ) : (

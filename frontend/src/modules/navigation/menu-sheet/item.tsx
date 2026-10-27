@@ -75,7 +75,7 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
           </span>
         )}
       </span>
-      <div className="flex grow flex-col justify-center truncate pr-2 text-left group-hover/menu-sheet-item:opacity-100 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80">
+      <div className="flex grow flex-col justify-center truncate pr-2 text-left">
         <div className="truncate pt-3.5 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[link-active=true]/menu-sheet-item:font-medium group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]">
           {item.name}
         </div>

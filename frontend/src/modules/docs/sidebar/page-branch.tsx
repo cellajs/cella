@@ -56,10 +56,10 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           data-expanded={isExpanded}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'w-full justify-start lowercase',
+            'w-full justify-start',
             isRoot
               ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
-              : 'focus-inset h-8 pl-5 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
+              : 'focus-inset h-8 pl-5 font-normal text-muted-foreground data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground data-[expanded=true]:text-foreground',
           )}
           onClick={(event) => {
             if (isModifiedClick(event)) return;

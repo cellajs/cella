@@ -136,7 +136,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
-      className={cn('flex w-full items-center justify-center py-2 text-center text-muted-foreground text-sm empty:hidden', className)}
+      className={cn('flex w-full items-center justify-center py-2 text-center text-faint-foreground text-sm empty:hidden', className)}
       {...props}
     />
   );
@@ -150,7 +150,7 @@ function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabe
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-group-label"
-      className={cn('pointer-coarse:px-3 px-2 pointer-coarse:py-2 py-1.5 pointer-coarse:text-sm text-muted-foreground text-xs', className)}
+      className={cn('group-label pointer-coarse:px-3 px-2 pointer-coarse:py-2 py-1.5', className)}
       {...props}
     />
   );

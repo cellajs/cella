@@ -21,7 +21,7 @@ export const buttonVariants = cva(
         'outline-ghost':
           'border border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
         link: 'link-inline text-primary',
-        cell: 'group/cell-button flex w-full justify-start font-normal opacity-75 hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'intent-primary soft-bg soft-border hover:soft-bg-strong hover:soft-border-medium border text-primary',
         input: 'border border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive',
         warning: 'intent-warning',

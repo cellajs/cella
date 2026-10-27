@@ -70,7 +70,7 @@ function DragHandle({ block, editor, allowedTypes, headingLevels, pinTitleBlock 
     <button
       type="button"
       draggable
-      className="bn-button cursor-grab text-muted-foreground/70"
+      className="bn-button cursor-grab text-faint-foreground"
       aria-label={t('c:reorder')}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

@@ -27,10 +27,7 @@ export function ContentPlaceholder({ title, icon: Icon, size = 'default', classN
     >
       {/* A thin stroke scales with the icon: the small one gets a heavier stroke to stay as visible. */}
       {Icon && <Icon strokeWidth={size === 'sm' ? 1 : 0.7} className="size-20 opacity-50 group-data-[size=sm]/placeholder:size-10" />}
-      {/* Dimmed at rest (still above 4.5:1 on page and card); increased contrast gives it the full muted text color. */}
-      <p className="mt-4 more-contrast:text-muted-foreground text-sm more-contrast:opacity-100 opacity-60 group-data-[size=sm]/placeholder:mt-2">
-        {titleText}
-      </p>
+      <p className="mt-4 text-faint-foreground text-sm group-data-[size=sm]/placeholder:mt-2">{titleText}</p>
       {children && <div className="mt-8 group-data-[size=sm]/placeholder:mt-4">{children}</div>}
     </div>
   );

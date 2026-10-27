@@ -110,7 +110,7 @@ function PreferenceDescription({ id, className, children }: { id: string; classN
         className,
       )}
     >
-      <p id={id} className="overflow-hidden text-muted-foreground text-xs">
+      <p id={id} className="overflow-hidden text-muted-foreground text-sm">
         <span className="block pt-1">{children}</span>
       </p>
     </div>

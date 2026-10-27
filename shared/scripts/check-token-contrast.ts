@@ -1,7 +1,7 @@
 /**
  * Contrast of the color tokens in the theme stylesheet, in light and dark mode: text on its own fill, the status
- * colors as text on the page, and `--edge-raised`, the control edge increased contrast paints and the audit measures.
- * A token below WCAG's ratio fails here, before any page is opened.
+ * colors as text on the page, hint text on a highlighted row, and `--edge-raised`, the control edge increased contrast
+ * paints and the audit measures. A token below WCAG's ratio fails here, before any page is opened.
  */
 import { type Finding, lineColumn } from './repo-files.ts';
 
@@ -12,23 +12,37 @@ const fills = ['background', 'card', 'popover', 'primary', 'secondary', 'muted',
 /** Tokens also used as text on the page and on a card. */
 const textTokens = ['destructive', 'success', 'warning'];
 const surfaces = ['background', 'card'];
+/** A hint can sit on a highlighted row, the lowest-contrast surface text meets. */
+const hintSurface = 'muted';
 
 type Oklch = [lightness: number, chroma: number, hue: number];
+/** A declaration holds a color or names another token (`var(--foreground)`), which the mode resolves. */
+type Declaration = { value?: Oklch; alias?: string; offset: number };
 
-/** `--name: oklch(L C H)` declarations of the first block that follows `selector` inside the theme layer. */
-function tokens(source: string, selector: string): Map<string, { value: Oklch; offset: number }> {
-  const found = new Map<string, { value: Oklch; offset: number }>();
+/** `--name: oklch(L C H)` and `--name: var(--other)` declarations of the first block that follows `selector` inside the theme layer. */
+function tokens(source: string, selector: string): Map<string, Declaration> {
+  const found = new Map<string, Declaration>();
   const start = source.search(new RegExp(`^\\s*${selector.replace('.', '\\.')}\\s*\\{\\s*\\n\\s*--background:`, 'm'));
   if (start < 0) return found;
   const block = source.slice(start, source.indexOf('\n  }', start));
-  for (const match of block.matchAll(/--([a-z-]+):\s*oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\)/g)) {
+  for (const match of block.matchAll(/--([a-z-]+):\s*(?:oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\)|var\(--([a-z-]+)\))/g)) {
+    const offset = start + (match.index ?? 0);
+    if (match[5]) {
+      found.set(match[1], { alias: match[5], offset });
+      continue;
+    }
     const lightness = Number(match[2]);
-    found.set(match[1], {
-      value: [lightness > 1 ? lightness / 100 : lightness, Number(match[3]), Number(match[4])],
-      offset: start + (match.index ?? 0),
-    });
+    found.set(match[1], { value: [lightness > 1 ? lightness / 100 : lightness, Number(match[3]), Number(match[4])], offset });
   }
   return found;
+}
+
+/** The color a token holds in one mode, following aliases; undefined for a token the mode never gives a color. */
+function resolve(set: Map<string, Declaration>, name: string, seen = new Set<string>()): Oklch | undefined {
+  const declaration = set.get(name);
+  if (!declaration?.alias) return declaration?.value;
+  if (seen.has(name)) return undefined;
+  return resolve(set, declaration.alias, seen.add(name));
 }
 
 /** Relative luminance of an oklch color, clipped to sRGB. */
@@ -64,13 +78,13 @@ export function tokenContrastFindings(file: string, source: string): Finding[] {
     ['dark', dark],
   ] as const) {
     const check = (text: string, behind: string, needed: number, what: string) => {
-      const [front, back] = [set.get(text), set.get(behind)];
+      const [front, back] = [resolve(set, text), resolve(set, behind)];
       if (!front || !back) return;
-      const measured = ratio(front.value, back.value);
+      const measured = ratio(front, back);
       if (measured >= needed) return;
       findings.push({
         file,
-        ...lineColumn(source, front.offset),
+        ...lineColumn(source, set.get(text)?.offset ?? 0),
         rule: 'token-contrast',
         term: `--${text}`,
         message: `${what} is ${measured.toFixed(2)}:1 in ${mode} mode, below ${needed}:1 (--${text} on --${behind})`,
@@ -78,6 +92,9 @@ export function tokenContrastFindings(file: string, source: string): Finding[] {
     };
     for (const fill of fills) check(fill === 'background' ? 'foreground' : `${fill}-foreground`, fill, 4.5, 'text on its fill');
     for (const token of textTokens) for (const surface of surfaces) check(token, surface, 4.5, 'status color as text');
+    check('faint-foreground', hintSurface, 4.5, 'hint text on a highlighted row');
+    // The tooltip (ui/tooltip.tsx) borrows the support text color as its fill
+    check('primary-foreground', 'muted-foreground', 4.5, 'tooltip text on its fill');
     for (const surface of surfaces) check('edge-raised', surface, 3, 'raised control edge');
 
     // A theme that drops the token has nothing to measure, which would pass every check above in silence

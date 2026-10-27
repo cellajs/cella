@@ -40,7 +40,7 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
         <div
           aria-hidden
           className={cn(
-            'flex h-full items-center justify-center font-semibold text-[50cqi] text-black leading-none more-contrast:opacity-85 opacity-50',
+            'flex h-full items-center justify-center font-semibold more-contrast:text-black/85 text-[50cqi] text-black/50 leading-none',
             isUser && '@min-[calc(1.5rem+1px)]:text-[40cqi]',
           )}
         >

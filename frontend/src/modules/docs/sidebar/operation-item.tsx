@@ -11,7 +11,7 @@ interface OperationItemProps {
 function OperationItemBase({ operation, isActive }: OperationItemProps) {
   return (
     <SidebarHashItem to="/docs/operations" hash={operation.hash} isActive={isActive}>
-      <span className="flex-1 truncate lowercase">{operation.summary || operation.id}</span>
+      <span className="flex-1 truncate">{operation.summary || operation.id}</span>
       <MethodLabel method={operation.method} />
     </SidebarHashItem>
   );

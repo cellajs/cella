@@ -40,7 +40,8 @@ export function SubscribeNewsletterForm() {
           autoComplete="email"
           aria-label={t('c:newsletter_email')}
           required
-          className="py-4 pl-6 text-base/6 text-gray-200 placeholder:text-gray-300/50"
+          // The footer band stays dark in both themes, so the field reads the dark text steps
+          className="dark py-4 pl-6 text-base/6 text-foreground"
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton type="submit" aria-label={t('c:newsletter_submit')} className="mr-0.5 size-10 rounded-lg text-white">

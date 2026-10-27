@@ -83,7 +83,7 @@ interface CollapsedPanelViewProps {
 const emptySections: CollapsedSection[] = [];
 
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
-const collapsedCountClass = tw('absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs');
+const collapsedCountClass = tw('absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-faint-foreground text-xs');
 
 interface CollapsedSectionsProps {
   sections: CollapsedSection[];

@@ -79,7 +79,7 @@ export function AboutPage() {
             </div>
           </div>
           <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')}>
-            <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:continue_below_fold')}</span>
+            <span className="font-normal text-base text-muted-foreground group-hover:text-foreground">{t('about:continue_below_fold')}</span>
             <ArrowDownIcon className="repeat-5 animate-bounce opacity-70 group-hover:opacity-100 motion-reduce:animate-none" />
           </Button>
         </Hero>

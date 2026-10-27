@@ -74,7 +74,7 @@ function CollapsibleTagItemBase<T>({
             draggable={false}
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'group focus-inset h-8 w-full justify-start pl-5 font-normal opacity-80 group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
+              'group focus-inset h-8 w-full justify-start pl-5 font-normal text-muted-foreground group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:text-foreground',
             )}
             onMouseEnter={!isExpanded ? onPrerender : undefined}
             // Leaves the mobile sheet open, so expanding a tag shows its items
@@ -84,7 +84,7 @@ function CollapsibleTagItemBase<T>({
       >
         <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
         <span className="truncate">{tag.name}</span>
-        <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
+        <span className="text-faint-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
           {tag.count}
         </span>
         <ChevronDownIcon className="invisible ml-auto shrink-0 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
