@@ -1359,7 +1359,7 @@ export type GenerateTotpKeyError = GenerateTotpKeyErrors[keyof GenerateTotpKeyEr
 
 export type GenerateTotpKeyResponses = {
   /**
-   * Challenge created
+   * TOTP key generated
    */
   200: {
     totpUri: string;

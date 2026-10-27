@@ -15,7 +15,7 @@ export const passkeysTable = snakeCase.table(
       .$type<UserId>(),
     credentialId: varchar({ length: maxLength.url }).notNull(),
     publicKey: varchar({ length: maxLength.url }).notNull(),
-    // WebAuthn signature counter, persisted after each assertion to detect cloned authenticators
+    /** The WebAuthn signature counter, stored after each assertion to detect a cloned authenticator. */
     counter: integer().notNull().default(0),
     deviceName: varchar({ length: maxLength.field }),
     deviceType: varchar({ enum: ['desktop', 'mobile'] })

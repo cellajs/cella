@@ -3,7 +3,6 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
@@ -28,8 +27,9 @@ interface SendMagicLinkOpts {
 
 /**
  * Mails a magic link to the address: a sign-in link for its account, or a sign-up link when the address may sign up. Any
- * other address gets nothing, while this browser is marked as if a link went out, so the answer never tells whether the
+ * other address gets nothing, while this browser is marked as if a link went out, so the 204 does not tell whether the
  * address has an account.
+ * @throws AppError 403 `sso_required` for an account's address an institution proved, while its tenant excludes magic links.
  */
 export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, assertedThrough }: SendMagicLinkOpts) => {
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
@@ -39,11 +39,11 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
 
   const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
 
-  // An address an institution proved inherits its tenant's sign-in policy (D16): while that policy excludes magic
-  // links, the address sends none and the answer points at the institution's entry. The user keeps every other
-  // method and address; an unknown address still gets the silent answer below. The one exception is a link asked for
-  // right after signing in at that same institution, which is how an account whose institution identifier changed gets
-  // back in: the link then takes the institution account and the mailbox together, more than either alone.
+  // An address an institution proved inherits its tenant's sign-in policy: while that policy excludes magic links,
+  // the address sends none and the answer points at the institution's entry. The user keeps every other method and
+  // address; an unknown address still gets the 204 below. The one exception is a link asked for right after signing in
+  // at that same institution, which is how an account whose institution identifier changed gets back in: the link then
+  // takes the institution account and the mailbox together, more than either alone.
   if (existingUser) {
     const governance = await findAddressGovernance(ctx, { email: normalizedEmail });
     const excludesMagic = governance?.status === 'active' && governance.authStrategies.length > 0 && !governance.authStrategies.includes('magic');
@@ -52,25 +52,18 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
         meta: { connectionId: governance.connectionId, entryPath: `/auth/sso/${governance.connectionId}` },
       });
     }
-  }
-
-  if (!existingUser) {
+  } else if (!(await maySignUp(ctx, { email: normalizedEmail }))) {
     // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
     // as a real request, to prevent email enumeration.
-    if (!(await maySignUp(ctx, { email: normalizedEmail }))) {
-      log.info('Magic link requested for unknown email');
-      await rememberLinkRequest(ctx, 'magic', generateId());
-      return;
-    }
+    log.info('Magic link requested for unknown email');
+    await rememberLinkRequest(ctx, 'magic', generateId());
+    return;
   }
 
   // A sign-up link names no user: asking for it proves nothing about the address, so the account is created when the
-  // link is clicked (claimMagicLinkOwner).
+  // link is clicked (claimMagicLinkHolder).
   const userId = existingUser?.id ?? null;
-  const { token: tokenRecord, rawToken } = await issueToken(
-    { var: { db: baseDb } },
-    { type: 'magic', userId, email: normalizedEmail, createdBy: userId, redirectPath },
-  );
+  const { token: tokenRecord, rawToken } = await issueToken(ctx, { type: 'magic', userId, email: normalizedEmail, createdBy: userId, redirectPath });
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
   await rememberLinkRequest(ctx, 'magic', tokenRecord.id);

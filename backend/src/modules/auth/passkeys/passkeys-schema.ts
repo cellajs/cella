@@ -41,7 +41,7 @@ export const passkeyCreateBodySchema = z.object({ attestation: webAuthnAttestati
 
 export const passkeyChallengeBodySchema = z.object({ type: challengeTypeSchema });
 
-/** `credentialIds` lists the account's passkeys for an MFA challenge only; it is empty for any other challenge. */
+/** `credentialIds` lists the account's passkeys for an MFA or step-up challenge; empty for a sign-in or registration challenge. */
 export const passkeyChallengeSchema = z.object({ challenge: z.string(), credentialIds: z.array(z.string()) });
 
 export const passkeyVerificationBodySchema = z.object({ assertion: webAuthnAssertionSchema, type: passkeyTypeSchema });

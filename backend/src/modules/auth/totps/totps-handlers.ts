@@ -1,3 +1,4 @@
+import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
@@ -14,6 +15,9 @@ import { encodeBase32 } from '#/utils/base32';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
+/** How long a TOTP setup waits for its first code: the pending secret's cookie lives that long. */
+const totpSetupLifetime = new TimeSpan(5, 'm');
+
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
@@ -21,12 +25,12 @@ app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
 
   if (await findTotp(ctx, { userId: user.id })) throw new AppError(409, 'resource_already_exists', 'warn');
 
-  // Generate a 20-byte random secret and encode it as Base32
-  const secretBytes = crypto.getRandomValues(new Uint8Array(20));
+  // 160 bits, the shared secret length RFC 4226 recommends.
+  const secretBytes = getRandomValues(new Uint8Array(20));
 
   const manualKey = encodeBase32(secretBytes);
 
-  await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
+  await setAuthCookie(ctx, 'totp-challenge', manualKey, totpSetupLifetime);
 
   const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 

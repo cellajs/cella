@@ -756,7 +756,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
 /**
  * Delete TOTP
  *
- * Delete TOTP credential for current user.
+ * Delete the current user's authenticator app (TOTP).
  *
  * **DELETE /auth/totp** ·· [deleteTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/totp) ·· _auth · cella_
  *

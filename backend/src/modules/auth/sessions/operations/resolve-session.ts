@@ -65,7 +65,7 @@ const refusalAsNull = (err: unknown): null => {
  * of it.
  * @throws AppError 401 without a token, for an unknown, revoked or expired one, or for an impersonation's.
  */
-export const readOwnSession = async (sessionToken: string | undefined): Promise<ResolvedSession> => {
+export const readBrowserSession = async (sessionToken: string | undefined): Promise<ResolvedSession> => {
   if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
   const entry = await readSession(sessionToken);
   if (entry.session.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
@@ -109,7 +109,7 @@ export const resolveSession = async (ctx: Context, { clearOnError = false }: { c
     });
   }
 
-  return clearIfRefused('session', async () => ({ ...(await readOwnSession(sessionToken)), impersonator: null }));
+  return clearIfRefused('session', async () => ({ ...(await readBrowserSession(sessionToken)), impersonator: null }));
 };
 
 /**

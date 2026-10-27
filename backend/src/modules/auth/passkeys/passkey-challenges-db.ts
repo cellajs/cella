@@ -23,7 +23,7 @@ export const passkeyChallengesTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     challengeHash: varchar({ length: 64 }).notNull(),
     purpose: varchar({ enum: passkeyChallengePurposes }).notNull(),
-    // The account an mfa or step-up challenge was issued for; null where the passkey names the account.
+    /** The account an mfa or step-up challenge was issued for; null where the passkey names the account. */
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),

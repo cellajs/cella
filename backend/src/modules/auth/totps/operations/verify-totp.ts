@@ -3,15 +3,15 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { settleTotpAttempt, type TotpUser, takeTotpAttempt } from '#/modules/auth/totps/helpers/totp-budget';
 import { matchTOTPStep } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
+import { settleTotpAttempt, type TotpUser, takeTotpAttempt } from '#/modules/auth/totps/operations/totp-budget';
 import { findTotp, updateTotpLastUsedStep } from '#/modules/auth/totps/totps-queries';
 import { decodeBase32 } from '#/utils/base32';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totp;
 
-/** Factor checks read and write on the base pool, whatever the route's context holds. */
+/** The secret and its last used step are read and written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /** The account's stored Base32 secret. */

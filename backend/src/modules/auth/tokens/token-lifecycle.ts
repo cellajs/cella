@@ -116,8 +116,8 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
   if (!signedIn) return;
 
   const { user } = signedIn;
-  const ownerId = token.userId ?? (await findUserByEmail(dbCtx, { email: token.email }))?.id;
-  if (ownerId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
+  const holderId = token.userId ?? (await findUserByEmail(dbCtx, { email: token.email }))?.id;
+  if (holderId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
 };
 
 /**
@@ -136,14 +136,14 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
  * Settles the account of a link issued without one, in the transaction that redeems it, and returns its user id: the
  * token is bound to that user. A throw rolls the redemption back, so the link stays unopened.
  */
-export type ClaimTokenOwner = (tx: Tx, token: TokenRecord) => Promise<string>;
+type ClaimTokenHolder = (tx: Tx, token: TokenRecord) => Promise<string>;
 
 interface InvokeTokenOpts {
   type: LinkTokenType;
-  /** The raw value from the link. */
+  /** The raw value in the link's URL; the database holds only its hash. */
   rawToken: string;
   /** For a link issued without an account (a sign-up link); runs only in the redemption that wins. */
-  claimOwner?: ClaimTokenOwner;
+  claimHolder?: ClaimTokenHolder;
 }
 
 /**
@@ -151,12 +151,12 @@ interface InvokeTokenOpts {
  * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
  * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
- * its owner from `claimOwner`, committed with the redemption.
+ * its holder from `claimHolder`, committed with the redemption.
  * @returns The redeemed token.
  * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 409
- *   `user_mismatch` while signed in to another account, or what `claimOwner` throws.
+ *   `user_mismatch` while signed in to another account, or what `claimHolder` throws.
  */
-export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwner }: InvokeTokenOpts): Promise<TokenRecord> => {
+export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
 
   const token = await findLinkToken(dbCtx, { type, rawToken });
@@ -178,13 +178,13 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
     updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: singleUse.hash, expiresAt: isoDateIn(singleUseWindow) });
 
   const redeemed =
-    token.userId || !claimOwner
+    token.userId || !claimHolder
       ? await redeem(dbCtx)
       : await baseDb.transaction(async (tx) => {
           const txCtx = { var: { db: tx } };
           const won = await redeem(txCtx);
           if (!won) return won;
-          const userId = await claimOwner(tx, won);
+          const userId = await claimHolder(tx, won);
           return bindTokenToUser(txCtx, { tokenId: won.id, userId });
         });
 

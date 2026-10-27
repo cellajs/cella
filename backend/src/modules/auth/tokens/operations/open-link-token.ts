@@ -2,9 +2,9 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { assertSwitchOn } from '#/middlewares/config-switch';
-import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic';
+import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-link';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
-import { claimMagicLinkOwner } from '#/modules/auth/magic/operations/magic-sign-up';
+import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/operations/handle-oauth-verification';
 import { openStepUpLink } from '#/modules/auth/step-up/operations/open-step-up-link';
 import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -26,7 +26,7 @@ const linkHandlers = {
     if (held) return held;
 
     // A sign-up link creates its account at this click, which proves the inbox.
-    const token = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner }).catch((err) =>
+    const token = await invokeToken(ctx, { type: 'magic', rawToken, claimHolder: claimMagicLinkHolder }).catch((err) =>
       explainOpenedMagicLink(err, rawToken),
     );
     forgetLinkRequest(ctx, 'magic');

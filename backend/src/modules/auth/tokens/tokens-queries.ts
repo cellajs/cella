@@ -11,10 +11,8 @@ export type { PendingSignUp } from '#/modules/auth/tokens-db';
 /** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
 
-const { secret: _secret, singleUseToken: _singleUseToken, ...safeColumns } = getColumns(tokensTable);
-
 /** The columns of a {@link TokenRecord}, for the queries of this module. */
-const tokenColumns = safeColumns;
+const { secret: _secret, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
 
 /** By the token's own id, or by its membership invitation (the newest token). */
 type FindInvitationTokenOpts = ({ id: string } | { inactiveMembershipId: string }) & {
@@ -27,9 +25,8 @@ type FindInvitationTokenOpts = ({ id: string } | { inactiveMembershipId: string 
  * these, never by its address: an address can hold newer tokens from other invitations.
  */
 export const findInvitationToken = async (ctx: DbContext, opts: FindInvitationTokenOpts): Promise<TokenRecord | undefined> => {
-  const { db } = ctx.var;
   const byKey = 'id' in opts ? eq(tokensTable.id, opts.id) : eq(tokensTable.inactiveMembershipId, opts.inactiveMembershipId);
-  const query = db
+  const query = ctx.var.db
     .select(tokenColumns)
     .from(tokensTable)
     .where(and(eq(tokensTable.type, 'invitation'), byKey))
@@ -45,8 +42,7 @@ interface HasLiveInvitationTokenOpts {
 
 /** Whether an unexpired invitation token is addressed to `email`: the trace a system invitation leaves. */
 export const hasLiveInvitationToken = async (ctx: DbContext, { email }: HasLiveInvitationTokenOpts) => {
-  const { db } = ctx.var;
-  const [liveToken] = await db
+  const [liveToken] = await ctx.var.db
     .select({ id: tokensTable.id })
     .from(tokensTable)
     .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())))
@@ -60,8 +56,7 @@ interface FindSystemInvitationTokensOpts {
 
 /** The unopened system invitations (no membership row) addressed to any of `emails`, expired ones included. */
 export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: FindSystemInvitationTokensOpts) => {
-  const { db } = ctx.var;
-  return db
+  return ctx.var.db
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
     .from(tokensTable)
     .where(
@@ -81,8 +76,7 @@ interface DeleteInvitationTokensOpts {
 /** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
 export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: DeleteInvitationTokensOpts) => {
   if (!inactiveMembershipIds.length) return;
-  const { db } = ctx.var;
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
+  await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
 interface BindTokenToUserOpts {
@@ -149,6 +143,7 @@ interface InsertTokensOpts {
   values: InsertTokenModel[];
 }
 
+/** Stores new tokens; returns the stored rows without their secrets. */
 export const insertTokens = async (ctx: DbContext, { values }: InsertTokensOpts) => {
   return ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
 };

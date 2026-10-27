@@ -19,7 +19,7 @@ export const devicesTable = snakeCase.table(
     deviceIdHash: varchar({ length: 64 }).notNull(),
     firstSeenAt: isoTimestamp().notNull(),
     lastSeenAt: isoTimestamp().notNull(),
-    // Set when a new sign-in notice went out for this row; the per-user daily budget counts these.
+    /** Set when a new sign-in notice went out for this row; the per-user daily budget counts these. */
     notifiedAt: isoTimestamp(),
   },
   (table) => [
@@ -28,5 +28,3 @@ export const devicesTable = snakeCase.table(
     index('devices_last_seen_at_idx').on(table.lastSeenAt),
   ],
 );
-
-export type DeviceModel = typeof devicesTable.$inferSelect;

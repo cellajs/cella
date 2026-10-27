@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { dropHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-browser';
-import { readOwnSession } from '#/modules/auth/sessions/operations/resolve-session';
+import { readBrowserSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { log } from '#/utils/logger';
@@ -34,7 +34,7 @@ export const signOutOp = async (ctx: Context<Env>) => {
   deleteAuthCookie(ctx, 'session');
   if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
 
-  const { session: currentSession } = await readOwnSession(sessionToken);
+  const { session: currentSession } = await readBrowserSession(sessionToken);
 
   await revokeSessions(ctx, {
     userId: currentSession.userId,

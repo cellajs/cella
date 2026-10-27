@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { memoryStores } from '#/middlewares/rate-limiter/tests/memory-stores';
-import type { TotpUser } from '#/modules/auth/totps/helpers/totp-budget';
+import type { TotpUser } from '#/modules/auth/totps/operations/totp-budget';
 import { testTotpSecret, totpCode, wrongTotpCode } from '../../../../../tests/helpers';
 
 // The account budget counts in the limiter stores: in-memory ones here, so a day's failures can be arranged.

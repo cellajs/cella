@@ -1,4 +1,4 @@
-import { getTableColumns, sql } from 'drizzle-orm';
+import { getColumns, sql } from 'drizzle-orm';
 import { type AnyPgColumn, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -9,19 +9,24 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
-const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
-export type SessionTypes = (typeof sessionTypeEnum)[number];
+/**
+ * What a session stands for: `regular`, a sign-in; `mfa`, a sign-in with a second factor (an MFA challenge completed, or
+ * MFA turned on); `impersonation`, a system admin acting as the user, layered on the admin's session.
+ */
+const sessionTypes = ['regular', 'impersonation', 'mfa'] as const;
+export type SessionType = (typeof sessionTypes)[number];
 
 const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
 /** A sign-in method as a session records it: a built-in one, or a federation key from `appConfig.federations`. */
 export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;
+/** Every {@link AuthStrategy}: the enum of the columns and request fields that hold one. */
 export const authStrategiesEnum = [...baseAuthStrategies, ...(Object.keys(appConfig.federations) as FederationKey[])] as [
   AuthStrategy,
   ...AuthStrategy[],
 ];
 
 /**
- * Why a session was revoked before its expiry. The owner's acts: `sign_out` from the session itself, `other_session`
+ * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`
  * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. The server's
  * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
  * browser: a sign-in, or the mfa session that enabling MFA mints. `impersonation_stopped` when the admin stops.
@@ -49,7 +54,7 @@ export const sessionsTable = snakeCase.table(
   {
     id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
-    type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
+    type: varchar({ enum: sessionTypes }).notNull().default('regular'),
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
@@ -94,7 +99,7 @@ export const sessionsTable = snakeCase.table(
   ],
 );
 
-const { secret: _secret, ...safeColumns } = getTableColumns(sessionsTable);
+const { secret: _secret, ...safeColumns } = getColumns(sessionsTable);
 /** Every column but the secret: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
@@ -102,11 +107,8 @@ const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impe
 /** The columns of {@link SessionFacts}. */
 export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId };
 
-/** Raw session model including sensitive secret field - use only when secret access is required. */
-export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;
-
-/** Safe session model with secret omitted for general use. */
-export type SessionModel = Omit<UnsafeSessionModel, 'secret'>;
+/** A session row without its secret. */
+export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret'>;
 
 /** What the guards know about a session: fixed when it was created, so the auth cache may hold them until it ends. */
 export type SessionFacts = Pick<SessionModel, keyof typeof sessionFactColumns>;

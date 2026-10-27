@@ -51,8 +51,9 @@ export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice
 };
 
 /**
- * Tells the user their account was signed in to from a browser they had not used before. Silent for a first-ever sign-in (it
- * would land next to the welcome mail), for sign-ins through the inbox, and once the daily budget is spent. Never throws.
+ * Tells the user their account was signed in to from a browser they had not used before. Sends nothing for an account's
+ * first sign-in, which has no earlier browser to differ from, for sign-ins through the inbox, and once the daily budget
+ * is spent. Never throws.
  */
 export const notifyNewSignIn = async ({
   user,

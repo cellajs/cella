@@ -61,8 +61,8 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
 
   const challenge = await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id });
 
-  const credentials = user ? await findCredentialIdsByUser(ctx, { userId: user.id }) : [];
-  const credentialIds = credentials.map((c) => c.credentialId);
+  const passkeys = user ? await findCredentialIdsByUser(ctx, { userId: user.id }) : [];
+  const credentialIds = passkeys.map((passkey) => passkey.credentialId);
 
   return ctx.json({ challenge, credentialIds }, 200);
 });
@@ -78,7 +78,7 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
 
   const userId = await verifyPasskeyAssertion(ctx, { assertion: response, purpose: 'authentication' });
   const user = await findUserById(ctx, { id: userId });
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   // A regular passkey sign-in also ends a challenge this browser left open.
   await spendCookieToken(ctx, 'confirm-mfa');

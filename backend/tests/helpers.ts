@@ -9,7 +9,7 @@ import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { type AuthStrategy, type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -207,7 +207,7 @@ export async function createTestOrganization(overrides?: Partial<ReturnType<type
 }
 
 interface TestSessionOpts {
-  type?: SessionTypes;
+  type?: SessionType;
   authStrategy?: AuthStrategy;
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;

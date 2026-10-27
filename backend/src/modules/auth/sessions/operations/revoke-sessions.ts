@@ -2,13 +2,13 @@ import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
-import type { SessionEndReason, SessionModel, SessionTypes } from '#/modules/auth/sessions/sessions-db';
+import type { SessionEndReason, SessionModel, SessionType } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
 import { deleteProviderSessionsOfUser } from '#/modules/oauth-server/oauth-server-queries';
 import { log } from '#/utils/logger';
 
 /** Which of the user's live sessions are revoked: these ids, or all of them (optionally of one type). */
-type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionTypes };
+type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionType };
 
 /**
  * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on): the authorization
@@ -17,7 +17,7 @@ type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionTy
  */
 const deletesProviderSessions = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
 
-export type RevokeSessionsOpts = SessionSelection & {
+type RevokeSessionsOpts = SessionSelection & {
   userId: string;
   reason: SessionEndReason;
   /** The actor whose request revokes the sessions; null when the server does it during a sign-in. */

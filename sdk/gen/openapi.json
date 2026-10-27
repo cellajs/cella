@@ -3824,7 +3824,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "Challenge created",
+            "description": "TOTP key generated",
             "content": {
               "application/json": {
                 "example": {
@@ -3934,7 +3934,7 @@
         "operationId": "deleteTotp",
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
-        "description": "Delete TOTP credential for current user.",
+        "description": "Delete the current user's authenticator app (TOTP).",
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

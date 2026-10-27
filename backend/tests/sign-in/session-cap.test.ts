@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { evictExcessSessions } from '#/modules/auth/sessions/operations/create-session';
-import { type SessionTypes, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type SessionType, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { overrideConfig } from '../fixtures';
 import { createTestUser, insertTestSession, sessionRow } from '../helpers';
 import { clearDatabase } from '../test-utils';
@@ -15,10 +15,10 @@ overrideConfig(appConfig, { maxSessionsPerUser: TEST_CAP });
 afterEach(async () => await clearDatabase());
 
 /** A session row of `type` signed in `ageMs` ago, inserted past setUserSession so no cap applies yet. */
-const insertSession = async (user: { id: string }, type: SessionTypes, ageMs: number) => (await insertTestSession(user, { type, ageMs })).id;
+const insertSession = async (user: { id: string }, type: SessionType, ageMs: number) => (await insertTestSession(user, { type, ageMs })).id;
 
 /** Ids of the user's sessions that still authenticate: revoked rows stay in the table but no longer count. */
-const liveIds = (userId: string, type?: SessionTypes) =>
+const liveIds = (userId: string, type?: SessionType) =>
   db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
