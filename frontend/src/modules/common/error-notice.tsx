@@ -157,7 +157,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
-                <Button ref={contactButtonRef} variant="plain" onClick={() => askForHelp(contactButtonRef)}>
+                <Button ref={contactButtonRef} variant="secondary" onClick={() => askForHelp(contactButtonRef)}>
                   <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>

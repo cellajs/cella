@@ -69,7 +69,8 @@ export function OAuthProviders({ authStep }: OAuthProvidersProps) {
   if (!enabledOAuthProviders.length) return null;
 
   return (
-    <div className="flex flex-col gap-2">
+    // The backdrop sets these alternatives apart, so their outline edge drops; increased contrast brings it back
+    <div className="edgeless flex flex-col gap-2">
       {enabledOAuthProviders.map(({ id, name }) => (
         <Button loading={loadingProvider === id} key={id} variant="outline" onClick={() => authenticateWithProvider(id)}>
           <OAuthProviderIcon id={id} />

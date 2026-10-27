@@ -17,12 +17,12 @@ export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
         {children}
       </pre>
       <Button
-        variant="ghost"
+        variant="outline"
         size="micro"
         tabIndex={-1}
         aria-label={t('c:copy')}
         onClick={() => copyToClipboard(preRef.current?.textContent ?? '')}
-        className="absolute top-2 right-2 size-7 border border-input bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover/code-block:opacity-100"
+        className="absolute top-2 right-2 size-7 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover/code-block:opacity-100"
       >
         <CopiedIcon copied={copied} icon={CopyIcon} />
       </Button>

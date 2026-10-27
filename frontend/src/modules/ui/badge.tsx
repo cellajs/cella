@@ -13,7 +13,7 @@ export const badgeVariants = cva(
         secondary: 'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
         plain: 'border-primary/20 bg-primary/5 text-primary',
         destructive: 'intent-destructive border-transparent focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
-        outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+        outline: 'text-foreground [a&]:hover:bg-muted [a&]:hover:text-foreground',
         warning: 'intent-warning border-transparent',
       },
       soft: { true: '', false: '' },

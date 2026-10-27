@@ -49,7 +49,7 @@ export type CarouselItemData = {
 };
 
 /** The viewer header's icon buttons: `-my-1` keeps the header at the stage's 3rem inset, `shrink-0` keeps a long title from squeezing them. */
-export const headerButtonClass = tw('-my-1 size-8 shrink-0 opacity-70 hover:opacity-100');
+export const headerButtonClass = tw('-my-1 size-8 shrink-0');
 
 type AttachmentsCarouselProps = {
   items: CarouselItemData[];
@@ -236,10 +236,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {items.length > 1 && (
         <>
           {/* Solid on every backdrop: the slide behind can be any image, so neither the button nor its hover fill lets it through. */}
-          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
+          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 [&_svg]:size-5" />
           <CarouselNext
             ref={nextButtonRef}
-            className="right-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
+            className="right-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 [&_svg]:size-5"
           />
         </>
       )}

@@ -17,7 +17,7 @@ export function StepUpConfirmedPage() {
       <AuthHeader title={t('c:step_up_confirmed')}>
         <p>{t('c:step_up_confirmed.text')}</p>
       </AuthHeader>
-      <Button variant="plain" render={<a href={redirect ?? appConfig.defaultRedirectPath} />}>
+      <Button variant="secondary" render={<a href={redirect ?? appConfig.defaultRedirectPath} />}>
         {t('c:step_up_continue')}
       </Button>
     </>

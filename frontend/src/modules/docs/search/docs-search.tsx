@@ -172,7 +172,7 @@ export function DocsSearch() {
               tabIndex={-1}
               aria-pressed={scope === chip.value}
               onClick={() => setScope(chip.value)}
-              className="rounded-md border border-input px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-accent/50 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+              className="rounded-md border border-input px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
             >
               {chip.label}
             </button>

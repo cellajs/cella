@@ -55,7 +55,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             variant="ghost"
             type="button"
             tabIndex={isClickable ? 0 : -1}
-            className="pointer-events-none size-(--step-icon-size) rounded-full border-2 p-0 data-[clickable=true]:pointer-events-auto data-[completed=true]:border-primary data-[current=true]:border-primary data-[completed=true]:bg-primary data-[current=true]:bg-secondary data-[completed=true]:text-primary-foreground"
+            className="pointer-events-none size-(--step-icon-size) rounded-full border-2 border-border p-0 data-[clickable=true]:pointer-events-auto data-[completed=true]:border-primary data-[current=true]:border-primary data-[completed=true]:bg-primary data-[current=true]:bg-secondary data-[completed=true]:text-primary-foreground"
             aria-current={isCurrentStep ? 'step' : undefined}
             data-current={isCurrentStep}
             data-completed={isCompletedStep}

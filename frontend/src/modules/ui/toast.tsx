@@ -65,10 +65,10 @@ function ToastList({ position }: { position: ToastPosition }) {
         <ToastPrimitive.Close
           data-slot="toast-close"
           aria-label={t('c:close')}
-          render={<Button variant="ghost" size="xs" />}
-          className="relative shrink-0 text-muted-foreground after:absolute after:-inset-2 hover:text-foreground"
+          render={<Button variant="ghost" size="icon" />}
+          className="relative size-6 shrink-0 after:absolute after:-inset-2"
         >
-          <XIcon />
+          <XIcon className="size-4" />
         </ToastPrimitive.Close>
       </ToastPrimitive.Content>
     </ToastPrimitive.Root>

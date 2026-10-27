@@ -156,7 +156,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
               </div>
               <div className="flex flex-wrap items-start gap-2">
                 <HelpText content={t('c:sso_entry_link.text')}>
-                  <Button variant="plain" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
+                  <Button variant="secondary" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
                     <CopiedIcon copied={copied} icon={CopyIcon} />
                     {t('c:sso_entry_link')}
                   </Button>

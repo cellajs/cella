@@ -5,27 +5,27 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
-  'focus-effect inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm transition-colors disabled:pointer-events-none disabled:opacity-50',
+  'focus-effect inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent bg-clip-padding font-medium text-sm transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
+      // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega. Outline keeps the input edge, rests
+      // flat and keeps its opaque page fill in dark mode, so an edgeless scope, an open state and media behind it leave it
+      // intact; link stays underlined. The intents, `soft`, outline-ghost (over media), cell, input and row are additions.
       variant: {
         default: 'intent-primary',
         brand: 'intent-brand',
         destructive: 'intent-destructive',
         success: 'intent-success',
         info: 'intent-info',
-        secondary: 'border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground dark:hover:bg-input/50',
-        // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
-        ghost: 'hover:bg-foreground/8 hover:text-accent-foreground',
-        'outline-ghost':
-          'border border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
-        link: 'link-inline text-primary',
-        cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent',
-        plain: 'intent-primary soft-bg soft-border hover:soft-bg-strong hover:soft-border-medium border text-primary',
-        input: 'border border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive',
         warning: 'intent-warning',
-        none: 'border-none bg-transparent',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        outline: 'border-input bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
+        ghost: 'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        link: 'link-inline text-primary',
+        'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
+        cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        input: 'border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive',
         // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it; only a DrawerRowSeparator between groups draws a line
         row: 'relative w-full justify-start gap-3 font-normal text-md active:bg-accent',
       },
@@ -52,15 +52,14 @@ export const buttonVariants = cva(
         variant: ['default', 'brand', 'destructive', 'success', 'info', 'warning'],
         soft: true,
         // The strong steps keep the button legible on a soft-tinted surface.
-        className:
-          'soft-bg-strong soft-border-medium hover:soft-bg-stronger hover:soft-border-strong soft-text-strong hover:soft-text-stronger border',
+        className: 'soft-bg-strong soft-border-medium hover:soft-bg-stronger hover:soft-border-strong soft-text-strong hover:soft-text-stronger',
       },
       { variant: 'default', soft: false, className: 'bg-primary text-primary-foreground hover:bg-primary/80' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground hover:bg-brand/80' },
-      { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground hover:bg-destructive/90' },
-      { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/90' },
-      { variant: 'info', soft: false, className: 'bg-info text-info-foreground hover:bg-info/90' },
-      { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/90' },
+      { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground hover:bg-destructive/80' },
+      { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/80' },
+      { variant: 'info', soft: false, className: 'bg-info text-info-foreground hover:bg-info/80' },
+      { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/80' },
       // A row's height and inset outrank the size variant: about 52px on a phone, a native action sheet row.
       { variant: 'row', className: 'h-11 px-4' },
       // A disabled solid fill is a flat tint, so it can't read as a live secondary button; a busy one keeps its fill under the spinner.

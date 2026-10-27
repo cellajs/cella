@@ -24,7 +24,7 @@ export function CallToAction() {
         >
           {t('c:start_building')}
         </Button>
-        <Button ref={buttonRef} variant="plain" size="xl" onClick={() => contactFormHandler(buttonRef)} className="rounded-full px-10">
+        <Button ref={buttonRef} variant="secondary" size="xl" onClick={() => contactFormHandler(buttonRef)} className="rounded-full px-10">
           {t('c:talk_to_us')}
         </Button>
       </div>

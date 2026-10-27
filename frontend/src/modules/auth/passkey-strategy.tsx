@@ -36,7 +36,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
   });
 
   return (
-    <Button variant={type === 'mfa' ? 'default' : 'plain'} onClick={() => passkeySignIn()} className="w-full">
+    <Button variant={type === 'mfa' ? 'default' : 'secondary'} onClick={() => passkeySignIn()} className="w-full">
       <FingerprintPatternIcon />
       <span className="truncate">{t('c:passkey.sign_in')}</span>
     </Button>

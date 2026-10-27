@@ -118,7 +118,7 @@ export function UserTheme({ buttonClassName, tooltip = false }: UserThemeProps) 
         ref={triggerRef}
         variant="ghost"
         size="icon"
-        className={cn('data-dropdowner-active:bg-foreground/8', buttonClassName)}
+        className={cn('data-dropdowner-active:bg-muted', buttonClassName)}
         aria-label={label}
         onClick={themes.length ? openDropdown : () => setMode(mode === 'light' ? 'dark' : 'light')}
       >

@@ -32,8 +32,8 @@ export function MenuSheetChannelTabs({ channel, className }: MenuSheetChannelTab
               activeOptions={{ exact: true, includeSearch: false }}
               activeProps={{ 'data-active': true }}
               className={cn(
-                'focus-effect flex h-10 items-center rounded-sm px-3 text-muted-foreground text-sm sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
-                'data-[active=true]:bg-accent/50 data-[active=true]:font-medium data-[active=true]:text-foreground',
+                'focus-effect flex h-10 items-center rounded-sm px-3 text-muted-foreground text-sm sm:hover:bg-accent sm:hover:text-foreground',
+                'data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground',
               )}
             >
               {t(label)}

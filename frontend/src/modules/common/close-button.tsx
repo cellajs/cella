@@ -24,7 +24,7 @@ export function CloseButton({ onClick, size = 'md', label = 'c:close', className
   const { icon, button } = sizeConfig[size];
 
   return (
-    <Button variant="ghost" size="icon" aria-label={t(label)} className={cn(button, 'opacity-70 hover:opacity-100', className)} onClick={onClick}>
+    <Button variant="ghost" size="icon" aria-label={t(label)} className={cn(button, className)} onClick={onClick}>
       <XIcon className={icon} />
     </Button>
   );

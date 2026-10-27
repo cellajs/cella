@@ -125,7 +125,7 @@ export function AccountAuthenticationCard() {
                 ) : (
                   <Button
                     key={id}
-                    variant="plain"
+                    variant="secondary"
                     className="sm:self-start"
                     loading={connecting === id}
                     onClick={() => connectTo(id, (search) => `${appConfig.backendAuthUrl}/${id}?${new URLSearchParams(search)}`)}
@@ -163,7 +163,7 @@ export function AccountAuthenticationCard() {
                 ) : (
                   <Button
                     key={connectionId}
-                    variant={connectionId === toConnect?.connectionId ? 'default' : 'plain'}
+                    variant={connectionId === toConnect?.connectionId ? 'default' : 'secondary'}
                     className="max-w-full sm:self-start"
                     loading={connecting === connectionId}
                     onClick={() => connectTo(connectionId, (search) => ssoStartUrl({ connectionId }, search))}

@@ -104,7 +104,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         </ul>
       </div>
 
-      <Button ref={buttonRef} variant={popular ? 'default' : 'plain'} className="mt-6 w-full" onClick={handleActionClick}>
+      <Button ref={buttonRef} variant={popular ? 'default' : 'secondary'} className="mt-6 w-full" onClick={handleActionClick}>
         {t(`c:${action}`)}
       </Button>
     </div>

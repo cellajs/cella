@@ -67,7 +67,7 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
   // The address shows once the link is sent, on the sent step.
   const emailWay = magicLinkEnabled && (
     <SubmitButton
-      variant={institutionFirst ? 'plain' : 'default'}
+      variant={institutionFirst ? 'secondary' : 'default'}
       loading={isPending}
       icon={<MailIcon />}
       className="w-full"

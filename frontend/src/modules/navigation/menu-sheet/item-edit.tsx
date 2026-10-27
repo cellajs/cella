@@ -14,7 +14,6 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
-import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -30,15 +29,14 @@ interface MembershipFlagButtonProps {
 
 function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButtonProps) {
   return (
-    <Button
-      variant="none"
-      size="sm"
-      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 text-foreground-soft text-xs leading-3 hover:text-foreground hover:underline"
+    <button
+      type="button"
+      className="link-decoration active:link-decoration-strong focus-effect focus-inset active:press -mx-1 -my-0.5 inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded-sm px-1 font-medium text-foreground-soft text-xs leading-3 transition-colors hover:text-foreground hover:underline"
       onClick={onClick}
     >
       <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
       {title}
-    </Button>
+    </button>
   );
 }
 

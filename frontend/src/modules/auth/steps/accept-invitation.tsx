@@ -75,7 +75,7 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
         <SubmitButton loading={isPending} icon={<CheckIcon />} className="w-full" onClick={() => accept(undefined, { onSuccess: leave })}>
           {t('c:accept')}
         </SubmitButton>
-        <Button variant="plain" className="w-full" disabled={isPending} onClick={leave}>
+        <Button variant="secondary" className="w-full" disabled={isPending} onClick={leave}>
           {t('c:decline')}
         </Button>
       </div>
