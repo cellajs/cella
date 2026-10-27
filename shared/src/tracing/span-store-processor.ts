@@ -1,6 +1,6 @@
 import type { Context } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
-import type { SpanData, SpanStore } from './tracing.ts';
+import type { CleanSpanAttributes, SpanData, SpanStore } from './tracing.ts';
 
 export interface SpanStoreProcessorOptions {
   /** SpanStore to push completed spans into. */
@@ -18,7 +18,7 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
   const startTime = hrTimeToMs(span.startTime);
   const endTime = hrTimeToMs(span.endTime);
 
-  const attributes: Record<string, string | number | boolean | null> = {};
+  const attributes: CleanSpanAttributes = {};
   for (const [key, value] of Object.entries(span.attributes)) {
     if (value !== undefined && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
       attributes[key] = value;

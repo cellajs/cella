@@ -1,4 +1,5 @@
 import type { ChannelEntityType, EntityActionType, EntityRole, EntityType } from '../../types.ts';
+import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
 import { allActionsDenied } from './action-helpers.ts';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
@@ -26,7 +27,6 @@ function computeEntityPermissions(
   channelType: ChannelEntityType,
   role: EntityRole,
   policies: PolicyMatrix,
-  entityActions: readonly EntityActionType[],
   homeScoped: boolean,
 ): ActionStates {
   const entityPolicies = getEntityPolicies(entityType, policies);
@@ -34,7 +34,7 @@ function computeEntityPermissions(
 
   if (!permissions) return allActionsDenied;
 
-  return recordFromKeys(entityActions, (action) => {
+  return recordFromKeys(appConfig.entityActions, (action) => {
     const value = permissions[action];
     const scoped = homeScoped && action !== 'create';
     if (value === 1) return scoped ? 'home' : true;
@@ -81,14 +81,14 @@ export const computeCan = (
 ): EntityCanMap => {
   if (!grants) return {};
 
-  const { hierarchy: h, entityActions } = resolveHierarchy(overrides);
-  const chain: readonly string[] = [channelType, ...h.getOrderedAncestors(channelType)];
+  const { hierarchy: h, orderedChannels } = resolveHierarchy(overrides);
+  const chain: readonly string[] = orderedChannels(channelType);
   const onChain = (Array.isArray(grants) ? grants : [grants]).filter((grant: CanGrant) => chain.includes(grant.channelType));
   if (onChain.length === 0) return {};
 
   /** One grant's cells for an entity type of the map. */
   const statesOf = ({ channelType: grantChannel, role }: CanGrant, entityType: EntityType): ActionStates => {
-    const cells = (homeScoped: boolean) => computeEntityPermissions(entityType, grantChannel, role, policies, entityActions, homeScoped);
+    const cells = (homeScoped: boolean) => computeEntityPermissions(entityType, grantChannel, role, policies, homeScoped);
     if (!h.isProduct(entityType) || h.elevatedGrants.has(`${grantChannel}:${role}`)) return cells(false);
     if (grantChannel !== channelType) return allActionsDenied;
     return cells(h.getParent(entityType) !== grantChannel);
@@ -97,7 +97,9 @@ export const computeCan = (
   const map: EntityCanMap = {};
   for (const entityType of [channelType, ...h.getOrderedDescendants(channelType)] as EntityType[]) {
     const perGrant = onChain.map((grant: CanGrant) => statesOf(grant, entityType));
-    map[entityType] = perGrant.reduce((merged, states) => recordFromKeys(entityActions, (action) => eitherState(merged[action], states[action])));
+    map[entityType] = perGrant.reduce((merged, states) =>
+      recordFromKeys(appConfig.entityActions, (action) => eitherState(merged[action], states[action])),
+    );
   }
 
   return map;

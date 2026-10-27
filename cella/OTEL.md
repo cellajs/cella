@@ -154,7 +154,7 @@ The two are not joined: the WAL carries no trace context, so the change a reques
 
 ## Data model
 
-**SpanStore** is an in-memory ring buffer of finished spans (default 500) with pub/sub and prefix filtering, fed by **SpanStoreProcessor** on span end. The frontend devtools and CDC debug logging read it.
+**SpanStore** is an in-memory ring buffer of finished spans (default 500) with pub/sub, fed by **SpanStoreProcessor** on span end. The frontend devtools and CDC debug logging read it.
 
 ## Health endpoints
 

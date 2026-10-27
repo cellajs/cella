@@ -1,8 +1,9 @@
 import type { ChannelEntityType } from '../../../types.ts';
+import { appConfig } from '../../config-builder/app-config.ts';
 import { allActionsDenied, createActionRecord } from '../action-helpers.ts';
-import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions.ts';
+import { conditionRowOf, isRowCondition, matchesRowCondition, type RowConditionName } from '../row-conditions.ts';
 import type { PolicyMatrix } from '../types.ts';
-import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check.ts';
+import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId, type MembershipIndex } from './check.ts';
 import { resolveHierarchy } from './resolve-hierarchy.ts';
 import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types.ts';
 import { validateSubject } from './validation.ts';
@@ -47,38 +48,36 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
   subject: SubjectForPermission,
   options?: ResolveAccessOptions,
 ): PermissionDecision<T>[] {
-  const { hierarchy, entityActions, getRoles } = resolveHierarchy(options);
+  const { hierarchy, getRoles, orderedChannels } = resolveHierarchy(options);
   validateSubject(subject, undefined, hierarchy);
 
-  const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ChannelEntityType[];
-  const orderedChannels = (hierarchy.isChannel(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors]) as ChannelEntityType[];
-
+  const channels = orderedChannels(subject.entityType);
   const policyIndex = buildPolicyIndex(policies, subject.entityType);
 
   // Row conditions this subject's policies reference: besides roles and the admin bit, the only
   // places an actor's identity enters a decision.
   const conditionNames: RowConditionName[] = [];
   for (const permissions of policyIndex.values()) {
-    for (const action of entityActions) {
+    for (const action of appConfig.entityActions) {
       const value = permissions[action];
       if (isRowCondition(value) && !conditionNames.includes(value)) conditionNames.push(value);
     }
   }
 
-  const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
+  const conditionRow = conditionRowOf(subject);
 
   const channelLevels: Array<[ChannelEntityType, string]> = [];
-  for (const channelType of orderedChannels) {
+  for (const channelType of channels) {
     const channelId = getSubjectChannelId(subject, channelType);
     if (channelId) channelLevels.push([channelType, channelId]);
   }
-  const primaryChannel = orderedChannels[0];
+  const primaryChannel = channels[0];
   const primaryChannelId = primaryChannel ? getSubjectChannelId(subject, primaryChannel) : undefined;
 
   const memo = new Map<string, PermissionDecision<T>>();
 
   return accesses.map((access) => {
-    let membershipIndex: ReturnType<typeof getMembershipIndex<T>>;
+    let membershipIndex: MembershipIndex<T>;
     try {
       membershipIndex = getMembershipIndex(access.memberships);
     } catch (error) {
@@ -106,18 +105,12 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
 
     let decision = memo.get(key);
     if (!decision) {
-      decision = checkWithIndices(
-        membershipIndex,
-        policyIndex,
-        subject,
-        orderedChannels,
-        getRoles,
-        entityActions,
-        access.isSystemAdmin === true,
-        access.actorId,
-        options?.publicGrants,
-        options?.elevatedGrants,
-      );
+      decision = checkWithIndices(membershipIndex, policyIndex, subject, channels, getRoles, {
+        actorId: access.actorId,
+        isSystemAdmin: access.isSystemAdmin,
+        publicGrants: options?.publicGrants,
+        elevatedGrants: options?.elevatedGrants,
+      });
       memo.set(key, decision);
     }
 

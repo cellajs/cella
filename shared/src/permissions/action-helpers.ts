@@ -1,6 +1,7 @@
 import type { EntityActionType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
+import { matchesRowCondition } from './row-conditions.ts';
 import type { CanState } from './types.ts';
 
 export function createActionRecord<T>(valueFn: (action: EntityActionType) => T): Record<EntityActionType, T> {
@@ -24,7 +25,7 @@ export type CanHome = { row: string | null; channel: string };
  */
 export const resolveCan = (permission: CanState | undefined, entityCreatedBy?: string | null, actorId?: string, home?: CanHome): boolean => {
   if (typeof permission !== 'string') return permission === true;
-  const own = !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
+  const own = matchesRowCondition('own', { createdBy: entityCreatedBy }, { actorId });
   const atHome = !!home?.row && home.row === home.channel;
   switch (permission) {
     case 'own':

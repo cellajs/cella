@@ -79,30 +79,25 @@ export const getRelativeOrder = (items: OrderedItem[], targetOrder: number, sour
   const sorted = items.filter((item) => item.id !== sourceId).toSorted((a, b) => a.displayOrder - b.displayOrder);
   const taken = new Set(sorted.map((i) => i.displayOrder));
 
+  // Past the target on the drop side, snapped to a clean integer even when targetOrder is fractional.
+  const pastTarget = () => (insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap);
+
   const targetIdx = sorted.findIndex((item) => item.displayOrder === targetOrder);
   if (targetIdx === -1) {
     // Dropped on itself
     if (sourceOrder === targetOrder) return sourceOrder;
-    // Target absent: extend past it on the requested side, snapped to an integer.
-    return insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap;
+    return pastTarget();
   }
 
-  const [prev, next] = insertBefore ? [sorted[targetIdx - 1]?.displayOrder, targetOrder] : [targetOrder, sorted[targetIdx + 1]?.displayOrder];
+  const neighbor = sorted[insertBefore ? targetIdx - 1 : targetIdx + 1]?.displayOrder;
+  const [prev, next] = insertBefore ? [neighbor, targetOrder] : [targetOrder, neighbor];
 
   // Dropped on the edge facing it: the slot is unchanged, so a new order would only churn a write
   const staysInSlot = sourceOrder !== undefined && (prev === undefined || prev < sourceOrder) && (next === undefined || sourceOrder < next);
   if (staysInSlot) return sourceOrder;
 
-  // One neighbor: extend past it to a clean integer, even when targetOrder is fractional.
-  if (prev === undefined && next !== undefined) return Math.floor(next) - orderGap;
-  if (next === undefined && prev !== undefined) return Math.ceil(prev) + orderGap;
-
-  if (prev === undefined || next === undefined) return getOrderBetween(prev, next) ?? targetOrder;
-  if (next - prev < Number.EPSILON * 8) return targetOrder + (insertBefore ? -orderGap : orderGap);
+  // No neighbor on the drop side.
+  if (prev === undefined || next === undefined) return pastTarget();
+  if (next - prev < minOrderGap) return targetOrder + (insertBefore ? -orderGap : orderGap);
   return pickCleanOrder(prev, next, taken);
-};
-
-/** The visual bottom of an ascending list. */
-export const getNewItemOrder = (existingOrders: number[]): number => {
-  return getEdgeOrder(existingOrders, 'bottom', true);
 };

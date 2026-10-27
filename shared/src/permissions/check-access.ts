@@ -3,24 +3,27 @@ import { accessScopes, policyMatrix, publicReadGrants } from '../../config/permi
 import type { EntityActionType, EntityType } from '../../types.ts';
 import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
-import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
+import { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access.ts';
 import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './engine/types.ts';
 
 /**
- * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
- * omitted actor id a type error, so no actor-based condition is denied by accident. `actorId` is a user or
- * service account id; `scopes` is the mask of the API key or access token that proved the caller (null or absent = unmasked; a session is never masked).
+ * A signed-in actor as the checks read it. `actorId` is a user or service account id. `scopes` is the mask of the API
+ * key or access token that proved the caller, required so a hand-built actor states its mask (null = unmasked, what a
+ * session passes) and can never fail open by omission.
  */
-export type PredicateActor = { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null } | { anonymous: true };
+type ActorFields = { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null };
+
+/**
+ * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
+ * omitted actor id a type error, so no actor-based condition is denied by accident.
+ */
+export type PredicateActor = ActorFields | { anonymous: true };
 
 /**
  * Memberships and actor travel together, so no call site can pair one user's memberships with
- * another's actor. An anonymous access carries no memberships. `scopes` is required so a hand-built access states
- * its mask (null = unmasked) and can never fail open by omission.
+ * another's actor. An anonymous access carries no memberships.
  */
-export type Access<T extends AccessMembership = AccessMembership> =
-  | { actorId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
-  | { anonymous: true };
+export type Access<T extends AccessMembership = AccessMembership> = (ActorFields & { memberships: T[] }) | { anonymous: true };
 
 /**
  * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its actor's grants allow,
@@ -48,13 +51,8 @@ export interface BatchPermissionResult<T extends AccessMembership = AccessMember
   decisions: Map<string, PermissionDecision<T>>;
 }
 
-export interface CheckAccessFanoutOptions {
-  /**
-   * `'throw'` (default) reports a malformed membership like the single-access form. `'deny'`
-   * fail-closes that one access and keeps resolving the rest, which stream fan-out needs.
-   */
-  onInvalidMembership?: 'throw' | 'deny';
-}
+/** What the fan-out takes beyond the configured grants. */
+export type CheckAccessFanoutOptions = Pick<ResolveAccessOptions, 'onInvalidMembership'>;
 
 // Every entry point injects the same public and elevated grants. SQL collection predicates are
 // the tested database-side projection of the same decisions.
@@ -85,12 +83,9 @@ export function checkAccessBatch<T extends AccessMembership>(
 ): BatchPermissionResult<T> {
   const engineAccess = toEngineAccess(access);
   const decisions = getAllDecisions(policyMatrix, engineAccess.memberships, subjects, accessOptions(engineAccess));
-  const entityTypes = new Map(subjects.map((subject) => [subject.id, subject.entityType]));
   const results = new Map<string, PermissionResult<T>>();
   for (const [id, decision] of decisions) {
-    const entityType = entityTypes.get(id);
-    const inScope = entityType ? scopeAllows(access, entityType, action) : true;
-    results.set(id, { allowed: decision.can[action] && inScope, membership: decision.membership });
+    results.set(id, { allowed: decision.can[action] && scopeAllows(access, decision.subject.entityType, action), membership: decision.membership });
   }
   return { results, decisions };
 }

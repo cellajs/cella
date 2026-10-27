@@ -77,10 +77,6 @@ export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => 
   return { source, summaryLength };
 };
 
-/** Fallback for summary sources the per-side HTML converters cannot render. */
-export const blockPlainText = (block: DescriptionBlock): string =>
-  Array.isArray(block.content) ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('') : '';
-
 /** Everything the app derives from one stored description. */
 export type DerivedDocument = {
   /** Block 0's inline text (`titleFromDocument`): the title of a title document, empty when block 0 has none (an image). */

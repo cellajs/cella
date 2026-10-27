@@ -7,6 +7,9 @@ export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span
 /** Aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 
+/** No undefined values. */
+export type CleanSpanAttributes = Record<string, string | number | boolean | null>;
+
 /** Stored and displayed shape; real OTel tracers create the spans. @see span-store-processor.ts */
 export interface SpanData {
   traceId: string;
@@ -15,7 +18,7 @@ export interface SpanData {
   startTime: number;
   endTime: number | null;
   duration: number | null;
-  attributes: Record<string, string | number | boolean | null>;
+  attributes: CleanSpanAttributes;
   status: SpanStatus;
   events: SpanEvent[];
   parentSpanId?: string;
@@ -47,7 +50,6 @@ export function remoteParentContext(parent: Pick<TraceContext, 'traceId' | 'span
 
 export interface SpanStoreOptions {
   maxSpans?: number;
-  onSpanEnd?: (span: SpanData) => void;
 }
 
 export interface SpanStats {
@@ -63,7 +65,7 @@ export type SpanSubscriber = (spans: SpanData[]) => void;
 
 /** In-memory, with subscription support. */
 export function createSpanStore(options: SpanStoreOptions = {}) {
-  const { maxSpans = 500, onSpanEnd } = options;
+  const { maxSpans = 500 } = options;
 
   const spans: SpanData[] = [];
   const subscribers = new Set<SpanSubscriber>();
@@ -73,7 +75,6 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
     if (spans.length > maxSpans) {
       spans.splice(0, spans.length - maxSpans);
     }
-    onSpanEnd?.(span);
     const snapshot = [...spans];
     for (const subscriber of subscribers) {
       subscriber(snapshot);
@@ -82,10 +83,6 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
 
   function getSpans(): SpanData[] {
     return [...spans];
-  }
-
-  function getSpansByPrefix(prefix: string): SpanData[] {
-    return spans.filter((s) => s.name.startsWith(prefix));
   }
 
   function subscribe(callback: SpanSubscriber): () => void {
@@ -101,21 +98,7 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
     }
   }
 
-  function getStats(): SpanStats {
-    return computeSpanStats(spans);
-  }
-
-  return {
-    addSpan,
-    getSpans,
-    getSpansByPrefix,
-    subscribe,
-    clear,
-    getStats,
-    get length() {
-      return spans.length;
-    },
-  };
+  return { addSpan, getSpans, subscribe, clear };
 }
 
 export type SpanStore = ReturnType<typeof createSpanStore>;
@@ -157,9 +140,6 @@ export interface IncomingTraceContext {
 }
 
 // Attribute helpers
-
-/** No undefined values. */
-export type CleanSpanAttributes = Record<string, string | number | boolean | null>;
 
 export interface CdcInput {
   lsn: string;

@@ -1,15 +1,14 @@
-import { hierarchy } from '../../../config/hierarchy-config.ts';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 /**
- * `entityGuards` defaults to the real config's hierarchy. The engine passes its own, possibly
- * synthetic, so a subject whose entity type exists only in a fixture still validates.
+ * The engine passes its own hierarchy as `entityGuards`, possibly synthetic, so a subject whose entity type exists only
+ * in a fixture still validates.
  */
 export const validateSubject = (
   subject: SubjectForPermission,
-  index?: number,
-  entityGuards?: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
+  index: number | undefined,
+  entityGuards: Pick<EntityHierarchy, 'isChannel' | 'isProduct'>,
 ): void => {
   const prefix = index !== undefined ? `Subject[${index}]` : 'Subject';
 
@@ -17,8 +16,8 @@ export const validateSubject = (
     throw new Error(`[Permission] ${prefix} missing entityType`);
   }
 
-  const isChannel = (entityGuards ?? hierarchy).isChannel(subject.entityType);
-  const isProduct = (entityGuards ?? hierarchy).isProduct(subject.entityType);
+  const isChannel = entityGuards.isChannel(subject.entityType);
+  const isProduct = entityGuards.isProduct(subject.entityType);
   if (!isChannel && !isProduct) {
     throw new Error(`[Permission] ${prefix} has invalid entityType: ${subject.entityType}`);
   }

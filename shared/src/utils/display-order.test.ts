@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultOrder, getEdgeOrder, getNewItemOrder, getOrderBetween, getRelativeOrder, orderGap } from './display-order.ts';
+import { defaultOrder, getEdgeOrder, getOrderBetween, getRelativeOrder, orderGap } from './display-order.ts';
 
 describe('getOrderBetween', () => {
   it('returns defaultOrder when both bounds are undefined', () => {
@@ -53,16 +53,6 @@ describe('getEdgeOrder', () => {
     it("'bottom' returns min - gap", () => {
       expect(getEdgeOrder([10, 20, 30], 'bottom', false)).toBe(0);
     });
-  });
-});
-
-describe('getNewItemOrder', () => {
-  it('returns defaultOrder for an empty list', () => {
-    expect(getNewItemOrder([])).toBe(defaultOrder);
-  });
-
-  it('returns max + gap (ascending bottom)', () => {
-    expect(getNewItemOrder([10, 20, 30])).toBe(40);
   });
 });
 

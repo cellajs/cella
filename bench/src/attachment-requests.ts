@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { hierarchy } from 'shared';
+import { hashSourceId } from 'shared/utils/hash-source-id';
 import { uuidv7 } from 'uuidv7';
 import { ORG_PATH } from './bench-user';
 import { TOTAL_ATTACHMENTS } from './seeds/attachment-constants';
@@ -10,14 +11,6 @@ import { attachmentId } from './seeds/ids';
 export const CHURN_BATCH_SIZE = 10;
 /** Past the seeded attachments and still inside the bench id band, so the next seed removes what a run leaves. */
 const FIRST_CHURN_INDEX = 0x1000000;
-
-function hashSourceId(sourceId: string): string {
-  let hash = 0;
-  for (let i = 0; i < sourceId.length; i++) {
-    hash = ((hash << 5) - hash + sourceId.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash).toString(36).padStart(5, '0').slice(0, 5);
-}
 
 const hlcTimestamp = (sourceId: string, counter = 0) => `${Date.now()}:${String(counter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
 

@@ -1,4 +1,6 @@
-import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import { appConfig } from '../config-builder/app-config.ts';
+import { recordFromKeys } from '../config-builder/utils.ts';
 import { type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
 import type { PublicReadGrants } from './public-read.ts';
@@ -8,26 +10,19 @@ import type {
   EntityActionPermissions,
   EntityPolicies,
   PolicyCallback,
-  PolicyCellInput,
   PolicyConfiguration,
   PolicyEntry,
   PolicyMatrix,
 } from './types.ts';
 
-const createChannelPolicyBuilder = (
-  channelType: ChannelEntityType,
-  roles: readonly string[],
-  entries: PolicyEntry[],
-  entityActions: readonly EntityActionType[],
-): ChannelPolicyBuilder => {
-  const builder: Record<string, (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void> = {};
+const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly string[], entries: PolicyEntry[]): ChannelPolicyBuilder => {
+  const builder: Record<string, ChannelPolicyBuilder[EntityRole]> = {};
 
   for (const role of roles) {
-    builder[role] = (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => {
+    builder[role] = (permissions) => {
       // Expand to a full record so the engine always reads an explicit value; an omitted action
       // defaults to 0 (denied).
-      const fullPermissions = {} as EntityActionPermissions;
-      for (const action of entityActions) {
+      const fullPermissions = recordFromKeys(appConfig.entityActions, (action) => {
         const value = permissions[action] ?? 0;
         // A row-conditioned create is invalid because its absent row cannot satisfy the condition.
         if (action === 'create' && isRowCondition(value)) {
@@ -36,29 +31,13 @@ const createChannelPolicyBuilder = (
               'which can never match: the row does not exist yet. Use 1 or 0 for create.',
           );
         }
-        fullPermissions[action] = value;
-      }
+        return value;
+      });
       entries.push({ channelType, role, permissions: fullPermissions });
     };
   }
 
   return builder as ChannelPolicyBuilder;
-};
-
-const createChannelBuilders = (
-  entries: PolicyEntry[],
-  channelEntityTypes: readonly ChannelEntityType[],
-  getRoles: (channelType: string) => readonly string[],
-  entityActions: readonly EntityActionType[],
-): Record<ChannelEntityType, ChannelPolicyBuilder> => {
-  const channels = {} as Record<ChannelEntityType, ChannelPolicyBuilder>;
-
-  for (const channelType of channelEntityTypes) {
-    const roles = getRoles(channelType);
-    channels[channelType] = createChannelPolicyBuilder(channelType, roles, entries, entityActions);
-  }
-
-  return channels;
 };
 
 export interface PermissionsConfigResult {
@@ -77,13 +56,13 @@ export const configurePermissions = (
   const policies: PolicyMatrix = {};
   const publicReadGrants: PublicReadGrants = {};
 
-  const { entityActions, channelEntityTypes, getRoles } = resolveHierarchy(overrides);
+  const { channelEntityTypes, getRoles } = resolveHierarchy(overrides);
 
   const permissionableTypes = entityTypes.filter((type): type is ChannelEntityType | ProductEntityType => type !== 'user');
 
   for (const entityType of permissionableTypes) {
     const entries: PolicyEntry[] = [];
-    const channels = createChannelBuilders(entries, channelEntityTypes, getRoles, entityActions);
+    const channels = recordFromKeys(channelEntityTypes, (channelType) => createChannelPolicyBuilder(channelType, getRoles(channelType), entries));
 
     const config: PolicyConfiguration = {
       entityType,

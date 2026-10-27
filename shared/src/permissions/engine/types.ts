@@ -1,6 +1,6 @@
 import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types.ts';
-import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { PublicReadGrants } from '../public-read.ts';
+import type { HierarchyOverrides } from './resolve-hierarchy.ts';
 
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 
@@ -49,7 +49,7 @@ export interface PermissionDecision<T extends AccessMembership = AccessMembershi
   membership: T | null;
 }
 
-export interface PermissionCheckOptions {
+export interface PermissionCheckOptions extends HierarchyOverrides {
   isSystemAdmin?: boolean;
   /** Acting actor id (a user or a service account). Required by `own` conditions. */
   actorId?: string;
@@ -62,8 +62,4 @@ export interface PermissionCheckOptions {
    * subtree-wide) for callers driving the engine with synthetic policies.
    */
   elevatedGrants?: ReadonlySet<string>;
-  /** Synthetic hierarchy override; defaults to the app singleton. */
-  hierarchy?: EntityHierarchy;
-  /** Action set override; defaults to `appConfig.entityActions`. */
-  entityActions?: readonly EntityActionType[];
 }

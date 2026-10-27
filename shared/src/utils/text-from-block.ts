@@ -67,18 +67,15 @@ const inlineText = (item: unknown): string => {
 
 const inlineContentText = (content: unknown[]): string => collapseWhitespace(content.map(inlineText).join(' '));
 
+/** The inline content of every cell of a table block, row by row; none for any other content. */
+const tableCellContents = (content: Exclude<Block['content'], unknown[]>): unknown[][] =>
+  content?.type === 'tableContent' && Array.isArray(content.rows)
+    ? content.rows.flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? cell.content : [])))
+    : [];
+
 /** Text of inline content, or of every cell when the block holds a table. */
-const contentText = (content: Block['content']): string => {
-  if (Array.isArray(content)) return inlineContentText(content);
-  if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    return collapseWhitespace(
-      content.rows
-        .flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? inlineContentText(cell.content) : '')))
-        .join(' '),
-    );
-  }
-  return '';
-};
+const contentText = (content: Block['content']): string =>
+  Array.isArray(content) ? inlineContentText(content) : collapseWhitespace(tableCellContents(content).map(inlineContentText).join(' '));
 
 /** Covers inline content, table content, file-based blocks and children. */
 export const getTextFromBlock = (block: Block): string => {
@@ -115,18 +112,8 @@ export const getSearchableTextFromBlock = (block: Block): string => {
   const { content, children } = block;
   const parts: string[] = [];
 
-  if (Array.isArray(content)) {
-    parts.push(getSearchableTextFromInlineContent(content));
-  } else if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    parts.push(
-      content.rows
-        .flatMap((row) =>
-          row.cells.flatMap((cell) => ('content' in cell && Array.isArray(cell.content) ? getSearchableTextFromInlineContent(cell.content) : '')),
-        )
-        .filter(Boolean)
-        .join(' '),
-    );
-  }
+  if (Array.isArray(content)) parts.push(getSearchableTextFromInlineContent(content));
+  else parts.push(tableCellContents(content).map(getSearchableTextFromInlineContent).filter(Boolean).join(' '));
 
   const props: unknown = block.props;
   if (mediaBlockTypes.has(block.type) && isRecord(props)) {

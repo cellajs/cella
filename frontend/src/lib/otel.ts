@@ -6,6 +6,7 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
+import { escapeRegExp } from 'shared/utils/escape-regexp';
 import { mapleEnabled } from '~/lib/maple-enabled';
 
 // `@opentelemetry/instrumentation` and `-fetch` are pinned to the line @maple-dev/browser depends on (package.json),
@@ -24,7 +25,7 @@ if (!mapleEnabled) {
 
   // Guarded for test environments where appConfig is partially mocked.
   if (appConfig.backendUrl) {
-    const backendOrigin = new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`);
+    const backendOrigin = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}(/|$)`);
     registerInstrumentations({
       instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })],
     });
