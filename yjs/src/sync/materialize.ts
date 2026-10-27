@@ -1,4 +1,4 @@
-import { stateToBlocksJson as blocksJsonOf } from '#/modules/yjs/helpers/description-update';
+import { stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
 import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { docKey } from '../constants';
 import { env } from '../env';
@@ -19,6 +19,9 @@ export type MaterializeResult = 'ok' | 'gone' | 'permanent' | 'retry';
 
 /** Refusals a later attempt can overcome, so they never count as permanent. */
 const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
+
+/** How long a materialize request may take before it counts as a retry: the caller holds the document lock. */
+const materializeTimeoutMs = 10_000;
 
 /**
  * POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret.
@@ -44,6 +47,7 @@ export async function postMaterialize(
         serverRowIds,
         description,
       }),
+      signal: AbortSignal.timeout(materializeTimeoutMs),
     });
     if (res.ok) return 'ok';
     if (res.status === 410) {
@@ -61,10 +65,10 @@ export async function postMaterialize(
   }
 }
 
-/** Convert a Y.Doc state to blocks JSON with the backend's headless converter; null, logged with `doc`, when it can't be parsed. */
-export function stateToBlocksJson(state: Uint8Array, doc: YjsDocKey): string | null {
+/** Converts a Y.Doc state to blocks JSON with the backend's headless converter; null, logged with `doc`, when it can't be parsed. */
+export function stateToBlocksJsonOrNull(state: Uint8Array, doc: YjsDocKey): string | null {
   try {
-    return blocksJsonOf(state);
+    return stateToBlocksJson(state);
   } catch (err) {
     log.error(`Compaction: unparseable state for ${docKey(doc)}, keeping the log`, { err });
     return null;

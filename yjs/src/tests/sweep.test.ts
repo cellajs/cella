@@ -6,9 +6,9 @@ vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
 
 const { runSweep, startPeriodicSweep } = await import('../sync/sweep');
-const { listStaleDocs, deleteDoc } = await import('../data/storage');
+const { findStaleDocuments, deleteDocument } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
-const { getCollab, joinCollab, withDocLock } = await import('../sync/session-manager');
+const { getCollab, joinCollab, withDocumentLock } = await import('../sync/session-manager');
 
 const staleRow = (overrides: Record<string, unknown> = {}) => ({
   entityType: 'task',
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 describe('runSweep', () => {
   it('must not delete the document rows it writes: every unwritten log goes through the shared routine, and the rows stay', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2', organizationId: null })]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2', organizationId: null })]);
 
     await runSweep();
 
@@ -32,36 +32,36 @@ describe('runSweep', () => {
     // As the system, in the scope the row stored: no user context.
     expect(compactDocument).toHaveBeenCalledWith(staleRow(), null);
     expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }), null);
-    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(deleteDocument).not.toHaveBeenCalled();
     expect(getCollab(staleRow())).toBeUndefined();
   });
 
   it('deletes the rows of a document whose entity is gone', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow()]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow()]);
     vi.mocked(compactDocument).mockResolvedValueOnce('gone');
     await runSweep();
-    expect(deleteDoc).toHaveBeenCalledWith(staleRow());
+    expect(deleteDocument).toHaveBeenCalledWith(staleRow());
   });
 
   it('keeps the log when it was not written or compaction throws', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' }), staleRow({ entityId: 'entity-3' })]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' }), staleRow({ entityId: 'entity-3' })]);
     vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockResolvedValueOnce('permanent').mockRejectedValueOnce(new Error('db down'));
     await runSweep();
-    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(deleteDocument).not.toHaveBeenCalled();
   });
 
   it('skips a document that has a live session in this process', async () => {
     const live = mockScope({ entityId: 'entity-live' });
     joinCollab(live, mockWebSocket() as never);
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow({ entityId: 'entity-live' })]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow({ entityId: 'entity-live' })]);
     await runSweep();
     expect(compactDocument).not.toHaveBeenCalled();
-    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(deleteDocument).not.toHaveBeenCalled();
   });
 
   it('a socket that joins while the sweep writes keeps the session, and its handshake waits for the write', async () => {
     const doc = staleRow({ entityId: 'entity-joining' });
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([doc]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([doc]);
     const compaction = deferred();
     vi.mocked(compactDocument).mockImplementationOnce(async () => {
       await compaction.promise;
@@ -75,7 +75,7 @@ describe('runSweep', () => {
     const joiner = mockWebSocket();
     const session = joinCollab(mockScope({ entityId: 'entity-joining' }), joiner as never);
     const handshake = vi.fn();
-    const handshakeDone = withDocLock(session, async () => handshake());
+    const handshakeDone = withDocumentLock(session, async () => handshake());
     await flushMicrotasks();
     expect(handshake).not.toHaveBeenCalled();
 
@@ -90,7 +90,7 @@ describe('runSweep', () => {
   });
 
   it('a listing failure is logged and the sweep returns', async () => {
-    vi.mocked(listStaleDocs).mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(findStaleDocuments).mockRejectedValueOnce(new Error('db down'));
     await expect(runSweep()).resolves.toBeUndefined();
     expect(compactDocument).not.toHaveBeenCalled();
   });
@@ -104,17 +104,17 @@ describe('the periodic sweep', () => {
   it('sweeps every yjsCleanupDelayMs while the relay stays up, so rows posted over HTTP are written without a restart (D15)', async () => {
     vi.useFakeTimers();
     const doc = staleRow({ entityId: 'entity-posted' });
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([]).mockResolvedValueOnce([doc]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([]).mockResolvedValueOnce([doc]);
     const stop = startPeriodicSweep();
     try {
       await vi.advanceTimersByTimeAsync(yjsCleanupDelayMs);
-      expect(listStaleDocs).toHaveBeenCalledTimes(1);
+      expect(findStaleDocuments).toHaveBeenCalledTimes(1);
       expect(compactDocument).not.toHaveBeenCalled();
 
       // The rows posted since are listed once they are older than the grace, at the next run.
       await vi.advanceTimersByTimeAsync(yjsCleanupDelayMs);
-      expect(listStaleDocs).toHaveBeenCalledTimes(2);
-      expect(listStaleDocs).toHaveBeenLastCalledWith(yjsCleanupDelayMs);
+      expect(findStaleDocuments).toHaveBeenCalledTimes(2);
+      expect(findStaleDocuments).toHaveBeenLastCalledWith(yjsCleanupDelayMs);
       expect(compactDocument).toHaveBeenCalledWith(doc, null);
     } finally {
       stop();
@@ -122,12 +122,12 @@ describe('the periodic sweep', () => {
 
     // Stopped, as at shutdown: no run comes due.
     await vi.advanceTimersByTimeAsync(3 * yjsCleanupDelayMs);
-    expect(listStaleDocs).toHaveBeenCalledTimes(2);
+    expect(findStaleDocuments).toHaveBeenCalledTimes(2);
   });
 
   it('must not run two sweeps at once: a run that comes due while one runs joins it', async () => {
     const listing = deferred();
-    vi.mocked(listStaleDocs).mockImplementationOnce(async () => {
+    vi.mocked(findStaleDocuments).mockImplementationOnce(async () => {
       await listing.promise;
       return [staleRow({ entityId: 'entity-once' })];
     });
@@ -137,21 +137,21 @@ describe('the periodic sweep', () => {
     expect(second).toBe(first);
     listing.release();
     await first;
-    expect(listStaleDocs).toHaveBeenCalledTimes(1);
+    expect(findStaleDocuments).toHaveBeenCalledTimes(1);
     expect(compactDocument).toHaveBeenCalledTimes(1);
 
     // Positive control: once it ended, the next run lists again.
     await runSweep();
-    expect(listStaleDocs).toHaveBeenCalledTimes(2);
+    expect(findStaleDocuments).toHaveBeenCalledTimes(2);
   });
 
   it('keeps sweeping after a run that failed', async () => {
     vi.useFakeTimers();
-    vi.mocked(listStaleDocs).mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(findStaleDocuments).mockRejectedValueOnce(new Error('db down'));
     const stop = startPeriodicSweep();
     try {
       await vi.advanceTimersByTimeAsync(2 * yjsCleanupDelayMs);
-      expect(listStaleDocs).toHaveBeenCalledTimes(2);
+      expect(findStaleDocuments).toHaveBeenCalledTimes(2);
     } finally {
       stop();
     }

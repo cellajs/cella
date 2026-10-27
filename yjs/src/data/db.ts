@@ -5,7 +5,7 @@ import { createPgConnection, type Tx, transactionOpenedWith } from '#/db/create-
 import { tenantTransactionOpening } from '#/db/tenant-transaction-opening';
 import { env } from '../env';
 
-// Production requires the provisioned RDB CA to prevent a silent TLS downgrade.
+// Production requires the provisioned RDB CA, so the TLS connection is always verified.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
@@ -48,7 +48,7 @@ export function createListenerClient(): pg.Client {
   });
 }
 
+/** Ends the pool once its connections are released: the last step of the relay's shutdown. */
 export async function closeDb(): Promise<void> {
-  // The factory always constructs a pg.Pool ($client is only narrower for other drivers).
-  await (db.$client as pg.Pool).end();
+  await db.$client.end();
 }

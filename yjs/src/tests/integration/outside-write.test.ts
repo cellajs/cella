@@ -57,7 +57,7 @@ const { postMaterialize } = await import('../../sync/materialize');
 const { getCollab } = await import('../../sync/session-manager');
 const { logListenerStatus, startLogListener, stopLogListener } = await import('../../data/listener');
 const { listenerApplicationName, withRlsTx } = await import('../../data/db');
-const { loadDocument } = await import('../../data/storage');
+const { findDocument } = await import('../../data/storage');
 const { stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
 const { retireYjsDocuments } = await import('#/modules/yjs/operations/retire-yjs-documents');
 
@@ -170,7 +170,7 @@ describe('outside writes reach live sessions', () => {
     expect(client.generations).toHaveLength(1);
     expect(blockGroups(client.doc)).toBe(1);
     // The stored row is server-origin: no editor is credited for it.
-    expect((await loadDocument(scope))!.rows.map((row) => row.userId)).toEqual([null]);
+    expect((await findDocument(scope))!.rows.map((row) => row.userId)).toEqual([null]);
     client.provider.destroy();
   });
 
@@ -199,7 +199,7 @@ describe('a push over HTTP', () => {
   it('reaches a live client without a reconnect: appended with no notification in its transaction, announced after its commit', async () => {
     const scope = await attachment(paragraphs('typed in the editor'));
     const client = await connectClient(relay.baseUrl, scope);
-    const read = (await loadDocument(scope))!;
+    const read = (await findDocument(scope))!;
     // A client that cannot reach the relay, another user's.
     const pusher = randomUUID();
 
@@ -273,7 +273,7 @@ describe('the seed transaction', () => {
     // Both type into the paragraph at once, as two first writers would.
     firstParagraph(one.doc).insert(0, [new Y.XmlText('one ')]);
     firstParagraph(two.doc).insert(0, [new Y.XmlText('two ')]);
-    await until(async () => (await loadDocument(scope))!.rows.length >= 2, 2000);
+    await until(async () => (await findDocument(scope))!.rows.length >= 2, 2000);
     await recordOutsideWrite(scope, paragraphs('written'), { updateEntity: true });
 
     for (const client of [one, two]) {
@@ -306,7 +306,7 @@ describe('a deleted entity', () => {
     expect(client.closes[0]).toBe(1013);
     expect(getCollab(scope)).toBeUndefined();
     // Nothing seeds a document for it again.
-    expect(await loadDocument(scope)).toBeNull();
+    expect(await findDocument(scope)).toBeNull();
   });
 });
 

@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
-import type { SocketContext } from '../constants';
+import type { SocketContext } from '../server/upgrade';
 
 interface TokenOptions {
   userId: string;
@@ -180,15 +180,15 @@ export interface MockWebSocket {
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
-  loadDocument: vi.fn().mockResolvedValue(null),
+  findDocument: vi.fn().mockResolvedValue(null),
   seedDocument: vi.fn().mockResolvedValue({ generation: 'gen-1', base: new Uint8Array(), rows: [] }),
   appendUpdate: vi.fn().mockResolvedValue({ status: 'appended', id: 1 }),
-  readLogOf: vi.fn().mockResolvedValue([]),
-  compactState: vi.fn().mockResolvedValue('ok'),
+  findLog: vi.fn().mockResolvedValue([]),
+  foldLog: vi.fn().mockResolvedValue('ok'),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
-  deleteDoc: vi.fn().mockResolvedValue(undefined),
-  touchDoc: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
-  listStaleDocs: vi.fn().mockResolvedValue([]),
+  deleteDocument: vi.fn().mockResolvedValue(undefined),
+  stampDocumentLive: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
+  findStaleDocuments: vi.fn().mockResolvedValue([]),
 });
 
 /** A logged row as the fake storage keeps it: a client's under its sender, a server-origin one with none. */
@@ -232,8 +232,8 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     logs,
     descriptions,
     gone,
-    loadDocument: vi.fn(async (doc: YjsDocKey) => {
-      await wait('loadDocument');
+    findDocument: vi.fn(async (doc: YjsDocKey) => {
+      await wait('findDocument');
       return read(key(doc));
     }),
     seedDocument: vi.fn(async (scope: YjsDocScope, toSeed: (description: string | null) => Uint8Array) => {
@@ -263,13 +263,13 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
         return { status: 'appended' as const, id };
       },
     ),
-    readLogOf: vi.fn(async (doc: YjsDocKey, generation: string) => {
-      await wait('readLogOf');
+    findLog: vi.fn(async (doc: YjsDocKey, generation: string) => {
+      await wait('findLog');
       const current = row(key(doc));
       return current?.generation === generation ? [...(logs.get(key(doc)) ?? [])] : null;
     }),
-    compactState: vi.fn(async (doc: YjsDocKey, merged: Uint8Array, ids: number[], generation?: string) => {
-      await wait('compactState');
+    foldLog: vi.fn(async (doc: YjsDocKey, merged: Uint8Array, ids: number[], generation?: string) => {
+      await wait('foldLog');
       const current = row(key(doc));
       if (!current || (generation !== undefined && current.generation !== generation)) return 'retired' as const;
       const log = logs.get(key(doc)) ?? [];
@@ -288,18 +288,18 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
         (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
     }),
-    deleteDoc: vi.fn(async (doc: YjsDocKey) => {
-      await wait('deleteDoc');
+    deleteDocument: vi.fn(async (doc: YjsDocKey) => {
+      await wait('deleteDocument');
       bases.delete(key(doc));
       generations.delete(key(doc));
       logs.delete(key(doc));
     }),
-    touchDoc: vi.fn(async (doc: YjsDocKey) => {
-      await wait('touchDoc');
+    stampDocumentLive: vi.fn(async (doc: YjsDocKey) => {
+      await wait('stampDocumentLive');
       const log = logs.get(key(doc)) ?? [];
       return { exists: bases.has(key(doc)), lastLogId: bases.has(key(doc)) ? (log.at(-1)?.id ?? null) : null };
     }),
-    listStaleDocs: vi.fn(async (): Promise<YjsDocScope[]> => []),
+    findStaleDocuments: vi.fn(async (): Promise<YjsDocScope[]> => []),
   };
   return store;
 }

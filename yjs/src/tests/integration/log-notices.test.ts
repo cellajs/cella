@@ -14,7 +14,7 @@ vi.mock('../../constants', async (importOriginal) => ({
   yjsLogNoticeDelayMs: delayMs,
 }));
 
-const { appendUpdate, loadDocument } = await import('../../data/storage');
+const { appendUpdate, findDocument } = await import('../../data/storage');
 
 const tenantId = 'yjs-notices-tenant';
 const organizationId = '00000000-0000-4000-a000-0000000000c1';
@@ -100,6 +100,6 @@ describe("a relay's appends announce themselves after commit, batched", () => {
     await new Promise((resolve) => setTimeout(resolve, delayMs * 2));
     await barrier();
     expect(heardFor(scope)).toEqual([]);
-    expect((await loadDocument(scope))!.rows).toEqual([]);
+    expect((await findDocument(scope))!.rows).toEqual([]);
   });
 });

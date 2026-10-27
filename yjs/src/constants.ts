@@ -1,14 +1,26 @@
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocKey } from '#/modules/yjs/helpers/yjs-log';
 
-/** Grace period after the last client leaves before the session row is compacted and deleted; also the retry interval when the backend cannot take the final write. */
+/**
+ * Grace period after the last client leaves before the session's log is compacted and the session forgotten; also the
+ * retry interval when the backend cannot take the final write.
+ */
 export const yjsCleanupDelayMs = 5 * 60 * 1000;
-/** How often a session stamps its row live: well inside yjsCleanupDelayMs, the sweep's cutoff, so no relay's sweep takes a live session for an orphan. */
-export const yjsLiveTouchMs = yjsCleanupDelayMs / 5;
-/** Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its rows stay for the next session or the sweep. */
+/**
+ * How often a session stamps its row live: well inside yjsCleanupDelayMs, the sweep's cutoff, so no relay's sweep takes
+ * a live session for an orphan.
+ */
+export const yjsLiveStampMs = yjsCleanupDelayMs / 5;
+/**
+ * Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its
+ * rows stay for the next session or the sweep.
+ */
 export const yjsCleanupMaxAttempts = 12;
 /** Debounces compaction (merge the log into the base state and materialize) after the last received update, up to yjsCompactMaxWaitMs. */
 export const yjsCompactDebounceMs = 3000;
-/** Longest wait for compaction after the first update since the last compaction started, however often later updates restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause. */
+/**
+ * Longest wait for compaction after the first update since the last compaction started, however often later updates
+ * restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause.
+ */
 export const yjsCompactMaxWaitMs = 10_000;
 /**
  * How long a relay collects its committed appends before it announces them, one notice per document in one statement.
@@ -32,27 +44,16 @@ export function docKey({ tenantId, entityType, entityId }: YjsDocKey): string {
 }
 
 /**
- * One socket: the user its token names and the document the token asks for. Until the user's access is authorized
- * against the entity row, the socket's sync frames wait in its queue and it relays nothing.
+ * Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`. The
+ * frontend's `yjsMessageTypes` (yjs-connections.ts) must match.
  */
-export interface SocketContext {
-  userId: string;
-  requested: YjsDocScope;
-  /**
-   * The document as its entity row states it, null until authorization read that row. Only a scope read from the row
-   * reaches storage or a session: it is the session key, the tenant its rows are stored and read under, and the scope
-   * materialize writes in.
-   */
-  scope: YjsDocScope | null;
-  /** True from the relay's Step1 until the socket's Step2 answers it: an update sent meanwhile is dropped, since the reply carries it and its document may be one the client is about to drop. */
-  awaitingReply: boolean;
-}
-
-/** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`, which must match the frontend's yjs-connections.ts. */
-export const YMessage = {
+export const yjsMessageTypes = {
   Sync: 0,
   Awareness: 1,
   Generation: 4,
-  /** Empty body, to the sender alone, after each of its Step2 or Update frames the relay logged, found empty or dropped as covered by a pending reply. */
+  /**
+   * Empty body, to the sender alone, after each of its Step2 or Update frames the relay logged, found empty or dropped
+   * as covered by a pending reply.
+   */
   Saved: 5,
 } as const;

@@ -19,6 +19,7 @@ const connectionLimiter = env.NODB
       inMemoryBlockOnConsumed: connectionBudget.points,
     });
 
+/** Spends one connection of the user's budget; false when the budget is spent, which refuses the upgrade with 429. */
 export async function checkConnectionRate(userId: string): Promise<boolean> {
   try {
     await connectionLimiter.consume(userId);

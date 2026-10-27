@@ -1,5 +1,6 @@
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { docKey, yjsCleanupDelayMs } from '../constants';
-import { listStaleDocs } from '../data/storage';
+import { findStaleDocuments } from '../data/storage';
 import { log } from '../lib/pino';
 import { finishOrphan } from './session-manager';
 
@@ -11,7 +12,7 @@ let running: Promise<void> | null = null;
  * grace, and no log row younger than it, goes through the same locked finish as a cleanup (the log is durable, so an
  * unmaterialized edit is written now and its rows deleted; the document row stays). Those are the logs a relay crash
  * left behind, and the rows clients posted over HTTP while they could not reach a relay. A log the backend did not
- * write waits for a later sweep. A live session stamps its row every yjsLiveTouchMs, so a relay generation started
+ * write waits for a later sweep. A live session stamps its row every yjsLiveStampMs, so a relay generation started
  * next to a running one never lists that one's documents, and a document with a session on this relay is left to it.
  * Listing runs per tenant inside tenant-scoped transactions, so the sweep sees rows under the RLS-subject runtime role.
  * One sweep runs at a time on a relay: a call while one runs returns that one.
@@ -24,9 +25,9 @@ export function runSweep(): Promise<void> {
 }
 
 async function sweepOnce(): Promise<void> {
-  let stale: Awaited<ReturnType<typeof listStaleDocs>>;
+  let stale: YjsDocScope[];
   try {
-    stale = await listStaleDocs(yjsCleanupDelayMs);
+    stale = await findStaleDocuments(yjsCleanupDelayMs);
   } catch (err) {
     log.warn('Sweep: listing stale docs failed', { err });
     return;

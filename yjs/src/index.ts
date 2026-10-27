@@ -53,7 +53,7 @@ export async function startYjsWorker(options: { inProcess?: boolean } = {}): Pro
     waitForBackend()
       .then(() => runSweep())
       .catch((err) => {
-        log.warn('waitForBackend failed. Yjs will retry per-request.', { err });
+        log.warn('Backend not ready: skipping the boot sweep, the periodic sweep follows', { err });
       });
   } else {
     runSweep().catch((err) => log.warn('Startup sweep failed', { err }));

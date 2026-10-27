@@ -42,7 +42,7 @@ The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves `/in
 | **Log** | The updates not yet folded into the base, in arrival order, each with its sender (`yjs_updates`). Base plus log is the document. |
 | **Seed** | Creating a document from the stored description. The server does it, never a client. |
 | **Generation** | The identity of one seed. Two seeds of one description are two Yjs histories that cannot be merged, so a client drops a document of another generation. |
-| **Session** | What a relay keeps in memory for a document with connected editors. |
+| **Collab session** | What a relay keeps in memory for a document with connected editors. |
 | **Materialization** | Writing the merged document to the entity row, as an ordinary update through the backend. |
 | **Compaction** | Folding the log into the base, once the entity row holds it. |
 | **Outside write** | A description written by anything but the relay: a REST update, an MCP tool, an import. |
@@ -64,7 +64,7 @@ Cursors and selections are relayed between the editors of a document, rate-limit
 
 Presence is cosmetic. The name and colour next to a cursor are whatever the client sends, so they prove nothing about who edits. Authorship comes from the log: every update is stored under the user its token names, and materialization credits editors from there.
 
-## Session lifecycle
+## Collab session lifecycle
 
 ### Seed
 
@@ -84,25 +84,25 @@ The template registers the attachment update operation as its materializer. An a
 
 ### Outside writes
 
-A description written by anything but the relay does not end live sessions. The backend turns the written blocks into an update to the document and appends it to the log, in the same transaction as the write. Editors receive it as a remote change, in place, and keep typing.
+A description written by anything but the relay does not end live collab sessions. The backend turns the written blocks into an update to the document and appends it to the log, in the same transaction as the write. Editors receive it as a remote change, in place, and keep typing.
 
 ### Deletion
 
-A document is retired only together with its entity. Open sessions end at once, and the editor shows the entity as deleted. Because two seeds cannot be merged, a document otherwise outlives its sessions, relay restarts and offline editors: a client that returns merges into the same history.
+A document is retired only together with its entity. Open collab sessions end at once, and the editor shows the entity as deleted. Because two seeds cannot be merged, a document otherwise outlives its collab sessions, relay restarts and offline editors: a client that returns merges into the same history.
 
 ### Other writers
 
-The relay is not the only one that appends to a log: outside writes, updates posted over HTTP and, during a rollout, a second relay do too. Each relay listens for Postgres notifications of those appends and passes the new rows on to its editors. A notification can be missed, so every session also checks the log when a socket connects, before it compacts and once a minute. A missed notification costs at most a minute.
+The relay is not the only one that appends to a log: outside writes, updates posted over HTTP and, during a rollout, a second relay do too. Each relay listens for Postgres notifications of those appends and passes the new rows on to its editors. A notification can be missed, so every collab session also checks the log when a socket connects, before it compacts and once a minute. A missed notification costs at most a minute.
 
 ### Over HTTP
 
-A client that reaches the API but not the relay keeps working through the API's pull and push routes, which authorize as the token route does. A push is appended to the same log, and live sessions receive it like any other append. A document edited over HTTP alone, with no session on a relay, is written to its entity by the sweep, 5 to 10 minutes after the last push.
+A client that reaches the API but not the relay keeps working through the API's pull and push routes, which authorize as the token route does. A push is appended to the same log, and live collab sessions receive it like any other append. A document edited over HTTP alone, with no collab session on a relay, is written to its entity by the sweep, 5 to 10 minutes after the last push.
 
 ### Leave
 
-After its last editor disconnects, a session stays warm for five minutes, so a reconnect reuses it. Then it saves and compacts once more and is forgotten. The document stays.
+After its last editor disconnects, a collab session stays warm for five minutes, so a reconnect reuses it. Then it saves and compacts once more and is forgotten. The document stays.
 
-A sweep, at boot and every five minutes, saves the logs no session holds: those a crash left behind and those posted over HTTP. Since every update was logged before it was broadcast, a crash loses nothing a client had sent.
+A sweep, at boot and every five minutes, saves the logs no collab session holds: those a crash left behind and those posted over HTTP. Since every update was logged before it was broadcast, a crash loses nothing a client had sent.
 
 ## Durability and failure
 
@@ -112,12 +112,12 @@ A sweep, at boot and every five minutes, saves the logs no session holds: those 
 | The client is offline | A document the user opened for editing is stored per user ([Client](../cella/CLIENT.md#the-per-user-database)), so it opens from storage and stays editable. One never opened is read-only. An edit no server has confirmed stays stored until one does. |
 | The relay is out of reach, the API is not | The editor continues [over HTTP](#over-http) and switches back once the socket works again. |
 | The relay ends a session for good | The client stops reconnecting and the editor turns read-only with a notice. Edits that can no longer be saved are offered to copy before they are discarded. |
-| The backend is unavailable | Materialization is retried at the next window, when the session ends or by the sweep. The log stays until it succeeds. |
+| The backend is unavailable | Materialization is retried at the next window, when the collab session ends or by the sweep. The log stays until it succeeds. |
 | The relay restarts | Clients reconnect with complete documents into the same history. The sweep at boot saves the logs the crash left. |
 | Access revoked | The socket closes when its token expires and cannot reconnect. A pending save is credited to the newest editor who may still update the entity. When none may, the log stays until a write succeeds. |
-| Entity deleted | Its document is retired: sessions end at once and each client stops, offering the edits it never saved to copy. |
+| Entity deleted | Its document is retired: collab sessions end at once and each client stops, offering the edits it never saved to copy. |
 | Description written outside the relay | Editors receive the write in place, with no reconnect. It overrides earlier edits where it differs. Concurrent edits in blocks it keeps survive, and text typed into a block it removes is lost with the block. |
-| The notification listener drops | It reconnects with backoff and every session catches up. Meanwhile outside writes reach editors within a minute, and health reports `degraded`. |
+| The notification listener drops | It reconnects with backoff and every collab session catches up. Meanwhile outside writes reach editors within a minute, and health reports `degraded`. |
 | A live update arrives during editing | A read that lags the relay cannot undo what the editor shows: [Sync engine](../cella/SYNC_ENGINE.md#yjs). |
 
 ## Operational constraints
@@ -134,7 +134,7 @@ A sweep, at boot and every five minutes, saves the logs no session holds: those 
 | Close code | Meaning |
 | --- | --- |
 | `1011` | The relay could not handle a frame, or too many arrived before authorization. The client reconnects. |
-| `1013` | The session ended: its entity was deleted, or its document was seeded anew. The client reconnects, and a deleted entity's reconnect gets `4410`. |
+| `1013` | The collab session ended: its entity was deleted, or its document was seeded anew. The client reconnects, and a deleted entity's reconnect gets `4410`. |
 | `4001` | Invalid or expired token. The client refreshes it and reconnects. |
 | `4003` | Entity access denied. Final. |
 | `4400` | An invalid entity scope, a frame the relay cannot decode, or a socket announcing more cursors than it may hold. Final. |

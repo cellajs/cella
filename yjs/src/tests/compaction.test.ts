@@ -10,11 +10,11 @@ vi.mock('#/modules/yjs/helpers/yjs-log', async (importOriginal) => ({
 }));
 vi.mock('../sync/materialize', () => ({
   postMaterialize: vi.fn().mockResolvedValue('ok'),
-  stateToBlocksJson: vi.fn(() => '[{"type":"paragraph"}]'),
+  stateToBlocksJsonOrNull: vi.fn(() => '[{"type":"paragraph"}]'),
 }));
 
 const { compactDocument } = await import('../sync/compaction');
-const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize');
+const { postMaterialize, stateToBlocksJsonOrNull } = await import('../sync/materialize');
 
 const scope = mockScope();
 const key = storageKey(scope);
@@ -32,7 +32,7 @@ describe('compactDocument', () => {
   it('returns empty and writes nothing when the log has no rows', async () => {
     expect(await compactDocument(scope, null)).toBe('empty');
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
   });
 
   it('merges base and log, posts the blocks JSON for the last editor, then replaces the base and deletes the rows', async () => {
@@ -43,7 +43,7 @@ describe('compactDocument', () => {
 
     expect(await compactDocument(scope, null)).toBe('ok');
 
-    expect(stateToBlocksJson).toHaveBeenCalledTimes(1);
+    expect(stateToBlocksJsonOrNull).toHaveBeenCalledTimes(1);
     // Every sender of the window, newest first: the backend credits the first who may still update the entity. The
     // server-origin row credits no one, and is named so the backend can tell the merge holds it.
     expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]', [server.id]);
@@ -83,7 +83,7 @@ describe('compactDocument', () => {
     expect(await compactDocument(scope, null)).toBe('ok');
 
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(stateToBlocksJson).not.toHaveBeenCalled();
+    expect(stateToBlocksJsonOrNull).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
     expect(storage.logs.get(key)).toHaveLength(0);
   });
@@ -99,7 +99,7 @@ describe('compactDocument', () => {
     });
 
     expect(await compactDocument(scope, null)).toBe('retry');
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
 
     expect(await compactDocument(scope, null)).toBe('ok');
@@ -119,8 +119,8 @@ describe('compactDocument', () => {
     expect(await compactDocument(scope, null)).toBe('ok');
 
     // Three folded unsaved, then one request for the client's row and the two server rows left.
-    expect(storage.compactState).toHaveBeenCalledTimes(2);
-    expect(storage.compactState.mock.calls[0][2]).toEqual(serverIds.slice(0, 3));
+    expect(storage.foldLog).toHaveBeenCalledTimes(2);
+    expect(storage.foldLog.mock.calls[0][2]).toEqual(serverIds.slice(0, 3));
     expect(postMaterialize).toHaveBeenCalledTimes(1);
     expect(vi.mocked(postMaterialize).mock.calls[0][3]).toEqual(serverIds.slice(3));
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, typed: 0, outside1: 1, outside2: 2, outside3: 3, outside4: 4, outside5: 5 });
@@ -163,7 +163,7 @@ describe('compactDocument', () => {
     storage.bases.delete(key);
     expect(await compactDocument(scope, 'gen-0')).toBe('retired');
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
 
     // Positive control: under its document row, a log is written.
     storage.bases.set(key, mapUpdate('seed', true));
@@ -185,14 +185,14 @@ describe('compactDocument', () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('gone');
     expect(await compactDocument(scope, null)).toBe('gone');
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
   });
 
   it('retry leaves the base and the log untouched', async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
     expect(await compactDocument(scope, null)).toBe('retry');
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
@@ -200,17 +200,17 @@ describe('compactDocument', () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
     expect(await compactDocument(scope, null)).toBe('permanent');
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
   });
 
   it('unparseable state is never posted and keeps the log', async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
-    vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
+    vi.mocked(stateToBlocksJsonOrNull).mockReturnValueOnce(null);
     expect(await compactDocument(scope, null)).toBe('permanent');
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
@@ -240,7 +240,7 @@ describe('compactDocument', () => {
     const reseed = mapUpdate('reseeded', true);
     vi.mocked(postMaterialize).mockImplementationOnce(async () => {
       // The document is retired and reseeded, under a new generation, before this window's base is written.
-      await storage.deleteDoc(scope);
+      await storage.deleteDocument(scope);
       storage.bases.set(key, reseed);
       storage.generations.set(key, 'gen-reseeded');
       return 'ok';

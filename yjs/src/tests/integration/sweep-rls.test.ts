@@ -2,7 +2,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { deleteDoc, listStaleDocs } from '../../data/storage';
+import { deleteDocument, findStaleDocuments } from '../../data/storage';
 import { cleanupSeed, seedOrg } from './seed';
 
 const entityType = appConfig.productEntityTypes[0];
@@ -65,14 +65,14 @@ describe('startup sweep under RLS (runtime_role)', () => {
   });
 
   it('lists documents with an unwritten log from every tenant through tenant-scoped reads, skipping stamped rows, live logs and rows with nothing logged', async () => {
-    const stale = await listStaleDocs(60_000);
+    const stale = await findStaleDocuments(60_000);
     const ours = stale.filter((doc) => Object.values(tenants).includes(doc.tenantId));
     expect(ours.map((doc) => doc.entityId).sort()).toEqual([docs.staleA, docs.staleB].sort());
     expect(ours.find((doc) => doc.entityId === docs.staleB)?.organizationId).toBe(orgs.b);
   });
 
   it('deletes a swept document inside its own tenant scope', async () => {
-    await deleteDoc({ entityType, entityId: docs.staleA, tenantId: tenants.a });
+    await deleteDocument({ entityType, entityId: docs.staleA, tenantId: tenants.a });
     const { rowCount } = await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [docs.staleA]);
     expect(rowCount).toBe(0);
     // The other tenant's row is untouched.

@@ -10,7 +10,7 @@ import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/app
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import { db, withRlsTx } from '../../data/db';
-import { loadDocument } from '../../data/storage';
+import { findDocument } from '../../data/storage';
 
 // Seeds rows as the superuser (bypassing RLS) for the relay's integration tests, whose code under test connects as runtime_role.
 
@@ -171,7 +171,7 @@ export async function cleanupSeed(
 
 /** A document as the relay stored it: its base with every logged row merged in; null when it holds nothing. */
 export async function storedState(doc: YjsDocKey): Promise<Uint8Array | null> {
-  const document = await loadDocument(doc);
+  const document = await findDocument(doc);
   return mergeState(
     document?.base ?? null,
     (document?.rows ?? []).map((row) => row.payload),

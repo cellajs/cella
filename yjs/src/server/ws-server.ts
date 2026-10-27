@@ -1,6 +1,5 @@
-import type { Server } from 'node:http';
 import process from 'node:process';
-import { serve } from '@hono/node-server';
+import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
@@ -15,10 +14,10 @@ import { log } from '../lib/pino';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
 import { setupConnectionHandler, setupUpgradeHandler } from './upgrade';
 
-let httpServer: Server | null = null;
+let httpServer: ServerType | null = null;
 let wss: WebSocketServer | null = null;
 
-/** The shared health app, mounted on both the bare path and the `/yjs` prefix, since the load balancer forwards `/yjs/...` without stripping it. */
+/** The shared health app, on the bare path and under `/yjs`: the two paths `stripYjsPrefix` accepts. */
 export function buildHttpApp(): Hono {
   const version = env.RELEASE_SHA;
   const healthApp = createHealthApp({
@@ -51,11 +50,11 @@ export function buildHttpApp(): Hono {
   return app;
 }
 
+/** Listens on YJS_PORT: the health app over HTTP, and editor sockets through the upgrade and connection handlers. */
 export function startWsServer(): void {
-  // hostname doubles as the Host fallback for the load balancer's host-less HTTP/1.0 probe, which @hono/node-server otherwise rejects with 400.
   const server = serve({ fetch: buildHttpApp().fetch, hostname: '0.0.0.0', port: env.YJS_PORT }, () => {
     log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
-  }) as Server;
+  });
   httpServer = server;
 
   const wsServer = new WebSocketServer({ noServer: true, maxPayload: yjsMaxUpdateBytes });
@@ -65,6 +64,10 @@ export function startWsServer(): void {
   setupConnectionHandler(wsServer);
 }
 
+/**
+ * Closes every socket with 1001 and stops listening, then ends the log listener, flushes the notifier and ends the
+ * pool, in that order.
+ */
 export async function closeWsServer(): Promise<void> {
   log.info('Yjs worker stopping...');
 
@@ -89,6 +92,7 @@ export async function closeWsServer(): Promise<void> {
   log.info('Yjs worker stopped');
 }
 
+/** Open editor sockets on this relay, for health and metrics. */
 export function getConnectionCount(): number {
   return wss?.clients.size ?? 0;
 }

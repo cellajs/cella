@@ -9,6 +9,14 @@ export function loadBackendDotenv(): void {
   if (existsSync(envFile)) process.loadEnvFile(envFile);
 }
 
+/** A flag that only the string `true` turns on; unset, it reads as `fallback`. */
+export function envFlag(fallback: 'true' | 'false') {
+  return z
+    .string()
+    .default(fallback)
+    .transform((value) => value === 'true');
+}
+
 /** Shared by cdc and yjs. Extend with service-specific fields. */
 export const workerEnvBase = z.object({
   // PEM CA cert for the Scaleway RDB instance, verifying the PostgreSQL TLS connection.
@@ -23,8 +31,5 @@ export const workerEnvBase = z.object({
 
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
-  DEBUG: z
-    .string()
-    .default('false')
-    .transform((value) => value === 'true'),
+  DEBUG: envFlag('false'),
 });

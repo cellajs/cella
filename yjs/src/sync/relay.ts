@@ -5,10 +5,10 @@ import * as Y from 'yjs';
 import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice, LogRow, YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
-import type { SocketContext } from '../constants';
-import { docKey, YMessage, yjsAwarenessMaxEntries, yjsAwarenessRateLimit, yjsCompactDebounceMs, yjsCompactMaxWaitMs } from '../constants';
-import { appendUpdate, loadDocument, readLogOf, seedDocument } from '../data/storage';
+import { docKey, yjsAwarenessMaxEntries, yjsAwarenessRateLimit, yjsCompactDebounceMs, yjsCompactMaxWaitMs, yjsMessageTypes } from '../constants';
+import { appendUpdate, findDocument, findLog, seedDocument } from '../data/storage';
 import { log } from '../lib/pino';
+import type { SocketContext } from '../server/upgrade';
 import { type CompactionResult, compactDocument } from './compaction';
 import {
   broadcastToCollab,
@@ -19,14 +19,15 @@ import {
   getCollabs,
   leaveCollab,
   setUnseenRowHandler,
-  withDocLock,
+  withDocumentLock,
 } from './session-manager';
 
-const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
+/** y-protocols' sync subtypes: the handshake's two steps and a live update. */
+const yjsSyncSubtypes = { Step1: 0, Step2: 1, Update: 2 } as const;
 
-const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, YMessage.Saved));
+const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, yjsMessageTypes.Saved));
 
-/** Between two awareness frames a socket relays. */
+/** Milliseconds between two awareness frames a socket relays. */
 const awarenessWindowMs = 1000 / yjsAwarenessRateLimit;
 
 /** A socket's awareness rate window: what it sent inside the window waits here and is relayed as one frame when the window ends. */
@@ -55,18 +56,21 @@ export function peekMessageType(data: Uint8Array): number | null {
 }
 
 /** y-websocket's sync message: a Step1 carries a state vector, a Step2 or an Update a Yjs update. */
-function encodeSync(subtype: (typeof YSync)[keyof typeof YSync], payload: Uint8Array): Uint8Array {
+function encodeSync(subtype: (typeof yjsSyncSubtypes)[keyof typeof yjsSyncSubtypes], payload: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
-  encoding.writeVarUint(encoder, YMessage.Sync);
+  encoding.writeVarUint(encoder, yjsMessageTypes.Sync);
   encoding.writeVarUint(encoder, subtype);
   encoding.writeVarUint8Array(encoder, payload);
   return encoding.toUint8Array(encoder);
 }
 
-/** The document's generation, sent before every Step1 answer: a client holding a document of another generation drops it before it merges or replies. */
+/**
+ * The document's generation, sent before every Step1 answer: a client holding a document of another generation drops
+ * it before it merges or replies.
+ */
 function encodeGeneration(generation: string): Uint8Array {
   const encoder = encoding.createEncoder();
-  encoding.writeVarUint(encoder, YMessage.Generation);
+  encoding.writeVarUint(encoder, yjsMessageTypes.Generation);
   encoding.writeVarString(encoder, generation);
   return encoding.toUint8Array(encoder);
 }
@@ -114,7 +118,7 @@ function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
     encoding.writeVarString(update, state);
   }
   const encoder = encoding.createEncoder();
-  encoding.writeVarUint(encoder, YMessage.Awareness);
+  encoding.writeVarUint(encoder, yjsMessageTypes.Awareness);
   encoding.writeVarUint8Array(encoder, encoding.toUint8Array(update));
   return encoding.toUint8Array(encoder);
 }
@@ -198,7 +202,7 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
   // log, a peer or a newer session of the document.
   if (!collab?.clients.has(ws)) return;
 
-  if (messageType === YMessage.Sync) {
+  if (messageType === yjsMessageTypes.Sync) {
     let syncType: number;
     let payload: Uint8Array;
     try {
@@ -209,19 +213,19 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
       return;
     }
 
-    if (syncType === YSync.Step1) {
+    if (syncType === yjsSyncSubtypes.Step1) {
       log.trace(`Sync step 1 from ${docKey(scope)}`, { bytes: data.length });
       await handleSyncStep1(ctx, collab, ws, payload);
-    } else if (syncType === YSync.Step2) {
+    } else if (syncType === yjsSyncSubtypes.Step2) {
       ctx.awaitingReply = false;
       if (await handleSyncUpdate(collab, ctx.userId, ws, payload, data)) sendSaved(ws);
-    } else if (syncType === YSync.Update) {
+    } else if (syncType === yjsSyncSubtypes.Update) {
       // Sent before the client read the relay's answer: its reply carries what the relay lacks, and a client about to
       // drop its document for another generation must log nothing of it. The update counts as handled, and the reply
       // that carries it gets a `Saved` of its own.
       if (ctx.awaitingReply || (await handleSyncUpdate(collab, ctx.userId, ws, payload, data))) sendSaved(ws);
     }
-  } else if (messageType === YMessage.Awareness) {
+  } else if (messageType === yjsMessageTypes.Awareness) {
     if (ws.readyState !== ws.OPEN) return;
     let entries: AwarenessEntry[] | null;
     try {
@@ -284,7 +288,7 @@ function relayRows(collab: CollabSession, rows: readonly LogRow[], exclude?: Web
     if (collab.seen.has(row.id)) continue;
     collab.seen.add(row.id);
     if (classifyUpdate(row.payload) !== 'update') continue;
-    broadcastToCollab(collab, encodeSync(YSync.Update, row.payload), exclude);
+    broadcastToCollab(collab, encodeSync(yjsSyncSubtypes.Update, row.payload), exclude);
     relayed++;
   }
   return relayed;
@@ -299,7 +303,7 @@ function relayRows(collab: CollabSession, rows: readonly LogRow[], exclude?: Web
  */
 async function loadDocumentState(collab: CollabSession, ws?: WebSocket): Promise<{ state: Uint8Array | null; generation: string } | null> {
   const { scope } = collab;
-  let document = await loadDocument(scope);
+  let document = await findDocument(scope);
   if (collab.generation !== null && document?.generation !== collab.generation) {
     endCollab(collab);
     return null;
@@ -335,21 +339,21 @@ async function handleSyncStep1(ctx: SocketContext, collab: CollabSession, ws: We
   const held: Uint8Array[] = [];
   collab.handshakes.set(ws, held);
   try {
-    const doc = await withDocLock(collab, () => loadDocumentState(collab, ws));
+    const doc = await withDocumentLock(collab, () => loadDocumentState(collab, ws));
     if (!doc || ws.readyState !== ws.OPEN) return;
 
     ws.send(encodeGeneration(doc.generation));
     ctx.awaitingReply = true;
     if (!doc.state) {
-      ws.send(encodeSync(YSync.Step2, Y.encodeStateAsUpdate(new Y.Doc())));
-      ws.send(encodeSync(YSync.Step1, Y.encodeStateVector(new Y.Doc())));
+      ws.send(encodeSync(yjsSyncSubtypes.Step2, Y.encodeStateAsUpdate(new Y.Doc())));
+      ws.send(encodeSync(yjsSyncSubtypes.Step1, Y.encodeStateVector(new Y.Doc())));
     } else {
       try {
-        ws.send(encodeSync(YSync.Step2, Y.diffUpdate(doc.state, clientStateVector)));
-        ws.send(encodeSync(YSync.Step1, Y.encodeStateVectorFromUpdate(doc.state)));
+        ws.send(encodeSync(yjsSyncSubtypes.Step2, Y.diffUpdate(doc.state, clientStateVector)));
+        ws.send(encodeSync(yjsSyncSubtypes.Step1, Y.encodeStateVectorFromUpdate(doc.state)));
       } catch {
         // Corrupted state: fall back to the full state and skip the pull.
-        ws.send(encodeSync(YSync.Step2, doc.state));
+        ws.send(encodeSync(yjsSyncSubtypes.Step2, doc.state));
         ctx.awaitingReply = false;
       }
     }
@@ -377,7 +381,7 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
 
   // Before any handshake loaded the document, the update takes the generation a handshake would load; none, when the
   // document was retired under the session meanwhile, which has ended.
-  const generation = collab.generation ?? (await withDocLock(collab, () => loadDocumentState(collab)))?.generation;
+  const generation = collab.generation ?? (await withDocumentLock(collab, () => loadDocumentState(collab)))?.generation;
   if (!generation) return false;
   const appended = await appendUpdate(collab.scope, userId, update, generation, (id) => collab.seen.add(id));
   // The update was classified above and fits in one frame, so the append logged it, or found the document retired or
@@ -402,11 +406,11 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
  */
 export function relayUnseen(collab: CollabSession): Promise<void> {
   if (collab.queuedCatchUp) return collab.queuedCatchUp;
-  const run = withDocLock(collab, async () => {
+  const run = withDocumentLock(collab, async () => {
     collab.queuedCatchUp = undefined;
     const { generation, scope } = collab;
     if (generation === null || getCollab(scope) !== collab) return;
-    const rows = await readLogOf(scope, generation);
+    const rows = await findLog(scope, generation);
     if (getCollab(scope) !== collab) return;
     if (!rows) endCollab(collab);
     else if (relayRows(collab, rows) > 0) scheduleCompaction(collab);
@@ -467,7 +471,7 @@ function scheduleCompaction(collab: CollabSession): void {
  */
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
   collab.compactDueAt = undefined;
-  return withDocLock(collab, async () => {
+  return withDocumentLock(collab, async () => {
     try {
       const result = await compactDocument(collab.scope, collab.generation, {
         // Rows a missed notification left unrelayed reach the sockets before they fold into the base.

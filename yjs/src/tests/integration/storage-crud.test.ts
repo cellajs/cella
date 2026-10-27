@@ -9,7 +9,7 @@ import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { db, withRlsTx } from '../../data/db';
-import { appendUpdate, compactState, deleteDoc, discardLogRows, loadDocument, readLogOf, seedDocument, touchDoc } from '../../data/storage';
+import { appendUpdate, deleteDocument, discardLogRows, findDocument, findLog, foldLog, seedDocument, stampDocumentLive } from '../../data/storage';
 import { mapUpdate, readMap, undecodableUpdate } from '../helpers';
 import { cleanupSeed, insertDocument, seedOrg } from './seed';
 
@@ -66,13 +66,13 @@ describe('6.1 Storage: session row, update log, compaction', () => {
   it('insert → append → read → compact → delete lifecycle', async () => {
     const c = ctx(ids.lifecycle);
     const seed = mapUpdate('seed', true);
-    expect(await loadDocument(c)).toBeNull();
+    expect(await findDocument(c)).toBeNull();
     const generation = await insertDocument(adminClient, c, seed);
 
     const first = await appended(c, testUserId, mapUpdate('a', 1), generation);
     const second = await appended(c, null, mapUpdate('b', 2), generation);
     expect(first).toBeLessThan(second);
-    const document = (await loadDocument(c))!;
+    const document = (await findDocument(c))!;
     expect(document.generation).toBe(generation);
     expect(document.base).toEqual(seed);
     expect(document.rows.map((row) => [row.id, row.userId])).toEqual([
@@ -84,57 +84,57 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       document.base,
       document.rows.map((row) => row.payload),
     )!;
-    expect(await compactState(c, merged, [first, second], generation)).toBe('ok');
-    const folded = (await loadDocument(c))!;
+    expect(await foldLog(c, merged, [first, second], generation)).toBe('ok');
+    const folded = (await findDocument(c))!;
     expect(readMap(folded.base)).toEqual({ seed: true, a: 1, b: 2 });
     expect(folded.rows).toEqual([]);
 
-    await deleteDoc(c);
-    expect(await loadDocument(c)).toBeNull();
+    await deleteDocument(c);
+    expect(await findDocument(c)).toBeNull();
   });
 
   it('seeds nothing for an entity with no live row: a deleted entity gets no document back', async () => {
     const c = ctx(ids.noEntity);
     expect(await seedDocument(c, () => mapUpdate('seed', true))).toBeNull();
-    expect(await loadDocument(c)).toBeNull();
+    expect(await findDocument(c)).toBeNull();
   });
 
   it('a retired document takes no write of its generation, and a reseed none of the old one', async () => {
     const c = ctx(ids.retire);
     const first = await insertDocument(adminClient, c, mapUpdate('first', true));
-    expect(await touchDoc(c)).toEqual({ exists: true, lastLogId: null });
-    await deleteDoc(c);
-    expect(await touchDoc(c)).toEqual({ exists: false, lastLogId: null });
+    expect(await stampDocumentLive(c)).toEqual({ exists: true, lastLogId: null });
+    await deleteDocument(c);
+    expect(await stampDocumentLive(c)).toEqual({ exists: false, lastLogId: null });
     // An update or a compaction of the retired generation writes nothing, before and after the reseed.
     expect(await appendUpdate(c, testUserId, mapUpdate('late', true), first)).toEqual({ status: 'no-document' });
     const second = await insertDocument(adminClient, c, mapUpdate('second', true));
     expect(second).not.toBe(first);
     expect(await appendUpdate(c, testUserId, mapUpdate('late', true), first)).toEqual({ status: 'stale-generation', generation: second });
-    expect(await compactState(c, mapUpdate('old history', true), [], first)).toBe('retired');
-    expect(await readLogOf(c, first)).toBeNull();
-    const document = (await loadDocument(c))!;
+    expect(await foldLog(c, mapUpdate('old history', true), [], first)).toBe('retired');
+    expect(await findLog(c, first)).toBeNull();
+    const document = (await findDocument(c))!;
     expect(readMap(document.base)).toEqual({ second: true });
     expect(document.rows).toEqual([]);
-    expect(await readLogOf(c, second)).toEqual([]);
-    await deleteDoc(c);
+    expect(await findLog(c, second)).toEqual([]);
+    await deleteDocument(c);
   });
 
   it('twenty concurrent appends all land, the live stamp reads the newest, and compaction deletes only the rows it was given', async () => {
     const c = ctx(ids.compaction);
     const generation = await insertDocument(adminClient, c, new Uint8Array());
     await Promise.all(Array.from({ length: 20 }, (_, i) => appended(c, testUserId, mapUpdate(`k${i}`, i), generation)));
-    const read = (await loadDocument(c))!;
+    const read = (await findDocument(c))!;
     expect(read.rows).toHaveLength(20);
 
     // An append that lands after the read and before the compaction write survives.
     const late = await appended(c, testUserId, mapUpdate('late', true), generation);
-    expect(await touchDoc(c)).toEqual({ exists: true, lastLogId: late });
+    expect(await stampDocumentLive(c)).toEqual({ exists: true, lastLogId: late });
     const merged = mergeState(
       read.base,
       read.rows.map((row) => row.payload),
     )!;
     expect(
-      await compactState(
+      await foldLog(
         c,
         merged,
         read.rows.map((row) => row.id),
@@ -142,19 +142,19 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       ),
     ).toBe('ok');
 
-    const remaining = (await readLogOf(c, generation))!;
+    const remaining = (await findLog(c, generation))!;
     expect(remaining.map((row) => row.id)).toEqual([late]);
-    expect(Object.keys(readMap((await loadDocument(c))!.base))).toHaveLength(20);
-    await deleteDoc(c);
+    expect(Object.keys(readMap((await findDocument(c))!.base))).toHaveLength(20);
+    await deleteDocument(c);
   });
 
   it('must not let two compactions both fold one row: the later is rolled back, and the earlier base stays', async () => {
     const c = ctx(ids.overlap);
     const generation = await insertDocument(adminClient, c, mapUpdate('seed', true));
-    const early = (await loadDocument(c))!;
+    const early = (await findDocument(c))!;
     await appended(c, testUserId, mapUpdate('a', 1), generation);
     await appended(c, testUserId, mapUpdate('b', 2), generation);
-    const later = (await loadDocument(c))!;
+    const later = (await findDocument(c))!;
     const laterIds = later.rows.map((row) => row.id);
     const mergeOf = (read: typeof later) =>
       mergeState(
@@ -164,24 +164,24 @@ describe('6.1 Storage: session row, update log, compaction', () => {
 
     // Two relays during a rollout: one folds the window it read; the other read only the first row, before the second
     // was logged, and would replace that base with one lacking `b`.
-    expect(await compactState(c, mergeOf(later), laterIds, generation)).toBe('ok');
+    expect(await foldLog(c, mergeOf(later), laterIds, generation)).toBe('ok');
     const stale = mergeState(early.base, [later.rows[0].payload])!;
-    expect(await compactState(c, stale, [laterIds[0]], generation)).toBe('overlap');
-    expect(readMap((await loadDocument(c))!.base)).toEqual({ seed: true, a: 1, b: 2 });
+    expect(await foldLog(c, stale, [laterIds[0]], generation)).toBe('overlap');
+    expect(readMap((await findDocument(c))!.base)).toEqual({ seed: true, a: 1, b: 2 });
 
     // Run at once, on overlapping windows: one wins, the other is rolled back with nothing changed.
     await appended(c, testUserId, mapUpdate('c', 3), generation);
     await appended(c, testUserId, mapUpdate('d', 4), generation);
-    const both = (await loadDocument(c))!;
+    const both = (await findDocument(c))!;
     const bothIds = both.rows.map((row) => row.id);
     const results = await Promise.all([
-      compactState(c, mergeOf(both), bothIds, generation),
-      compactState(c, mergeState(both.base, [both.rows[0].payload])!, [bothIds[0]], generation),
+      foldLog(c, mergeOf(both), bothIds, generation),
+      foldLog(c, mergeState(both.base, [both.rows[0].payload])!, [bothIds[0]], generation),
     ]);
     expect([...results].sort()).toEqual(['ok', 'overlap']);
     // Whichever won, base and log together still hold both rows.
-    expect(readMap(mergeOf((await loadDocument(c))!))).toEqual({ seed: true, a: 1, b: 2, c: 3, d: 4 });
-    await deleteDoc(c);
+    expect(readMap(mergeOf((await findDocument(c))!))).toEqual({ seed: true, a: 1, b: 2, c: 3, d: 4 });
+    await deleteDocument(c);
   });
 
   it('must not read an old base with a new log: a load waits for a fold in flight, and sees it whole', async () => {
@@ -198,7 +198,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
         ids.consistent,
       ]);
       await adminClient.query('DELETE FROM yjs_updates WHERE id = $1', [folded]);
-      const load = loadDocument(c);
+      const load = findDocument(c);
       const settled = await Promise.race([load.then(() => 'read'), sleep(300).then(() => 'waiting')]);
       expect(settled).toBe('waiting');
       await adminClient.query('COMMIT');
@@ -210,7 +210,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       await adminClient.query('ROLLBACK');
       throw err;
     }
-    await deleteDoc(c);
+    await deleteDocument(c);
   });
 
   it('discardLogRows deletes exactly the rows it was given, in the document it names', async () => {
@@ -229,17 +229,17 @@ describe('6.1 Storage: session row, update log, compaction', () => {
 
     // An id of another document's row is ignored: the delete is scoped to the document.
     await discardLogRows(c, [bad, elsewhere]);
-    expect((await readLogOf(c, generation))!.map((row) => row.id)).toEqual([kept]);
-    expect((await readLogOf(other, otherGeneration))!.map((row) => row.id)).toEqual([elsewhere]);
-    await deleteDoc(c);
-    await deleteDoc(other);
+    expect((await findLog(c, generation))!.map((row) => row.id)).toEqual([kept]);
+    expect((await findLog(other, otherGeneration))!.map((row) => row.id)).toEqual([elsewhere]);
+    await deleteDocument(c);
+    await deleteDocument(other);
   });
 
-  it('loadDocument is null for a non-existent doc, and deleteDoc is safe on it', async () => {
+  it('findDocument is null for a non-existent doc, and deleteDocument is safe on it', async () => {
     const c = ctx(ids.nonexistent);
-    expect(await loadDocument(c)).toBeNull();
-    expect(await touchDoc(c)).toEqual({ exists: false, lastLogId: null });
-    await expect(deleteDoc(c)).resolves.toBeUndefined();
+    expect(await findDocument(c)).toBeNull();
+    expect(await stampDocumentLive(c)).toEqual({ exists: false, lastLogId: null });
+    await expect(deleteDocument(c)).resolves.toBeUndefined();
   });
 
   it('rows are invisible to the runtime role without tenant context and from another tenant', async () => {
@@ -264,6 +264,6 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const log = await adminClient.query('SELECT 1 FROM yjs_updates WHERE entity_id = $1', [ids.rls]);
     expect(docs.rowCount).toBe(1);
     expect(log.rowCount).toBe(1);
-    await deleteDoc(c);
+    await deleteDocument(c);
   });
 });

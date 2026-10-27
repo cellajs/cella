@@ -18,10 +18,8 @@ import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { getTableColumnNames } from '#/modules/yjs/yjs-queries';
 import { withRlsTx } from './db';
 
-// Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
-
-/** Runs on an RLS-scoped transaction, so the result is limited to the active tenant. */
-async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
+/** The user's memberships for the permission engine; the RLS-scoped transaction limits them to the active tenant. */
+async function findMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
   return tx
     .select({ channelType: membershipsTable.channelType, channelId: membershipsTable.channelId, role: membershipsTable.role })
     .from(membershipsTable)
@@ -38,13 +36,13 @@ type EntityScopeRow = Partial<ChannelIdColumns> & {
 };
 
 /**
- * Table and column names come from the app's schema conventions, filtered to columns the table has. Returns `null` if
- * the table has no `id` column or the row does not exist.
+ * The entity row's scope and ownership columns. Table and column names come from the app's schema conventions,
+ * filtered to the columns the table has. Null when the table has no `id` column or the row does not exist.
  */
-async function resolveEntityScope(tx: Tx, entityType: ProductEntityType, entityId: string): Promise<EntityScopeRow | null> {
+async function findEntityScope(tx: Tx, entityType: ProductEntityType, entityId: string): Promise<EntityScopeRow | null> {
   const table = toTableName(entityType);
   const existing = await getTableColumnNames({ var: { db: tx } }, { table });
-  if (!existing.has('id')) return null; // unknown / non-conforming table
+  if (!existing.has('id')) return null;
 
   // Logical keys the permission engine may read; an absent `publishedAt` column counts as published. `deletedAt` tells a
   // soft-deleted row, under a read that includes them.
@@ -62,7 +60,7 @@ async function resolveEntityScope(tx: Tx, entityType: ProductEntityType, entityI
 }
 
 /** The verdict on a socket: the document's scope, as its entity row states it; `denied` (4003); or `deleted` (4410). */
-export type DocAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted';
+export type DocumentAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted';
 
 /**
  * Authorizes a user to edit the document a token asks for, as the backend's `getValidProduct(update)` does: one
@@ -78,7 +76,7 @@ export type DocAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted';
  *
  * @throws MissingAncestorError if the resolved entity is missing a required ancestor scope.
  */
-export async function authorizeDoc(userId: string, requested: YjsDocScope): Promise<DocAuthorization> {
+export async function authorizeDocument(userId: string, requested: YjsDocScope): Promise<DocumentAuthorization> {
   const { entityType } = requested;
   // Tokens are issued for product entities only, the ones a materializer writes.
   if (!isProduct(entityType)) return 'denied';
@@ -86,8 +84,8 @@ export async function authorizeDoc(userId: string, requested: YjsDocScope): Prom
   return withRlsTx(
     requested.tenantId,
     userId,
-    async (tx): Promise<DocAuthorization> => {
-      const [entity, memberships] = await Promise.all([resolveEntityScope(tx, entityType, requested.entityId), loadMemberships(tx, userId)]);
+    async (tx): Promise<DocumentAuthorization> => {
+      const [entity, memberships] = await Promise.all([findEntityScope(tx, entityType, requested.entityId), findMemberships(tx, userId)]);
 
       if (!entity) return 'deleted';
       if (typeof entity.tenantId !== 'string') return 'denied';

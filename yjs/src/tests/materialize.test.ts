@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
-import { postMaterialize, stateToBlocksJson } from '../sync/materialize';
+import { postMaterialize, stateToBlocksJsonOrNull } from '../sync/materialize';
 import { mockScope } from './helpers';
 
 const ctx = mockScope();
@@ -67,10 +67,10 @@ describe('postMaterialize', () => {
   });
 });
 
-describe('stateToBlocksJson', () => {
+describe('stateToBlocksJsonOrNull', () => {
   it('converts a seeded state back to the stored blocks and returns null for garbage', () => {
-    const blocks = JSON.parse(stateToBlocksJson(state, ctx)!) as { content: { text: string }[] }[];
+    const blocks = JSON.parse(stateToBlocksJsonOrNull(state, ctx)!) as { content: { text: string }[] }[];
     expect(blocks[0].content[0].text).toBe('hello');
-    expect(stateToBlocksJson(new Uint8Array([255, 1, 2]), ctx)).toBeNull();
+    expect(stateToBlocksJsonOrNull(new Uint8Array([255, 1, 2]), ctx)).toBeNull();
   });
 });

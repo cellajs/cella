@@ -13,7 +13,7 @@ import { logNotifier } from './log-notifier';
 /**
  * Every read and write runs as the system (no user context) under the document's own tenant, the one its entity row
  * states, and carries that tenant id as a predicate, so the result is the same with RLS bypassed. Both tables are
- * fail-closed under RLS: a contextless query on the runtime role returns zero rows, silently.
+ * fail-closed under RLS: a contextless query on the runtime role returns zero rows and no error.
  */
 function asSystem<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return withRlsTx(tenantId, '', fn);
@@ -23,7 +23,7 @@ function asSystem<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
  * The document in one consistent read (`findYjsDocument`): its row under FOR SHARE, so a compaction's base replace on
  * any relay commits before it or waits, then its log, oldest first. Null when no row exists: never seeded, or retired.
  */
-export async function loadDocument(doc: YjsDocKey): Promise<YjsDocumentRead | null> {
+export async function findDocument(doc: YjsDocKey): Promise<YjsDocumentRead | null> {
   return asSystem(doc.tenantId, (tx) => findYjsDocument({ var: { db: tx } }, { doc }));
 }
 
@@ -65,7 +65,7 @@ export async function appendUpdate(
  * The log of the document's `generation`, oldest first, with that document row held under a key-share lock so no
  * retirement deletes it meanwhile. Null when no row of that generation exists: retired, or reseeded since.
  */
-export async function readLogOf(doc: YjsDocKey, generation: string): Promise<LogRow[] | null> {
+export async function findLog(doc: YjsDocKey, generation: string): Promise<LogRow[] | null> {
   return asSystem(doc.tenantId, async (tx) => {
     const document = await findYjsDocumentGeneration({ var: { db: tx } }, { doc });
     return document?.generation === generation ? findYjsLog({ var: { db: tx } }, { doc }) : null;
@@ -83,7 +83,7 @@ export type FoldResult = 'ok' | 'retired' | 'overlap';
  * its base holds rows this merge may lack. The document row is locked first, as a retirement locks it, so two folds of
  * one document wait for each other.
  */
-export async function compactState(doc: YjsDocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
+export async function foldLog(doc: YjsDocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
   const state = collectGarbage(merged);
   try {
     return await asSystem(doc.tenantId, async (tx): Promise<FoldResult> => {
@@ -120,7 +120,7 @@ export async function discardLogRows(doc: YjsDocKey, logIds: number[]): Promise<
  * Removes the document row and any log rows: the entity is gone, so nothing can receive them. The row goes first, so an
  * append that holds it commits before the log delete, which takes its row too.
  */
-export async function deleteDoc(doc: YjsDocKey): Promise<void> {
+export async function deleteDocument(doc: YjsDocKey): Promise<void> {
   await asSystem(doc.tenantId, async (tx) => {
     await tx.delete(yjsDocumentsTable).where(docWhere(doc));
     await tx.delete(yjsUpdatesTable).where(logWhere(doc));
@@ -134,7 +134,7 @@ export interface LiveStamp {
 }
 
 /** Stamps the document row live, so no sweep takes it for an orphan, and reads its newest log row. Creates no row. */
-export async function touchDoc(doc: YjsDocKey): Promise<LiveStamp> {
+export async function stampDocumentLive(doc: YjsDocKey): Promise<LiveStamp> {
   return asSystem(doc.tenantId, async (tx) => {
     const stamped = await tx
       .update(yjsDocumentsTable)
@@ -153,7 +153,7 @@ export async function touchDoc(doc: YjsDocKey): Promise<LiveStamp> {
 /** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
 const sweepTenantConcurrency = 4;
 
-async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<YjsDocScope[]> {
+async function findStaleDocumentsOfTenant(tenantId: string, olderThanMs: number): Promise<YjsDocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;
   const sameDocument = sql`${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
               AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
@@ -188,18 +188,18 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every yjsLiveTouchMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
- * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
- * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
- * nothing.
+ * row every yjsLiveStampMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP.
+ * An idle document with nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits
+ * every tenant through its own tenant-scoped transaction, a bounded number at a time; a contextless query on the
+ * fail-closed policy returns nothing.
  */
-export async function listStaleDocs(olderThanMs: number): Promise<YjsDocScope[]> {
+export async function findStaleDocuments(olderThanMs: number): Promise<YjsDocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.
   const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
   const stale: YjsDocScope[] = [];
   for (let i = 0; i < tenantIds.length; i += sweepTenantConcurrency) {
     const batch = tenantIds.slice(i, i + sweepTenantConcurrency);
-    const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));
+    const perTenant = await Promise.all(batch.map((tenantId) => findStaleDocumentsOfTenant(tenantId, olderThanMs)));
     for (const rows of perTenant) stale.push(...rows);
   }
   return stale;
