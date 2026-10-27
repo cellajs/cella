@@ -55,18 +55,13 @@ app.use('*', loggerMiddleware);
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
 // request that carries an API key skips it (the service guard rejects browser origins itself).
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
-app.use('*', (c, next) => (hasApiKeyHeader(c) ? next() : csrfMiddleware(c, next)));
+app.use('*', (ctx, next) => (hasApiKeyHeader(ctx) ? next() : csrfMiddleware(ctx, next)));
 
 app.use('*', clientVersionMiddleware);
 
 app.use('*', dynamicBodyLimit);
 
-// gzip compression for GET requests only
-app.use('*', (c, next) => {
-  if (c.req.method === 'GET') {
-    return compress()(c, next);
-  }
-  return next();
-});
+const compressMiddleware = compress();
+app.use('*', (ctx, next) => (ctx.req.method === 'GET' ? compressMiddleware(ctx, next) : next()));
 
 export { app };

@@ -32,7 +32,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   action: Exclude<EntityActionType, 'create'>,
   { forUpdate = false }: { forUpdate?: boolean } = {},
 ): Promise<ValidProductResult<K>> => {
-  // Product routes run behind tenantGuard + orgGuard; a route wired without them is a bug, not a request error.
+  // Product routes run behind tenantGuard + orgGuard; a route defined without them is a bug, not a request error.
   const { tenantId, organizationId } = requestScope(ctx, entityType);
 
   // A lock lasts as long as its transaction, and the read below opens a read-only one of its own.
@@ -43,12 +43,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // Missing, soft-deleted, foreign-tenant, foreign-organization and invisible-draft rows all read
   // as the same 404, so a row's existence is never revealed outside its scope.
   const notFound = () => new AppError(404, 'not_found', 'warn', { entityType });
-  if (
-    !entity ||
-    entity.tenantId !== tenantId ||
-    entity.organizationId !== organizationId ||
-    !draftVisibleTo(entity as Record<string, unknown>, ctx.var.actor.id)
-  ) {
+  if (!entity || entity.tenantId !== tenantId || entity.organizationId !== organizationId || !draftVisibleTo(entity, ctx.var.actor.id)) {
     throw notFound();
   }
 

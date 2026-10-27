@@ -1,8 +1,8 @@
 import { xMiddleware } from '#/core/x-middleware';
+import { serviceGuard } from '#/middlewares/guard/service-guard';
+import { userGuard } from '#/middlewares/guard/user-guard';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
-import { serviceGuard } from './service-guard';
-import { userGuard } from './user-guard';
 
 /**
  * One guard for routes any actor may call: a request carrying an API key goes through `serviceGuard`, everything
@@ -18,5 +18,5 @@ export const actorGuard = xMiddleware(
     name: 'actor',
     description: 'Requires a session cookie, a secret API key or an access token; acts as the user or service account it proves',
   },
-  async (ctx, next) => (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
+  (ctx, next) => (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
 );

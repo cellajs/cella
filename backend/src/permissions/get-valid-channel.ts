@@ -57,7 +57,7 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
  * `membership` may be `null` while allowed: system admins and admins of a higher-level entity
  * (`permissions-config`) pass without one.
- * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
+ * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
   ctx: C,
@@ -68,7 +68,6 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
 ): Promise<ValidChannelResult<T, BindingOf<C>>> => {
   const entity = await resolveChannelInScope(ctx, entityId, entityType, bySlug);
 
-  // System admin bypass is handled inside checkAccess.
   const subject = buildSubjectFromEntity(entityType, entity);
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);

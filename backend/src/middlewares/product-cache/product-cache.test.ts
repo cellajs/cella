@@ -5,8 +5,8 @@ import type { Env } from '#/core/context';
 // Mock the boundaries: the cache store and the permission engine.
 const productCacheGet = vi.fn();
 const productCacheSet = vi.fn();
-vi.mock('./app-product-cache', () => ({
-  productCache: { get: (...a: unknown[]) => productCacheGet(...a), set: (...a: unknown[]) => productCacheSet(...a) },
+vi.mock('./product-cache-store', () => ({
+  productCacheStore: { get: (...a: unknown[]) => productCacheGet(...a), set: (...a: unknown[]) => productCacheSet(...a) },
 }));
 const checkAccess = vi.fn();
 vi.mock('#/permissions', () => ({ checkAccess: (...a: unknown[]) => checkAccess(...a) }));
@@ -15,8 +15,8 @@ vi.mock('#/permissions/access', () => ({ accessFrom: () => accessFrom() }));
 const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
 vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a) }));
 
-const { productCache } = await import('./presets');
-const { productCache: store } = await vi.importActual<typeof import('./app-product-cache')>('./app-product-cache');
+const { productCache } = await import('./product-cache');
+const { productCacheStore: store } = await vi.importActual<typeof import('./product-cache-store')>('./product-cache-store');
 
 // The cached detail response enriches `createdBy` into a user object, the case that would
 // break an `own` grant if fed to the permission subject verbatim.

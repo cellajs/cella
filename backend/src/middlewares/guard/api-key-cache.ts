@@ -8,10 +8,8 @@ export interface ApiKeyCacheEntry {
   account: ServiceAccountModel;
 }
 
-const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({
-  maxSize: 5000,
-  defaultTtl: 60_000, // 1 min: keys are used and revoked in the API process, which drops them at the revoke or disable
-});
+// A minute: keys are used and revoked in the API process, which drops them at the revoke or disable.
+const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({ maxSize: 5000, defaultTtl: 60_000 });
 
 /**
  * The cached key and account for a key hash, or else what `read` resolves, cached for the key's next uses.
@@ -19,10 +17,10 @@ const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({
  * @param read - Reads the key with its account by that hash; undefined when no such key exists.
  * @returns The key and its account, or undefined for an unknown key, which is never cached.
  */
-export const loadApiKeyCache = (hash: string, read: () => Promise<ApiKeyCacheEntry | undefined>): Promise<ApiKeyCacheEntry | undefined> =>
+export const loadCachedApiKey = (hash: string, read: () => Promise<ApiKeyCacheEntry | undefined>): Promise<ApiKeyCacheEntry | undefined> =>
   apiKeyCache.load(hash, read);
 
 /** After a revoke, roll, or account status change: every cached key of the account is dropped, and no read in flight stores one. */
-export const invalidateApiKeyCacheByAccount = (accountId: string): void => {
+export const dropCachedApiKeys = (accountId: string): void => {
   apiKeyCache.invalidateWhere((entry) => entry.account.id === accountId);
 };

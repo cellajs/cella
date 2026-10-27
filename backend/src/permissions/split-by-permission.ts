@@ -1,4 +1,4 @@
-import { type ChannelEntityType, type ChannelIdColumns, draftVisibleTo, type EntityActionType, isChannel, type ProductEntityType } from 'shared';
+import { type ChannelEntityType, draftVisibleTo, type EntityActionType, isChannel, type ProductEntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
@@ -22,7 +22,7 @@ const draftShowsTo = (ctx: ActorContext, entityType: ChannelEntityType | Product
  * may not `action` on. A bulk call never acts on such a row, and `rejectedIds` keeps the request order, so the answer
  * tells none of these apart.
  * @param entityType - The type of entity (channel or product, not user).
- * @throws {AppError} 403 if no entities are allowed.
+ * @throws AppError 403 if no entities are allowed.
  */
 export const splitByPermission = async (
   ctx: ActorContext,
@@ -35,9 +35,7 @@ export const splitByPermission = async (
   const entities = resolved.filter((entity) => inRequestScope(ctx, entity) && draftShowsTo(ctx, entityType, entity));
 
   // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.
-  const subjects = entities.map((entity) =>
-    buildSubjectFromEntity(entityType, entity as { id: string; createdBy?: string | null } & Partial<ChannelIdColumns>),
-  );
+  const subjects = entities.map((entity) => buildSubjectFromEntity(entityType, entity));
   const access = accessFrom(ctx);
   const actions = action === 'read' ? [action] : (['read', action] as const);
   const decisions = actions.map((asked) => checkAccessBatch(access, asked, subjects).results);

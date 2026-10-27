@@ -19,12 +19,7 @@ export const relatableGuard = xMiddleware(
     const user = ctx.var.user;
     const isSystemAdmin = ctx.var.isSystemAdmin;
 
-    if (!targetUserId || targetUserId === user.id || targetUserId === user.slug) {
-      await next();
-      return;
-    }
-
-    if (isSystemAdmin) {
+    if (!targetUserId || targetUserId === user.id || targetUserId === user.slug || isSystemAdmin) {
       await next();
       return;
     }
@@ -36,17 +31,16 @@ export const relatableGuard = xMiddleware(
     // never reaches the uuid-typed query below.
     if (!validUuidSchema.safeParse(targetUserId).success) throw unrelated();
 
-    const memberships = ctx.var.memberships;
-    const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+    const organizationIds = [...new Set(ctx.var.memberships.map((membership) => membership.organizationId))];
 
-    if (myOrgIds.length === 0) throw unrelated();
+    if (organizationIds.length === 0) throw unrelated();
 
-    // memberships_select_authenticated_policy lets any authenticated user read membership rows in cross-tenant RLS
+    // Memberships carry no RLS, so the runtime pool reads them across tenants.
     const db = ctx.var.db;
     const [shared] = await db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, myOrgIds)))
+      .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, organizationIds)))
       .limit(1);
 
     if (!shared) throw unrelated();

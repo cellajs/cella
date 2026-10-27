@@ -40,6 +40,7 @@ type LimiterStatusLists = { successStatusCodes?: number[]; failStatusCodes?: num
 
 export type RateLimitOptions = Partial<BucketLimits> & LimiterStatusLists;
 
+/** A route limiter: `keyPrefix` (`<key>_<mode>`) starts the keys of its rows, `buckets` are what `checkRateLimitStatus` reads. */
 export type RateLimiterHandler = MiddlewareHandler<Env> & { keyPrefix: string; buckets: Bucket[] };
 
 export interface RateLimiterOpts {

@@ -6,7 +6,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 
 /** Applies a body size limit chosen from the request's Content-Type. */
-export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
+export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>((ctx, next) => {
   const contentType = ctx.req.header('content-type') ?? '';
 
   const isJson = contentType.includes('application/json');

@@ -7,7 +7,7 @@ const maxEntries = 5000;
 /** Enriched entity response, keyed by entity. */
 type CacheValue = Record<string, unknown>;
 
-const cache = new TTLCache<CacheValue>({
+const responseCache = new TTLCache<CacheValue>({
   maxSize: maxEntries,
   defaultTtl: 10 * 60 * 1000,
   onDispose: (key, _value, reason) => {
@@ -17,9 +17,7 @@ const cache = new TTLCache<CacheValue>({
   },
 });
 
-function productKey(entityType: EntityType, entityId: string): string {
-  return `${entityType}:${entityId}`;
-}
+const productKey = (entityType: EntityType, entityId: string): string => `${entityType}:${entityId}`;
 
 /** How long after a write no read of that row is cached: longer than the write's transaction takes to commit. */
 const writeHoldMs = 5000;
@@ -36,7 +34,7 @@ const holdOff = (key: string, until: number): void => {
 };
 
 /** Entity-keyed store of enriched detail responses; the API's own writes and CDC messages drop entries by id, the next fetch re-enriches. */
-export const productCache = {
+export const productCacheStore = {
   /**
    * Called by the productCache middleware once the handler has fetched and enriched from the DB. The row is stored
    * under its own id, which every drop names, whatever spelling of the id the request used. Stores nothing when the
@@ -47,12 +45,12 @@ export const productCache = {
   set(entityType: EntityType, row: CacheValue & { id: string }, readStartedAt: number): boolean {
     const key = productKey(entityType, row.id);
     if (readStartedAt < (noStoreBefore.get(key) ?? 0)) return false;
-    cache.set(key, row);
+    responseCache.set(key, row);
     return true;
   },
 
   get(entityType: EntityType, entityId: string): CacheValue | undefined {
-    return cache.get(productKey(entityType, entityId));
+    return responseCache.get(productKey(entityType, entityId));
   },
 
   /** A CDC message says the row changed: its entry goes, and a read that is in flight is not stored. */
@@ -60,7 +58,7 @@ export const productCache = {
     const key = productKey(entityType, entityId);
     // Also without an entry: a read in flight would store the row it read before this change.
     holdOff(key, performance.now());
-    cache.delete(key);
+    responseCache.delete(key);
   },
 
   /**
@@ -70,13 +68,13 @@ export const productCache = {
   holdForWrite(entityType: EntityType, entityIds: string[]): void {
     for (const entityId of entityIds) {
       const key = productKey(entityType, entityId);
-      cache.delete(key);
+      responseCache.delete(key);
       holdOff(key, performance.now() + writeHoldMs);
     }
   },
 
   clear(): void {
-    cache.clear();
+    responseCache.clear();
     noStoreBefore.clear();
   },
 };

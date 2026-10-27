@@ -7,7 +7,7 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { modeSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
-import { productCache } from '#/middlewares/product-cache/app-product-cache';
+import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { log } from '#/utils/logger';
 
@@ -197,7 +197,7 @@ class CdcWebSocketServer {
       // Drop the detail cache entry of each changed product row, so a later detail fetch re-enriches (entity-keyed cache, no token)
       const { entityType } = message.activity;
       for (const row of rows ?? []) {
-        if (entityType && typeof row.rowData.id === 'string') productCache.invalidateProduct(entityType, row.rowData.id);
+        if (entityType && typeof row.rowData.id === 'string') productCacheStore.invalidateProduct(entityType, row.rowData.id);
       }
 
       const activityEvent = { ...message.activity, type, rowData, rows, trace: message._trace ?? null } as ActivityEvent;

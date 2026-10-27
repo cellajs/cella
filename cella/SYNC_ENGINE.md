@@ -296,4 +296,4 @@ interface CatchupChangeSummary {
 
 ### Detail cache
 
-The server keeps a TTL cache of enriched product detail responses. The API's own write of a row and every CDC message for it drop its entry, and a read that started before a drop is never stored. A hit rechecks permission, draft visibility, tenant and organization. Concurrent misses fetch once, and lists bypass it.
+The server keeps a TTL cache of enriched product detail responses. The API's own write of a row and every CDC message for it drop its entry, and a read that started before a drop is never stored. A hit rechecks permission, draft visibility, tenant and organization. Concurrent misses share the first read when it stores a row they may read, and lists bypass it.

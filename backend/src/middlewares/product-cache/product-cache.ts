@@ -2,16 +2,15 @@ import type { Context, MiddlewareHandler } from 'hono';
 import { draftVisibleTo, type ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
+import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
-import { productCache as productCacheStore } from './app-product-cache';
 
 /**
- * Detail cache keyed by entity type and the row's id, with no cache token. A hit re-authorizes the caller against the
- * cached row; concurrent misses share the first one's read, which caches the row. A write in this process drops the
- * row's entry itself (through the mutation bus), and CDC invalidates by entity id for every other writer.
+ * Detail cache keyed by entity type and the row's id. A hit re-authorizes the caller against the cached row, and
+ * concurrent misses share the first one's read when it stores a row they may read.
  */
 export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
@@ -66,9 +65,8 @@ export const productCache = (entityType: ProductEntityType): MiddlewareHandler<E
   );
 
 /** True if a cache value holds enriched entity data: a row with its `id`. */
-function isEnriched(value: Record<string, unknown> | null | undefined): value is Record<string, unknown> & { id: string } {
-  return typeof value?.id === 'string';
-}
+const isEnriched = (value: Record<string, unknown> | null | undefined): value is Record<string, unknown> & { id: string } =>
+  typeof value?.id === 'string';
 
 /**
  * Re-authorizes a cache hit: the row must sit in the tenant and organization of the request path, as `getValidProduct`
@@ -76,17 +74,17 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
  * veto, so an author-cached draft never serves to a non-author. `createdBy` is normalized from the actor reference
  * back to the raw id the permission subject expects.
  */
-function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached: Record<string, unknown>): boolean {
+const callerCanRead = (ctx: Context<Env>, entityType: ProductEntityType, cached: Record<string, unknown>): boolean => {
   if (cached.tenantId !== ctx.var.tenantId || cached.organizationId !== ctx.var.organizationId) return false;
   try {
     const createdBy = cached.createdBy as { id: string } | null | undefined;
     const authRow = { ...cached, createdBy: createdBy?.id ?? null } as { id: string; createdBy?: string | null };
     const access = accessFrom(ctx);
     if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.actorId)) return false;
-    const subject = buildSubjectFromEntity(productType, authRow);
+    const subject = buildSubjectFromEntity(entityType, authRow);
     return checkAccess(access, 'read', subject).allowed;
   } catch {
     // Unexpected row shape → don't serve from cache; the handler runs the full permission check.
     return false;
   }
-}
+};

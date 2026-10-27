@@ -70,14 +70,17 @@ interface ScopeAccumulator {
   >;
 }
 
-/** The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list. */
+/**
+ * The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list.
+ * @param ancestors - Most specific first, ending at the organization: `[project, course, organization]`.
+ */
 const resolveScopes = (
   policies: PolicyMatrix,
   memberships: ActorBinding[],
   entityType: ProductEntityType,
   organizationId: string,
   elevatedGrants: ReadonlySet<string> | undefined,
-  ancestors: readonly ChannelEntityType[], // most-specific → organization, e.g. [project, course, organization]
+  ancestors: readonly ChannelEntityType[],
   homeChannelType: ChannelEntityType | null,
   publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
@@ -134,7 +137,7 @@ const resolveScopes = (
       membership.channelType !== 'organization' &&
       ancestors.includes(membership.channelType)
     ) {
-      const grantLevel = membership.channelType as ChannelEntityType;
+      const grantLevel = membership.channelType;
       const value = roleReadValue(policies, entityType, grantLevel, membership.role);
       if (value === 1) addUnconditional(grantLevel, membership.role, membership.channelId);
       else if (isRowCondition(value))

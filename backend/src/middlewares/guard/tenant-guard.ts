@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { Env } from '#/core/context';
+import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
@@ -9,8 +9,6 @@ import { countOrganizationsByTenant } from '#/modules/organization/organization-
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 
-type Actor = NonNullable<Env['Variables']['actor']>;
-
 /**
  * A foothold in the tenant: a service account holds at least one binding (its bindings live in its own tenant); a user
  * has a membership there or is system admin. The tenant's creator holds one only while the tenant has no organization
@@ -18,9 +16,9 @@ type Actor = NonNullable<Env['Variables']['actor']>;
  */
 const holdsFoothold = async (ctx: Context<Env>, actor: Actor, tenant: TenantModel): Promise<boolean> => {
   if (actor.kind === 'service') return actor.bindings.length > 0;
-  if (ctx.var.isSystemAdmin || actor.bindings.some((m) => m.tenantId === tenant.id)) return true;
+  if (ctx.var.isSystemAdmin || actor.bindings.some((binding) => binding.tenantId === tenant.id)) return true;
   if (tenant.createdBy !== actor.id) return false;
-  return (await countOrganizationsByTenant({ var: { db: baseDb } }, { tenantId: tenant.id })) === 0;
+  return (await countOrganizationsByTenant(ctx, { tenantId: tenant.id })) === 0;
 };
 
 /**
@@ -58,14 +56,14 @@ export const tenantGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: tenant.status } });
     }
 
-    // The tenant's sign-in policy (D17): a person who holds an identity through this tenant's connection must have
+    // The tenant's sign-in policy: a person who holds an identity through this tenant's connection must have
     // signed in with an allowed method, whether by session or by a token their session authorized. Externals without
     // such an identity are untouched. System admins are exempt, acting as a user too: an impersonation's method is its
     // admin's. A session's method is in the cached facts, so only the mismatch pays for the lookup.
     if (actor.kind === 'user' && !ctx.var.isSystemAdmin && !ctx.var.impersonator && tenant.authStrategies.length > 0) {
       const strategy = actor.authStrategy ?? null;
       if (!strategy || !tenant.authStrategies.includes(strategy)) {
-        const connection = await findConnectionBindingUser({ var: { db: baseDb } }, { userId: actor.id, tenantId: tenant.id });
+        const connection = await findConnectionBindingUser(ctx, { userId: actor.id, tenantId: tenant.id });
         if (connection) {
           throw new AppError(403, 'sso_required', 'warn', {
             meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },

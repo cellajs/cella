@@ -5,7 +5,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-const throttleMs = 5 * 60 * 1000; // 5 minutes
+const throttleMs = 5 * 60 * 1000;
 
 /**
  * When each actor was last stamped. An entry expires with its throttle window, so memory holds the recently active

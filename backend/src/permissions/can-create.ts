@@ -10,23 +10,22 @@ import { validateAncestorScope } from '#/permissions/build-subject';
  * does not exist yet. Every ancestor channel ID must be present: `null` states org-level scope,
  * while an omitted (undefined) ancestor throws 400 so it cannot fall back to a broader scope.
  */
-export const canCreateEntity = (ctx: ActorContext, entity: SubjectForPermission) => {
-  const { entityType } = entity;
+export const canCreateEntity = (ctx: ActorContext, subject: SubjectForPermission) => {
+  const { entityType } = subject;
 
-  validateAncestorScope(entity);
+  validateAncestorScope(subject);
 
-  // Permission check (system admin bypass is handled inside)
-  const { allowed } = checkAccess(accessFrom(ctx), 'create', entity);
+  const { allowed } = checkAccess(accessFrom(ctx), 'create', subject);
 
   if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType });
   }
 
-  const org = ctx.var.organization;
+  const organization = ctx.var.organization;
 
-  // Defense in depth check: if entity has an organization scope, it must match the subject's organization
-  const organizationId = entity.channelIds.organization;
-  if (org && organizationId && organizationId !== org.id) {
+  // Defense in depth: a subject scoped to an organization must name the organization of the request.
+  const organizationId = subject.channelIds.organization;
+  if (organization && organizationId && organizationId !== organization.id) {
     throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }
 };

@@ -6,7 +6,7 @@ import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 
 /**
- * The MCP face accepts only tokens from the app's own authorization server (D12): no sessions, no API keys. A missing or
+ * The MCP face accepts only tokens from the app's own authorization server: no sessions, no API keys. A missing or
  * invalid token answers with the RFC 9728 challenge, which is how an MCP client discovers where to authorize. It charges
  * no burst budget: a tool call counts once, at the route it runs (`serviceGuard`), and the endpoint's own requests
  * count against `mcpRequestLimiter`.

@@ -1,15 +1,15 @@
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { extractIdentifiers, getRateLimiterInstance, openBucket, rateLimitError, subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { maxWindowMs, restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+import { extractIdentifiers, getRateLimiterInstance, openBucket, refuseRateLimited, subjectSegment } from '#/middlewares/rate-limiter/helpers';
+import { adoptDbCount, maxWindowMs, restoreDebt, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
 
 const defaultOptions = {
   points: 10,
-  duration: 60 * 60, // within 1 hour
+  duration: 60 * 60,
   blockDuration: 60 * 30,
   successStatusCodes: [200, 201],
   failStatusCodes: [401, 403, 404],
@@ -17,13 +17,13 @@ const defaultOptions = {
 };
 
 /** Opens a bucket before its first consume; the store falls back to its in-memory insurance while the database is unreachable. */
-async function openBucketSafely(store: ReturnType<typeof getRateLimiterInstance>, rateLimitKey: string, durationSeconds: number) {
+const openBucketSafely = async (store: ReturnType<typeof getRateLimiterInstance>, rateLimitKey: string, durationSeconds: number) => {
   try {
     await openBucket(store, rateLimitKey, durationSeconds);
   } catch (err) {
     log.warn('Rate limit bucket could not be opened', { rateLimitKey, err });
   }
-}
+};
 
 /**
  * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
@@ -68,7 +68,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         const identifier = chain.find((id) => extractedIdentifiers[id]);
 
         if (!identifier) {
-          // Chains and bare ip/email must resolve; bare userId/tenantId are skipped so pointsLimiter can fall back
+          // Chains and bare ip/email must resolve; bare userId, actorId and tenantId are skipped, and an empty key is refused below
           if (Array.isArray(part) || part === 'ip' || part === 'email') {
             throw new AppError(400, 'invalid_request', 'warn');
           }
@@ -102,28 +102,28 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
 
         const limitState = await store.get(rateLimitKey);
         if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
-          return rateLimitError(ctx, limitState, refusalType);
+          return refuseRateLimited(ctx, limitState, refusalType);
         }
         // A row opens with the time left in the window the key counts in process, so both counts restart together.
         const windowSeconds = fastPath ? windowSecondsLeft(fastKey, windowMs) : config.duration;
         // No live row yet: create it first, or the first requests of a parallel burst each start the count at one.
         if (limitState === null) await openBucketSafely(store, rateLimitKey, windowSeconds);
 
-        // Settle unflushed fast-path consumes with this request's cost, or `syncFromDb` resets the counter to an undercount
+        // Settle unflushed fast-path consumes with this request's cost, or `adoptDbCount` resets the counter to an undercount
         const debt = fastPath ? takeDebt(fastKey) : 0;
 
         try {
           const consumeResult = await store.consume(rateLimitKey, consumePoints + debt, { customDuration: windowSeconds });
-          if (fastPath) syncFromDb(fastKey, consumeResult.consumedPoints, consumeResult.msBeforeNext, windowMs);
+          if (fastPath) adoptDbCount(fastKey, consumeResult.consumedPoints, consumeResult.msBeforeNext, windowMs);
           // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
-            return rateLimitError(ctx, consumeResult, refusalType);
+            return refuseRateLimited(ctx, consumeResult, refusalType);
           }
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
             // A refusal proves the bucket spent, and one from the store's in-memory block reports no count of its own
-            if (fastPath) syncFromDb(fastKey, Math.max(rlRejected.consumedPoints, config.points), rlRejected.msBeforeNext, windowMs);
-            return rateLimitError(ctx, rlRejected, refusalType);
+            if (fastPath) adoptDbCount(fastKey, Math.max(rlRejected.consumedPoints, config.points), rlRejected.msBeforeNext, windowMs);
+            return refuseRateLimited(ctx, rlRejected, refusalType);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.
           restoreDebt(fastKey, debt);

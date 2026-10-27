@@ -136,7 +136,7 @@ export const resolvePlacement = async <T extends ProductEntityType>(
   if (!homeType) return { columns, home: null };
 
   const entity = await resolveHome(ctx, input[entityIdColumnKey(homeType)] as string, homeType);
-  const row = entity as Record<string, unknown>;
+  const row: Record<string, unknown> = entity;
   stamped[entityIdColumnKey(homeType)] = entity.id;
   for (const ancestor of hierarchy.getOrderedAncestors(homeType)) {
     if (ancestor === 'organization') break;

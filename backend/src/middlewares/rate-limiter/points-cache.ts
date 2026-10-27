@@ -18,7 +18,7 @@ const maxEntries = 50_000;
 /** The longest window a limiter may count in process: an entry is kept this long after its last write. */
 export const maxWindowMs = 60 * 60 * 1000;
 
-const cache = new TTLCache<PointsEntry>({ maxSize: maxEntries, defaultTtl: maxWindowMs });
+const pointsCache = new TTLCache<PointsEntry>({ maxSize: maxEntries, defaultTtl: maxWindowMs });
 
 /**
  * Local consumption accrues as debt settled by `takeDebt`, so each process reaches the threshold before its first flush.
@@ -27,7 +27,7 @@ const cache = new TTLCache<PointsEntry>({ maxSize: maxEntries, defaultTtl: maxWi
  */
 export function tryFastConsume(key: string, cost: number, budget: number, windowMs: number): 'allow' | 'check-db' {
   const now = Date.now();
-  const entry = cache.get(key);
+  const entry = pointsCache.get(key);
 
   const isFresh = !entry || now >= entry.windowEnd;
   const priorConsumed = isFresh ? 0 : entry.consumed;
@@ -36,30 +36,31 @@ export function tryFastConsume(key: string, cost: number, budget: number, window
   if (priorConsumed + cost >= budget * fastPathThreshold) return 'check-db';
 
   if (isFresh) {
-    cache.set(key, { consumed: cost, flushed: 0, windowEnd: now + windowMs });
+    pointsCache.set(key, { consumed: cost, flushed: 0, windowEnd: now + windowMs });
   } else {
     entry.consumed = priorConsumed + cost;
-    cache.set(key, entry);
+    pointsCache.set(key, entry);
   }
   return 'allow';
 }
 
 /** Claims the unflushed consumes and marks them flushed; on a DB failure other than a 429 call {@link restoreDebt}. */
 export function takeDebt(key: string): number {
-  const entry = cache.get(key);
+  const entry = pointsCache.get(key);
   if (!entry) return 0;
   const debt = Math.max(0, entry.consumed - entry.flushed);
   entry.flushed = entry.consumed;
-  cache.set(key, entry);
+  pointsCache.set(key, entry);
   return debt;
 }
 
+/** Returns debt that {@link takeDebt} claimed for a database consume that failed, so a later request settles it. */
 export function restoreDebt(key: string, debt: number): void {
   if (debt <= 0) return;
-  const entry = cache.get(key);
+  const entry = pointsCache.get(key);
   if (!entry) return;
   entry.flushed = Math.max(0, entry.flushed - debt);
-  cache.set(key, entry);
+  pointsCache.set(key, entry);
 }
 
 /**
@@ -69,24 +70,25 @@ export function restoreDebt(key: string, debt: number): void {
  */
 export function windowSecondsLeft(key: string, windowMs: number): number {
   const now = Date.now();
-  const entry = cache.get(key);
+  const entry = pointsCache.get(key);
   return Math.ceil((entry && now < entry.windowEnd ? entry.windowEnd - now : windowMs) / 1000);
 }
 
 /**
- * Called after a DB consume, accepted or rejected. The DB count is shared by all processes, and so is the
+ * Adopts the database count after a consume, accepted or rejected. The count is shared by all processes, and so is the
  * time `msBeforeNext` its row or the block on it has left: the in-process window ends with it.
  */
-export function syncFromDb(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {
+export function adoptDbCount(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {
   const now = Date.now();
-  const entry = cache.get(key);
+  const entry = pointsCache.get(key);
   // A store that reports no time left leaves the entry its own window
   const ownEnd = entry && now < entry.windowEnd ? entry.windowEnd : now + windowMs;
   const windowEnd = msBeforeNext > 0 ? now + msBeforeNext : ownEnd;
   // A block longer than an hour keeps its entry until it ends
-  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(maxWindowMs, Math.ceil(windowEnd - now)));
+  pointsCache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(maxWindowMs, Math.ceil(windowEnd - now)));
 }
 
-export function clearCache(): void {
-  cache.clear();
+/** Drops every in-process count: what a test does to start from an empty window. */
+export function clearPointsCache(): void {
+  pointsCache.clear();
 }

@@ -1,5 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
+import type { Env } from '#/core/context';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
 
@@ -7,7 +8,7 @@ import { isBenchTraffic } from '#/utils/logger';
  * Logs requests with timing, status, user and session id and the request id set before it; a request made through an impersonation
  * also names its admin. pino-pretty formats in dev.
  */
-export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
+export const loggerMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   const start = Date.now();
   const { url, method } = ctx.req;
   // The logger's `url` serializer scrubs tokens out of the path and query.
@@ -17,22 +18,14 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
 
   const status = ctx.res.status;
   const responseTime = Date.now() - start;
-  const userId = ctx.get('user')?.id || 'na';
+  const { user, tenantId, impersonator, requestId, sessionId } = ctx.var;
+  const userId = user?.id || 'na';
 
-  // Suppress bench traffic logs in development (only log errors)
-  if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
+  // Outside production, bench traffic logs its server errors alone.
+  if (isBenchTraffic(userId, tenantId) && status < 500) return;
 
-  const impersonatorId = ctx.get('impersonator')?.id;
-  const logData = {
-    requestId: ctx.get('requestId'),
-    method,
-    url: path,
-    status,
-    responseTime,
-    userId,
-    sessionId: ctx.get('sessionId'),
-    ...(impersonatorId && { impersonatorId }),
-  };
+  const impersonatorId = impersonator?.id;
+  const logData = { requestId, method, url: path, status, responseTime, userId, sessionId, ...(impersonatorId && { impersonatorId }) };
 
   if (status >= 500) requestLogger.error(logData);
   else if (status >= 400) requestLogger.warn(logData);

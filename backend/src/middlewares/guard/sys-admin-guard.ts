@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { scrubUrl } from 'shared/utils/scrub-url';
+import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { setMiddlewareExtension } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -15,11 +16,10 @@ import { systemAdminAllowList } from '#/utils/system-access';
  * is refused first: system administration is done as oneself, and the role check would judge the impersonated user
  * and raise an alert about the admin's own request.
  */
-const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
-  const user = ctx.var.user;
-  const isSystemAdmin = ctx.var.isSystemAdmin;
+const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
+  const { user, isSystemAdmin, session } = ctx.var;
 
-  refuseImpersonation(ctx.var.session);
+  refuseImpersonation(session);
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
@@ -30,23 +30,21 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
   await next();
 };
 
-/** Both the system admin check and the IP restriction must pass. */
-const combinedMiddleware: MiddlewareHandler = every(
-  sysAdminCheck,
-  // hono's ipRestriction wants a `(c) => string` getter; coerce a null IP to '' so it matches no
-  // allowlist entry and denies by default without throwing.
-  ipRestriction(
-    (c) => getIp(c) ?? '',
-    { allowList: systemAdminAllowList() },
-    async (remote) => {
-      const ip = remote.addr ?? 'unknown';
-      sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: getIsoDate() });
-      throw new AppError(403, 'forbidden', 'warn');
-    },
-  ),
+/** Refuses an address outside `SYSTEM_ADMIN_IP_ALLOWLIST`, with a security notification. */
+const allowedIpCheck = ipRestriction(
+  // hono's ipRestriction wants a `(c) => string` getter. A request without an IP reads as '', which hono refuses with
+  // its own 403 before the allow-list and the refusal below run.
+  (c) => getIp(c) ?? '',
+  { allowList: systemAdminAllowList() },
+  async (remote) => {
+    const ip = remote.addr ?? 'unknown';
+    sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: getIsoDate() });
+    throw new AppError(403, 'forbidden', 'warn');
+  },
 );
 
-export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
+/** Both the system admin check and the IP restriction must pass, in that order. */
+export const sysAdminGuard = setMiddlewareExtension(every(sysAdminCheck, allowedIpCheck), {
   functionName: 'sysAdminGuard',
   type: 'x-guard',
   requires: ['session'],

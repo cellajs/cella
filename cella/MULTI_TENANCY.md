@@ -61,6 +61,7 @@ variables before product queries:
 | Helper | Transaction | Use it for |
 | --- | --- | --- |
 | `tenantRead(ctx, fn)` | Read only, live rows | Normal protected product reads |
+| `tenantReadUnlessInTransaction(ctx, fn)` | `tenantRead` on the bare pool, else the caller's own transaction | A read that may run inside a write, such as a row locked for update |
 | `tenantReadIncludingDeleted(ctx, fn)` | Read only, includes tombstones | Delta and recovery reads |
 | `tenantContext(ctx, fn)` | Read/write, live rows | Creates and ordinary updates |
 | `tenantContextIncludingDeleted(ctx, fn)` | Read/write, includes tombstones | Soft-delete and restore flows |
