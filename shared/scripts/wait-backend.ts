@@ -12,8 +12,8 @@ for (let i = 0; i < args.length; i++) {
 
 try {
   await waitForBackend({ interval, timeout });
-} catch {
-  console.error(`Backend not ready after ${timeout}ms`);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 }
 process.exit(0);

@@ -7,12 +7,12 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import ts from 'typescript';
-import { type Finding, repoRoot } from './repo-files.ts';
+import { splitToken } from './class-tokens.ts';
+import { type Finding, lineColumn, repoRoot } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 /** Class names no frontend stylesheet, script or class string selects, each with the reason it stays. */
 const markerClasses: Record<string, string> = {
-  'not-prose': 'opts a subtree out of the typography plugin, whose prose rules exclude `.not-prose` descendants',
   'is-selected': 'BoardPanel state for apps whose board selects items (hasSelection), a hook for their styles',
   'docs-floating-nav': 'FloatingNav bodyClass on docs pages, a hook for app styles scoped to them',
   'marketing-floating-nav': 'FloatingNav bodyClass on marketing pages, a hook for app styles scoped to them',
@@ -291,19 +291,6 @@ function tokens({ start, text, raw, openStart, openEnd }: ClassText): { token: s
   return result;
 }
 
-/** `token` without its variants and important marker: `md:hover:x!` gives `x`. */
-function baseClass(token: string): string {
-  let depth = 0;
-  let separator = -1;
-  for (let index = 0; index < token.length; index++) {
-    const char = token[index];
-    if (char === '[' || char === '(') depth++;
-    else if (char === ']' || char === ')') depth--;
-    else if (char === ':' && depth === 0) separator = index;
-  }
-  return token.slice(separator + 1).replace(/^!|!$/g, '');
-}
-
 function compiles(context: TailwindContext, designSystem: DesignSystem, candidates: string[]): void {
   const unknown = [...new Set(candidates)].filter((candidate) => !context.compiles.has(candidate));
   const css = designSystem.candidatesToCss(unknown);
@@ -314,7 +301,7 @@ function compiles(context: TailwindContext, designSystem: DesignSystem, candidat
 function problem(context: TailwindContext, token: string): string | undefined {
   if (context.compiles.get(token) || groupPattern.test(token) || context.knownClasses.has(token)) return undefined;
   if (Object.keys(libraryPrefixes).some((prefix) => token.startsWith(prefix))) return undefined;
-  const base = baseClass(token);
+  const { base } = splitToken(token);
   if (base !== token && (context.knownClasses.has(base) || groupPattern.test(base))) {
     return `${base} is a plain CSS class, so variants and ! do not apply to it; define it with @utility`;
   }
@@ -341,7 +328,6 @@ export function tailwindFindings(file: string, source: string, context: Tailwind
   return found.flatMap(({ token, offset }) => {
     const message = problem(context, token);
     if (!message) return [];
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(offset);
-    return [{ file, line: line + 1, column: character + 1, rule: 'tailwind-class', term: token, message }];
+    return [{ file, ...lineColumn(source, offset), rule: 'tailwind-class', term: token, message }];
   });
 }

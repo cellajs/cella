@@ -6,7 +6,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { alignmentFindings, owedAlignmentFindings } from './check-alignments.ts';
+import { alignmentFindings, type BranchChanges, owedAlignmentFindings } from './check-alignments.ts';
 import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
 import { buttonRecipeFindings } from './check-button-recipes.ts';
 import { commentFindings } from './check-comment-style.ts';
@@ -26,24 +26,31 @@ const stores = frontendStores(files);
 const tailwind = await tailwindContext(files, allowlist.markerClasses);
 
 /** What this branch changes against `origin/main`, uncommitted work included; nothing on main itself or without that ref. */
-function branchChanges(): { files: string[]; messages: string } {
+function branchChanges(): BranchChanges {
   const git = (...args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   try {
     const base = git('merge-base', 'HEAD', 'origin/main').trim();
-    const changed = `${git('diff', '--name-only', base)}${git('ls-files', '-o', '--exclude-standard')}`;
-    return { files: changed.split('\n').filter(Boolean), messages: git('log', '--format=%B', `${base}..HEAD`) };
+    const untracked = git('ls-files', '-o', '--exclude-standard');
+    const paths = (diff: string) => `${diff}${untracked}`.split('\n').filter(Boolean);
+    return {
+      changed: paths(git('diff', '--name-only', base)),
+      added: paths(git('diff', '--name-only', '--no-renames', '--diff-filter=A', base)),
+      messages: git('log', '--format=%B', `${base}..HEAD`),
+    };
   } catch {
-    return { files: [], messages: '' };
+    return { changed: [], added: [], messages: '' };
   }
 }
 
 const requested = files.filter((file) => isRequested(file, roots));
-const findings: Finding[] = alignmentFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8'));
+const findings: Finding[] = roots
+  .filter((root) => !files.some((file) => isRequested(file, [root])))
+  .map((root) => ({ file: root, rule: 'path-argument', message: 'no file matches this path' }));
+findings.push(...alignmentFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8')));
 // Alignments are written where they live: an app's own changes to its own paths owe none. Every synced app has a sync
 // manifest, and a sync by a CLI before 0.5 also copied the alignments folder in, so the folder alone does not mark the template.
 if (roots.length === 0 && files.includes('cella/alignments/_TEMPLATE.md') && !files.includes('cella/cella.manifest.json')) {
-  const { files: changed, messages } = branchChanges();
-  findings.push(...owedAlignmentFindings(changed, messages, readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
+  findings.push(...owedAlignmentFindings(branchChanges(), readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
 }
 for (const file of requested) {
   const content = readFileSync(join(repoRoot, file));
@@ -51,7 +58,7 @@ for (const file of requested) {
   const source = content.toString('utf8');
   const prose = allowlist.proseExclude?.some((prefix) => file.startsWith(prefix))
     ? []
-    : [...docFindings(file, source), ...commentFindings(file, source, audit)];
+    : [...docFindings(file, source), ...commentFindings(file, source)];
   const inFile = [
     ...findAppVocabularyFindings(file, source, allowlist),
     ...findProductNameFindings(file, source),

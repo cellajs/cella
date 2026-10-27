@@ -1,6 +1,7 @@
 /**
  * Prose rules for source comments and authored Markdown. `required` rules fail `pnpm style`; `review` rules print
- * under `pnpm style:audit` only. Every rule reads source comments; `docs` rules also read Markdown and MDX prose.
+ * under `pnpm style:audit` only. Every rule reads source comments; `text` rules read the whole source file, strings
+ * included; `docs` rules also read Markdown and MDX prose.
  */
 import type { Finding } from './repo-files.ts';
 
@@ -10,15 +11,26 @@ export interface ProseRule {
   level: 'required' | 'review';
   message: string;
   docs?: boolean;
+  /** Read in the whole text of a source file, strings and JSON values included, not only in its comments. */
+  text?: boolean;
   /** Repo-relative paths the rule skips. */
   exclude?: RegExp;
 }
 
-/** Agent-associated wording, skipped in infra/ and in text that is generated or addresses app maintainers. */
-const agentWording = { level: 'review', docs: true, exclude: /^(?:cella\/alignments\/|infra\/|sdk\/gen\/)/ } as const;
+/** Agent-associated wording, skipped in infra/ and in alignments, which address app maintainers. */
+const agentWording = { level: 'review', docs: true, exclude: /^(?:cella\/alignments\/|infra\/)/ } as const;
+
+/**
+ * Files no prose rule reads, on top of a rule's own `exclude` and the app's `proseExclude`: in source, migrations,
+ * the alignment folders and generated code; in docs, the changelogs release-please writes from commit messages.
+ */
+export function isProseExempt(file: string, kind: 'source' | 'doc'): boolean {
+  if (kind === 'doc') return file.endsWith('CHANGELOG.md');
+  return ['backend/drizzle/', 'cella/alignments/', 'sdk/gen/'].some((prefix) => file.startsWith(prefix)) || file.includes('.gen.');
+}
 
 export const proseRules: ProseRule[] = [
-  { name: 'em-dash', pattern: /—/, level: 'required', message: 'split the sentence, use a colon, or drop the clause', docs: true },
+  { name: 'em-dash', pattern: /\u2014/, level: 'required', message: 'split the sentence, use a colon, or drop the clause', docs: true, text: true },
   {
     name: 'contrast-history',
     pattern: /\b(?:instead|rather than|as opposed to)\b/i,

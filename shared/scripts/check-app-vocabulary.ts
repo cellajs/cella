@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { repoRoot as defaultRepoRoot, type Finding, lineColumn } from './repo-files.ts';
+import { blankOut, repoRoot as defaultRepoRoot, type Finding, lineColumn } from './repo-files.ts';
 
 const disallowedTerm = /fork/gi;
 /** The product name as an identifier or wire string; prose may still contrast the template with the app. */
@@ -48,7 +48,6 @@ const templateAllowlist: VocabularyAllowlist = {
     // both of which use the CLI's source-control term. It must stay byte-identical with the
     // copies shipped to apps so `pnpm cella sync` reports it as identical.
     'cella/skills/cella-sync/SKILL.md',
-    'shared/scripts/check-app-vocabulary.test.ts',
     'shared/scripts/check-app-vocabulary.ts',
   ],
   // Alignment READMEs address app maintainers pulling template changes, an audience the CLI's source-control term describes precisely.
@@ -66,10 +65,8 @@ export function findAppVocabularyFindings(file: string, source: string, allowlis
   if (isAllowed(file, allowlist)) return [];
 
   const finding = (term: string) => ({ file, rule: 'source-control-term', term, message: sourceControlAdvice });
-  // Blank the markers to same-length whitespace so line and column numbers of real findings hold.
-  const blank = (marker: string) => marker.replace(/[^\n]/g, ' ');
-  const markers = source.replace(markerComment, blank);
-  const scanned = /\.ya?ml$/.test(file) ? markers.replace(yamlMarkerComment, blank) : markers;
+  const markers = source.replace(markerComment, blankOut);
+  const scanned = /\.ya?ml$/.test(file) ? markers.replace(yamlMarkerComment, blankOut) : markers;
   return [
     ...[...file.matchAll(disallowedTerm)].map((match) => finding(match[0])),
     ...[...scanned.matchAll(disallowedTerm)].map((match) => ({ ...finding(match[0]), ...lineColumn(scanned, match.index) })),

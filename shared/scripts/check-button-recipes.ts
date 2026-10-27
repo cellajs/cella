@@ -4,15 +4,15 @@
  * hover off that model are review markers, a destructive or muted text a button keeps on purpose included.
  */
 import ts from 'typescript';
-import { isFrontendSource, splitToken, stringTokens, type Token } from './check-text-colors.ts';
-import type { Finding } from './repo-files.ts';
+import { splitToken, stringTokens, type Token } from './class-tokens.ts';
+import { type Finding, isFrontendSource, lineColumn } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 /** Color utilities by kind; a size, width, alignment or layout keyword under the same prefix is none of them. */
 const colorUtilities = {
   fill: /^bg-(?!(?:clip|origin|blend|size|position|repeat|linear|radial|conic)-|(?:none|cover|contain|auto|fixed|local|scroll|no-repeat|repeat|center|top|bottom|left|right)$)/,
   edge: /^border-(?:[trblxyse]-)?(?![trblxyse](?:-|$)|\d|px$|\[\d|spacing|(?:solid|dashed|dotted|double|hidden|none|collapse|separate)$)/,
-  text: /^text-(?!\[\d|(?:2xs|xs|sm|base|md|lg|\d?xl|left|center|right|start|end|justify|wrap|nowrap|balance|pretty|ellipsis|clip)$)/,
+  text: /^text-(?!\[\d|\[length:|(?:2xs|xs|sm|base|md|lg|\d?xl|left|center|right|start|end|justify|wrap|nowrap|balance|pretty|ellipsis|clip)$)/,
 };
 /** Variants that style a child or a pseudo-element, not the button. */
 const childVariant = /^(?:\[&|\*|before$|after$|placeholder$|selection$|marker$|file$)/;
@@ -44,8 +44,7 @@ export function buttonRecipeFindings(file: string, source: string): Finding[] {
   const sourceFile = parseSource(file, source);
   const findings = new Map<number, Finding>();
   const report = (offset: number, term: string, message: string) => {
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(offset);
-    findings.set(offset, { file, line: line + 1, column: character + 1, rule: 'button-recipe', term, message, review: true });
+    findings.set(offset, { file, ...lineColumn(source, offset), rule: 'button-recipe', term, message, review: true });
   };
   const judgeButton = (tokens: Token[]) => {
     const restyled = tokens.filter(({ token }) => restylesVariant(token));

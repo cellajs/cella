@@ -19,12 +19,14 @@ type Oklch = [lightness: number, chroma: number, hue: number];
 /** A declaration holds a color or names another token (`var(--foreground)`), which the mode resolves. */
 type Declaration = { value?: Oklch; alias?: string; offset: number };
 
-/** `--name: oklch(L C H)` and `--name: var(--other)` declarations of the first block that follows `selector` inside the theme layer. */
+/** `--name: oklch(L C H)` and `--name: var(--other)` declarations of the first `selector` block in the theme layer that declares `--background`. */
 function tokens(source: string, selector: string): Map<string, Declaration> {
   const found = new Map<string, Declaration>();
-  const start = source.search(new RegExp(`^\\s*${selector.replace('.', '\\.')}\\s*\\{\\s*\\n\\s*--background:`, 'm'));
-  if (start < 0) return found;
-  const block = source.slice(start, source.indexOf('\n  }', start));
+  const blockAt = (start: number) => source.slice(start, source.indexOf('\n  }', start));
+  const opening = new RegExp(`^\\s*${selector.replace('.', '\\.')}\\s*\\{`, 'gm');
+  const start = [...source.matchAll(opening)].map(({ index }) => index).find((index) => blockAt(index).includes('--background:'));
+  if (start === undefined) return found;
+  const block = blockAt(start);
   for (const match of block.matchAll(/--([a-z-]+):\s*(?:oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\)|var\(--([a-z-]+)\))/g)) {
     const offset = start + (match.index ?? 0);
     if (match[5]) {
@@ -70,6 +72,7 @@ const ratio = (one: Oklch, other: Oklch) => {
 export function tokenContrastFindings(file: string, source: string): Finding[] {
   if (file !== themeFile) return [];
   const light = tokens(source, ':root');
+  if (light.size === 0) return [{ file, rule: 'token-contrast', message: 'no :root block declares --background, so no token is measured' }];
   const dark = new Map([...light, ...tokens(source, '.dark')]);
   const findings: Finding[] = [];
 

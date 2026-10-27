@@ -60,6 +60,12 @@ describe('tokenContrastFindings', () => {
     expect(messages).not.toContainEqual(expect.stringContaining('light mode, below 4.5:1 (--secondary-foreground'));
   });
 
+  it('finds the light block when --background is not its first declaration', () => {
+    const source = theme(['--foreground: oklch(0.95 0 0);'], []).replace(':root {', ':root {\n    --radius: 0.5rem;');
+    const messages = tokenContrastFindings(file, source).map(({ message }) => message);
+    expect(messages).toContainEqual(expect.stringMatching(/in light mode, below 4\.5:1 \(--foreground on --background\)$/));
+  });
+
   it('reports a raised control edge below 3:1', () => {
     const source = theme(['--edge-raised: oklch(0.88 0.005 285);'], ['--edge-raised: oklch(0.54 0.011 285);']);
     const findings = tokenContrastFindings(file, source);

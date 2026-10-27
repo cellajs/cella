@@ -43,19 +43,36 @@ export function withRestoredPaths(paths: string[], run: () => void): void {
 }
 
 /** Repo-relative files git tracks, plus untracked ones it does not ignore, that exist on disk, in `git ls-files` order. */
-export function repoFiles(root = repoRoot): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: root, encoding: 'utf8' })
+export function repoFiles(): string[] {
+  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n')
-    .filter((file) => file && existsSync(join(root, file)));
+    .filter((file) => file && existsSync(join(repoRoot, file)));
+}
+
+/** Whether `file` is the path `entry` or inside it; `entry` may end in `/`. */
+export function isUnder(file: string, entry: string): boolean {
+  return file === entry || file.startsWith(entry.endsWith('/') ? entry : `${entry}/`);
 }
 
 /** Whether `file` is one of the requested roots or inside one; no roots requests every file. */
 export function isRequested(file: string, roots: string[]): boolean {
-  if (roots.length === 0) return true;
-  return roots.some((root) => {
-    const normalized = root.replace(/^\.\//, '').replace(/\/$/, '');
-    return file === normalized || file.startsWith(`${normalized}/`);
-  });
+  return roots.length === 0 || roots.some((root) => isUnder(file, root.replace(/^\.\//, '').replace(/\/$/, '')));
+}
+
+/** App sources under frontend/src, outside generated files, content, stories and tests: the files the frontend convention rules read. */
+export function isFrontendSource(file: string): boolean {
+  return (
+    /^frontend\/src\/.*\.tsx?$/.test(file) &&
+    !file.includes('.gen.') &&
+    !file.includes('/content/') &&
+    !file.includes('/stories/') &&
+    !/\.(?:stories|test)\.tsx?$/.test(file)
+  );
+}
+
+/** `text` with every character but a line break turned into a space, so offsets and line numbers into it still hold. */
+export function blankOut(text: string): string {
+  return text.replace(/[^\n]/g, ' ');
 }
 
 /** 1-based line and column of `offset`, counting `\n` line breaks only. */

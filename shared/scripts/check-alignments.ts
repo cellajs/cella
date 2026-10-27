@@ -3,7 +3,7 @@
  * then the title and a one-paragraph summary. Apps read them with `pnpm cella align`, which expects this shape.
  * Also the rule that a branch changing an app-owned path synced code reads from brings an alignment.
  */
-import type { Finding } from './repo-files.ts';
+import { type Finding, isUnder } from './repo-files.ts';
 
 /** An alignment folder name: `<YYYYMMDDThhmm>-<slug>`, UTC minute precision. */
 const alignmentIdPattern = /^\d{8}T\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -11,32 +11,18 @@ const alignmentIdPattern = /^\d{8}T\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const alignmentsDir = 'cella/alignments/';
 
 /** How an app finds the code an alignment leaves behind: typecheck, a test it inherits, or only by reading. */
-const caughtByValues = ['compiler', 'tests', 'nothing'] as const;
+const caughtByValues = ['compiler', 'tests', 'nothing'];
 
-/** One alignment README, parsed. Fields fall back to empty values when `errors` is not empty. */
+/** One alignment README, checked: the codemod's default scan roots (empty without a codemod) and every shape problem. */
 interface Alignment {
-  /** Changes upstream in a way app-specific code must follow. */
-  syncBreaking: boolean;
-  /** Bumped `clientCacheVersion` or shipped a lens module. */
-  clientCacheBump: boolean;
-  /** Needs `pnpm generate`. */
-  generate: boolean;
-  /** Null when the frontmatter has none, which only a change that is not sync-breaking may omit. */
-  caughtBy: (typeof caughtByValues)[number] | null;
-  /** Terms `pnpm cella align` greps for in app code; empty when the compiler finds every site. */
-  grep: string[];
-  /** Default scan roots for the codemod; empty for an alignment without one. */
   roots: string[];
-  /** The `# ` heading. */
-  title: string;
-  /** The paragraph under the title. */
-  summary: string;
   errors: string[];
 }
 
-const requiredBooleanKeys = ['syncBreaking', 'clientCacheBump'] as const;
-const booleanKeys = [...requiredBooleanKeys, 'generate'] as const;
-const listKeys = ['grep', 'roots'] as const;
+const requiredBooleanKeys = ['syncBreaking', 'clientCacheBump'];
+const booleanKeys = [...requiredBooleanKeys, 'generate'];
+/** Comma-separated values: the terms `pnpm cella align` greps for, and the codemod's roots. */
+const listKeys = ['grep', 'roots'];
 
 /** The lines after the frontmatter, without HTML comment lines (a comment opens at the start of a line). */
 function bodyLines(lines: string[]): string[] {
@@ -48,48 +34,31 @@ function bodyLines(lines: string[]): string[] {
   });
 }
 
-/** Parse an alignment README; every shape problem lands in `errors`. */
+/** Check an alignment README; every shape problem lands in `errors`. */
 export function parseAlignment(source: string): Alignment {
-  const alignment: Alignment = {
-    syncBreaking: false,
-    clientCacheBump: false,
-    generate: false,
-    caughtBy: null,
-    grep: [],
-    roots: [],
-    title: '',
-    summary: '',
-    errors: [],
-  };
+  const errors: string[] = [];
   const lines = source.replace(/\r\n/g, '\n').split('\n');
 
   const close = lines[0] === '---' ? lines.indexOf('---', 1) : -1;
-  if (close === -1) alignment.errors.push('must open with a `---` frontmatter block');
-  const seen = new Set<string>();
+  if (close === -1) errors.push('must open with a `---` frontmatter block');
+  const frontmatter = new Map<string, string>();
   for (const line of lines.slice(1, Math.max(close, 1))) {
     const match = /^(\w+):\s*(.*)$/.exec(line);
     if (!match) {
-      alignment.errors.push(`frontmatter line is not \`key: value\`: ${line}`);
+      errors.push(`frontmatter line is not \`key: value\`: ${line}`);
       continue;
     }
     const [, key, value] = match;
-    seen.add(key);
-    if (listKeys.includes(key as (typeof listKeys)[number]))
-      alignment[key as (typeof listKeys)[number]] = value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
-    else if (booleanKeys.includes(key as (typeof booleanKeys)[number])) {
-      if (value !== 'true' && value !== 'false') alignment.errors.push(`${key} must be true or false`);
-      alignment[key as (typeof booleanKeys)[number]] = value === 'true';
+    frontmatter.set(key, value);
+    if (booleanKeys.includes(key)) {
+      if (value !== 'true' && value !== 'false') errors.push(`${key} must be true or false`);
     } else if (key === 'caughtBy') {
-      alignment.caughtBy = caughtByValues.find((option) => option === value) ?? null;
-      if (!alignment.caughtBy) alignment.errors.push(`caughtBy must be one of ${caughtByValues.join(', ')}`);
-    } else alignment.errors.push(`unknown frontmatter key: ${key}`);
+      if (!caughtByValues.includes(value)) errors.push(`caughtBy must be one of ${caughtByValues.join(', ')}`);
+    } else if (!listKeys.includes(key)) errors.push(`unknown frontmatter key: ${key}`);
   }
-  for (const key of requiredBooleanKeys) if (close !== -1 && !seen.has(key)) alignment.errors.push(`frontmatter is missing ${key}`);
-  if (alignment.syncBreaking && !seen.has('caughtBy'))
-    alignment.errors.push('a sync-breaking alignment says how an app finds its leftovers: caughtBy');
+  for (const key of requiredBooleanKeys) if (close !== -1 && !frontmatter.has(key)) errors.push(`frontmatter is missing ${key}`);
+  if (frontmatter.get('syncBreaking') === 'true' && !frontmatter.has('caughtBy'))
+    errors.push('a sync-breaking alignment says how an app finds its leftovers: caughtBy');
 
   // Body: the title, then the summary paragraph. Blank lines and HTML comments in between are skipped.
   const body = bodyLines(lines.slice(close + 1)).join('\n');
@@ -97,16 +66,17 @@ export function parseAlignment(source: string): Alignment {
     .split(/\n\s*\n/)
     .map((block) => block.trim())
     .filter(Boolean);
-  const title = /^# (.+)$/.exec(blocks[0] ?? '');
-  if (!title || blocks[0].includes('\n')) alignment.errors.push('the first line after the frontmatter must be the `# ` title');
-  else alignment.title = title[1].trim();
+  if (!/^# .+$/.test(blocks[0] ?? '')) errors.push('the first line after the frontmatter must be the `# ` title');
   const summary = blocks[1] ?? '';
-  if (!summary || /^(#|>|[-*|]|```|\d+\.)/.test(summary)) alignment.errors.push('the title must be followed by a one-paragraph summary');
-  else alignment.summary = summary.replace(/\s*\n\s*/g, ' ');
-  return alignment;
+  if (!summary || /^(#|>|[-*|]|```|\d+\.)/.test(summary)) errors.push('the title must be followed by a one-paragraph summary');
+  const roots = (frontmatter.get('roots') ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return { roots, errors };
 }
 
-/** Findings for every alignment folder among `files`: folder name, README shape, and `roots` only beside a codemod. */
+/** Findings for every alignment folder among `files`: folder name, README shape, and `roots` exactly beside a codemod. */
 export function alignmentFindings(files: string[], read: (file: string) => string): Finding[] {
   const folders = new Map<string, string[]>();
   for (const file of files) {
@@ -131,6 +101,8 @@ export function alignmentFindings(files: string[], read: (file: string) => strin
     const codemods = names.filter((name) => !name.includes('/') && name.endsWith('.ts') && !name.endsWith('.test.ts'));
     if (codemods.length > 1) finding(readme, `one codemod per alignment, found ${codemods.join(', ')}`, 1);
     if (alignment.roots.length > 0 && codemods.length === 0) finding(readme, 'roots is only for an alignment with a codemod', 1);
+    if (alignment.roots.length === 0 && codemods.length > 0)
+      finding(readme, 'a codemod needs roots: the folders `pnpm cella align --run` scans by default', 1);
   }
   return findings;
 }
@@ -145,7 +117,6 @@ const alignmentExempt = [
   'a11y/scope-config.ts',
   'frontend/public/',
   'frontend/src/content',
-  'frontend/src/modules/home/home-page.tsx',
   'frontend/src/routes/routeTree.gen.ts',
   'frontend/src/styling/gradients.css',
   'infra/',
@@ -155,28 +126,34 @@ const alignmentExempt = [
   'shared/config',
 ];
 
-const isUnder = (file: string, entry: string) => file === entry || file.startsWith(entry.endsWith('/') ? entry : `${entry}/`);
-
 /** The `ignored` and `pinned` entries of the sync config, read from its source text. */
 export function ownedPaths(configSource: string): string[] {
   const lists = [...configSource.matchAll(/\b(?:ignored|pinned): \[([\s\S]*?)\n {4}\]/g)].map((match) => match[1]);
   return lists.flatMap((list) => [...list.matchAll(/^\s*'([^']+)',?\s*$/gm)].map((match) => match[1]));
 }
 
+/** What a branch changes against its base: every changed path, the paths it adds, and its commit messages. */
+export interface BranchChanges {
+  changed: string[];
+  added: string[];
+  messages: string;
+}
+
 /**
  * The finding for a branch that changes an app-owned path synced code reads from (a pinned seam, `logo.tsx`,
- * `backend/drizzle`) without an alignment. Such a change never reaches an app's copy, so the app's synced code breaks
- * until someone tells it what to add. An `Alignment: none, <reason>` line in a commit message waives it.
+ * `backend/drizzle`) without adding an alignment. Such a change never reaches an app's copy, so the app's synced code
+ * breaks until someone tells it what to add. An `Alignment: none, <reason>` line in a commit message waives it.
  */
-export function owedAlignmentFindings(changedFiles: string[], commitMessages: string, configSource: string): Finding[] {
-  const owned = ownedPaths(configSource).filter((entry) => !alignmentExempt.some((exempt) => isUnder(entry, exempt) || entry.startsWith(exempt)));
+export function owedAlignmentFindings({ changed, added, messages }: BranchChanges, configSource: string): Finding[] {
+  const owned = ownedPaths(configSource).filter((entry) => !alignmentExempt.some((exempt) => isUnder(entry, exempt)));
   // A Markdown file inside an owned folder is read by people, never by synced code
-  const touched = changedFiles.filter((file) => !file.endsWith('.md') && owned.some((entry) => isUnder(file, entry)));
+  const touched = changed.filter((file) => !file.endsWith('.md') && owned.some((entry) => isUnder(file, entry)));
   if (touched.length === 0) return [];
-  const hasAlignment = changedFiles.some(
-    (file) => file.startsWith(alignmentsDir) && alignmentIdPattern.test(file.slice(alignmentsDir.length).split('/')[0]),
-  );
-  if (hasAlignment || /^Alignment: none\b.*\w/m.test(commitMessages)) return [];
+  const addsAlignment = added.some((file) => {
+    const [folder, name, ...rest] = file.slice(alignmentsDir.length).split('/');
+    return file.startsWith(alignmentsDir) && alignmentIdPattern.test(folder) && name === 'README.md' && rest.length === 0;
+  });
+  if (addsAlignment || /^Alignment: none\b.*\w/m.test(messages)) return [];
   return touched.map((file) => ({
     file,
     rule: 'alignment',

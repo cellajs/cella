@@ -56,7 +56,7 @@ const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
   throw new Error('expected orgGuard to throw');
 };
 
-describe('orgGuard — organization access', () => {
+describe('orgGuard: organization access', () => {
   beforeEach(() => {
     clearOrgCache();
     setOrgCache(tenantId, orgId, orgRow as never);
@@ -118,7 +118,7 @@ describe('orgGuard — organization access', () => {
 
 // The lookup on a cache miss runs against the database: the request's tenant bounds it, so an organization id
 // from another tenant does not resolve, whoever asks.
-describe('orgGuard — organization lookup within the tenant', () => {
+describe('orgGuard: organization lookup within the tenant', () => {
   const seedDb = getSeedDb();
   let organization: { id: string; tenantId: string; name: string };
   let otherTenantId: string;

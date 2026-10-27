@@ -6,34 +6,24 @@
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
-import { type Finding, repoRoot } from './repo-files.ts';
+import { type Finding, isFrontendSource, lineColumn, repoRoot } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 type Report = (node: ts.Node, rule: string, message: string) => void;
 
-/** App sources under frontend/src, outside generated files, content, stories and tests. */
-function isFrontendSource(file: string): boolean {
-  return (
-    /^frontend\/src\/.*\.tsx?$/.test(file) &&
-    !file.includes('.gen.') &&
-    !file.includes('/content/') &&
-    !file.includes('/stories/') &&
-    !/\.(?:stories|test)\.tsx?$/.test(file)
-  );
+function containsJsx(node: ts.Node): boolean {
+  return ts.isJsxElement(node) || ts.isJsxFragment(node) || ts.isJsxSelfClosingElement(node) || !!ts.forEachChild(node, containsJsx);
 }
 
-function containsJsx(node: ts.Node): boolean {
-  let found = false;
-  function visit(child: ts.Node): void {
-    if (found) return;
-    if (ts.isJsxElement(child) || ts.isJsxFragment(child) || ts.isJsxSelfClosingElement(child)) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(child, visit);
-  }
-  visit(node);
-  return found;
+/** The import declarations of a file by module, each with the names it imports: `imported` as exported, `element` the binding. */
+function importsOf(sourceFile: ts.SourceFile) {
+  return sourceFile.statements.filter(ts.isImportDeclaration).flatMap((declaration) => {
+    if (!ts.isStringLiteral(declaration.moduleSpecifier)) return [];
+    const bindings = declaration.importClause?.namedBindings;
+    const elements = bindings && ts.isNamedImports(bindings) ? bindings.elements : [];
+    const names = elements.map((element) => ({ imported: (element.propertyName ?? element.name).text, element }));
+    return [{ module: declaration.moduleSpecifier.text, declaration, names }];
+  });
 }
 
 function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
@@ -66,15 +56,11 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
 }
 
 function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
-  const createNames = new Set<string>();
-  for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (statement.moduleSpecifier.text !== 'zustand' || !bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      if ((element.propertyName ?? element.name).text === 'create') createNames.add(element.name.text);
-    }
-  }
+  const createNames = new Set(
+    importsOf(sourceFile)
+      .filter(({ module }) => module === 'zustand')
+      .flatMap(({ names }) => names.filter(({ imported }) => imported === 'create').map(({ element }) => element.name.text)),
+  );
   if (createNames.size === 0) return;
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) continue;
@@ -123,7 +109,7 @@ function checkButtonPressCancel(sourceFile: ts.SourceFile, node: ts.Node, report
   if (node.tagName.getText(sourceFile) !== 'Button') return;
   for (const attribute of node.attributes.properties) {
     if (!ts.isJsxAttribute(attribute) || attribute.name.getText(sourceFile) !== 'className' || !attribute.initializer) continue;
-    if (!/(?<![\w:-])!?active:translate-y-0!?(?![\w-])/.test(attribute.initializer.getText(sourceFile))) continue;
+    if (!/(?<![\w-])!?active:translate-y-0!?(?![\w-])/.test(attribute.initializer.getText(sourceFile))) continue;
     report(
       attribute,
       'button-press-cancel',
@@ -146,10 +132,12 @@ function checkFormNoValidate(sourceFile: ts.SourceFile, node: ts.Node, report: R
 }
 
 /** A form resolves through `formResolver`, which leaves a cleared optional field unset; it is the one reader of `zodResolver`. */
-function checkFormResolver(file: string, node: ts.Node, report: Report): void {
-  if (file === 'frontend/src/utils/form-resolver.ts' || !ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) return;
-  if (node.moduleSpecifier.text !== '@hookform/resolvers/zod') return;
-  report(node, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
+function checkFormResolver(file: string, sourceFile: ts.SourceFile, report: Report): void {
+  if (file === 'frontend/src/utils/form-resolver.ts') return;
+  for (const { module, declaration } of importsOf(sourceFile)) {
+    if (module !== '@hookform/resolvers/zod') continue;
+    report(declaration, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
+  }
 }
 
 /**
@@ -160,13 +148,9 @@ function checkReorderGrip(file: string, sourceFile: ts.SourceFile, report: Repor
   if (file.endsWith('-preview.tsx') || file === 'frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx') return;
   let grip: ts.Node | undefined;
   let hasHandle = false;
-  for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      const imported = (element.propertyName ?? element.name).text;
-      if (statement.moduleSpecifier.text === 'lucide-react' && /^Grip(Vertical|Horizontal)Icon$/.test(imported)) grip = element;
+  for (const { module, names } of importsOf(sourceFile)) {
+    for (const { imported, element } of names) {
+      if (module === 'lucide-react' && /^Grip(?:Vertical|Horizontal)?Icon$/.test(imported)) grip = element;
       if (imported === 'ReorderHandle' || imported === 'reorderColumn') hasHandle = true;
     }
   }
@@ -225,22 +209,19 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   if (!isFrontendSource(file)) return [];
   const sourceFile = parseSource(file, source);
   const findings: Finding[] = [];
-  const report: Report = (node, rule, message) => {
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-    findings.push({ file, line: line + 1, column: character + 1, rule, message });
-  };
+  const report: Report = (node, rule, message) => findings.push({ file, ...lineColumn(source, node.getStart(sourceFile)), rule, message });
 
   for (const statement of sourceFile.statements) {
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement, report);
   }
   checkReorderGrip(file, sourceFile, report);
+  checkFormResolver(file, sourceFile, report);
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
     checkRouteContextSelector(node, report);
     checkButtonPressCancel(sourceFile, node, report);
     checkFormNoValidate(sourceFile, node, report);
-    checkFormResolver(file, node, report);
     checkMemoDependencies(node, report);
     node.forEachChild(visit);
   });

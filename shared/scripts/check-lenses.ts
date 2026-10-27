@@ -1,15 +1,13 @@
 /** CI guards for schema-evolution lenses; `pnpm --filter shared lens:check`. @see README.md */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, relative } from 'node:path';
 import { appConfig } from '../index.ts';
 import { deltaRenameMap } from '../src/schema-evolution/define.ts';
 import { lenses } from '../src/schema-evolution/lens-list.ts';
+import { repoRoot } from './repo-files.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const lensDir = join(here, '..', 'src', 'schema-evolution');
-const repoRoot = join(here, '..', '..');
+const lensDir = join(repoRoot, 'shared/src/schema-evolution');
 
 const DATED_LENS = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;
 
