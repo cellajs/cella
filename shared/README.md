@@ -2,7 +2,7 @@
 
 Shared configuration, types, permissions, and utilities used by all packages.
 
-`config/config.default.ts` holds the full base config. Mode files (`config/config.development.ts`, etc.) provide partial overrides merged via `mergeDeep` into the exported `appConfig`. To add a mode: add it to `ConfigMode` in `types.ts`, create the config file in `shared/config/`, and register it in `app-config.ts`. `config-validation.ts` checks at compile time that config arrays match the hierarchy.
+`config/config.default.ts` holds the full base config. Mode files (`config/config.development.ts`, etc.) provide partial overrides merged via `mergeDeep` into the exported `appConfig`. To add a mode: add it to `ConfigMode` in `types.ts`, create the config file in `shared/config/`, and register it in `app-config.ts`. `app-config.ts` refuses an invalid config while it builds `appConfig`, and `config-validation.ts` checks the config against the permission policies.
 
 ## Dev ports
 

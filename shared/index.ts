@@ -1,7 +1,7 @@
 import { hierarchy } from './config/config.default.ts';
 
 export { hierarchy, roles } from './config/config.default.ts';
-export { appConfig, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
+export { appConfig, urlEnvNames, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
 export { type ConfigSwitch, isStrategyEnabled, isSwitchOn } from './src/config-builder/config-switch.ts';
 export type { ConfigMode } from './src/config-builder/types.ts';
 
@@ -119,5 +119,5 @@ export type {
 } from './types.ts';
 export { actionToVerb, activityActions, isValidEventType, trackedEventTypes } from './types.ts';
 
-// Side-effect import: compile-time check that the config matches the hierarchy.
+// Side-effect import: the config checks that need the policy matrix run in every program that imports `shared`.
 import './src/config-builder/config-validation.ts';

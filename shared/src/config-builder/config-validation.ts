@@ -3,20 +3,15 @@ import { getEntityPolicies, isRowCondition } from '../permissions/index.ts';
 import { appConfig } from './app-config.ts';
 import type { RequiredConfig } from './types.ts';
 
+// Checks the config against the policy matrix, which `app-config.ts` cannot import: the matrix is built from `appConfig`.
+// `shared/index.ts` imports this file, so a program that imports `shared` runs it; one that imports only a config file
+// or `app-config.ts` (the sdk, infra) does not.
+
 // Validate that Config satisfies RequiredConfig (compile-time only).
 type Config = typeof appConfig;
 type _ConfigSatisfiesRequired = Config extends RequiredConfig ? true : never;
 const _configValid: _ConfigSatisfiesRequired = true;
 void _configValid;
-
-// A device away for the activity window starts over, so it never needs a tombstone older than that; the margin absorbs
-// clock differences and the CDC worker's lag before a tombstone it has not read goes.
-if (appConfig.retention.deletedItemsDays < appConfig.retention.activityDays + 30) {
-  throw new Error('[Config] retention.deletedItemsDays must be at least retention.activityDays + 30.');
-}
-
-// Entity arrays and id-column keys derive from the hierarchy in config.default.ts, so no
-// bidirectional check is needed.
 
 // Unseen tracking needs unconditional channel reads for tracked types; conditional visibility
 // keeps endpoint-based counting.

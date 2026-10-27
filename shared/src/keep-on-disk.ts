@@ -14,13 +14,18 @@
  * kept on disk and every inlined package is a devDependency. A `dependencies` entry the bundle would inline throws here.
  * A package kept on disk that production never loads, such as pino-pretty, stays a devDependency.
  */
-const sharedPatterns = [String.raw`pg(?:\/|$)`, String.raw`@opentelemetry\/`, String.raw`pino(?:-|\/|$)`];
+const sharedPatterns = [
+  String.raw`pg(?:\/|$)`,
+  String.raw`@opentelemetry\/`,
+  String.raw`pino(?:-|\/|$)`,
+  String.raw`thread-stream(?:\/|$)`,
+  String.raw`sonic-boom(?:\/|$)`,
+];
 
 export function keepOnDisk(packages: readonly string[], dependencies: Readonly<Record<string, string>>): { external: RegExp[] } {
-  const external = [
-    ...sharedPatterns,
-    ...['thread-stream', 'sonic-boom', ...packages].map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`),
-  ].map((pattern) => new RegExp(`^${pattern}`));
+  const external = [...sharedPatterns, ...packages.map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`)].map(
+    (pattern) => new RegExp(`^${pattern}`),
+  );
 
   const inlined = Object.keys(dependencies).filter((name) => !external.some((pattern) => pattern.test(name)));
   if (inlined.length) {

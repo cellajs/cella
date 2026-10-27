@@ -7,8 +7,8 @@
 export type UnknownFieldHandling = 'ignore' | 'strip' | 'fail';
 
 /**
- * Timing that gates expand-to-contract transitions and forces stale bundles to update. Apps may
- * tune the defaults. Pure constants with no runtime dependencies.
+ * Timing for the manual expand-to-contract step (`cella/SCHEMA_EVOLUTION.md`); no code reads
+ * `expandWindowMinDays` or `staleBundleMaxDays` yet. Pure constants with no runtime dependencies.
  */
 export const schemaEvolutionPolicy: {
   /** Minimum days an expand-window lens must live before it may be contracted. */

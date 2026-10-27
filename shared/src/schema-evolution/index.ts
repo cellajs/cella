@@ -1,30 +1,12 @@
-/** Public barrel for the schema-evolution lens registry. @see README.md */
+/** Public barrel for the schema-evolution lens registry: what the backend and frontend read. @see README.md */
 
-export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
-export type {
-  AddDelta,
-  DropDelta,
-  LensContext,
-  LensCustom,
-  LensDefinition,
-  LensDelta,
-  LensEntityType,
-  LensPhase,
-  RenameDelta,
-  RetypeDelta,
-  SetRenameDelta,
-} from './define.ts';
-export { defineLens, lensFormatVersion, resolveAddDefault } from './define.ts';
-export type { NormalizeOpsOptions, RegistryHooks } from './engine.ts';
+export type { LensEntityType } from './define.ts';
+export type { RegistryHooks } from './engine.ts';
 export {
   configureLensTelemetry,
   currentSchemaVersion,
-  downgradeEntity,
   migrateCachedEntity,
   migrateQueuedMutation,
   normalizeOps,
-  resetLensEngine,
-  versionNodeFor,
   widenedOpsKeyMap,
 } from './engine.ts';
-export { lenses } from './lens-list.ts';

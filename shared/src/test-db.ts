@@ -34,9 +34,10 @@ export const testDatabaseName = poolId ? testWorkerDatabase(poolId) : 'postgres'
  * which no other suite should find done to the database it reads. The backend's global setup creates and migrates it.
  */
 export const cdcTestDatabase = 'cdc_integration';
-export const testCdcDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${cdcTestDatabase}`;
 
-// URLs are derived from the required port and the standard dev role credentials (mirrors backend/compose.yaml).
-export const testDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${testDatabaseName}`;
-export const testRuntimeDatabaseUrl = `postgres://runtime_role:dev_password@0.0.0.0:${port}/${testDatabaseName}`;
-export const testAdminRoleDatabaseUrl = `postgres://admin_role:dev_password@0.0.0.0:${port}/${testDatabaseName}`;
+// URLs are derived from the required port and the dev roles' names and passwords (mirrors backend/compose.yaml).
+const databaseUrl = (role: string, password: string, database: string) => `postgres://${role}:${password}@0.0.0.0:${port}/${database}`;
+export const testCdcDatabaseUrl = databaseUrl('postgres', 'postgres', cdcTestDatabase);
+export const testDatabaseUrl = databaseUrl('postgres', 'postgres', testDatabaseName);
+export const testRuntimeDatabaseUrl = databaseUrl('runtime_role', 'dev_password', testDatabaseName);
+export const testAdminRoleDatabaseUrl = databaseUrl('admin_role', 'dev_password', testDatabaseName);

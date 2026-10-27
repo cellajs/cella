@@ -23,4 +23,4 @@ With an empty lens list (`currentSchemaVersion === 0`) every export is a passthr
 
 ## Barrel: [index.ts](./index.ts)
 
-Public entry point re-exporting the registry, config, definitions, and engine functions.
+Public entry point re-exporting what the backend and frontend read: the schema version, the lens entity type, and the engine functions.

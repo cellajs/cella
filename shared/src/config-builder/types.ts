@@ -193,12 +193,10 @@ export interface ConfigStringArrays {
   uploadTemplateIds: readonly string[];
 }
 
-/**
- * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
- * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
- */
-/** The placement surfaces that exist once per app; the rest belong to a channel. */
-export type SingletonSlot = 'account.settings' | 'account.preferences' | 'home.sections' | 'user.profile' | 'system.tabs';
+/** The placement surfaces that exist once per app, in the order they are declared; the rest belong to a channel. */
+export const singletonSlots = ['account.settings', 'account.preferences', 'home.sections', 'user.profile', 'system.tabs'] as const;
+
+export type SingletonSlot = (typeof singletonSlots)[number];
 
 /** A channel's own placement surfaces; the only ones a channel row can store an arrangement for. */
 export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;
@@ -216,6 +214,10 @@ export interface NavigationConfig<C extends string = string> {
   pageTabs: Partial<Record<C, 'menu'>>;
 }
 
+/**
+ * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
+ * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
+ */
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   entityTypes: T['entityTypes'];
   channelEntityTypes: T['channelEntityTypes'];

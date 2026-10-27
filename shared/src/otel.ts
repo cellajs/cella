@@ -16,7 +16,6 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
-import { detectResources, envDetector, hostDetector, processDetector, resourceFromAttributes } from '@opentelemetry/resources';
 import { LoggerProvider, type LogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from '@opentelemetry/sdk-metrics';
@@ -33,6 +32,7 @@ import {
 } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config.ts';
+import { serviceResource } from './otel-resource.ts';
 import type { OtlpSignal, OtlpSink } from './otlp-sink.ts';
 import { createRedactingSpanProcessor } from './tracing/redacting-span-processor.ts';
 
@@ -105,8 +105,8 @@ export interface OtelSDK {
 /**
  * Tracer provider plus MeterProvider for one service. Backend, CDC and YJS share this exporter configuration.
  * `start()` registers what the OpenTelemetry Node SDK registers for this setup: the instrumentations, an
- * AsyncLocalStorage context, W3C trace-context and baggage propagation, and the provider with the host and process
- * resource attributes. Logs reach the sink through the pino transport (`otel-log-transport.ts`).
+ * AsyncLocalStorage context, W3C trace-context and baggage propagation, and the provider. Traces and metrics carry
+ * `serviceResource`; logs reach the sink through the pino transport (`otel-log-transport.ts`), which builds the same.
  *
  * @example
  * const otel = createOtelSDK({ serviceName: 'raak-development-api', sink: resolveOtlpSink(env) });
@@ -127,7 +127,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const exportTimeoutMs = appConfig.mode === 'development' ? 1000 : 10000;
   const metricExportIntervalMs = Math.max(metricIntervalMs, exportTimeoutMs);
 
-  const resource = resourceFromAttributes({
+  const resource = serviceResource({
     [ATTR_SERVICE_NAME]: serviceName,
     ...(serviceVersion && { [ATTR_SERVICE_VERSION]: serviceVersion }),
     // OTel semantic convention: reports the deploy environment.
@@ -181,8 +181,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const instrumentationList = autoInstrumentations ? instrumentations() : [];
 
   const tracerProvider = new TracerProvider({
-    // The host, process and OTEL_RESOURCE_ATTRIBUTES attributes, over the service's own.
-    resource: resource.merge(detectResources({ detectors: [envDetector, processDetector, hostDetector] })),
+    resource,
     sampler: samplerFromEnv(),
     // Redaction runs first, so every later processor and the exporter read the scrubbed span.
     spanProcessors: [

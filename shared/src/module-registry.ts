@@ -21,11 +21,6 @@ export const registerModule = (config: ModuleConfig) => {
   });
 };
 
-export const getModules = (filter?: { scope?: ModuleScope }): ModuleConfig[] => {
-  if (!filter) return [...modules];
-  return modules.filter((m) => !filter.scope || m.scope.includes(filter.scope));
-};
-
 export const onModuleRegister = (fn: (config: ModuleConfig) => void) => {
   listeners.push(fn);
   modules.forEach(fn);

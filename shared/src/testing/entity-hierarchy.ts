@@ -43,8 +43,13 @@ export const buildTestEntityHierarchyPlan = ({
 }: BuildTestEntityHierarchyPlanOptions): TestEntityHierarchyPlan => {
   const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
   const channelIdsByType: Partial<Record<ChannelEntityType, string>> = {};
+  // A parameter keeps the type wide: where the organization is the only channel type, `channelType` past its branch is `never`.
   const setChannelId = (channelType: ChannelEntityType, id: string) => {
     channelIdsByType[channelType] = id;
+  };
+  const channelColumn = (channelType: ChannelEntityType, id: string): TestChannelColumn => {
+    const idKey = appConfig.entityIdColumnKeys[channelType];
+    return { channelType, id, idKey, columnName: toColumnName(idKey) };
   };
   const seedChannelRows: TestChannelRow[] = [];
   let generatedIndex = 0;
@@ -55,13 +60,9 @@ export const buildTestEntityHierarchyPlan = ({
       continue;
     }
 
-    const parentChannelType = hierarchy.getParent(channelType) as ChannelEntityType | null;
-    if (!parentChannelType) {
-      continue;
-    }
-
-    const parentId = channelIdsByType[parentChannelType];
-    if (!parentId) {
+    const parentChannelType = hierarchy.getParent(channelType);
+    const parentId = parentChannelType && channelIdsByType[parentChannelType];
+    if (!parentChannelType || !parentId) {
       throw new Error(`Cannot seed ${channelType}: missing parent channel id for ${parentChannelType}`);
     }
     if (!makeChannelId) {
@@ -80,8 +81,7 @@ export const buildTestEntityHierarchyPlan = ({
       if (!ancestorId) {
         throw new Error(`Cannot seed ${channelType}: missing ancestor channel id for ${cursor}`);
       }
-      const idKey = appConfig.entityIdColumnKeys[cursor];
-      ancestorColumns.push({ channelType: cursor, id: ancestorId, idKey, columnName: toColumnName(idKey) });
+      ancestorColumns.push(channelColumn(cursor, ancestorId));
       cursor = hierarchy.getParent(cursor) as ChannelEntityType | null;
     }
     seedChannelRows.push({
@@ -101,9 +101,7 @@ export const buildTestEntityHierarchyPlan = ({
     if (!id) {
       throw new Error(`Missing channel id for ${channelType}`);
     }
-
-    const idKey = appConfig.entityIdColumnKeys[channelType];
-    return { channelType, id, idKey, columnName: toColumnName(idKey) };
+    return channelColumn(channelType, id);
   });
 
   return {

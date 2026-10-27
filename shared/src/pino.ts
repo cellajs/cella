@@ -5,11 +5,9 @@ import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
 import type { OtelLogTransportOptions } from './otel-log-transport.ts';
-import { type OtlpSink, resolveOtlpSink } from './otlp-sink.ts';
+import { type OtlpSink, type OtlpSinkEnv, resolveOtlpSink } from './otlp-sink.ts';
 import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils/failed-query.ts';
 import { scrubText, scrubUrl } from './utils/scrub-url.ts';
-
-export type { Logger } from 'pino';
 
 interface CreateLoggerOptions {
   level?: string;
@@ -229,11 +227,9 @@ export const createLog = (logger: pino.Logger): Log => {
   };
 };
 
-interface WorkerLogEnv {
+interface WorkerLogEnv extends OtlpSinkEnv {
   NODE_ENV: string;
   PINO_LOG_LEVEL?: string;
-  MAPLE_SECRET_INGEST_KEY?: string;
-  OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   RELEASE_SHA?: string;
 }
 

@@ -14,6 +14,19 @@ type BuiltServices = typeof _default.services & Record<UrlBearingService, { publ
 type Config = Omit<typeof _default, 's3' | 'services'> & { s3: S3Config; services: BuiltServices; devPortOffset: number };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
+/**
+ * The public URL family and the env variable that overrides each URL. The dev port offset shifts the same URLs, and
+ * `frontend/vite.config.ts` hands the same variables to the browser bundle, which evaluates this file again.
+ */
+export const urlEnvNames = {
+  frontendUrl: 'FRONTEND_URL',
+  backendUrl: 'BACKEND_URL',
+  backendAuthUrl: 'BACKEND_AUTH_URL',
+  yjsUrl: 'YJS_URL',
+  mcpUrl: 'MCP_URL',
+  oauthUrl: 'OAUTH_URL',
+} as const;
+
 // APP_MODE selects config independently so production-mode containers can use development naming.
 const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
 // Fail loud: an undefined `configModes` entry would otherwise boot the default configuration
@@ -45,7 +58,7 @@ const devPortOffset = mode === 'development' || mode === 'tunnel' ? resolveDevPo
 const shiftedHosts = new Map<string, string>();
 if (devPortOffset) {
   for (const [service, port] of typedEntries(merged.devPorts)) merged.devPorts[service] = port + devPortOffset;
-  for (const key of ['frontendUrl', 'backendUrl', 'backendAuthUrl', 'yjsUrl', 'mcpUrl', 'oauthUrl'] as const) {
+  for (const [key] of typedEntries(urlEnvNames)) {
     const shifted = shiftLocalPort(merged[key], devPortOffset);
     if (shifted !== merged[key]) shiftedHosts.set(new URL(shifted).host, new URL(merged[key]).host);
     merged[key] = shifted;
@@ -57,12 +70,10 @@ export const withConfiguredDevPorts = (text: string): string =>
   [...shiftedHosts].reduce((result, [shifted, configured]) => result.replaceAll(shifted, configured), text);
 
 // URL overrides let the dev config deploy to Scaleway containers while local dev keeps localhost.
-if (process.env.FRONTEND_URL) merged.frontendUrl = process.env.FRONTEND_URL;
-if (process.env.BACKEND_URL) merged.backendUrl = process.env.BACKEND_URL;
-if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AUTH_URL;
-if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
-if (process.env.MCP_URL) merged.mcpUrl = process.env.MCP_URL;
-if (process.env.OAUTH_URL) merged.oauthUrl = process.env.OAUTH_URL;
+for (const [key, envName] of typedEntries(urlEnvNames)) {
+  const url = process.env[envName];
+  if (url) merged[key] = url;
+}
 
 // Set via env so `pnpm dev:single` or a preview deploy flips it without a config edit.
 if (process.env.SINGLE_VM) merged.singleVM = process.env.SINGLE_VM === 'true';
@@ -86,6 +97,12 @@ if (!slugPattern.test(merged.slug)) {
 }
 if (merged.slug.replace(/-/g, '').length < 4) {
   throw new Error(`Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`);
+}
+
+// A device away for the activity window starts over, so it never needs a tombstone older than that; the margin absorbs
+// clock differences and the CDC worker's lag before a tombstone it has not read goes.
+if (merged.retention.deletedItemsDays < merged.retention.activityDays + 30) {
+  throw new Error('[Config] retention.deletedItemsDays must be at least retention.activityDays + 30.');
 }
 
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage

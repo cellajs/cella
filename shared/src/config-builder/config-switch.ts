@@ -11,17 +11,16 @@ export type ConfigSwitch =
   | { strategy: BaseAuthStrategies; provider?: never }
   | { strategy: 'oauth'; provider: BaseOAuthProviders };
 
-/** Whether a switch is on in this app's config, read per call: tests change the config at runtime. */
-export const isSwitchOn = (on: ConfigSwitch): boolean => {
-  if ('service' in on) return appConfig.services[on.service]?.enabled !== false;
-  // `some` with a comparison, like the providers below: an app's tuple may leave out strategies the type lists (`sso`)
-  if (!appConfig.enabledAuthStrategies.some((enabled) => enabled === on.strategy)) return false;
-  const { provider } = on;
-  return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);
-};
-
 /**
  * Whether a sign-in method is on in this app's config, read per call like `isSwitchOn`. An app's tuple may leave out
  * methods the type lists (a new app has no `sso`), and `includes` on that tuple refuses them, so code asks here.
  */
 export const isStrategyEnabled = (strategy: BaseAuthStrategies): boolean => appConfig.enabledAuthStrategies.some((enabled) => enabled === strategy);
+
+/** Whether a switch is on in this app's config, read per call: tests change the config at runtime. */
+export const isSwitchOn = (on: ConfigSwitch): boolean => {
+  if ('service' in on) return appConfig.services[on.service]?.enabled !== false;
+  if (!isStrategyEnabled(on.strategy)) return false;
+  const { provider } = on;
+  return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);
+};

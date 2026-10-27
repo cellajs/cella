@@ -23,10 +23,6 @@ export type RenameDelta = { rename: { from: string; to: string } };
  */
 export type AddDelta = { add: { field: string; default: unknown } };
 
-export function resolveAddDefault(add: AddDelta['add'], row: Record<string, unknown>): unknown {
-  return typeof add.default === 'function' ? (add.default as (row: Record<string, unknown>) => unknown)(row) : add.default;
-}
-
 /** Drop a field. Backward migration cannot restore the value (lossy). */
 export type DropDelta = { drop: { field: string } };
 

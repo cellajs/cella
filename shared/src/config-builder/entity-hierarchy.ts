@@ -1,19 +1,9 @@
-import {
-  entityIdColumnKey,
-  possibleHomeChannels,
-  type ResolvedAncestor,
-  resolveDeepestAncestorId,
-  resolveNonNullAncestors,
-} from './resolve-row-channel.ts';
-import { computeAncestorPath, computeChannelPath, computeProductPath, deepestAncestorSql, pathColumnSql } from './row-path.ts';
+import { entityIdColumnKey, entityIdColumnName, type ResolvedAncestor } from './resolve-row-channel.ts';
 
-function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
-  return Object.fromEntries(roleNames.map((r) => [r, r])) as { readonly [K in T[number]]: K };
-}
+type RoleRegistry<T extends readonly string[]> = { readonly all: T } & { readonly [K in T[number]]: K };
 
-export function createRoleRegistry<const T extends readonly string[]>(roleNames: T): { readonly all: T } & { readonly [K in T[number]]: K } {
-  const registry = Object.assign({ all: roleNames }, buildRoleMap(roleNames));
-  return Object.freeze(registry) as { readonly all: T } & { readonly [K in T[number]]: K };
+export function createRoleRegistry<const T extends readonly string[]>(roleNames: T): RoleRegistry<T> {
+  return Object.freeze({ all: roleNames, ...Object.fromEntries(roleNames.map((role) => [role, role])) }) as RoleRegistry<T>;
 }
 
 export type RoleFromRegistry<R extends { all: readonly string[] }> = R['all'][number];
@@ -342,18 +332,22 @@ class EntityHierarchyBuilder<
     }
   }
 
-  /** Each must be an already-defined channel, outside the strict ancestor chain, not itself. */
-  private validateRelatedChannels(name: string, parent: string | null, relatedChannels?: readonly string[]): void {
-    if (!relatedChannels?.length) return;
-
-    const ancestors = new Set<string>();
-    let current = parent;
-    while (current !== null) {
-      ancestors.add(current);
+  /** The strict chain from `parent` up to the organization, as declared so far. */
+  private ancestorChain(parent: string): string[] {
+    const chain: string[] = [];
+    for (let current: string | null = parent; current !== null; ) {
+      chain.push(current);
       const entry = this.entities.get(current);
       current = entry && entry.kind !== 'user' ? entry.parent : null;
     }
+    return chain;
+  }
 
+  /** Each must be an already-defined channel, outside the strict ancestor chain, not itself. */
+  private validateRelatedChannels(name: string, parent: string, relatedChannels?: readonly string[]): void {
+    if (!relatedChannels?.length) return;
+
+    const ancestors = new Set(this.ancestorChain(parent));
     const seen = new Set<string>();
     for (const related of relatedChannels) {
       if (related === name) {
@@ -390,14 +384,7 @@ class EntityHierarchyBuilder<
   private validateNullableAncestors(name: string, parent: string, nullableAncestors?: readonly string[]): void {
     if (!nullableAncestors?.length) return;
 
-    const chain: string[] = [];
-    let current: string | null = parent;
-    while (current !== null) {
-      chain.push(current);
-      const entry = this.entities.get(current);
-      current = entry && entry.kind !== 'user' ? entry.parent : null;
-    }
-
+    const chain = this.ancestorChain(parent);
     const seen = new Set<string>();
     for (const ancestor of nullableAncestors) {
       if (seen.has(ancestor)) {
@@ -558,13 +545,7 @@ export class EntityHierarchy<
     if (cached) return cached as readonly TChannels[];
 
     const ancestors: TChannels[] = [];
-    let current = this.getParent(entityType);
-    while (current !== null) {
-      const entry = this.entities.get(current);
-      if (!entry) break;
-      if (entry.kind === 'channel') ancestors.push(current as TChannels);
-      current = entry.kind === 'user' ? null : (entry.parent as TChannels | null);
-    }
+    for (let current = this.getParent(entityType); current !== null; current = this.getParent(current)) ancestors.push(current);
 
     const frozen = Object.freeze(ancestors);
     this.ancestorCache.set(entityType, frozen);
@@ -629,41 +610,86 @@ export class EntityHierarchy<
     return this.roleRegistry;
   }
 
-  // Row location: home attribution and path computation. The instance is the
-  // entry point; `resolve-row-channel.ts` and `row-path.ts` hold the implementations and also
-  // export them as free functions over `AncestorSource` for injected hierarchies.
+  // Row location: home attribution and path computation. The home and the path read a row's
+  // ancestor ids through `resolveNonNullAncestors`, so they agree by construction.
 
+  /** All non-null ancestors of a row, most-specific → root. */
   readonly resolveNonNullAncestors = (entityType: string, row: Record<string, unknown>): ResolvedAncestor[] => {
-    return resolveNonNullAncestors(this, entityType, row);
+    const ancestors: ResolvedAncestor[] = [];
+    for (const type of this.getOrderedAncestors(entityType)) {
+      const idColumn = entityIdColumnKey(type);
+      const id = row[idColumn];
+      if (typeof id === 'string' && id) ancestors.push({ type, idColumn, id });
+    }
+    return ancestors;
   };
 
-  readonly resolveDeepestAncestorId = (entityType: string, row: Record<string, unknown>): string | null => {
-    return resolveDeepestAncestorId(this, entityType, row);
-  };
+  /** The row's effective home context id: deepest non-null ancestor. Null when every ancestor id is null. */
+  readonly resolveDeepestAncestorId = (entityType: string, row: Record<string, unknown>): string | null =>
+    this.resolveNonNullAncestors(entityType, row)[0]?.id ?? null;
 
+  /**
+   * Homes under the deepest-non-null rule: the declared parent, plus each further ancestor while
+   * everything below it is nullable. A row never attaches above a non-nullable ancestor.
+   */
   readonly possibleHomeChannels = (entityType: string): string[] => {
-    return possibleHomeChannels(this, entityType);
+    const nullable = new Set(this.getNullableAncestors(entityType));
+    const homes: string[] = [];
+    for (const ancestor of this.getOrderedAncestors(entityType)) {
+      homes.push(ancestor);
+      if (!nullable.has(ancestor)) break;
+    }
+    return homes;
   };
 
+  /** Organization-first path from the populated ancestor ids. Null when the organization id is missing. */
   readonly computeAncestorPath = (entityType: string, row: Record<string, unknown>): string | null => {
-    return computeAncestorPath(this, entityType, row);
+    const ancestors = this.resolveNonNullAncestors(entityType, row);
+    // A row without the organization id has no addressable subtree.
+    if (ancestors.at(-1)?.type !== 'organization') return null;
+    return ancestors
+      .map(({ id }) => id)
+      .reverse()
+      .join('/');
   };
 
-  readonly computeProductPath = (entityType: string, row: Record<string, unknown>): string | null => {
-    return computeProductPath(this, entityType, row);
-  };
+  /** A product row's path: its non-null ancestor chain. */
+  readonly computeProductPath = (entityType: string, row: Record<string, unknown>): string | null => this.computeAncestorPath(entityType, row);
 
+  /** A channel row's ancestor chain plus its own id; for the organization, just its own id. */
   readonly computeChannelPath = (entityType: string, row: Record<string, unknown>): string | null => {
-    return computeChannelPath(this, entityType, row);
+    const id = row.id;
+    if (typeof id !== 'string' || !id) return null;
+    if (this.getOrderedAncestors(entityType).length === 0) return id;
+    const ancestors = this.computeAncestorPath(entityType, row);
+    return ancestors === null ? null : `${ancestors}/${id}`;
   };
 
-  /** Channel tables store this expression as a generated column (`appendOwnId` true). */
+  /**
+   * SQL twin of {@link computeAncestorPath} / {@link computeChannelPath}, kept adjacent and held
+   * identical by the path parity tests. Produces the generated-column expression
+   * `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`, appending
+   * `'/' || "id"::text` when `appendOwnId` (channel entities). It updates atomically on
+   * reparenting, skips nullable intermediate ancestors, and requires a non-null organization.
+   * Channel tables store this expression as a generated column (`appendOwnId` true).
+   */
   readonly pathColumnSql = (entityType: string, appendOwnId: boolean): string => {
-    return pathColumnSql(this, entityType, appendOwnId);
+    const [root, ...deeper] = [...this.getOrderedAncestors(entityType)].reverse();
+    if (root === undefined) return `"id"::text`;
+
+    const parts = [`"${entityIdColumnName(root)}"::text`];
+    for (const ancestor of deeper) {
+      parts.push(`COALESCE('/' || "${entityIdColumnName(ancestor)}"::text, '')`);
+    }
+    if (appendOwnId) parts.push(`'/' || "id"::text`);
+    return parts.join(' || ');
   };
 
+  /** SQL twin of {@link resolveDeepestAncestorId}. Null when the entity has no ancestors. */
   readonly deepestAncestorSql = (entityType: string, alias: string): string | null => {
-    return deepestAncestorSql(this, entityType, alias);
+    const ancestors = this.getOrderedAncestors(entityType);
+    if (!ancestors.length) return null;
+    return `COALESCE(${ancestors.map((ancestor) => `${alias}.${entityIdColumnName(ancestor)}`).join(', ')})`;
   };
 }
 

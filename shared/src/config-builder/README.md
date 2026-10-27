@@ -15,8 +15,7 @@ Public readability is a permission concern, declared per subject via `publicRead
 
 Which channel owns a row: walk the strict ancestor chain most-specific-first and take the first
 non-null ancestor id. With nullable ancestors the deepest non-null ancestor is the effective home;
-without them it is the declared parent. `EntityHierarchy` exposes the rule as instance methods
-(`hierarchy.resolveDeepestAncestorId`, `hierarchy.computeProductPath`, ...);
-`resolve-row-channel.ts` and `row-path.ts` implement the internal `AncestorSource` interface.
+without them it is the declared parent. `EntityHierarchy` holds the rule as instance methods
+(`hierarchy.resolveDeepestAncestorId`, `hierarchy.computeProductPath`, ...).
 
-Every site that answers "which channel is this row's home" shares this rule: CDC counter deltas and self-summary placement (`e:f:h:`/`e:c:h:`, `e:li:h:`/`e:lu:h:`), wire-notification `channelId`, seen-by grouping, and counter recalculation. The org SEQUENCE does not key on it; seq values are org-scoped. The id-path (`row-path.ts`) ends in that ancestor (asserted by tests). Channel tables store it as a generated column (mirrored to `channel_counters.path` for catchup ancestry); product rows compute it where needed. Covered by `shared/src/config-builder/tests/`.
+Every site that answers "which channel is this row's home" shares this rule: CDC counter deltas and self-summary placement (`e:f:h:`/`e:c:h:`, `e:li:h:`/`e:lu:h:`), wire-notification `channelId`, seen-by grouping, and counter recalculation. The org SEQUENCE does not key on it; seq values are org-scoped. The id-path ends in that ancestor (asserted by tests). Channel tables store it as a generated column (mirrored to `channel_counters.path` for catchup ancestry); product rows compute it where needed. Covered by `shared/src/config-builder/tests/`.
