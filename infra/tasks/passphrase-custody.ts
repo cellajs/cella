@@ -18,7 +18,7 @@ export function verifiedSalt(stackYaml: string | undefined, passphrase: string):
 }
 
 export interface PassphraseCustodyOptions {
-  /** A key that reads and writes secret values: the operator key or an Owner API key. The admin application key reads metadata only. */
+  /** A key that reads and writes secret values: the operator key or an Owner API key. */
   secretKey: string;
   region: string;
   projectId: string;
@@ -27,8 +27,8 @@ export interface PassphraseCustodyOptions {
 }
 
 /**
- * The Pulumi passphrase as Secret Manager holds it, in the engine folder beside the admin key: outside every VM condition, readable by the
- * operator key, an Owner API key and the CI key, which holds the passphrase anyway. Undefined when the stack has none stored yet.
+ * The Pulumi passphrase as Secret Manager holds it, in the engine folder: outside every VM condition, readable by the operator key and an
+ * Owner API key; the main job reads it by reference. Undefined when the stack has none stored yet.
  */
 export async function readCustodiedPassphrase(opts: PassphraseCustodyOptions): Promise<string | undefined> {
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });

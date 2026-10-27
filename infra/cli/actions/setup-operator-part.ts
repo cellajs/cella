@@ -144,7 +144,9 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     }
   }
   if (firstProvision) {
-    console.info(`${pc.dim('  the first provisioning runs on the operator key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
+    console.info(
+      `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
+    );
     // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {

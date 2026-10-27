@@ -10,7 +10,7 @@ import { infraDir } from '../utils/paths';
 export const RUNNER_FILE = join(infraDir, 'runner.json');
 
 export interface RunnerFile {
-  /** The runner's own project, one per organization. */
+  /** The runner's own project, one per app. */
   projectId: string;
   /** The full commit, or the release tag, the runner's program is fetched at. */
   release: string;

@@ -61,7 +61,7 @@ const deployAccess = (bucketName: pulumi.Input<string>, prefix = '') => ({
   Resource: [bucketName, pulumi.interpolate`${bucketName}/${prefix}*`],
 });
 
-/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its per-deploy service key. An absent app drops the statement. */
+/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its standing service key. An absent app drops the statement. */
 const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
   backendServiceApplicationId.apply((backendId) =>
     backendId

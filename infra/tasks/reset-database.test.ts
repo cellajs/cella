@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RdbBackup, RdbDatabase, RdbInstance } from '../lib/scaleway/scaleway-rdb';
-import { backupName, type ResetDatabasePlan, ResetIrrecoverableError, sequenceDatabaseReset, serialConsoleSteps } from './reset-database';
+import { backupName, type ResetDatabasePlan, ResetIrrecoverableError, rebuildSteps, sequenceDatabaseReset } from './reset-database';
 
 const INSTANCE: RdbInstance = { id: 'inst-1', name: 'cella-postgres', status: 'ready' };
 const DATABASES: RdbDatabase[] = [{ name: 'cella' }, { name: 'rdb' }];
@@ -166,12 +166,12 @@ describe('sequenceDatabaseReset', () => {
   });
 });
 
-describe('serialConsoleSteps', () => {
-  it('prints the two steps the CLI cannot run, and no worker restart', () => {
-    const steps = serialConsoleSteps('cella');
+describe('rebuildSteps', () => {
+  it('names the step a machine with no login allows: a reboot runs the migrate companion; no worker restart', () => {
+    const steps = rebuildSteps('cella');
 
-    expect(steps).toContain('docker compose --profile backend run --rm backend-release');
-    expect(steps).toContain('dist/seeds-bundle.js init');
+    expect(steps).toContain('Reboot the backend machine');
+    expect(steps).not.toContain('docker compose');
     // The slot is re-ensured on every retry, so a restart would be cargo cult.
     expect(steps).toMatch(/no restart/i);
   });

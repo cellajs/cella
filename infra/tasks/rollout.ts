@@ -136,8 +136,8 @@ export interface WavedRolloutPlan {
 /**
  * Two-wave rollout. Wave 1 deploys the primary service alone, which must promote first because consumers bake its promoted generation's address at plan time.
  * Wave 2 records pending intent for every remaining service, provisions all their generations in ONE stack update that also reaps the primary's displaced
- * generation, then health-gates and cuts each service over concurrently. A final update reaps every remaining displaced generation, or `skipFinalReap` defers
- * that to a separate reap run. A singleton host with no wave 2 is reaped right after its promotion either way. Any cutover failure skips the reap because a
+ * generation, then health-gates and cuts each service over concurrently. A final update reaps every remaining displaced generation, or `skipFinalReap` leaves
+ * that to the deploy's last step, once smoke passed. A singleton host with no wave 2 is reaped right after its promotion either way. Any cutover failure skips the reap because a
  * displaced generation may still be serving.
  */
 export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime): Promise<void> {
@@ -155,7 +155,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
     const backendIds = await backendIdsFor([plan.primary]);
     await activateService(plan.primary, sha, generations, backendIds, rt);
 
-    // The wave-2 update reaps the primary's displaced generation; without one, a singleton host's old VM would keep the cdc slot and the cron claim until the deferred reap.
+    // The wave-2 update reaps the primary's displaced generation; without one, a singleton host's old VM would keep the cdc slot and the cron claim until the deploy's last step.
     if (plan.primary.singletonHost && plan.rest.length === 0) {
       rt.info(`[rollout] reaping ${plan.primary.service}'s displaced generation so its in-process stop-first workers move to the new one`);
       await rt.update([plan.primary.service]);
@@ -182,7 +182,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   }
 
   if (plan.skipFinalReap) {
-    rt.info('[rollout] leaving displaced generations for a deferred reap run');
+    rt.info("[rollout] leaving displaced generations for the deploy's last step");
     return;
   }
   rt.info('[rollout] reaping displaced generations');

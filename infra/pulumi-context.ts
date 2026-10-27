@@ -68,7 +68,8 @@ export function serviceUrl(slug: ServiceName): string {
  *  CLI) inject these, so the program requires them strictly with no fallback. */
 function requireEnv(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} is not set: run deploys via CI or the infra CLI, which inject it from the single source of truth.`);
+  if (!value)
+    throw new Error(`${name} is not set: deploys run in the main job, and the infra CLI injects it for an apply, from the single source of truth.`);
   return value;
 }
 

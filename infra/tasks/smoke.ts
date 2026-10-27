@@ -105,7 +105,7 @@ export interface SmokeOptions {
 export const COMPONENTS_RETRY_ATTEMPTS = 15;
 export const COMPONENTS_RETRY_DELAY_MS = 8_000;
 
-/** `warn` surfaces as a CI annotation and keeps the run green; only `fail` makes the deploy red. */
+/** `warn` is a line in the run's log and keeps the run deployed; only `fail` fails the deploy. */
 export type SmokeStatus = 'ok' | 'warn' | 'fail';
 
 export interface SmokeResult {

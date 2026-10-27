@@ -2,7 +2,7 @@
 syncBreaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: infra/environments, --defer-reap, pnpm --filter infra diag, geoip-refresh, repair-control-store, validate-state-bucket-policy, buildcache-r
+grep: infra/environments, --defer-reap, pnpm --filter infra diag, pnpm infra geoip-refresh, repair-control-store, validate-state-bucket-policy, buildcache-r
 ---
 
 # The deploy key writes only hand-over bundles, and each environment owes an Update identities and an apply
@@ -11,7 +11,7 @@ The deploy key's policy loses its secret writes outside `/handoff/`, the diagnos
 
 ## What & why
 
-The deploy path reads an environment's secrets by design, so the engine now says so and keeps the deploy path from writing them. A deploy whose key policy differs from the declared one stops blocked. Rotations start their own deploy. A build is redone after a rotation, a lost stack lock stops a run, and `diag`, `geoip-refresh`, `repair-control-store`, `validate-state-bucket-policy` and the separate `reap` command are gone. Design: `cella/DEPLOYMENT.md`.
+The deploy path reads an environment's secrets by design, so the engine now says so and keeps the deploy path from writing them. A deploy whose key policy differs from the declared one stops blocked. Rotations start their own deploy. A build is redone after a rotation, a lost stack lock stops a run, and `diag`, the `geoip-refresh` action, `repair-control-store`, `validate-state-bucket-policy` and the separate `reap` command are gone. Design: `cella/DEPLOYMENT.md`.
 
 ## Blast radius
 
@@ -26,7 +26,7 @@ No script: manual.
 1. In `infra/environments`, change a `production` line that names a commit or `branch:` to `releases` or a release tag.
 2. Per environment, at the dedicated address: `pnpm infra identity --mode <env>` (Owner API key), which rewrites the deploy key's policy.
 3. Per environment: `pnpm infra apply --mode <env>` (operator key): the diagnostics bucket's versioning, the main job's definition and its salt reference. The apply starts a blocked target again.
-4. Once: `pnpm infra runner-identity --mode <env> --rotate-key` (Owner API key), then `pnpm infra runner-replace` (operator key): a new runner key and the pinned `node` image.
+4. Once: move `release` in `infra/runner.json` to a commit that carries this change, then `pnpm infra runner-identity --mode <env> --rotate-key` (Owner API key) and `pnpm infra runner-replace` (operator key): the runner then checks targets with the releases-only rule, holds a new key and runs the pinned `node` image.
 5. Replace `pnpm --filter infra diag` in scripts and runbooks with `pnpm infra runs --machines` or `pnpm infra runs --sha <sha>`.
 
 ## Verify

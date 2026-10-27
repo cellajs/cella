@@ -86,7 +86,7 @@ Every period lives in `appConfig.retention`, the same for every tenant, and the 
 
 Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. The `sdk` package uses that document to generate the fetch client, TypeScript types, and validation schemas consumed by the frontend. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
 
-The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth, MCP and jobs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth, MCP and jobs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway from a job inside the Scaleway organization, which a runner starts when a release or a followed branch moves; GitHub holds no Scaleway key ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 

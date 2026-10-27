@@ -21,7 +21,7 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 /**
  * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
  * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
- * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* key can run it.
+ * The main job runs this with the deploy key in `SCW_*`, the one key it needs.
  */
 export interface DeployOptions {
   mode: string;

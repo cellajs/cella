@@ -75,7 +75,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Set up the runner',
     key: 'owner',
     description:
-      "Make the organization's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json. With --rotate-key it replaces the runner's key; Replace the runner then gives it to the machine.",
+      "Make the app's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json. With --rotate-key it replaces the runner's key; Replace the runner then gives it to the machine.",
   },
   'runner-replace': {
     label: 'Replace the runner',

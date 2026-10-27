@@ -79,7 +79,7 @@ export interface ProbeSession {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
-  /** True when a Scaleway key (the admin application key, else the process's SCW_* or AWS_* pair) is present for `scaleway`-tier checks. */
+  /** True when a Scaleway key (the observer key, else the process's SCW_* or AWS_* pair) is present for `scaleway`-tier checks. */
   scalewayKeyAvailable: boolean;
   accessKey?: string;
   secretKey?: string;
