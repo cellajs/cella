@@ -198,7 +198,7 @@ export interface ConfigStringArrays {
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
  */
 /** The placement surfaces that exist once per app; the rest belong to a channel. */
-export type SingletonSlot = 'account.settings' | 'home.sections' | 'user.profile' | 'system.tabs';
+export type SingletonSlot = 'account.settings' | 'account.preferences' | 'home.sections' | 'user.profile' | 'system.tabs';
 
 /** A channel's own placement surfaces; the only ones a channel row can store an arrangement for. */
 export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;

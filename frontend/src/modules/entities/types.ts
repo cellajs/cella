@@ -18,6 +18,8 @@ export type ChannelEnrichment = {
   ancestorSlugs?: AncestorSlugs;
   /** Populated by cache enrichment from membership and policies. */
   can?: EntityCan;
+  /** `can` without the system-admin bypass: what the memberships alone grant, which is all a description editor may answer by, as the relay honours no bypass. */
+  memberCan?: EntityCan;
 };
 
 /** API base + frontend cache enrichment. Use `ChannelBase` from `sdk` for base fields only. */

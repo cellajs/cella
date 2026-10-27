@@ -53,7 +53,11 @@ function ToastList({ position }: { position: ToastPosition }) {
             {toastIcons[toast.type]}
           </span>
         )}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        {/* A mouse drag on the text selects it instead of swiping, so a message can be copied for support; touch keeps swipe-to-dismiss. */}
+        <div
+          className="flex min-w-0 flex-1 select-text flex-col gap-1"
+          onPointerDown={(event) => event.pointerType === 'mouse' && event.stopPropagation()}
+        >
           <ToastPrimitive.Title data-slot="toast-title" className="font-medium text-sm" />
           <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="text-muted-foreground text-sm" />
         </div>

@@ -40,15 +40,15 @@ function membershipsAbove(item: EnrichableChannel, channelType: ChannelEntityTyp
 
 /**
  * Permission map keyed by entity type, self plus hierarchy descendants, computed as the backend decides: from the actor's
- * membership on the row and their memberships on the channels above it. A system admin gets every action, with or without a membership.
+ * membership on the row and their memberships on the channels above it. A system admin gets every action, with or without
+ * a membership, in `can`; `memberCan` holds what the memberships alone grant, the same object for everyone else.
  */
 export function enrichWithPermissions(item: EnrichableChannel, channelType: ChannelEntityType, memberships: MembershipBase[]): EnrichableChannel {
-  const existing = item.can;
-
   const grants = [...(item.membership ? [item.membership] : []), ...membershipsAbove(item, channelType, memberships)];
-  const computed = userStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : computeCan(channelType, grants, policyMatrix);
+  const memberCan = computeCan(channelType, grants, policyMatrix);
+  const can = userStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : memberCan;
 
-  if (!hasCanChanged(existing, computed)) return item;
+  if (!hasCanChanged(item.can, can) && !hasCanChanged(item.memberCan, memberCan)) return item;
 
-  return { ...item, can: computed };
+  return { ...item, can, memberCan };
 }

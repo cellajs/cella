@@ -44,8 +44,8 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
 
   const resolveCan = useResolveCan();
   const channel = findInCache<EnrichedChannel>(homeType, homeId);
-  // The map is the home channel's own, so the row is at home for a home-scoped grant.
-  const canEdit = resolveCan(channel?.can?.attachment?.update, attachment.createdBy, { row: homeId, channel: homeId });
+  // The map is the home channel's own, so the row is at home for a home-scoped grant; the relay grants a system admin no bypass.
+  const canEdit = resolveCan(channel?.memberCan?.attachment?.update, attachment.createdBy, { row: homeId, channel: homeId });
 
   const membersQuery = useInfiniteQuery(membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }));
   const members = flattenInfiniteData<Member>(membersQuery.data);

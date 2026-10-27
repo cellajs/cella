@@ -1,4 +1,4 @@
-import { type StaticDataRouteOption, useNavigate, useRouterState } from '@tanstack/react-router';
+import { type StaticDataRouteOption, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { type RefObject, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -40,6 +40,7 @@ const serializeFloatingNavConfig = (matches: { pathname: string; staticData: Sta
 export function AppNav() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const router = useRouter();
   const isMobile = useBreakpointBelow('sm');
   const isDesktop = useBreakpointAbove('2xl');
 
@@ -72,6 +73,8 @@ export function AppNav() {
 
     if (navItem.href) {
       if (!navigationStore.getState().keepNavOpen) closeNavSheet();
+      // On the page already, the press takes it back to the top
+      if (router.state.location.pathname === navItem.href) return window.scrollTo({ top: 0, behavior: 'smooth' });
       return navigate({ to: navItem.href });
     }
 

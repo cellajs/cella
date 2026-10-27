@@ -131,7 +131,7 @@ if (import.meta.hot) {
   import.meta.hot.data.listenersAttached = true;
 }
 
-/** `true` while offline with offline access on; `false` restores the default. */
+/** `true` while offline; `false` restores the default. */
 export function setOfflineStaleTime(offline: boolean): void {
   const staleTime = offline ? offlineStaleTime : defaultStaleTime;
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime } });

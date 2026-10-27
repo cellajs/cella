@@ -2,12 +2,11 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { type ReactNode, useEffect } from 'react';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
-import { cleanupOrphanedSessions, persistOptions } from '~/query/persister';
+import { persistOptions } from '~/query/persister';
 import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
@@ -35,12 +34,6 @@ interface QueryClientProviderProps {
 
 /** Provides the query client with its persisted cache, and starts the services that work from it. */
 export function QueryClientProvider({ children }: QueryClientProviderProps) {
-  const offlineAccess = useUIStore((state) => state.offlineAccess);
-
-  useEffect(() => {
-    cleanupOrphanedSessions();
-  }, []);
-
   useEffect(() => startYjsStore(), []);
 
   useEffect(() => {
@@ -67,8 +60,6 @@ export function QueryClientProvider({ children }: QueryClientProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (!offlineAccess) return;
-
     const applyNetwork = (online: boolean) => {
       console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
       setOfflineStaleTime(!online);
@@ -89,7 +80,7 @@ export function QueryClientProvider({ children }: QueryClientProviderProps) {
       window.removeEventListener('offline', handleOffline);
       setOfflineStaleTime(false);
     };
-  }, [offlineAccess]);
+  }, []);
 
   return (
     <PersistQueryClientProvider

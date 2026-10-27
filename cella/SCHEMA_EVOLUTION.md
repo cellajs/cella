@@ -28,7 +28,7 @@ Three rules follow:
 Until the first lens ships, breaking schema changes use a throwaway escape hatch:
 
 1. **`appConfig.clientCacheVersion`** ([shared/config/config.default.ts](../shared/config/config.default.ts)): a string token next to `apiVersion`/`cookieVersion`. Bump it (`'v1'` to `'v2'`) in the **same PR** as any breaking change to a cached entity's wire shape.
-2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data but **keeps queued mutations**, which replay against the fresh cache. A missing version seeds without wiping. Session scopes are wiped wholesale.
+2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data but **keeps queued mutations**, which replay against the fresh cache. A missing version seeds without wiping.
 3. **Mutation salvage**: replayed mutations that fail with a 4xx are quarantined in the `failedSync` Dexie table ([failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) with a JSON export function, never dropped. So is a queued mutation whose variables this bundle cannot read, stored by an older bundle in a shape no upgrade knows or by a newer one before a rollback ([mutation-variables.ts](../frontend/src/query/offline/mutation-variables.ts)): it is quarantined when the queue is restored, with status 0, and not replayed. No UI reads the table yet.
 4. **CI gate**: `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) runs oasdiff on the committed `sdk/gen/openapi.json` (base vs head), the backend's spec as `pnpm sdk` copies it. A breaking diff **fails the PR** unless `clientCacheVersion` was bumped in the same PR. Pair it with a `feat!` PR title so release-please cuts a major. The gate is PR-time only.
 
@@ -175,7 +175,6 @@ Seam: `migrateScopeToCurrent` in [persister.ts](../frontend/src/query/persister.
 
 - Pointer behind the bundle: a migration pass runs before hydration over every persisted product query record, the bundled channel queries, and queued mutation variables. Writes are chunked (200 rows per Dexie transaction) and the pointer advances in the final meta write, so a crash-resume re-runs idempotently. The pass runs under a Web Lock. Followers wait.
 - Pointer ahead of the bundle (another tab migrated forward, or a rollback deploy): the bundle marks itself stale, restores nothing, and never writes.
-- Session scopes (`s-<uuid>`) are wiped on pointer mismatch, not migrated.
 
 ### CI guards
 

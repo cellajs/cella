@@ -54,5 +54,4 @@ export interface BuildEntitySyncQueriesParams {
   targetEntityType: EntityType;
   tenantId: string;
   currentOrganizationId: string;
-  includeMemberQueries: boolean;
 }

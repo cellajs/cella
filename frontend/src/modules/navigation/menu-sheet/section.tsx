@@ -102,7 +102,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
             {isEditing ? (
               <MenuSheetItemsListEdit items={items} isArchived={false} options={options} onArchive={handleArchive} />
             ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} onCreate={handleCreate} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} />
             )}
             {!!items.length && (
               <li className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>

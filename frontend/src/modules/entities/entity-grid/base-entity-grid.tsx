@@ -32,10 +32,10 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   fetchMore: () => Promise<unknown>;
   /** A search or filter is active: an empty list shows "No … found" (else "No … yet"). */
   isFiltered: boolean;
-  /** Shows at most {@link gridPreviewLimit} tiles and a "Show all" button. */
+  /** Shows at most {@link gridPreviewLimit} tiles and a "Show N more" button. */
   limitedView?: boolean;
   onExpand?: () => void;
-  /** List query key; with limitedView, sources the server total for the "Show all (N)" button. */
+  /** List query key; with limitedView, sources the server total for the "Show N more" button. */
   queryKey?: QueryKey;
 }
 
@@ -86,7 +86,9 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
 
   const isLimited = limitedView && entities.length > gridPreviewLimit;
   const visibleEntities = isLimited ? entities.slice(0, gridPreviewLimit) : entities;
-  const showAllCount = total !== null && total > gridPreviewLimit ? ` (${total})` : '';
+  // Without a list total, the loaded rows are the total only once every page is in
+  const knownTotal = total ?? (hasNextPage ? null : entities.length);
+  const expandLabel = knownTotal === null ? t('c:show_all') : t('c:show_more', { count: knownTotal - gridPreviewLimit });
 
   return (
     <div className="mb-12">
@@ -99,7 +101,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
       {isLimited ? (
         <div className="mt-4 flex justify-center">
           <Button variant="ghost" onClick={onExpand}>
-            {`${t('c:show_all')}${showAllCount}`}
+            {expandLabel}
           </Button>
         </div>
       ) : (

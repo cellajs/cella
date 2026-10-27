@@ -106,7 +106,7 @@ export async function newContext(session: Session, { auth, mode }: ContextOption
   });
   // `contrast` here is what the app's own `data-contrast` path reads; the context option above covers the media query
   const uiState = {
-    state: { mode, theme: 'none', contrast: auditContrast, offlineAccess: false, publicAlertsSeen: ['test-credentials'] },
+    state: { mode, theme: 'none', contrast: auditContrast, publicAlertsSeen: ['test-credentials'] },
     version: 1,
   };
   // tsx keeps function names with an `__name` helper that does not exist in the page

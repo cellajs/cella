@@ -1,4 +1,4 @@
-import { type TouchEvent, useRef } from 'react';
+import { type ReactNode, type Ref, type TouchEvent, useRef } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -23,6 +23,9 @@ interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'aria
   /** Required on a nav item; an inert placeholder button may go without. */
   ariaLabel?: string;
   className?: string;
+  ref?: Ref<HTMLButtonElement>;
+  /** Marks on the button, such as a `Badge context="button"`. */
+  children?: ReactNode;
 }
 
 export function FloatingNavButton({
@@ -34,6 +37,8 @@ export function FloatingNavButton({
   direction = 'right',
   label,
   labelVisible,
+  ref,
+  children,
 }: FloatingNavButtonProps) {
   // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
@@ -63,6 +68,7 @@ export function FloatingNavButton({
 
   return (
     <Button
+      ref={ref}
       id={id}
       size="icon"
       data-direction={direction}
@@ -105,6 +111,7 @@ export function FloatingNavButton({
           </span>
         </span>
       )}
+      {children}
     </Button>
   );
 }

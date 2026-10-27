@@ -1,5 +1,4 @@
 import { useMatchRoute } from '@tanstack/react-router';
-import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -11,7 +10,6 @@ import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { Button } from '~/modules/ui/button';
 import { getChannelRoute } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
@@ -24,25 +22,13 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
   return <MenuSheetChannelTabs channel={channel} className="py-1 pl-12" />;
 }
 
-interface MenuSheetNoItemsProps {
-  entityType: ChannelEntityType;
-  onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
-}
-
-/** The placeholder a section shows while it has no items, with a create button when the section offers one. */
-export function MenuSheetNoItems({ entityType, onCreate }: MenuSheetNoItemsProps) {
+/** The placeholder a section shows while it has no items. */
+export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType }) {
   const { t } = useTranslation();
-  const createButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <li>
-      <ContentPlaceholder size="sm" title="c:no_resource_yet" titleOptions={{ resource: t(entityType, { count: 0 }).toLowerCase() }}>
-        {onCreate && (
-          <Button ref={createButtonRef} variant="plain" size="xs" onClick={() => onCreate(createButtonRef)}>
-            {t('c:create')}
-          </Button>
-        )}
-      </ContentPlaceholder>
+      <ContentPlaceholder size="sm" title="c:no_resource_yet" titleOptions={{ resource: t(entityType, { count: 0 }).toLowerCase() }} />
     </li>
   );
 }
@@ -52,16 +38,14 @@ interface MenuSheetItemsListProps {
   entityType: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
-  /** The section's create handler, offered under the empty-list placeholder. */
-  onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
   /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
 }
 
-export function MenuSheetItemsList({ items, entityType, isArchived, options, onCreate, isSubmenu = false }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, isArchived, options, isSubmenu = false }: MenuSheetItemsListProps) {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  if (items.length === 0) return <MenuSheetNoItems entityType={entityType} onCreate={onCreate} />;
+  if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 
   return sortAndFilterMenu(items, isArchived).map((item) => {
     const hasSubmenu = isSubmenuShown(item, detailedMenu);

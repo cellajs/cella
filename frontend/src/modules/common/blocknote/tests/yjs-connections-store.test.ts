@@ -123,7 +123,6 @@ vi.mock('~/modules/common/blocknote/query', () => ({
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess: true }) } }));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/modules/common/blocknote/yjs-store')>();

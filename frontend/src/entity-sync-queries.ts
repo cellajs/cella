@@ -11,30 +11,22 @@ import type { BuildEntitySyncQueriesParams, EntitySyncQueryOptions } from '~/que
  *
  * Pure mapping: React Query owns staleness.
  */
-export const buildEntitySyncQueries = ({
-  targetEntityId,
-  targetEntityType,
-  tenantId,
-  currentOrganizationId,
-  includeMemberQueries,
-}: BuildEntitySyncQueriesParams) => {
+export const buildEntitySyncQueries = ({ targetEntityId, targetEntityType, tenantId, currentOrganizationId }: BuildEntitySyncQueriesParams) => {
   const syncQueries: EntitySyncQueryOptions[] = [];
 
   const memberListLimit = 200;
   const queryOrganizationId = targetEntityType === 'organization' ? targetEntityId : currentOrganizationId;
 
   const addMembersQuery = (channelEntityType: ChannelEntityType) => {
-    if (includeMemberQueries) {
-      syncQueries.push(
-        membersListQueryOptions({
-          entityId: targetEntityId,
-          tenantId,
-          organizationId: queryOrganizationId,
-          entityType: channelEntityType,
-          limit: memberListLimit,
-        }),
-      );
-    }
+    syncQueries.push(
+      membersListQueryOptions({
+        entityId: targetEntityId,
+        tenantId,
+        organizationId: queryOrganizationId,
+        entityType: channelEntityType,
+        limit: memberListLimit,
+      }),
+    );
   };
 
   switch (targetEntityType) {

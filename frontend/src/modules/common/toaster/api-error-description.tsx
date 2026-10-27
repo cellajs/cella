@@ -16,7 +16,7 @@ interface ApiErrorDescriptionProps {
 
 /**
  * The body of an API error toast, in a fixed order: what happened, the cause a development server names, and the
- * request id of a failure worth reporting. Toast text cannot be selected, so the id comes with a copy button.
+ * request id of a failure worth reporting, with a button that copies everything support asks for.
  */
 export function ApiErrorDescription({ message, cause, report }: ApiErrorDescriptionProps) {
   const { t } = useTranslation();

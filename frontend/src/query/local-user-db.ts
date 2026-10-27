@@ -27,7 +27,7 @@ export interface PersistedQueryRecord {
 
 /** A React Query meta row: a scope's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
 export interface PersistedMetaRecord {
-  /** A scope's row: `rq` (offline) or `s-<uuid>` (session). A tab's row: `<scope>:mut:<tabSessionId>`, with no queries. */
+  /** The scope's row: `rq`. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
   buster: string;

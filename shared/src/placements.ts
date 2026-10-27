@@ -17,7 +17,7 @@ export type ChannelSlot = `${ChannelEntityType}.settings` | `${ChannelEntityType
 export type Slot = ChannelSlot | SingletonSlot;
 
 /** The surfaces that are not a channel's, in the order they are declared. */
-export const singletonSlots = ['account.settings', 'home.sections', 'user.profile', 'system.tabs'] as const;
+export const singletonSlots = ['account.settings', 'account.preferences', 'home.sections', 'user.profile', 'system.tabs'] as const;
 
 /** Every channel slot this app has: the keys a stored `toolsConfig` may carry, validated at the wire. */
 export const channelSlots = (): ChannelSlot[] =>

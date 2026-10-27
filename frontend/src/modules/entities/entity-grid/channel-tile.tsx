@@ -6,10 +6,9 @@ import { getMemberStatIcon } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { ChannelTileEntity, EnrichedChannel } from '~/modules/entities/types';
 import { JoinedButton } from '~/modules/memberships/joined-button';
-import { AvatarGroup } from '~/modules/ui/avatar';
 import { Badge } from '~/modules/ui/badge';
 import { Card } from '~/modules/ui/card';
-import { MemberAvatar } from '~/modules/user/member-avatar';
+import { MemberAvatarGroup } from '~/modules/user/member-avatar';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
@@ -197,20 +196,11 @@ export function ChannelTileMembers() {
   if (!members?.length) return null;
 
   const role = hierarchy.getMostPrivilegedRole(entity.entityType);
-  const overflow = Math.max(0, (entity.included?.counts?.membership[role] ?? 0) - members.length);
+  const total = Math.max(members.length, entity.included?.counts?.membership[role] ?? 0);
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 bottom-14 flex items-center justify-center [&_button]:pointer-events-auto">
-      <AvatarGroup>
-        {members.map((member) => (
-          <MemberAvatar key={member.id} member={member} className="size-10 border-background/70" />
-        ))}
-        {overflow > 0 && (
-          <div className="z-10 flex size-10 items-center justify-center rounded-full border-2 border-background/70 more-contrast:border-black/85 bg-background/75 bg-clip-padding font-semibold more-contrast:text-foreground text-muted-foreground text-xs tracking-tighter backdrop-blur-xs">
-            +{formatCount(overflow)}
-          </div>
-        )}
-      </AvatarGroup>
+      <MemberAvatarGroup members={members} total={total} itemClassName="size-10" />
     </div>
   );
 }

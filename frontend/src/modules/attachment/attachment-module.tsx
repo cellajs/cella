@@ -6,7 +6,8 @@ import { lazyNamed } from '~/utils/lazy-named';
 // Registers the mutation defaults before the cache restore, so a queued attachment mutation replays after a reload
 import '~/modules/attachment/query';
 
-const OfflineFilesCard = lazyNamed(() => import('~/modules/attachment/offline-files-card'), 'OfflineFilesCard');
+const OfflineFilesPreference = lazyNamed(() => import('~/modules/attachment/offline-files-preference'), 'OfflineFilesPreference');
+const OfflineFilesIndicator = lazyNamed(() => import('~/modules/attachment/offline-files-preference'), 'OfflineFilesIndicator');
 
 defineFrontendModule({
   name: 'attachments',
@@ -17,6 +18,14 @@ defineFrontendModule({
   // `deepLinkParam` is the one this module's `attachmentsRouteSearchParamsSchema` declares, so a notification opens the dialog.
   product: { entityType: 'attachment', memberStatIcon: PaperclipIcon, deepLinkParam: attachmentDialogParam },
   tools: appConfig.localBlobStorage.enabled
-    ? [{ slot: 'account.settings', id: 'offline-files', label: 'c:offline_files', order: 50, render: () => <OfflineFilesCard /> }]
+    ? [
+        {
+          slot: 'account.preferences',
+          id: 'offline-files',
+          label: 'c:offline_files',
+          render: () => <OfflineFilesPreference />,
+          indicator: () => <OfflineFilesIndicator />,
+        },
+      ]
     : [],
 });

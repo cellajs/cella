@@ -10,7 +10,6 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
@@ -25,10 +24,9 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
-  const offlineAccess = useUIStore((state) => state.offlineAccess);
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const canAccess = !offlineAccess || isOnline || !item.membership.archived;
+  const canAccess = isOnline || !item.membership.archived;
 
   const unseenCount = useMenuItemUnseenCount(item, isSubmenuShown(item, detailedMenu));
 

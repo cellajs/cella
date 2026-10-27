@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { QueryClient } from '@tanstack/react-query';
-import { type PersistedClient, persistQueryClientRestore, persistQueryClientSubscribe } from '@tanstack/react-query-persist-client';
+import { type PersistedClient, persistQueryClientRestore } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => {
@@ -41,13 +41,12 @@ vi.stubGlobal('sessionStorage', {
   removeItem: (key: string) => sessionStorageMap.delete(key),
 });
 
-const { persister, sessionPersister, cleanupOrphanedSessions, persistOptions } = await import('~/query/persister');
-const { uiStore } = await import('~/modules/ui/ui-store');
+const { persister, persistOptions } = await import('~/query/persister');
 // The persister reads/writes the live per-user localUserDb; bind one (owner `u1`) per test.
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { registerVariablesVersion } = await import('~/query/offline/mutation-variables');
 
-// Snapshot of the listeners registered at import time: a reload fires `beforeunload`, so a teardown registered there would wipe the session cache on every refresh.
+// Snapshot of the listeners registered at import time.
 const importTimeWindowListeners = new Map(addWindowListener.mock.calls.map(([type, listener]) => [type, listener]));
 
 function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data: unknown = null) {
@@ -94,21 +93,6 @@ const queuedMutation = (mutationKey: string[], variables: unknown) => ({
     submittedAt: 100,
   },
 });
-
-/** Holds the tab lock another open tab holds, until the returned release runs. */
-async function holdTabLock(tabId: string): Promise<() => void> {
-  let release = () => {};
-  const held = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await new Promise<void>((granted) => {
-    void navigator.locks.request(`test-app-mutation-owner:${tabId}`, () => {
-      granted();
-      return held;
-    });
-  });
-  return release;
-}
 
 async function deleteDb() {
   await deleteLocalUserDb();
@@ -206,47 +190,19 @@ describe('per-query IDB persister', () => {
     failOnce.mockRestore();
     logged.mockRestore();
   });
-
-  it('keeps the scope of a tab that is still open, however long it was idle', async () => {
-    const db = getLocalUserDb()!;
-    const releaseLock = await holdTabLock('idle-tab');
-    await db.meta.put({ key: 's-idle-tab', timestamp: Date.now() - 3 * 60 * 60 * 1000, buster: '', mutations: [], channelQueries: [] });
-
-    await cleanupOrphanedSessions();
-
-    expect(await db.meta.get('s-idle-tab')).toBeDefined();
-    releaseLock();
-  });
-
-  it("keeps this tab's queued writes however old they are, so a reload replays them", async () => {
-    const db = getLocalUserDb()!;
-    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
-    await sessionPersister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
-    await sessionPersister.flush();
-    const queue = (await db.meta.toArray()).find(({ key }) => key.startsWith('s-') && key.includes(':mut:'))!;
-    await db.meta.put({ ...queue, timestamp: Date.now() - 3 * 60 * 60 * 1000 });
-
-    await cleanupOrphanedSessions();
-
-    const restored = await sessionPersister.restoreClient();
-    expect(restored!.clientState.mutations.map(({ state }) => state.variables)).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
-  });
 });
 
 describe('the options PersistQueryClientProvider restores and saves with', () => {
   beforeEach(async () => {
     bindLocalUserDb('u1');
     await persister.removeClient();
-    await sessionPersister.removeClient();
   });
 
   afterEach(async () => {
-    uiStore.setState({ offlineAccess: false });
     await deleteDb();
   });
 
   it('restores a cache no tab wrote for days, its queued writes included', async () => {
-    uiStore.setState({ offlineAccess: true });
     const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
     const queries = [makeQuery('["task","list","org-1"]', 'task', threeDaysAgo, [{ id: 't1' }])];
     const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
@@ -263,19 +219,6 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
         .getAll()
         .map(({ state }) => state.variables),
     ).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
-  });
-
-  it('writes to the scope the offline access switch names at the time of the write, without a reload', async () => {
-    // Subscribed with offline access off, as a tab that started in session mode.
-    const queryClient = new QueryClient();
-    const unsubscribe = persistQueryClientSubscribe({ ...persistOptions, queryClient });
-    uiStore.setState({ offlineAccess: true });
-
-    queryClient.setQueryData(['me'], { name: 'user' });
-    await persister.flush();
-    unsubscribe();
-
-    expect((await getLocalUserDb()!.meta.get('rq'))?.channelQueries.map(({ queryKey }) => queryKey)).toEqual([['me']]);
   });
 });
 
@@ -360,10 +303,10 @@ describe('queued mutations across a change of their variables shape', () => {
   });
 });
 
-describe('session persister survives reload', () => {
+describe('a closing tab', () => {
   beforeEach(async () => {
     bindLocalUserDb('u1');
-    await sessionPersister.removeClient();
+    await persister.removeClient();
     sessionStorageMap.clear();
   });
 
@@ -371,15 +314,10 @@ describe('session persister survives reload', () => {
     await deleteLocalUserDb();
   });
 
-  it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
-    // `beforeunload` cannot tell a reload from a closed tab, so the startup sweep reclaims closed tabs' scopes and a reloaded tab keeps its scope.
-    expect(importTimeWindowListeners.has('beforeunload')).toBe(false);
-  });
-
   it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
     const onPageHide = importTimeWindowListeners.get('pagehide');
     const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'last edit' } })];
-    await sessionPersister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
+    await persister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
 
     expect(onPageHide).toBeTypeOf('function');
     onPageHide();

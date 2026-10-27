@@ -52,14 +52,18 @@ const project = { id: 'p1', organizationId: 'org-1' };
 describe('the can map of a cached channel row', () => {
   let unsubscribe: (() => void) | undefined;
 
-  /** The `can` map the pipeline put on the project once these memberships are the caller's. */
-  const canWith = (memberships: unknown[]) => {
+  /** The project row the pipeline enriched once these memberships are the caller's. */
+  const rowWith = (memberships: unknown[]) => {
     unsubscribe = initChannelEnrichment();
     queryClient.setQueryData(['me', 'memberships'], { items: memberships });
     queryClient.setQueryData(['project', 'list'], makeInfiniteData([project]));
-    const data = queryClient.getQueryData(['project', 'list']) as { pages: { items: { can?: Record<string, Record<string, unknown>> }[] }[] };
-    return data.pages[0].items[0].can;
+    type CanMap = Record<string, Record<string, unknown>>;
+    const data = queryClient.getQueryData(['project', 'list']) as { pages: { items: { can?: CanMap; memberCan?: CanMap }[] }[] };
+    return data.pages[0].items[0];
   };
+
+  /** The `can` map the pipeline put on the project once these memberships are the caller's. */
+  const canWith = (memberships: unknown[]) => rowWith(memberships).can;
 
   beforeEach(() => queryClient.clear());
 
@@ -92,5 +96,19 @@ describe('the can map of a cached channel row', () => {
     queryClient.clear();
     // Memberships loaded and empty: the rows are still enriched.
     expect(canWith([])?.task).toEqual(every);
+  });
+
+  it('keeps what the memberships alone grant beside the every action of a system admin', () => {
+    session.isSystemAdmin = true;
+    const row = rowWith([onProject('member')]);
+
+    expect(row.can?.project).toEqual(every);
+    expect(row.memberCan?.project).toEqual({ create: false, read: true, update: 'own', delete: false });
+  });
+
+  it('puts the one map in both for a caller who is no system admin', () => {
+    const row = rowWith([onProject('member')]);
+
+    expect(row.memberCan).toBe(row.can);
   });
 });

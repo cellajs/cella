@@ -1,4 +1,4 @@
-import { UploadIcon } from 'lucide-react';
+import { ImageUpIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -42,9 +42,14 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: Pa
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (
-        <Button variant="secondary" size="sm" className="relative top-3 mx-auto bg-secondary/80 hover:bg-secondary" onClick={openUploadDialog}>
-          <UploadIcon />
-          <span>{uploadLabel}</span>
+        <Button
+          variant="outline-ghost"
+          size="xs"
+          className="absolute top-2.5 right-2.5 bg-background/50 backdrop-blur-xs hover:bg-background/75 max-sm:size-10 dark:bg-background/75"
+          onClick={openUploadDialog}
+        >
+          <ImageUpIcon />
+          <span className="max-sm:sr-only">{uploadLabel}</span>
         </Button>
       )}
     </div>
