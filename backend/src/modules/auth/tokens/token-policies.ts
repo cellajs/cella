@@ -33,8 +33,8 @@ export type TokenPolicy =
       replaces: TokenReplacement;
       /**
        * Who a link issued without an account belongs to when a signed-in browser opens it: `address-holder`, the
-       * account holding its address by now (a new account when nobody does); `any-account`, whoever is signed in, as
-       * their own account (an invitation not yet bound to a user).
+       * account holding its address by now (a new account when nobody does); `any-account`, whoever is signed in (an
+       * invitation not yet bound to a user), whose account accepts it only once it holds the invited address.
        */
       unboundOpener: 'address-holder' | 'any-account';
     }

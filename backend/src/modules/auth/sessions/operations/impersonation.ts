@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { findUserById } from '#/modules/user/user-queries';
@@ -13,8 +13,8 @@ interface StartImpersonationOpts {
 }
 
 /**
- * Starts impersonating a user in this browser: an impersonation session layered over the admin's own, and a security mail
- * to the user.
+ * Starts impersonating a user in this browser: an impersonation session layered over the admin's own, and a mail to the
+ * security inbox.
  * @throws AppError 404 `not_found` for an unknown user.
  */
 export const startImpersonationOp = async (ctx: Context<Env>, { targetUserId }: StartImpersonationOpts) => {
@@ -27,7 +27,12 @@ export const startImpersonationOp = async (ctx: Context<Env>, { targetUserId }: 
   await setUserSession(ctx, user, ctx.var.session.authStrategy, 'impersonation');
 
   log.info('Started impersonation', { adminId: adminUser.id, targetUserId });
-  sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
+  // The impersonated user cannot end it; whoever runs the app can act on a misused admin account.
+  sendSecurityInboxEmail('impersonation-started', {
+    adminName: adminUser.name || adminUser.email,
+    adminEmail: adminUser.email,
+    userEmail: user.email,
+  });
 };
 
 /**

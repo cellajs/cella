@@ -93,6 +93,8 @@
   "invalid_token": "Code not accepted",
   "invalid_token.text": "Enter the current code from your authenticator app.",
   "invalid_url": "URL must start with https://",
+  "invitation_address_unproven": "Confirm the invited address",
+  "invitation_address_unproven.text": "This invitation was sent to another address. Confirm that address is yours to join with this account.",
   "invitation_expired": "Invitation expired",
   "invitation_expired.text": "Use the button below to get a new link by email.",
   "invitation_not_found": "Invitation link not valid",

@@ -692,6 +692,11 @@ export const zGetTokenDataResponse = z.object({
  */
 export const zAcceptInvitationTokenResponse = zChannelBase;
 
+/**
+ * Confirmation link sent to the invited address
+ */
+export const zConfirmInvitationAddressResponse = z.void();
+
 export const zStartImpersonationBody = z.object({
   targetUserId: z.string().max(50),
 });

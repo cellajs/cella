@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { acceptInvitationToken, invokeToken } from 'sdk';
+import { acceptInvitationToken, confirmInvitationAddress, invokeToken } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -7,6 +7,7 @@ import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
@@ -15,7 +16,9 @@ import {
   createTestSession,
   createTestUser,
   insertTestToken,
+  mailedLink,
   sentMails,
+  setCookiePair,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -42,9 +45,9 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
   const membershipsOf = (userId: string) => db.select().from(membershipsTable).where(eq(membershipsTable.userId, userId));
 
-  it('activates the membership for the session user, spends the invitation and notifies the invited address', async () => {
+  it('activates the membership for the account holding the invited address and spends the invitation', async () => {
     const { organization, token, inactiveMembership, invitationCookie } = await setup();
-    const me = await createTestUser('my-account@example.com');
+    const me = await createTestUser(invitedEmail);
     const sessionCookie = await createTestSession(me);
 
     const { response, data } = await accept([sessionCookie, invitationCookie]);
@@ -59,17 +62,47 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toHaveLength(0);
     expect(await db.select().from(tokensTable).where(eq(tokensTable.id, token.id))).toHaveLength(0);
+  });
 
-    // The invited inbox may not belong to the accepting account, so it hears about the acceptance.
-    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
-    const mails = sentMails();
-    expect(mails.map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
-    expect(mails[0].statics).toMatchObject({ type: 'invitation-accepted-elsewhere', details: { accountEmail: 'my-account@example.com' } });
+  it('refuses a forwarded link opened by another account, and its confirmation goes only to the invited inbox', async () => {
+    const { token, invitationCookie } = await setup();
+    const other = await createTestUser('forwarded-to@example.com');
+    const cookies = [await createTestSession(other), invitationCookie];
+
+    const { response, error } = await accept(cookies);
+    expect(response.status).toBe(403);
+    expect(error).toMatchObject({ type: 'invitation_address_unproven' });
+
+    const confirm = await call(confirmInvitationAddress, { headers: { ...defaultHeaders, Cookie: cookies.join('; ') } });
+    expect(confirm.response.status).toBe(204);
+    expect(sentMails().map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
+    // The new link replaces the forwarded one, which can no longer be used by anyone.
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.id, token.id))).toHaveLength(0);
+    expect(await membershipsOf(other.id)).toHaveLength(0);
+  });
+
+  it('lets the account that opens the confirmation link from the invited inbox join, holding the address', async () => {
+    const { organization, invitationCookie } = await setup();
+    const me = await createTestUser('my-account@example.com');
+    const sessionCookie = await createTestSession(me);
+    await call(confirmInvitationAddress, { headers: { ...defaultHeaders, Cookie: [sessionCookie, invitationCookie].join('; ') } });
+
+    const opened = await call(invokeToken, {
+      path: { type: 'invitation', token: mailedLink('confirmUrl').token },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
+    expect(opened.response.status).toBe(302);
+
+    const { response } = await accept([sessionCookie, setCookiePair(opened.response, 'invitation')]);
+    expect(response.status).toBe(200);
+    expect((await membershipsOf(me.id)).map(({ organizationId }) => organizationId)).toEqual([organization.id]);
+    const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, invitedEmail));
+    expect(address?.userId).toBe(me.id);
   });
 
   it('lets the new member into the organization right after accepting', async () => {
     const { organization, invitationCookie } = await setup();
-    const me = await createTestUser('my-account@example.com');
+    const me = await createTestUser(invitedEmail);
     const sessionCookie = await createTestSession(me);
     const readMembers = () => readMembersAs(organization, sessionCookie);
     expect((await readMembers()).response.status).toBe(403);
@@ -82,7 +115,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
   it('cannot be replayed once accepted', async () => {
     const { invitationCookie } = await setup();
-    const me = await createTestUser('my-account@example.com');
+    const me = await createTestUser(invitedEmail);
     const other = await createTestUser('other-account@example.com');
 
     const first = await accept([await createTestSession(me), invitationCookie]);
@@ -105,7 +138,8 @@ describe('Accept an invitation token as the signed-in user', async () => {
     });
     await db.update(inactiveMembershipsTable).set({ userId: owner.id }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-    const attacker = await createTestUser('attacker@example.com');
+    // Holding the invited address gets the attacker past the address check, to the row's own binding.
+    const attacker = await createTestUser(invitedEmail);
     const { response } = await accept([await createTestSession(attacker), invitationCookie]);
 
     expect(response.status).toBe(404);
@@ -160,17 +194,15 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(await membershipsOf(me.id)).toHaveLength(0);
   });
 
-  it('lets exactly one of two racing accounts win', async () => {
+  it('lets exactly one of two racing sessions win', async () => {
     const { invitationCookie } = await setup();
-    const first = await createTestUser('first@example.com');
-    const second = await createTestUser('second@example.com');
-    const [firstSession, secondSession] = await Promise.all([createTestSession(first), createTestSession(second)]);
+    const me = await createTestUser(invitedEmail);
+    const [firstSession, secondSession] = await Promise.all([createTestSession(me), createTestSession(me)]);
 
     const results = await Promise.all([accept([firstSession, invitationCookie]), accept([secondSession, invitationCookie])]);
 
     expect(results.filter((r) => r.response.status === 200)).toHaveLength(1);
-    const total = (await membershipsOf(first.id)).length + (await membershipsOf(second.id)).length;
-    expect(total).toBe(1);
+    expect(await membershipsOf(me.id)).toHaveLength(1);
   });
 
   it('spends the invitation without a duplicate membership when the user is already a member', async () => {
@@ -178,7 +210,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const me = await createOrganizationAdminUser('my-account@example.com', organization.id, adminRole, organization.tenantId);
     const { inactiveMembership, invitationCookie } = await createInvitation({
       token: 'invoked',
-      email: invitedEmail,
+      email: me.email,
       organization,
       createdBy: me.id,
     });

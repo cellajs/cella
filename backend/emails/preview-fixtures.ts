@@ -5,6 +5,7 @@ import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import {
   accountExistsEmail,
   accountSecurityEmail,
+  invitationAddressEmail,
   magicLinkEmail,
   memberAddedEmail,
   memberInviteEmail,
@@ -43,6 +44,7 @@ const previewTemplates = {
   'member-invite': memberInviteEmail,
   'member-invite-with-token': memberInviteWithTokenEmail,
   'member-added': memberAddedEmail,
+  'invitation-address': invitationAddressEmail,
   newsletter: newsletterEmail,
   'request-was-sent': requestResponseEmail,
   'request-was-sent-admin': requestInfoEmail,

@@ -1009,6 +1009,51 @@ export type AcceptInvitationTokenResponses = {
 
 export type AcceptInvitationTokenResponse = AcceptInvitationTokenResponses[keyof AcceptInvitationTokenResponses];
 
+export type ConfirmInvitationAddressData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/invitation-token/confirm-address';
+};
+
+export type ConfirmInvitationAddressErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ConfirmInvitationAddressError = ConfirmInvitationAddressErrors[keyof ConfirmInvitationAddressErrors];
+
+export type ConfirmInvitationAddressResponses = {
+  /**
+   * Confirmation link sent to the invited address
+   */
+  204: void;
+};
+
+export type ConfirmInvitationAddressResponse = ConfirmInvitationAddressResponses[keyof ConfirmInvitationAddressResponses];
+
 export type StartImpersonationData = {
   body: {
     targetUserId: string;

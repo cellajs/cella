@@ -6,6 +6,7 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { acceptInvitationTokenOp } from '#/modules/auth/invitations/operations/accept-invitation-token';
+import { confirmInvitationAddressOp } from '#/modules/auth/invitations/operations/confirm-invitation-address';
 import { getTokenDataOp } from '#/modules/auth/invitations/operations/get-token-data';
 import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
 import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
@@ -64,6 +65,15 @@ app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
   await spendCookieToken(ctx, 'invitation');
 
   return ctx.json(entity, 200);
+});
+
+app.openapi(authGeneralRoutes.confirmInvitationAddress, async (ctx) => {
+  const tokenRecord = await readBoundToken(ctx, 'invitation');
+
+  // The new link replaces this browser's token, whose cookie then names nothing.
+  await confirmInvitationAddressOp(ctx, tokenRecord);
+
+  return ctx.body(null, 204);
 });
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {

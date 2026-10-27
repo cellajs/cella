@@ -19,7 +19,6 @@ type AccountSecurityType =
   | 'system-role-granted'
   | 'system-role-changed'
   | 'system-role-revoked'
-  | 'invitation-accepted-elsewhere'
   | 'new-sign-in';
 
 interface AccountSecurityStatic {
@@ -27,9 +26,6 @@ interface AccountSecurityStatic {
   type: AccountSecurityType;
   details?: Record<string, string | number>;
 }
-
-/** Mails about what another person did to the account: they carry no request details, which would be that person's. */
-const othersActions: AccountSecurityType[] = ['impersonation-started', 'invitation-accepted-elsewhere'];
 
 export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
   translate(lng, { name, type, details }) {
@@ -46,7 +42,7 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
   component({ previewText, headerHtml, bodyHtml, supportText, frame }) {
     return <EmailMessage frame={frame} previewText={previewText} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
   },
-  requestDetails: ({ type }) => !othersActions.includes(type),
+  requestDetails: true,
   preview: {
     statics: {
       name: 'Emily',

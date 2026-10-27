@@ -3442,7 +3442,7 @@
         "operationId": "acceptInvitationToken",
         "tags": ["auth", "cella"],
         "summary": "Accept invitation token as current user",
-        "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
+        "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
@@ -3456,6 +3456,45 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/invitation-token/confirm-address": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "confirmInvitationAddress",
+        "tags": ["auth", "cella"],
+        "summary": "Confirm the invited address",
+        "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["spamLimiter"],
+        "x-cache": [],
+        "responses": {
+          "204": {
+            "description": "Confirmation link sent to the invited address"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

@@ -15,6 +15,9 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  ConfirmInvitationAddressData,
+  ConfirmInvitationAddressErrors,
+  ConfirmInvitationAddressResponses,
   ConfirmMagicLinkData,
   ConfirmMagicLinkErrors,
   CreateApiKeyData,
@@ -336,6 +339,7 @@ import {
   zCheckEmailResponse,
   zCheckMembershipInviteResponse,
   zCheckSlugResponse,
+  zConfirmInvitationAddressResponse,
   zCreateApiKeyResponse,
   zCreateAttachmentsResponse,
   zCreateConnectionResponse,
@@ -561,7 +565,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
 /**
  * Accept invitation token as current user
  *
- * Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.
+ * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.
  *
  * **POST /auth/invitation-token/accept** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/accept) ·· _auth · cella_
  *
@@ -575,6 +579,26 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zAcceptInvitationTokenResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/invitation-token/accept',
+    ...options,
+  });
+
+/**
+ * Confirm the invited address
+ *
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.
+ *
+ * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
+ *
+ * @param {confirmInvitationAddressData} options
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
+  options?: Options<ConfirmInvitationAddressData, ThrowOnError>,
+): RequestResult<ConfirmInvitationAddressResponses, ConfirmInvitationAddressErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<ConfirmInvitationAddressResponses, ConfirmInvitationAddressErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zConfirmInvitationAddressResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/invitation-token/confirm-address',
     ...options,
   });
 
