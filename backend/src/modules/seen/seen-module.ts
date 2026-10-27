@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { seenHandlers, unseenHandlers } from './seen-handlers';
+import { seenHandlers, unseenHandlers } from '#/modules/seen/seen-handlers';
 
 defineBackendModule({
   name: 'seen',

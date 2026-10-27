@@ -2850,7 +2850,14 @@
             "enum": ["admin", "member"]
           }
         },
-        "required": ["email", "outcome"]
+        "required": ["email", "outcome"],
+        "description": "What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.",
+        "example": {
+          "email": "p.okafor@example.net",
+          "outcome": "remind",
+          "invitedAt": "2026-10-20T09:12:00.000Z"
+        },
+        "x-tags": ["data", "memberships", "cella"]
       },
       "ServiceAccount": {
         "type": "object",
@@ -7585,7 +7592,7 @@
         "operationId": "createRequest",
         "tags": ["requests", "cella"],
         "summary": "Create request",
-        "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
+        "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
@@ -12445,7 +12452,7 @@
         "operationId": "deleteMemberships",
         "tags": ["memberships", "cella"],
         "summary": "Delete memberships",
-        "description": "Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).",
+        "description": "Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -12913,7 +12920,7 @@
         "operationId": "handleMembershipInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Respond to membership invitation",
-        "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
+        "description": "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -12939,7 +12946,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Invitation was accepted",
+            "description": "The invitation's organization",
             "content": {
               "application/json": {
                 "schema": {
@@ -13455,8 +13462,8 @@
                             "description": "The primary email address, shown to every user who shares an organization with this one."
                           },
                           "role": {
-                            "type": ["string", "null"],
-                            "enum": ["admin", "member", null]
+                            "type": "string",
+                            "enum": ["admin", "member"]
                           },
                           "createdAt": {
                             "type": "string"

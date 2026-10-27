@@ -3,7 +3,6 @@ import { appConfig, type ChannelEntityType, type EntityIdColumns, type EntityRol
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
-import type { UserModel } from '#/modules/user/user-db';
 import { mockActorRef, mockUserBase } from '#/schemas/entity-base-mocks';
 
 /** MembershipBase type defined here to avoid circular dependency with memberships-schema */
@@ -11,17 +10,17 @@ type MembershipBase = Omit<MembershipModel, 'createdAt' | 'createdBy' | 'updated
 
 const membershipOrderMap: Map<string, number> = new Map();
 
+/** A seed helper: the channel's ordinal (from 1) among the channels asked about in this process, the same on every call. */
 export const getMembershipOrderOffset = (channelId: string): number => {
-  if (!membershipOrderMap.has(channelId)) {
-    membershipOrderMap.set(channelId, membershipOrderMap.size + 1);
-  }
-  return membershipOrderMap.get(channelId)!;
+  const offset = membershipOrderMap.get(channelId) ?? membershipOrderMap.size + 1;
+  membershipOrderMap.set(channelId, offset);
+  return offset;
 };
 
 /** Minimal channel entity interface for membership creation; ancestor ID columns are read off the row when present */
 type ChannelRef = { id: string; tenantId: string } & Partial<MembershipChannelIdColumns>;
 
-/** Override IDs for channel entity columns (organizationId, workspaceId, etc.) */
+/** One id, or null, per channel type's id column. */
 type MembershipChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 type ChannelIdOverrides = Partial<MembershipChannelIdColumns>;
 
@@ -49,7 +48,7 @@ const membershipChannelIdColumns = (
   return columns;
 };
 
-export type MockMembershipBaseOptions = {
+type MockMembershipBaseOptions = {
   channelType?: ChannelEntityType;
   channelId?: string;
   channelIds?: ChannelIdOverrides;
@@ -80,10 +79,10 @@ const generateMembershipBase = (options: MockMembershipBaseOptions = {}): Member
  * Mock membership linking a user to a channel entity. Ancestor ID columns are derived from the channel row
  * (`overrideIds` win) and never invented, so the result is safe against FK constraints.
  */
-export const mockChannelMembership = <T extends ChannelEntityType>(
-  channelType: T,
+export const mockChannelMembership = (
+  channelType: ChannelEntityType,
   channel: ChannelRef,
-  user: UserModel | { id: string },
+  user: { id: string },
   overrideIds?: ChannelIdOverrides,
 ): InsertMembershipModel => {
   const userId = user.id;
@@ -91,11 +90,10 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
   return {
     id: mockUuid(),
     userId,
-    tenantId: channel.tenantId, // Use channel entity's tenant for RLS isolation
+    tenantId: channel.tenantId,
     channelType,
-    channelId: channel.id, // Denormalized primary channel entity ID
+    channelId: channel.id,
     ...membershipChannelIdColumns(channelType, channel.id, (columnKey) => channel[columnKey] ?? null, overrideIds),
-    // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
     role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
     displayOrder: getMembershipOrderOffset(channel.id) * 10,
     createdAt: mockPastIsoDate(),
@@ -165,9 +163,12 @@ const mockMemberResponse = (key = 'member:default') => {
 
 export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMemberResponse, count);
 
+/** An address the channel invited before, which the invite reminds. */
+export const mockInviteOutcome = () => ({ email: 'p.okafor@example.net', outcome: 'remind' as const, invitedAt: '2026-10-20T09:12:00.000Z' });
+
 const mockInviteOutcomes = () => [
   { email: 'sara.devries@example.com', outcome: 'invite' as const },
-  { email: 'p.okafor@example.net', outcome: 'remind' as const, invitedAt: '2026-10-20T09:12:00.000Z' },
+  mockInviteOutcome(),
   { email: 'lena@example.com', outcome: 'member' as const, role: 'member' as const },
 ];
 

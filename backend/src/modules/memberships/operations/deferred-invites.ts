@@ -8,14 +8,14 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 interface DispatchDeferredInvitesOpts {
-  /** Channel entity ids whose pending invites should be dispatched (e.g. a published course + descendants). */
+  /** The channels whose held invitations go out: a published channel and its descendants. */
   channelIds: string[];
 }
 
 /**
- * Sends the invitations held while their context was unpublished: the ones whose mail never went out, which carry no
+ * Sends the invitations held while their channel was unpublished: the ones whose mail never went out, which carry no
  * `remindedAt`. One mailed when it was made, or dispatched before, is left alone, so a publish flow may hand over a
- * context again. An invitation no account holds yet goes by link: its token is rotated (fresh secret and expiry)
+ * channel again. An invitation no account holds yet goes by link: its token is rotated (fresh secret and expiry)
  * because raw tokens are unrecoverable. One an account holds, including an invitee who signed up while it was held, is
  * answered in-app and gets no link. Each mail names the invitation's inviter, whoever publishes.
  */
@@ -24,7 +24,7 @@ export async function dispatchDeferredInvites(ctx: OrgContext, { channelIds }: D
   const heldRows = pendingRows.filter((row) => !row.remindedAt);
   if (!heldRows.length) return { dispatched: 0 };
 
-  // Group per context+role+inviter: each email batch shares entityName, role and sender
+  // Group per channel, role and inviter: each mail batch shares the channel's name, the role and the sender
   const groups = new Map<string, typeof heldRows>();
   for (const row of heldRows) {
     const key = `${row.channelType}:${row.channelId}:${row.role}:${row.createdBy}`;
@@ -40,7 +40,7 @@ export async function dispatchDeferredInvites(ctx: OrgContext, { channelIds }: D
     const entity = await resolveEntity(ctx, { entityType: channelType, identifier: channelId });
     if (!entity) continue;
 
-    // Rotate each link: fresh secret + expiry, replacing the invitation's earlier tokens
+    // Each new token replaces its invitation's earlier ones
     const tokens = await issueTokens(
       ctx,
       group.flatMap((row) => (row.userId ? [] : [{ type: 'invitation' as const, email: row.email, createdBy, inactiveMembershipId: row.id }])),
@@ -59,7 +59,7 @@ export async function dispatchDeferredInvites(ctx: OrgContext, { channelIds }: D
     dispatched += group.length;
   }
 
-  log.info('Deferred invites dispatched', { count: dispatched, contexts: channelIds.length });
+  log.info('Deferred invites dispatched', { count: dispatched, channels: channelIds.length });
 
   return { dispatched };
 }

@@ -27,7 +27,10 @@ interface FindUnseenCountsByUserOpts {
   scopeWhereByType?: Partial<Record<SeenTrackedProductType, SQL | undefined>>;
 }
 
-/** Counts readable, live, unseen rows in the recency window by home context. Draft-lifecycle rows use publish time, others creation time; `unseen-sync.ts` mirrors this. */
+/**
+ * Counts readable, live, unseen rows in the recency window by home channel. Draft-lifecycle rows use publish time,
+ * others creation time; `unseen-sync.ts` mirrors this.
+ */
 export const findUnseenCountsByUser = async (
   ctx: DbContext,
   { userId, channelIds, productTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,

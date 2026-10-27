@@ -28,8 +28,8 @@ vi.mock('#/modules/memberships/memberships-queries', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/modules/memberships/memberships-queries')>();
   return {
     ...actual,
-    findInvitationsToAddresses: async (...args: Parameters<typeof actual.findInvitationsToAddresses>) =>
-      planSees.invitations ? actual.findInvitationsToAddresses(...args) : [],
+    findInactiveMembershipsByEmails: async (...args: Parameters<typeof actual.findInactiveMembershipsByEmails>) =>
+      planSees.invitations ? actual.findInactiveMembershipsByEmails(...args) : [],
   };
 });
 

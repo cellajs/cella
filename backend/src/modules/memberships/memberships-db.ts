@@ -9,11 +9,9 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
-const roleEnum = roles.all;
-
 /**
- * Active memberships of users in organizations and other channel entities. Each belongs to exactly one tenant (RLS
- * isolation boundary). Sub-organization channel columns and their indexes come from the hierarchy, shared with inactive-memberships.
+ * Active memberships of users in the organization and the channels below it; `tenantId` is half of the organization
+ * foreign key. The id columns of the channels below the organization and their indexes come from the hierarchy.
  */
 export const membershipsTable = snakeCase.table(
   'memberships',
@@ -29,7 +27,7 @@ export const membershipsTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
+    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'set null' })
       .$type<UserId>(),
@@ -52,7 +50,7 @@ export const membershipsTable = snakeCase.table(
     ...membershipChannelIndexes('memberships', table),
     // Composite index for application-layer membership lookups (orgGuard, permission checks)
     index('memberships_org_user_tenant_idx').on(table.organizationId, table.userId, table.tenantId),
-    // One membership per user per entity
+    // One membership per user per channel
     unique('memberships_unique_channel').on(table.tenantId, table.userId, table.channelId),
     organizationForeignKey(table),
   ],

@@ -1,17 +1,11 @@
-import type { ChannelEntityType } from 'shared';
+import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
+import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
-interface GetPendingMembershipsInput {
-  entityId: string;
-  entityType: ChannelEntityType;
-  sort?: 'createdAt';
-  order?: 'asc' | 'desc';
-  offset: number;
-  limit: number;
-}
+type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchema>;
 
 /**
  * Pending invitations of a channel, for anyone who may read it: members already see every member's address. Each row

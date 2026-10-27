@@ -6,6 +6,7 @@ import { findAccountLanguages } from '#/modules/memberships/memberships-queries'
 import { slugFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
+/** An address an invitation mail goes to. */
 export interface InvitedAddress {
   email: string;
   /** The account holding the address, when one does: it reads the mail in its own language. */

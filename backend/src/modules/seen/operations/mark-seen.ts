@@ -1,26 +1,16 @@
 import { eq, getColumns, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import type { ProductEntityType, SeenTrackedProductType } from 'shared';
-import { appConfig, hierarchy } from 'shared';
+import type { ProductEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
 import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
+import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { findSeenCandidates, insertSeenBy, type OrgScopedEntityTable, seenRecencySql, seenWindowStart } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
-
-export const trackedProductTypes = appConfig.seenTrackedProductTypes;
-const trackedProductTypeSet = new Set<string>(trackedProductTypes);
-
-export function isTrackedProductType(productType: string): productType is SeenTrackedProductType {
-  return trackedProductTypeSet.has(productType);
-}
-
-/** Context types that group unseen counts: every possible home channel of a tracked row. */
-export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
 
 /**
  * Records the rows the user newly saw and bumps their view counts; returns how many were new. Only rows the user may

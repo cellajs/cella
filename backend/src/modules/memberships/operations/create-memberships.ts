@@ -4,11 +4,11 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
-import { getMembershipEntityIds, isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
+import { channelIdColumnsOf, isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countMembershipsByChannel,
-  countPendingInviteSeats,
+  countPendingInactiveMembershipSeats,
   insertInactiveMemberships,
   stampInactiveMembershipsReminded,
   updateInactiveMemberships,
@@ -39,7 +39,6 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const { db, user, organization, tenantId } = ctx.var;
   const { emails, role, entityId, entityType } = input;
 
-  // The invited role must exist in the target context's vocabulary (e.g. no org 'member' on a course)
   const channelRoles = hierarchy.getRoles(entityType);
   if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType });
 
@@ -64,7 +63,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     const [members, pending] = await Promise.all([
       countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id }),
       // An address this request charges is left out of the pending count, so a second invitation costs no second seat.
-      countPendingInviteSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
+      countPendingInactiveMembershipSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
     ]);
     if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
   }
@@ -83,7 +82,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     createdBy: user.id,
     channelType: entityType,
     tenantId,
-    ...getMembershipEntityIds(entity),
+    ...channelIdColumnsOf(entity),
     channelId: entity.id,
   }));
   // One transaction: a link only for a row this request inserted, and the address's waitlist request answered with it.
@@ -122,8 +121,8 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     const toAddress = (email: string, userId: string | null): InvitedAddress => ({ email, userId, rawToken: linkByEmail.get(email) });
 
     // One mail batch per role: a reminder names the role its invitation holds, which may be higher than the one picked.
-    const byRole = new Map<string, InvitedAddress[]>();
-    const addTo = (mailRole: string, address: InvitedAddress) => byRole.set(mailRole, [...(byRole.get(mailRole) ?? []), address]);
+    const byRole = new Map<EntityRole, InvitedAddress[]>();
+    const addTo = (mailRole: EntityRole, address: InvitedAddress) => byRole.set(mailRole, [...(byRole.get(mailRole) ?? []), address]);
     const insertedEmails = new Set(insertedInvites.map(({ email }) => email));
     for (const { email, userId } of invites) if (insertedEmails.has(email)) addTo(role, toAddress(email, userId));
     for (const { email, invitation } of reminders) {
@@ -135,7 +134,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     for (const [mailRole, invited] of byRole) {
       await sendInvitationMails(ctx, {
         sender: user,
-        channel: { type: entityType, slug: entity.slug, name: entity.name, role: mailRole as EntityRole },
+        channel: { type: entityType, slug: entity.slug, name: entity.name, role: mailRole },
         organization,
         invited,
         added: mailRole === role ? adds : [],

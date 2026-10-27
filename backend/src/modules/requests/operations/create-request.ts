@@ -17,9 +17,9 @@ type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 
 /**
  * Stores a waitlist, newsletter or contact request and confirms it by mail. The caller answers every submission alike,
- * so the form tells nobody whether an address has an account or is listed already: an address with an account gets a
- * mail pointing to sign-in and no request, a repeat of a waitlist or newsletter request is dropped. Notifying the team
- * runs in the background, so a stored request takes no longer to answer than a dropped one.
+ * so the form tells nobody whether an address has an account or is listed already: a waitlist request from an address
+ * with an account gets a mail pointing to sign-in and is not stored, and a repeat of a waitlist or newsletter request is
+ * dropped. Notifying the team runs in the background, so a stored request is answered as fast as a dropped one.
  */
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
   // The body schema trims and lowercases the address.

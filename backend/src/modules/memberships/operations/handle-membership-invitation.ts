@@ -9,7 +9,7 @@ import {
   deleteInactiveMembership,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
-  updateInactiveMembershipRejected,
+  stampInactiveMembershipRejected,
 } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { channelBaseSchema } from '#/schemas/entity-base';
@@ -24,6 +24,12 @@ interface HandleMembershipInvitationOpts {
   viaToken?: boolean;
 }
 
+/**
+ * Answers an invitation for the signed-in user. Accepting makes them a member of its channel, or spends it when they
+ * are one already; rejecting declines it. Either way its links go, and the answer is its organization as `ChannelBase`.
+ * @throws AppError 404 `not_found` for a missing, rejected or another user's invitation alike, 409 `user_mismatch` when
+ * a token accept loses the bind to another account.
+ */
 export async function handleMembershipInvitationOp(
   ctx: UserContext,
   inactiveMembershipId: string,
@@ -68,7 +74,7 @@ export async function handleMembershipInvitationOp(
     }
 
     if (acceptOrReject === 'reject') {
-      await updateInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
+      await stampInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
       await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });

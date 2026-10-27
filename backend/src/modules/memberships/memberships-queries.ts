@@ -21,16 +21,17 @@ interface CountMembershipsByChannelOpts {
   channelId: string;
 }
 
+/** The number of memberships of one channel. */
 export const countMembershipsByChannel = async (ctx: DbContext, { channelType, channelId }: CountMembershipsByChannelOpts) => {
   const { db } = ctx.var;
-  const [{ currentOrgMemberships }] = await db
-    .select({ currentOrgMemberships: count() })
+  const [{ total }] = await db
+    .select({ total: count() })
     .from(membershipsTable)
     .where(and(eq(membershipsTable.channelType, channelType), eq(membershipsTable.channelId, channelId)));
-  return currentOrgMemberships;
+  return total;
 };
 
-interface CountPendingInviteSeatsOpts {
+interface CountPendingInactiveMembershipSeatsOpts {
   organizationId: string;
   /** Addresses the caller charges a seat for itself; their pending invitations are not counted again. */
   exceptEmails?: string[];
@@ -41,7 +42,10 @@ interface CountPendingInviteSeatsOpts {
  * to the organization or to any channel below it, counted once, since accepting either makes an organization member.
  * An invitation bound to an account that is a member already, or a rejected one, holds none.
  */
-export const countPendingInviteSeats = async (ctx: DbContext, { organizationId, exceptEmails = [] }: CountPendingInviteSeatsOpts) => {
+export const countPendingInactiveMembershipSeats = async (
+  ctx: DbContext,
+  { organizationId, exceptEmails = [] }: CountPendingInactiveMembershipSeatsOpts,
+) => {
   const { db } = ctx.var;
   const orgMembership = db
     .select({ id: membershipsTable.id })
@@ -67,7 +71,7 @@ export const countPendingInviteSeats = async (ctx: DbContext, { organizationId, 
   return seats;
 };
 
-interface FindInvitationAccountsOpts {
+interface FindInviteeAccountsOpts {
   emails: string[];
   entityType: ChannelEntityType;
   entityId: string;
@@ -77,7 +81,7 @@ interface FindInvitationAccountsOpts {
  * The accounts behind invited addresses, one row per address an account holds: its primary address, its membership
  * of the channel (with the role) and whether it is a member of the organization. Addresses no account holds have no row.
  */
-export const findInvitationAccounts = async (ctx: OrgContext, { emails, entityType, entityId }: FindInvitationAccountsOpts) => {
+export const findInviteeAccounts = async (ctx: OrgContext, { emails, entityType, entityId }: FindInviteeAccountsOpts) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
 
@@ -103,13 +107,13 @@ export const findInvitationAccounts = async (ctx: OrgContext, { emails, entityTy
     .where(inArray(emailsTable.email, emails));
 };
 
-interface FindInvitationsToAddressesOpts {
+interface FindInactiveMembershipsByEmailsOpts {
   emails: string[];
   channelId: string;
 }
 
-/** The channel's invitations addressed to exactly these addresses, pending or rejected. */
-export const findInvitationsToAddresses = async (ctx: DbContext, { emails, channelId }: FindInvitationsToAddressesOpts) => {
+/** The channel's inactive memberships addressed to exactly these addresses, pending or rejected. */
+export const findInactiveMembershipsByEmails = async (ctx: DbContext, { emails, channelId }: FindInactiveMembershipsByEmailsOpts) => {
   const { db } = ctx.var;
   if (!emails.length) return [];
   return db
@@ -141,7 +145,7 @@ interface FindPendingInactiveMembershipsByChannelsOpts {
   channelIds: string[];
 }
 
-/** Pending (not rejected) inactive memberships for a set of contexts (deferred-invite dispatch). */
+/** Pending (not rejected) inactive memberships of a set of channels. */
 export const findPendingInactiveMembershipsByChannels = async (ctx: DbContext, { channelIds }: FindPendingInactiveMembershipsByChannelsOpts) => {
   const { db } = ctx.var;
   if (!channelIds.length) return [];
@@ -219,6 +223,7 @@ interface FindMembershipByIdInOrgOpts {
   membershipId: string;
 }
 
+/** A membership of the request's organization by id, as `MembershipBase`; one of another organization reads as missing. */
 export const findMembershipByIdInOrg = async (ctx: OrgContext, { membershipId }: FindMembershipByIdInOrgOpts) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
@@ -234,6 +239,7 @@ interface FindMembershipsByUserIdsAndChannelOpts {
   channelId: string;
 }
 
+/** The channel's memberships of these users, as `MembershipBase`; a user without one has no row. */
 export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts) => {
   const { db } = ctx.var;
   return db
@@ -246,6 +252,7 @@ interface DeleteMembershipsByIdsOpts {
   ids: string[];
 }
 
+/** Deletes memberships by id, only those of the request's organization. */
 export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: DeleteMembershipsByIdsOpts) => {
   const { db, organizationId } = ctx.var;
   return db.delete(membershipsTable).where(and(inArray(membershipsTable.id, ids), eq(membershipsTable.organizationId, organizationId)));
@@ -256,6 +263,7 @@ interface UpdateMembershipOpts {
   values: Partial<typeof membershipsTable.$inferInsert>;
 }
 
+/** Updates a membership of the request's organization and returns the row; undefined when none has the id. */
 export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMembershipOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
@@ -270,7 +278,7 @@ interface InsertInactiveMembershipsOpts {
   memberships: (typeof inactiveMembershipsTable.$inferInsert)[];
 }
 
-/** Insert inactive memberships in bulk, ignoring conflicts. */
+/** Inserts inactive memberships and returns the ones inserted; a row whose address the channel invited already is skipped. */
 export const insertInactiveMemberships = async (ctx: DbContext, { memberships }: InsertInactiveMembershipsOpts) => {
   const { db } = ctx.var;
   return db
@@ -284,13 +292,14 @@ interface FindInactiveMembershipByIdOpts {
   id: string;
 }
 
+/** An inactive membership by id, of any organization, pending or rejected. */
 export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
   const { db } = ctx.var;
   const [membership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
   return membership;
 };
 
-/** An invitation of the request's organization by id, pending or rejected; one of another organization reads as missing. */
+/** An inactive membership of the request's organization by id, pending or rejected; one of another organization reads as missing. */
 export const findInactiveMembershipInOrg = async (ctx: OrgContext, { id }: FindInactiveMembershipByIdOpts) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
@@ -382,17 +391,18 @@ interface FindMembersPaginatedOpts {
   limit: number;
   role?: EntityRole;
   userIds?: string[];
-  // Opt-in per-member insight counts; caller must run under tenantRead (product subqueries are RLS-guarded)
+  /** Per-member counts on the page rows (`memberCountsSelect`). */
   includeCounts?: boolean;
-  // Each member's MFA switch; the caller decides who may see it
+  /** Each member's MFA switch; the caller decides who may see it. */
   includeMfa?: boolean;
 }
 
+/** A page of a channel's members, each user with its membership, and the total. */
 export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
 
-  const $or = q ? [textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q)] : [];
+  const searchFilters = q ? [textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q)] : [];
 
   const membersFilters: SQL[] = [
     eq(membershipsTable.organizationId, organizationId),
@@ -414,7 +424,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       createdAt: usersTable.createdAt,
       lastSeenAt: lastSeenOrder,
       role: membershipsTable.role,
-      // Latest live product row by the member in the viewed channel; RLS-guarded like the counts
+      // Latest live product row by the member in the viewed channel
       lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
     },
     tieBreaker: usersTable.id,
@@ -431,7 +441,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .innerJoin(actorsTable, userActorJoin)
-    .where(and(...membersFilters, or(...$or)));
+    .where(and(...membersFilters, or(...searchFilters)));
 
   const itemsQuery = membersQuery
     .orderBy(...orderBy)
@@ -443,7 +453,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .select({ id: usersTable.id })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
-    .where(and(...membersFilters, or(...$or)));
+    .where(and(...membersFilters, or(...searchFilters)));
 
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
@@ -462,7 +472,7 @@ interface FindMemberPreviewsByChannelsOpts {
 }
 
 /**
- * Member previews for a set of contexts in one batched query: the first `limit` members per context with the given
+ * Member previews for a set of channels in one batched query: the first `limit` members per channel with the given
  * role, oldest membership first. Overflow counts come from the `m:c:{role}` counters, so previews need no second query.
  */
 export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType, channelIds, role, limit }: FindMemberPreviewsByChannelsOpts) => {
@@ -470,7 +480,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
   const previews = new Map<string, UserMinimalBase[]>();
   if (!channelIds.length) return previews;
 
-  // Rank members per context so a single query returns at most `limit` rows per context
+  // Rank members per channel so a single query returns at most `limit` rows per channel
   const rowNumber = sql<number>`row_number() over (
       partition by ${membershipsTable.channelId} order by ${membershipsTable.createdAt} asc
     )`.as('row_number');
@@ -501,7 +511,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
     .where(lte(rankedMembers.rowNumber, limit))
     .orderBy(rankedMembers.channelId, rankedMembers.rowNumber);
 
-  // Group per context, preserving the createdAt order from the window function
+  // Group per channel, preserving the createdAt order from the window function
   for (const { channelId, ...user } of rows) {
     const list = previews.get(channelId) ?? [];
     list.push({ ...user, entityType: 'user' });
@@ -574,6 +584,7 @@ interface InsertMembershipRowsOpts {
   values: InsertMembershipModel[];
 }
 
+/** Inserts membership rows and returns them as `MembershipBase`. */
 export const insertMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) => {
   return ctx.var.db.insert(membershipsTable).values(values).returning(membershipBaseSelect);
 };
@@ -587,6 +598,7 @@ interface FindMembershipsByUserIdsOpts {
   userIds: string[];
 }
 
+/** Every membership of these users, in any organization. */
 export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) => {
   return ctx.var.db.select().from(membershipsTable).where(inArray(membershipsTable.userId, userIds));
 };
@@ -595,6 +607,7 @@ interface InactiveMembershipIdOpts {
   id: string;
 }
 
+/** Deletes an inactive membership by id. */
 export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
 };
@@ -610,8 +623,8 @@ export const updateInactiveMemberships = async (ctx: DbContext, { ids, values }:
   await ctx.var.db.update(inactiveMembershipsTable).set(values).where(inArray(inactiveMembershipsTable.id, ids));
 };
 
-/** Stamps a membership invitation rejected now. */
-export const updateInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
+/** Stamps an inactive membership rejected now. */
+export const stampInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
 };
 

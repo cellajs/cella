@@ -14,9 +14,11 @@ import { log } from '#/utils/logger';
 
 type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
 
-/** User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership (D9). */
+/**
+ * Updates a membership's role, which needs `update` on its channel, or the member's own archive, mute and menu order.
+ * User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership.
+ */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
-  // `memberships.updatedBy` is a user id: the type rejects `actor.id`, which could be a service account.
   const actorId = ctx.var.user.id;
   const memberships = ctx.var.memberships;
 
@@ -42,7 +44,6 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   const updatedType = membershipToUpdate.channelType;
 
-  // The new role must exist in the context's vocabulary (e.g. no org 'member' on a course)
   if (role !== undefined && !hierarchy.getRoles(updatedType).includes(role)) {
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }

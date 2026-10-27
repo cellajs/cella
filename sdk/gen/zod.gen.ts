@@ -574,6 +574,9 @@ export const zAttachment = z.object({
   viewCount: z.int().gte(0).optional(),
 });
 
+/**
+ * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
+ */
 export const zInviteOutcome = z.object({
   email: z.email(),
   outcome: z.enum(['invite', 'remind', 'add', 'member']),
@@ -2192,7 +2195,7 @@ export const zHandleMembershipInvitationPath = z.object({
 });
 
 /**
- * Invitation was accepted
+ * The invitation's organization
  */
 export const zHandleMembershipInvitationResponse = zChannelBase;
 
@@ -2275,7 +2278,7 @@ export const zGetPendingMembershipsResponse = z.object({
     z.object({
       id: z.string(),
       email: z.email(),
-      role: z.enum(['admin', 'member']).nullable(),
+      role: z.enum(['admin', 'member']),
       createdAt: z.string(),
       remindedAt: z.string().nullable(),
       createdBy: zActorRef.nullable(),

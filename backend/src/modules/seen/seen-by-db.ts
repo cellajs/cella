@@ -5,7 +5,10 @@ import { tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Per-user product views for 90-day unseen-count windows. Partitioned, excluded from CDC, composite key; RLS replaces organization/tenant foreign keys. */
+/**
+ * Per-user product views inside the seen window (`seenWindowMs`). Partitioned, excluded from CDC, composite key; no
+ * RLS, and `user_id` is its only foreign key.
+ */
 export const seenByTable = snakeCase.table(
   'seen_by',
   {
@@ -13,7 +16,7 @@ export const seenByTable = snakeCase.table(
     userId: uuid().notNull(),
     productId: uuid().notNull(),
     productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
-    /** Parent channel entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
+    /** The product's home channel: its deepest channel, else the organization. */
     channelId: uuid().notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar({ length: tenantIdLength }).notNull(),
@@ -24,7 +27,6 @@ export const seenByTable = snakeCase.table(
     primaryKey({ columns: [table.id, table.createdAt] }),
     // Partitioning prevents a unique user/product index: `insertSeenBy` keeps one row per user and product itself.
     index('seen_by_user_product_index').on(table.userId, table.productId),
-    // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND productType
     index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.productType),
     index('seen_by_product_id_index').on(table.productId),
     index('seen_by_tenant_id_index').on(table.tenantId),

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { and, eq, getTableColumns, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, eq, getColumns, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { appConfig, type ChannelEntityType, hierarchy, isChannel, recordFromKeys } from 'shared';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
@@ -8,15 +8,8 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { entityTables } from '#/tables';
 
-/**
- * Product types with per-member stats for the members table (`include=counts` on GET /members),
- * from `appConfig.memberStatProductTypes`. Counts are computed per request, scoped to the viewed
- * channel, and the subqueries read RLS-guarded tables, so the members query must run under
- * `tenantRead` when counts are requested.
- */
-export type MemberStatProductType = (typeof appConfig.memberStatProductTypes)[number];
-/** @public */
-export const memberStatProductTypes = appConfig.memberStatProductTypes;
+/** A product type with per-member stats in the members table (`include=counts` on GET /members). */
+type MemberStatProductType = (typeof appConfig.memberStatProductTypes)[number];
 
 /** Columns every stat product table carries (product columns); `publishedAt` marks draft-capable tables. */
 type MemberStatTable = AnyPgTable & {
@@ -53,12 +46,14 @@ const activityStamp = (t: MemberStatTable): PgColumn => t.publishedAt ?? t.creat
 
 /**
  * Select fragment for the members query: `counts: memberCountsSelect(...)`. Correlated scalar
- * subqueries per row; cost scales with page size and per-user content, not channel volume.
+ * subqueries per row; cost scales with page size and per-user content, not channel volume. Counted
+ * per request in the viewed channel; the product subqueries read RLS-guarded tables, so the members
+ * query runs under `tenantRead` when counts are requested.
  */
 export const memberCountsSelect = (entityType: ChannelEntityType, entityId: string, organizationId: string) => {
   // Membership counts per descendant channel type, scoped by the viewed channel's ancestor column
   // on the membership rows themselves (populated by insertMemberships for every level).
-  const scopeColumn = getTableColumns(membershipsTable)[appConfig.entityIdColumnKeys[entityType]].name;
+  const scopeColumn = getColumns(membershipsTable)[appConfig.entityIdColumnKeys[entityType]].name;
   const descendantChannels = hierarchy.getOrderedDescendants(entityType).filter(isChannel);
   const membershipPairs = descendantChannels.map(
     (type) =>
@@ -67,14 +62,14 @@ export const memberCountsSelect = (entityType: ChannelEntityType, entityId: stri
           AND mc.${sql.raw(scopeColumn)} = ${entityId})`,
   );
 
-  const productPairs = memberStatProductTypes.map((type) => {
+  const productPairs = appConfig.memberStatProductTypes.map((type) => {
     const table = memberStatTable(type);
     const where = liveAuthoredWhere(type, entityType, entityId, organizationId);
     return sql`${sql.raw(`'${type}'`)}, (SELECT count(*)::int FROM ${table} WHERE ${where})`;
   });
 
   // Epoch ms of the member's latest live row per product type; null when never.
-  const activityPairs = memberStatProductTypes.map((type) => {
+  const activityPairs = appConfig.memberStatProductTypes.map((type) => {
     const table = memberStatTable(type);
     const where = liveAuthoredWhere(type, entityType, entityId, organizationId);
     return sql`${sql.raw(`'${type}'`)}, (SELECT (extract(epoch from max(${activityStamp(table)})) * 1000)::bigint
@@ -95,7 +90,7 @@ export const memberCountsSelect = (entityType: ChannelEntityType, entityId: stri
  * FIRST in Postgres).
  */
 export const lastPostedAtOrder = (entityType: ChannelEntityType, entityId: string, organizationId: string) => {
-  const primary = memberStatProductTypes[0];
+  const primary = appConfig.memberStatProductTypes[0];
   if (!primary) return sql`'-infinity'`;
   const table = memberStatTable(primary);
   return sql`coalesce((SELECT max(${activityStamp(table)}) FROM ${table}
@@ -105,6 +100,6 @@ export const lastPostedAtOrder = (entityType: ChannelEntityType, entityId: strin
 /** Response shape for `member.counts`; membership keys are scoped to the viewed channel, so all optional. */
 export const memberCountsSchema = z.object({
   memberships: z.object(recordFromKeys(memberStatChannelTypes, () => z.number().optional())),
-  products: z.object(recordFromKeys(memberStatProductTypes, () => z.number())),
-  activity: z.object(recordFromKeys(memberStatProductTypes, () => z.number().nullable())),
+  products: z.object(recordFromKeys(appConfig.memberStatProductTypes, () => z.number())),
+  activity: z.object(recordFromKeys(appConfig.memberStatProductTypes, () => z.number().nullable())),
 });

@@ -35,8 +35,8 @@ export const resolveOrganizationMembershipRole = (
   return explicit;
 };
 
-/** Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`. */
-export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
+/** The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one the row holds. */
+export const channelIdColumnsOf = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
   return appConfig.channelEntityTypes.reduce(
     (acc, channelEntityType) => {
       const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];

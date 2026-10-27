@@ -8,7 +8,7 @@ import type { Tx } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
-import { isTrackedProductType } from '#/modules/seen/operations/mark-seen';
+import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { insertSeenBy } from '#/modules/seen/seen-queries';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';

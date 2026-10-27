@@ -1,18 +1,18 @@
 import type { z } from '@hono/zod-openapi';
-import type { ChannelEntityType } from 'shared';
+import type { ChannelEntityType, EntityRole } from 'shared';
 import type { UserContext } from '#/core/context';
-import { findInvitationAccounts, findInvitationsToAddresses } from '#/modules/memberships/memberships-queries';
+import { findInactiveMembershipsByEmails, findInviteeAccounts } from '#/modules/memberships/memberships-queries';
 import type { inviteOutcomeSchema } from '#/modules/memberships/memberships-schema';
 
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;
-type Invitation = Awaited<ReturnType<typeof findInvitationsToAddresses>>[number];
+type InactiveMembership = Awaited<ReturnType<typeof findInactiveMembershipsByEmails>>[number];
 
 /** One address with what an invite does with it, and the rows the invite acts on. Only `outcome` goes on the wire. */
 export type PlannedAddress =
   | { email: string; outcome: 'invite'; userId: string | null }
   | { email: string; outcome: 'add'; userId: string }
-  | { email: string; outcome: 'remind'; invitation: Invitation }
-  | { email: string; outcome: 'member'; role: string };
+  | { email: string; outcome: 'remind'; invitation: InactiveMembership }
+  | { email: string; outcome: 'member'; role: EntityRole };
 
 interface PlanInvitesInput {
   /** Trimmed and lowercased, as the body schema leaves them; a repeat is planned once. */
@@ -33,8 +33,8 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
   const uniqueEmails = [...new Set(emails)];
 
   const [accounts, invitations] = await Promise.all([
-    findInvitationAccounts(ctx, { emails: uniqueEmails, entityType, entityId: entity.id }),
-    findInvitationsToAddresses(ctx, { emails: uniqueEmails, channelId: entity.id }),
+    findInviteeAccounts(ctx, { emails: uniqueEmails, entityType, entityId: entity.id }),
+    findInactiveMembershipsByEmails(ctx, { emails: uniqueEmails, channelId: entity.id }),
   ]);
   const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
   const invitationByEmail = new Map(invitations.map((invitation) => [invitation.email, invitation]));
@@ -61,9 +61,9 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
 }
 
 /** The wire form of a plan: what the inviter may know about each address. */
-export const toInviteOutcome = (planned: PlannedAddress): InviteOutcome => {
-  if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role as InviteOutcome['role'] };
+export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
+  if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role };
   if (planned.outcome !== 'remind') return { email: planned.email, outcome: planned.outcome };
   const { createdAt, rejectedAt } = planned.invitation;
   return { email: planned.email, outcome: 'remind', invitedAt: createdAt, ...(rejectedAt && { declinedAt: rejectedAt }) };
-};
+}

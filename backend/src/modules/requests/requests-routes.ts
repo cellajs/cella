@@ -2,9 +2,9 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockPaginatedRequestsResponse } from '#/modules/requests/requests-mocks';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, idsBodySchema, paginationSchema } from '#/schemas';
-import { mockPaginatedRequestsResponse } from './requests-mocks';
 
 const requestRoutes = createXRoutes(['requests', 'cella'], {
   createRequest: xRoute({
@@ -15,7 +15,7 @@ const requestRoutes = createXRoutes(['requests', 'cella'], {
     middleware: [isNoBot],
     summary: 'Create request',
     description:
-      'Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.',
+      'Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.',
     request: { body: jsonBody(requestCreateBodySchema) },
     responses: { 204: { description: 'Request received' } },
   }),

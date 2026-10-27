@@ -1,20 +1,24 @@
 import type { SQL } from 'drizzle-orm';
-import type { SeenTrackedProductType } from 'shared';
+import { appConfig, type SeenTrackedProductType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantReadAs } from '#/db/tenant-context';
-import { groupingChannelTypes, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
+import { groupingChannelTypes } from '#/modules/seen/helpers/tracked-products';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 
+/**
+ * The user's unseen counts per home channel and product type, `{}` without memberships. Only rows the user may read
+ * count: live, published and inside the seen window.
+ */
 export async function getUnseenCountsOp(ctx: UserContext) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
   const actor = actorFrom(ctx);
 
-  // No memberships means no badge contexts: administrator bypass widens rows inside an organization, not the organization set.
+  // No memberships means no channels to badge: administrator bypass widens rows inside an organization, not the organization set.
   if (memberships.length === 0) {
     return {};
   }
@@ -35,7 +39,7 @@ export async function getUnseenCountsOp(ctx: UserContext) {
     const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
     const readableTypes: SeenTrackedProductType[] = [];
 
-    for (const productType of trackedProductTypes) {
+    for (const productType of appConfig.seenTrackedProductTypes) {
       const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
       const entityTable = getEntityTable(productType);
       const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
