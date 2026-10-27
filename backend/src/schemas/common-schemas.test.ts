@@ -8,6 +8,7 @@ import {
   validDomainSchema,
   validEmailSchema,
   validNameSchema,
+  validSlugSchema,
   validUrlSchema,
 } from './common-schemas';
 
@@ -113,6 +114,14 @@ describe('validNameSchema', () => {
 
   it('stores the name without surrounding spaces', () => {
     expect(validNameSchema.parse('  Acme  ')).toBe('Acme');
+  });
+});
+
+describe('validSlugSchema', () => {
+  it('refuses a slug built to backtrack, in bounded time', () => {
+    const started = performance.now();
+    expect(validSlugSchema.safeParse(`${'a'.repeat(28)}_`).success).toBe(false);
+    expect(performance.now() - started).toBeLessThan(100);
   });
 });
 

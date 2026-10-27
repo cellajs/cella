@@ -5583,7 +5583,7 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                    "pattern": "^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$"
                   },
                   "entityType": {
                     "type": "string",
@@ -5984,7 +5984,7 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                    "pattern": "^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$"
                   },
                   "userFlags": {
                     "type": "object",
@@ -8169,7 +8169,7 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                    "pattern": "^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$"
                   }
                 }
               }
@@ -9588,7 +9588,7 @@
                       "type": "string",
                       "minLength": 2,
                       "maxLength": 255,
-                      "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                      "pattern": "^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$"
                     },
                     "draft": {
                       "type": "boolean",
@@ -10472,7 +10472,7 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 255,
-                    "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                    "pattern": "^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$"
                   },
                   "name": {
                     "type": "string",

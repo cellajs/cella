@@ -16,7 +16,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/
 import { cn } from '~/utils/cn';
 
 // The form a slug is stored in. The input lowers what is typed, as the API does with an upper-case slug.
-const slugPattern = /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/;
+const slugPattern = /^[a-z0-9]+(-{1,3}[a-z0-9]+)*$/;
 
 type SlugFormFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   entityType: ChannelEntityType | 'user';
