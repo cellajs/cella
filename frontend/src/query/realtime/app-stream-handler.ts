@@ -9,8 +9,8 @@ import * as cacheOps from '~/query/realtime/cache-ops';
 import { enqueueRange } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
 import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { publishChangeEvent } from '~/query/realtime/sync-events';
 import { getSyncTier } from '~/query/realtime/sync-priority';
-import { publishChangeEvent } from '~/query/realtime/sync-signals';
 import { syncStore } from '~/query/realtime/sync-store';
 import type { AppStreamNotification, ProductNotification } from '~/query/realtime/types';
 

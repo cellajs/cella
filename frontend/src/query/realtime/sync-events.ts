@@ -2,7 +2,7 @@ import type { ProductEntityType } from 'shared';
 import type { AppStreamNotification } from '~/query/realtime/types';
 
 /** A change the stream announced, in the fields of its envelope; no row data yet. */
-export interface ChangeEventSignal {
+export interface AnnouncedChange {
   kind: AppStreamNotification['kind'];
   action: AppStreamNotification['action'];
   entityType: string | null;
@@ -12,7 +12,7 @@ export interface ChangeEventSignal {
 }
 
 /** Rows a sequence-range fetch just delivered. */
-export interface SyncedRowsSignal {
+export interface SyncedRows {
   entityType: ProductEntityType;
   organizationId: string;
   rows: { id: string; [key: string]: unknown }[];
@@ -20,17 +20,17 @@ export interface SyncedRowsSignal {
   degraded: boolean;
 }
 
-type Handler<T> = (signal: T) => void;
+type Handler<T> = (event: T) => void;
 
 /** One kind of in-process event: `publish` reaches every handler that `subscribe` registered, and `name` labels a failing handler's log line. */
-export function createSignal<T>(name: string) {
+export function createEmitter<T>(name: string) {
   const handlers = new Set<Handler<T>>();
 
   /** A throwing handler is logged and skipped, so one bad subscriber cannot break the sync flow. */
-  const publish = (signal: T): void => {
+  const publish = (event: T): void => {
     for (const handler of handlers) {
       try {
-        handler(signal);
+        handler(event);
       } catch (error) {
         console.error(`[${name}] subscriber failed:`, error);
       }
@@ -47,8 +47,8 @@ export function createSignal<T>(name: string) {
   return { publish, subscribe };
 }
 
-const changeEvent = createSignal<ChangeEventSignal>('ChangeEventSignal');
-const syncedRows = createSignal<SyncedRowsSignal>('SyncedRowsSignal');
+const changeEvent = createEmitter<AnnouncedChange>('AnnouncedChange');
+const syncedRows = createEmitter<SyncedRows>('SyncedRows');
 
 /** Subscribe to announced changes to trigger work: every readable notification, before any tier decision, muted and archived channels included. */
 export const onChangeEvent = changeEvent.subscribe;

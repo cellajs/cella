@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { onChangeEvent, publishChangeEvent } from './sync-signals';
+import { onChangeEvent, publishChangeEvent } from './sync-events';
 
 const change = {
   kind: 'product' as const,
@@ -10,7 +10,7 @@ const change = {
   subjectId: 'attachment-1',
 };
 
-describe('syncSignals', () => {
+describe('syncEvents', () => {
   it('isolates a throwing subscriber, so one consumer cannot break the sync flow', () => {
     const thrower = vi.fn(() => {
       throw new Error('boom');

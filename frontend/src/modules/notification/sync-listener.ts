@@ -1,6 +1,6 @@
 import { hierarchy } from 'shared';
 import { invalidateNotifications } from '~/modules/notification/query';
-import { onChangeEvent } from '~/query/realtime/sync-signals';
+import { onChangeEvent } from '~/query/realtime/sync-events';
 
 /** One refetch per burst of change events, this long after the first, so the post-commit fan-out has written the notification. */
 const refreshDelayMs = 2000;
