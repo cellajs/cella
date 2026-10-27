@@ -101,8 +101,11 @@ function DrawerContent({
             <div className="sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden group-data-[swipe-direction=down]/drawer-content:py-2 group-data-[swipe-direction=up]/drawer-content:py-2">
               <div className="h-1 w-20 rounded-full bg-muted" />
             </div>
-            {/* shrink-0 keeps flex from collapsing Content, so the popup scrolls it. */}
-            <DrawerPrimitive.Content className="shrink-0">{children}</DrawerPrimitive.Content>
+            {/* shrink-0 keeps flex from collapsing Content, so the popup scrolls it. Content, not the popup, is the sheet layer:
+                it spans the full scroll height, where a dim in the popup would scroll away with its first screen. */}
+            <DrawerPrimitive.Content data-sheet-layer className="relative shrink-0">
+              {children}
+            </DrawerPrimitive.Content>
           </DrawerPrimitive.Popup>
         </DrawerPrimitive.Viewport>
       </div>

@@ -20,7 +20,7 @@ export function InvitationsTable() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <AlertBanner id="accept_invitations" variant="plain" icon={InfoIcon} animate>
+      <AlertBanner id="accept_invitations" variant="info" icon={InfoIcon} animate>
         {t('c:accept_invitations.text')}
       </AlertBanner>
 

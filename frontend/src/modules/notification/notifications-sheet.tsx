@@ -32,8 +32,8 @@ export function NotificationsSheet() {
   return (
     <NavSheetFrame>
       {/* Sticky like the menu sheet's section buttons: opaque card layer inside the sheet's scroll container. */}
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-card px-4 py-3">
-        <h2 className="flex items-center gap-2 font-medium text-lg">
+      <div className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-2 bg-card px-5">
+        <h2 className="flex items-center gap-2 font-semibold text-base">
           {t('c:notifications')}
           <UnreadCountBadge />
         </h2>
@@ -97,10 +97,11 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
     </>
   );
 
-  // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode); only read rows tint on hover.
+  // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode). Hover adds the ghost
+  // button's 8% foreground on top of whichever fill the row has.
   const className = cn(
     'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
-    notification.readAt ? 'hover:bg-accent/50' : 'bg-accent',
+    notification.readAt ? 'hover:bg-foreground/8' : 'bg-accent hover:bg-[color-mix(in_oklab,var(--accent),var(--foreground)_8%)]',
   );
 
   return (

@@ -13,6 +13,7 @@ export const buttonVariants = cva(
         brand: 'intent-brand',
         destructive: 'intent-destructive',
         success: 'intent-success',
+        info: 'intent-info',
         secondary: 'border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground dark:hover:bg-input/50',
         // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
@@ -49,7 +50,7 @@ export const buttonVariants = cva(
     compoundVariants: [
       // Only intent variants have a soft form; surface-colored ones (`secondary`) would paint `soft-text` near-invisible.
       {
-        variant: ['default', 'brand', 'destructive', 'success', 'warning'],
+        variant: ['default', 'brand', 'destructive', 'success', 'info', 'warning'],
         soft: true,
         // The strong steps keep the button legible on a soft-tinted surface.
         className:
@@ -59,12 +60,13 @@ export const buttonVariants = cva(
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground hover:bg-brand/80' },
       { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground hover:bg-destructive/90' },
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/90' },
+      { variant: 'info', soft: false, className: 'bg-info text-info-foreground hover:bg-info/90' },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/90' },
       // A row's height and inset outrank the size variant: about 52px on a phone, a native action sheet row.
       { variant: 'row', className: 'h-11 px-4' },
       // A disabled solid fill is a flat tint, so it can't read as a live secondary button; a busy one keeps its fill under the spinner.
       {
-        variant: ['default', 'brand', 'destructive', 'success', 'warning'],
+        variant: ['default', 'brand', 'destructive', 'success', 'info', 'warning'],
         soft: false,
         className: 'disabled:not-aria-busy:bg-foreground/10 disabled:not-aria-busy:text-foreground/40 disabled:not-aria-busy:opacity-100',
       },

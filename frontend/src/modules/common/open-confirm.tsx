@@ -55,6 +55,8 @@ export function openConfirm(trigger: HTMLElement, options: ConfirmOptions) {
     triggerRef: { current: trigger },
     align: options.align ?? 'end',
     kind: 'menu',
+    // A wide trigger, such as a tile's full-width button, gets a confirmation as wide as itself
+    popupClassName: 'min-w-(--anchor-width)',
   });
 }
 

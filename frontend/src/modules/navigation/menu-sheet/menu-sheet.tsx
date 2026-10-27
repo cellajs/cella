@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getMenuSection } from '~/lib/entity-modules';
@@ -39,9 +38,8 @@ export function MenuSheet() {
   const isMobile = useBreakpointBelow('sm', false);
   const navSheetOrganizationId = useNavigationStore((state) => state.navSheetOrganizationId);
   const lastOrganizationId = useNavigationStore((state) => state.lastOrganizationId);
-  // Only a desktop nav bar holds organization buttons; elsewhere the switcher picks, and can turn the sheet to the full menu
+  // Only a desktop nav bar holds organization buttons; elsewhere the switcher picks
   const hasOrganizationButtons = navBar && !isMobile;
-  const [showsFullMenu, setShowsFullMenu] = useState(false);
 
   const { menu, isLoading } = useMenu(user?.id);
   useMenuDropMonitor(menu);
@@ -51,10 +49,9 @@ export function MenuSheet() {
 
   if (isLoading || !user) return <Spinner />;
 
-  const organization =
-    isMenuPerOrganization && !showsFullMenu
-      ? pickOrganization(organizations, hasOrganizationButtons, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
-      : undefined;
+  const organization = isMenuPerOrganization
+    ? pickOrganization(organizations, hasOrganizationButtons, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
+    : undefined;
 
   const menuSections = appConfig.menuStructure.flatMap(({ entityType }) => {
     const menuSection = getMenuSection(entityType);
@@ -68,7 +65,7 @@ export function MenuSheet() {
   return (
     <NavSheetFrame panels>
       <MenuSheetHeader />
-      {organization && !hasOrganizationButtons && <OrganizationSwitcher organization={organization} onShowMenu={() => setShowsFullMenu(true)} />}
+      {organization && !hasOrganizationButtons && <OrganizationSwitcher organization={organization} />}
       <ContentKeyTransition contentKey={organization?.id ?? 'all'}>
         {organization ? <MenuSheetOrganization organization={organization} menu={menu} hasSwitcher={!hasOrganizationButtons} /> : renderedSections}
       </ContentKeyTransition>

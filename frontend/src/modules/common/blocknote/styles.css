@@ -15,7 +15,7 @@ li:has(.is-focused) {
   background: transparent;
 }
 
-/* BlockNote's font and soft editor text color, taken from the app's tokens. */
+/* BlockNote's font and editor text color, taken from the app's tokens. */
 .bn-container.bn-shadcn {
   --bn-font-family: var(--font-sans);
   --bn-colors-editor-text: var(--foreground);
@@ -99,7 +99,6 @@ li:has(.is-focused) {
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
-  border: 1px solid var(--border);
   border-radius: 0.375rem;
   background-color: var(--muted);
   padding: 0.125rem 0.375rem;

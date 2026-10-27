@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CircleCheckBigIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
+import { ArrowRightIcon, CircleCheckBigIcon, InfoIcon, ShieldAlertIcon, TriangleAlertIcon } from 'lucide-react';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
+import { Button } from '~/modules/ui/button';
 
 const meta = { title: 'common/AlertBanner', component: AlertBanner, tags: ['autodocs'], parameters: { layout: 'padded' } } satisfies Meta<
   typeof AlertBanner
@@ -36,6 +37,23 @@ export const Success: Story = {
 
 export const Warning: Story = {
   args: { id: 'story-warning', variant: 'warning', icon: TriangleAlertIcon, title: 'Warning' as TKey, children: 'This action cannot be undone.' },
+};
+
+/** The action sits beside the text from `sm` up and wraps under it on a phone; the close button centers on it. */
+export const WithAction: Story = {
+  args: {
+    id: 'story-action',
+    variant: 'info',
+    icon: ShieldAlertIcon,
+    title: 'MFA is off' as TKey,
+    children: "Multifactor authentication adds a second step at sign-in, so a leaked password alone can't open your account.",
+    action: (
+      <Button variant="info" soft size="sm" className="max-sm:w-full">
+        Set up MFA
+        <ArrowRightIcon />
+      </Button>
+    ),
+  },
 };
 
 export const Animated: Story = {

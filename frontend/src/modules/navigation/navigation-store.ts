@@ -15,6 +15,9 @@ interface NavigationStoreState {
 
   lastOrganizationId: string | null; // Organization last opened from the rail or the switcher, where the mobile menu opens outside organization pages
 
+  lastChannelIds: Record<string, string>; // Per organization id, the channel below it that its pages last showed, where its rail button lands
+  setLastChannelId: (organizationId: string, channelId: string) => void;
+
   keepNavOpen: boolean; // Nav sheet stays open beside the content
   setKeepNavOpen: (keepNavOpen: boolean) => void;
 
@@ -47,6 +50,7 @@ interface InitStore
     | 'navSheetOpen'
     | 'navSheetOrganizationId'
     | 'lastOrganizationId'
+    | 'lastChannelIds'
     | 'keepOpenPreference'
     | 'floatingNavActive'
     | 'navSheetPanel'
@@ -57,6 +61,7 @@ const initStore: InitStore = {
   navSheetOpen: null,
   navSheetOrganizationId: null,
   lastOrganizationId: null,
+  lastChannelIds: {},
   keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
   detailedMenu: false,
@@ -69,7 +74,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
     immer(
       persist(
-        (set) => ({
+        (set, get) => ({
           ...initStore,
           setNavSheetOpen: (navSheetOpen, organizationId = null) => {
             set((state) => {
@@ -77,6 +82,13 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.navSheetOrganizationId = navSheetOpen ? organizationId : null;
               if (navSheetOpen && organizationId) state.lastOrganizationId = organizationId;
               if (!navSheetOpen) state.navSheetPanel = null;
+            });
+          },
+          setLastChannelId: (organizationId, channelId) => {
+            // Every resolved navigation reports, a search change too: an unchanged id would still write the persisted store
+            if (get().lastChannelIds[organizationId] === channelId) return;
+            set((state) => {
+              state.lastChannelIds[organizationId] = channelId;
             });
           },
           setKeepNavOpen: (keepNavOpen) => {
@@ -126,6 +138,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
             lastOrganizationId: state.lastOrganizationId,
+            lastChannelIds: state.lastChannelIds,
           }),
           storage: createJSONStorage(() => idbKvStorage('navigation')),
         },

@@ -93,7 +93,14 @@ export function TableBarShell<TRow extends object>({
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {!isFiltered && actions}
-            <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+            {/* TableCount hides on phones to leave the actions room; without actions it stays */}
+            <TableCount
+              count={total}
+              label={label}
+              isFiltered={isFiltered}
+              onResetFilters={onResetFilters}
+              className={actions ? undefined : 'max-sm:flex'}
+            >
               {countExtra}
             </TableCount>
           </FilterBarActions>

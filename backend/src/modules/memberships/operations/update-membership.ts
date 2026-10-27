@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { hierarchy } from 'shared';
-import { getEdgeOrder } from 'shared/utils/display-order';
+import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
@@ -53,13 +53,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
-    const relevantOrders = memberships
-      .filter((m) => m.channelType === updatedType && m.archived === archived)
-      // Use ceil so a fractional displayOrder doesn't squeeze a future insert.
-      .map((m) => Math.ceil(m.displayOrder));
-
-    // Push to the visual bottom of the destination bucket (ascending list).
-    orderToUpdate = getEdgeOrder(relevantOrders, 'bottom', true);
+    orderToUpdate = getArchiveMoveOrder(memberships, updatedType, archived);
   }
 
   const values = {

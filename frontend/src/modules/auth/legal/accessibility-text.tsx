@@ -35,7 +35,7 @@ export function AccessibilityText() {
 
   const appName = appConfig.name;
   const frontendUrl = appConfig.frontendUrl;
-  const { standard, reviewedAt, provisional, results, limitations, report } = accessibilityReview;
+  const { standard, reviewedAt, provisional, results, limitations, report, whatYouCanDo = [] } = accessibilityReview;
   const notEvaluated = results?.notEvaluated ?? [];
   const conforms = limitations.length === 0 && notEvaluated.length === 0;
 
@@ -86,6 +86,9 @@ export function AccessibilityText() {
             Open the menu with Alt + M, search with Ctrl + K and your account with Alt + A (Option and ⌘ on a Mac). Every shortcut needs one of these
             keys, so typing and voice control do not set one off by accident.
           </li>
+          {whatYouCanDo.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
           {languages.length > 1 && <li>Choose your language: {orNodes(languages)}.</li>}
           {signInMethods.length > 0 && <li>Sign in without a password, using {listed(signInMethods, 'or')}.</li>}
         </ul>

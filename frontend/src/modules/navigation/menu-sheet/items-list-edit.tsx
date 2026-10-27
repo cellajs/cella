@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggable-item';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
@@ -10,18 +11,22 @@ interface MenuSheetItemsListEditProps {
   items: UserMenuItem[];
   options?: MenuSectionOptions;
   isArchived: boolean;
+  /** Runs before a row of this list is archived; true when it had to open the archived list the row moves into. */
+  onArchive?: () => boolean;
 }
 
-export function MenuSheetItemsListEdit({ items, isArchived, options }: MenuSheetItemsListEditProps) {
+export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive }: MenuSheetItemsListEditProps) {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuArchivedVisible, setSubmenuArchivedVisible] = useState<Record<string, boolean>>({});
+  // A row that mounts once the list is on screen arrived by a restore or a create, and unfolds its submenu
+  const { hasStarted: isShown } = useMountedState();
 
   if (options && items.length === 0) return <MenuSheetNoItems entityType={options.entityType} />;
 
   const filteredItems = sortAndFilterMenu(items, isArchived);
 
-  const toggleSubmenuArchived = (itemId: string) => {
-    setSubmenuArchivedVisible((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
+  const setSubmenuArchivedOpen = (itemId: string, open: boolean) => {
+    setSubmenuArchivedVisible((prev) => ({ ...prev, [itemId]: open }));
   };
 
   return filteredItems.map((item) => (
@@ -32,8 +37,10 @@ export function MenuSheetItemsListEdit({ items, isArchived, options }: MenuSheet
       options={options}
       isArchived={isArchived}
       detailedMenu={detailedMenu}
+      isArriving={isShown}
       isSubmenuArchivedVisible={submenuArchivedVisible[item.id]}
-      onToggleSubmenuArchived={toggleSubmenuArchived}
+      onSubmenuArchivedChange={setSubmenuArchivedOpen}
+      onArchive={onArchive}
     />
   ));
 }

@@ -16,7 +16,8 @@ export const cn = createCn({
       'border-color': ['soft-border', 'soft-border-medium', 'soft-border-strong'],
       'text-decoration': ['link-inline'],
       'text-decoration-color': ['link-decoration', 'link-decoration-strong'],
-      intent: [{ intent: ['primary', 'brand', 'destructive', 'success', 'secondary', 'warning'] }],
+      shadow: ['shadow-floating'],
+      intent: [{ intent: ['primary', 'brand', 'destructive', 'success', 'info', 'secondary', 'warning'] }],
     },
   },
 });

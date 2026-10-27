@@ -16,9 +16,9 @@ import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
-  healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
-  degraded: { dot: 'bg-warning', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--warning)_50%,transparent)]' },
-  unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
+  healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_30%,transparent)]' },
+  degraded: { dot: 'bg-warning', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--warning)_30%,transparent)]' },
+  unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_30%,transparent)]' },
 };
 
 const statusCardClass = tw('flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs');

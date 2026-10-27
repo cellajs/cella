@@ -71,7 +71,9 @@ function ReorderCell(props: ReorderCellProps) {
     <ReorderHandle
       {...props}
       ref={registerHandle}
-      className="flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground active:cursor-grabbing data-popup-open:bg-accent/50 data-popup-open:text-foreground"
+      // Any focus shows the outline, a click's too: the grip then takes the arrow keys. `outline-solid` because
+      // `outline-hidden` sets the style to none.
+      className="flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground outline-hidden hover:bg-accent/50 hover:text-foreground focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-accent/50 focus:text-foreground active:cursor-grabbing data-popup-open:bg-accent/50 data-popup-open:text-foreground"
     >
       <GripVerticalIcon className="size-3.5" />
     </ReorderHandle>

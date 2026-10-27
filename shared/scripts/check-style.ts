@@ -37,8 +37,9 @@ function branchChanges(): { files: string[]; messages: string } {
 
 const requested = files.filter((file) => isRequested(file, roots));
 const findings: Finding[] = alignmentFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8'));
-// Alignments are written where they live: an app has no cella/alignments folder, and its own changes to its own paths owe none.
-if (roots.length === 0 && files.includes('cella/alignments/_TEMPLATE.md')) {
+// Alignments are written where they live: an app's own changes to its own paths owe none. Every synced app has a sync
+// manifest, and a sync by a CLI before 0.5 also copied the alignments folder in, so the folder alone does not mark the template.
+if (roots.length === 0 && files.includes('cella/alignments/_TEMPLATE.md') && !files.includes('cella/cella.manifest.json')) {
   const { files: changed, messages } = branchChanges();
   findings.push(...owedAlignmentFindings(changed, messages, readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
 }

@@ -37,12 +37,15 @@ function DialogContent({
   className,
   children,
   container,
+  layer,
   outsideScroll = false,
   viewportClassName,
   dock,
   ...props
 }: DialogPrimitive.Popup.Props & {
   container?: HTMLElement | null;
+  /** A positioned element the backdrop and viewport cover in place of the screen, e.g. a sheet's layer. */
+  layer?: HTMLElement | null;
   /** Scroll tall content inside the popup by default, or outside through the viewport. */
   outsideScroll?: boolean;
   viewportClassName?: string;
@@ -50,13 +53,14 @@ function DialogContent({
   dock?: 'bottom';
 }) {
   return (
-    <DialogPortal container={container || undefined}>
-      {!container && <DialogOverlay />}
+    <DialogPortal container={container || layer || undefined}>
+      {!container && <DialogOverlay className={layer ? 'absolute' : undefined} />}
       <DialogPrimitive.Viewport
         data-slot="dialog-viewport"
         className={cn(
           !container && [
-            'fixed inset-0 in-[.sheeter-open]:z-125 z-115',
+            'inset-0 in-[.sheeter-open]:z-125 z-115',
+            layer ? 'absolute' : 'fixed',
             dock
               ? 'grid items-end justify-items-center overflow-hidden p-4'
               : outsideScroll
@@ -74,7 +78,7 @@ function DialogContent({
           className={cn(
             'data-closed:fade-out-0 data-open:fade-in-0 relative mx-auto grid w-[95vw] max-w-full grid-cols-1 gap-4 overflow-x-clip rounded-lg bg-background p-4 shadow-lg duration-200 focus-visible:outline-hidden data-closed:animate-out data-open:animate-in',
             dock
-              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+              ? 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom shadow-floating duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
               : 'data-closed:zoom-out-95 data-open:zoom-in-95',
             // A container owns the scroll, so the popup only clips; inside scroll caps the height to keep a screen-edge gap.
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',

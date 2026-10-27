@@ -124,7 +124,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
         )}
         {current && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
+            <AlertBanner id={`invite_${inviteMode}`} variant="info" icon={InfoIcon}>
               {t(current.explain)}
             </AlertBanner>
             <current.Form channel={channel} dialog={isDialog}>

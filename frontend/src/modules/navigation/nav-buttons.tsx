@@ -41,7 +41,7 @@ interface SidebarNavButtonProps {
   isCollapsed: boolean;
   onClick: () => void;
   isActive?: boolean;
-  /** Marks the button as the place the page belongs to, with a bar on its edge. */
+  /** Marks the button as the place the page belongs to; the caller draws the cue. */
   isCurrent?: boolean;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
@@ -82,7 +82,6 @@ export function SidebarNavButton({
           className,
         )}
       >
-        {isCurrent && <span className="absolute inset-y-3 left-0 w-1 rounded-r-lg bg-primary" />}
         {children}
         {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
         {badge}

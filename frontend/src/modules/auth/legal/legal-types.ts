@@ -84,4 +84,6 @@ export interface AccessibilityReview {
   results?: AccessibilityResults;
   limitations: AccessibilityLimitation[];
   report: AccessibilityReport | null;
+  /** The app's own items for "What you can do", such as the keys of its views, after the template's. */
+  whatYouCanDo?: string[];
 }

@@ -6,7 +6,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Alert, AlertDescription, AlertTitle, type alertVariants } from '~/modules/ui/alert';
+import { Alert, AlertAction, AlertDescription, AlertTitle, type alertVariants } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
@@ -19,6 +19,7 @@ interface AlertBannerProps {
   icon?: IconComponent;
   children: ReactNode;
   title?: TKey;
+  action?: ReactNode;
   variant?: VariantProps<typeof alertVariants>['variant'];
   animate?: boolean;
   contextMode?: AlertContextMode;
@@ -33,6 +34,7 @@ export function AlertBanner({
   children,
   className = '',
   title,
+  action,
   variant = 'default',
   animate = false,
   contextMode = 'app',
@@ -57,6 +59,7 @@ export function AlertBanner({
       {Icon && <Icon />}
       {title && <AlertTitle>{t(title)}</AlertTitle>}
       {children && <AlertDescription>{children}</AlertDescription>}
+      {action && <AlertAction>{action}</AlertAction>}
     </Alert>
   );
 

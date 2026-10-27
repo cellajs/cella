@@ -12,12 +12,14 @@ import { cn } from '~/utils/cn';
 interface JoinedButtonProps extends LeaveChannelProps {
   /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */
   role?: MembershipBase['role'] | null;
+  /** `outline` leaves the success color to the check, for places that repeat the button, such as a grid of tiles. */
+  variant?: 'success' | 'outline';
   size?: ButtonProps['size'];
   className?: string;
 }
 
 /** The joined state: its check turns into an X on hover or focus, and a click asks to leave in a popconfirm (a drawer below `sm`). */
-export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
+export function JoinedButton({ role, variant = 'success', size = 'sm', className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
@@ -29,8 +31,13 @@ export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedB
     });
 
   return (
-    <Button size={size} variant="success" className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
-      <CheckIcon className="group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden" />
+    <Button size={size} variant={variant} className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
+      <CheckIcon
+        className={cn(
+          'group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden',
+          variant === 'outline' && 'text-success',
+        )}
+      />
       <XIcon className="hidden group-hover/joined-button:block group-focus-visible/joined-button:block group-data-dropdowner-active/joined-button:block" />
       <span className="max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
       <span className="sr-only">{t('c:leave')}</span>

@@ -19,8 +19,8 @@ interface MenuSheetOrganizationProps {
 }
 
 /**
- * The menu sheet of one organization: its name, then its pages when they show in the menu or else a link to manage it on
- * its page, then its channel sections.
+ * The menu sheet of one organization: its name, as a link to its page unless its pages show in the menu below it, then
+ * its channel sections. A switcher above already heads it.
  */
 export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuSheetOrganizationProps) {
   const { t } = useTranslation();
@@ -29,27 +29,40 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
   const unseenCount = useMenuItemUnseenCount(organization, true);
   const sections = organizationSections(organization, menu);
 
+  const badge = unseenCount > 0 && <CountBadge count={unseenCount} className="ml-auto shrink-0" />;
+
   return (
     <>
-      <div className="flex items-center gap-2 px-6 pt-3 pb-2 empty:hidden">
-        {(!hasSwitcher || !hasTabsInMenu) && (
-          <div className="flex min-w-0 grow flex-col items-start gap-0.5">
-            {!hasSwitcher && <h2 className="max-w-full truncate font-medium text-sm">{organization.name}</h2>}
-            {!hasTabsInMenu && (
-              <Link
-                to={to}
-                params={params}
-                search={search}
-                draggable={false}
-                className="link-decoration focus-effect rounded-sm text-muted-foreground text-xs hover:text-foreground"
-              >
-                {t('c:manage')}
-              </Link>
-            )}
+      {!hasSwitcher &&
+        (hasTabsInMenu ? (
+          <div className="flex items-center gap-2 px-6 pt-3 pb-2">
+            <h2 className="truncate font-semibold text-base">{organization.name}</h2>
+            {badge}
           </div>
-        )}
-        {unseenCount > 0 && <CountBadge count={unseenCount} className="ml-auto shrink-0" />}
-      </div>
+        ) : (
+          <div className="px-3 pt-3">
+            <Link
+              to={to}
+              params={params}
+              search={search}
+              draggable={false}
+              className="group/organization-link focus-effect focus-inset flex h-12 items-center gap-3 rounded-md px-3 transition-colors hover:bg-foreground/8"
+            >
+              <span className="flex min-w-0 grow flex-col gap-0.5">
+                <h2 className="truncate font-semibold text-base leading-5">{organization.name}</h2>
+                <span className="grid overflow-hidden text-muted-foreground text-xs">
+                  <span className="truncate transition [grid-area:1/1] group-hover/organization-link:-translate-y-2 group-hover/organization-link:opacity-0 group-hover/organization-link:delay-300 group-focus-visible/organization-link:-translate-y-2 group-focus-visible/organization-link:opacity-0">
+                    {t(organization.membership.role)}
+                  </span>
+                  <span className="translate-y-2 truncate opacity-0 transition [grid-area:1/1] group-hover/organization-link:translate-y-0 group-hover/organization-link:opacity-100 group-hover/organization-link:delay-300 group-focus-visible/organization-link:translate-y-0 group-focus-visible/organization-link:opacity-100">
+                    {t('c:go_to_organization_page')}
+                  </span>
+                </span>
+              </span>
+              {badge}
+            </Link>
+          </div>
+        ))}
       {hasTabsInMenu && <MenuSheetChannelTabs channel={organization} className="px-3 pb-2" />}
       {sections.map(({ options, items }) => (
         <MenuSheetSection

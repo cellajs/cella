@@ -31,6 +31,23 @@ export const getEdgeOrder = (existingOrders: number[], edge: 'top' | 'bottom', a
 };
 
 /**
+ * Order of a membership an archive or restore moves: the bottom of the list it joins. The server writes it and the client
+ * predicts it, so a moved menu row lands once.
+ */
+export const getArchiveMoveOrder = (
+  memberships: { channelType: string; archived: boolean; displayOrder: number }[],
+  channelType: string,
+  archived: boolean,
+): number =>
+  getEdgeOrder(
+    memberships
+      .filter((membership) => membership.channelType === channelType && membership.archived === archived)
+      // Ceil so a fractional displayOrder doesn't squeeze a future insert
+      .map((membership) => Math.ceil(membership.displayOrder)),
+    'bottom',
+  );
+
+/**
  * An integer in the open interval `(prev, next)` absent from `taken`, closest to the midpoint.
  * Falls back to the float midpoint only when every integer position is occupied.
  */

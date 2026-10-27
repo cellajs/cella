@@ -11,7 +11,7 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
     id: docsSearchDialogId,
     triggerRef,
     title: i18n.t('c:search'),
-    className: tw('mb-4 border-0 p-0 ring-6 ring-foreground/8 sm:max-w-3xl dark:ring-foreground/12'),
+    className: tw('mb-4 border-0 p-0 shadow-floating sm:max-w-3xl'),
     headerClassName: 'hidden',
     drawerOnMobile: false,
     searchLayout: true,

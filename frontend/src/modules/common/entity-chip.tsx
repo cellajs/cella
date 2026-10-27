@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import type { EntityType } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { Chip, type Removable } from '~/modules/ui/chip';
 import { cn } from '~/utils/cn';
 
@@ -9,6 +10,8 @@ type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   id?: string;
   name: string;
   url?: string | null;
+  /** Shown in place of the image or initials, as the menu shows a workspace. */
+  icon?: IconComponent;
   size?: 'default' | 'lg';
   /** Text in place of the name, such as a sentence that names the entity. */
   children?: ReactNode;
@@ -16,7 +19,7 @@ type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
 } & Removable;
 
 /** An entity as a chip that starts with its avatar. A user's chip is a pill like its avatar, any other entity's has rounded corners. */
-export function EntityChip({ type, id, name, url, size = 'default', className, children, ...props }: EntityChipProps) {
+export function EntityChip({ type, id, name, url, icon, size = 'default', className, children, ...props }: EntityChipProps) {
   const isUser = type === 'user';
 
   return (
@@ -28,6 +31,7 @@ export function EntityChip({ type, id, name, url, size = 'default', className, c
           id={id}
           name={name}
           url={url}
+          icon={icon}
           className={cn(size === 'lg' ? 'size-8' : 'size-6', !isUser && 'rounded-r-none')}
         />
       }

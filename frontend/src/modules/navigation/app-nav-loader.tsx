@@ -1,7 +1,8 @@
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
+import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Logo } from '~/modules/common/logo';
@@ -13,9 +14,73 @@ import { cn } from '~/utils/cn';
 // Requests have no client timeout, so one that never settles (often after a phone wakes) would keep the spinner going.
 const loadingBreakerMs = 15_000;
 
-/** The app's logo mark as a nav icon, a size up from the line icons so the mark reads at nav bar size. */
+const popTransition = { opacity: { duration: 0.15 }, scale: { type: 'spring', stiffness: 300, damping: 17 } } as const;
+
+/** Whether a mouse is over, or keyboard focus is on, the link or button around `ref`. */
+function useControlHint(ref: RefObject<HTMLElement | null>) {
+  const [isHinted, setIsHinted] = useState(false);
+
+  useEffect(() => {
+    const control = ref.current?.closest<HTMLElement>('a, button');
+    if (!control) return;
+
+    let isHovered = false;
+    let isFocused = false;
+    const update = () => setIsHinted(isHovered || isFocused);
+    // A tap also fires pointerenter, and nothing fires the leave until the next tap elsewhere
+    const onPointerEnter = (event: PointerEvent) => {
+      isHovered = event.pointerType === 'mouse';
+      update();
+    };
+    const onPointerLeave = () => {
+      isHovered = false;
+      update();
+    };
+    const onFocus = () => {
+      isFocused = control.matches(':focus-visible');
+      update();
+    };
+    const onBlur = () => {
+      isFocused = false;
+      update();
+    };
+
+    control.addEventListener('pointerenter', onPointerEnter);
+    control.addEventListener('pointerleave', onPointerLeave);
+    control.addEventListener('focus', onFocus);
+    control.addEventListener('blur', onBlur);
+    return () => {
+      control.removeEventListener('pointerenter', onPointerEnter);
+      control.removeEventListener('pointerleave', onPointerLeave);
+      control.removeEventListener('focus', onFocus);
+      control.removeEventListener('blur', onBlur);
+    };
+  }, [ref]);
+
+  return isHinted;
+}
+
+/** The app's logo mark as a nav icon, a size up from the line icons so the mark reads at nav bar size. Hover or keyboard focus pops in a home icon: the button only goes home. */
 export function AppIcon({ className }: { className?: string }) {
-  return <Logo iconOnly height={28} className={cn(className, 'size-7 sm:size-7')} />;
+  const ref = useRef<HTMLSpanElement>(null);
+  const showHome = useControlHint(ref);
+
+  return (
+    <span ref={ref} className={cn(className, 'relative flex size-7 items-center justify-center sm:size-7')}>
+      <AnimatePresence initial={false}>
+        <motion.span
+          key={showHome ? 'home' : 'logo'}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0 }}
+          transition={popTransition}
+          className="absolute flex"
+        >
+          {showHome ? <HomeIcon strokeWidth={navIconStrokeWidth} className="size-5" /> : <Logo iconOnly height={28} className="size-7" />}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
 }
 
 /** Brand intro on first load, then the item's icon, swapped for a spinner while queries or navigation are in flight. */
@@ -87,7 +152,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             initial={skipInitialAnimation ? false : { opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{ opacity: { duration: 0.15 }, scale: { type: 'spring', stiffness: 300, damping: 17 } }}
+            transition={popTransition}
             className="absolute"
           >
             {isLoading ? (

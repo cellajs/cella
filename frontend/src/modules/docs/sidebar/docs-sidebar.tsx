@@ -34,7 +34,7 @@ export function DocsSidebar() {
             <Logo iconOnly height={28} title={null} />
           </Link>
         </TooltipButton>
-        <div aria-hidden="true" className="h-5 w-px bg-border" />
+        <div aria-hidden="true" className="h-5 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
         <TooltipButton toolTipContent={t('c:go_to_docs')}>
           <Link
             to="/docs"

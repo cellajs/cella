@@ -41,7 +41,7 @@ export function MenuSheetSectionButton({
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="sticky top-0 z-10 flex items-center bg-card py-2">
+    <div className="sticky top-0 z-10 flex items-center bg-card pt-2">
       {isCollapsible ? (
         <Button onClick={() => setSectionOpen(options.entityType, !isSectionVisible)} className="min-w-0 flex-1 justify-between" variant="ghost">
           <div className="flex items-center">

@@ -37,7 +37,7 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
-  --animate-status-pulse: status-pulse 2.4s ease-in-out 2;
+  --animate-status-pulse: status-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
 
   @keyframes accordion-down {
     from {
@@ -72,14 +72,11 @@
     }
   }
   @keyframes status-pulse {
-    0%,
-    100% {
-      transform: scale(1);
-      box-shadow: 0 0 2px 1px var(--status-pulse-color, currentColor);
+    from {
+      box-shadow: 0 0 0 0 var(--status-pulse-color, currentColor);
     }
-    50% {
-      transform: scale(1.12);
-      box-shadow: 0 0 4px 2px var(--status-pulse-color, currentColor);
+    to {
+      box-shadow: 0 0 0 6px transparent;
     }
   }
 }
@@ -88,9 +85,11 @@
 @theme inline {
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-edge-overlay: var(--edge-overlay);
   --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -125,6 +124,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --shadow-floating: 0 0 0 4px color-mix(in oklab, var(--foreground) var(--edge-floating), transparent);
 }
 
 /* Inter, one variable file per script set (self-hosted, OFL: public/static/ui/OFL.txt). Only Latin is preloaded and
@@ -163,18 +163,27 @@
   }
 }
 
+/* A vertical line of 2px dots as a 4px-period background: pieces that start on a multiple of 4px join without a seam,
+   where a dotted border ends every piece on a dot. Takes the text color. */
+@utility dotted-line {
+  width: 2px;
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1.5px);
+  background-size: 2px 4px;
+}
+
 @utility submenu-section {
   &:before {
-    border-left: 2px dotted var(--foreground);
+    @apply dotted-line;
+    color: var(--foreground);
     content: "";
     display: block;
     position: absolute;
-    margin-top: 0.6rem;
+    /* Starts under the parent's avatar (row 3rem, avatar ending 2.5rem down), so that avatar needs no backing to hide it */
+    margin-top: 2.5rem;
     margin-left: 1.7rem;
     opacity: 0.5;
     z-index: 0;
-    width: 0.05rem;
-    height: calc(100% - 1.5rem);
+    height: calc(100% - 3.4rem);
   }
 }
 
@@ -246,6 +255,23 @@
 /* Button-weight frame: 40% of the full-contrast one at rest; hover steps up to soft-border-strong. */
 @utility soft-border-medium {
   border-color: color-mix(in srgb, var(--intent-color) 40%, var(--background));
+}
+
+/* A card in a long list, such as a board, rests at prose body strength so a full list reads calmly, and comes up to full
+   under the pointer or with focus inside. An app sets it only while the card is idle (collapsed, not current). The
+   `:root &` bump outranks Card's `text-card-foreground`; the transition stays with the card, which may have its own. */
+@utility resting-text {
+  :root & {
+    color: var(--foreground-soft);
+  }
+  @media (hover: hover) {
+    :root &:hover {
+      color: var(--foreground);
+    }
+  }
+  :root &:focus-within {
+    color: var(--foreground);
+  }
 }
 
 /* From shadcn's tailwind.css so ported upstream classes work: Base UI sets `data-orientation`, never `data-horizontal`.
@@ -360,9 +386,11 @@
   z-index: 111;
 }
 
-/* Mobile prose stays at text-md (about 17px), a step below the 19px root. Unlayered rules outrank typography utilities. */
+/* Mobile prose stays at text-md (about 17px), a step below the 19px root. Unlayered rules outrank typography utilities,
+   prose-invert's body color included: the token already turns with the theme. */
 .prose {
   @apply max-sm:text-md;
+  --tw-prose-body: var(--foreground-soft);
 }
 
 /* Inter descenders reach 0.22em, past the bottom of typography's 1.11 h1 line box; 1.3 contains them. Typography asks
@@ -379,14 +407,13 @@
 
 /* Keep docs code unlayered so it outranks typography's utilities-layer theme. */
 
-/* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
+/* Inline `code` pills: drop the prose backtick pseudo-elements, add a filled chip. */
 .prose code:not(pre code)::before,
 .prose code:not(pre code)::after {
   content: none;
 }
 
 .prose code:not(pre code) {
-  border: 1px solid var(--border);
   border-radius: 0.375rem;
   background-color: var(--muted);
   padding: 0.125rem 0.375rem;
@@ -427,6 +454,8 @@
   :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.2067 0.01 285.49);
+    /* Running text a step below --foreground and above --muted-foreground: prose body and resting cards. */
+    --foreground-soft: oklch(0.37 0.013 285.8);
     --card: oklch(0.987 0.0013 285.76);
     --card-foreground: oklch(0.2067 0.01 285.49);
     --popover: oklch(1 0 0);
@@ -444,13 +473,20 @@
     --border: oklch(0.92 0.004 285.75);
     /* --input edges what a person acts on (a field, button, link tile, toggle); --border frames or divides content.
        One resting edge: a field is outlined no more strongly than an outline button. Increased contrast raises both. */
-    --input: var(--border);
-    /* What --border, --input and --sidebar-border become under increased contrast. Never used by a class: the
-       three tokens below are what components read, this only holds the raised value so it is written once. */
+    --input: oklch(0.83 0.005 285.75);
+    /* What --border, --input, --sidebar-border and --edge-overlay become under increased contrast. Never used by a class:
+       those tokens are what components read, this only holds the raised value so it is written once. */
     --edge-raised: oklch(0.64 0.005 285.75);
+    /* An edge drawn on top of media, such as a tile's cover: translucent, so it shades a colored cover in its own hue
+       and still shows on a white one. On a plain card it lands close to --border. */
+    --edge-overlay: oklch(0 0 0 / 0.1);
+    /* Edge of a surface floating over the page (toast, selection bar, FAB, search dialog), as a share of the foreground
+       read by shadow-floating: a flat translucent ring with no blur, so it separates from whatever scrolls under it in
+       both themes. */
+    --edge-floating: 12%;
     /* Link underline strength as a share of the text color, read by link-decoration and link-inline. */
-    --link-decoration: 20%;
-    --link-decoration-strong: 50%;
+    --link-decoration: 30%;
+    --link-decoration-strong: 65%;
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
     --success: oklch(0.49 0.167 142.5);
@@ -481,6 +517,7 @@
   .dark {
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
+    --foreground-soft: oklch(0.871 0.006 286.3);
     --card: oklch(0.232 0.0095 285.56);
     --card-foreground: oklch(0.9627 0 0);
     --popover: oklch(0.1963 0.0092 285.53);
@@ -498,6 +535,7 @@
     --border: oklch(0.27 0.011 285.63);
     --input: oklch(0.36 0.011 285.63);
     --edge-raised: oklch(0.54 0.011 285.63);
+    --edge-overlay: oklch(1 0 0 / 0.06);
     --ring: oklch(0.86 0.0096 285.72);
     --success: oklch(0.72 0.2 142.5);
     --success-foreground: oklch(0.1963 0.0092 285.53);
@@ -518,13 +556,17 @@
   }
 
   /* Increased contrast (WCAG 1.4.11): every edge steps up together, since raising only the fields is what made
-     them read as a different family. Link underlines step up one tier. Status and text tokens never move. */
+     them read as a different family. Link underlines step up one tier. Soft text reads at full strength; status and the
+     other text tokens never move. */
   @media (prefers-contrast: more) {
     :root {
       --border: var(--edge-raised);
       --input: var(--edge-raised);
       --sidebar-border: var(--edge-raised);
-      --link-decoration: 50%;
+      --edge-overlay: var(--edge-raised);
+      --edge-floating: 30%;
+      --foreground-soft: var(--foreground);
+      --link-decoration: 65%;
       --link-decoration-strong: 100%;
     }
   }
@@ -534,7 +576,10 @@
     --border: var(--edge-raised);
     --input: var(--edge-raised);
     --sidebar-border: var(--edge-raised);
-    --link-decoration: 50%;
+    --edge-overlay: var(--edge-raised);
+    --edge-floating: 30%;
+    --foreground-soft: var(--foreground);
+    --link-decoration: 65%;
     --link-decoration-strong: 100%;
   }
 }
@@ -573,6 +618,12 @@
   :where(svg.lucide) {
     width: 1rem;
     height: 1rem;
+  }
+
+  /* A check reports success or an on state, so it is drawn heavier than the theme stroke, as the dropdowner's done check.
+     CSS outranks the stroke-width attribute, so a strokeWidth prop on CheckIcon has no effect. */
+  :where(svg.lucide-check) {
+    stroke-width: 2.5;
   }
 
   *,
