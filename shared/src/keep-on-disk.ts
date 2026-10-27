@@ -1,6 +1,15 @@
+/** What every service keeps on disk: the OpenTelemetry SDK with `pg`, and pino with its worker-thread packages. */
+const sharedPatterns = [
+  String.raw`pg(?:\/|$)`,
+  String.raw`@opentelemetry\/`,
+  String.raw`pino(?:-|\/|$)`,
+  String.raw`thread-stream(?:\/|$)`,
+  String.raw`sonic-boom(?:\/|$)`,
+];
+
 /**
- * The `external` patterns of a service bundle: everything is inlined except the packages below and
- * `packages`, which the service loads from disk.
+ * The `external` patterns of a service bundle: everything is inlined except `packages` and these, which the service
+ * loads from disk:
  * - @opentelemetry/*: the SDK patches modules through the loader registry, so it loads from disk,
  *   and so does anything it instruments. `pg` is here for that reason: PgInstrumentation only ever
  *   sees a module the registry handed it, so an inlined copy emits no query spans.
@@ -14,14 +23,6 @@
  * kept on disk and every inlined package is a devDependency. A `dependencies` entry the bundle would inline throws here.
  * A package kept on disk that production never loads, such as pino-pretty, stays a devDependency.
  */
-const sharedPatterns = [
-  String.raw`pg(?:\/|$)`,
-  String.raw`@opentelemetry\/`,
-  String.raw`pino(?:-|\/|$)`,
-  String.raw`thread-stream(?:\/|$)`,
-  String.raw`sonic-boom(?:\/|$)`,
-];
-
 export function keepOnDisk(packages: readonly string[], dependencies: Readonly<Record<string, string>>): { external: RegExp[] } {
   const external = [...sharedPatterns, ...packages.map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`)].map(
     (pattern) => new RegExp(`^${pattern}`),

@@ -1,11 +1,9 @@
-// Load backend/.env so DB_TEST_PORT (app-specific) is available; in CI it's set directly in process.env.
 import process from 'node:process';
 
+// DB_TEST_PORT (app-specific) comes from backend/.env, or from the environment where there is no .env, as in CI.
 try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
-} catch {
-  // CI and other environments without .env must provide DB_TEST_PORT through process.env.
-}
+} catch {}
 
 // biome-ignore lint/style/noProcessEnv: test bootstrap runs before any env module exists; CI provides DB_TEST_PORT directly
 const port = process.env.DB_TEST_PORT;

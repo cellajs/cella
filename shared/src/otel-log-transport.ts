@@ -1,9 +1,3 @@
-/**
- * pino transport that ships log lines to the OTLP sink over HTTP. `createLogger` (./pino.ts) starts it in pino's
- * worker thread with the sink's exporter options and the service's resource attributes; a service build emits it as
- * its own bundle entry next to the service bundle.
- */
-
 import type { Transform } from 'node:stream';
 import type { Attributes } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
@@ -46,6 +40,11 @@ export function toLogRecord(line: Record<string, unknown>, { messageKey, levels 
   };
 }
 
+/**
+ * The pino transport that ships log lines to the OTLP sink over HTTP. `createLogger` (./pino.ts) starts it in pino's
+ * worker thread with the sink's exporter options and the service's resource attributes; a service build emits it as
+ * its own bundle entry next to the service bundle.
+ */
 export default async function otelLogTransport({ resourceAttributes, exporterOptions }: OtelLogTransportOptions) {
   const provider = new LoggerProvider({
     resource: serviceResource(resourceAttributes),

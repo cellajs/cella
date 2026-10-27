@@ -36,10 +36,10 @@ shared
 │   └── transloadit-config.ts      Transloadit upload templates
 ├── scripts/                       TSX loader registration, wait-for-backend helper
 └── src/
-    ├── config-builder/            Merges base + mode config → appConfig, compile-time validation
+    ├── config-builder/            Merges base + mode config → appConfig, entity hierarchy, load-time config checks
     ├── permissions/               Access policies, computeCan, shared by backend & frontend
     ├── tracing/                   OpenTelemetry setup, span names, span processor
     ├── utils/                     Display order, entity IDs, nanoid, worker lifecycle, etc.
-    ├── otel.ts                    OTel convenience exports
+    ├── otel.ts                    OpenTelemetry SDK of a service (traces, metrics)
     └── pino.ts                    Shared Pino logger config
 ```

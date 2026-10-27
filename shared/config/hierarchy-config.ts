@@ -1,4 +1,3 @@
-// Split from config.default.ts so its types can be inferred before the config object is built.
 import { createEntityHierarchy, createRoleRegistry } from '../src/config-builder/entity-hierarchy.ts';
 
 /** Single source of truth for all entity roles used in memberships and permissions. */
@@ -7,12 +6,13 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
 /**
  * Entity relationships, single-parent inheritance. The organization is the spine (`organization()`,
  * the only parentless entity); parents before children, and order sets the ancestor chain. Products
- * may add `relatedChannels` (non-ancestor context refs, nullable id columns). Public readability is
+ * may add `relatedChannels` (non-ancestor channel refs, nullable id columns). Public readability is
  * a permission concern, not declared here. Channels may add `elevated` (roles whose product grants
  * cover the whole subtree, compiled into `hierarchy.elevatedGrants`) and `drafts` (the channel can
  * start unpublished; `prepareRoles` are invited at once, the rest when it is published); channels below
  * the organization may add `organizationRoles` (the complete escalation map for auto-created
- * organization membership rows).
+ * organization membership rows). Declared apart from config.default.ts so its types are inferred before the config
+ * object is built.
  *
  * @see cella/PERMISSIONS.md
  */

@@ -9,23 +9,23 @@ export const shiftLocalPort = (url: string, by: number): string =>
   url.replace(/^(\w+:\/\/localhost:)(\d+)/, (_, head: string, port: string) => `${head}${Number(port) + by}`);
 
 /**
- * Claims a slot for `owner`, one file per slot in `slotsDir` holding the owner's path. An owner keeps
- * its slot between runs. A new owner takes the first slot that is free or whose owner no longer
- * exists, else the slot whose stack started longest ago.
+ * Claims a slot for `worktree`, a git directory path. Each slot is a file in `slotsDir` that holds its holder's path. A
+ * worktree keeps its slot between runs. A new one takes the first slot that is free or whose holder is gone from disk,
+ * else the slot whose stack started longest ago.
  */
-export function claimSlot(fs: typeof import('node:fs'), slotsDir: string, owner: string): number {
+export function claimSlot(fs: typeof import('node:fs'), slotsDir: string, worktree: string): number {
   fs.mkdirSync(slotsDir, { recursive: true });
   const file = (slot: number) => `${slotsDir}/${slot}`;
   const holderOf = (slot: number) => (fs.existsSync(file(slot)) ? fs.readFileSync(file(slot), 'utf8') : null);
   // Rewriting the file stamps the start time that decides which slot gives way.
   const take = (slot: number) => {
-    fs.writeFileSync(file(slot), owner);
+    fs.writeFileSync(file(slot), worktree);
     return slot;
   };
 
   const slots = Array.from({ length: slotCount }, (_, index) => index + 1);
-  const own = slots.find((slot) => holderOf(slot) === owner);
-  if (own) return take(own);
+  const held = slots.find((slot) => holderOf(slot) === worktree);
+  if (held) return take(held);
 
   const free = slots.find((slot) => {
     const holder = holderOf(slot);

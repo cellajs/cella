@@ -11,7 +11,7 @@ type AnyRecord = Record<string, unknown>;
 
 /** Permissive Standard Schema node: transforms always run with `validate: 'none'`. */
 const passthroughSchema = {
-  '~standard': { version: 1 as const, vendor: 'cella', validate: (value: unknown) => ({ value }) },
+  '~standard': { version: 1 as const, vendor: 'schema-evolution', validate: (value: unknown) => ({ value }) },
 };
 
 /** Injected by the host: the server passes otel hooks, the client passes none. */
@@ -28,8 +28,8 @@ export const currentSchemaVersion: number = lenses.length;
 /** Paired with their 1-based global ordinal, in order. */
 function lensesFor(entityType: LensEntityType): { lens: LensDefinition; ordinal: number }[] {
   const result: { lens: LensDefinition; ordinal: number }[] = [];
-  lenses.forEach((lens, i) => {
-    if (lens.entityType === entityType) result.push({ lens, ordinal: i + 1 });
+  lenses.forEach((lens, index) => {
+    if (lens.entityType === entityType) result.push({ lens, ordinal: index + 1 });
   });
   return result;
 }
@@ -44,8 +44,6 @@ export function versionNodeFor(entityType: LensEntityType, globalVersion: number
   }
   return node;
 }
-
-// ── Entity (whole-row) migrations, including stx.fieldTimestamps key rewrites ──
 
 /** `record` with `from` renamed to `to`; the same object when it has no `from`. */
 function renameKey(record: AnyRecord, from: string, to: string): AnyRecord {
@@ -83,34 +81,37 @@ function resolveAddDefault(add: AddDelta['add'], row: AnyRecord): unknown {
   return typeof add.default === 'function' ? (add.default as (row: AnyRecord) => unknown)(row) : add.default;
 }
 
-type DobaCtx = LensContext & { from: string; to: string };
+type DobaContext = LensContext & { from: string; to: string };
+
+const unchanged = (entity: AnyRecord): AnyRecord => entity;
 
 function buildEntityMigration(lens: LensDefinition): {
-  forward: (value: AnyRecord, ctx: DobaCtx) => AnyRecord;
-  backward: (value: AnyRecord, ctx: DobaCtx) => AnyRecord;
+  forward: (entity: AnyRecord, ctx: DobaContext) => AnyRecord;
+  backward: (entity: AnyRecord, ctx: DobaContext) => AnyRecord;
 } {
   const { delta, custom } = lens;
   const rename = deltaRenameMap(delta);
 
   if (custom?.entityForward || custom?.entityBackward) {
-    const fwd = custom.entityForward ?? ((v: AnyRecord) => v);
-    const bwd = custom.entityBackward ?? ((v: AnyRecord) => v);
-    return { forward: (v, ctx) => fwd(v, ctx), backward: (v, ctx) => bwd(v, ctx) };
+    return { forward: custom.entityForward ?? unchanged, backward: custom.entityBackward ?? unchanged };
   }
 
   if (rename) {
-    return { forward: (v) => renameKeyDeep(v, rename.from, rename.to), backward: (v) => renameKeyDeep(v, rename.to, rename.from) };
+    return {
+      forward: (entity) => renameKeyDeep(entity, rename.from, rename.to),
+      backward: (entity) => renameKeyDeep(entity, rename.to, rename.from),
+    };
   }
 
   if ('add' in delta) {
     const add = delta.add;
     return {
-      forward: (v, ctx) => {
-        if (add.field in v) return v;
+      forward: (entity, ctx) => {
+        if (add.field in entity) return entity;
         ctx.defaulted([add.field], `lens ${lens.id}: filled "${add.field}" with default`);
-        return { ...v, [add.field]: resolveAddDefault(add, v) };
+        return { ...entity, [add.field]: resolveAddDefault(add, entity) };
       },
-      backward: (v) => dropKeyDeep(v, add.field),
+      backward: (entity) => dropKeyDeep(entity, add.field),
     };
   }
 
@@ -118,20 +119,18 @@ function buildEntityMigration(lens: LensDefinition): {
     const { field } = delta.drop;
     return {
       // backward is lossy by construction: the value is gone.
-      forward: (v) => dropKeyDeep(v, field),
-      backward: (v, ctx) => {
-        if (lens.lossyBackward) return v;
+      forward: (entity) => dropKeyDeep(entity, field),
+      backward: (entity, ctx) => {
+        if (lens.lossyBackward) return entity;
         ctx.warn(`lens ${lens.id}: cannot restore dropped field "${field}"`);
-        return v;
+        return entity;
       },
     };
   }
 
   // retype without custom converters is rejected at defineLens time.
-  return { forward: (v) => v, backward: (v) => v };
+  return { forward: unchanged, backward: unchanged };
 }
-
-// ── Lazy per-entity doba registry ──
 
 const registryCache = new Map<LensEntityType, Registry<Record<string, typeof passthroughSchema>> | null>();
 
@@ -146,13 +145,12 @@ function getRegistry(entityType: LensEntityType): Registry<Record<string, typeof
 
   const schemas: Record<string, typeof passthroughSchema> = { v0: passthroughSchema };
   const migrations: Record<string, { forward: unknown; backward: unknown }> = {};
-  let prev = 'v0';
+  let previousNode = 'v0';
   for (const { lens, ordinal } of entityLenses) {
     const node = `v${ordinal}`;
     schemas[node] = passthroughSchema;
-    const { forward, backward } = buildEntityMigration(lens);
-    migrations[`${prev}<->${node}`] = { forward, backward };
-    prev = node;
+    migrations[`${previousNode}<->${node}`] = buildEntityMigration(lens);
+    previousNode = node;
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: doba's generic migration map is keyed dynamically.
@@ -175,8 +173,6 @@ async function transformEntity<T extends AnyRecord>(entityType: LensEntityType, 
   const result = await registry.transform(entity, from, to, { validate: 'none' });
   return result.ok ? (result.value as T) : entity;
 }
-
-// ── Public API ──
 
 /** Idempotent: re-running over already-migrated rows changes nothing. */
 export function migrateCachedEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, fromVersion: number): Promise<T> {
@@ -220,8 +216,8 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
   if (entityLenses.length === 0) return { ops, stx, unknownFields: [] };
 
   let nextOps: AnyRecord = { ...ops };
-  const ft: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
-  let ftTouched = false;
+  const fieldTimestamps: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
+  let fieldTimestampsChanged = false;
 
   for (const { lens } of entityLenses) {
     const rename = deltaRenameMap(lens.delta);
@@ -230,25 +226,25 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
         nextOps[rename.to] = nextOps[rename.from];
         delete nextOps[rename.from];
       }
-      if (ft && rename.from in ft) {
-        ft[rename.to] = ft[rename.from];
-        delete ft[rename.from];
-        ftTouched = true;
+      if (fieldTimestamps && rename.from in fieldTimestamps) {
+        fieldTimestamps[rename.to] = fieldTimestamps[rename.from];
+        delete fieldTimestamps[rename.from];
+        fieldTimestampsChanged = true;
       }
       // Mirror-write the old twin during expand so old bundles keep reading fresh data.
       if (lens.phase === 'expand') {
         if (rename.to in nextOps) nextOps[rename.from] = nextOps[rename.to];
-        if (ft && rename.to in ft) {
-          ft[rename.from] = ft[rename.to];
-          ftTouched = true;
+        if (fieldTimestamps && rename.to in fieldTimestamps) {
+          fieldTimestamps[rename.from] = fieldTimestamps[rename.to];
+          fieldTimestampsChanged = true;
         }
       }
     } else if ('drop' in lens.delta) {
       const field = lens.delta.drop.field;
-      if (field in nextOps) delete nextOps[field];
-      if (ft && field in ft) {
-        delete ft[field];
-        ftTouched = true;
+      delete nextOps[field];
+      if (fieldTimestamps && field in fieldTimestamps) {
+        delete fieldTimestamps[field];
+        fieldTimestampsChanged = true;
       }
     } else if ('retype' in lens.delta && lens.custom?.opsConvert) {
       nextOps = lens.custom.opsConvert(nextOps);
@@ -270,16 +266,16 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
       if (handling === 'strip') {
         for (const key of unknownFields) {
           delete nextOps[key];
-          if (ft && key in ft) {
-            delete ft[key];
-            ftTouched = true;
+          if (fieldTimestamps && key in fieldTimestamps) {
+            delete fieldTimestamps[key];
+            fieldTimestampsChanged = true;
           }
         }
       }
     }
   }
 
-  const nextStx = ftTouched && ft ? ({ ...stx, fieldTimestamps: ft } as S) : stx;
+  const nextStx = fieldTimestampsChanged && fieldTimestamps ? ({ ...stx, fieldTimestamps } as S) : stx;
   return { ops: nextOps as O, stx: nextStx, unknownFields };
 }
 

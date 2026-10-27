@@ -16,7 +16,7 @@ export type Slot = SlotOf<ChannelEntityType>;
 
 /** Every channel slot this app has: the keys a stored `toolsConfig` may carry, validated at the wire. */
 export const channelSlots = (): ChannelSlot[] =>
-  appConfig.channelEntityTypes.flatMap((type) => [`${type}.settings` as ChannelSlot, `${type}.tabs` as ChannelSlot]);
+  appConfig.channelEntityTypes.flatMap((type) => [`${type}.settings` as const, `${type}.tabs` as const]);
 
 /** Every slot id this app has, for startup checks over the app's `surfaces` config. */
 export const allSlots = (): Slot[] => [...channelSlots(), ...singletonSlots];

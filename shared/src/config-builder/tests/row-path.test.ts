@@ -57,9 +57,9 @@ describe('row-path (materialized id-path rule)', () => {
     });
   });
 
-  describe('computeAncestorPath', () => {
+  describe('computeProductPath on a channel', () => {
     it('is null for the organization (no ancestors)', () => {
-      expect(h.computeAncestorPath('organization', { id: 'o1' })).toBeNull();
+      expect(h.computeProductPath('organization', { id: 'o1' })).toBeNull();
     });
   });
 

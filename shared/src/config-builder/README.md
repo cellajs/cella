@@ -13,7 +13,7 @@ Public readability is a permission concern, declared per subject via `publicRead
 
 ## Row-to-channel attribution
 
-Which channel owns a row: walk the strict ancestor chain most-specific-first and take the first
+Which channel is a row's home: walk the strict ancestor chain most-specific-first and take the first
 non-null ancestor id. With nullable ancestors the deepest non-null ancestor is the effective home;
 without them it is the declared parent. `EntityHierarchy` holds the rule as instance methods
 (`hierarchy.resolveDeepestAncestorId`, `hierarchy.computeProductPath`, ...).

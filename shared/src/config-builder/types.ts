@@ -45,7 +45,7 @@ export interface S3ConfigInput {
   privateCDNUrl?: string;
 }
 
-export interface S3Config extends Required<S3ConfigInput> {}
+export type S3Config = Required<S3ConfigInput>;
 
 export interface RequestLimitsConfig {
   default: number;
@@ -85,6 +85,7 @@ export interface UppyRestrictionsConfig {
   requiredMetaFields: string[];
 }
 
+/** Which attachments a device keeps in IndexedDB for offline use, and how it downloads and uploads them. */
 export interface LocalBlobStorageConfig {
   enabled: boolean;
   maxFileSize: number;
@@ -146,12 +147,14 @@ export interface CompanyConfig {
   country: string;
   registration: string;
   vatNumber: string;
+  /** Link behind "Get directions" and the address on the contact page. */
   directionsUrl: string;
   scheduleCallUrl: string;
   socialUrl: string;
   blueskyHandle: string;
   element: string;
   githubUrl: string;
+  /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets. */
   mapZoom: number;
   coordinates: { lat: number; lng: number };
 }
@@ -295,6 +298,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   apiDescription: string;
 
   requestLimits: RequestLimitsConfig;
+  // Request body limits, in bytes.
   jsonBodyLimit: number;
   fileUploadLimit: number;
   defaultBodyLimit: number;
@@ -313,6 +317,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   pushServiceHosts: readonly string[];
 
   theme: ThemeConfig;
+  /** Background classes for an avatar or cover without an image, picked per id. */
   placeholderColors: readonly string[];
 
   defaultLanguage: string;
@@ -322,9 +327,12 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   defaultUserFlags: Record<string, boolean>;
 
+  /** Per-organization feature flags and their defaults (e.g. `coursesEnabled: true`), read from `organization.organizationFlags`. */
   defaultOrganizationFlags: Record<string, boolean>;
 
-  // Defaults layered under each organization's stored jsonb. The template ships {}; apps widen
-  // the value (e.g. `{ primaryLabels: [...] }`) in their own config.
+  /**
+   * Setup defaults layered under each organization's stored jsonb, read from `organization.setupConfig`. The template
+   * ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their own config.
+   */
   defaultSetupConfig: Record<string, unknown>;
 }

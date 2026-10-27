@@ -1,4 +1,4 @@
-import { config as _default } from '../../config/config.default.ts';
+import { config as defaultConfig } from '../../config/config.default.ts';
 import { development } from '../../config/config.development.ts';
 import { production } from '../../config/config.production.ts';
 import { staging } from '../../config/config.staging.ts';
@@ -10,8 +10,8 @@ import { mergeDeep, typedEntries } from './utils.ts';
 
 /** Services whose public URL the builder derives from the top-level URL family. */
 type UrlBearingService = 'frontend' | 'backend' | 'yjs' | 'mcp' | 'oauth';
-type BuiltServices = typeof _default.services & Record<UrlBearingService, { publicUrl: string }>;
-type Config = Omit<typeof _default, 's3' | 'services'> & { s3: S3Config; services: BuiltServices; devPortOffset: number };
+type BuiltServices = typeof defaultConfig.services & Record<UrlBearingService, { publicUrl: string }>;
+type Config = Omit<typeof defaultConfig, 's3' | 'services'> & { s3: S3Config; services: BuiltServices; devPortOffset: number };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
 /**
@@ -39,7 +39,7 @@ const mode = rawMode as Config['mode'];
 // MCP takes access tokens only, and the app's authorization server (`services.oauth`) issues them. Checked for every
 // mode, so a combination only production has fails in development and in CI too.
 for (const [name, overrides] of typedEntries(configModes)) {
-  const { mcp, oauth } = mergeDeep(structuredClone(_default), overrides).services;
+  const { mcp, oauth } = mergeDeep(structuredClone(defaultConfig), overrides).services;
   if (mcp.enabled && !oauth.enabled) {
     throw new Error(
       `Invalid config: services.mcp is enabled in ${name} mode while services.oauth is off. MCP calls carry an access token ` +
@@ -48,8 +48,8 @@ for (const [name, overrides] of typedEntries(configModes)) {
   }
 }
 
-// The type comes from _default so literal types survive for Drizzle v1 strict enum typing.
-const merged = mergeDeep(structuredClone(_default), configModes[mode]);
+// The type comes from the default config so literal types survive for Drizzle v1 strict enum typing.
+const merged = mergeDeep(structuredClone(defaultConfig), configModes[mode]);
 
 // A second checkout of the app runs its stack beside the first: `devPorts` and the localhost URL
 // family move together by one offset. The env URL overrides below are taken as given.
@@ -108,10 +108,13 @@ if (merged.retention.deletedItemsDays < merged.retention.activityDays + 30) {
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage
 // across applications.
 const s3 = merged.s3 as S3Config;
-const bucketPrefix = merged.slug;
-s3.publicBucket ??= `${bucketPrefix}-public`;
-s3.privateBucket ??= `${bucketPrefix}-private`;
+s3.publicBucket ??= `${merged.slug}-public`;
+s3.privateBucket ??= `${merged.slug}-private`;
 s3.publicCDNUrl ??= `https://${s3.publicBucket}.${s3.host}`;
 s3.privateCDNUrl ??= `https://${s3.privateBucket}.${s3.host}`;
 
+/**
+ * The runtime config: the default config, then the mode config `APP_MODE` (or `NODE_ENV`) names, the dev port offset
+ * and the env URL overrides, with `services.<slug>.publicUrl` and the S3 bucket names and CDN URLs derived.
+ */
 export const appConfig = { ...merged, services, devPortOffset } as Config;

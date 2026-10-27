@@ -36,12 +36,16 @@ export interface BuildTestEntityHierarchyPlanOptions {
   makeChannelId?: (channelType: ChannelEntityType, index: number) => string;
 }
 
+/**
+ * The channels a test row of `entityType` needs, seeded organization-first under `organizationId`, and the id columns
+ * the row carries. A channel below the organization takes its id from `makeChannelId`; without one, it throws.
+ */
 export const buildTestEntityHierarchyPlan = ({
   entityType,
   organizationId,
   makeChannelId,
 }: BuildTestEntityHierarchyPlanOptions): TestEntityHierarchyPlan => {
-  const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   const channelIdsByType: Partial<Record<ChannelEntityType, string>> = {};
   // A parameter keeps the type wide: where the organization is the only channel type, `channelType` past its branch is `never`.
   const setChannelId = (channelType: ChannelEntityType, id: string) => {
@@ -73,8 +77,7 @@ export const buildTestEntityHierarchyPlan = ({
     setChannelId(channelType, id);
 
     const parentIdKey = appConfig.entityIdColumnKeys[parentChannelType];
-    // Rows are seeded organization-first, so every ancestor id is known. Deep hierarchies keep all
-    // ancestor id columns NOT NULL, so filling only the immediate parent breaks grandchildren.
+    // Rows are seeded organization-first, so every ancestor id is known.
     const ancestorColumns: TestChannelColumn[] = [];
     for (let cursor: ChannelEntityType | null = parentChannelType; cursor; ) {
       const ancestorId = channelIdsByType[cursor];
@@ -82,7 +85,7 @@ export const buildTestEntityHierarchyPlan = ({
         throw new Error(`Cannot seed ${channelType}: missing ancestor channel id for ${cursor}`);
       }
       ancestorColumns.push(channelColumn(cursor, ancestorId));
-      cursor = hierarchy.getParent(cursor) as ChannelEntityType | null;
+      cursor = hierarchy.getParent(cursor);
     }
     seedChannelRows.push({
       channelType,
@@ -130,8 +133,8 @@ export const channelsDownToStrictHome = <T extends string>(ancestors: readonly T
  */
 export const toStrictHomePlan = (plan: TestEntityHierarchyPlan): TestEntityHierarchyPlan => {
   const needed = channelsDownToStrictHome<ChannelEntityType>(
-    hierarchy.getOrderedAncestors(plan.entityType) as ChannelEntityType[],
-    hierarchy.getNullableAncestors(plan.entityType) as ChannelEntityType[],
+    hierarchy.getOrderedAncestors(plan.entityType),
+    hierarchy.getNullableAncestors(plan.entityType),
   );
   const sqlChannelColumns = plan.sqlChannelColumns.filter((column) => needed.includes(column.channelType));
   return {

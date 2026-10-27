@@ -38,10 +38,8 @@ import { createRedactingSpanProcessor } from './tracing/redacting-span-processor
 
 /**
  * The instrumentations this stack has something to instrument: node:http, fetch through undici, and
- * postgres queries. `getNodeAutoInstrumentations()` covers these too, but installs 41 instrumentation
- * packages to do it; the other 37 target databases and frameworks nothing here runs (mongodb, mysql,
- * kafka, express, grpc and so on). Each one patches module loading when the SDK starts, so those 37
- * add 146 packages that every service loads at boot and that produce no spans. Adding one back means
+ * postgres queries. `getNodeAutoInstrumentations()` adds dozens that target databases and frameworks
+ * nothing here runs, each patching module loading at boot and producing no spans. Adding one means
  * a line here plus a dependency in each workspace whose bundle keeps @opentelemetry external.
  *
  * Pino is deliberately absent: `createLogger` in ./pino.ts already stamps trace_id and span_id onto
@@ -85,7 +83,7 @@ export interface OtelSDKOptions {
   metricIntervalMs?: number;
   /** Flush exporters on shutdown. Defaults false in development for fast hot restarts. */
   flushOnShutdown?: boolean;
-  /** Enable the instrumentations below (default: true). Set false for workers without HTTP. */
+  /** Enable the instrumentations `instrumentations()` lists (default: true). Set false for workers without HTTP. */
   autoInstrumentations?: boolean;
   /** Additional span processors (e.g. SpanStoreProcessor for devtools/debug logging). */
   spanProcessors?: SpanProcessor[];
@@ -109,7 +107,7 @@ export interface OtelSDK {
  * `serviceResource`; logs reach the sink through the pino transport (`otel-log-transport.ts`), which builds the same.
  *
  * @example
- * const otel = createOtelSDK({ serviceName: 'raak-development-api', sink: resolveOtlpSink(env) });
+ * const otel = createOtelSDK({ serviceName: `${appConfig.slug}-api`, sink: resolveOtlpSink(env) });
  * otel.start();
  * // on shutdown: await otel.shutdown();
  */
@@ -233,8 +231,8 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       return;
     }
     try {
-      // The processor neither awaits its export nor surfaces failures (they go to OTel's silent global
-      // error handler), so the probe taps the exporter callback to read the real result.
+      // The processor does not await its export and hands a failure to OTel's global error handler, which logs
+      // nothing by default, so the probe taps the exporter callback to read the real result.
       const result = await new Promise<{ code: number; error?: Error }>((resolve) => {
         const probeExporter: LogRecordExporter = {
           export: (records, done) =>
@@ -258,7 +256,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
           body: `[otel] ${serviceName} initialized`,
         });
       });
-      // Silent on success; 0 is ExportResultCode.SUCCESS, inlined like the severity above.
+      // Logs nothing on success; 0 is ExportResultCode.SUCCESS, inlined like the severity above.
       if (result.code !== 0) throw result.error ?? new Error('export rejected');
     } catch (err) {
       console.error(`[otel] ${serviceName}: Failed to export to ingest:`, err instanceof Error ? err.message : err);

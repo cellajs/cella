@@ -7,13 +7,5 @@ import { toColumnName } from '../permissions/schema-naming.ts';
  */
 export const entityIdColumnKey = (entityType: string): string => `${entityType}Id`;
 
+/** The id column's SQL name (`courseSection` to `course_section_id`). */
 export const entityIdColumnName = (entityType: string): string => `${toColumnName(entityType)}_id`;
-
-export interface ResolvedAncestor {
-  /** Ancestor channel type (e.g. 'project'). */
-  type: string;
-  /** The row's id column for it (e.g. 'projectId'). */
-  idColumn: string;
-  /** Non-null ancestor row id. */
-  id: string;
-}

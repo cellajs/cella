@@ -10,12 +10,15 @@ import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils
 import { scrubText, scrubUrl } from './utils/scrub-url.ts';
 
 interface CreateLoggerOptions {
+  /** Pino level. Absent, tests log nothing and other modes log at `info`. */
   level?: string;
   isProduction: boolean;
   isTest: boolean;
   /** Keys censored in every line (fast-redact paths): secret columns and transport keys. Required, so no logger skips it. */
   redactPaths: readonly string[];
+  /** Merged over the level formatter. */
   formatters?: pino.LoggerOptions['formatters'];
+  /** pino-pretty options over the console defaults; unused where the console writes JSON. */
   transportOptions?: Record<string, unknown>;
   /** Where structured logs ship alongside the console output, in dev and production alike (`resolveOtlpSink`). Absent, the console is the only target. */
   sink?: OtlpSink;
@@ -83,6 +86,10 @@ const resolvable = (name: string) => {
   }
 };
 
+/**
+ * A pino logger for a service: the console (pretty outside production when pino-pretty resolves, JSON otherwise), plus
+ * the OTLP log transport when a sink is set outside tests. Errors and URLs are scrubbed and `redactPaths` censored.
+ */
 export const createLogger = ({
   level,
   isProduction,
