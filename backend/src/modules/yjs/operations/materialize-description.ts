@@ -6,7 +6,7 @@ import { tenantReadById } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
-import { loadTenant } from '#/modules/tenants/operations/load-tenant';
+import { loadTenant } from '#/modules/tenants/load-tenant';
 import { findUserModelsByIds } from '#/modules/user/user-queries';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';

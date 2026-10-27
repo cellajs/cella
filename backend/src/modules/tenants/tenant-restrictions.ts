@@ -41,15 +41,17 @@ export const defaultRestrictions = (): Restrictions => {
 };
 
 /**
- * Rejects one more service account or API key once the tenant's cap on it is reached (0 = unlimited). `existing` is
- * the count the tenant holds now. System admins bypass. Entity quotas keep checks of their own: the organization's 1:1
+ * Rejects when the tenant's hard cap on `key` would be passed (0 = unlimited). `existing` is the count the tenant holds
+ * now, `adding` the rows about to be created. System admins bypass. Organizations keep a check of their own: the 1:1
  * slot binds system admins too and clamps a batch.
- * @throws AppError 403 `restrict_by_app` with the key in `meta.resource` and the cap in `meta.quota`.
+ * @throws AppError 403 `restrict_by_app` with the key in `meta.resource` and the cap in `meta.quota`; an entity key also
+ * sets `entityType`.
  */
-export const assertTenantQuota = (ctx: ActorContext, key: (typeof machineQuotaKeys)[number], existing: number): void => {
+export const assertTenantQuota = (ctx: ActorContext, key: QuotaKey, existing: number, adding = 1): void => {
   const quota = ctx.var.tenant.restrictions.quotas[key];
-  if (ctx.var.isSystemAdmin || quota === 0 || existing < quota) return;
-  throw new AppError(403, 'restrict_by_app', 'warn', { meta: { resource: key, quota } });
+  if (ctx.var.isSystemAdmin || quota === 0 || existing + adding <= quota) return;
+  const entityType = appConfig.entityTypes.find((type) => type === key);
+  throw new AppError(403, 'restrict_by_app', 'warn', { ...(entityType && { entityType }), meta: { resource: key, quota } });
 };
 
 /** A partial restrictions update, or a stored row that predates a field: what `mergeRestrictions` lays over a base. */
