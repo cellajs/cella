@@ -30,6 +30,8 @@ export function useUppyUpload() {
 
     const uppyOptions: CustomUppyOptions = { restrictions: { ...defaultRestrictions, ...restrictions, allowedFileTypes } };
 
+    const sourcePlugins = isUploadFullyEnabled ? plugins : plugins.filter((plugin) => plugin !== 'audio' && plugin !== 'screen-capture');
+
     const initializeUppy = async () => {
       try {
         localUppy = await createUppy(uppyOptions, { templateId, organizationId });
@@ -50,7 +52,6 @@ export function useUppyUpload() {
               });
           });
 
-        const sourcePlugins = isUploadFullyEnabled ? plugins : plugins.filter((plugin) => plugin !== 'audio' && plugin !== 'screen-capture');
         registerUppyPlugins(localUppy, sourcePlugins, templateId);
 
         if (!isMounted) {

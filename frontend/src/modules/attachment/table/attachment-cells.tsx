@@ -82,6 +82,22 @@ function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
   );
 }
 
+/** Saves the stored blob, else the cloud file; throws when neither exists. */
+async function saveAttachment(row: Attachment, download: (url: string, filename: string) => Promise<unknown>) {
+  const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);
+  if (local) {
+    try {
+      await download(local.url, row.filename);
+    } finally {
+      URL.revokeObjectURL(local.url);
+    }
+    return;
+  }
+  const url = await getCloudUrl(row, 'original');
+  if (!url) throw new Error('No cloud URL for attachment');
+  await download(url, row.filename);
+}
+
 export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
   const { t } = useTranslation();
   const { download, isInProgress } = useDownloader();
@@ -93,18 +109,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
   const handleDownload = async () => {
     if (pending) return;
     try {
-      const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);
-      if (local) {
-        try {
-          await download(local.url, row.filename);
-        } finally {
-          URL.revokeObjectURL(local.url);
-        }
-        return;
-      }
-      const url = await getCloudUrl(row, 'original');
-      if (!url) throw new Error('No cloud URL for attachment');
-      await download(url, row.filename);
+      await saveAttachment(row, download);
     } catch {
       toaster.error(t('error:download_failed'));
     }

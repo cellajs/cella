@@ -89,11 +89,12 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
             return { data: buildItemData(item, existingUrl, true) };
           }
 
-          try {
-            // The list cache holds fresher metadata; group and single items carry full keys as fallback.
-            const cachedMeta = findAttachmentInCache(item.id);
-            const meta = cachedMeta ?? (item.keys?.original ? item : null);
+          // The list cache holds fresher metadata; group and single items carry full keys as fallback.
+          const cachedMeta = findAttachmentInCache(item.id);
+          const itemWithKey = item.keys?.original ? item : null;
+          const meta = cachedMeta ?? itemWithKey;
 
+          try {
             const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
             if (result) {
               if (result.isLocal) newBlobUrls.set(item.id, result.url);
@@ -102,7 +103,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
             // cachedMeta/itemKey separate a cache miss (both false) from a resource with no cloud key whose local blob is gone.
             console.warn(
               `[useResolvedAttachments] Unresolvable attachment ${item.id} (no local blob and no cloud URL, ` +
-                `cachedMeta=${!!cachedMeta}, itemKey=${!!item.keys?.original})`,
+                `cachedMeta=${!!cachedMeta}, itemKey=${!!itemWithKey})`,
             );
             return { errorId: item.id, permanent: false };
           } catch (error) {

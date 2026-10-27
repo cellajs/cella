@@ -1,6 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { type ReactNode, useEffect } from 'react';
-import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -12,6 +11,8 @@ import { cleanupOrphanedSessions, persistOptions } from '~/query/persister';
 import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
+
+const loadUploadService = () => import('~/modules/attachment/offline/upload-service');
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
 const idleTimeoutMs = 5000;
@@ -35,11 +36,6 @@ interface QueryClientProviderProps {
 /** Provides the query client with its persisted cache, and starts the services that work from it. */
 export function QueryClientProvider({ children }: QueryClientProviderProps) {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
-  const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
-
-  useEffect(() => {
-    if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
-  }, [offlineAccess, toggleOfflineAccess]);
 
   useEffect(() => {
     cleanupOrphanedSessions();
@@ -55,7 +51,7 @@ export function QueryClientProvider({ children }: QueryClientProviderProps) {
     let service: { stop: () => void } | undefined;
     let cancelled = false;
     const idle = scheduleIdle(() => {
-      import('~/modules/attachment/offline/upload-service').then(({ uploadService }) => {
+      loadUploadService().then(({ uploadService }) => {
         if (cancelled) return;
         service = uploadService;
         uploadService.start();

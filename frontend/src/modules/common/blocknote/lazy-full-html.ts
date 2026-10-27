@@ -4,6 +4,9 @@ import { lazyNamed } from '~/utils/lazy-named';
 /** One shared lazy instance so preloading resolves the same wrapper every consumer uses, avoiding a Suspense spinner flash. */
 export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');
 
+const loadRenderer = () =>
+  Promise.all([import('~/modules/common/blocknote/full-html'), import('~/modules/common/blocknote/helpers/blocknote-helpers')]);
+
 // Once warm, later mounts skip the gate: a card computes within a frame and a seen document renders from the first-pass cache.
 let rendererWarm = false;
 
@@ -28,10 +31,7 @@ export function useStaticDocumentsReady(documents: string[] | null, organization
     startedRef.current = true;
     (async () => {
       // The async continuation runs outside React's render/commit, which blocksToFullHTML requires.
-      const [fullHtml, helpers] = await Promise.all([
-        import('~/modules/common/blocknote/full-html'),
-        import('~/modules/common/blocknote/helpers/blocknote-helpers'),
-      ]);
+      const [fullHtml, helpers] = await loadRenderer();
       if (!mountedRef.current) return;
       helpers.getHeadlessEditor();
       for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);

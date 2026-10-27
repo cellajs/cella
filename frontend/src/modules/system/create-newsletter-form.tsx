@@ -28,6 +28,9 @@ import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
 
 /** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
+// Imported on submit, so @blocknote/core stays off the boot path.
+const loadBlocknoteHelpers = () => import('~/modules/common/blocknote/helpers/blocknote-helpers');
+
 export const newsletterFormId = 'create-newsletter';
 
 // A newsletter goes out to every member it picks, so it never leaves without a subject
@@ -61,8 +64,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
   });
 
   const onSubmit = async (values: FormValues) => {
-    // Imported on submit, so @blocknote/core stays off the boot path.
-    const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
+    const { blocksToHTML } = await loadBlocknoteHelpers();
     // The selected organizations, not a restored draft's, and the blocks as HTML.
     const body = { ...values, organizationIds, content: blocksToHTML(values.content) };
     send({ body, query: { toSelf: testOnly } });

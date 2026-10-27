@@ -132,6 +132,11 @@ export const useUIStore = create<UIStoreState>()(
           hintsSeen: state.hintsSeen,
         }),
         storage: createJSONStorage(() => localStorage),
+        // Offline storage needs the service worker: without a PWA a stored `true` reads as off for every reader.
+        merge: (persisted, current) => {
+          const merged = Object.assign({}, current, persisted);
+          return appConfig.has.pwa ? merged : { ...merged, offlineAccess: false };
+        },
       },
     ),
     { enabled: isDebugMode, name: 'ui store' },
