@@ -419,6 +419,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { dayStart, includ
         digest,
         lastDigestAt: notificationPreferencesTable.lastDigestAt,
         email: usersTable.email,
+        name: usersTable.name,
         language: usersTable.language,
       })
       .from(usersTable)

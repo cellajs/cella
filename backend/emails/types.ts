@@ -1,4 +1,5 @@
 import type { SafeHtmlPolicy } from './components/safe-html';
+import type { EmailFrame } from './frame';
 
 /** Per-recipient base fields shared by every email recipient. */
 export type EmailRecipient = { email: string; lng: string };
@@ -47,6 +48,16 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
 }
 
 /**
+ * Whether a send inside a request ends the body with the request details (country, browser, time). Only mail that reports
+ * something done as the recipient (their address, session or link) and operator mail declare it; a function answers per
+ * send, for a template whose types differ.
+ */
+export type RequestDetailsDeclaration<TStatic> = true | ((statics: TStatic) => boolean);
+
+/** Props every component receives from the mailer besides `translate`'s output: the frame it forwards to the layout. */
+export type FrameProps = { frame: EmailFrame };
+
+/**
  * The mailer's runtime contract. `TStatic`: props shared across recipients (senderName,
  * entityName); `TRecipient` extends `EmailRecipient` with per-recipient props.
  */
@@ -57,10 +68,16 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
    */
   translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): { subject: string } & Record<string, unknown>;
   /** React shell receiving translate() output and per-recipient display props. No i18n calls. */
-  component(props: Record<string, unknown>): React.ReactElement;
+  component(props: Record<string, unknown> & FrameProps): React.ReactElement;
   /** Sample data to render this template in previews and tests. */
   preview: EmailPreviewData<TStatic, TRecipient>;
   htmlParams?: HtmlParams<TRecipient>;
+  requestDetails?: RequestDetailsDeclaration<TStatic>;
+  /**
+   * The recipient field holding their one-click unsubscribe URL, sent as `List-Unsubscribe` (RFC 8058). A template that
+   * names one goes out one recipient per request.
+   */
+  listUnsubscribe?: RecipientKey<TRecipient>;
   /** Phantom field carrying the recipient type; not set at runtime. */
   _recipientType?: TRecipient;
 }
@@ -69,9 +86,11 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
 export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient = EmailRecipient>() {
   return <TTranslated extends { subject: string }>(def: {
     translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): TTranslated;
-    component(props: TTranslated & RecipientProps<TRecipient>): React.ReactElement;
+    component(props: TTranslated & RecipientProps<TRecipient> & FrameProps): React.ReactElement;
     preview: EmailPreviewData<TStatic, TRecipient>;
     htmlParams?: HtmlParams<TRecipient>;
+    requestDetails?: RequestDetailsDeclaration<TStatic>;
+    listUnsubscribe?: RecipientKey<TRecipient>;
   }): EmailTemplateDef<TStatic, TRecipient> => {
     return def as EmailTemplateDef<TStatic, TRecipient>;
   };

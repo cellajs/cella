@@ -15,6 +15,9 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  ConfirmInvitationAddressData,
+  ConfirmInvitationAddressErrors,
+  ConfirmInvitationAddressResponses,
   ConfirmMagicLinkData,
   ConfirmMagicLinkErrors,
   CreateApiKeyData,
@@ -223,6 +226,8 @@ import type {
   MicrosoftCallbackErrors,
   MicrosoftData,
   MicrosoftErrors,
+  OpenUnsubscribeLinkData,
+  OpenUnsubscribeLinkErrors,
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
@@ -241,6 +246,9 @@ import type {
   ResendPendingInvitationData,
   ResendPendingInvitationErrors,
   ResendPendingInvitationResponses,
+  ResubscribeNotificationsData,
+  ResubscribeNotificationsErrors,
+  ResubscribeNotificationsResponses,
   RevokeApiKeyData,
   RevokeApiKeyErrors,
   RevokeApiKeyResponses,
@@ -300,6 +308,7 @@ import type {
   ToggleMfaResponses,
   UnsubscribeNotificationsData,
   UnsubscribeNotificationsErrors,
+  UnsubscribeNotificationsResponses,
   UpdateAttachmentData,
   UpdateAttachmentErrors,
   UpdateAttachmentResponses,
@@ -336,6 +345,7 @@ import {
   zCheckEmailResponse,
   zCheckMembershipInviteResponse,
   zCheckSlugResponse,
+  zConfirmInvitationAddressResponse,
   zCreateApiKeyResponse,
   zCreateAttachmentsResponse,
   zCreateConnectionResponse,
@@ -403,6 +413,7 @@ import {
   zPushYjsUpdateResponse,
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationResponse,
+  zResubscribeNotificationsResponse,
   zRevokeApiKeyResponse,
   zRevokeConnectedAppResponse,
   zRevokeMySessionsResponse,
@@ -420,6 +431,7 @@ import {
   zStopImpersonationResponse,
   zSystemInviteResponse,
   zToggleMfaResponse,
+  zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
   zUpdateConnectionResponse,
   zUpdateMembershipResponse,
@@ -561,7 +573,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
 /**
  * Accept invitation token as current user
  *
- * Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.
+ * Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.
  *
  * **POST /auth/invitation-token/accept** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/accept) ·· _auth · cella_
  *
@@ -575,6 +587,26 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zAcceptInvitationTokenResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/invitation-token/accept',
+    ...options,
+  });
+
+/**
+ * Confirm the invited address
+ *
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.
+ *
+ * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
+ *
+ * @param {confirmInvitationAddressData} options
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
+  options?: Options<ConfirmInvitationAddressData, ThrowOnError>,
+): RequestResult<ConfirmInvitationAddressResponses, ConfirmInvitationAddressErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<ConfirmInvitationAddressResponses, ConfirmInvitationAddressErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zConfirmInvitationAddressResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/invitation-token/confirm-address',
     ...options,
   });
 
@@ -1731,24 +1763,70 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
   });
 
 /**
- * Unsubscribe from a notification category
+ * Open an unsubscribe link
  *
- * Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.
+ * Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners and link previews open links on their own. No auth.
  *
- * **GET /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications · cella_
+ * **GET /notifications/unsubscribe** ·· [openUnsubscribeLink](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications · cella_
  *
- * @param {unsubscribeNotificationsData} options
+ * @param {openUnsubscribeLinkData} options
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
  */
-export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
-  options: Options<UnsubscribeNotificationsData, ThrowOnError>,
-): RequestResult<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'>({
+export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
+  options: Options<OpenUnsubscribeLinkData, ThrowOnError>,
+): RequestResult<unknown, OpenUnsubscribeLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, OpenUnsubscribeLinkErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/notifications/unsubscribe',
+    ...options,
+  });
+
+/**
+ * Unsubscribe from a notification category
+ *
+ * Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.
+ *
+ * **POST /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/unsubscribe) ·· _notifications · cella_
+ *
+ * @param {unsubscribeNotificationsData} options
+ * @param {string} options.query.user - `string`
+ * @param {enum} options.query.category - `enum`
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
+  options: Options<UnsubscribeNotificationsData, ThrowOnError>,
+): RequestResult<UnsubscribeNotificationsResponses, UnsubscribeNotificationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<UnsubscribeNotificationsResponses, UnsubscribeNotificationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUnsubscribeNotificationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/notifications/unsubscribe',
+    ...options,
+  });
+
+/**
+ * Turn a notification category back on
+ *
+ * Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.
+ *
+ * **POST /notifications/resubscribe** ·· [resubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/resubscribe) ·· _notifications · cella_
+ *
+ * @param {resubscribeNotificationsData} options
+ * @param {string} options.query.user - `string`
+ * @param {enum} options.query.category - `enum`
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
+  options: Options<ResubscribeNotificationsData, ThrowOnError>,
+): RequestResult<ResubscribeNotificationsResponses, ResubscribeNotificationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ResubscribeNotificationsResponses, ResubscribeNotificationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zResubscribeNotificationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/notifications/resubscribe',
     ...options,
   });
 

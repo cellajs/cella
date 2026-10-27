@@ -1,6 +1,6 @@
 import { SubjectEmail, type SubjectEmailRecipient } from '#/modules/notification/emails/subject-email';
 import { i18n, plainText } from '../../../../emails/i18n';
-import { defineEmailTemplate } from '../../../../emails/types';
+import { defineEmailTemplate, plainParam } from '../../../../emails/types';
 
 interface MentionStatic {
   /** Empty string when the actor is gone; the copy falls back to a generic subject. */
@@ -13,9 +13,10 @@ interface MentionStatic {
  * mention is addressed to you while ambient comment activity is not.
  */
 export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecipient>()({
-  translate(lng, { actorName, channelName }) {
+  translate(lng, { actorName, channelName }, param = plainParam) {
     return {
       subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName, ...plainText }),
+      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       previewText: i18n.t('c:email.mention.preview', { lng, actorName, ...plainText }),
       headerHtml: i18n.t('c:email.mention.title', { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
@@ -27,9 +28,11 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecip
   component(props) {
     return <SubjectEmail {...props} />;
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { actorName: 'John', channelName: 'Design 101' },
     recipient: {
+      name: 'Emily',
       subjectTitle: 'Roadmap review',
       excerpt: 'Could you take a look at this before Friday?',
       link: 'https://example.com/acme',

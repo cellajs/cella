@@ -6,7 +6,7 @@ import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { getIsoDate, isoDateAgo, utcStamp } from '#/utils/iso-date';
+import { isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -31,23 +31,14 @@ const noticeWindow = new TimeSpan(24, 'h');
 /** Notices go out fire-and-forget, without a request, on the base pool. */
 const dbCtx = { var: { db: baseDb } };
 
-/** Country name in the reader's language from the ISO code GeoIP gives. */
-const countryName = (code: string, language: string) => {
-  try {
-    return new Intl.DisplayNames([language], { type: 'region' }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-};
-
 /** Security mails a completed sign-in gives rise to. Fire-and-forget: a mail problem never undoes a sign-in. */
 export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice }: SignInNotice) => {
   // A system admin session goes to the security inbox. Skipped in development, where every local sign-in would mail it.
   if (isSystemAdmin && appConfig.mode !== 'development') {
-    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: getIsoDate() });
+    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown' });
   }
 
-  if (newDevice) void notifyNewSignIn({ user, context, strategy, newDevice });
+  if (newDevice) void notifyNewSignIn({ user, strategy, newDevice });
 };
 
 /**
@@ -55,12 +46,7 @@ export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice
  * first sign-in, which has no earlier browser to differ from, for sign-ins through the inbox, and once the daily budget
  * is spent. Never throws.
  */
-export const notifyNewSignIn = async ({
-  user,
-  context,
-  strategy,
-  newDevice,
-}: Pick<SignInNotice, 'user' | 'context' | 'strategy'> & { newDevice: NewDevice }) => {
+export const notifyNewSignIn = async ({ user, strategy, newDevice }: Pick<SignInNotice, 'user' | 'strategy'> & { newDevice: NewDevice }) => {
   if (!newDevice.previousSignInAt || inboxStrategies.includes(strategy)) return;
 
   try {
@@ -73,15 +59,8 @@ export const notifyNewSignIn = async ({
 
     await updateDeviceNotifiedAt(dbCtx, { userId: user.id, deviceIdHash: newDevice.deviceIdHash });
 
-    sendAccountSecurityEmail(user, 'new-sign-in', {
-      timestamp: utcStamp(),
-      browser: context.device.browser ?? 'unknown',
-      os: context.device.os ?? 'unknown',
-      // Omitted when GeoIP has no answer: the template then leaves the location line out entirely.
-      ...(context.country ? { country: countryName(context.country, user.language) } : {}),
-      strategy: strategyLabels[strategy],
-      accountUrl: `${appConfig.frontendUrl}/account`,
-    });
+    // Country, browser and time come with the mail's request details: this runs inside the sign-in's request.
+    sendAccountSecurityEmail(user, 'new-sign-in', { strategy: strategyLabels[strategy] });
   } catch (err) {
     log.error('Failed to send new sign-in notice', { userId: user.id, err });
   }

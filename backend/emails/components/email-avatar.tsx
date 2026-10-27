@@ -1,12 +1,13 @@
 import { getInitials } from 'shared/utils/get-initials';
 
-const getRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
+// Each keeps white initials at 4.5:1 or more.
+const avatarColors = ['#2d518c', '#6d28d9', '#0f766e', '#b45309', '#be185d', '#4d7c0f', '#1d4ed8', '#a21caf'];
+
+/** One color per name, the same in every mail, so a reader recognizes the sender by it. */
+const colorFor = (name: string) => {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return avatarColors[hash % avatarColors.length];
 };
 
 export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; type?: 'user' | 'organization' }) => {
@@ -22,7 +23,7 @@ export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; typ
         height: '64px',
         lineHeight: '64px',
         borderRadius: '50%',
-        backgroundColor: getRandomColor(),
+        backgroundColor: colorFor(name ?? ''),
         color: '#fff',
         fontSize: '18px',
         fontWeight: 'bold',

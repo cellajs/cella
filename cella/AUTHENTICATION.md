@@ -30,7 +30,7 @@ An account exists only once its inbox is proven:
 - **One transaction.** The user, its verified email row and the invitations waiting for the address are created together, so no unproven account ever holds an address.
 - **Magic link.** A link to an unknown address names no user. The account is created when the link is clicked.
 - **Provider.** A provider sign-up waits on a verification mail to the provider's address. The account is created when the same provider account signs in again in the browser that opened the mail.
-- **Invitation.** An invitee skips that mail only when the provider itself verified the invited address: an invitation link can be forwarded, so the opened link and the provider's verification prove the inbox together. A link not yet bound to an account can be accepted by whoever opens it, as the account they are signed in to.
+- **Invitation.** An invitee skips that mail only when the provider itself verified the invited address: an invitation link can be forwarded, so the opened link and the provider's verification prove the inbox together. A link not yet bound to an account opens for whoever is signed in, and that account accepts it only once it holds the invited address: an account on another address asks for a link to the invited inbox, bound to the account, and opening it there adds the address.
 - **Who may sign up.** Open registration, or an invitation that still stands. It is asked at the start of a sign-up and again at its completion, since either may have changed in between.
 
 An account is identified by the proofs it holds (`identities`, `emails`), never by an address: [Architecture](./ARCHITECTURE.md#trust-boundaries).
@@ -42,7 +42,7 @@ One module, `auth/tokens/`, issues, opens and spends every token. `tokens.secret
 | Type | Carrier | Lives | Replaces earlier tokens of | A link without an account belongs to |
 | --- | --- | --- | --- | --- |
 | `magic` | link | 15 minutes, then 5 minutes single-use | the address or the account | the address's holder, else a new account |
-| `invitation` | link | 7 days, then 30 minutes | the invitation | whoever is signed in |
+| `invitation` | link | 7 days, then 30 minutes | the invitation | whoever is signed in, accepted once their account holds the address |
 | `oauth-verification` | link | 2 hours, then 5 minutes | the identity | the address's holder, else a new account |
 | `confirm-mfa` | cookie | 10 minutes | nothing | |
 | `oauth-connect` | cookie | 10 minutes | the account | |

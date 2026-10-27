@@ -76,6 +76,7 @@ export const SystemInvite = makeEmailStory('system-invite');
 export const MemberInvite = makeEmailStory('member-invite');
 export const MemberInviteWithToken = makeEmailStory('member-invite-with-token');
 export const MemberAdded = makeEmailStory('member-added');
+export const InvitationAddress = makeEmailStory('invitation-address');
 export const Newsletter = makeEmailStory('newsletter');
 export const RequestWasSent = makeEmailStory('request-was-sent');
 export const RequestWasSentAdmin = makeEmailStory('request-was-sent-admin');

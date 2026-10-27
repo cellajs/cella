@@ -32,7 +32,7 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
 
   // The registration proved the new passkey on this session: it steps the session up, so the action that asked runs next.
   await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: user.id, via: 'passkey' });
-  sendAccountSecurityEmail(user, 'passkey-added');
+  sendAccountSecurityEmail(user, 'passkey-added', { passkeyName: newPasskey.nameOnDevice });
 
   return ctx.json(newPasskey, 201);
 });
@@ -50,7 +50,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
   });
 
   // An id the user holds no passkey by answers 204 as well, but only a deletion mails the user.
-  if (deleted) sendAccountSecurityEmail(user, 'passkey-deleted');
+  if (deleted) sendAccountSecurityEmail(user, 'passkey-deleted', { passkeyName: deleted.nameOnDevice });
 
   return ctx.body(null, 204);
 });

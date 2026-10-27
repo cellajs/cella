@@ -8,7 +8,6 @@ import { setMiddlewareExtension } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getIp } from '#/utils/get-ip';
-import { getIsoDate } from '#/utils/iso-date';
 import { systemAdminAllowList } from '#/utils/system-access';
 
 /**
@@ -23,7 +22,7 @@ const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path), timestamp: getIsoDate() });
+    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) });
     throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
   }
 
@@ -38,7 +37,7 @@ const allowedIpCheck = ipRestriction(
   { allowList: systemAdminAllowList() },
   async (remote) => {
     const ip = remote.addr ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: getIsoDate() });
+    sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted' });
     throw new AppError(403, 'forbidden', 'warn');
   },
 );

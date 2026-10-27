@@ -1009,6 +1009,51 @@ export type AcceptInvitationTokenResponses = {
 
 export type AcceptInvitationTokenResponse = AcceptInvitationTokenResponses[keyof AcceptInvitationTokenResponses];
 
+export type ConfirmInvitationAddressData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/invitation-token/confirm-address';
+};
+
+export type ConfirmInvitationAddressErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ConfirmInvitationAddressError = ConfirmInvitationAddressErrors[keyof ConfirmInvitationAddressErrors];
+
+export type ConfirmInvitationAddressResponses = {
+  /**
+   * Confirmation link sent to the invited address
+   */
+  204: void;
+};
+
+export type ConfirmInvitationAddressResponse = ConfirmInvitationAddressResponses[keyof ConfirmInvitationAddressResponses];
+
 export type StartImpersonationData = {
   body: {
     targetUserId: string;
@@ -3585,6 +3630,46 @@ export type UpdateNotificationPreferencesResponses = {
 
 export type UpdateNotificationPreferencesResponse = UpdateNotificationPreferencesResponses[keyof UpdateNotificationPreferencesResponses];
 
+export type OpenUnsubscribeLinkData = {
+  body?: never;
+  path?: never;
+  query: {
+    user: string;
+    category: 'digest' | 'mention' | 'comment' | 'newsletter';
+    token: string;
+  };
+  url: '/notifications/unsubscribe';
+};
+
+export type OpenUnsubscribeLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type OpenUnsubscribeLinkError = OpenUnsubscribeLinkErrors[keyof OpenUnsubscribeLinkErrors];
+
 export type UnsubscribeNotificationsData = {
   body?: never;
   path?: never;
@@ -3624,6 +3709,64 @@ export type UnsubscribeNotificationsErrors = {
 };
 
 export type UnsubscribeNotificationsError = UnsubscribeNotificationsErrors[keyof UnsubscribeNotificationsErrors];
+
+export type UnsubscribeNotificationsResponses = {
+  /**
+   * Category turned off
+   */
+  204: void;
+};
+
+export type UnsubscribeNotificationsResponse = UnsubscribeNotificationsResponses[keyof UnsubscribeNotificationsResponses];
+
+export type ResubscribeNotificationsData = {
+  body?: never;
+  path?: never;
+  query: {
+    user: string;
+    category: 'digest' | 'mention' | 'comment' | 'newsletter';
+    token: string;
+  };
+  url: '/notifications/resubscribe';
+};
+
+export type ResubscribeNotificationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ResubscribeNotificationsError = ResubscribeNotificationsErrors[keyof ResubscribeNotificationsErrors];
+
+export type ResubscribeNotificationsResponses = {
+  /**
+   * Category turned on
+   */
+  204: void;
+};
+
+export type ResubscribeNotificationsResponse = ResubscribeNotificationsResponses[keyof ResubscribeNotificationsResponses];
 
 export type GetPushVapidData = {
   body?: never;

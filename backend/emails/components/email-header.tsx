@@ -3,6 +3,7 @@ import { Heading } from './primitives';
 
 export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }): JSX.Element => (
   <Heading
+    className="email-heading"
     style={{
       margin: '1.875rem 0',
       padding: '0',

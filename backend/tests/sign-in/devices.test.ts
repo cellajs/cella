@@ -50,7 +50,7 @@ const notices = () =>
 /** A full sign-in without a request: the session, then the notice its new device calls for. */
 const signIn = async (user: Awaited<ReturnType<typeof createTestUser>>, context: SignInContext, strategy: AuthStrategy = 'passkey') => {
   const { newDevice } = await createSession(user, context, strategy);
-  if (newDevice) await notifyNewSignIn({ user, context, strategy, newDevice });
+  if (newDevice) await notifyNewSignIn({ user, strategy, newDevice });
   return newDevice;
 };
 
@@ -103,9 +103,7 @@ describe('new sign-in notice', () => {
     await signIn(user, browser());
 
     expect(notices()).toHaveLength(1);
-    expect(notices()[0].details).toMatchObject({ browser: 'Firefox', os: 'macOS', country: 'Netherlands', strategy: 'Passkey' });
-    expect(notices()[0].details.accountUrl).toMatch(/\/account$/);
-    expect(notices()[0].details.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$/);
+    expect(notices()[0].details).toEqual({ strategy: 'Passkey' });
 
     const [row] = await devicesOf(user.id);
     expect(row.notifiedAt).toBeTruthy();

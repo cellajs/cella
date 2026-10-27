@@ -1,5 +1,6 @@
 export { accountExistsEmail } from './templates/account-exists';
 export { accountSecurityEmail } from './templates/account-security';
+export { invitationAddressEmail } from './templates/invitation-address';
 export { magicLinkEmail } from './templates/magic-link';
 export { memberAddedEmail } from './templates/member-added';
 export { memberInviteEmail } from './templates/member-invite';

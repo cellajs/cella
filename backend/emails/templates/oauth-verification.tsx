@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
+import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 const appName = appConfig.name;
@@ -18,28 +19,34 @@ export const oauthVerificationEmail = defineEmailTemplate<OAuthVerificationStati
   translate(lng, { name, verificationLink, providerEmail, providerName, isNewUser }, param = plainParam) {
     const keyBase = isNewUser ? 'backend:email.oauth_verification.signup' : 'backend:email.oauth_verification';
     return {
-      subject: i18n.t(`${keyBase}.subject`, { lng, appName, ...plainText }),
+      subject: i18n.t(`${keyBase}.subject`, { lng, appName, providerName, ...plainText }),
       previewText: i18n.t(`${keyBase}.preview`, { appName, lng, providerName, ...plainText }),
       headerHtml: i18n.t(`${keyBase}.preview`, { appName, lng, providerName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName, email: param('email'), providerEmail, providerName, name }),
       buttonText: i18n.t(`${keyBase}.verify`, { lng, providerName, ...plainText }),
+      expiresText: linkExpiresText(lng, 'oauth-verification'),
+      endingHtml: endingFor(lng, 'ignore'),
       supportText: i18n.t('backend:email.support_email', { lng }),
       verificationLink,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, verificationLink, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, expiresText, endingHtml, verificationLink, supportText, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         headerHtml={headerHtml}
         greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: verificationLink }}
+        note={expiresText}
+        endingHtml={endingHtml}
         supportText={supportText}
       />
     );
   },
+  requestDetails: true,
   preview: {
     statics: {
       verificationLink: 'https://example.com/verify',

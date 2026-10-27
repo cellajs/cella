@@ -1,6 +1,6 @@
 import { SubjectEmail, type SubjectEmailRecipient } from '#/modules/notification/emails/subject-email';
 import { i18n, plainText } from '../../../../emails/i18n';
-import { defineEmailTemplate } from '../../../../emails/types';
+import { defineEmailTemplate, plainParam } from '../../../../emails/types';
 
 interface CommentStatic {
   /** Empty string when the actor is gone. */
@@ -15,10 +15,11 @@ interface CommentStatic {
  * the recipient turns comment emails on; a mention on the same subject is mailed as a mention.
  */
 export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecipient>()({
-  translate(lng, { actorName, channelName, reply }) {
+  translate(lng, { actorName, channelName, reply }, param = plainParam) {
     const key = reply ? 'reply' : 'comment';
     return {
       subject: i18n.t(`c:email.${key}.subject`, { lng, actorName, channelName, ...plainText }),
+      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       previewText: i18n.t(`c:email.${key}.preview`, { lng, actorName, ...plainText }),
       headerHtml: i18n.t(`c:email.${key}.title`, { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
@@ -30,9 +31,11 @@ export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecip
   component(props) {
     return <SubjectEmail {...props} />;
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { actorName: 'John', channelName: 'Design 101', reply: false },
     recipient: {
+      name: 'Emily',
       subjectTitle: 'Roadmap review',
       excerpt: 'I added the dates we discussed.',
       link: 'https://example.com/acme',

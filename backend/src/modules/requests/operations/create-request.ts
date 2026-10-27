@@ -69,13 +69,17 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   sendMatrixMessage(textMessage)
     .then((sent) => {
       if (sent) return;
-      return mailer.sendEmails(requestInfoEmail, { ...staticProps, email: normalizedEmail, subject: title }, [
-        { email: appConfig.company.email, lng },
-      ]);
+      // Replies go to the requester, who typed this address: answering means writing back.
+      return mailer.sendEmails(
+        requestInfoEmail,
+        { ...staticProps, email: normalizedEmail, subject: title },
+        [{ email: appConfig.company.email, lng }],
+        normalizedEmail,
+      );
     })
     .catch((err) => log.error('Failed to notify the team of a request', { err }));
 
   mailer
-    .sendEmails(requestResponseEmail, staticProps, [{ email: normalizedEmail, lng }])
+    .sendEmails(requestResponseEmail, { type }, [{ email: normalizedEmail, lng }])
     .catch((err) => log.error('Failed to send request confirmation', { err }));
 }

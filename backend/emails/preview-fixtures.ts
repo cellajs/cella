@@ -1,9 +1,11 @@
+import type { RequestDetails } from '#/lib/request-details';
 import { commentEmail } from '#/modules/notification/emails/comment-email';
 import { digestEmail } from '#/modules/notification/emails/digest-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import {
   accountExistsEmail,
   accountSecurityEmail,
+  invitationAddressEmail,
   magicLinkEmail,
   memberAddedEmail,
   memberInviteEmail,
@@ -19,6 +21,18 @@ import {
 } from './index';
 import type { EmailTemplateDef } from './types';
 
+/** The address a preview names in its footer. */
+export const previewRecipientEmail = 'emily@example.com';
+
+/** The request a preview pretends to run in, so templates that declare request details show them. */
+export const previewRequestDetails: RequestDetails = {
+  requestId: 'd97be30c-c253-470d-948f-f2983733c77f',
+  at: '2026-10-27T09:30:00.000Z',
+  country: 'NL',
+  browser: 'Firefox',
+  os: 'macOS',
+};
+
 // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
 type AnyEmailTemplateDef = EmailTemplateDef<any, any>;
 
@@ -33,6 +47,7 @@ const previewTemplates = {
   'member-invite': memberInviteEmail,
   'member-invite-with-token': memberInviteWithTokenEmail,
   'member-added': memberAddedEmail,
+  'invitation-address': invitationAddressEmail,
   newsletter: newsletterEmail,
   'request-was-sent': requestResponseEmail,
   'request-was-sent-admin': requestInfoEmail,

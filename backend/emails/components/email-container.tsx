@@ -1,3 +1,4 @@
+import { headStyles } from '../styles';
 import { Body, Container, Head, Html, Preview } from './primitives';
 
 interface EmailContainerProps {
@@ -10,8 +11,14 @@ interface EmailContainerProps {
 
 export const EmailContainer = ({ previewText, bodyStyle, containerStyle, headChildren, children }: EmailContainerProps) => (
   <Html>
-    <Head>{headChildren}</Head>
+    <Head>
+      <meta name="color-scheme" content="light dark" />
+      <meta name="supported-color-schemes" content="light dark" />
+      <style>{headStyles}</style>
+      {headChildren}
+    </Head>
     <Body
+      className="email-page"
       style={{
         backgroundColor: '#f5f5f5',
         fontFamily: 'sans-serif',

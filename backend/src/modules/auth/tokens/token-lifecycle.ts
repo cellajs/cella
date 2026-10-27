@@ -121,7 +121,8 @@ const expired = (token: TokenRecord) => new AppError(401, `${token.type}_expired
 /**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
  * account goes to its policy's `unboundOpener`: the account holding its address by now (a new account when nobody
- * does), or any signed-in account (an invitation not yet bound to a user, answered as that account).
+ * does), or any signed-in account (an invitation not yet bound to a user, which only an account holding its address
+ * accepts).
  */
 const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token: TokenRecord) => {
   if (!token.userId && tokenPolicies[type].unboundOpener === 'any-account') return;

@@ -13,11 +13,13 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
     }}
   >
     <div
+      className="email-panel"
       style={{
         backgroundColor: '#ffffff',
         color: '#404040',
         borderRadius: '.75rem',
         borderStyle: 'solid',
+        borderWidth: '4px',
         borderColor: '#eaeaea',
         padding: '1.5rem',
       }}

@@ -10,7 +10,12 @@ import { oauthVerificationEmail } from '../../emails/templates/oauth-verificatio
 import { systemInviteEmail } from '../../emails/templates/system-invite';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
-type SentBody = { subject: string; htmlContent: string; messageVersions: { params: Record<string, string> }[] };
+type SentBody = {
+  subject: string;
+  htmlContent: string;
+  headers?: Record<string, string>;
+  messageVersions: { params: Record<string, string>; textContent: string }[];
+};
 
 const link = 'https://app.example.test/item';
 const unsubscribeLink = 'https://app.example.test/unsubscribe';
@@ -67,13 +72,36 @@ afterEach(() => {
  * `{{params.x}}` escaped, and a param declared as app-built HTML through `{{params.x|safe}}`.
  */
 describe('Mails as Brevo fills them', () => {
-  const mentionRecipient = { email: 'mentioned@example.test', lng: 'en', subjectTitle: 'Roadmap', excerpt: 'See this', link, unsubscribeLink };
+  const mentionRecipient = {
+    email: 'mentioned@example.test',
+    lng: 'en',
+    name: 'Mia',
+    subjectTitle: 'Roadmap',
+    excerpt: 'See this',
+    link,
+    unsubscribeLink,
+  };
+
+  it('gives each recipient a filled plain-text part and their own one-click unsubscribe header', async () => {
+    const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}';
+    const { body } = await send(mentionEmail, { actorName: hostileName, channelName: 'R&D <Lab>' }, mentionRecipient);
+    const text = body.messageVersions[0].textContent;
+
+    // Mail clients read these two headers for one-click unsubscribe (RFC 8058); the URL is the recipient's own.
+    expect(body.headers).toMatchObject({ 'List-Unsubscribe': `<${unsubscribeLink}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
+    // The text part is built here in full: the recipient's values filled in, names as typed, no tag a template engine opens.
+    expect(text).toContain(`Hi ${mentionRecipient.name},`);
+    expect(text).toContain(`(${link})`);
+    expect(text).toContain('R&D <Lab>');
+    expect(text).not.toMatch(tagOpener);
+    expect(text).not.toContain('<a ');
+  });
 
   it('must not open a Brevo template tag via a name rendered into the mail', async () => {
     const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';
     const { body } = await send(mentionEmail, { actorName: hostileName, channelName: hostileName }, mentionRecipient);
 
-    const ownPlaceholders = /\{\{params\.(?:subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
+    const ownPlaceholders = /\{\{params\.(?:name|email|subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
     expect(body.htmlContent.replace(ownPlaceholders, '')).not.toMatch(tagOpener);
     expect(body.subject).not.toMatch(tagOpener);
     // The name still reads as typed: only the brace that opens a tag is written as a character reference.
@@ -95,8 +123,9 @@ describe('Mails as Brevo fills them', () => {
     const typed = '{{params.email}} {{params.unsubscribeLink}} {{params.link}}';
     const { body, html } = await send(mentionEmail, { actorName: typed, channelName: typed }, mentionRecipient);
 
-    // No param key can be named without the send's nonce: the typed placeholders read as typed.
-    expect(html).not.toContain(mentionRecipient.email);
+    // No param key can be named without the send's nonce: the typed placeholders read as typed, and the address shows
+    // only where the footer names it.
+    expect(html.split(mentionRecipient.email)).toHaveLength(2);
     expect(html.split(unsubscribeLink)).toHaveLength(2);
     expect(body.htmlContent).toContain('&#123;{params.email}}');
     expect(body.subject).not.toMatch(tagOpener);
@@ -133,7 +162,11 @@ describe('Mails as Brevo fills them', () => {
       [{ channelId: 'c1', channelName: hostile, lines: [describeDigestRow('comment', hostile, 'en')], overflow: 0 }],
       'en',
     );
-    const { params, html } = await send(digestEmail, { daily: true }, { email: 'reader@example.test', lng: 'en', sectionsHtml, unsubscribeLink });
+    const { params, html } = await send(
+      digestEmail,
+      { daily: true },
+      { email: 'reader@example.test', lng: 'en', name: 'Reader', sectionsHtml, unsubscribeLink },
+    );
 
     expect(paramValue(params, 'sectionsHtml')).not.toMatch(tagOpener);
     expect(html).not.toMatch(anchorToEvil);
@@ -147,7 +180,11 @@ describe('Mails as Brevo fills them', () => {
       [{ channelId: 'c1', channelName: 'Design 101', lines: [describeDigestRow('comment', 'Roadmap', 'en')], overflow: 2 }],
       'en',
     );
-    const { html } = await send(digestEmail, { daily: false }, { email: 'reader@example.test', lng: 'en', sectionsHtml, unsubscribeLink });
+    const { html } = await send(
+      digestEmail,
+      { daily: false },
+      { email: 'reader@example.test', lng: 'en', name: 'Reader', sectionsHtml, unsubscribeLink },
+    );
 
     expect(html).toContain('<h3>Design 101</h3><ul><li>New comment on <strong>Roadmap</strong></li>');
     expect(html).toContain('<li>and 2 more</li></ul>');
@@ -171,7 +208,7 @@ describe('neutralizeBrevoTags', () => {
     const keys = Object.keys(def.preview.recipient);
     const { subject, ...props } = def.translate('en', def.preview.statics);
     const placeholders = Object.fromEntries(keys.map((key) => [key, brevoPlaceholder(key, htmlParams)]));
-    const html = await render(def.component({ ...props, ...placeholders }));
+    const html = await render(def.component({ ...props, ...placeholders, frame: {} }));
     const params = [...keys, 'email'];
     expect(neutralizeBrevoTags(html, { params, htmlParams: Object.keys(htmlParams) }, 'html')).toBe(html);
     expect(neutralizeBrevoTags(subject, { params }, 'text')).toBe(subject);

@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { Context } from 'hono';
 import { appConfig, type Severity } from 'shared';
 import type { LogMeta } from 'shared/pino';
 import { benchTenantId, benchUuidPrefix } from 'shared/utils/bench-identity';
@@ -14,7 +15,10 @@ export const isBenchTraffic = (userId?: string, tenantId?: string): boolean => {
 };
 
 /** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
-type LogContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> } | null;
+type LogContext =
+  | Context<Env>
+  | { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> }
+  | null;
 
 const logContextStorage = new AsyncLocalStorage<LogContext>();
 
@@ -23,6 +27,12 @@ const logContextStorage = new AsyncLocalStorage<LogContext>();
  * not event emitters or timers, so code invoked from detached callbacks logs without ids.
  */
 export const runWithLogContext = <T>(ctx: LogContext, fn: () => T): T => logContextStorage.run(ctx, fn);
+
+/** The request this code runs in, from the same store; null in a job, a CDC listener or a detached callback. */
+export const ambientRequest = (): Context<Env> | null => {
+  const store = logContextStorage.getStore();
+  return store && 'req' in store ? store : null;
+};
 
 const extractBase = (ctx: LogContext) => {
   if (!ctx?.var) return {};

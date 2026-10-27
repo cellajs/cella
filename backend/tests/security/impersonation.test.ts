@@ -143,8 +143,8 @@ describe('impersonation lives on its admin', async () => {
     await expectRefusal(attempt, 403, 'impersonation_forbidden');
     expect(cookieChange(attempt.response, 'impersonation')).toBeUndefined();
     expect(await sessionsOf(other.id)).toHaveLength(0);
-    // Refused as an impersonation, not as a user without the system role: no security alert goes out for the admin.
-    expect(mailsTo(appConfig.securityEmail)).toHaveLength(0);
+    // Refused as an impersonation, not as a user without the system role: the inbox has only the first one's notice.
+    expect(mailsTo(appConfig.securityEmail).map(({ statics }) => statics.type)).toEqual(['impersonation-started']);
     expect(await meAs(impersonation)).toMatchObject({ status: 200, userId: target.id });
   });
 

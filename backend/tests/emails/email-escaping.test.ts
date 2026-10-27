@@ -17,7 +17,7 @@ describe('email templates escape names interpolated into HTML', () => {
   it('must not inject a link into a member invite via the sender or organization name', async () => {
     const statics = { senderName: hostile, entityName: hostile, role: memberRole };
     const translated = memberInviteEmail.translate('en', statics);
-    const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link }));
+    const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link, frame: {} }));
 
     expect(html).not.toMatch(anchorToEvil);
     expect(html).toContain('&lt;a href=');
@@ -31,9 +31,9 @@ describe('email templates escape names interpolated into HTML', () => {
     const added = memberAddedEmail.translate('en', statics);
     const system = systemInviteEmail.translate('en', { senderName: hostile });
     const htmls = await Promise.all([
-      render(memberInviteWithTokenEmail.component({ ...withToken, name: 'Emily', inviteLink: link })),
-      render(memberAddedEmail.component({ ...added, name: 'Emily', entityLink: link })),
-      render(systemInviteEmail.component({ ...system, name: 'Emily', inviteLink: link })),
+      render(memberInviteWithTokenEmail.component({ ...withToken, name: 'Emily', inviteLink: link, frame: {} })),
+      render(memberAddedEmail.component({ ...added, name: 'Emily', entityLink: link, frame: {} })),
+      render(systemInviteEmail.component({ ...system, name: 'Emily', inviteLink: link, frame: {} })),
     ]);
 
     for (const html of htmls) {
@@ -51,6 +51,7 @@ describe('email templates escape names interpolated into HTML', () => {
         excerpt: 'See this',
         link,
         unsubscribeLink: 'https://app.example.test/unsubscribe',
+        frame: {},
       }),
     );
 
@@ -82,10 +83,10 @@ describe('email plain-text parts keep names as typed', () => {
 
   it('leaves the subject and preview unescaped, and the rendered mail escapes them once', async () => {
     const translated = memberInviteEmail.translate('en', statics);
-    expect(translated.subject).toBe('Invitation to R&D <Lab>');
+    expect(translated.subject).toContain('Jane invited you to R&D <Lab>');
     expect(translated.previewText).toContain('R&D <Lab>');
 
-    const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link }));
+    const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link, frame: {} }));
     expect(html).not.toMatch(doubleEscaped);
     expect(html).not.toContain('<Lab>');
   });
@@ -94,7 +95,7 @@ describe('email plain-text parts keep names as typed', () => {
     const translated = magicLinkEmail.translate('en', { magicLinkUrl: link, name: "O'Brien & <Co>", isNewUser: false });
     expect(translated.hiText).toBe("Hi O'Brien & <Co>,");
 
-    const html = await render(magicLinkEmail.component({ ...translated }));
+    const html = await render(magicLinkEmail.component({ ...translated, frame: {} }));
     expect(html).not.toMatch(doubleEscaped);
     expect(html).not.toContain('<Co>');
   });

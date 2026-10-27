@@ -22,6 +22,7 @@ import type {
 } from 'sdk';
 import {
   acceptInvitationToken,
+  confirmInvitationAddress,
   createPasskey,
   createTotp,
   deleteMe,
@@ -69,6 +70,7 @@ export const meKeys = {
   },
   handleInvitation: ['me', 'handle-invitation'] as const,
   acceptInvitationToken: ['me', 'accept-invitation-token'] as const,
+  confirmInvitationAddress: ['me', 'confirm-invitation-address'] as const,
 };
 
 /** Never persisted: the guards read it as `static`, so a stored entry would pass a session revoked between visits and skip the store write. */
@@ -242,12 +244,25 @@ export const useHandleInvitationMutation = () =>
     onSuccess: (_organization, { path: { id, acceptOrReject } }) => applySettledInvitation(id, acceptOrReject),
   });
 
-/** Accepts the invitation behind the single-use token cookie, as the signed-in account. */
+/**
+ * Accepts the invitation behind the single-use token cookie, as the signed-in account. A refusal for an address the
+ * account does not hold yet stays quiet: the accept step answers it by offering a link to that address.
+ */
 export const useAcceptInvitationTokenMutation = () =>
   useMutation<AcceptInvitationTokenResponse, ApiError, void>({
     mutationKey: meKeys.acceptInvitationToken,
     mutationFn: () => acceptInvitationToken(),
     onSuccess: () => applySettledInvitation(null, 'accept'),
+    meta: { suppressGlobalErrorToast: (error: ApiError) => error.type === 'invitation_address_unproven' },
+  });
+
+/** Mails the invited address a link bound to the signed-in account; opening it there adds the address and lets it join. */
+export const useConfirmInvitationAddressMutation = () =>
+  useMutation<void, ApiError, void>({
+    mutationKey: meKeys.confirmInvitationAddress,
+    mutationFn: async () => {
+      await confirmInvitationAddress();
+    },
   });
 
 /** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */

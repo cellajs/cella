@@ -23,9 +23,10 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
       testEmail: testEmail ?? false,
     };
   },
-  component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink }) {
+  component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink, frame }) {
     return (
       <EmailLayout
+        frame={frame}
         previewText={subject}
         headerHtml={headerHtml}
         wide
@@ -38,6 +39,7 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
       </EmailLayout>
     );
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { content: '<p>Test content</p>', subject: 'Monthly newsletter', testEmail: false },
     recipient: { unsubscribeLink: 'https://example.com/unsubscribe' },

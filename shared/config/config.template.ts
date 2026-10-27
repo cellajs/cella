@@ -321,6 +321,19 @@ export const config = {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
     strokeWidth: 1.5,
+    /**
+     * Mail colors, hex: mail clients read neither CSS variables nor oklch. Some clients recolor a mail for dark mode and
+     * leave dark fills alone, so the button's edge, or a mid-tone fill, must stand out on white and on a dark panel;
+     * `backend/tests/emails/email-colors.test.ts` checks the ratios. `darkButton` is the button under the mail's own dark
+     * styles, which Apple Mail and the Outlook apps apply.
+     */
+    email: {
+      button: '#262626',
+      buttonEdge: '#808080',
+      buttonLabel: '#ffffff',
+      darkButton: '#fafafa',
+      darkButtonLabel: '#262626',
+    },
     screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
   } as const,
   placeholderColors: [
