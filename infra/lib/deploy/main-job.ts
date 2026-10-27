@@ -92,12 +92,19 @@ unset REPO_KEY
 git -C /work checkout -q FETCH_HEAD
 cd /work
 echo "== $(date -u +%FT%TZ) install"
-npm install -g --silent "$(node -p 'require("./package.json").packageManager.replace(/\+.*$/, "")')"
-pnpm install --frozen-lockfile --filter 'infra...' --filter 'shared...'
+# Install scripts run without the deploy key or the passphrase in their environment.
+keyless() { env -u SCW_ACCESS_KEY -u SCW_SECRET_KEY -u PULUMI_CONFIG_PASSPHRASE "$@"; }
+keyless npm install -g --silent "$(node -p 'require("./package.json").packageManager.replace(/\+.*$/, "")')"
+keyless pnpm install --frozen-lockfile --filter 'infra...' --filter 'shared...'
 PULUMI_VERSION=$(node -p 'require("./infra/node_modules/@pulumi/pulumi/package.json").version')
 # The CLI at the SDK's version, from its release archive. A job runs as root with no capability, so tar must not try to restore owners.
 curl -fsSL "https://get.pulumi.com/releases/sdk/pulumi-v$PULUMI_VERSION-linux-x64.tar.gz" | tar -xz --no-same-owner -C /usr/local
 export PATH="/usr/local/pulumi:$PATH"
+# The salt kept beside the passphrase goes into the target's stack file, so any commit decrypts the state, an older release's too.
+SALT=$(printenv PULUMI_ENCRYPTION_SALT || true)
+if [ -n "$SALT" ]; then
+  node -e 'const fs = require("fs"); const [file, salt] = process.argv.slice(1); const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""; fs.writeFileSync(file, /^encryptionsalt:.*$/m.test(text) ? text.replace(/^encryptionsalt:.*$/m, "encryptionsalt: " + salt) : "encryptionsalt: " + salt + "\n" + text)' "infra/Pulumi.$MODE.yaml" "$SALT"
+fi
 echo "== $(date -u +%FT%TZ) deploy"
 exec pnpm --silent --filter infra main-job
 `;

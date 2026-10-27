@@ -128,15 +128,6 @@ describe('createTelemetry', () => {
     }
   });
 
-  it('without an endpoint stays build-only: events land in the black-box JSONL', async () => {
-    const t = createTelemetry({ resource: {}, now: () => 1000 });
-    t.event('boot.failed', { service: 'cdc' }, { severity: 'error' });
-    await t.flush();
-    const lines = t.eventsJsonl().split('\n');
-    expect(lines).toHaveLength(1);
-    expect(JSON.parse(lines[0] ?? '').eventName).toBe('boot.failed');
-  });
-
   it('must not export a secret learned after its record was buffered', async () => {
     const fetchImpl = fetchOk();
     const known = new Set<string>();
@@ -154,7 +145,7 @@ describe('createTelemetry', () => {
 
     const bodies = fetchImpl.mock.calls.map(([, init]) => String(init?.body));
     expect(bodies).toHaveLength(2);
-    for (const text of [...bodies, t.eventsJsonl()]) {
+    for (const text of bodies) {
       expect(text).not.toContain('late-secret');
       // Positive control: the record itself is exported, only the value is gone.
       expect(text).toContain('[REDACTED]');

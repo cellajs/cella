@@ -2,9 +2,7 @@
 import type { DrainPolicy, ReplacementStrategy } from '../compose/types';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { isRecord } from '../lib/utils/guards';
-import { isMain } from '../lib/utils/is-main';
-import { sleep as defaultSleep, getFlag, getNumFlag } from './args';
-import { createFetchProbe, pollForVersion } from './wait-for-version';
+import { sleep as defaultSleep } from './args';
 
 export type { DrainPolicy, ReplacementStrategy };
 
@@ -213,70 +211,4 @@ export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
     if (!res.ok) throw new Error(`ListBackendServers ${backendId} → ${res.status}: ${body}`);
     return parseBackendServers(body);
   };
-}
-
-// Standalone entry point: builds the live effects and runs the cutover. CI orchestrates the `pulumi up` create/destroy bookends around this call.
-
-function parseIps(raw: string | undefined): string[] {
-  return (raw ?? '')
-    .split(',')
-    .map((ip) => ip.trim())
-    .filter((ip) => ip.length > 0);
-}
-
-if (isMain(import.meta.url)) {
-  const argv = process.argv.slice(2);
-  const service = getFlag(argv, '--service');
-  const sha = getFlag(argv, '--sha');
-  const strategy = getFlag(argv, '--strategy');
-  const drainPolicyRaw = getFlag(argv, '--drain-policy') ?? 'requests';
-  const healthUrl = getFlag(argv, '--health-url');
-  const oldIps = parseIps(getFlag(argv, '--old-ips'));
-  const newIps = parseIps(getFlag(argv, '--new-ips'));
-  const drainSeconds = getNumFlag(argv, '--drain-seconds', 10);
-  const secretKey = process.env.SCW_SECRET_KEY;
-
-  if (!service || !sha || !strategy || !healthUrl) {
-    process.stderr.write('Required: --service, --sha, --strategy, --health-url\n');
-    process.exit(2);
-  }
-  if (strategy !== 'start-first' && strategy !== 'stop-first') {
-    process.stderr.write(`Unknown --strategy '${strategy}' (expected start-first | stop-first)\n`);
-    process.exit(2);
-  }
-  if (drainPolicyRaw !== 'requests' && drainPolicyRaw !== 'reconnect') {
-    process.stderr.write(`Unknown --drain-policy '${drainPolicyRaw}' (expected requests | reconnect)\n`);
-    process.exit(2);
-  }
-  const drainPolicy: DrainPolicy = drainPolicyRaw;
-
-  const healthGate: HealthGateFn = async () => {
-    const outcome = await pollForVersion({ url: healthUrl, expectedSha: sha, probe: createFetchProbe(8000) });
-    return outcome.ok;
-  };
-
-  // Both LB effects are built in the one validated block, so the flags are read and checked exactly once.
-  let setServers: SetServersFn | undefined;
-  let getServers: GetServersFn | undefined;
-  if (strategy === 'start-first') {
-    const zone = getFlag(argv, '--lb-zone');
-    const backendId = getFlag(argv, '--backend-id');
-    if (!zone || !backendId || !secretKey) {
-      process.stderr.write('start-first requires: --lb-zone, --backend-id, SCW_SECRET_KEY\n');
-      process.exit(2);
-    }
-    setServers = createLbSetServers({ secretKey, zone, backendId });
-    getServers = createLbGetServers({ secretKey, zone, backendId });
-  }
-
-  const result = await sequenceCutover({ service, strategy, drainPolicy, oldIps, newIps, drainSeconds, healthGate, setServers, getServers });
-
-  if (!result.ok) {
-    process.stderr.write(
-      `✗ Cutover of ${service} to ${sha} aborted (${result.aborted}). ` +
-        'The previous generation is still serving: no outage. See the new generation logs (serial console) for the cause.\n',
-    );
-    process.exit(1);
-  }
-  process.stdout.write(`✓ Cutover of ${service} to ${sha} complete (${result.steps.length} steps)\n`);
 }

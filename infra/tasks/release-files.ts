@@ -26,7 +26,7 @@ const ENTRY_CACHE = 'no-cache, no-store, must-revalidate';
 /**
  * What the builder uploads of a release's frontend. A hashed file goes up when the bucket lacks it; a stable-named one (static/, favicon) when
  * the bucket's copy differs; the release's entry files always, under `releases/<sha>/`. It reads the bucket over its public endpoint, so it runs
- * where no key is: in the container that also runs the app's build.
+ * where no key is: in a container of its own, on the build's read-only output.
  */
 export async function releaseFiles(opts: { distDir: string; sha: string; publicBase: string; fetchImpl?: FetchLike }): Promise<ReleaseFile[]> {
   const fetchImpl = resolveFetch(opts.fetchImpl);

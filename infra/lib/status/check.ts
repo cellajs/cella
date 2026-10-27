@@ -3,7 +3,6 @@ import type { Check, CheckStatus, CredentialTier, NextAction } from './types';
 
 /** The local setup/manage entrypoint. */
 export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
-export const installPulumi: NextAction = { description: 'Install the Pulumi CLI', command: 'brew install pulumi/tap/pulumi' };
 export const manageSecrets: NextAction = {
   description: `Set the missing runtime secret(s) via "${menuPath('secrets')}"`,
   command: actionCommand('secrets'),
@@ -21,19 +20,16 @@ export const clearPending: NextAction = {
   command: actionCommand('unlock'),
 };
 
-/** Local deploy of the current HEAD for a mode: the commit must be pushed, as the builder machine fetches it. */
+/** Deploy the environment's target: the runner does once its target moves, this starts a run now. */
 export function deployAction(mode: string): NextAction {
-  return {
-    description: `Deploy the current commit to ${mode}`,
-    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD)`,
-  };
+  return { description: `Start a run of ${mode}'s main job for its target`, command: `${actionCommand('start-deploy')} --mode ${mode}` };
 }
 
-/** Redeploy or read boot diagnostics when a live service is wrong. */
+/** Read the last runs and the machines' boot accounts when a live service is wrong, then deploy again. */
 export function diagAction(mode: string): NextAction {
   return {
-    description: 'Redeploy, or read boot diagnostics if it keeps failing',
-    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD)  # or: pnpm --filter infra diag`,
+    description: "Read the last runs and the release's boot accounts, then start a run again",
+    command: `${actionCommand('runs')} --mode ${mode} --machines`,
   };
 }
 

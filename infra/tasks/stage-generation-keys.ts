@@ -1,7 +1,14 @@
 import { writeFile } from 'node:fs/promises';
 import { actionCommand } from '../lib/operator-actions';
 import { type IamAuth, listApiKeys, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import { handoffBundleKey, type MachinePrincipal, machineKeyName, machinePrincipals, standingAccessKey } from '../lib/scaleway/machine-keys';
+import {
+  handoffBundleKey,
+  type MachinePrincipal,
+  machineKeyName,
+  machineKeyStep,
+  machinePrincipals,
+  standingAccessKey,
+} from '../lib/scaleway/machine-keys';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { deployFolderPath, handoffServicePath } from '../lib/scaleway/secret-paths';
 import { runIfMain } from '../lib/utils/is-main';
@@ -29,12 +36,15 @@ export interface StageSecrets {
   deleteSecret(secretId: string): Promise<void>;
 }
 
-/** Why a principal's keys are not as made at the Owner moment, or undefined when they are. */
+/** Why a principal's keys are not as made at the Owner moment, or undefined when they are: Update identities' own rule (`machineKeyStep`), said. */
 export function standingKeyProblem(principal: MachinePrincipal, stored: string | undefined, live: readonly string[]): string | undefined {
-  if (!stored) return `${principal.application} has no standing key in the deploy folder`;
-  if (!live.includes(stored)) return `${principal.application}'s standing key ${stored} is no longer live`;
-  const extra = live.filter((accessKey) => accessKey !== stored);
-  return extra.length > 0 ? `${principal.application} holds a key nobody hands over: ${extra.join(', ')}` : undefined;
+  const step = machineKeyStep(principal, stored, live);
+  if (step.change === 'make') {
+    return stored
+      ? `${principal.application}'s standing key ${stored} is no longer live`
+      : `${principal.application} has no standing key in the deploy folder`;
+  }
+  return step.change === 'prune' ? `${principal.application} holds a key nobody hands over: ${step.extra.join(', ')}` : undefined;
 }
 
 /**

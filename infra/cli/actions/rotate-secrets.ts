@@ -4,6 +4,7 @@ import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
@@ -18,21 +19,21 @@ import {
 } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
+import { startTargetAfterRotation } from './start-deploy';
 
 /**
  * Rotate the secrets the engine checks, on the operator key: a fresh password for every database role (set on the live role through the
  * database API) and a fresh value for every rotatable generated secret, every consumer's copy rewritten. A key that protects stored data is
- * not rotatable here (lib/runtime-secrets.ts). The rotation is recorded in the control object,
- * and its counter makes the next deploy replace every machine. Third-party keys are pasted anew in "Manage runtime secrets"; the passphrase
- * has its own action.
+ * not rotatable here (lib/runtime-secrets.ts). The rotation is recorded in the control object, and its counter makes the deploy it starts at
+ * its end replace every machine. Third-party keys are pasted anew in "Manage runtime secrets"; the passphrase has its own action.
  */
 export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(
-    pc.dim(`\n${actionLabel('rotate-secrets')}: fresh database role passwords and generated values, then the next deploy replaces every machine.\n`),
+    pc.dim(`\n${actionLabel('rotate-secrets')}: fresh database role passwords and generated values, then a deploy that replaces every machine.\n`),
   );
   console.warn(
-    `${warningMark} The running machines keep the old values until the next deploy replaces them, and the database refuses the new connections they open with the old passwords: deploy right after.`,
+    `${warningMark} The running machines keep the old values until that deploy replaces them, and the database refuses the new connections they open with the old passwords.`,
   );
   if (!(await confirmOrDefault({ message: `Rotate the secrets of ${context.environment}?`, default: false }))) return;
 
@@ -66,9 +67,12 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
       `\n${checkMark} Database role passwords and ${rotated.length} generated secret(s) rotated; rotation ${rotations.counter} recorded. Keys that protect stored data were left as they are.`,
     );
     console.info(
-      `  ${pc.bold('Deploy now')}: every machine is replaced. Third-party keys are pasted anew in "${actionLabel('secrets')}", the passphrase in "${actionLabel('rotate-passphrase')}" (\`${actionCommand('rotate-passphrase')}\`).`,
+      `  Third-party keys are pasted anew in "${actionLabel('secrets')}", the passphrase in "${actionLabel('rotate-passphrase')}" (\`${actionCommand('rotate-passphrase')}\`).`,
     );
   } finally {
     await lock.release();
   }
+  await startTargetAfterRotation(context, operator).catch((error) =>
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
+  );
 }

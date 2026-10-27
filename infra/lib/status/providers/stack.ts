@@ -1,13 +1,12 @@
-import { actionCommand } from '../../operator-actions';
 import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
 import { machinePrincipals } from '../../scaleway/machine-keys';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
-import { allPrincipalNames, appPrincipalNames } from '../../scaleway/principals';
+import { allPrincipalNames } from '../../scaleway/principals';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
-import { check, deployAction, probed, runSetup } from '../check';
+import { check, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
 
-/** Stack-file + compute-deferral checks; every fact lives on the session. */
+/** The stack file's check; every fact lives on the session. */
 export const stackProvider: StatusProvider<Record<string, never>> = {
   domain: 'config',
   async gather() {
@@ -15,22 +14,13 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
   },
   evaluate(_facts, session) {
     const stack = check('config.stackState', 'Stack');
-    const checks = [
+    return [
       session.stackState === 'fresh'
         ? stack.missing(`no Pulumi.${session.mode}.yaml; this stack has not been set up`, runSetup)
         : session.stackState === 'partial'
           ? stack.warn('stack file exists but bootstrap is incomplete (no CI deploy key)', runSetup)
           : stack.ok(`bootstrapped (${session.mode})`),
     ];
-    if (session.stackState === 'bootstrapped') {
-      const compute = check('config.computeDeferred', 'Compute');
-      checks.push(
-        session.computeDeferredSince
-          ? compute.warn(`deferred since ${session.computeDeferredSince}; the first deploy brings the VMs up`, deployAction(session.mode))
-          : compute.ok('declared (not deferred)'),
-      );
-    }
-    return checks;
   },
 };
 
@@ -98,17 +88,6 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
           : project.ok(session.projectId ?? ''),
     ];
     if (session.stackState === 'bootstrapped') {
-      const observer = check('identity.observerApp', 'Observer app', 'scaleway');
-      checks.push(
-        probed(observer, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ observerAppId }) =>
-          observerAppId
-            ? observer.ok(observerAppId)
-            : observer.warn(
-                `IAM application '${appPrincipalNames(session.appConfig.appSlug).observer}' not found; \`${actionCommand('identity')}\` creates it`,
-                runSetup,
-              ),
-        ),
-      );
       const ages = check('identity.keyAges', 'Key ages', 'scaleway');
       checks.push(
         probed(ages, session.scalewayKeyAvailable, facts, 'could not read the keys', ({ keyAges }) =>

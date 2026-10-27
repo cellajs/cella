@@ -43,7 +43,7 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
  */
 export const DEPLOY_SECRET_METADATA_SETS = ['SecretManagerReadOnly'] as const;
 
-/** Secret writes, in the runtime folders and the hand-over folder: containers the program declares, versions it writes, bundles it stages. */
+/** Secret writes, in the hand-over folder only: the read-once bundles a deploy stages for its machines. Every app secret is the apply's. */
 export const DEPLOY_SECRET_WRITE_SETS = ['SecretManagerSecretCreate', 'SecretManagerSecretWrite', 'SecretManagerSecretDelete'] as const;
 
 /** Secret values, in the deploy folder only: the standing machine keys and the telemetry key. */
@@ -118,22 +118,3 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  * listing them first to skip unchanged ones. The frontend bucket's policy is the one that admits it to objects.
  */
 export const BUILDER_PROJECT_PERMISSION_SETS = ['ContainerRegistryFullAccess', 'ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite'] as const;
-
-/**
- * Resource-token fragments of the privileged resources, the ones NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a privileged `pulumi up` with the Owner API key, never widening the CI key.
- * Matched as a case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
- */
-const PRIVILEGED_RESOURCE_FRAGMENTS = [
-  'private_network', // VPC private network; CI is read-only
-  'vpc', // the VPC itself
-  'rdb', // managed PostgreSQL (rdb_instance, rdb_acl, rdb_user, …)
-  'instance_db', // DB-bearing instance resources
-  'domain_zone', // DNS zone
-  'policy', // VM IAM policies; IAM write is forbidden for the CI key (perm-escalation)
-] as const;
-
-/** True when a Scaleway resource token names a privileged resource. */
-export function isPrivilegedResource(resource: string): boolean {
-  const token = resource.toLowerCase();
-  return PRIVILEGED_RESOURCE_FRAGMENTS.some((fragment) => token.includes(fragment));
-}

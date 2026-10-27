@@ -153,12 +153,8 @@ describe('boot', () => {
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toContain('failed with exit 1');
     const uploads = sent.filter((request) => request.url.startsWith('https://app-boot-diag.'));
-    expect(uploads.map((request) => request.url.split('/boot-diag/')[1])).toEqual([
-      expect.stringMatching(/^backend-.*-boot\.log$/),
-      expect.stringMatching(/^backend-failed-.*\.log$/),
-      expect.stringMatching(/^backend-.*-events\.jsonl$/),
-    ]);
-    expect(uploads[2]?.body).toContain('release-command');
+    expect(uploads.map((request) => request.url.split('/boot-diag/')[1])).toEqual([expect.stringMatching(/^backend-.*-boot\.log$/)]);
+    expect(uploads[0]?.body).toContain('release-command');
     expect(uploads[0]?.body).toContain('auth rejected [REDACTED]');
     expect(uploads[0]?.body).toContain('::cella:: boot start\nlauncher saw [REDACTED]');
     expect(uploads[0]?.body).not.toContain('boot log not found');

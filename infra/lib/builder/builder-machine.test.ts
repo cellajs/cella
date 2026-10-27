@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BUILDER_SCRIPT, type BuilderValues, builderCloudConfig, containerScript } from './builder-machine';
+import { BUILDER_SCRIPT, type BuilderValues, bootBundleScript, builderCloudConfig, frontendScript } from './builder-machine';
 import { S3_SCRIPT } from './s3-script';
 
 const values: BuilderValues = {
@@ -18,6 +18,7 @@ const values: BuilderValues = {
   BOOT_AK: 'SCWBOOTACCESSKEY0001',
   BOOT_SK: 'boot-secret-key-value',
   NODE_IMAGE: 'node:26-bookworm-slim',
+  EPOCH: '0123456789ab',
 };
 
 describe('the builder machine', () => {
@@ -44,29 +45,61 @@ describe('the builder machine', () => {
     expect(lines.indexOf('rm -f /run/builder.repo')).toBeLessThan(lines.indexOf('step build'));
   });
 
-  it("must not hand a key to the app's code: the container gets the frontend env file only", () => {
-    const run = BUILDER_SCRIPT.split('\n').find((line) => line.startsWith('docker run'));
-    expect(run).toBeDefined();
-    expect(run).not.toMatch(/\s-e\s|--env\s/);
-    expect(run).toContain('--env-file /etc/builder-frontend.env');
-    for (const script of [
-      containerScript({ pnpmVersion: '11.8.0', sha: values.SHA, frontendBucketUrl: 'https://app-frontend.s3.nl-ams.scw.cloud' }),
+  it("must not hand a key to the app's code: its containers get no key and no metadata service", () => {
+    const lines = BUILDER_SCRIPT.split('\n');
+    const runs = lines.filter((line) => line.trim().startsWith('docker run'));
+    expect(runs.length).toBeGreaterThan(3);
+    // A container that gets a key runs the Object Storage script and nothing of the app; every other container gets none.
+    for (const run of runs) {
+      if (run.includes('S3_AK=')) expect(run).toContain('-v /etc/builder-s3.mjs:/s3.mjs:ro');
+      else expect(run).not.toMatch(/\s-e\s|--env\s/);
+    }
+    for (const script of [bootBundleScript('11.8.0'), frontendScript('11.8.0')]) expect(script).not.toMatch(/SCW_|_AK|_SK|AWS_/);
+    const block = lines.findIndex((line) => line.includes('-d 169.254.42.42 -j DROP'));
+    expect(block).toBeGreaterThan(-1);
+    expect(block).toBeLessThan(lines.findIndex((line) => line.startsWith('docker run')));
+  });
+
+  it("must not upload a file the app's build pointed outside its output, or to a key other than its place", () => {
+    const dir = mkdtempSync(join(tmpdir(), 'upload-'));
+    const root = join(dir, 'dist');
+    mkdirSync(join(root, 'assets'), { recursive: true });
+    writeFileSync(join(root, 'assets', 'a.js'), 'ok');
+    writeFileSync(join(root, 'index.html'), '<html>');
+    writeFileSync(join(dir, 'secret'), 'S3_SK=key');
+    symlinkSync(join(dir, 'secret'), join(root, 'assets', 'b.js'));
+    const script = join(dir, 's3.mjs');
+    writeFileSync(script, S3_SCRIPT);
+    const upload = (rows: string[][]) => {
+      writeFileSync(join(dir, 'list'), rows.map((row) => `${row.join('\t')}\n`).join(''));
+      return spawnSync(process.execPath, [script, 'upload', 'bucket', join(dir, 'list'), root, 'releases/x/'], {
+        encoding: 'utf8',
+        env: { ...process.env, REGION: 'test', S3_AK: 'ak', S3_SK: 'sk' },
+      });
+    };
+    const valid = [join(root, 'assets', 'a.js'), 'assets/a.js'];
+    for (const attack of [
+      [join(root, 'assets', 'b.js'), 'assets/b.js'],
+      [join(dir, 'secret'), 'assets/c.js'],
+      [join(root, 'index.html'), 'releases/y/index.html'],
+      [join(root, 'assets', 'a.js'), 'releases/x/a.js'],
     ]) {
-      expect(script).not.toMatch(/SCW_|_AK|_SK|AWS_/);
+      const result = upload([valid, attack]);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain('refused');
     }
   });
 
   it('keeps the keys in the one file only root reads', () => {
-    const document = builderCloudConfig({ values, frontendEnv: { APP_MODE: 'staging' }, bake: { group: {} }, container: 'true\n' });
+    const document = builderCloudConfig({ values, frontendEnv: { APP_MODE: 'staging' }, bake: { group: {} }, boot: 'true\n', frontend: 'true\n' });
     const files = document.split('\n  - path: ').slice(1);
     const holding = files.filter((file) => file.includes(values.BOOT_SK)).map((file) => file.split('\n')[0]);
     expect(holding).toEqual(['/etc/builder.env']);
     expect(files.find((file) => file.startsWith('/etc/builder.env'))).toContain("permissions: '0600'");
   });
 
-  it('builds no frontend for an app without one', () => {
-    const script = containerScript({ pnpmVersion: '11.8.0', sha: values.SHA });
-    expect(script).toContain('pnpm --filter infra boot:build');
-    expect(script).not.toContain('frontend');
+  it('builds the boot bundle with the engine only, apart from the frontend', () => {
+    expect(bootBundleScript('11.8.0')).toContain('pnpm --filter infra boot:build');
+    expect(bootBundleScript('11.8.0')).not.toContain('frontend');
   });
 });

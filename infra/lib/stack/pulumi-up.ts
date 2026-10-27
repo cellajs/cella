@@ -1,7 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { actionCommand } from '../operator-actions';
-import { isPrivilegedResource } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
@@ -40,14 +39,9 @@ function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
 }
 
-export type PermissionHint = { kind: 'privileged'; resource: string } | { kind: 'ci-grantable'; resource: string } | undefined;
-
-/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as privileged or CI-grantable. */
-function classifyPermissionError(stderr: string): PermissionHint {
-  const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i);
-  if (!m?.[1]) return undefined;
-  const resource = m[1];
-  return isPrivilegedResource(resource) ? { kind: 'privileged', resource } : { kind: 'ci-grantable', resource };
+/** The resource of a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr. */
+function deniedResource(stderr: string): string | undefined {
+  return stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i)?.[1];
 }
 
 /** Detect a "secret ... already exists" conflict: the container is live in Scaleway but missing from Pulumi state, so `up` fails recreating it. Returns the secret name when the error text carries one. */
@@ -151,15 +145,13 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
         `  ${pc.cyan(`pulumi import scaleway:secrets/secret:Secret secret-${dup.name ?? '<secret-name>'} <region>/<secret-uuid> --stack ${stack} --yes`)}`,
       );
     }
-    const hint = classifyPermissionError(stderrBuf);
-    if (hint) {
-      console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);
-      if (hint.kind === 'privileged')
-        console.error(`  A privileged resource. Run ${pc.cyan(actionCommand('apply'))} to apply it with your Owner API key.`);
-      else
-        console.error(
-          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then run ${pc.cyan(actionCommand('rotate-keys'))}.`,
-        );
+    const denied = deniedResource(stderrBuf);
+    if (denied) {
+      // A deploy stops at its preflight before any resource the apply owns, so a denial is a set the run's key lacks, or the apply's change.
+      console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the key of this run may not write ${pc.cyan(denied)}.`);
+      console.error(
+        `  A change the apply owns runs on the operator key (${pc.cyan(actionCommand('apply'))}). A set the deploy key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('identity'))} writes it.`,
+      );
     }
   }
 

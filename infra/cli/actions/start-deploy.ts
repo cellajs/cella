@@ -4,7 +4,7 @@ import { listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
-import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../../lib/deploy/target';
+import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -22,14 +22,7 @@ const POLL_MS = 10_000;
 export async function runStartDeploy(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const environment = context.environment;
-  const repository = repositoryUrl();
-  const file = join(infraDir, '..', ENVIRONMENTS_FILE);
-  const line = existsSync(file) ? parseEnvironmentsFile(readFileSync(file, 'utf8')).get(environment) : undefined;
-  const target = await resolveTarget({
-    environment,
-    line,
-    listRemote: listRemoteRefs(repository, process.env.REPOSITORY_READ_KEY),
-  });
+  const target = await environmentTarget(context);
   console.info(
     pc.dim(
       `\n${actionLabel('start-deploy')}: one run of ${environment}'s main job, for ${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}).\n`,
@@ -67,6 +60,34 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
       `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
     );
   if (outcome !== 'deployed') endAction(1);
+}
+
+/** The environment's target, as the environments file of this checkout and the repository's refs say it. */
+async function environmentTarget(context: InfraContext): Promise<Target> {
+  const file = join(infraDir, '..', ENVIRONMENTS_FILE);
+  const line = existsSync(file) ? parseEnvironmentsFile(readFileSync(file, 'utf8')).get(context.environment) : undefined;
+  return resolveTarget({ environment: context.environment, line, listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY) });
+}
+
+/**
+ * Start the environment's target after a rotation, on the operator key. The running machines hold keys or values the rotation replaced, and the
+ * runner starts a run only when the target moves, so the rotation starts the run whose new generations replace every machine.
+ */
+export async function startTargetAfterRotation(context: InfraContext, key: { secretKey: string }): Promise<void> {
+  const auth = { secretKey: key.secretKey };
+  const { naming, region } = deriveInfra(context.appConfig);
+  const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
+  if (!definitionId) {
+    console.warn(
+      `${warningMark} ${context.environment} has no main job yet: deploy with \`${actionCommand('start-deploy')}\` once an apply made it.`,
+    );
+    return;
+  }
+  const target = await environmentTarget(context);
+  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
+  console.info(
+    `${checkMark} Run ${run.id} deploys ${target.sha.slice(0, 10)} with the rotated keys and values, replacing every machine (\`${actionCommand('runs')}\` shows how it ends).`,
+  );
 }
 
 /**

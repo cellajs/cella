@@ -168,7 +168,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   console.info('\n→ CI deploy key');
   const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
   console.info('\n→ Operator');
-  const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, release: async () => {} };
+  const ownerKey: OwnerKey = { ...pair, organizationId, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
 
   // The observer takes the operator's address list, so it follows the operator.

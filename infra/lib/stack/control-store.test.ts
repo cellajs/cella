@@ -61,7 +61,6 @@ describe('parse/serialize', () => {
   it('round-trips a populated state', () => {
     const state: ControlState = {
       schemaVersion: 2,
-      bootstrap: { completedAt: '2026-06-20T00:00:00Z' },
       rollout: {
         backend: { seq: 6, active: { id: 'aa11', sha: 'abc', seq: 5 }, pendingSha: 'def' },
         cdc: { seq: 2, active: { id: 'cc33', sha: 'abc', seq: 2 } },
@@ -72,8 +71,9 @@ describe('parse/serialize', () => {
     expect(parseControlState(serializeControlState(state))).toEqual(state);
   });
 
-  it('accepts a minimal document', () => {
+  it('accepts a minimal document, and one an older engine wrote with its bootstrap block', () => {
     expect(parseControlState('{"schemaVersion":2}')).toEqual(emptyControlState());
+    expect(parseControlState('{"schemaVersion":2,"bootstrap":{"completedAt":"2026-06-20T00:00:00Z"}}')).toEqual(emptyControlState());
   });
 
   it('rejects invalid JSON', () => {
@@ -275,7 +275,6 @@ function makeRacingControlS3(initial: ControlState) {
 describe('updateServiceRollout', () => {
   const initial: ControlState = {
     schemaVersion: 2,
-    bootstrap: {},
     rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'old', seq: 1 }, pendingSha: 'new' } },
   };
 

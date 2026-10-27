@@ -20,22 +20,13 @@ beforeEach(() => {
 });
 
 describe('a main job run', () => {
-  it('deploys the target, then reaps the generation it displaced', () => {
+  it('ends as the deploy did: 0 deployed, 2 blocked (the runner and the apply read it so), anything else failed', () => {
     const { calls, run } = runs({});
     expect(mainJob(env, run)).toBe(0);
-    expect(calls).toEqual([`deploy --mode staging --sha ${env.TARGET_SHA} --defer-reap`, `reap --mode staging --sha ${env.TARGET_SHA}`]);
-  });
-
-  it('ends blocked when the deploy stopped on an owed privileged change, and reaps nothing', () => {
-    const { calls, run } = runs({ deploy: 2 });
-    expect(mainJob(env, run)).toBe(2);
-    expect(calls).toHaveLength(1);
-  });
-
-  it('ends failed on any other failure of the deploy, and on a failed reap', () => {
+    expect(calls).toEqual([`deploy --mode staging --sha ${env.TARGET_SHA}`]);
+    expect(mainJob(env, runs({ deploy: 2 }).run)).toBe(2);
     expect(mainJob(env, runs({ deploy: 1 }).run)).toBe(1);
     expect(mainJob(env, runs({ deploy: 137 }).run)).toBe(1);
-    expect(mainJob(env, runs({ reap: 1 }).run)).toBe(1);
   });
 
   it('must not start without a mode and a full commit id', () => {

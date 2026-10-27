@@ -36,13 +36,9 @@ describe('deploy key rights', () => {
     expect(metadata[0]?.condition).toBeUndefined();
   });
 
-  it('writes secrets in the runtime folders and the hand-over folder only, never in the engine or deploy folder', () => {
+  it("writes secrets in the hand-over folder only: never an app secret, nor the engine's or the deploy folder", () => {
     const writes = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerSecretWrite'));
-    const condition = writes.map((rule) => rule.condition).join(' || ');
-    expect(condition).toContain('"/app-production/handoff/"');
-    expect(condition).toContain('"/app-production/backend/"');
-    expect(condition).not.toContain('/engine/');
-    expect(condition).not.toContain('/deploy/');
+    expect(writes.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/app-production/handoff/")']);
   });
 
   it('reads IAM in the organization, and everything else in its own project', () => {

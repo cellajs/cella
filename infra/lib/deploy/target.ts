@@ -1,7 +1,7 @@
 /**
  * What an environment deploys (D8): by default the newest commit of the branch it follows, or the newest release; one optional line in the
- * repository's environments file pins a release or a commit, raises the retry counter, or adds an environment. The runner reads this, as
- * data, once a minute; the deploy pipeline reads it until the runner takes over.
+ * repository's environments file pins a release or a commit, raises the retry counter, or adds an environment. An environment that follows
+ * the releases deploys releases only: its line names `releases` or a release tag. The runner reads this, as data, once a minute.
  */
 
 /** Where the environments file lives in the repository, relative to its root. */
@@ -65,6 +65,10 @@ export function parseEnvironmentsFile(text: string): Map<string, EnvironmentLine
     } catch (error) {
       throw new Error(`${where}: ${error instanceof Error ? error.message : String(error)}`);
     }
+    // Merging a line is not publishing a release: an environment that follows the releases takes no commit and no branch from a line.
+    if (defaultRule(environment).kind === 'releases' && (rule.kind === 'branch' || (rule.kind === 'pin' && !RELEASE_TAG.test(rule.ref)))) {
+      throw new Error(`${where}: ${environment} deploys releases only: write releases or a release tag such as 0.18.1, got '${target}'`);
+    }
     lines.set(environment, { environment, rule, retry });
   });
   return lines;
@@ -87,22 +91,14 @@ function tagCommit(refs: readonly RemoteRef[], tag: string): string | undefined 
   return refs.find((ref) => ref.ref === `refs/tags/${tag}^{}`)?.sha ?? refs.find((ref) => ref.ref === `refs/tags/${tag}`)?.sha;
 }
 
-/**
- * Find an environment's target from its line, or its default, and the repository's refs. `startedOn` is the commit a manual run was started
- * on: an environment without a line deploys it, so a branch reaches staging by starting a run on it.
- */
+/** Find an environment's target from its line, or its default, and the repository's refs. */
 export async function resolveTarget(opts: {
   environment: string;
   line?: EnvironmentLine;
-  startedOn?: string;
   listRemote: (patterns: string[]) => Promise<RemoteRef[]>;
 }): Promise<Target> {
   const retry = opts.line?.retry ?? 0;
   const of = (sha: string, source: string): Target => ({ environment: opts.environment, sha, retry, source });
-  if (!opts.line && opts.startedOn) {
-    if (!COMMIT.test(opts.startedOn)) throw new Error(`'${opts.startedOn}' is no full commit id`);
-    return of(opts.startedOn, 'the commit the run was started on');
-  }
   const rule = opts.line?.rule ?? defaultRule(opts.environment);
   if (rule.kind === 'branch') {
     const head = (await opts.listRemote([`refs/heads/${rule.branch}`])).find((ref) => ref.ref === `refs/heads/${rule.branch}`);

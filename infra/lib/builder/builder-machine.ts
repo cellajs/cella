@@ -14,6 +14,8 @@ export interface BuilderValues {
   BOOT_AK: string;
   BOOT_SK: string;
   NODE_IMAGE: string;
+  /** The build epoch (`buildEpoch`): marks this build's images and frontend files as made under the current builder key. */
+  EPOCH: string;
 }
 
 /** Where the builder reports, in the boot-diagnostics bucket: `step`, `log` and `result` (`ok` or `failed`). */
@@ -53,6 +55,8 @@ trap 'echo "failed at line $LINENO"; finish failed' ERR
 set -eE -o pipefail
 
 docker pull -q "$NODE_IMAGE"
+# No container reaches the metadata service: the machine's user data holds the boot key.
+iptables -I DOCKER-USER -d 169.254.42.42 -j DROP || iptables -I FORWARD -d 169.254.42.42 -j DROP
 step key
 # Read once: a second read fails, as the bundle is disabled after the first.
 curl -sS -m 30 --fail -H "X-Auth-Token: $BOOT_SK" "https://api.scaleway.com/secret-manager/v1beta1/regions/$REGION/secrets/$BUNDLE_ID/versions/latest/access" > /run/builder.bundle
@@ -79,47 +83,57 @@ printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-
 docker buildx create --use --name release --driver docker-container >/dev/null
 
 step build
-# The services' images bake while the keyless container builds the boot bundle and the frontend; only the boot image waits for its bundle.
+# The frontend builds on a copy made before anything runs: the app's dependencies reach neither the images' source nor the boot bundle.
+if [ -n "$FRONTEND_BUCKET" ]; then cp -a /build /frontend; fi
 docker buildx bake --file /etc/builder-bake.json --push services &
-BAKE=$!
-# The app's dependencies run here, in a container that holds no key.
-docker run --rm -v /build:/build -v /etc/builder-container.sh:/builder-container.sh:ro -w /build --env-file /etc/builder-frontend.env "$NODE_IMAGE" bash -eo pipefail /builder-container.sh
-wait "$BAKE"
-
-step images
-docker buildx bake --file /etc/builder-bake.json --push boot
+SERVICES=$!
+# Keyless containers: the engine's workspace builds the boot bundle in the checkout, the app's the frontend in its copy.
+docker run --rm -v /build:/build -v /etc/builder-boot.sh:/script.sh:ro -w /build "$NODE_IMAGE" bash -eo pipefail /script.sh
+docker buildx bake --file /etc/builder-bake.json --push boot &
+BOOT=$!
+if [ -n "$FRONTEND_BUCKET" ]; then
+  docker run --rm -v /frontend:/build -v /etc/builder-frontend.sh:/script.sh:ro -w /build --env-file /etc/builder-frontend.env "$NODE_IMAGE" bash -eo pipefail /script.sh
+fi
+wait "$SERVICES"
+wait "$BOOT"
 docker logout "$REGISTRY_HOST"
 
-if [ -s /build/.release-files ]; then
+if [ -n "$FRONTEND_BUCKET" ]; then
   step files
-  docker run --rm -e REGION -e S3_AK="$BUILDER_AK@$PROJECT" -e S3_SK="$BUILDER_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /build:/build:ro "$NODE_IMAGE" \
-    node /s3.mjs upload "$FRONTEND_BUCKET" /build/.release-files
+  # The engine's own code lists the files from the read-only output, holding no key; the upload refuses a row outside that output.
+  docker run --rm -v /build:/build:ro -v /frontend/frontend/dist:/dist:ro -w /build/infra "$NODE_IMAGE" \
+    node_modules/.bin/tsx tasks/release-files.ts --dist /dist --sha "$SHA" --bucket-url "https://$FRONTEND_BUCKET.s3.$REGION.scw.cloud" > /run/release-files
+  printf '%s' "$EPOCH" > /run/builder.epoch
+  docker run --rm -e REGION -e S3_AK="$BUILDER_AK@$PROJECT" -e S3_SK="$BUILDER_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /frontend/frontend/dist:/dist:ro \
+    -v /run:/run:ro "$NODE_IMAGE" sh -c 'node /s3.mjs upload "$0" /run/release-files /dist "releases/$1/" && node /s3.mjs put "$0" "releases/$1/epoch" /run/builder.epoch' \
+    "$FRONTEND_BUCKET" "$SHA"
 fi
 
 finish ok
 `;
 
-/**
- * The keyless container's commands: install the workspace and build the boot bundle; when there is a frontend, write this environment's
- * OpenAPI spec (the docs page serves it, with the environment's URLs), then build the frontend and its upload list.
- */
-export function containerScript(opts: { pnpmVersion: string; sha: string; frontendBucketUrl?: string }): string {
-  const lines = [`npm install -g --silent pnpm@${opts.pnpmVersion}`];
-  if (opts.frontendBucketUrl) {
-    lines.push(
-      "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'backend...' --filter 'infra...'",
-      'pnpm --filter infra boot:build',
-      // The spec opens no database and signs nothing: the example env and a placeholder cookie secret only pass validation.
-      'cp backend/.env.example backend/.env',
-      'COOKIE_SECRET=openapi-spec-placeholder-secret pnpm --filter backend generate:openapi --force',
-      'cp backend/openapi.cache.json sdk/gen/openapi.json',
-      'pnpm --filter frontend build',
-      `pnpm --silent --filter infra release-files --dist /build/frontend/dist --sha ${opts.sha} --bucket-url ${opts.frontendBucketUrl} > /build/.release-files`,
-    );
-  } else {
-    lines.push("pnpm install --frozen-lockfile --filter 'infra...'", 'pnpm --filter infra boot:build');
-  }
-  return `${lines.join('\n')}\n`;
+/** The keyless container that builds the boot bundle: the engine's workspace only. */
+export function bootBundleScript(pnpmVersion: string): string {
+  return [
+    `npm install -g --silent pnpm@${pnpmVersion}`,
+    "pnpm install --frozen-lockfile --filter 'infra...'",
+    'pnpm --filter infra boot:build',
+    '',
+  ].join('\n');
+}
+
+/** The keyless container that builds the frontend on its copy: this environment's OpenAPI spec first, which the docs page serves with its URLs. */
+export function frontendScript(pnpmVersion: string): string {
+  return [
+    `npm install -g --silent pnpm@${pnpmVersion}`,
+    "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'backend...'",
+    // The spec opens no database and signs nothing: the example env and a placeholder cookie secret only pass validation.
+    'cp backend/.env.example backend/.env',
+    'COOKIE_SECRET=openapi-spec-placeholder-secret pnpm --filter backend generate:openapi --force',
+    'cp backend/openapi.cache.json sdk/gen/openapi.json',
+    'pnpm --filter frontend build',
+    '',
+  ].join('\n');
 }
 
 const UNIT = [
@@ -135,12 +149,19 @@ const UNIT = [
 ].join('\n');
 
 /**
- * The builder machine's cloud-init: the values, the bake file, the commands of its keyless container, the script, and a unit started once.
+ * The builder machine's cloud-init: the values, the bake file, the commands of its keyless containers, the script, and a unit started once.
  * The script runs on Scaleway's `docker` image: it takes the builder key from its read-once bundle with the boot key, fetches the release's
- * commit (with the repository read key the bundle carries for a private repository), has a `node` container that holds no key install the workspace and build the boot bundle and the frontend, then pushes the images
- * and uploads the frontend files with the builder key, and reports each step to the boot-diagnostics bucket with the boot key.
+ * commit (with the repository read key the bundle carries for a private repository), builds the boot bundle and the frontend in `node`
+ * containers that hold no key, then pushes the images and uploads the frontend files with the builder key, and reports each step to the
+ * boot-diagnostics bucket with the boot key.
  */
-export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: Record<string, string>; bake: unknown; container: string }): string {
+export function builderCloudConfig(opts: {
+  values: BuilderValues;
+  frontendEnv: Record<string, string>;
+  bake: unknown;
+  boot: string;
+  frontend: string;
+}): string {
   const files: CloudConfigFile[] = [
     {
       path: '/etc/builder.env',
@@ -157,7 +178,8 @@ export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: R
         .join('\n'),
     },
     { path: '/etc/builder-bake.json', permissions: '0644', content: JSON.stringify(opts.bake, null, 2) },
-    { path: '/etc/builder-container.sh', permissions: '0644', content: opts.container.trimEnd() },
+    { path: '/etc/builder-boot.sh', permissions: '0644', content: opts.boot.trimEnd() },
+    { path: '/etc/builder-frontend.sh', permissions: '0644', content: opts.frontend.trimEnd() },
     { path: '/etc/builder-s3.mjs', permissions: '0644', content: S3_SCRIPT.trimEnd() },
     { path: '/usr/local/bin/builder.sh', permissions: '0755', content: BUILDER_SCRIPT.trimEnd() },
     { path: '/etc/systemd/system/builder.service', permissions: '0644', content: UNIT },

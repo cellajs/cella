@@ -35,6 +35,20 @@ export async function findJobDefinition(auth: ScwAuth, opts: { region: string; p
   }
 }
 
+/** What a job definition runs, as Scaleway holds it: the image and the startup command; undefined where the API names neither. */
+export async function readJobDefinition(
+  auth: ScwAuth,
+  opts: { region: string; definitionId: string },
+): Promise<{ imageUri?: string; command?: string }> {
+  const definition = await scwFetch<{ image_uri?: string; startup_command?: string[] | null; command?: string | null }>(
+    auth,
+    'GET',
+    `${base(opts.region)}/job-definitions/${opts.definitionId}`,
+  );
+  const command = definition.startup_command?.length ? definition.startup_command.join('\n') : (definition.command ?? undefined);
+  return { imageUri: definition.image_uri, command };
+}
+
 /**
  * Every run of a definition Scaleway still keeps (60 days), newest first. Each run's `environment_variables` holds the definition's values
  * and its start call's, so a run names the target it was started for.
