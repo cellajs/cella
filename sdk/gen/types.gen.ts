@@ -658,6 +658,9 @@ export type Attachment = {
   viewCount?: number;
 };
 
+/**
+ * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
+ */
 export type InviteOutcome = {
   /**
    * The primary email address, shown to every user who shares an organization with this one.
@@ -6029,7 +6032,7 @@ export type HandleMembershipInvitationError = HandleMembershipInvitationErrors[k
 
 export type HandleMembershipInvitationResponses = {
   /**
-   * Invitation was accepted
+   * The invitation's organization
    */
   200: ChannelBase;
 };
@@ -6187,7 +6190,7 @@ export type GetPendingMembershipsResponses = {
        * The primary email address, shown to every user who shares an organization with this one.
        */
       email: string;
-      role: 'admin' | 'member' | null;
+      role: 'admin' | 'member';
       createdAt: string;
       remindedAt: string | null;
       createdBy: ActorRef | null;

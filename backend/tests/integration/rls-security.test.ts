@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq, getColumns, getTableName, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType, seenWindowMs } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,7 +10,6 @@ import { membershipImmutableColumns } from '#/db/immutability-triggers';
 import { tenantReadById } from '#/db/tenant-context';
 import { buildInsertableProduct } from '#/mocks';
 import { loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
-import { seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables, getEntityTable } from '#/tables';
 
@@ -433,14 +432,14 @@ const rlsSuiteReady = await (async () => {
   describe('Unseen counts (seen-tracking RLS regression)', () => {
     // FORCE RLS makes context-less base reads return zero, so unseen reads need tenant context.
     type UnseenRow = { channelId: string; productType: string; unseenCount: number };
-    const trackedProduct = iterableRlsProducts.find(([type]) => (trackedProductTypes as readonly string[]).includes(type));
+    const trackedProduct = iterableRlsProducts.find(([type]) => (appConfig.seenTrackedProductTypes as readonly string[]).includes(type));
     const [trackedType, trackedFixture] = trackedProduct ?? [undefined, undefined];
     const cutoff = () => new Date(Date.now() - seenWindowMs).toISOString();
     const countUnseen = (tx: NodePgTx) =>
       findUnseenCountsByUser({ var: { db: tx } } as Parameters<typeof findUnseenCountsByUser>[0], {
         userId: TEST_USER_A,
         channelIds: [trackedFixture?.homeChannelId ?? TEST_ORG_A],
-        productTypes: trackedProductTypes,
+        productTypes: appConfig.seenTrackedProductTypes,
         cutoff: cutoff(),
       });
 

@@ -1877,7 +1877,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
+ * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· _requests · cella_
  *
@@ -2706,7 +2706,7 @@ export const handleMcp = <ThrowOnError extends boolean = true>(
 /**
  * Delete memberships
  *
- * Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).
+ * Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.
  *
  * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships) ·· _memberships · cella_
  *
@@ -2825,7 +2825,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
 /**
  * Respond to membership invitation
  *
- * Accepting activates the associated membership. Rejecting simply removes the invitation token.
+ * Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.
  *
  * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships · cella_
  *
@@ -2908,7 +2908,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships · cella_
  *

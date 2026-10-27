@@ -6,6 +6,7 @@ import { findAccountLanguages } from '#/modules/memberships/memberships-queries'
 import { slugFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
+/** An address an invitation mail goes to. */
 export interface InvitedAddress {
   email: string;
   /** The account holding the address, when one does: it reads the mail in its own language. */
@@ -15,8 +16,8 @@ export interface InvitedAddress {
 }
 
 interface InvitationMailOpts {
-  /** The inviter: named in the mail, and replies reach them. */
-  sender: { name: string; email?: string };
+  /** The inviter: named in the mail, and replies reach them. Without one the mail comes from the system. */
+  sender?: { name: string; email?: string };
   /** The invited channel and role; a system invitation names none. */
   channel?: { type: ChannelEntityType; slug: string; name: string; role: EntityRole };
   /** Whose default language an address without an account reads. */
@@ -33,7 +34,7 @@ interface InvitationMailOpts {
  * organization's default, else the app's.
  */
 export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOpts): Promise<void> {
-  const { sender, channel, organization, invited, added = [] } = opts;
+  const { sender = { name: 'System' }, channel, organization, invited, added = [] } = opts;
 
   const userIds = [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : []));
   const languages = await findAccountLanguages(ctx, { userIds });

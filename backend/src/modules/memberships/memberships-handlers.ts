@@ -31,7 +31,7 @@ app.openapi(membershipRoutes.checkMembershipInvite, async (ctx) => {
 app.openapi(membershipRoutes.deleteMemberships, async (ctx) => {
   const { entityType, entityId } = ctx.req.valid('query');
   const { ids } = ctx.req.valid('json');
-  const data = await deleteMembershipsOp(ctx, { ids, entityId, entityType });
+  const data = await deleteMembershipsOp(ctx, { userIds: ids, entityId, entityType });
   return ctx.json(data, 200);
 });
 

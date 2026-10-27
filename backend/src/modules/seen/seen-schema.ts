@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { productEntityTypeSchema, validIdSchema } from '#/schemas';
 
-/** Batch of accumulated seen entity IDs, posted by the client every minute. */
+/** Batch of accumulated seen entity IDs, posted by the client's seen store on a timer and on page unload. */
 export const seenBatchBodySchema = z.object({
   entityIds: validIdSchema.array().min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
   entityType: productEntityTypeSchema.describe('Entity type for all IDs in this batch'),

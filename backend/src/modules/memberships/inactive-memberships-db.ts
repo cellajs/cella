@@ -9,9 +9,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
-const roleEnum = roles.all;
-
-/** Pending invitations and rejected membership requests. */
+/** Inactive memberships: invitations to a channel, pending or declined (`rejectedAt`). Accepting one replaces the row with a membership. */
 export const inactiveMembershipsTable = snakeCase.table(
   'inactive_memberships',
   {
@@ -26,7 +24,7 @@ export const inactiveMembershipsTable = snakeCase.table(
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
+    role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     rejectedAt: isoTimestamp(),
     /** When the invitation's mail last went out. Null while it is held: made in a draft channel and never mailed. */
     remindedAt: isoTimestamp(),

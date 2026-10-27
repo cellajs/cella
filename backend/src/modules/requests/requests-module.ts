@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { requestHandlers } from './requests-handlers';
+import { requestHandlers } from '#/modules/requests/requests-handlers';
 
 defineBackendModule({
   name: 'requests',

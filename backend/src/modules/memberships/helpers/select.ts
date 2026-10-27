@@ -13,12 +13,10 @@ type MembershipBaseSelect = Pick<TableColumns, MembershipBaseKeys>;
 
 const membershipBaseKeys = Object.keys(membershipBaseSchema.shape) as MembershipBaseKeys[];
 
-export const membershipBaseSelect: MembershipBaseSelect = (() => {
-  const cols = getColumns(membershipsTable);
-  return pick(cols, membershipBaseKeys);
-})();
+/** The memberships table's `MembershipBase` columns, for a select or a returning. */
+export const membershipBaseSelect: MembershipBaseSelect = pick(getColumns(membershipsTable), membershipBaseKeys);
 
-/** Schema-driven, so apps with extra channel entity ID columns (workspaceId, projectId) are handled automatically. */
+/** The `MembershipBase` fields of a membership row, by the schema's keys, so an app's extra channel id columns come along. */
 export const toMembershipBase = (membership: Record<string, unknown>): MembershipBaseModel => {
   const result = {} as Record<string, unknown>;
   for (const key of membershipBaseKeys) {

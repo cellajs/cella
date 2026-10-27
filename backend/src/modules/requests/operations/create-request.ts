@@ -1,10 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { getRateLimiterInstance, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { sendMatrixMessage } from '#/modules/requests/helpers/send-matrix-message';
-import type { RequestModel } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
+import type { requestCreateBodySchema } from '#/modules/requests/requests-schema';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../../../../emails';
@@ -12,24 +13,17 @@ import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../.
 /** One account-exists mail per address a day, however often the waitlist form names it. */
 const accountExistsMails = getRateLimiterInstance({ keyPrefix: 'accountExistsMail', points: 1, duration: 60 * 60 * 24 });
 
-interface CreateRequestInput {
-  email: string;
-  type: string;
-  message: string | null;
-}
+type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 
 /**
  * Stores a waitlist, newsletter or contact request and confirms it by mail. The caller answers every submission alike,
- * so the form tells nobody whether an address has an account or is listed already: an address with an account gets a
- * mail pointing to sign-in and no request, a repeat of a waitlist or newsletter request is dropped. Notifying the team
- * runs in the background, so a stored request takes no longer to answer than a dropped one.
+ * so the form tells nobody whether an address has an account or is listed already: a waitlist request from an address
+ * with an account gets a mail pointing to sign-in and is not stored, and a repeat of a waitlist or newsletter request is
+ * dropped. Notifying the team runs in the background, so a stored request is answered as fast as a dropped one.
  */
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
-  const { email, type: requestType, message } = input;
-  // Cast type to proper literal union for Drizzle v1 strict types
-  const type = requestType as RequestModel['type'];
-
-  const normalizedEmail = email.toLowerCase().trim();
+  // The body schema trims and lowercases the address.
+  const { email: normalizedEmail, type, message } = input;
   const lng = appConfig.defaultLanguage;
 
   if (type === 'waitlist') {
@@ -68,9 +62,6 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
       textMessage = `Contact Request\nMessage: "${message}"\nEmail: ${normalizedEmail}`;
       title = `Request for contact with message: "${message}"`;
       break;
-    default:
-      textMessage = `Request\nEmail: ${normalizedEmail}`;
-      title = 'Request received';
   }
 
   const staticProps = { type, message };

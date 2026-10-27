@@ -9,10 +9,12 @@ import {
   deleteInactiveMembership,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
-  updateInactiveMembershipRejected,
+  stampInactiveMembershipRejected,
 } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { log } from '#/utils/logger';
+import { pick } from '#/utils/pick';
 
 interface HandleMembershipInvitationOpts {
   /**
@@ -22,6 +24,12 @@ interface HandleMembershipInvitationOpts {
   viaToken?: boolean;
 }
 
+/**
+ * Answers an invitation for the signed-in user. Accepting makes them a member of its channel, or spends it when they
+ * are one already; rejecting declines it. Either way its links go, and the answer is its organization as `ChannelBase`.
+ * @throws AppError 404 `not_found` for a missing, rejected or another user's invitation alike, 409 `user_mismatch` when
+ * a token accept loses the bind to another account.
+ */
 export async function handleMembershipInvitationOp(
   ctx: UserContext,
   inactiveMembershipId: string,
@@ -66,17 +74,15 @@ export async function handleMembershipInvitationOp(
     }
 
     if (acceptOrReject === 'reject') {
-      await updateInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
+      await stampInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
       await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
   if (acceptOrReject === 'accept') invalidateCache.user(userId);
 
-  const organizationId = inactiveMembership.organizationId;
-  if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });
+  const organization = await resolveEntity(ctx, { entityType: 'organization', identifier: inactiveMembership.organizationId });
+  if (!organization) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
 
-  const entity = await resolveEntity({ var: { db: baseDb } }, { entityType: 'organization', identifier: organizationId });
-  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
-
-  return entity;
+  // The invitee may have declined and is no member: the answer names the organization, never its settings or writers.
+  return pick(organization, channelBaseSchema.keyof().options);
 }

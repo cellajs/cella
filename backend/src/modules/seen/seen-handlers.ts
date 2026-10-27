@@ -17,7 +17,9 @@ export const seenHandlers = app;
 
 const unseenApp = new OpenAPIHono<Env>({ defaultHook });
 
-export const unseenHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts, async (ctx) => {
+unseenApp.openapi(seenRoutes.getUnseenCounts, async (ctx) => {
   const data = await getUnseenCountsOp(ctx);
   return ctx.json(data, 200);
 });
+
+export const unseenHandlers = unseenApp;

@@ -1,10 +1,14 @@
-import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { type RequestModel, requestsTable } from '#/modules/requests/requests-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
+import { textSearchFilter } from '#/utils/sql';
+
+/** A request's columns as responses carry them: `invitedAt` travels as `wasInvited`. */
+const { invitedAt, ...requestColumns } = getColumns(requestsTable);
 
 interface InsertRequestOpts {
   email: string;
@@ -15,27 +19,25 @@ interface InsertRequestOpts {
 /** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
 export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
   const { db } = ctx.var;
-  const { invitedAt, ...requestsSelect } = getColumns(requestsTable);
-  const [created] = await db
-    .insert(requestsTable)
-    .values({ email, type, message })
-    .onConflictDoNothing()
-    .returning({ ...requestsSelect });
+  const [created] = await db.insert(requestsTable).values({ email, type, message }).onConflictDoNothing().returning(requestColumns);
   return created;
 };
 
 interface FindRequestsPaginatedOpts {
-  filter?: SQL;
+  /** Searches the address. */
+  q?: string;
   sort?: 'type' | 'id' | 'createdAt' | 'email';
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
 
+/** A page of requests with `wasInvited`, and the total. */
 export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { filter, sort, order, limit, offset } = opts;
-  const { invitedAt, ...requestsSelect } = getColumns(requestsTable);
+  const { q, sort, order, limit, offset } = opts;
+
+  const filter = q ? textSearchFilter(requestsTable.email, q) : undefined;
 
   const orderBy = getOrderColumns({
     sort,
@@ -46,7 +48,7 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   });
 
   const itemsQuery = db
-    .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.invitedAt} IS NOT NULL)::boolean`.as('wasInvited') })
+    .select({ ...requestColumns, wasInvited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('wasInvited') })
     .from(requestsTable)
     .where(filter)
     .orderBy(...orderBy)
@@ -66,6 +68,7 @@ interface DeleteRequestsByIdsOpts {
   ids: string[];
 }
 
+/** Deletes requests by id. */
 export const deleteRequestsByIds = async (ctx: DbContext, { ids }: DeleteRequestsByIdsOpts) => {
   const { db } = ctx.var;
   return db.delete(requestsTable).where(inArray(requestsTable.id, ids));

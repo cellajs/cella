@@ -1,4 +1,4 @@
-import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
 import type { EntityModel } from '#/tables';
 
@@ -35,13 +35,11 @@ export const resolveOrganizationMembershipRole = (
   return explicit;
 };
 
-/** Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`. */
-export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
+/** The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one the row holds. */
+export const channelIdColumnsOf = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
   return appConfig.channelEntityTypes.reduce(
     (acc, channelEntityType) => {
       const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];
-      if (!entityFieldIdName) return acc;
-
       if (entity.entityType === channelEntityType) {
         acc[entityFieldIdName] = entity.id;
       }
@@ -54,3 +52,10 @@ export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: Enti
     {} as Record<(typeof appConfig.entityIdColumnKeys)[ChannelEntityType], string>,
   );
 };
+
+/**
+ * Whether an invitation to the channel waits for its publish: one to a draft channel is held, its mail unsent and its
+ * invitee kept out, unless its role is one of the channel's prepare roles (`drafts.prepareRoles`), which go out at once.
+ */
+export const isHeldInvitation = (channelType: ChannelEntityType, channel: { publishedAt: string | null }, role: EntityRole) =>
+  channel.publishedAt === null && !hierarchy.getPrepareRoles(channelType).includes(role);

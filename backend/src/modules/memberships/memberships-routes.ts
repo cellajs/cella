@@ -3,6 +3,13 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  mockMembershipCheckResponse,
+  mockMembershipInviteResponse,
+  mockMembershipResponse,
+  mockPaginatedMembersResponse,
+  mockPaginatedPendingMembershipsResponse,
+} from '#/modules/memberships/memberships-mocks';
+import {
   memberListQuerySchema,
   membershipCheckBodySchema,
   membershipCheckResponseSchema,
@@ -24,13 +31,6 @@ import {
   validIdSchema,
 } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
-import {
-  mockMembershipCheckResponse,
-  mockMembershipInviteResponse,
-  mockMembershipResponse,
-  mockPaginatedMembersResponse,
-  mockPaginatedPendingMembershipsResponse,
-} from './memberships-mocks';
 
 const membershipRoutes = createXRoutes(['memberships', 'cella'], {
   createMemberships: xRoute({
@@ -62,7 +62,8 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete memberships',
-    description: 'Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).',
+    description:
+      'Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.',
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
@@ -83,9 +84,10 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Respond to membership invitation',
-    description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
+    description:
+      "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
     request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
-    responses: { 200: json('Invitation was accepted', channelBaseSchema) },
+    responses: { 200: json("The invitation's organization", channelBaseSchema) },
   }),
   getMembers: xRoute({
     method: 'get',
@@ -114,7 +116,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, singlePointsLimiter],
     summary: 'Resend pending invitation',
     description:
-      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
+      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 204: { description: 'Invitation resent' } },
   }),

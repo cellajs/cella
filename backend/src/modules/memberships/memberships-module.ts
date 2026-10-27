@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { membershipHandlers } from './memberships-handlers';
+import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 
 defineBackendModule({
   name: 'memberships',

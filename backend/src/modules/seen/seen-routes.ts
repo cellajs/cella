@@ -12,8 +12,7 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Mark entities as seen',
     description:
-      'Records that the current user has viewed one or more product entities. ' +
-      'Deduplicates against existing records. Updates entity view counts for newly seen entities.',
+      'Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.',
     request: { params: tenantOrgParamSchema, body: jsonBody(seenBatchBodySchema) },
     responses: { 200: json('Seen records processed', seenBatchResponseSchema) },
   }),
@@ -24,8 +23,7 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     xRateLimiter: [syncReadLimiter],
     summary: 'Get unseen counts',
     description:
-      'Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. ' +
-      'Computed within the rolling seen window so entities older than seen_by retention do not participate.',
+      'Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.',
     responses: { 200: json('Unseen counts per parent channel entity per entity type', unseenCountsResponseSchema) },
   }),
 });

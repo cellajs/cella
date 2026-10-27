@@ -16,8 +16,7 @@ interface CheckInvitesInput {
  */
 export async function checkInvitesOp(ctx: UserContext, { emails, entityId, entityType }: CheckInvitesInput) {
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
-  const normalized = [...new Set(emails.map((email) => email.toLowerCase().trim()))];
 
-  const plan = await planInvites(ctx, { emails: normalized, entity, entityType, held: true });
+  const plan = await planInvites(ctx, { emails, entity, entityType, held: true });
   return { outcomes: plan.map((item) => toInviteOutcome(item.outcome === 'add' ? { ...item, outcome: 'invite' } : item)) };
 }
