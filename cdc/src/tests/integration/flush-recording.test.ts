@@ -10,7 +10,7 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { parseMessage } from '../../pipeline/parse-message';
-import { processFlush } from '../../pipeline/process-events';
+import { processFlush } from '../../pipeline/process-flush';
 import { ApiUnreachableError } from '../../services/failure';
 import type { PendingEvent } from '../../types';
 import { dmlMessage } from '../factories';

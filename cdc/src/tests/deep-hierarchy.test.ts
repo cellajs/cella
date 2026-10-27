@@ -2,8 +2,9 @@ import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
+import { createActivity } from '../services/create-activity';
 import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
-import { getCountDeltas } from '../utils/update-counts';
+import { getCountDeltas } from '../utils/count-deltas';
 import { changeEvent, mockCdcActivity, tableMetaOf } from './factories';
 
 // `course` stays non-nullable so the warning suite below can prove a null non-nullable ancestor warns.
@@ -64,7 +65,7 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
     const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })], h);
 
     expect(plan.orgSequenceGroups).toHaveLength(1);
-    expect(plan.orgSequenceGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
+    expect(plan.orgSequenceGroups[0].orgKey).toBe('o1');
     expect(plan.orgSequenceGroups[0].events).toHaveLength(2);
   });
 
@@ -139,7 +140,7 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
 
   it('batch merge: two rows at different depths accumulate per context', () => {
     const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })], h);
-    // Activity stamps land at each row's home context only.
+    // Activity stamps go to each row's home context only.
     expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:item': 2 });
     expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:c:item': 2, 'e:c:h:item': 1, 'e:li:h:item': expect.any(Number) });
     expect(plan.countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:item': 1 });
@@ -233,12 +234,12 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
 
 describe('missing-ancestor warnings respect nullableAncestors', () => {
   it('a variable-depth row with only nullable ancestors missing warns nothing', () => {
-    getCountDeltas(itemMeta(), itemActivity('create'), courseStreamRow, null, h);
+    createActivity(itemMeta(), courseStreamRow, 'create', null, h);
     expect(log.warn).not.toHaveBeenCalled();
   });
 
   it('a missing non-nullable ancestor still warns', () => {
-    getCountDeltas(itemMeta(), itemActivity('create'), { ...courseStreamRow, courseId: null }, null, h);
+    createActivity(itemMeta(), { ...courseStreamRow, courseId: null }, 'create', null, h);
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('courseId'), expect.anything());
   });
 });

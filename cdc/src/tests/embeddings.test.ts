@@ -88,9 +88,9 @@ vi.mock('../lib/db', () => {
 
 // The mock replaces the module, so the one export read here is typed by hand.
 const { getEntityTable } = (await import('#/tables')) as unknown as { getEntityTable: (type: string) => AnyPgTable };
-const { embeddingsAfterDispatch } = await import('../embeddings');
+const { embeddingsAfterDispatch } = await import('../embeddings/embedding-hooks');
 const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
-const { handleUpdate } = await import('../handlers/update');
+const { parseUpdate } = await import('../pipeline/parse-update');
 const { createActivity } = await import('../services/create-activity');
 const { TransactionBuffer } = await import('../services/transaction-buffer');
 const { computeBatchUnifiedDeltas } = await import('../utils/compute-unified-deltas');
@@ -104,7 +104,8 @@ type Row = Record<string, unknown> & { id: string };
 const productOf = (type: SyntheticProduct) => type as ProductEntityType;
 
 /** A registry entry of a synthetic table: its kind, type and drizzle table. The cast covers the column map, which these paths read as absent. */
-const metaOf = (type: SyntheticProduct | SyntheticChannel) => ({ kind: 'entity', type, table: getEntityTable(type) }) as unknown as TableMeta;
+const metaOf = (type: SyntheticProduct | SyntheticChannel) =>
+  ({ kind: 'entity', type, table: getEntityTable(type), columnNameMap: new Map() }) as unknown as TableMeta;
 
 const ancestors = { organizationId: 'o1', courseId: 'c1', courseSectionId: 's1', projectId: 'p1' };
 const taskRow = (id: string, values: Record<string, unknown> = {}): Row => ({ id, ...ancestors, name: 'Task', items: [], ...values });
@@ -117,7 +118,7 @@ function change(
   rowData: Row,
   { changedFields = null, oldRowData = null }: { changedFields?: string[] | null; oldRowData?: Row | null } = {},
 ): ParseMessageResult {
-  return { activity: createActivity(metaOf(type), rowData, action, { changedFields }), rowData, oldRowData, tableMeta: metaOf(type) };
+  return { activity: createActivity(metaOf(type), rowData, action, changedFields), rowData, oldRowData, tableMeta: metaOf(type) };
 }
 
 /** Sends changes through the buffer as one source transaction. @returns What its commit lets through, as `type:action:id`. */
@@ -249,7 +250,7 @@ describe('isEmbeddingCleanupWrite: in the update handler', () => {
     // As cleanupEmbeddingReferences writes it: the array without the id, stx without changedFields, updatedAt untouched.
     const cleaned = { ...stored, items: ['i2'], stx: { mutationId: 'm1', sourceId: 'tab-1' } };
 
-    expect(handleUpdate(metaOf('task'), update(cleaned))).toBeNull();
+    expect(parseUpdate(metaOf('task'), update(cleaned))).toBeNull();
   });
 
   it('turns a user edit of the same column into an activity', () => {
@@ -261,7 +262,7 @@ describe('isEmbeddingCleanupWrite: in the update handler', () => {
       stx: { mutationId: 'm2', sourceId: 'tab-1', changedFields: ['items', 'updatedAt'] },
     };
 
-    const result = handleUpdate(metaOf('task'), update(edited));
+    const result = parseUpdate(metaOf('task'), update(edited));
 
     expect(result?.activity).toMatchObject({ action: 'update', entityType: 'task', subjectId: 't1', changedFields: ['items', 'updatedAt'] });
   });
@@ -272,7 +273,7 @@ describe('isEmbeddingCleanupWrite: in the update handler', () => {
     const after = { ...before, items: [] };
     const message = { tag: 'update', old: before, new: after } as unknown as Pgoutput.MessageUpdate;
 
-    expect(handleUpdate(metaOf('item'), message)?.activity).toMatchObject({ action: 'update', entityType: 'item', changedFields: ['items'] });
+    expect(parseUpdate(metaOf('item'), message)?.activity).toMatchObject({ action: 'update', entityType: 'item', changedFields: ['items'] });
   });
 });
 
@@ -294,7 +295,7 @@ describe('cleanupEmbeddingReferences', () => {
     expect(statement.where).toContain('"tasks"."organization_id" =');
     expect(statement.scope).toEqual(['i1', 'o1']);
     // No changedFields: the update handler reads the write by its WAL diff.
-    expect(statement.stx).toBe("stx - 'changedFields'");
+    expect(statement.stx).toBe(`"tasks"."stx" - 'changedFields'`);
   });
 
   it('strips the id of a soft-deleted embedded row, and issues nothing for an update that deletes nothing', async () => {

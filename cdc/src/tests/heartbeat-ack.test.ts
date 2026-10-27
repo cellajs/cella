@@ -13,7 +13,7 @@ vi.mock('pg-logical-replication', async () => {
   return { LogicalReplicationService, PgoutputPlugin: class {} };
 });
 
-vi.mock('../lib/db', () => ({ cdcDb: { execute: vi.fn() }, buildVerifiedSsl: () => undefined, stripSslParams: (url: string) => url }));
+vi.mock('../lib/db', () => ({ cdcDb: { execute: vi.fn() }, buildVerifiedSsl: () => undefined }));
 
 vi.mock('../network/websocket-client', () => ({
   wsClient: {

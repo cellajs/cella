@@ -1,6 +1,6 @@
 import { hierarchy, type ProductEntityType } from 'shared';
+import type { TraceContext } from 'shared/tracing';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import type { TraceContext } from '../lib/tracing';
 import { wsClient } from '../network/websocket-client';
 import type { CdcRowData, PendingEvent } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
@@ -43,10 +43,11 @@ interface CdcProductMessage extends CdcMessageBase {
  */
 export type CdcOutboundMessage = CdcRowMessage | CdcProductMessage;
 
-const padLsn = (lsn: string): string | null => {
+/** Both halves of an LSN zero-padded to eight digits and dash-joined; null for a string that is no LSN. */
+function padLsn(lsn: string): string | null {
   const [hi, lo] = lsn.split('/');
   return lo === undefined ? null : `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
-};
+}
 
 /**
  * Activity id of a change: the commit position of its transaction and its index in that transaction. Both are the
@@ -99,13 +100,9 @@ function buildProductMessage(rows: ProductRow[], traceContext: TraceContext): Cd
  * row carries its own. A send that fails throws, like `sendMessageToApi`.
  */
 export function sendProductMessagesToApi(productType: ProductEntityType, rows: ProductRow[], traceContext: TraceContext): void {
-  const audiences = new Map<string, ProductRow[]>();
-  for (const row of rows) {
-    const key = hierarchy.computeProductPath(productType, row.rowData) ?? resolveChannelKey(productType, row.rowData, row.activity);
-    const audience = audiences.get(key);
-    if (audience) audience.push(row);
-    else audiences.set(key, [row]);
-  }
-
+  const audiences = Map.groupBy(
+    rows,
+    (row) => hierarchy.computeProductPath(productType, row.rowData) ?? resolveChannelKey(productType, row.rowData, row.activity),
+  );
   for (const audience of audiences.values()) wsClient.send(buildProductMessage(audience, traceContext));
 }

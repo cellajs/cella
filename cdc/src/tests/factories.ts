@@ -1,8 +1,7 @@
-import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
-import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { ProductRow } from '../services/activity-service';
+import type { DmlMessage, ParseMessageResult } from '../pipeline/parse-message';
+import type { ProductRow } from '../services/api-messages';
 import type { PendingEvent, TableMeta } from '../types';
 
 /**
@@ -14,9 +13,9 @@ export function dmlMessage(
   table: string,
   row: Record<string, unknown>,
   oldRow?: Record<string, unknown>,
-): Pgoutput.Message {
-  if (tag === 'delete') return { tag, relation: { name: table }, old: row } as unknown as Pgoutput.Message;
-  return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as Pgoutput.Message;
+): DmlMessage {
+  if (tag === 'delete') return { tag, relation: { name: table }, old: row } as unknown as DmlMessage;
+  return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as DmlMessage;
 }
 
 /**

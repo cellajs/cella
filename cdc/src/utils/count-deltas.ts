@@ -1,12 +1,14 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
-import { entityIdColumnKey, hierarchy } from 'shared';
-import { log } from '../lib/pino';
+import { hierarchy } from 'shared';
+import { entityCountHomePrefix, entityCountPrefix } from '#/modules/entities/counter-keys';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
+import { getStringValue } from './get-string-value';
 
+/** What one change adds to the counters of one channel. */
 export interface CountDelta {
-  /** Context key (organizationId or sub-context id): the row to update. */
+  /** The channel whose `channel_counters` row takes the deltas: an organization, or a channel below one. */
   channelKey: string;
   /** e.g. `{ 'm:c:admin': 1, 'm:c:total': 1 }`; an activity stamp (`e:li:h:<type>`, `e:lu:h:<type>`) carries epoch ms and merges as a maximum. */
   deltas: Record<string, number>;
@@ -14,7 +16,7 @@ export interface CountDelta {
 
 /**
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
- * apply only at the home context. Only live, published rows participate.
+ * apply only at the home channel. Only live, published rows participate.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -35,12 +37,12 @@ export function getCountDeltas(
     return deltas;
   }
 
-  // Reparents inside the countable set re-credit contexts; changes outside it do nothing, matching SQL repair.
+  // Reparents inside the countable set re-credit channels; changes outside it do nothing, matching SQL repair.
   if (tableMeta.kind === 'entity' && organizationId) {
     const countAction = deriveCountAction(action, newRow, oldRow);
     const deltas = countAction ? getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h) : [];
 
-    // Creates/publishes and content updates stamp the home context only; deletes and restores do not.
+    // Creates/publishes and content updates stamp the home channel only; deletes and restores do not.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
       const stampKey =
         action === 'create' && countAction === 'create' ? `e:li:h:${tableMeta.type}` : countAction === 'update' ? `e:lu:h:${tableMeta.type}` : null;
@@ -63,8 +65,6 @@ export function getCountDeltas(
   return [];
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
 /**
  * Map a WAL action onto the countable set (`isCountableRow`) by its set edge: enter = create
  * (restore, publish), leave = delete (soft-delete, unpublish), stay inside = update, stay outside
@@ -72,7 +72,7 @@ export function getCountDeltas(
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
   if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
-  if (action === 'delete') return isCountableRow(oldRow ?? newRow) ? 'delete' : null;
+  if (action === 'delete') return isCountableRow(newRow) ? 'delete' : null;
   // REPLICA IDENTITY FULL always carries the old row on updates; fallback only.
   if (!oldRow) return isCountableRow(newRow) ? 'update' : null;
   const wasCountable = isCountableRow(oldRow);
@@ -80,11 +80,6 @@ function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: C
   if (wasCountable && !nowCountable) return 'delete';
   if (!wasCountable && nowCountable) return 'create';
   return wasCountable && nowCountable ? 'update' : null;
-}
-
-function getStringValue(row: CdcRowData, key: string): string | null {
-  const v = row[key];
-  return typeof v === 'string' ? v : null;
 }
 
 /** Reads channelId and role, both NOT NULL: a missing value means a malformed row and yields no delta. */
@@ -112,6 +107,7 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
 
   return null;
 }
+
 /** Inactive membership m:c:pending delta; only rows with rejectedAt null count as pending. */
 function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
@@ -123,8 +119,7 @@ function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, 
   }
 
   if (action === 'delete') {
-    const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
-    if (rejectedAt != null) return null;
+    if (newRow.rejectedAt != null) return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
@@ -143,8 +138,8 @@ function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, 
 }
 
 /**
- * Full attribution: a row counts on its organization and on every non-null ancestor context, so
- * members at any level screen catchup changes against their own context's counters. Set edges are
+ * Full attribution: a row counts on its organization and on every non-null ancestor channel, so
+ * members at any level screen catchup changes against their own channel's counters. Set edges are
  * already remapped to create/delete by `deriveCountAction`.
  */
 function getEntityDeltas(
@@ -155,33 +150,27 @@ function getEntityDeltas(
   oldRow: CdcRowData | null,
   h: EntityHierarchy,
 ): CountDelta[] {
-  if (!newRow.id) {
-    log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
-    return [];
-  }
-
-  const counterKey = `e:c:${entityType}`;
-  const selfCountKey = `e:c:h:${entityType}`;
+  const counterKey = `${entityCountPrefix}${entityType}`;
+  const selfCountKey = `${entityCountHomePrefix}${entityType}`;
 
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
     const deltas: CountDelta[] = [{ channelKey: organizationId, deltas: { [counterKey]: value } }];
     for (const ancestor of h.resolveNonNullAncestors(entityType, row)) {
-      if (ancestor.id === organizationId) continue; // org already counted above
+      if (ancestor.id === organizationId) continue;
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
     // Self count: rows homed at the node only (deepest non-null ancestor, org fallback).
     const home = h.resolveDeepestAncestorId(entityType, row) ?? organizationId;
     deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
-    warnMissingAncestors(h, entityType, row);
     return deltas;
   }
 
   // Re-credit ancestor differences for updates inside the countable set.
   if (action === 'update' && oldRow) {
-    const oldIds = new Set(h.resolveNonNullAncestors(entityType, oldRow).map((a) => a.id));
-    const newIds = new Set(h.resolveNonNullAncestors(entityType, newRow).map((a) => a.id));
+    const oldIds = new Set(h.resolveNonNullAncestors(entityType, oldRow).map((ancestor) => ancestor.id));
+    const newIds = new Set(h.resolveNonNullAncestors(entityType, newRow).map((ancestor) => ancestor.id));
     const deltas: CountDelta[] = [];
     for (const id of newIds) {
       if (!oldIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
@@ -200,15 +189,4 @@ function getEntityDeltas(
   }
 
   return [];
-}
-
-/** Warns for missing ancestor ids, except ancestors declared nullable (variable-depth rows). */
-function warnMissingAncestors(h: EntityHierarchy, entityType: EntityType, row: CdcRowData): void {
-  const nullable = h.getNullableAncestors(entityType);
-  for (const ancestor of h.getOrderedAncestors(entityType)) {
-    const idColumn = entityIdColumnKey(ancestor);
-    if (typeof row[idColumn] === 'string') continue;
-    if (nullable.includes(ancestor)) continue;
-    log.warn(`getEntityDeltas: missing "${idColumn}" for ${entityType}`, { id: row.id });
-  }
 }

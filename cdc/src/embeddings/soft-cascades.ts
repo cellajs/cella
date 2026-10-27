@@ -28,10 +28,8 @@ function onlyPropagatesDeletes(hostProduct: string, changedFields: string[] | nu
  */
 export function suppressSoftCascades(events: PendingEvent[]): PendingEvent[] {
   const deleteTypes = new Set<string>();
-  for (const e of events) {
-    if (e.result.activity.action === 'delete' && e.result.activity.entityType) {
-      deleteTypes.add(e.result.activity.entityType);
-    }
+  for (const { result } of events) {
+    if (result.activity.action === 'delete' && result.activity.entityType) deleteTypes.add(result.activity.entityType);
   }
 
   if (deleteTypes.size === 0) return events;

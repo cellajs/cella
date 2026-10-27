@@ -1,14 +1,10 @@
 import { getTableName, sql } from 'drizzle-orm';
 import type { EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
-import type { cdcDb } from '../lib/db';
+import { frontierHomePrefix, frontierPrefix } from '#/modules/entities/counter-keys';
+import type { Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
-
-// ── Counter upsert ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-/** What the deltas are written through: the transaction of the flush they belong to. */
-export type DeltaExecutor = Pick<typeof cdcDb, 'execute'>;
 
 /** Rows per stamp statement: two bind parameters each, far below the protocol's 65,535. */
 const stampChunkSize = 5000;
@@ -18,7 +14,7 @@ const stampChunkSize = 5000;
  * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
  * fixed so PostgreSQL can cache the plan.
  */
-async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
+async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
 
   const deltasJson = JSON.stringify(deltas);
@@ -30,10 +26,8 @@ async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas:
       updated_at = NOW()
     RETURNING counts
   `);
-  return result.rows[0].counts as Record<string, number>;
+  return result.rows[0].counts;
 }
-
-// ── Batch execution ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /**
  * Applies a batch delta plan on the flush's transaction and stamps eligible events with an organization sequence.
@@ -41,7 +35,7 @@ async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas:
  * values. Every statement runs in a fixed order (organizations and counter rows by key, product rows by id), so two
  * transactions that touch the same rows take their locks the same way round.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: DeltaExecutor, h: EntityHierarchy = hierarchy): Promise<void> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor, h: EntityHierarchy = hierarchy): Promise<void> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
@@ -51,36 +45,34 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: D
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one RETURNING UPSERT per organization sequence.
-  for (const group of [...orgSequenceGroups].sort((a, b) => a.orgKey.localeCompare(b.orgKey))) {
+  for (const group of [...orgSequenceGroups].sort((a, b) => (a.orgKey < b.orgKey ? -1 : 1))) {
+    const count = group.events.length;
     // The sequence reservation goes with the count deltas of the organization's own row, which never hold a sequence.
-    const mergedDeltas = { ...countDeltasByChannelKey.get(group.orgKey), sequence: group.count };
+    const mergedDeltas = { ...countDeltasByChannelKey.get(group.orgKey), sequence: count };
     handledChannelKeys.add(group.orgKey);
 
     const counts = await applyCounterDeltas(db, group.orgKey, mergedDeltas);
-    const highSeq = counts.sequence ?? group.count;
-    const baseSeq = highSeq - group.count;
+    const highSeq = counts.sequence ?? count;
+    const baseSeq = highSeq - count;
 
-    for (let i = 0; i < group.events.length; i++) {
+    for (let i = 0; i < count; i++) {
       const seq = baseSeq + i + 1;
-      const { tableMeta, activity, rowData } = group.events[i].result;
+      const { tableMeta, rowData } = group.events[i].result;
       rowData.seq = seq;
       const tableName = getTableName(tableMeta.table);
       const rows = lastSeqByTable.get(tableName) ?? new Map<string, number>();
       rows.set(rowData.id, seq);
       lastSeqByTable.set(tableName, rows);
 
-      // Frontiers roll up to the organization and every populated ancestor.
-      const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
-      const frontierKey = `e:f:${tableMeta.type}`;
-      for (const node of nodes) {
-        mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
+      // Frontiers roll up to the organization and every populated ancestor; the home frontier stays at the home channel.
+      for (const node of frontierNodeKeys(tableMeta.type, rowData, group.orgKey, h)) {
+        mergeDelta(phase2Deltas, node, { [`${frontierPrefix}${tableMeta.type}`]: seq });
       }
-      // Self frontier at the home node only; frontierNodeKeys returns [org, mostSpecific, ...], so home is nodes[1].
-      const home = nodes[1] ?? nodes[0] ?? group.orgKey;
-      mergeDelta(phase2Deltas, home, { [`e:f:h:${tableMeta.type}`]: seq });
+      const home = h.resolveDeepestAncestorId(tableMeta.type, rowData) ?? group.orgKey;
+      mergeDelta(phase2Deltas, home, { [`${frontierHomePrefix}${tableMeta.type}`]: seq });
     }
 
-    log.trace('Batch sequence stamped', { orgKey: group.orgKey, count: group.count, baseSeq: baseSeq + 1, highSeq });
+    log.trace('Batch sequence stamped', { orgKey: group.orgKey, count, baseSeq: baseSeq + 1, highSeq });
   }
 
   // Phase 2: frontier marks and remaining count UPSERTs, then the entity stamps.

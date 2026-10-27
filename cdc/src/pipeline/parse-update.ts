@@ -1,29 +1,25 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { hierarchy, isChannel, isProduct } from 'shared';
-import { isEmbeddingCleanupWrite } from '../embeddings';
-import type { ParseMessageResult } from '../pipeline/parse-message';
+import { isEmbeddingCleanupWrite } from '../embeddings/embedding-hooks';
 import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
 import { compactRowData } from '../utils/compact-row-data';
 import { convertRowKeys } from '../utils/convert-row-keys';
+import { getStxChangedFields } from '../utils/extract-stx-data';
 import { getChangedFields } from '../utils/get-changed-fields';
-import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { pickPermissionRowData } from '../utils/permission-row-data';
+import type { ParseMessageResult } from './parse-message';
+
+/**
+ * What the worker's own stamp changes (`seq`, `stx`), and the generated `path`, whose move the placement columns show.
+ * None of them is a user's edit.
+ */
+const stampedFields = new Set(['stx', 'seq', 'path']);
 
 /** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
-const rowLocationPath = (entityType: string, row: Record<string, unknown>): string | null => {
+function rowLocationPath(entityType: string, row: Record<string, unknown>): string | null {
   if (isProduct(entityType)) return hierarchy.computeProductPath(entityType, row);
   if (isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
-  return null;
-};
-
-/** @returns null when stx carries no changedFields: creates, non-API updates, rows written before stx. */
-function getStxChangedFields(row: Record<string, unknown>): string[] | null {
-  const stx = row.stx;
-  if (stx && typeof stx === 'object' && !Array.isArray(stx)) {
-    const cf = (stx as Record<string, unknown>).changedFields;
-    if (Array.isArray(cf)) return cf.filter((x): x is string => typeof x === 'string');
-  }
   return null;
 }
 
@@ -31,7 +27,13 @@ function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Reco
   return oldRowData?.deletedAt != null && rowData.deletedAt != null;
 }
 
-export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdate): ParseMessageResult | null {
+/**
+ * An update as the worker records it: the activity with the fields a user changed, and for a row that moved the
+ * permission fields of the place it left.
+ * @returns null for an update that changed nothing a client holds: no field, only the stamp or the path, a row that
+ *   was soft-deleted already, or the worker's own cleanup of an embedding column.
+ */
+export function parseUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdate): ParseMessageResult | null {
   const rowData = convertRowKeys(message.new ?? {}, tableMeta.columnNameMap);
   const oldRowData = message.old && Object.keys(message.old).length > 0 ? convertRowKeys(message.old, tableMeta.columnNameMap) : null;
 
@@ -40,19 +42,17 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
 
   if (changedFields && changedFields.length === 0) return null;
 
-  // Drop sync and generated path echoes; placement columns still carry the user-visible move.
-  const syncStateKeys = new Set(['stx', 'seq', 'path']);
-  const userChangedFields = changedFields?.filter((k) => !syncStateKeys.has(k)) ?? null;
+  const userChangedFields = changedFields?.filter((field) => !stampedFields.has(field)) ?? null;
 
-  // CDC's own seq stamps carry no user mutation.
+  // The worker's own seq stamp carries no user mutation.
   if (userChangedFields && userChangedFields.length === 0) return null;
 
-  if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
+  if (isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
-  // CDC's own cleanup of an embedding column carries no user mutation.
+  // The worker's own cleanup of an embedding column carries no user mutation.
   if (isEmbeddingCleanupWrite(tableMeta.type, userChangedFields)) return null;
 
-  const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
+  const activity = createActivity(tableMeta, rowData, 'update', userChangedFields);
 
   // Move-out: when the location path changes, the old row's permission subset lets dispatch notify
   // subscribers who could read the old location but not the new one.

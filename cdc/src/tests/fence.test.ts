@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../lib/db', () => ({ cdcDb: {} }));
-vi.mock('../pipeline/handle-message', () => ({ fenceMarkerPrefix: 'sync-fence', runBetweenFlushes: vi.fn() }));
+vi.mock('../pipeline/handle-message', () => ({ runBetweenFlushes: vi.fn() }));
 
 import { compareBooks } from '../pipeline/verify';
 import { addCounts, type CounterDeltas, fence, isVisibleIn, parseSnapshot, plainCounts } from '../services/fence';

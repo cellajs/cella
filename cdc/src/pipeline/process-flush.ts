@@ -1,35 +1,24 @@
 import { sql } from 'drizzle-orm';
-import { hierarchy, isProduct, type ProductEntityType } from 'shared';
+import { isProduct, type ProductEntityType } from 'shared';
+import { activityAttrs, cdcAttrs, cdcSpanNames } from 'shared/tracing';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { embeddingsAfterDispatch } from '../embeddings';
+import { embeddingsAfterDispatch } from '../embeddings/embedding-hooks';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
+import { withSpan } from '../lib/tracing';
 import { wsClient } from '../network/websocket-client';
-import { generateActivityId, type ProductRow, sendMessageToApi, sendProductMessagesToApi } from '../services/activity-service';
+import { generateActivityId, type ProductRow, sendMessageToApi, sendProductMessagesToApi } from '../services/api-messages';
 import { metrics } from '../services/cdc-metrics';
 import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
 import type { PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
-import { syncChannelPaths } from '../utils/channel-path-sync';
+import { mirrorChannelPaths } from '../utils/channel-paths';
 import { computeBatchUnifiedDeltas, isStampable } from '../utils/compute-unified-deltas';
 
 /** A change with the activity it is recorded as: the parsed activity plus its id. */
 interface PreparedEvent {
   event: PendingEvent;
   activity: ProductRow['activity'];
-}
-
-/** Groups in the order their keys first appear. */
-function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const key = keyOf(item);
-    const group = groups.get(key);
-    if (group) group.push(item);
-    else groups.set(key, [item]);
-  }
-  return groups;
 }
 
 /** Rows per activity insert: a row binds about twenty parameters, and one statement takes 65,535 at most. */
@@ -39,11 +28,18 @@ const activityChunkSize = 1000;
 const readBackChunkSize = 5000;
 
 /** The product type of a change's row; null for a row that is no product: a membership, a tenant, a channel. */
-const productTypeOf = ({ result: { tableMeta } }: PendingEvent): ProductEntityType | null =>
-  tableMeta.kind === 'entity' && isProduct(tableMeta.type) ? tableMeta.type : null;
+function productTypeOf({ result: { tableMeta } }: PendingEvent): ProductEntityType | null {
+  return tableMeta.kind === 'entity' && isProduct(tableMeta.type) ? tableMeta.type : null;
+}
 
-/** The sequence value a product row holds once its flush is recorded. A delete leaves none. */
-const seqOf = ({ result: { rowData } }: PendingEvent): number | undefined => (typeof rowData.seq === 'number' ? rowData.seq : undefined);
+/**
+ * The sequence value a product row holds once its flush is recorded: the stamp, or the value read back for a change
+ * delivered again. A row image carries `seq` as text (pg leaves `int8` a string), so a delete, which gets neither, has
+ * none.
+ */
+function seqOf({ result: { rowData } }: PendingEvent): number | undefined {
+  return typeof rowData.seq === 'number' ? rowData.seq : undefined;
+}
 
 /**
  * Records a flush, in commit order and in one transaction: the activity rows, then the sequence values, counters and
@@ -77,8 +73,8 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
     const again = prepared
       .filter((item) => !insertedIds.has(item.activity.id))
       .map((item) => item.event.result)
-      .filter(({ tableMeta, activity }) => isStampable(tableMeta, activity.action, hierarchy));
-    for (const [tableName, results] of groupBy(again, (result) => result.activity.tableName)) {
+      .filter(({ tableMeta, activity }) => isStampable(tableMeta, activity.action));
+    for (const [tableName, results] of Map.groupBy(again, (result) => result.activity.tableName)) {
       const seqById = new Map<string, number>();
       const ids = [...new Set(results.map((result) => result.rowData.id))];
       for (let offset = 0; offset < ids.length; offset += readBackChunkSize) {
@@ -97,10 +93,12 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
 }
 
 /**
- * One flush, in commit order across entity types and actions:
+ * One flush:
  *   1. wait for the API: a change the worker cannot hand over is left in the WAL
- *   2. record it in one transaction: activity rows, sequence values, counters, row stamps
- *   3. mirror channel paths, then hand the changes to the API and clean up embeddings
+ *   2. record it in one transaction, in commit order across entity types and actions: activity rows, sequence values,
+ *      counters, row stamps
+ *   3. mirror channel paths, then hand the changes to the API: the rows that are no product in commit order, then the
+ *      product rows per type and action, each group followed by its embedding cleanup
  *
  * Step 2 happens exactly once per change however often the change is delivered; step 3 repeats when it is delivered
  * again, and each part of it is safe to repeat. Whatever fails rejects the flush: the caller then acknowledges nothing
@@ -113,19 +111,18 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
   const prepared: PreparedEvent[] = transactions
     .flat()
     .map((event) => ({ event, activity: { ...event.result.activity, id: generateActivityId(event) } }));
-  if (prepared.length === 0) return;
 
   await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activity), () => recordFlush(prepared));
 
   // Mirror channel paths onto counters rows: the view-ancestry verification source.
-  await syncChannelPaths(prepared.map((item) => item.event));
+  await mirrorChannelPaths(prepared.map((item) => item.event));
 
   // A row that is no product goes to the API alone and in commit order: its listeners act on that one row.
   for (const { event, activity } of prepared) {
     if (productTypeOf(event)) continue;
     const { rowData, movedFrom } = event.result;
-    await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: event.lsn, tag: activity.action, table: activity.tableName }), async (traceCtx) =>
-      sendMessageToApi(activity, rowData, traceCtx, movedFrom),
+    await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: event.lsn, tag: activity.action, table: activity.tableName }), async (traceContext) =>
+      sendMessageToApi(activity, rowData, traceContext, movedFrom),
     );
   }
 
@@ -134,12 +131,12 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
     const productType = productTypeOf(item.event);
     return productType ? [{ ...item, productType }] : [];
   });
-  for (const group of groupBy(products, ({ productType, activity }) => `${productType}:${activity.action}`).values()) {
+  for (const group of Map.groupBy(products, ({ productType, activity }) => `${productType}:${activity.action}`).values()) {
     const events = group.map((item) => item.event);
     const { productType, activity } = group[0];
     const { action } = activity;
 
-    await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: events[0].lsn, tag: action, table: activity.tableName }), async (traceCtx) => {
+    await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: events[0].lsn, tag: action, table: activity.tableName }), async (traceContext) => {
       // Read after recording: a row's seq is its stamp, or the one it already held when the change is delivered again.
       const rows = group.map((item) => ({
         activity: item.activity,
@@ -147,7 +144,7 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
         seq: seqOf(item.event),
         movedFrom: item.event.result.movedFrom,
       }));
-      sendProductMessagesToApi(productType, rows, traceCtx);
+      sendProductMessagesToApi(productType, rows, traceContext);
       await embeddingsAfterDispatch(productType, action, events);
     });
 

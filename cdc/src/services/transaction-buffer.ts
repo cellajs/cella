@@ -1,25 +1,22 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import type { ChannelIdColumns } from 'shared';
 import { isChannel } from 'shared';
+import { entityCountPrefix } from '#/modules/entities/counter-keys';
 import { resourceLimits } from '../constants';
-import { suppressEmbeddingPropagation } from '../embeddings';
+import { suppressEmbeddingPropagation } from '../embeddings/embedding-hooks';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
-import { getCountDeltas } from '../utils/update-counts';
+import { getCountDeltas } from '../utils/count-deltas';
 import { TransactionTooLargeError } from './failure';
-
-/** Prefix of the counter keys that count rows: what a cascaded delete takes off the channels above it. */
-const entityCountPrefix = 'e:c:';
 
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
  * deleted channel ids bounds memory to surviving changes regardless of cascade size; changes outside
- * a transaction pass through directly. A transaction leaves the buffer whole, at its COMMIT, however
- * large it is or long it takes to arrive: a part of one is never emitted.
+ * a transaction pass through directly. A transaction leaves the buffer whole, at its COMMIT, however long it takes to
+ * arrive: a part of one is never emitted. Past `maxTransactionEvents` kept changes, `onEvent` throws.
  *
  * A suppressed delete is no activity, and it still counted: its row leaves the counts of every channel above the one
  * that was deleted. Those counts are summed per channel as the deletes arrive and leave with the channel's own delete.
@@ -50,7 +47,7 @@ export class TransactionBuffer {
 
   constructor(
     onSurvivingEvents: (events: PendingEvent[]) => Promise<void>,
-    { maxEvents = resourceLimits.buffers.maxTransactionEvents as number } = {},
+    { maxEvents = resourceLimits.buffers.maxTransactionEvents }: { maxEvents?: number } = {},
   ) {
     this.onSurvivingEvents = onSurvivingEvents;
     this.maxEvents = maxEvents;
@@ -174,7 +171,7 @@ export class TransactionBuffer {
     if (activity.entityType && isChannel(activity.entityType)) return false;
 
     for (const idColumn of channelIdColumnKeys) {
-      const value = (activity as Partial<ChannelIdColumns>)[idColumn];
+      const value = activity[idColumn];
       if (typeof value === 'string' && this.deletedChannelIds.has(value)) {
         return true;
       }

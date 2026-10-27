@@ -173,7 +173,7 @@ describe('wsClient.send', () => {
 
   it('must not report a row that cannot be serialized as the API being away: it fails its flush, and counts toward stuck', async () => {
     const wsClient = await freshClient();
-    const { sendMessageToApi } = await import('../services/activity-service');
+    const { sendMessageToApi } = await import('../services/api-messages');
     const { FlushBuffer } = await import('../services/flush-buffer');
     const { replicationState } = await import('../services/replication-state');
     const { resourceLimits } = await import('../constants');

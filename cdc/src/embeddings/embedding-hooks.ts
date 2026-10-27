@@ -30,7 +30,7 @@ export function suppressEmbeddingPropagation(events: PendingEvent[]): PendingEve
 }
 
 /**
- * Hook of the update handler.
+ * Hook of the update parser.
  * @param hostType - The type of the updated row.
  * @returns Whether the update is the worker's own cleanup of an embedding column, which is no activity.
  */

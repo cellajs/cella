@@ -1,10 +1,11 @@
 import { sql } from 'drizzle-orm';
 import { LogicalReplicationService, type Pgoutput, type PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
+import { stripPostgresSslParams } from 'shared/utils/postgres-tls';
 import { findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
 import { cdcSlotName, resourceLimits } from '../constants';
 import { env } from '../env';
-import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
+import { buildVerifiedSsl, cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
 import { wsClient } from '../network/websocket-client';
@@ -22,7 +23,7 @@ const { reconnection, runtime, slotTakeover } = resourceLimits;
  * of {@link createReplicationService} applies and pg cannot downgrade to unverified libpq-compat.
  */
 function buildReplicationUrl(): URL {
-  const replicationUrl = new URL(stripSslParams(env.DATABASE_CDC_URL));
+  const replicationUrl = new URL(stripPostgresSslParams(env.DATABASE_CDC_URL));
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }
@@ -52,8 +53,8 @@ export function createReplicationService(): LogicalReplicationService {
   // so a worker that is behind holds the stream where it is.
   // A service that was replaced can still hold queued messages. They belong to a stream that is read again, so they
   // are left alone.
-  service.on('data', (lsn: string, message: unknown) =>
-    replicationState.service === service ? handleDataMessage(lsn, message as Pgoutput.Message) : undefined,
+  service.on('data', (lsn: string, message: Pgoutput.Message) =>
+    replicationState.service === service ? handleDataMessage(lsn, message) : undefined,
   );
 
   // The stream is open: the slot is read once more and the API hears at once that the worker reads. The push at
@@ -94,7 +95,8 @@ export function createReplicationService(): LogicalReplicationService {
  * `max_slot_wal_keep_size` while nothing read it) cannot be read again: it is dropped and made anew.
  * @returns `created` when a slot had to be made. On a database with a history that is a lost case: what was written
  *   since the old slot's position is in no stream. `held` when another worker still reads the slot, as during a
- *   deploy: its flushes go on, so nothing may be settled beside them.
+ *   deploy: its flushes go on, so nothing may be settled beside them. `unknown` when the slot could not be looked up.
+ * @throws When a slot could not be made: the attempt fails, and nothing is settled while there is no slot.
  */
 export async function ensureReplicationSlot(): Promise<'present' | 'held' | 'created' | 'unknown'> {
   try {
@@ -111,13 +113,17 @@ export async function ensureReplicationSlot(): Promise<'present' | 'held' | 'cre
     } else {
       log.info(`Replication slot '${cdcSlotName}' not found, creating...`);
     }
-    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${cdcSlotName}, 'pgoutput')`);
-    log.info(`Replication slot '${cdcSlotName}' created`);
-    return 'created';
   } catch (error) {
     log.warn('Could not verify/create replication slot', { err: error, slotName: cdcSlotName });
     return 'unknown';
   }
+
+  // The rebuild a new slot owes is asked for before the slot exists: a worker that stops before that rebuild commits
+  // finds the request at its next start. As in `giveUpBacklog`, it replaces a verify that waits: the rebuild recounts.
+  if ((await readLostCaseFacts()).hasHistory) await requestBooks(cdcDb, 'rebuild');
+  await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${cdcSlotName}, 'pgoutput')`);
+  log.info(`Replication slot '${cdcSlotName}' created`);
+  return 'created';
 }
 
 /**
@@ -190,8 +196,8 @@ export async function settleLostCases(slotCreated: boolean): Promise<void> {
     return rebuildBooks('stuck', { positionFrom: failure.position, positionTo, error: failure.error });
   }
 
-  // Read from the database: a rebuild above answers a request too, and a worker that died after giving up a backlog
-  // finds its own request here at its next start.
+  // Read from the database: a rebuild above answers a request too, and a worker whose rebuild for a new slot or a
+  // given-up backlog did not commit finds its own request here.
   if ((await findBooksRequest(cdcDb)) === 'rebuild') return rebuildBooks('requested');
 }
 

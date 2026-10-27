@@ -1,6 +1,6 @@
 import type { CdcMessage, CdcWorkerHealth } from '#/lib/cdc-websocket';
 import type { HealthPush } from '../network/health-reporter';
-import type { CdcOutboundMessage } from '../services/activity-service';
+import type { CdcOutboundMessage } from '../services/api-messages';
 
 type ActivityFieldsTolerant<T> = { [K in keyof T]?: T[K] };
 

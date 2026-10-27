@@ -1,6 +1,6 @@
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DeltaExecutor } from '../utils/apply-unified-deltas';
+import type { Executor } from '../lib/db';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import { changeEvent, tableMetaOf } from './factories';
 
@@ -20,7 +20,7 @@ const db = {
     dbOps.push(sqlParts.includes('channel_counters') ? { type: 'upsert' } : { type: 'execute', sql: sqlParts });
     return { rows: [{ counts: upsertReturnValue }], rowCount: 1 };
   }),
-} as unknown as DeltaExecutor;
+} as unknown as Executor;
 
 const { applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
 const { frontierNodeKeys, mergeDelta } = await import('../utils/compute-unified-deltas');
@@ -49,7 +49,7 @@ describe('applyBatchUnifiedDeltas', () => {
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t3')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      orgSequenceGroups: [{ orgKey: 'org-1', count: 3, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', events }],
       countDeltasByChannelKey: new Map([
         ['org-1', { 'e:c:task': 3 }],
         ['proj-1', { 'e:c:task': 3 }],
@@ -70,7 +70,7 @@ describe('applyBatchUnifiedDeltas', () => {
     const events = [mockEvent('t1'), mockEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', events }],
       countDeltasByChannelKey: new Map([
         ['org-1', { 'e:c:task': 2 }],
         ['proj-1', { 'e:c:task': 2 }],
@@ -102,7 +102,7 @@ describe('applyBatchUnifiedDeltas', () => {
     const events = [mockEvent('t1'), tombstoneEvent('t2')];
 
     const plan: BatchUnifiedDeltaPlan = {
-      orgSequenceGroups: [{ orgKey: 'org-1', count: 2, events }],
+      orgSequenceGroups: [{ orgKey: 'org-1', events }],
       countDeltasByChannelKey: new Map(),
     };
 
@@ -119,7 +119,7 @@ describe('applyBatchUnifiedDeltas', () => {
     upsertReturnValue = { sequence: 3 };
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t1')];
 
-    await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', count: 3, events }], countDeltasByChannelKey: new Map() }, db, syntheticH);
+    await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', events }], countDeltasByChannelKey: new Map() }, db, syntheticH);
 
     // Each event keeps the position it was given, for its notification.
     expect(events.map((event) => event.result.rowData.seq)).toEqual([1, 2, 3]);

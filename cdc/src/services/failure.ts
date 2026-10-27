@@ -23,7 +23,7 @@ const networkCodes = new Set(['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT'
 const connectionPhrases = ['connection terminated', 'timeout exceeded when trying to connect'];
 
 function hasErrorCode(value: unknown): value is { code: string } {
-  return typeof value === 'object' && value !== null && 'code' in value && typeof (value as { code: unknown }).code === 'string';
+  return typeof value === 'object' && value !== null && 'code' in value && typeof value.code === 'string';
 }
 
 /** Reads the PostgreSQL or network error code, unwrapping Drizzle-wrapped errors via `.cause`. */

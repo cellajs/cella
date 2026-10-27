@@ -47,7 +47,9 @@ interface HealthResponse {
 }
 
 /** The reasons whose rule holds, in the order given. */
-const holding = (rules: [holds: boolean, reason: string][]): string[] => rules.filter(([holds]) => holds).map(([, reason]) => reason);
+function holding(rules: [holds: boolean, reason: string][]): string[] {
+  return rules.filter(([holds]) => holds).map(([, reason]) => reason);
+}
 
 /**
  * Grades the worker, for its own endpoint and for the push to the API alike, so the two never disagree. Unhealthy is

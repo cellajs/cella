@@ -49,7 +49,7 @@ hand to the API → acknowledge the commit of the last source transaction of the
 
 The API receives the messages on `/internal/cdc` of its internal listener, passes them to its ActivityBus, and fans them out over SSE. Clients order by `seq`, not arrival.
 
-The worker is `cdc/src/`, with the steps above in `pipeline/` and every limit and timing in `constants.ts`. The API's receiving side is `backend/src/lib/cdc-websocket.ts`. Details are documented there, at their declarations.
+The worker is `cdc/src/`, with the steps above in `pipeline/` and the limits this page names in `constants.ts`. The API's receiving side is `backend/src/lib/cdc-websocket.ts`. Details are documented there, at their declarations.
 
 ## Normal flow
 
@@ -71,7 +71,7 @@ Recording happens once per change, however often the change arrives. An activity
 
 After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
 
-## Internal API channel
+## Internal API socket
 
 One WebSocket from the worker to the API carries every change, with entity row data. It must never be reachable from a browser or an external network: the API serves it only on its internal listener, to peers on the private network, checks a shared secret and accepts one worker at a time.
 

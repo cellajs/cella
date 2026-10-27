@@ -15,4 +15,5 @@ const envSchema = workerEnvBase.extend({
   CDC_HEALTH_PORT: z.coerce.number().default(appConfig.devPorts.cdcHealth),
 });
 
+/** The worker's environment, validated when the module loads: a missing or malformed variable stops it at start. */
 export const env = envSchema.parse(process.env);

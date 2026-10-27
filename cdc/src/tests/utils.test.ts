@@ -34,17 +34,17 @@ describe('snakeToCamel', () => {
 describe('convertRowKeys', () => {
   it('should convert all keys from snake_case to camelCase', () => {
     const row = { id: 'abc', user_id: '123', organization_id: '456', created_at: '2024-01-01' };
-    const result = convertRowKeys(row);
+    const result = convertRowKeys(row, new Map());
     expect(result).toEqual({ id: 'abc', userId: '123', organizationId: '456', createdAt: '2024-01-01' });
   });
 
   it('should throw on missing id', () => {
-    expect(() => convertRowKeys({})).toThrow('row missing "id"');
+    expect(() => convertRowKeys({}, new Map())).toThrow('row missing "id"');
   });
 
   it('should preserve values', () => {
     const row = { id: '123', count: 42, is_active: true, data: null };
-    const result = convertRowKeys(row);
+    const result = convertRowKeys(row, new Map());
     expect(result).toEqual({ id: '123', count: 42, isActive: true, data: null });
   });
 });

@@ -26,7 +26,7 @@ const RESERVED_FIELDS = new Set<string>([
   'createdBy',
   'updatedAt',
   'updatedBy',
-  // CDC counter logic reads (cdc/src/utils/update-counts.ts)
+  // CDC counter logic reads (cdc/src/utils/count-deltas.ts)
   'role',
   'rejectedAt',
   // Declared entity-embedding host columns

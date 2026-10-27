@@ -8,8 +8,8 @@ const warn = vi.mocked(log.warn);
 
 /**
  * Snake-cased ancestor id columns for attachment, derived from the hierarchy config so the
- * fixture passes under any app topology: a row missing an ancestor column would fire
- * `warnMissingAncestors` on every edit and drown the draft-guard warning this suite asserts on.
+ * fixture passes under any app topology: a row missing an ancestor column would fire the
+ * missing-ancestor warning on every edit and drown the draft-guard warning this suite asserts on.
  */
 const ancestorIdColumns = Object.fromEntries(
   hierarchy

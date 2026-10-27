@@ -3,9 +3,7 @@ import { hierarchy } from 'shared';
 import { isMaxMergeKey } from '#/modules/entities/counter-keys';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent, TableMeta } from '../types';
-import { getCountDeltas } from './update-counts';
-
-// ── Types ────────────────────────────────────────────────────────────────────
+import { getCountDeltas } from './count-deltas';
 
 /** One sequence group per organization (reserved by RETURNING UPSERT) plus accumulated count deltas. */
 export interface BatchUnifiedDeltaPlan {
@@ -15,27 +13,24 @@ export interface BatchUnifiedDeltaPlan {
   countDeltasByChannelKey: Map<string, Record<string, number>>;
 }
 
+/** The stampable changes of one organization in one flush, which take consecutive values of its sequence. */
 export interface OrgSequenceGroup {
   /** The organization whose sequence this group reserves from. */
   orgKey: string;
-  /** Number of stampable events (sequence values to reserve). */
-  count: number;
-  /** Stampable events in WAL order; seq values are assigned after RETURNING. */
+  /** Stampable events in WAL order, one sequence value each; seq values are assigned after RETURNING. */
   events: PendingEvent[];
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 /**
- * Home key of a product row: its deepest populated ancestor, falling back to the activity
- * organization; a missing organization violates the hierarchy and throws. The key groups audiences,
- * activity stamps, and unseen counts, never sequence allocation.
+ * Home key of a product row: its deepest populated ancestor, falling back to the activity organization; a missing
+ * organization violates the hierarchy and throws. The API messages group a row by it when its product path cannot be
+ * computed.
  */
 export function resolveChannelKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId, h: EntityHierarchy = hierarchy): string {
   const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
-  throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
+  throw new Error(`No channel for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
 }
 
 /**
@@ -54,8 +49,8 @@ export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organi
 export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);
   if (existing) {
-    for (const [k, v] of Object.entries(deltas)) {
-      existing[k] = isMaxMergeKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
+    for (const [key, value] of Object.entries(deltas)) {
+      existing[key] = isMaxMergeKey(key) ? Math.max(existing[key] ?? 0, value) : (existing[key] ?? 0) + value;
     }
   } else {
     map.set(channelKey, { ...deltas });
@@ -63,8 +58,16 @@ export function mergeDelta(map: Map<string, Record<string, number>>, channelKey:
 }
 
 /** Whether a change gets a sequence value: the create or the update of a product row. */
-export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
+export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy = hierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
+}
+
+/** The organization a stampable change reserves its sequence value from; a change without one violates the hierarchy. */
+function organizationOf({ result: { tableMeta, activity, rowData } }: PendingEvent): string {
+  if (!activity.organizationId) {
+    throw new Error(`No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
+  }
+  return activity.organizationId;
 }
 
 /**
@@ -72,34 +75,17 @@ export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: Ent
  * order, and accumulates count deltas. Frontier (`e:f:`) deltas wait until seq values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
+  const stamped = events.filter(({ result }) => isStampable(result.tableMeta, result.activity.action, h));
+  const orgSequenceGroups = [...Map.groupBy(stamped, organizationOf)].map(([orgKey, group]) => ({ orgKey, events: group }));
+
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
-  const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
-
-  for (const event of events) {
-    const { tableMeta, activity, rowData } = event.result;
-    const { action } = activity;
-
-    if (isStampable(tableMeta, action, h)) {
-      const orgKey = activity.organizationId;
-      if (!orgKey) {
-        throw new Error(`No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
-      }
-      const existing = orgSequenceGroupMap.get(orgKey);
-      if (existing) {
-        existing.count++;
-        existing.events.push(event);
-      } else {
-        orgSequenceGroupMap.set(orgKey, { orgKey, count: 1, events: [event] });
-      }
-    }
-
-    const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData, h);
-    for (const { channelKey, deltas } of countDeltas) {
+  for (const { result, cascadeCounts } of events) {
+    for (const { channelKey, deltas } of getCountDeltas(result.tableMeta, result.activity, result.rowData, result.oldRowData, h)) {
       mergeDelta(countDeltasByChannelKey, channelKey, deltas);
     }
     // The rows a channel delete took with it: their own deletes were suppressed, and this change carries their counts.
-    for (const [channelKey, deltas] of event.cascadeCounts ?? []) mergeDelta(countDeltasByChannelKey, channelKey, deltas);
+    for (const [channelKey, deltas] of cascadeCounts ?? []) mergeDelta(countDeltasByChannelKey, channelKey, deltas);
   }
 
-  return { orgSequenceGroups: Array.from(orgSequenceGroupMap.values()), countDeltasByChannelKey };
+  return { orgSequenceGroups, countDeltasByChannelKey };
 }
