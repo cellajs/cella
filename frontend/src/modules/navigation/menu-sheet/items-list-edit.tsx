@@ -13,9 +13,11 @@ interface MenuSheetItemsListEditProps {
   isArchived: boolean;
   /** Runs before a row of this list is archived; true when it had to open the archived list the row moves into. */
   onArchive?: () => boolean;
+  /** It lists a row's submenu, so its rows render as sub-rows. */
+  isSubmenu?: boolean;
 }
 
-export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive }: MenuSheetItemsListEditProps) {
+export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive, isSubmenu = false }: MenuSheetItemsListEditProps) {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuArchivedVisible, setSubmenuArchivedVisible] = useState<Record<string, boolean>>({});
   // A row that mounts once the list is on screen arrived by a restore or a create, and unfolds its submenu
@@ -34,6 +36,7 @@ export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive }
       key={item.id}
       siblings={filteredItems}
       item={item}
+      isSubitem={isSubmenu}
       options={options}
       isArchived={isArchived}
       detailedMenu={detailedMenu}

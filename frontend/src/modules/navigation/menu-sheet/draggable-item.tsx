@@ -10,8 +10,12 @@ import { DropIndicator } from '~/modules/common/drop-indicator';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
+import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
+import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
+import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListMotion, menuRowLandSeconds } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { MenuSheetItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
@@ -22,6 +26,8 @@ import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 interface MenuSheetDraggableItemProps {
   item: UserMenuItem;
   siblings: UserMenuItem[];
+  /** It is a row of a submenu. */
+  isSubitem: boolean;
   isArchived: boolean;
   detailedMenu: boolean;
   /** Its list is already on screen; read at mount, when it tells a restored row from one the list opened with. */
@@ -35,6 +41,7 @@ interface MenuSheetDraggableItemProps {
 export function MenuSheetDraggableItem({
   item,
   siblings,
+  isSubitem,
   isArchived,
   options,
   isSubmenuArchivedVisible = false,
@@ -44,6 +51,7 @@ export function MenuSheetDraggableItem({
   onArchive,
 }: MenuSheetDraggableItemProps) {
   const dragRef = useRef<HTMLDivElement>(null);
+  const { mutate: updateMembership } = useMemberUpdateMutation();
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
 
@@ -82,7 +90,13 @@ export function MenuSheetDraggableItem({
         getIsSticky: () => true,
         getData: ({ input }) => attachClosestEdge(data, { element, input, allowedEdges: ['top', 'bottom'] }),
         onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
-        onDrop: () => setClosestEdge(null),
+        onDrop: ({ self, source }) => {
+          setClosestEdge(null);
+          if (!isMenuItemDragData(source.data)) return;
+          const dragged = source.data.item;
+          const displayOrder = menuItemOrder(siblings, dragged, item, extractClosestEdge(self.data) === 'top' ? 'top' : 'bottom');
+          if (displayOrder !== dragged.membership.displayOrder) updateMembership(buildMembershipUpdate(dragged, { displayOrder }));
+        },
         onDragLeave: () => setClosestEdge(null),
       }),
     );
@@ -93,7 +107,7 @@ export function MenuSheetDraggableItem({
   const [isFolding, setIsFolding] = useState(false);
 
   const archivedSubitemCount = item.submenu?.filter((sub) => sub.membership.archived).length ?? 0;
-  const hasSubmenu = !item.membership.archived && !!item.submenu?.length && detailedMenu;
+  const hasSubmenu = isSubmenuShown(item, detailedMenu);
   // Empty, it has nothing to fold: kept open, a first archived subitem moves in without waiting for it to unfold
   const showsArchivedSubitems = isSubmenuArchivedVisible || !archivedSubitemCount;
 
@@ -117,6 +131,7 @@ export function MenuSheetDraggableItem({
         <MenuSheetItemEdit
           item={item}
           siblings={siblings}
+          isSubitem={isSubitem}
           icon={options?.icon}
           hasSubmenuBelow={hasSubmenu}
           isArriving={hasArrived}
@@ -140,7 +155,7 @@ export function MenuSheetDraggableItem({
             >
               <div className={cn('min-h-0 min-w-0 transition-opacity duration-200', isFolding && 'overflow-hidden opacity-0')}>
                 <ul>
-                  <MenuSheetItemsListEdit items={item.submenu ?? []} isArchived={isArchived} onArchive={handleSubitemArchive} />
+                  <MenuSheetItemsListEdit items={item.submenu ?? []} isArchived={isArchived} onArchive={handleSubitemArchive} isSubmenu />
                 </ul>
                 {/* Not a row with a layoutId, so it gets its own layout animation to travel with the rows when a move reorders them */}
                 <motion.div layout="position">
@@ -152,7 +167,7 @@ export function MenuSheetDraggableItem({
                 <AnimatePresence initial={false}>
                   {showsArchivedSubitems && (
                     <motion.ul key="archived" {...menuListMotion}>
-                      <MenuSheetItemsListEdit items={item.submenu ?? []} isArchived={true} />
+                      <MenuSheetItemsListEdit items={item.submenu ?? []} isArchived={true} isSubmenu />
                     </motion.ul>
                   )}
                 </AnimatePresence>

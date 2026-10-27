@@ -8,7 +8,6 @@ import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
-import { useMenuDropMonitor } from '~/modules/navigation/menu-sheet/helpers/use-menu-drop-monitor';
 import { MenuSheetOrganization } from '~/modules/navigation/menu-sheet/organization-menu';
 import { OrganizationSwitcher } from '~/modules/navigation/menu-sheet/organization-switcher';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
@@ -42,7 +41,6 @@ export function MenuSheet() {
   const hasOrganizationButtons = navBar && !isMobile;
 
   const { menu, isLoading } = useMenu(user?.id);
-  useMenuDropMonitor(menu);
 
   const organizations = menuOrganizations(menu);
   const routeOrganizationId = useRouteOrganizationId(organizations);
