@@ -4,11 +4,9 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { quotaKeys } from '#/modules/tenants/tenant-restrictions';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
+import { mockTenantResponse } from '#/modules/tenants/tenants-mocks';
 import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
-import { mockTenantResponse } from './tenants-mocks';
-
-export type TenantStatus = (typeof tenantStatusValues)[number];
 
 const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
@@ -18,10 +16,12 @@ const rateLimitsSchema = z.object({
     .number()
     .int()
     .min(0)
-    .describe('Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)'),
+    .describe('Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)'),
 });
 
-const quotasSchema = z.record(z.string(), z.number().int().min(0)).describe('Entity quotas (0 = unlimited)');
+const quotasSchema = z
+  .record(z.string(), z.number().int().min(0))
+  .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)');
 
 const restrictionsSchema = z.object({
   quotas: quotasSchema,
@@ -51,7 +51,10 @@ export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, { nam
 
 const partialRestrictionsSchema = z
   .object({
-    quotas: z.partialRecord(z.enum(quotaKeys), z.number().int().min(0)).optional().describe('Entity quotas (0 = unlimited)'),
+    quotas: z
+      .partialRecord(z.enum(quotaKeys), z.number().int().min(0))
+      .optional()
+      .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)'),
     allowUnregisteredClients: z.boolean().optional(),
     rateLimits: z.object({ apiPointsPerHour: z.number().int().min(0).optional() }).optional(),
   })
@@ -61,7 +64,6 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
   status: tenantStatusSchema,
   subscriptionStatus: subscriptionStatusSchema,
-  // Allowed sign-in strategies for the tenant's members (empty = all enabled); tenantGuard enforcement waits on the SSO build.
   authStrategies: z.array(z.enum(authStrategiesEnum)).max(authStrategiesEnum.length),
 })
   .pick({ name: true, status: true, subscriptionId: true, subscriptionStatus: true, subscriptionPlan: true, authStrategies: true })

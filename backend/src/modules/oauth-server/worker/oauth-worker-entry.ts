@@ -10,10 +10,10 @@ import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
 
 /**
- * The authorization server as its own process on the same public origin (D12, D16): the reverse proxy routes
+ * The authorization server as its own process on the same public origin: the reverse proxy routes
  * `/oauth/*` here. Under singleVM the API process calls this with the oauth port and `inProcess`.
  */
-export async function startOauthServer(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
+export async function startOauthWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
   if (appConfig.services.oauth.enabled === false) {
     baseLog.info('OAuth server disabled by appConfig');
     return;
@@ -33,7 +33,7 @@ export async function startOauthServer(options: { port?: number; inProcess?: boo
   server.listen(port, '0.0.0.0', () => baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`));
 
   setupGracefulShutdown({
-    name: 'oauth-server',
+    name: 'oauth-worker',
     cleanup: async () => {
       server.close();
       if (!options.inProcess) await otel.shutdown();

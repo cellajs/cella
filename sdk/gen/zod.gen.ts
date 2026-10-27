@@ -1571,7 +1571,7 @@ export const zCreateConnectionBody = z.object({
   idpEntityIds: z.array(z.string().min(1).max(255)).min(1).max(10),
   status: z.enum(['pending', 'active', 'disabled']).optional(),
   jitProvisioning: z.boolean().optional(),
-  logoUrl: z.url().max(255).optional(),
+  logoUrl: z.string().max(255).optional(),
 });
 
 export const zCreateConnectionPath = z.object({
@@ -1614,7 +1614,7 @@ export const zUpdateConnectionBody = z.object({
   idpEntityIds: z.array(z.string().min(1).max(255)).min(1).max(10).optional(),
   status: z.enum(['pending', 'active', 'disabled']).optional(),
   jitProvisioning: z.boolean().optional(),
-  logoUrl: z.url().max(255).optional(),
+  logoUrl: z.string().max(255).optional(),
 });
 
 export const zUpdateConnectionPath = z.object({

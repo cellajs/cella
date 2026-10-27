@@ -2,24 +2,21 @@ import { appConfig, type EntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/**
- * Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind.
- * @public
- */
-export const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
+/** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
+const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
+
+type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
 
 /** Hard caps per tenant on entities and on machine actors and their keys. 0 = unlimited. */
-export type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
-export type Quotas = Record<QuotaKey, number>;
+type Quotas = Record<QuotaKey, number>;
 
+/** Every key a tenant quota can name: the entity types, then the machine keys. */
 export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
 
-/** Time-windowed throughput limits per user in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
-export type RateLimits = {
-  /** Max API points per hour per user within this tenant */
-  apiPointsPerHour: number;
-};
+/** API points per hour per actor in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
+type RateLimits = { apiPointsPerHour: number };
 
+/** What a tenant may hold and spend, stored on its row (`tenants.restrictions`). */
 export type Restrictions = {
   quotas: Quotas;
   rateLimits: RateLimits;
@@ -27,6 +24,7 @@ export type Restrictions = {
   allowUnregisteredClients: boolean;
 };
 
+/** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, 0 for a quota it does not list. */
 export const defaultRestrictions = (): Restrictions => {
   const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
 
@@ -48,11 +46,11 @@ export const defaultRestrictions = (): Restrictions => {
  * slot binds system admins too and clamps a batch.
  * @throws AppError 403 `restrict_by_app` with the key in `meta.resource` and the cap in `meta.quota`.
  */
-export function assertTenantQuota(ctx: ActorContext, key: (typeof machineQuotaKeys)[number], existing: number): void {
+export const assertTenantQuota = (ctx: ActorContext, key: (typeof machineQuotaKeys)[number], existing: number): void => {
   const quota = ctx.var.tenant.restrictions.quotas[key];
   if (ctx.var.isSystemAdmin || quota === 0 || existing < quota) return;
   throw new AppError(403, 'restrict_by_app', 'warn', { meta: { resource: key, quota } });
-}
+};
 
 /** A partial restrictions update, or a stored row that predates a field: what `mergeRestrictions` lays over a base. */
 type RestrictionsPatch = { quotas?: Partial<Quotas>; rateLimits?: Partial<RateLimits>; allowUnregisteredClients?: boolean };

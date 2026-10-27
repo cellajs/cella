@@ -3,16 +3,17 @@ import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { loadTenant } from '#/modules/tenants/operations/load-tenant';
+import { loadTenant } from '#/modules/tenants/load-tenant';
 import { usersTable } from '#/modules/user/user-db';
 
-/** A person's consent to a client, for one tenant's resource. */
-export interface UserGrantSubject {
+/** A person's grant to a client, for one tenant's resource. */
+interface UserGrantSubject {
   userId: string;
   clientId: string;
   tenantId: string;
 }
 
+/** Why a person's grant does not hold; the consent page mirrors these values (`frontend/src/lib/oauth-interaction.ts`). */
 export type UserGrantRefusal = 'unknown_user' | 'not_a_member' | 'app_not_installed' | 'unregistered_clients_not_allowed';
 
 /**

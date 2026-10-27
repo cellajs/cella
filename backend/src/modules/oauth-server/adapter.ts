@@ -11,7 +11,7 @@ import { getIsoDate, isoDateIn } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';
 
 /** Client metadata as the provider reads it; `client_kind` names the table the adapter read the client from. */
-export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
+type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
 
 /**
  * Where a client comes from: `registered` (an `oauth_clients` row) or `service` (a service account) as the adapter
@@ -72,8 +72,7 @@ const hashedModels = new Set(['AuthorizationCode', 'RefreshToken']);
 
 /**
  * `node-oidc-provider`'s adapter over `oidc_payloads`: one row per model instance keyed by (type, id). The `Client`
- * model reads the app's own tables (`oauth_clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
- * what the provider no longer reads.
+ * model reads the app's own tables (`oauth_clients`, active `service_accounts`).
  */
 export class DrizzleAdapter implements Adapter {
   private readonly hashed: boolean;

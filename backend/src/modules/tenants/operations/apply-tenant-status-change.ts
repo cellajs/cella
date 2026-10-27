@@ -12,5 +12,5 @@ import { findOrganizationByTenant } from '#/modules/organization/organization-qu
 export async function applyTenantStatusChange(ctx: DbContext, tenantId: string): Promise<void> {
   for (const userId of await rotateTenantMemberBindings(ctx, { tenantId })) invalidateCache.user(userId);
   const organization = await findOrganizationByTenant(ctx, { tenantId });
-  if (organization) await endOrganizationStreams([organization.id], 'The organization was archived or restored');
+  if (organization) await endOrganizationStreams([organization.id], "The tenant's status changed");
 }

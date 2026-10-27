@@ -5,7 +5,7 @@ import { escapeRegExp } from 'shared/utils/escape-regexp';
 export type ResourceRef = { face: 'mcp'; tenantId: string; organizationId: string } | { face: 'api'; tenantId: string };
 
 /**
- * RFC 8707 resource identifiers are tenant-qualified (D7), so a token never crosses tenants. The ids are percent-encoded:
+ * RFC 8707 resource identifiers are tenant-qualified, so a token never crosses tenants. The ids are percent-encoded:
  * a guard builds its challenge header from the ids of the request path, before anything checked them.
  */
 export function resourceUri(ref: ResourceRef): string {

@@ -6,14 +6,12 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** The party a connection trusts: an institution behind an SSO federation. */
 export const connectionKinds = ['sso'] as const;
-export type ConnectionKind = (typeof connectionKinds)[number];
 
 /** `pending` until the institution activated the service at the federation; `disabled` keeps the row but refuses sign-ins. */
 export const connectionStatuses = ['pending', 'active', 'disabled'] as const;
-export type ConnectionStatus = (typeof connectionStatuses)[number];
 
 /** The protocol-specific part of a connection. */
-export interface ConnectionConfig {
+interface ConnectionConfig {
   /** The institution's IdP entity ids, all passed as `login_hint`; one skips the federation's picker. */
   idpEntityIds?: string[];
   /** The institution's logo from the federation's metadata feed, for the entry page. */

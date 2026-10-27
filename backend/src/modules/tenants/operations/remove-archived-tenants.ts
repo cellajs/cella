@@ -44,7 +44,7 @@ export async function removeArchivedTenants(): Promise<number> {
     try {
       const counts = await countTenantRows(tenant.id);
       const deleted = await deleteArchivedTenant({ var: { db: baseDb } }, { tenantId: tenant.id, archivedBefore });
-      // No longer due: kept, and no mail.
+      // Restored or archived again since the listing: kept, and no mail.
       if (!deleted) continue;
       removed += 1;
       log.info('Archived tenant removed', { tenantId: tenant.id, counts });

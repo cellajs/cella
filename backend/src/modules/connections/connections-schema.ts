@@ -5,9 +5,9 @@ import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
-import { validDomainSchema, validNameSchema } from '#/schemas';
+import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
+import { validDomainSchema, validNameSchema, validUrlSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
-import { mockConnectionResponse } from './connections-mocks';
 
 const federationKeys = Object.keys(appConfig.federations);
 
@@ -17,13 +17,11 @@ const federationKeySchema = z
   .refine(isFederationKey, { message: 'Unknown federation' })
   .openapi({ description: 'A federation key in appConfig.federations', ...(federationKeys.length ? { enum: federationKeys } : {}) });
 
-// One validator per config field, for the stored shape and the request bodies.
 const idpEntityIdSchema = z.string().min(1).max(maxLength.field);
-const logoUrlSchema = z.string().url().max(maxLength.field);
 
 const connectionConfigSchema = z.object({
   idpEntityIds: z.array(idpEntityIdSchema).optional().describe("The institution's IdP entity ids, passed as login_hint"),
-  logoUrl: logoUrlSchema.optional().describe("The institution's logo, for the entry page"),
+  logoUrl: z.string().url().max(maxLength.field).optional().describe("The institution's logo, for the entry page"),
 });
 
 export const connectionSchema = z
@@ -54,7 +52,8 @@ export const createConnectionBodySchema = z.object({
   idpEntityIds: z.array(idpEntityIdSchema).min(1).max(10).describe("The institution's IdP entity ids, all passed as login_hint"),
   status: z.enum(connectionStatuses).optional(),
   jitProvisioning: z.boolean().optional(),
-  logoUrl: logoUrlSchema.optional(),
+  // The response keeps the field limit, and the frontend validates responses: a longer stored URL would fail every read.
+  logoUrl: z.string().max(maxLength.field).pipe(validUrlSchema).optional(),
 });
 
 export const updateConnectionBodySchema = createConnectionBodySchema.omit({ issuer: true }).partial();

@@ -3,9 +3,10 @@ import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
-import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
+import { textSearchFilter } from '#/utils/sql';
 
 /** Tenant columns a response carries. */
 const tenantColumns = pick(tenantsTable, [
@@ -56,17 +57,21 @@ const toTenant = ({ organization, ...tenant }: TenantRow) => ({
 });
 
 interface FindTenantsPaginatedOpts {
-  filters: SQL[];
+  /** Searches the name. */
+  q?: string;
+  status?: TenantModel['status'];
   sort?: 'name' | 'createdAt';
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
 
+/** A page of tenants, each with its organization, and the total. */
 export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { filters, sort, order, limit, offset } = opts;
-  const whereClause = and(...filters);
+  const { q, status, sort, order, limit, offset } = opts;
+
+  const filter = and(q ? textSearchFilter(tenantsTable.name, q) : undefined, status ? eq(tenantsTable.status, status) : undefined);
 
   const orderBy = getOrderColumns({
     sort,
@@ -77,7 +82,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   });
 
   const itemsQuery = selectTenants(ctx)
-    .where(whereClause)
+    .where(filter)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset)
@@ -86,14 +91,18 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
     getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(whereClause);
+      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(filter);
       return total;
     },
   });
 };
 
+interface FindTenantOpts {
+  where: SQL | undefined;
+}
+
 /** The first tenant matching `where`, in its response shape; undefined when none matches. */
-export const findTenant = async (ctx: DbContext, { where }: { where: SQL | undefined }) => {
+export const findTenant = async (ctx: DbContext, { where }: FindTenantOpts) => {
   const [row] = await selectTenants(ctx).where(where).limit(1);
   return row ? toTenant(row) : undefined;
 };
@@ -108,11 +117,22 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: FindOrphan
   return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
 };
 
-interface UpdateTenantOpts {
-  targetTenantId: string;
-  values: Partial<typeof tenantsTable.$inferInsert>;
+interface InsertTenantOpts {
+  values: InsertTenantModel;
 }
 
+/** Inserts a tenant; status, restrictions and subscription take their column defaults. */
+export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts): Promise<TenantModel> => {
+  const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
+  return tenant;
+};
+
+interface UpdateTenantOpts {
+  targetTenantId: string;
+  values: Partial<InsertTenantModel>;
+}
+
+/** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
 export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: UpdateTenantOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, targetTenantId)).returning(tenantColumns);

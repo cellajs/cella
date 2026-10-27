@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { connectionHandlers } from './connections-handlers';
+import { connectionHandlers } from '#/modules/connections/connections-handlers';
 
 defineBackendModule({
   name: 'connections',

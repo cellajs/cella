@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, jsonb, snakeCase, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import type { JWK } from 'jose';
 import { maxLength } from '#/db/utils/constraints';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 
@@ -7,9 +8,9 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 const signingKeyStatuses = ['next', 'current', 'retired'] as const;
 
 /**
- * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens; later LTI launches and client
- * assertions). The private JWK is encrypted at rest with `data-encryption.ts`; the public JWK is what the JWKS
- * endpoint and the in-process verifier publish. Rotation moves next → current → retired.
+ * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens). The private JWK is encrypted
+ * at rest with `data-encryption.ts`; the public JWK is what the JWKS endpoint and the in-process verifier publish.
+ * Rotation moves next → current → retired.
  */
 export const signingKeysTable = snakeCase.table(
   'signing_keys',
@@ -19,7 +20,7 @@ export const signingKeysTable = snakeCase.table(
     alg: varchar({ length: 16 }).notNull().default('RS256'),
     status: varchar({ enum: signingKeyStatuses }).notNull(),
     privateJwk: text().notNull(),
-    publicJwk: jsonb().$type<Record<string, unknown>>().notNull(),
+    publicJwk: jsonb().$type<JWK>().notNull(),
     createdAt: timestampColumns.createdAt,
     retiredAt: isoTimestamp(),
   },

@@ -2,11 +2,11 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
+import { connectionSchema, createConnectionBodySchema, updateConnectionBodySchema } from '#/modules/connections/connections-schema';
 import { tenantIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
-import { mockConnectionResponse } from './connections-mocks';
-import { connectionSchema, createConnectionBodySchema, updateConnectionBodySchema } from './connections-schema';
 
-export const connectionRoutes = createXRoutes(['connections', 'cella'], {
+const connectionRoutes = createXRoutes(['connections', 'cella'], {
   getConnections: xRoute({
     method: 'get',
     path: '/',
@@ -53,3 +53,5 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     responses: { 200: json('Removed connection', connectionSchema) },
   }),
 });
+
+export { connectionRoutes };

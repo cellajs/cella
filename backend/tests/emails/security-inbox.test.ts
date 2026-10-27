@@ -4,7 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
-import { createTenantForUser } from '#/modules/tenants/tenant-service';
+import { createTenant } from '#/modules/tenants/operations/create-tenant';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createTestSession, createTestUser, mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -40,7 +40,7 @@ describe('security inbox mails', async () => {
 
   it('reports a new tenant with a readable UTC time', async () => {
     const user = await createTestUser(signUpUser.email);
-    await createTenantForUser(db, { name: 'Acme', createdBy: user.id, userEmail: user.email });
+    await createTenant({ var: { db } }, { name: 'Acme', createdBy: user.id, userEmail: user.email });
 
     expect(inboxMails()).toEqual([
       {

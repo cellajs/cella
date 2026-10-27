@@ -15,6 +15,11 @@ import { log } from '#/utils/logger';
 
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
+/**
+ * Updates a tenant's name, status, subscription, sign-in policy or restrictions; a restrictions update is merged over
+ * the stored ones. A status change also moves the members' bindings and ends their streams.
+ * @throws AppError 404 `not_found` for an unknown tenant.
+ */
 export async function updateTenantOp(ctx: UserContext, tenantId: string, updates: UpdateTenantInput) {
   const existing = await findTenant(ctx, { where: eq(tenantsTable.id, tenantId) });
   if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
@@ -27,7 +32,7 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     // `existing` already has every field, so a partial update stores the full shape.
     ...(restrictionsUpdate ? { restrictions: mergeRestrictions(existing.restrictions, restrictionsUpdate) } : {}),
     ...(statusChanged ? { statusChangedAt: getIsoDate() } : {}),
-    ...updateStamps(ctx.var.user.id),
+    ...updateStamps(ctx.var.actor.id),
   };
   const updated = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
@@ -36,6 +41,6 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
 
   log.info('Tenant updated', { tenantId, updates });
 
-  // An update leaves the tenant's organization and connections as they were.
+  // An update leaves the tenant's organization as it was.
   return withActorRef(ctx, { ...existing, ...updated, restrictions: normalizeRestrictions(updated.restrictions) });
 }

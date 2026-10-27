@@ -19,7 +19,7 @@ export const tenantsTable = snakeCase.table(
     /** When `status` last changed, stamped by the server; an archived tenant is removed `archivedTenantDays` after it. */
     statusChangedAt: isoTimestamp().defaultNow().notNull(),
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
-    // Sign-in strategies a tenant's members may use (empty = all enabled); enforced at the tenant boundary (tenantGuard) once SSO ships.
+    /** Sign-in methods the tenant's members may use (empty = every enabled method); `tenantGuard` enforces them. */
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     subscriptionId: varchar({ length: maxLength.field }),
     subscriptionStatus: varchar({ enum: subscriptionStatusValues }).notNull().default('none'),
