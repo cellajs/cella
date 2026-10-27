@@ -6,7 +6,7 @@ import { baseDb } from '#/db/db';
 import { imageColumns } from '#/db/storage-columns';
 import { tenantContextById } from '#/db/tenant-context';
 import { deleteStoredObjects, deleteStoredPrefix, isObjectStorageConfigured } from '#/lib/object-storage';
-import { findLiveAttachmentKeys } from '#/modules/attachment/attachment-queries';
+import { findLiveAttachmentKeys, findNamedImageKeys } from '#/modules/attachment/attachment-queries';
 import { isSignableKey, publicKeyOf } from '#/modules/attachment/helpers/storage-key';
 import { type DeletedStorageModel, deletedStorageTable } from '#/modules/entities/deleted-storage-db';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
@@ -45,8 +45,8 @@ function ownedObjectsOf({ entityType, entityId, organizationId, storage }: Delet
 
 /**
  * Clears one tenant's share of the queue: retires the collaborative documents of its product rows, then deletes the
- * files no live attachment of the tenant names and, for a deleted organization, everything under its prefix in both
- * buckets. A user's rows come with no tenant and hold images only.
+ * files that no live attachment of the tenant and no image of the organization's remaining rows names and, for a deleted
+ * organization, everything under its prefix in both buckets. A user's rows come with no tenant and hold images only.
  */
 async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[]): Promise<void> {
   const objects = rows.flatMap(ownedObjectsOf);
@@ -61,6 +61,12 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
     released = await tenantContextById(tenantId, async (db) => {
       for (const [entityType, entityIds] of documents) await retireYjsDocuments({ var: { db } }, { entityType, entityIds });
       const named = await findLiveAttachmentKeys({ var: { db } }, { keys: objects.map(({ key }) => key) });
+      // Per organization: an image of another organization's rows keeps nothing under this one's prefix.
+      for (const [organizationId, held] of Map.groupBy(rows, (row) => row.organizationId)) {
+        if (!organizationId) continue;
+        const keys = held.flatMap(ownedObjectsOf).map(({ key }) => key);
+        for (const key of await findNamedImageKeys({ var: { db } }, { keys, holder: { organizationId } })) named.add(key);
+      }
       return objects.filter(({ key }) => !named.has(key));
     });
   }

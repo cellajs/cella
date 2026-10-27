@@ -34,7 +34,7 @@ describe('Deleted storage', async () => {
     const plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     plans.push(plan);
     const keyOf = (name: string) => `${tenant.organization.id}/${tenant.user.id}/${name}`;
-    const insert = (keys: Record<string, string>, fields: { deletedAt?: string; seq?: number } = {}) => {
+    const insert = (keys: Record<string, string>, fields: { deletedAt?: string; seq?: number; bucketName?: string } = {}) => {
       const id = generateId();
       return insertAttachmentRow(
         buildInsertableProduct(
@@ -107,5 +107,20 @@ describe('Deleted storage', async () => {
     for (const bucket of [appConfig.s3.privateBucket, appConfig.s3.publicBucket]) {
       expect(deletedPrefixes()).toContain(`${bucket}:${tenant.organization.id}/`);
     }
+  });
+
+  it("deletes a deleted row's files, never one its organization's image still names", async () => {
+    const { tenant, keyOf, insert } = await seed('deleted-named-image');
+    const banner = keyOf('banner.webp');
+    const bannerUrl = `${appConfig.s3.publicCDNUrl}/${banner}`;
+    await db.update(organizationsTable).set({ bannerUrl }).where(eq(organizationsTable.id, tenant.organization.id));
+    // An attachment stands in for any row of the organization that names its banner, a sub-channel's image included.
+    const attachment = await insert({ original: banner, thumbnail: keyOf('thumbnail.webp') }, { bucketName: appConfig.s3.publicBucket });
+
+    await db.delete(attachmentsTable).where(eq(attachmentsTable.id, attachment));
+    await clearDeletedStorage();
+
+    expect(deletedKeys()).toContain(keyOf('thumbnail.webp'));
+    expect(deletedKeys()).not.toContain(banner);
   });
 });
