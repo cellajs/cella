@@ -18,9 +18,7 @@ export interface BatchUnifiedDeltaPlan {
 export interface OrgSequenceGroup {
   /** The organization whose sequence this group reserves from. */
   orgKey: string;
-  /** Number of stampable events (sequence values to reserve). */
-  count: number;
-  /** Stampable events in WAL order; seq values are assigned after RETURNING. */
+  /** Stampable events in WAL order, one sequence value each; seq values are assigned after RETURNING. */
   events: PendingEvent[];
 }
 
@@ -67,39 +65,30 @@ export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: Ent
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 
+/** The organization a stampable change reserves its sequence value from; a change without one violates the hierarchy. */
+function organizationOf({ result: { tableMeta, activity, rowData } }: PendingEvent): string {
+  if (!activity.organizationId) {
+    throw new Error(`No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
+  }
+  return activity.organizationId;
+}
+
 /**
  * Reserves one sequence range per organization, shared by all product entity types and preserving WAL
  * order, and accumulates count deltas. Frontier (`e:f:`) deltas wait until seq values are assigned.
  */
 export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
+  const stamped = events.filter(({ result }) => isStampable(result.tableMeta, result.activity.action, h));
+  const orgSequenceGroups = [...Map.groupBy(stamped, organizationOf)].map(([orgKey, group]) => ({ orgKey, events: group }));
+
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
-  const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
-
-  for (const event of events) {
-    const { tableMeta, activity, rowData } = event.result;
-    const { action } = activity;
-
-    if (isStampable(tableMeta, action, h)) {
-      const orgKey = activity.organizationId;
-      if (!orgKey) {
-        throw new Error(`No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
-      }
-      const existing = orgSequenceGroupMap.get(orgKey);
-      if (existing) {
-        existing.count++;
-        existing.events.push(event);
-      } else {
-        orgSequenceGroupMap.set(orgKey, { orgKey, count: 1, events: [event] });
-      }
-    }
-
-    const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData, h);
-    for (const { channelKey, deltas } of countDeltas) {
+  for (const { result, cascadeCounts } of events) {
+    for (const { channelKey, deltas } of getCountDeltas(result.tableMeta, result.activity, result.rowData, result.oldRowData, h)) {
       mergeDelta(countDeltasByChannelKey, channelKey, deltas);
     }
     // The rows a channel delete took with it: their own deletes were suppressed, and this change carries their counts.
-    for (const [channelKey, deltas] of event.cascadeCounts ?? []) mergeDelta(countDeltasByChannelKey, channelKey, deltas);
+    for (const [channelKey, deltas] of cascadeCounts ?? []) mergeDelta(countDeltasByChannelKey, channelKey, deltas);
   }
 
-  return { orgSequenceGroups: Array.from(orgSequenceGroupMap.values()), countDeltasByChannelKey };
+  return { orgSequenceGroups, countDeltasByChannelKey };
 }

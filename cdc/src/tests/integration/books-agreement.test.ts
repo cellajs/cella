@@ -3,6 +3,7 @@ import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import type { Pgoutput } from 'pg-logical-replication';
 import type { ActivityAction, ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
+import type { DmlMessage } from '../../pipeline/parse-message';
 import type { PendingEvent } from '../../types';
 
 // organization > course > courseSection > project, with `item` at any depth and `task` in a project.
@@ -210,7 +211,7 @@ function workloadOn(tx: Tx, seed: number) {
       commitTime: BigInt(0),
     } as unknown as Pgoutput.MessageBegin);
     for (const [index, change] of changes.entries()) {
-      const message = { tag: change.tag, relation: { name: change.table }, old: change.old, new: change.new } as unknown as Pgoutput.Message;
+      const message = { tag: change.tag, relation: { name: change.table }, old: change.old, new: change.new } as unknown as DmlMessage;
       const result = parseMessage(message);
       if (result) await buffer.onEvent(`0/${xid.toString(16)}`, result, index);
     }

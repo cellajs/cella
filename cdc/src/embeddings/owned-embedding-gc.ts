@@ -1,18 +1,19 @@
 import { and, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig, type ProductEntityType } from 'shared';
+import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
-import { stripChangedFieldsStx } from './strip-changed-fields';
 
 /** Columns the GC writes on an embedded row, beyond the scope and id columns. */
-const requiredEmbeddedColumns = ['id', 'deletedAt', 'deletedBy', 'updatedAt', 'updatedBy'] as const;
+const requiredEmbeddedColumns = ['id', 'deletedAt', 'deletedBy', 'updatedAt', 'updatedBy', 'stx'] as const;
 
 /** Pre-resolved owned embedding with Drizzle column references, keyed by host product. */
 interface ResolvedOwnedEmbedding {
+  hostProduct: ProductEntityType;
   embeddedProduct: ProductEntityType;
   embeddedTable: AnyPgTable;
   embeddedColumns: Record<string, AnyPgColumn>;
@@ -21,13 +22,14 @@ interface ResolvedOwnedEmbedding {
   hostColumn: AnyPgColumn;
   hostColumnName: string;
   hostScopeColumn: AnyPgColumn;
+  hostDeletedAtColumn: AnyPgColumn;
   /** Organization id column both sides carry. */
   scopeColumnName: string;
 }
 
 /** Resolves lifecycle-'owned' productEmbeddings to Drizzle references at module init; throws on misconfiguration. */
 function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedEmbedding[]> {
-  const map = new Map<ProductEntityType, ResolvedOwnedEmbedding[]>();
+  const resolved: ResolvedOwnedEmbedding[] = [];
 
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.lifecycle !== 'owned') continue;
@@ -38,6 +40,8 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     const hostColumns = getColumns(hostTable) as Record<string, AnyPgColumn>;
     const hostColumn = hostColumns[hostColumnName];
     if (!hostColumn) throw new Error(`owned embedding: column "${hostColumnName}" not found on "${hostProduct}" table`);
+    const hostDeletedAtColumn = hostColumns.deletedAt;
+    if (!hostDeletedAtColumn) throw new Error(`owned embedding: column "deletedAt" not found on "${hostProduct}" table`);
 
     const embeddedTable = getEntityTable(embeddedProduct as Parameters<typeof getEntityTable>[0]);
     const embeddedColumns = getColumns(embeddedTable) as Record<string, AnyPgColumn>;
@@ -52,7 +56,8 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     if (!hostScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${hostProduct}" table`);
     if (!embeddedScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${embeddedProduct}" table`);
 
-    const resolved: ResolvedOwnedEmbedding = {
+    resolved.push({
+      hostProduct,
       embeddedProduct,
       embeddedTable,
       embeddedColumns,
@@ -61,14 +66,12 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
       hostColumn,
       hostColumnName,
       hostScopeColumn,
+      hostDeletedAtColumn,
       scopeColumnName,
-    };
-    const list = map.get(hostProduct);
-    if (list) list.push(resolved);
-    else map.set(hostProduct, [resolved]);
+    });
   }
 
-  return map;
+  return Map.groupBy(resolved, (embedding) => embedding.hostProduct);
 }
 
 /** Owned embeddings keyed by HOST product type (host-side dispatch, unlike embedding-cleanup). */
@@ -99,7 +102,7 @@ export async function gcOwnedEmbeddedRows(
 
   for (const embedding of embeddings) {
     const { embeddedProduct, embeddedTable, embeddedColumns, embeddedScopeColumn } = embedding;
-    const { hostTable, hostColumn, hostColumnName, hostScopeColumn, scopeColumnName } = embedding;
+    const { hostTable, hostColumn, hostColumnName, hostScopeColumn, hostDeletedAtColumn, scopeColumnName } = embedding;
 
     // The organization is the GC scope boundary.
     const byScope = new Map<string, ScopeCandidates>();
@@ -139,13 +142,7 @@ export async function gcOwnedEmbeddedRows(
         const referencedRows = await cdcDb
           .selectDistinct({ id: sql<string>`referenced.id` })
           .from(sql`${hostTable}, unnest(${hostColumn}) AS referenced(id)`)
-          .where(
-            and(
-              sql`${hostScopeColumn} = ${scopeId}`,
-              isNull((getColumns(hostTable) as Record<string, AnyPgColumn>).deletedAt),
-              sql`referenced.id IN ${candidates}`,
-            ),
-          );
+          .where(and(sql`${hostScopeColumn} = ${scopeId}`, isNull(hostDeletedAtColumn), sql`referenced.id IN ${candidates}`));
         const referenced = new Set(referencedRows.map((row) => row.id));
         const orphanIds = candidates.filter((id) => !referenced.has(id));
         if (orphanIds.length === 0) return;
@@ -158,7 +155,7 @@ export async function gcOwnedEmbeddedRows(
             deletedBy: actorId,
             updatedAt: now,
             updatedBy: actorId,
-            stx: stripChangedFieldsStx(),
+            stx: stripChangedFields(embeddedColumns.stx),
           })
           .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
           .returning({ id: embeddedColumns.id });

@@ -6,10 +6,8 @@ import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
 import { lsnToBigInt } from '../utils/lsn';
-import { parseMessage } from './parse-message';
+import { type DmlMessage, parseMessage } from './parse-message';
 import { processFlush } from './process-events';
-
-type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.MessageDelete;
 
 function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
@@ -32,9 +30,9 @@ async function acknowledgeLsn(lsn: string): Promise<boolean> {
 const flushBuffer = new FlushBuffer(
   processFlush,
   async (position) => {
-    await acknowledgeLsn(position);
-    // The flush is recorded: whatever failed before is behind the worker.
-    replicationState.clearFailure();
+    // The flush is recorded, and once its position went out whatever failed before is behind the worker. A flush that
+    // ends after a later message failed acknowledges nothing, and that failure goes on counting.
+    if (await acknowledgeLsn(position)) replicationState.clearFailure();
   },
   resourceLimits.buffers.flushWindowMs,
 );

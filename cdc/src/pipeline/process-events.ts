@@ -1,10 +1,11 @@
 import { sql } from 'drizzle-orm';
 import { hierarchy, isProduct, type ProductEntityType } from 'shared';
+import { activityAttrs, cdcAttrs, cdcSpanNames } from 'shared/tracing';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { embeddingsAfterDispatch } from '../embeddings';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
+import { withSpan } from '../lib/tracing';
 import { wsClient } from '../network/websocket-client';
 import { generateActivityId, type ProductRow, sendMessageToApi, sendProductMessagesToApi } from '../services/activity-service';
 import { metrics } from '../services/cdc-metrics';
@@ -18,18 +19,6 @@ import { computeBatchUnifiedDeltas, isStampable } from '../utils/compute-unified
 interface PreparedEvent {
   event: PendingEvent;
   activity: ProductRow['activity'];
-}
-
-/** Groups in the order their keys first appear. */
-function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const key = keyOf(item);
-    const group = groups.get(key);
-    if (group) group.push(item);
-    else groups.set(key, [item]);
-  }
-  return groups;
 }
 
 /** Rows per activity insert: a row binds about twenty parameters, and one statement takes 65,535 at most. */
@@ -78,7 +67,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
       .filter((item) => !insertedIds.has(item.activity.id))
       .map((item) => item.event.result)
       .filter(({ tableMeta, activity }) => isStampable(tableMeta, activity.action, hierarchy));
-    for (const [tableName, results] of groupBy(again, (result) => result.activity.tableName)) {
+    for (const [tableName, results] of Map.groupBy(again, (result) => result.activity.tableName)) {
       const seqById = new Map<string, number>();
       const ids = [...new Set(results.map((result) => result.rowData.id))];
       for (let offset = 0; offset < ids.length; offset += readBackChunkSize) {
@@ -113,7 +102,6 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
   const prepared: PreparedEvent[] = transactions
     .flat()
     .map((event) => ({ event, activity: { ...event.result.activity, id: generateActivityId(event) } }));
-  if (prepared.length === 0) return;
 
   await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activity), () => recordFlush(prepared));
 
@@ -134,7 +122,7 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
     const productType = productTypeOf(item.event);
     return productType ? [{ ...item, productType }] : [];
   });
-  for (const group of groupBy(products, ({ productType, activity }) => `${productType}:${activity.action}`).values()) {
+  for (const group of Map.groupBy(products, ({ productType, activity }) => `${productType}:${activity.action}`).values()) {
     const events = group.map((item) => item.event);
     const { productType, activity } = group[0];
     const { action } = activity;

@@ -1,6 +1,7 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { ChannelIdColumns } from 'shared';
 import { isChannel } from 'shared';
+import { entityCountPrefix } from '#/modules/entities/counter-keys';
 import { resourceLimits } from '../constants';
 import { suppressEmbeddingPropagation } from '../embeddings';
 import { log } from '../lib/pino';
@@ -11,9 +12,6 @@ import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 import { TransactionTooLargeError } from './failure';
-
-/** Prefix of the counter keys that count rows: what a cascaded delete takes off the channels above it. */
-const entityCountPrefix = 'e:c:';
 
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking

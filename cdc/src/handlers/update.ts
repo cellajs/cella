@@ -6,8 +6,8 @@ import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
 import { compactRowData } from '../utils/compact-row-data';
 import { convertRowKeys } from '../utils/convert-row-keys';
+import { getStxChangedFields } from '../utils/extract-stx-data';
 import { getChangedFields } from '../utils/get-changed-fields';
-import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
 /** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
@@ -16,16 +16,6 @@ const rowLocationPath = (entityType: string, row: Record<string, unknown>): stri
   if (isChannel(entityType)) return hierarchy.computeChannelPath(entityType, row);
   return null;
 };
-
-/** @returns null when stx carries no changedFields: creates, non-API updates, rows written before stx. */
-function getStxChangedFields(row: Record<string, unknown>): string[] | null {
-  const stx = row.stx;
-  if (stx && typeof stx === 'object' && !Array.isArray(stx)) {
-    const cf = (stx as Record<string, unknown>).changedFields;
-    if (Array.isArray(cf)) return cf.filter((x): x is string => typeof x === 'string');
-  }
-  return null;
-}
 
 function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null): boolean {
   return oldRowData?.deletedAt != null && rowData.deletedAt != null;
@@ -47,12 +37,12 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
   // CDC's own seq stamps carry no user mutation.
   if (userChangedFields && userChangedFields.length === 0) return null;
 
-  if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
+  if (isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
   // CDC's own cleanup of an embedding column carries no user mutation.
   if (isEmbeddingCleanupWrite(tableMeta.type, userChangedFields)) return null;
 
-  const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
+  const activity = createActivity(tableMeta, rowData, 'update', userChangedFields);
 
   // Move-out: when the location path changes, the old row's permission subset lets dispatch notify
   // subscribers who could read the old location but not the new one.

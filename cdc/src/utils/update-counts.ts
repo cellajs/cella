@@ -1,9 +1,10 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
-import { entityIdColumnKey, hierarchy } from 'shared';
-import { log } from '../lib/pino';
+import { hierarchy } from 'shared';
+import { entityCountHomePrefix, entityCountPrefix } from '#/modules/entities/counter-keys';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
+import { getStringValue } from './get-string-value';
 
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update. */
@@ -72,7 +73,7 @@ export function getCountDeltas(
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
   if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
-  if (action === 'delete') return isCountableRow(oldRow ?? newRow) ? 'delete' : null;
+  if (action === 'delete') return isCountableRow(newRow) ? 'delete' : null;
   // REPLICA IDENTITY FULL always carries the old row on updates; fallback only.
   if (!oldRow) return isCountableRow(newRow) ? 'update' : null;
   const wasCountable = isCountableRow(oldRow);
@@ -80,11 +81,6 @@ function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: C
   if (wasCountable && !nowCountable) return 'delete';
   if (!wasCountable && nowCountable) return 'create';
   return wasCountable && nowCountable ? 'update' : null;
-}
-
-function getStringValue(row: CdcRowData, key: string): string | null {
-  const v = row[key];
-  return typeof v === 'string' ? v : null;
 }
 
 /** Reads channelId and role, both NOT NULL: a missing value means a malformed row and yields no delta. */
@@ -123,8 +119,7 @@ function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, 
   }
 
   if (action === 'delete') {
-    const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
-    if (rejectedAt != null) return null;
+    if (newRow.rejectedAt != null) return null;
     return { channelKey: channelId, deltas: { 'm:c:pending': -1 } };
   }
 
@@ -155,13 +150,8 @@ function getEntityDeltas(
   oldRow: CdcRowData | null,
   h: EntityHierarchy,
 ): CountDelta[] {
-  if (!newRow.id) {
-    log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
-    return [];
-  }
-
-  const counterKey = `e:c:${entityType}`;
-  const selfCountKey = `e:c:h:${entityType}`;
+  const counterKey = `${entityCountPrefix}${entityType}`;
+  const selfCountKey = `${entityCountHomePrefix}${entityType}`;
 
   if (action === 'create' || action === 'delete') {
     const value = action === 'create' ? 1 : -1;
@@ -174,7 +164,6 @@ function getEntityDeltas(
     // Self count: rows homed at the node only (deepest non-null ancestor, org fallback).
     const home = h.resolveDeepestAncestorId(entityType, row) ?? organizationId;
     deltas.push({ channelKey: home, deltas: { [selfCountKey]: value } });
-    warnMissingAncestors(h, entityType, row);
     return deltas;
   }
 
@@ -200,15 +189,4 @@ function getEntityDeltas(
   }
 
   return [];
-}
-
-/** Warns for missing ancestor ids, except ancestors declared nullable (variable-depth rows). */
-function warnMissingAncestors(h: EntityHierarchy, entityType: EntityType, row: CdcRowData): void {
-  const nullable = h.getNullableAncestors(entityType);
-  for (const ancestor of h.getOrderedAncestors(entityType)) {
-    const idColumn = entityIdColumnKey(ancestor);
-    if (typeof row[idColumn] === 'string') continue;
-    if (nullable.includes(ancestor)) continue;
-    log.warn(`getEntityDeltas: missing "${idColumn}" for ${entityType}`, { id: row.id });
-  }
 }

@@ -67,7 +67,7 @@ class ReplicationStateManager {
     this.failure = { position, count: passing ? before : before + 1, since, error: message, passing };
   }
 
-  /** A flush was recorded: whatever failed before is behind the worker. */
+  /** A flush was acknowledged, or a rebuild moved the slot past the failing position: whatever failed before is behind the worker. */
   clearFailure(): void {
     this.failure = null;
     this.failuresInARow = 0;

@@ -1,20 +1,11 @@
-import { getColumns, getTableName } from 'drizzle-orm';
+import { getColumns, getTableName, type Table } from 'drizzle-orm';
 import { typedEntries } from 'shared';
 import { entityTables, resourceTables } from '#/tables';
 import type { EntityTableMeta, ResourceTableMeta, TableMeta } from './types';
 
-/** Startup only, for building the column name map. */
-function camelToSnake(str: string): string {
-  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-}
-
-/** snake_case to camelCase column names, from the Drizzle schema. */
-function buildColumnNameMap(columnKeys: string[]): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const camelKey of columnKeys) {
-    map.set(camelToSnake(camelKey), camelKey);
-  }
-  return map;
+/** The camelCase key of each column of a table by its database name, both as the Drizzle schema declares them. */
+function buildColumnNameMap(table: Table): Map<string, string> {
+  return new Map(Object.entries(getColumns(table)).map(([key, column]) => [column.name, key]));
 }
 
 function buildTableRegistry(): Map<string, TableMeta> {
@@ -22,14 +13,14 @@ function buildTableRegistry(): Map<string, TableMeta> {
 
   for (const [type, table] of typedEntries(entityTables)) {
     const tableName = getTableName(table);
-    const columnNameMap = buildColumnNameMap(Object.keys(getColumns(table)));
+    const columnNameMap = buildColumnNameMap(table);
     const meta: EntityTableMeta = { kind: 'entity', table, type, columnNameMap };
     registry.set(tableName, meta);
   }
 
   for (const [type, table] of typedEntries(resourceTables)) {
     const tableName = getTableName(table);
-    const columnNameMap = buildColumnNameMap(Object.keys(getColumns(table)));
+    const columnNameMap = buildColumnNameMap(table);
     const meta: ResourceTableMeta = { kind: 'resource', table, type, columnNameMap };
     registry.set(tableName, meta);
   }

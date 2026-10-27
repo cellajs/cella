@@ -9,6 +9,9 @@ import type { CdcRowData, RowData, TableMeta } from '../types';
 import { compactRowData } from '../utils/compact-row-data';
 import { convertRowKeys } from '../utils/convert-row-keys';
 
+/** A change of a row, the one kind of message the parser reads. */
+export type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.MessageDelete;
+
 /** An activity before it has its id, which a flush derives from the commit position of its source transaction. */
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 
@@ -49,18 +52,13 @@ function handleWholeRow(tableMeta: TableMeta, row: RowData | null, action: 'crea
   return { activity: createActivity(tableMeta, rowData, action), rowData: compactRowData(tableMeta, rowData), oldRowData: null, tableMeta };
 }
 
-/** @returns null for untracked tables, non-DML messages, and filtered draft events. */
-export function parseMessage(message: Pgoutput.Message): ParseMessageResult | null {
-  const { tag } = message;
-  if (tag !== 'insert' && tag !== 'update' && tag !== 'delete') {
-    return null;
-  }
-
+/** @returns null for untracked tables and filtered draft events. */
+export function parseMessage(message: DmlMessage): ParseMessageResult | null {
   const tableMeta = tableRegistry.get(message.relation.name);
   if (!tableMeta) return null;
 
   const result = (() => {
-    switch (tag) {
+    switch (message.tag) {
       case 'insert':
         return handleWholeRow(tableMeta, message.new, 'create');
       case 'update':

@@ -2,12 +2,9 @@ import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
 import { resolveOtlpSink } from 'shared/otlp-sink';
-import { activityAttrs, cdcAttrs, cdcSpanNames, createSpanStoreProcessor, type TraceContext } from 'shared/tracing';
+import { type CleanSpanAttributes, createSpanStoreProcessor, type TraceContext } from 'shared/tracing';
 import { env } from '../env';
 import { log } from './pino';
-
-export type { TraceContext };
-export { activityAttrs, cdcAttrs, cdcSpanNames };
 
 // OTel SDK
 
@@ -63,17 +60,11 @@ meter
 
 const tracer = trace.getTracer(`${appConfig.name}-cdc`);
 
-interface SpanAttrs {
-  [key: string]: string | number | boolean | null | undefined;
-}
-
 /** Runs `fn` in a CDC span and hands it that span's W3C context for `_trace`, which the API continues the trace from. */
-export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
+export async function withSpan<T>(name: string, attrs: CleanSpanAttributes, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {
-      if (value !== undefined && value !== null) {
-        span.setAttribute(key, value);
-      }
+      if (value !== null) span.setAttribute(key, value);
     }
     try {
       const { traceId, spanId, traceFlags } = span.spanContext();

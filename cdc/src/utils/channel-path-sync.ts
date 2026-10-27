@@ -18,7 +18,7 @@ export async function syncChannelPaths(events: PendingEvent[]): Promise<void> {
     if (tableMeta.kind !== 'entity' || !channelTypes.has(tableMeta.type)) continue;
     if (activity.action === 'delete') continue;
     const path = hierarchy.computeChannelPath(tableMeta.type, rowData);
-    if (typeof rowData.id === 'string' && path !== null) paths.set(rowData.id, path);
+    if (path !== null) paths.set(rowData.id, path);
   }
   if (paths.size === 0) return;
 

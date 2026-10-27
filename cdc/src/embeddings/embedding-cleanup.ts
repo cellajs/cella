@@ -1,24 +1,26 @@
 import { and, arrayOverlaps, asc, getColumns, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { isEmbeddingColumn } from './reference-columns';
-import { stripChangedFieldsStx } from './strip-changed-fields';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
+  embeddedProduct: ProductEntityType;
   hostTable: AnyPgTable;
   hostColumn: AnyPgColumn;
   hostColumnName: string;
   parentColumnName: string;
   parentColumn: AnyPgColumn;
   hostIdColumn: AnyPgColumn;
+  hostStxColumn: AnyPgColumn;
 }
 
 /** What the cleanup writes through: the worker's pool, or the transaction a test keeps to itself. */
@@ -26,7 +28,7 @@ type CleanupExecutor = Pick<typeof cdcDb, 'transaction'>;
 
 /** Resolves productEmbeddings to Drizzle column references at module init; throws on misconfiguration. */
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
-  const map = new Map<ProductEntityType, ResolvedEmbedding[]>();
+  const resolved: ResolvedEmbedding[] = [];
 
   for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
     const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
@@ -52,13 +54,19 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     const parentColumn = columns[parentColumnName];
     if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
 
-    const resolved: ResolvedEmbedding = { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn: columns.id };
-    const list = map.get(embeddedProduct);
-    if (list) list.push(resolved);
-    else map.set(embeddedProduct, [resolved]);
+    resolved.push({
+      embeddedProduct,
+      hostTable,
+      hostColumn,
+      hostColumnName,
+      parentColumnName,
+      parentColumn,
+      hostIdColumn: columns.id,
+      hostStxColumn: columns.stx,
+    });
   }
 
-  return map;
+  return Map.groupBy(resolved, (embedding) => embedding.embeddedProduct);
 }
 
 /** Pre-resolved embedding lookups, keyed by embedded entity type. */
@@ -82,25 +90,19 @@ export async function cleanupEmbeddingReferences(
 
   if (relevantEvents.length === 0) return;
 
-  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } of embeddings) {
+  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn, hostStxColumn } of embeddings) {
+    const references = relevantEvents.flatMap(({ result: { rowData } }) => {
+      const parentId = rowData[parentColumnName];
+      if (typeof parentId === 'string') return [{ parentId, id: rowData.id }];
+      log.warn(`cleanupEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id: rowData.id });
+      return [];
+    });
     // Grouped by parent scope, e.g. projectId.
-    const byParent = new Map<string, string[]>();
-    for (const { result } of relevantEvents) {
-      const { id } = result.rowData;
-      const parentId = result.rowData[parentColumnName];
-      if (!id || typeof parentId !== 'string') {
-        if (id) log.warn(`cleanupEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id });
-        continue;
-      }
-
-      const ids = byParent.get(parentId);
-      if (ids) ids.push(id);
-      else byParent.set(parentId, [id]);
-    }
+    const byParent = Map.groupBy(references, (reference) => reference.parentId);
 
     // One parent after another, in a fixed order: two strips never wait for each other's rows the other way round.
     for (const parentId of [...byParent.keys()].sort()) {
-      const embeddedIds = byParent.get(parentId) ?? [];
+      const embeddedIds = byParent.get(parentId)?.map((reference) => reference.id) ?? [];
       await db.transaction(async (tx) => {
         // Locked in id order before the strip: two strips over the same hosts take their locks the same way round.
         const hosts = await tx
@@ -119,7 +121,7 @@ export async function cleanupEmbeddingReferences(
             FROM unnest(${hostColumn}) AS elem
             WHERE elem NOT IN ${embeddedIds}
           )`,
-            stx: stripChangedFieldsStx(),
+            stx: stripChangedFields(hostStxColumn),
           })
           .where(
             inArray(

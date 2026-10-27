@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { cdcPublicationName } from '../constants';
-import { cdcDb } from '../lib/db';
+import { cdcDb, type Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { tableRegistry } from '../table-registry';
 
@@ -12,7 +12,7 @@ import { tableRegistry } from '../table-registry';
  * @param db - What the catalog is read through: the worker's pool, or a transaction a test set a role in.
  * @returns What is wrong, in sentences for the log and health; empty when the setup holds.
  */
-export async function checkReplicationSetup(db: Pick<typeof cdcDb, 'execute'> = cdcDb): Promise<string[]> {
+export async function checkReplicationSetup(db: Executor = cdcDb): Promise<string[]> {
   const problems: string[] = [];
   const tracked = [...tableRegistry.keys()].sort();
 

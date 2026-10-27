@@ -7,7 +7,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { cdcPublicationName, cdcSlotName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
-import { ensureReplicationSlot, subscribeWithReconnect } from '../../pipeline/replication';
+import { subscribeWithReconnect } from '../../pipeline/replication';
 import { stopCdcWorker } from '../../pipeline/worker';
 import { replicationState } from '../../services/replication-state';
 
@@ -107,7 +107,7 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   }
 
   // Made here, so the loop finds it: a slot the loop makes on a database with a history is a lost case.
-  await ensureReplicationSlot();
+  await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${cdcSlotName}, 'pgoutput')`);
 
   const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [cdcPublicationName], messages: true });
   let looping = false;

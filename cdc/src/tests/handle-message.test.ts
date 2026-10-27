@@ -25,6 +25,7 @@ vi.mock('../pipeline/parse-message', () => ({
   })),
 }));
 
+import { resourceLimits } from '../constants';
 import { handleDataMessage, resetBuffers } from '../pipeline/handle-message';
 import { fence } from '../services/fence';
 import { replicationState } from '../services/replication-state';
@@ -268,6 +269,42 @@ describe('handleDataMessage: a message it cannot handle', () => {
 
       expect(processFlush).not.toHaveBeenCalled();
       expect(acknowledge).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('must not forget the failure when a flush that was already running ends after it', async () => {
+    vi.useFakeTimers();
+    try {
+      const { acknowledge } = serviceWith();
+      let release: () => void = () => {};
+      // Reset first: a held flush that another test queued and never started would take this one's place.
+      vi.mocked(processFlush)
+        .mockReset()
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              release = resolve;
+            }),
+        );
+      // The window ends and its flush starts: it waits for the API.
+      await begin('0/90');
+      await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+      await commit('0/98');
+      await vi.advanceTimersByTimeAsync(resourceLimits.buffers.flushWindowMs);
+      expect(processFlush).toHaveBeenCalledOnce();
+
+      // The next message fails while that flush runs, and the flush ends after it.
+      mocked.mockImplementationOnce(() => {
+        throw new Error('unreadable');
+      });
+      await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-2'));
+      release();
+      await vi.runAllTimersAsync();
+
+      expect(acknowledge).not.toHaveBeenCalled();
+      expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
     } finally {
       vi.useRealTimers();
     }

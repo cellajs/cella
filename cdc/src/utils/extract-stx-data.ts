@@ -21,3 +21,16 @@ export function extractStxData(row: RowData): StxBase | null {
       typeof stxObj.fieldTimestamps === 'object' && stxObj.fieldTimestamps !== null ? (stxObj.fieldTimestamps as Record<string, string>) : {},
   };
 }
+
+/**
+ * The fields an edit through the API changed, as the row's stx lists them.
+ * @returns null when stx carries no changedFields: creates, non-API updates, rows written before stx.
+ */
+export function getStxChangedFields(row: RowData): string[] | null {
+  const stx = row.stx;
+  if (stx && typeof stx === 'object' && !Array.isArray(stx)) {
+    const cf = (stx as Record<string, unknown>).changedFields;
+    if (Array.isArray(cf)) return cf.filter((x): x is string => typeof x === 'string');
+  }
+  return null;
+}

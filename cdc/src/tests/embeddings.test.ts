@@ -117,7 +117,7 @@ function change(
   rowData: Row,
   { changedFields = null, oldRowData = null }: { changedFields?: string[] | null; oldRowData?: Row | null } = {},
 ): ParseMessageResult {
-  return { activity: createActivity(metaOf(type), rowData, action, { changedFields }), rowData, oldRowData, tableMeta: metaOf(type) };
+  return { activity: createActivity(metaOf(type), rowData, action, changedFields), rowData, oldRowData, tableMeta: metaOf(type) };
 }
 
 /** Sends changes through the buffer as one source transaction. @returns What its commit lets through, as `type:action:id`. */
@@ -294,7 +294,7 @@ describe('cleanupEmbeddingReferences', () => {
     expect(statement.where).toContain('"tasks"."organization_id" =');
     expect(statement.scope).toEqual(['i1', 'o1']);
     // No changedFields: the update handler reads the write by its WAL diff.
-    expect(statement.stx).toBe("stx - 'changedFields'");
+    expect(statement.stx).toBe(`"tasks"."stx" - 'changedFields'`);
   });
 
   it('strips the id of a soft-deleted embedded row, and issues nothing for an update that deletes nothing', async () => {

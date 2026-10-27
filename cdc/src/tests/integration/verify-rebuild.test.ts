@@ -10,9 +10,9 @@ import { awaitBooksAnswer, clearBooksRequest, findBooksRequest, requestBooks } f
 import { type SyncCorrection, syncIncidentsTable, syncStateTable } from '#/modules/entities/sync-state-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
-import { cdcPublicationName, resourceLimits } from '../../constants';
+import { cdcPublicationName, cdcSlotName, resourceLimits } from '../../constants';
 import { cdcDb } from '../../lib/db';
-import { settleLostCases } from '../../pipeline/replication';
+import { ensureReplicationSlot, settleLostCases } from '../../pipeline/replication';
 import { answerBooksRequests, rebuildBooks, restoreBooksState, startBooksSchedule, stopBooksSchedule, verifyBooks } from '../../pipeline/verify';
 import { fence } from '../../services/fence';
 import { replicationState } from '../../services/replication-state';
@@ -560,6 +560,25 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
       expect(await findBooksRequest(cdcDb)).toBeNull();
       expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
       expect(await recordedFor(backlog)).toBe(0);
+    }, 60_000);
+
+    it('rebuilds at its next start when the rebuild for a slot it had to make did not commit', async () => {
+      await readingWithNoFence();
+      await stopReading();
+      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${cdcSlotName})`);
+
+      // Asked for before the slot exists: a worker that dies right after making it finds the request.
+      expect(await ensureReplicationSlot()).toBe('created');
+      expect(await findBooksRequest(cdcDb)).toBe('rebuild');
+
+      // The rebuild for the new slot does not commit, and the next attempt finds the slot present.
+      await withoutIncidents(() => expect(settleLostCases(true)).rejects.toThrow());
+      const since = await dbNow();
+      await settleLostCases(false);
+
+      expect(await rebuildsSince(since)).toEqual(['requested']);
+      expect(await findBooksRequest(cdcDb)).toBeNull();
+      expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
     }, 60_000);
 
     it('answers a request with the rebuild a lost case starts: one rebuild, not two', async () => {

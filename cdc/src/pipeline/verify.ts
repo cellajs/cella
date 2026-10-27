@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
+import type { Tx } from '#/db/create-connection';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { isForwardOnlyCounterKey, isPlainCountKey } from '#/modules/entities/counter-keys';
 import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
 import { clearBooksRequest, findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
 import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateId, syncStateTable } from '#/modules/entities/sync-state-db';
 import { resourceLimits } from '../constants';
-import { cdcDb } from '../lib/db';
+import { cdcDb, type Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
 import { type CounterDeltas, fence } from '../services/fence';
@@ -17,8 +18,6 @@ import { fenceMarkerPrefix, runBetweenFlushes } from './handle-message';
 const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
 
 type Counters = Map<string, Record<string, number>>;
-type Executor = Pick<typeof cdcDb, 'execute'>;
-type Transaction = Parameters<Parameters<typeof cdcDb.transaction>[0]>[0];
 type Incident = typeof syncIncidentsTable.$inferInsert;
 
 /** Why the books were rebuilt, as the incident says it. */
@@ -58,17 +57,18 @@ async function readStoredCounters(db: Executor): Promise<Counters> {
   return new Map(rows.rows.map((row) => [row.channel_key, row.counts]));
 }
 
-/** The first query of a REPEATABLE READ transaction fixes its snapshot: everything it reads afterwards is as of that snapshot. */
-async function takeSnapshot(tx: Transaction): Promise<string> {
-  return (await tx.execute<{ snapshot: string }>(sql`SELECT pg_current_snapshot()::text AS snapshot`)).rows[0].snapshot;
-}
-
 /**
- * Writes the marker: the logical message that tells the stream it has passed a snapshot. Not transactional, so it is
- * in the WAL at once, whatever becomes of the transaction that counts.
+ * Opens a recount in its REPEATABLE READ transaction. The first query fixes the snapshot: everything the transaction
+ * reads afterwards is as of that snapshot. The marker follows right after it: the logical message that tells the
+ * stream it has passed the snapshot, written outside the transaction so it is in the WAL at once, whatever becomes of
+ * the count. Then the statement timeout of the count.
+ * @returns The snapshot, as `pg_current_snapshot()` gives it.
  */
-async function emitMarker(marker: string): Promise<void> {
+async function openRecount(tx: Tx, marker: string, timeoutMs: number): Promise<string> {
+  const { snapshot } = (await tx.execute<{ snapshot: string }>(sql`SELECT pg_current_snapshot()::text AS snapshot`)).rows[0];
   await cdcDb.execute(sql`SELECT pg_logical_emit_message(false, ${fenceMarkerPrefix}, ${marker})`);
+  await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${timeoutMs}`));
+  return snapshot;
 }
 
 /**
@@ -82,7 +82,7 @@ const nextGeneration = sql`GREATEST(${syncStateTable.generation} + 1, floor(extr
  * `sync_incidents`. Written in the transaction that replaces the books, so the books never change without it.
  * @returns The new generation.
  */
-async function writeIncident(tx: Transaction, reason: IncidentReason, details: IncidentDetails): Promise<number> {
+async function writeIncident(tx: Tx, reason: IncidentReason, details: IncidentDetails): Promise<number> {
   await tx.insert(syncStateTable).values({ id: syncStateId }).onConflictDoNothing();
   const [state] = await tx
     .update(syncStateTable)
@@ -157,14 +157,13 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
       let snapshot = '';
       const committed = await cdcDb.transaction(
         async (tx) => {
-          snapshot = await takeSnapshot(tx);
-          await emitMarker(marker);
-          await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${countTimeoutMs}`));
+          snapshot = await openRecount(tx, marker, countTimeoutMs);
           await recalculateCounters({ var: { db: tx } });
           const next = await writeIncident(tx, reason, details);
           const kept: SyncFence = { marker };
           await tx.update(syncStateTable).set({ fence: kept }).where(eq(syncStateTable.id, syncStateId));
-          // A rebuild answers a request for one, whatever started it. A verify that is asked for still gets its own answer.
+          // A rebuild answers a request for one, whatever started it. A verify asked for during another rebuild still gets its
+          // own answer; one waiting when a stuck or lost slot writes its rebuild request is replaced by that rebuild.
           await clearBooksRequest(tx, 'rebuild');
           return next;
         },
@@ -180,7 +179,9 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
     announceIncident(reason, generation, details);
     lastRebuildAt = Date.now();
     fenceLeftOpen = false;
-    replicationState.clearFailure();
+    // Only these two move past the failing position: the slot moved, or it is new. After any other rebuild the same
+    // change is read again, and its failure goes on counting.
+    if (reason === 'stuck' || reason === 'lost_slot') replicationState.clearFailure();
   } finally {
     operations -= 1;
   }
@@ -208,11 +209,9 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
         new Promise<void>((taken, failed) => {
           counting = cdcDb.transaction(
             async (tx) => {
-              const snapshot = await takeSnapshot(tx);
-              await emitMarker(marker);
+              const snapshot = await openRecount(tx, marker, verifyTimeoutMs);
               fence.open('verify', snapshot, marker);
               taken();
-              await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${verifyTimeoutMs}`));
               stored = await readStoredCounters(tx);
               counted = await computeChannelCounters({ var: { db: tx } });
             },
@@ -237,8 +236,10 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
 
     const differences = compareBooks(stored, counted, fence.close());
     if (differences.length > 0) await rebuildBooks('wrong_books', { corrections: differences });
-    await cdcDb.insert(syncStateTable).values({ id: syncStateId }).onConflictDoNothing();
-    await cdcDb.update(syncStateTable).set({ verifiedAt: sql`now()` }).where(eq(syncStateTable.id, syncStateId));
+    await cdcDb
+      .insert(syncStateTable)
+      .values({ id: syncStateId, verifiedAt: sql`now()` })
+      .onConflictDoUpdate({ target: syncStateTable.id, set: { verifiedAt: sql`now()` } });
     log.info('Sync books verified', { channels: counted.size, differences: differences.length });
     return differences;
   } catch (error) {

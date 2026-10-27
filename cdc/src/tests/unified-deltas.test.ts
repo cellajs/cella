@@ -86,7 +86,6 @@ describe('computeBatchUnifiedDeltas', () => {
     // One sequence group per organization; all product types share it.
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
-    expect(plan.orgSequenceGroups[0].count).toBe(5);
     expect(plan.orgSequenceGroups[0].events).toHaveLength(5);
 
     // Accumulated across all 5 events, plus one activity stamp falling back to Date.now().
@@ -139,7 +138,7 @@ describe('computeBatchUnifiedDeltas', () => {
 
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
-    expect(plan.orgSequenceGroups[0].count).toBe(2);
+    expect(plan.orgSequenceGroups[0].events).toHaveLength(2);
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -2, 'e:c:h:attachment': -2 });
   });
 
@@ -150,10 +149,10 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    expect(plan.orgSequenceGroups.map((g) => [g.orgKey, g.count, g.events.map((e) => e.result.rowData.id)])).toEqual([
-      ['org-0', 1, ['att-0']],
-      ['org-1', 1, ['att-1']],
-      ['org-2', 1, ['att-2']],
+    expect(plan.orgSequenceGroups.map((g) => [g.orgKey, g.events.map((e) => e.result.rowData.id)])).toEqual([
+      ['org-0', ['att-0']],
+      ['org-1', ['att-1']],
+      ['org-2', ['att-2']],
     ]);
   });
 });
