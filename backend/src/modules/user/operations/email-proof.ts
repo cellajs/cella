@@ -1,14 +1,7 @@
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { EmailProof } from '#/modules/user/emails-db';
 import { claimEmailForUser } from '#/modules/user/operations/claim-email';
-import { updateEmailProof, upsertProvenEmail } from '#/modules/user/user-queries';
-
-interface EmailProofOpts {
-  userId: string;
-  email: string;
-  via: EmailProof;
-}
+import { type EmailProofOpts, updateEmailProof, upsertProvenEmail } from '#/modules/user/user-queries';
 
 /**
  * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user

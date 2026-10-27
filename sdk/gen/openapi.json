@@ -2973,11 +2973,17 @@
             }
           ],
           "oauthClientId": null,
-          "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
           "createdAt": "2024-09-01T22:49:17.262Z",
           "updatedAt": "2024-09-01T22:49:17.262Z",
-          "updatedBy": null,
-          "lastSeenAt": "2024-09-01T22:49:17.262Z"
+          "lastSeenAt": "2024-09-01T22:49:17.262Z",
+          "createdBy": {
+            "id": "b49a55f9-fa14-4193-ae0b-e26a7862c0b1",
+            "kind": "user",
+            "name": "Mafalda Mueller",
+            "slug": "mafalda_mueller",
+            "thumbnailUrl": null
+          },
+          "updatedBy": null
         },
         "x-tags": ["data", "service-accounts", "cella"]
       },
@@ -9220,80 +9226,30 @@
                 "example": {
                   "items": [
                     {
-                      "id": "af54c332-26e9-48e2-9f9d-8ade4a445d7f",
-                      "entityType": "user",
+                      "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                      "createdAt": "2024-09-01T15:27:58.824Z",
+                      "updatedAt": "2024-10-09T09:41:44.154Z",
                       "name": "Elton Beahan",
-                      "firstName": "Elton",
-                      "lastName": "Beahan",
-                      "email": "elton.beahan@gmail.com",
-                      "slug": "eltonbeahan78",
                       "description": null,
+                      "entityType": "user",
+                      "slug": "elton.beahan",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": false,
-                      "contrast": "system",
-                      "mfaRequired": false,
-                      "userFlags": {
-                        "finishedOnboarding": false
-                      },
-                      "createdAt": "2024-12-14T16:10:19.376Z",
-                      "updatedAt": "2024-12-14T16:10:19.376Z",
-                      "updatedBy": null,
-                      "lastSignInAt": "2024-12-14T16:10:19.376Z",
-                      "lastSeenAt": "2024-12-14T16:10:19.376Z",
-                      "memberships": [
-                        {
-                          "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
-                          "tenantId": "dbp099",
-                          "channelType": "organization",
-                          "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                          "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
-                          "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                          "role": "member",
-                          "displayOrder": 70,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
+                      "email": "elton_beahan40@hotmail.com",
+                      "lastSeenAt": "2024-10-09T09:41:44.154Z"
                     },
                     {
-                      "id": "c64d1a0d-9853-4aeb-8360-296b55c24f83",
-                      "entityType": "user",
+                      "id": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                      "createdAt": "2024-05-10T18:17:52.266Z",
+                      "updatedAt": "2024-11-05T16:38:04.981Z",
                       "name": "Moriah Adams",
-                      "firstName": "Moriah",
-                      "lastName": "Adams",
-                      "email": "moriah.adams@hotmail.com",
-                      "slug": "moriahadams",
                       "description": null,
+                      "entityType": "user",
+                      "slug": "moriah.adams",
                       "thumbnailUrl": null,
                       "bannerUrl": null,
-                      "language": "en",
-                      "newsletter": true,
-                      "contrast": "system",
-                      "mfaRequired": false,
-                      "userFlags": {
-                        "finishedOnboarding": false
-                      },
-                      "createdAt": "2024-01-03T10:14:05.394Z",
-                      "updatedAt": "2024-01-03T10:14:05.394Z",
-                      "updatedBy": null,
-                      "lastSignInAt": "2024-01-03T10:14:05.394Z",
-                      "lastSeenAt": "2024-01-03T10:14:05.394Z",
-                      "memberships": [
-                        {
-                          "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
-                          "tenantId": "6xgvt4",
-                          "channelType": "organization",
-                          "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                          "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
-                          "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                          "role": "admin",
-                          "displayOrder": 41,
-                          "muted": false,
-                          "archived": false
-                        }
-                      ]
+                      "email": "moriah.adams5@hotmail.com",
+                      "lastSeenAt": "2024-11-05T16:38:04.981Z"
                     }
                   ],
                   "total": 2
@@ -9424,28 +9380,17 @@
             "content": {
               "application/json": {
                 "example": {
-                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-                  "entityType": "user",
-                  "name": "Isai Senger",
-                  "firstName": "Isai",
-                  "lastName": "Senger",
-                  "email": "isai_senger@hotmail.com",
-                  "slug": "isaisenger90",
+                  "id": "cf387e16-8ae6-4047-89c7-8295efab57f0",
+                  "createdAt": "2024-01-11T09:56:56.168Z",
+                  "updatedAt": "2024-01-14T14:34:48.360Z",
+                  "name": "Zelma Murazik",
                   "description": null,
+                  "entityType": "user",
+                  "slug": "zelma_murazik1",
                   "thumbnailUrl": null,
                   "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": false,
-                  "contrast": "system",
-                  "mfaRequired": false,
-                  "userFlags": {
-                    "finishedOnboarding": false
-                  },
-                  "createdAt": "2024-06-15T02:53:22.776Z",
-                  "updatedAt": "2024-06-15T02:53:22.776Z",
-                  "updatedBy": null,
-                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
-                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
+                  "email": "zelma_murazik@hotmail.com",
+                  "lastSeenAt": "2024-01-14T14:34:48.360Z"
                 },
                 "schema": {
                   "allOf": [
@@ -12181,7 +12126,7 @@
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.",
         "x-enabled-by": {
           "service": "mcp"
         },
@@ -13849,11 +13794,17 @@
                       }
                     ],
                     "oauthClientId": null,
-                    "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
                     "createdAt": "2024-09-01T22:49:17.262Z",
                     "updatedAt": "2024-09-01T22:49:17.262Z",
-                    "updatedBy": null,
-                    "lastSeenAt": "2024-09-01T22:49:17.262Z"
+                    "lastSeenAt": "2024-09-01T22:49:17.262Z",
+                    "createdBy": {
+                      "id": "b49a55f9-fa14-4193-ae0b-e26a7862c0b1",
+                      "kind": "user",
+                      "name": "Mafalda Mueller",
+                      "slug": "mafalda_mueller",
+                      "thumbnailUrl": null
+                    },
+                    "updatedBy": null
                   },
                   "apiKey": {
                     "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
@@ -14033,11 +13984,17 @@
                         }
                       ],
                       "oauthClientId": null,
-                      "createdBy": "0796fe85-592b-48e6-b71b-17b41ee456f6",
                       "createdAt": "2024-03-18T03:56:02.722Z",
                       "updatedAt": "2024-03-18T03:56:02.722Z",
-                      "updatedBy": null,
-                      "lastSeenAt": "2024-03-18T03:56:02.722Z"
+                      "lastSeenAt": "2024-03-18T03:56:02.722Z",
+                      "createdBy": {
+                        "id": "99a36819-e0f2-470b-88d0-2f92a164c4d7",
+                        "kind": "user",
+                        "name": "Agustin Kirlin",
+                        "slug": "agustin_kirlin65",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": null
                     },
                     {
                       "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
@@ -14053,11 +14010,17 @@
                         }
                       ],
                       "oauthClientId": null,
-                      "createdBy": "339b813c-f84d-4752-a3c2-ac3827d82be1",
                       "createdAt": "2024-04-20T08:15:05.883Z",
                       "updatedAt": "2024-04-20T08:15:05.883Z",
-                      "updatedBy": null,
-                      "lastSeenAt": "2024-04-20T08:15:05.883Z"
+                      "lastSeenAt": "2024-04-20T08:15:05.883Z",
+                      "createdBy": {
+                        "id": "d296abdd-ef82-40aa-a7f0-4fba2ed8a6dc",
+                        "kind": "user",
+                        "name": "Nya Nikolaus",
+                        "slug": "nya_nikolaus53",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": null
                     }
                   ],
                   "total": 2

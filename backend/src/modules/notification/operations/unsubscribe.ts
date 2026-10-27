@@ -6,8 +6,7 @@ import { updateStamps } from '#/db/utils/stamps';
 import { type UnsubscribeCategory, verifyCategoryToken } from '#/modules/notification/helpers/category-token';
 import { updatePreferences } from '#/modules/notification/notification-queries';
 import type { updatePreferencesBodySchema } from '#/modules/notification/notification-schema';
-import { updateUser } from '#/modules/system/system-queries';
-import { findUserById } from '#/modules/user/user-queries';
+import { findUserById, updateUser } from '#/modules/user/user-queries';
 
 // Opened straight from an email client, so failures redirect to an error page, never JSON.
 const errorPage = { willRedirect: true } as const;

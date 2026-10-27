@@ -21,7 +21,7 @@ export interface JsonRpcResponse {
   error?: { code: number; message: string; data?: unknown };
 }
 
-/** Thrown by `tools/call` when the token lacks the tool's scope; the handler turns it into the RFC 6750 challenge. */
+/** Thrown by `tools/call` when the token lacks the tool's scope; the handler answers it with the RFC 6750 challenge. */
 export class InsufficientScopeError extends Error {
   constructor(
     readonly scope: string,
@@ -34,15 +34,32 @@ export class InsufficientScopeError extends Error {
 
 const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersion };
 
+const isJsonRpcMessage = (message: unknown): message is JsonRpcMessage =>
+  typeof message === 'object' && message !== null && 'method' in message && typeof message.method === 'string';
+
+/** The id of a message that is not a request, when it can be read (JSON-RPC 2.0 §5: otherwise null). */
+const readableId = (message: unknown): string | number | null =>
+  typeof message === 'object' && message !== null && 'id' in message && (typeof message.id === 'string' || typeof message.id === 'number')
+    ? message.id
+    : null;
+
+/** A response the client posts back (to a server request): acknowledged, never answered. */
+const isJsonRpcResponse = (message: unknown) =>
+  typeof message === 'object' && message !== null && !('method' in message) && ('result' in message || 'error' in message);
+
 /**
  * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
  * `tools/call`, `ping`. Tools are the routes carrying `xTool`; the token's scopes gate execution, and a call runs the
- * route's own handler. Returns `null` for notifications (messages without an `id`), which must not get a reply.
+ * route's own handler. Returns `null` for notifications (messages without an `id`) and for responses the client posts,
+ * which must not get a reply, and answers anything else that is not a request object with Invalid Request.
  * @see https://modelcontextprotocol.io
  */
-export async function handleMcpMessage(ctx: Context<Env>, message: JsonRpcMessage, tools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
-  const isNotification = message.id === undefined || message.id === null;
-  const id = message.id ?? null;
+export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
+  if (isJsonRpcResponse(message)) return null;
+  if (!isJsonRpcMessage(message)) return { jsonrpc: '2.0', id: readableId(message), error: { code: -32600, message: 'Invalid Request' } };
+  if (message.id === undefined || message.id === null) return null;
+
+  const id = message.id;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
   const fail = (code: number, msg: string, data?: unknown): JsonRpcResponse => ({
     jsonrpc: '2.0',
@@ -74,7 +91,6 @@ export async function handleMcpMessage(ctx: Context<Env>, message: JsonRpcMessag
       return respond({ tools: tools.map((tool) => tool.descriptor) });
 
     case 'tools/call': {
-      if (isNotification) return null;
       const name = typeof message.params?.name === 'string' ? message.params.name : undefined;
       if (!name) return fail(-32602, 'Invalid params: missing tool name');
 
@@ -102,7 +118,6 @@ export async function handleMcpMessage(ctx: Context<Env>, message: JsonRpcMessag
     }
 
     default:
-      if (isNotification) return null;
       return fail(-32601, `Method not found: ${message.method}`);
   }
 }

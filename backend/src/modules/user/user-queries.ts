@@ -1,7 +1,9 @@
 import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
+import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -176,13 +178,22 @@ export const findEmail = async (ctx: DbContext, { email }: FindEmailOpts) => {
   return row;
 };
 
-interface EmailProofOpts {
+export interface EmailProofOpts {
   userId: string;
   email: string;
   via: EmailProof;
 }
 
-/** The columns an inbox proof writes: the stamps every time, `verifiedAt` only when it was never set. */
+/** The row a first proof of an address writes: verified now, `via` the proof. */
+const provenEmailRow = ({ userId, email, via }: EmailProofOpts, now: string) => ({
+  email,
+  userId,
+  verifiedAt: now,
+  lastVerifiedVia: via,
+  lastVerifiedAt: now,
+});
+
+/** The columns a later proof writes: the stamps every time, `verifiedAt` only when it was never set. */
 const proofStamps = (via: EmailProof, now: string) => ({
   verifiedAt: sql<string>`coalesce(${emailsTable.verifiedAt}, ${now})`,
   lastVerifiedVia: via,
@@ -190,9 +201,8 @@ const proofStamps = (via: EmailProof, now: string) => ({
 });
 
 /** Stores an address as proven now, `via` the proof. Fails on the unique address when any account holds it. */
-export const insertEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
-  const now = getIsoDate();
-  await ctx.var.db.insert(emailsTable).values({ email, userId, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now });
+export const insertEmail = async (ctx: DbContext, opts: EmailProofOpts) => {
+  await ctx.var.db.insert(emailsTable).values(provenEmailRow(opts, getIsoDate()));
 };
 
 /** Stamps a proof on the user's own row for the address; undefined when the user has no row for it. */
@@ -209,12 +219,12 @@ export const updateEmailProof = async (ctx: DbContext, { userId, email, via }: E
  * Stores a proven address for the user, or stamps the proof when the row is already theirs, in one statement: insert, or
  * on a taken address update only when this user holds it. Undefined when another account holds the address.
  */
-export const upsertProvenEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+export const upsertProvenEmail = async (ctx: DbContext, opts: EmailProofOpts) => {
   const now = getIsoDate();
   const [row] = await ctx.var.db
     .insert(emailsTable)
-    .values({ email, userId, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now })
-    .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(via, now), setWhere: eq(emailsTable.userId, userId) })
+    .values(provenEmailRow(opts, now))
+    .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(opts.via, now), setWhere: eq(emailsTable.userId, opts.userId) })
     .returning({ id: emailsTable.id });
   return row;
 };
@@ -255,4 +265,47 @@ interface FindUserModelsByIdsOpts {
 /** Full user rows by id. */
 export const findUserModelsByIds = async (ctx: DbContext, { ids }: FindUserModelsByIdsOpts) => {
   return ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
+};
+
+interface FindUsersByIdsOpts {
+  ids: string[];
+}
+
+/** The ids among `ids` that name a user. */
+export const findUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
+  return ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
+};
+
+/** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
+export const deleteUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
+  return ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
+};
+
+interface UpdateUserOpts {
+  id: string;
+  values: Partial<Omit<InsertUserModel, 'userFlags'>> & { userFlags?: Partial<Record<keyof UserFlags, boolean>> };
+}
+
+/**
+ * Writes `values` to one user: an undefined value leaves its column, and `userFlags` merge into the stored flags.
+ * @returns The updated row, undefined when no user has `id`.
+ */
+export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts) => {
+  const { userFlags, ...rest } = values;
+  const [updated] = await ctx.var.db
+    .update(usersTable)
+    .set({ ...rest, ...(userFlags && { userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb` }) })
+    .where(eq(usersTable.id, id))
+    .returning();
+  return updated;
+};
+
+interface UpdateUserMfaOpts {
+  id: string;
+  mfaRequired: boolean;
+}
+
+/** Sets the user's MFA switch as their own write; the caller ends the sessions that turning it on replaces. */
+export const updateUserMfa = async (ctx: DbContext, { id, mfaRequired }: UpdateUserMfaOpts) => {
+  return updateUser(ctx, { id, values: { mfaRequired, ...updateStamps(id) } });
 };

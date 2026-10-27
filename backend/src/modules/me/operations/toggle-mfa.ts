@@ -8,7 +8,7 @@ import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
-import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
+import { findMfaRequired, findUserById, updateUserMfa } from '#/modules/user/user-queries';
 
 /**
  * Turns MFA on or off for the signed-in user. Turning it on ends every other regular session and replaces this
@@ -21,21 +21,23 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   const { factor, methods } = await readStepUp(session, 'account');
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
-  const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
+  const { updatedUser, changed } = await mfaFactorRules.locked(user.id, async (tx) => {
     if (mfaRequired) {
       await mfaFactorRules.assertCanEnable(tx, user.id);
       // The factor that proved this session is the step-up of the mfa session minted below. A session proven by an SSO
       // sign-in names none, so turning MFA on asks for one of the two factors it needs enrolled.
       if (!factor) throw new AppError(403, 'step_up_required', 'info', { meta: { methods } });
     }
-    const txCtx = { var: { ...ctx.var, db: tx } };
-    const updated = await updateUserMfa(txCtx, { mfaRequired });
+    const txCtx = { var: { db: tx } };
+    // Read under the lock, so the owner is mailed only for a switch this request flipped.
+    const changed = (await findMfaRequired(txCtx, { userId: user.id })) !== mfaRequired;
+    const updated = await updateUserMfa(txCtx, { id: user.id, mfaRequired });
     if (updated.mfaRequired) {
       // This browser's session gives way to the mfa session minted below; every other regular session ends.
       await revokeSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
       await revokeSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
     }
-    return updated;
+    return { updatedUser: updated, changed };
   });
 
   invalidateCache.user(user.id);
@@ -47,8 +49,8 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
     await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor, connectionId: session.connectionId });
   }
 
-  sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
+  if (changed) sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
   // Re-select to include the activity times of the user's actors row
-  return findCurrentUser(ctx);
+  return findUserById(ctx, { id: user.id });
 }

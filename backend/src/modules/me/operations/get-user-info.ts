@@ -5,16 +5,18 @@ import type { DbContext, Env } from '#/core/context';
 import { findNewDevices } from '#/modules/auth/devices/devices-queries';
 import { findSsoIdentities, findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
 import { findPasskeysByUser } from '#/modules/auth/passkeys/passkeys-queries';
+import { sessionLifetime } from '#/modules/auth/sessions/operations/create-session';
 import { findUserSessions } from '#/modules/auth/sessions/sessions-queries';
 import { findTotp } from '#/modules/auth/totps/totps-queries';
 import type { sessionSchema } from '#/modules/me/me-schema';
+import { isoDateAgo } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';
 
 /** How long a browser counts as new in the sessions list: one session lifetime. */
-const newDeviceWindow = new TimeSpan(1, 'w');
+const newDeviceWindow = sessionLifetime;
 
-/** How long a revoked session stays in the list; the sweep drops a row 30 days after its expiry, so nothing lingers longer. */
-const revokedSessionWindow = new TimeSpan(30, 'd');
+/** How long a revoked session stays in the list; the sweep drops a row that long after its expiry, so nothing lingers longer. */
+const revokedSessionWindow = new TimeSpan(appConfig.retention.sessionDaysAfterExpiry, 'd');
 
 /**
  * Fetches passkeys (minus the sensitive credentialId/publicKey), the TOTP's dates, verified OAuth identities and the SSO
@@ -40,9 +42,8 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
  * and the user has an older device, so an account's first browser never counts.
  */
 export const getUserSessions = async (ctx: Context<Env>, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
-  // Compared in SQL: the columns are timestamps without zone, which JavaScript would parse as local time.
-  const revokedSince = new Date(Date.now() - revokedSessionWindow.milliseconds()).toISOString();
-  const firstSeenAfter = new Date(Date.now() - newDeviceWindow.milliseconds()).toISOString();
+  const revokedSince = isoDateAgo(revokedSessionWindow);
+  const firstSeenAfter = isoDateAgo(newDeviceWindow);
 
   const [sessions, newDevices] = await Promise.all([
     findUserSessions(ctx, { userId, revokedSince }),

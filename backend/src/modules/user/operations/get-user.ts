@@ -13,7 +13,6 @@ interface GetUserOpts {
 
 export async function getUserOp(ctx: UserContext, relatableUserId: string, opts: GetUserOpts = {}) {
   const requestingUser = ctx.var.user;
-  const db = ctx.var.db;
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
@@ -31,7 +30,7 @@ export async function getUserOp(ctx: UserContext, relatableUserId: string, opts:
   }
 
   const filters: SQL[] = [userCondition];
-  if (!isSelf && !isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
+  if (!isSelf && !isSystemAdmin) filters.push(sharesOrgFilter(ctx, { myOrgIds }));
 
   const targetUser = await findUserByFilters(ctx, { filters });
 

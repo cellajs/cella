@@ -4,9 +4,9 @@ import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
-import { findServiceAccountInTenant, updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
+import { updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { UpdateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
-import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
 
 /**
@@ -15,14 +15,11 @@ import { log } from '#/utils/logger';
  * Re-enabling gives the account's keys their access back, so it asks the step-up a new key asks.
  */
 export async function updateServiceAccountOp(ctx: UserContext, id: string, input: UpdateServiceAccountInput) {
-  const { tenantId } = ctx.var;
-  await getValidChannel(ctx, ctx.var.organizationId, 'organization', 'update');
-  const account = await findServiceAccountInTenant(ctx, { id, tenantId });
-  if (!account) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });
+  const account = await getManagedServiceAccount(ctx, id);
   if (input.status === 'active' && account.status !== 'active') await requireStepUp(ctx.var.session, 'factor');
   const updated = await updateServiceAccount(ctx, {
     id,
-    tenantId,
+    tenantId: ctx.var.tenantId,
     values: { ...input, ...updateStamps(ctx.var.actor.id) },
   });
   if (!updated) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });

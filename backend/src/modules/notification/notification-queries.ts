@@ -15,11 +15,12 @@ import {
   notificationsTable,
 } from '#/modules/notification/notification-db';
 import { instantEmailTypes } from '#/modules/notification/notification-types';
-import { findSystemRoleHolders, findUsersByIds } from '#/modules/system/system-queries';
+import { findSystemRoleHolders } from '#/modules/system/system-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
+import { findUsersByIds } from '#/modules/user/user-queries';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 

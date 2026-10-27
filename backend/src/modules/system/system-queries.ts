@@ -15,31 +15,6 @@ export const findVerifiedEmails = async (ctx: DbContext, { emails }: FindVerifie
   return ctx.var.db.select({ email: emailsTable.email }).from(emailsTable).where(inArray(emailsTable.email, emails));
 };
 
-interface FindUsersByIdsOpts {
-  ids: string[];
-}
-
-/** The ids among `ids` that name a user. */
-export const findUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
-  return ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
-};
-
-/** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
-export const deleteUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
-  return ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
-};
-
-interface UpdateUserOpts {
-  id: string;
-  values: Partial<typeof usersTable.$inferInsert>;
-}
-
-/** Writes `values` to one user; returns the updated row, undefined when no user has `id`. */
-export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts) => {
-  const [updated] = await ctx.var.db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
-  return updated;
-};
-
 interface FindNewsletterRecipientsOpts {
   organizationIds: string[];
   roles: EntityRole[];

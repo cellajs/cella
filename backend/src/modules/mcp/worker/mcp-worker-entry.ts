@@ -9,6 +9,7 @@ import { otel } from '#/lib/tracing';
 // the module routes `#/routes` mounts.
 import '#/modules';
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
+import { mcpMountPath } from '#/modules/mcp/mcp-routes';
 import { createBaseApp } from '#/server';
 
 /**
@@ -33,7 +34,7 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
 
   // An app of its own: folded into the API process, the API's app takes no routes once it has answered a request.
   const app = createBaseApp();
-  app.route('/:tenantId/:organizationId/mcp', mcpHandlers);
+  app.route(mcpMountPath, mcpHandlers);
 
   const server: ServerType = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
     baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);

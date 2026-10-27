@@ -2677,7 +2677,7 @@ export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.
  *
  * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· _mcp · cella_
  *

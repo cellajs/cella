@@ -1,17 +1,15 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { resolveEntity } from '#/modules/entities/entities-queries';
 import { deleteMyMembership } from '#/modules/me/me-queries';
 import { log } from '#/utils/logger';
 
 export async function deleteMyMembershipOp(ctx: UserContext, entityType: ChannelEntityType, entityId: string) {
-  const entity = await resolveEntity(ctx, { entityType, identifier: entityId });
-  if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
+  // A channel the user is no member of answers as a missing one: a 204 would confirm that the id exists.
+  const deleted = await deleteMyMembership(ctx, { userId: ctx.var.user.id, channelType: entityType, channelId: entityId });
+  if (!deleted) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  await deleteMyMembership({ var: { ...ctx.var, db: baseDb } }, { channelId: entity.id });
   invalidateCache.user(ctx.var.user.id);
   log.info('User left entity');
 }

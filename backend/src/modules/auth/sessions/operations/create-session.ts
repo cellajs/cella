@@ -27,7 +27,7 @@ import { TimeSpan } from '#/utils/time-span';
 const dbCtx = { var: { db: baseDb } };
 
 /** How long a session lasts; the cookie that carries it expires with it. */
-const sessionLifetime = new TimeSpan(1, 'w');
+export const sessionLifetime = new TimeSpan(1, 'w');
 
 /** How long an impersonation lasts at most: it also ends with the admin session it is layered on. */
 const impersonationLifetime = new TimeSpan(1, 'h');

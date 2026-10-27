@@ -1,8 +1,8 @@
 import { eq, getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { userMinimalColumnKeys } from '#/modules/user/helpers/user-minimal';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 
@@ -44,15 +44,8 @@ export const memberSelect = (() => {
   return { ...userBaseSelect, lastSeenAt: actorsTable.lastSeenAt };
 })();
 
-type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;
-type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'entityType'>>;
-
 /**
  * id, name, slug and thumbnailUrl for createdBy/updatedBy; entityType is added as a SQL literal in joins.
  * @public
  */
-export const userMinimalBaseSelect: UserMinimalBaseSelect = (() => {
-  const cols = getColumns(usersTable);
-  const keys = (Object.keys(userMinimalBaseSchema.shape) as UserMinimalBaseKeys[]).filter((k) => k !== 'entityType');
-  return pick(cols, keys as Exclude<UserMinimalBaseKeys, 'entityType'>[]);
-})();
+export const userMinimalBaseSelect = pick(getColumns(usersTable), userMinimalColumnKeys);

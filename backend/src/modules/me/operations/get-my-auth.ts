@@ -13,9 +13,8 @@ interface GetMyAuthOpts {
 
 export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts) {
   const user = ctx.var.user;
-  const db = ctx.var.db;
 
-  const authInfo = await getAuthInfo({ var: { db } }, { userId: user.id });
+  const authInfo = await getAuthInfo(ctx, { userId: user.id });
 
   const { oauth, ssoIdentities, ...restInfo } = authInfo;
   const isEnabledProvider = (provider: string): provider is EnabledOAuthProvider =>
@@ -28,7 +27,7 @@ export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts)
     const identity = ssoIdentities.find((sso) => sso.connectionId === connectionId);
     return identity ? { email: identity.email, createdAt: identity.createdAt, lastUsedAt: identity.lastUsedAt } : null;
   };
-  const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants({ var: { db } }, { tenantIds }) : [];
+  const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants(ctx, { tenantIds }) : [];
   const institutions = connections
     .filter((connection) => isFederationKey(connection.issuer) && isFederationConfigured(connection.issuer))
     .map((connection) => ({

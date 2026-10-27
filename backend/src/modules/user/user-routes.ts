@@ -4,7 +4,7 @@ import { relatableGuard, userGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
 import { paginationSchema, relatableUserIdParamSchema, slugIncludeQuerySchema } from '#/schemas';
-import { mockPaginatedUsersResponse, mockUserResponse } from './user-mocks';
+import { mockMemberUserResponse, mockPaginatedUsersResponse } from './user-mocks';
 
 const userRoutes = createXRoutes(['users', 'cella'], {
   getUsers: xRoute({
@@ -42,7 +42,7 @@ const userRoutes = createXRoutes(['users', 'cella'], {
           // With include=mfa. Absent for other callers: the field would list the accounts without a second factor.
           mfaRequired: z.boolean().optional(),
         }),
-        mockUserResponse(),
+        mockMemberUserResponse(),
       ),
     },
   }),

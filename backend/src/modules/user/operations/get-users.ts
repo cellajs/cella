@@ -11,7 +11,6 @@ import { textSearchFilter } from '#/utils/sql';
 type GetUsersInput = z.infer<typeof userListQuerySchema>;
 
 export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
-  const db = ctx.var.db;
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
@@ -22,12 +21,12 @@ export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { reason: 'system_role' } });
   }
 
-  // Only see users who share at least one organization
+  // Only see users who share at least one organization; a system admin sees every user.
   const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
-  if (myOrgIds.length === 0) return { items: [], total: 0 };
+  if (!isSystemAdmin && myOrgIds.length === 0) return { items: [], total: 0 };
 
   const filters: SQL[] = [];
-  if (!isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
+  if (!isSystemAdmin) filters.push(sharesOrgFilter(ctx, { myOrgIds }));
   if (role) filters.push(eq(systemRolesTable.role, role));
   if (q) filters.push(or(textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q))!);
 

@@ -154,6 +154,31 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
   });
 
+  it('answers each call of a batch, one outside the token scopes with its own error', async () => {
+    const ctx = await serviceToken('attachment:read');
+    const write = { name: 'updateAttachment', arguments: { id: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } } };
+    const { response, data } = await call(handleMcp, {
+      path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+      body: [
+        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'getAttachments', arguments: {} } },
+        { jsonrpc: '2.0', id: 2, method: 'tools/call', params: write },
+        { jsonrpc: '2.0', id: 3 },
+        { jsonrpc: '2.0', id: 4, result: {} },
+      ],
+      headers: bearerHeaders(ctx.jwt),
+    });
+
+    // Answered as one 403, the read's result was lost and a client retrying the batch ran it again.
+    expect(response.status).toBe(200);
+    expect(response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
+    const [read, refused, invalid, ...rest] = data as Rpc[];
+    expect(read).toMatchObject({ id: 1, result: { structuredContent: { items: [], total: 0 } } });
+    expect(refused).toMatchObject({ id: 2, error: { code: -32002, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
+    // A message without a method keeps its id; a response the client posts back gets no answer.
+    expect(invalid).toMatchObject({ id: 3, error: { code: -32600 } });
+    expect(rest).toEqual([]);
+  });
+
   it('counts a tool call once against the burst limit, at the route it runs', async () => {
     const ctx = await serviceToken('attachment:read');
     charged.clear();
