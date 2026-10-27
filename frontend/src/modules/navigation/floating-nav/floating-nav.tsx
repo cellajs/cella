@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
@@ -29,8 +29,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   const hasExpandedLabel = items.some((item) => item.label && item.labelVisible);
   const [isLabelCollapsing, setIsLabelCollapsing] = useState(false);
   const wasExpandedRef = useRef(hasExpandedLabel);
-  const showButtonsRef = useRef(showButtons);
-  showButtonsRef.current = showButtons;
+  const isShowingButtons = useEffectEvent(() => showButtons);
   useEffect(() => {
     const wasExpanded = wasExpandedRef.current;
     wasExpandedRef.current = hasExpandedLabel;
@@ -39,7 +38,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
       return;
     }
     // Only hold when the collapse starts from a visible state; a label that expanded off-screen never flashes the buttons
-    if (!wasExpanded || !showButtonsRef.current) return;
+    if (!wasExpanded || !isShowingButtons()) return;
     setIsLabelCollapsing(true);
     const timeout = setTimeout(() => setIsLabelCollapsing(false), labelCollapseMs);
     return () => clearTimeout(timeout);

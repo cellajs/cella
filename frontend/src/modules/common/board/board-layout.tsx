@@ -7,6 +7,7 @@ import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
@@ -103,8 +104,7 @@ export function BoardLayout({
   );
 
   // Keep a ref to current panel IDs so drag wrappers can read it without needing deps
-  const panelIdsRef = useRef<string[]>([]);
-  panelIdsRef.current = panels.map((p) => p.panelId);
+  const panelIdsRef = useLatestRef(panels.map((p) => p.panelId));
 
   const [dropIndicator, setDropIndicator] = useState<{ panelId: string; edge: Edge } | null>(null);
 
