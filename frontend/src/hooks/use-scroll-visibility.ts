@@ -6,14 +6,10 @@ const minVisibleMs = 800; // Grace period after showing before a down-scroll may
 const resetCooldownMs = 500; // Post-reset window that swallows layout-driven scroll jank (e.g. drawer close, docs page swap)
 const initialCooldownMs = 500; // Brief cooldown on mount to prevent hiding from restored scroll position
 
-const scrollTopOf = (target: HTMLElement | Window) => (target instanceof Window ? target.scrollY : target.scrollTop);
-const scrollHeightOf = (target: HTMLElement | Window) => (target instanceof Window ? document.documentElement.scrollHeight : target.scrollHeight);
+const scrollHeight = () => document.documentElement.scrollHeight;
 
-/**
- * Shows on scroll up, hides on scroll down; returns `{ isVisible, reset }`. `container` defaults to window: pass the element a
- * callback ref stores, null until it is attached. For a scroll offset threshold use `useScrolledPast`.
- */
-export const useScrollVisibility = (enabled = true, container?: HTMLElement | null) => {
+/** Shows on window scroll up, hides on scroll down; returns `{ isVisible, reset }`. For a scroll offset threshold use `useScrolledPast`. */
+export const useScrollVisibility = (enabled = true) => {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   const lastScrollHeightRef = useRef(0);
@@ -21,32 +17,30 @@ export const useScrollVisibility = (enabled = true, container?: HTMLElement | nu
   const tickingRef = useRef(false);
   const cooldownUntilRef = useRef(Date.now() + initialCooldownMs);
 
-  const target = container === undefined ? window : container;
-
   const reset = useCallback(() => {
     setIsVisible(true);
     shownAtRef.current = Date.now();
-    lastScrollYRef.current = scrollTopOf(target ?? window);
-    lastScrollHeightRef.current = scrollHeightOf(target ?? window);
+    lastScrollYRef.current = window.scrollY;
+    lastScrollHeightRef.current = scrollHeight();
     cooldownUntilRef.current = Date.now() + resetCooldownMs;
-  }, [target]);
+  }, []);
 
   useEffect(() => {
-    if (!enabled || !target) {
-      if (!enabled) setIsVisible(true);
+    if (!enabled) {
+      setIsVisible(true);
       return;
     }
 
     // Start the baselines at the actual position to handle restored scroll on page reload
-    lastScrollYRef.current = scrollTopOf(target);
-    lastScrollHeightRef.current = scrollHeightOf(target);
+    lastScrollYRef.current = window.scrollY;
+    lastScrollHeightRef.current = scrollHeight();
 
     const updateVisibility = () => {
-      const currentY = scrollTopOf(target);
+      const currentY = window.scrollY;
       tickingRef.current = false;
 
       // Scroll anchoring turns a content-height change into a non-gesture scroll event: take the new baseline without flipping.
-      const currentHeight = scrollHeightOf(target);
+      const currentHeight = scrollHeight();
       if (currentHeight !== lastScrollHeightRef.current) {
         lastScrollHeightRef.current = currentHeight;
         lastScrollYRef.current = currentY;
@@ -80,9 +74,9 @@ export const useScrollVisibility = (enabled = true, container?: HTMLElement | nu
       }
     };
 
-    target.addEventListener('scroll', handleScroll, { passive: true });
-    return () => target.removeEventListener('scroll', handleScroll);
-  }, [enabled, target]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [enabled]);
 
   return { isVisible, reset };
 };
