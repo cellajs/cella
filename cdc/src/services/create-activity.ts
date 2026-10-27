@@ -1,6 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import type { ActivityAction, EntityHierarchy } from 'shared';
 import { actionToVerb, entityIdColumnKey, hierarchy } from 'shared';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '../lib/pino';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
@@ -72,7 +73,7 @@ export function createActivity(
     subjectId: rawSubjectId,
     // Null defaults, overridden below by channelIds for entities with hierarchy ancestors.
     ...nullChannelIds,
-    createdAt: new Date().toISOString(),
+    createdAt: getIsoDate(),
     ...channelIds,
     changedFields,
     stx: extractStxData(row),

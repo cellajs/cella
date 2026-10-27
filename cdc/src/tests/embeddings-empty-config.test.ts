@@ -26,7 +26,7 @@ vi.mock('../lib/db', () => ({
 }));
 
 const { appConfig } = await import('shared');
-const { embeddingsAfterDispatch, isEmbeddingCleanupWrite, suppressEmbeddingPropagation } = await import('../embeddings');
+const { embeddingsAfterDispatch, isEmbeddingCleanupWrite, suppressEmbeddingPropagation } = await import('../embeddings/embedding-hooks');
 const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
 const { gcOwnedEmbeddedRows } = await import('../embeddings/owned-embedding-gc');
 

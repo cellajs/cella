@@ -20,7 +20,7 @@ otel.verifyConnection();
 
 let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-/** Stops what this process starts besides its listeners: the GeoIP refresh. */
+/** Stops what this process starts besides its listeners: the GeoIP refresh, and under `singleVM` the CDC worker. */
 const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -62,8 +62,10 @@ const main = async () => {
     if (appConfig.singleVM) {
       if (appConfig.services.cdc.enabled) {
         console.info(`${timestamp()} [startup] singleVM + cdc: this process takes the replication slot once the previous generation releases it`);
-        // The replication loop never resolves, so detach it and log failures to prevent unhandled rejections.
-        void (await import('cdc-worker')).runCdcWorker().catch((error) => {
+        const cdc = await import('cdc-worker');
+        stops.push(cdc.shutdownCdcWorker);
+        // The replication loop runs until that stop, so detach it and log failures to prevent unhandled rejections.
+        void cdc.runCdcWorker({ inProcess: true }).catch((error) => {
           console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
         });
       }

@@ -1,13 +1,13 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { resourceLimits } from '../constants';
 import { log } from '../lib/pino';
-import { fence } from '../services/fence';
+import { fence, fenceMarkerPrefix } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
 import { lsnToBigInt } from '../utils/lsn';
 import { type DmlMessage, parseMessage } from './parse-message';
-import { processFlush } from './process-events';
+import { processFlush } from './process-flush';
 
 function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
@@ -49,9 +49,6 @@ flushBuffer.onFailed = (error, position) => {
 /** Holds a source transaction until its commit and suppresses what a cascade wrote. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 
-/** Prefix of the logical message a recount writes right after its snapshot: the marker. */
-export const fenceMarkerPrefix = 'sync-fence';
-
 /** Data messages whose handler has not returned yet. */
 let inFlightMessages = 0;
 
@@ -85,14 +82,16 @@ async function acknowledgeIdlePosition(): Promise<boolean> {
  * queues its data messages, so right after one handler returns the next messages can still wait in that queue while
  * the worker looks idle. They all reach their handlers before a callback of the check phase runs.
  */
-export const scheduleIdleCheck = (): void => {
+export function scheduleIdleCheck(): void {
   setImmediate(() => void acknowledgeIdlePosition());
-};
+}
 
 flushBuffer.onDrained = scheduleIdleCheck;
 
 /** Whether the subscription ended on a failure: the loop then waits before it reads the same changes again. */
-export const flushHasFailed = (): boolean => flushBuffer.failed;
+export function flushHasFailed(): boolean {
+  return flushBuffer.failed;
+}
 
 /** Buffers the changes of a source transaction between its BEGIN and COMMIT, and hands the survivors to a flush. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
@@ -111,30 +110,26 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
 }
 
 async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
-  const { tag } = msg;
-
-  if (tag === 'begin') {
-    changesInTransaction = 0;
-    const committedAt = txBuffer.onBegin(msg as Pgoutput.MessageBegin);
-    // How long ago the source transaction committed is how far the worker is behind.
-    if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
-    return;
-  }
-
-  if (tag === 'commit') {
-    await txBuffer.onCommit((msg as Pgoutput.MessageCommit).commitEndLsn);
-    return;
-  }
-
-  if (tag === 'message') {
-    const { prefix, content } = msg as Pgoutput.MessageMessage;
-    if (prefix !== fenceMarkerPrefix) return;
-    // The marker was written right after a recount's snapshot. Once everything before it is recorded, the stream has
-    // passed that snapshot. A subscription that ended meanwhile dropped what was pending: its marker is read again.
-    const subscription = subscriptionCount;
-    await flushBuffer.flush();
-    if (!flushBuffer.failed && subscription === subscriptionCount) fence.markerArrived(new TextDecoder().decode(content));
-    return;
+  switch (msg.tag) {
+    case 'begin': {
+      changesInTransaction = 0;
+      const committedAt = txBuffer.onBegin(msg);
+      // How long ago the source transaction committed is how far the worker is behind.
+      if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
+      return;
+    }
+    case 'commit':
+      await txBuffer.onCommit(msg.commitEndLsn);
+      return;
+    case 'message': {
+      if (msg.prefix !== fenceMarkerPrefix) return;
+      // The marker was written right after a recount's snapshot. Once everything before it is recorded, the stream has
+      // passed that snapshot. A subscription that ended meanwhile dropped what was pending: its marker is read again.
+      const subscription = subscriptionCount;
+      await flushBuffer.flush();
+      if (!flushBuffer.failed && subscription === subscriptionCount) fence.markerArrived(new TextDecoder().decode(msg.content));
+      return;
+    }
   }
 
   // Skips relation, origin, type and other non-DML messages.
@@ -144,7 +139,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   const index = changesInTransaction;
   changesInTransaction += 1;
 
-  log.trace('CDC message received', { lsn, tag, table: msg.relation?.name });
+  log.trace('CDC message received', { lsn, tag: msg.tag, table: msg.relation.name });
 
   // A change the parser drops leaves nothing to record. The idle acknowledgement moves the slot past it.
   const parseResult = parseMessage(msg);

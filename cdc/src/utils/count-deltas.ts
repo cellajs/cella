@@ -6,8 +6,9 @@ import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
 import { getStringValue } from './get-string-value';
 
+/** What one change adds to the counters of one channel. */
 export interface CountDelta {
-  /** Context key (organizationId or sub-context id): the row to update. */
+  /** The channel whose `channel_counters` row takes the deltas: an organization, or a channel below one. */
   channelKey: string;
   /** e.g. `{ 'm:c:admin': 1, 'm:c:total': 1 }`; an activity stamp (`e:li:h:<type>`, `e:lu:h:<type>`) carries epoch ms and merges as a maximum. */
   deltas: Record<string, number>;
@@ -15,7 +16,7 @@ export interface CountDelta {
 
 /**
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
- * apply only at the home context. Only live, published rows participate.
+ * apply only at the home channel. Only live, published rows participate.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -36,12 +37,12 @@ export function getCountDeltas(
     return deltas;
   }
 
-  // Reparents inside the countable set re-credit contexts; changes outside it do nothing, matching SQL repair.
+  // Reparents inside the countable set re-credit channels; changes outside it do nothing, matching SQL repair.
   if (tableMeta.kind === 'entity' && organizationId) {
     const countAction = deriveCountAction(action, newRow, oldRow);
     const deltas = countAction ? getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow, h) : [];
 
-    // Creates/publishes and content updates stamp the home context only; deletes and restores do not.
+    // Creates/publishes and content updates stamp the home channel only; deletes and restores do not.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
       const stampKey =
         action === 'create' && countAction === 'create' ? `e:li:h:${tableMeta.type}` : countAction === 'update' ? `e:lu:h:${tableMeta.type}` : null;
@@ -63,8 +64,6 @@ export function getCountDeltas(
 
   return [];
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 /**
  * Map a WAL action onto the countable set (`isCountableRow`) by its set edge: enter = create
@@ -108,6 +107,7 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
 
   return null;
 }
+
 /** Inactive membership m:c:pending delta; only rows with rejectedAt null count as pending. */
 function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
@@ -138,8 +138,8 @@ function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, 
 }
 
 /**
- * Full attribution: a row counts on its organization and on every non-null ancestor context, so
- * members at any level screen catchup changes against their own context's counters. Set edges are
+ * Full attribution: a row counts on its organization and on every non-null ancestor channel, so
+ * members at any level screen catchup changes against their own channel's counters. Set edges are
  * already remapped to create/delete by `deriveCountAction`.
  */
 function getEntityDeltas(
@@ -158,7 +158,7 @@ function getEntityDeltas(
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
     const deltas: CountDelta[] = [{ channelKey: organizationId, deltas: { [counterKey]: value } }];
     for (const ancestor of h.resolveNonNullAncestors(entityType, row)) {
-      if (ancestor.id === organizationId) continue; // org already counted above
+      if (ancestor.id === organizationId) continue;
       deltas.push({ channelKey: ancestor.id, deltas: { [counterKey]: value } });
     }
     // Self count: rows homed at the node only (deepest non-null ancestor, org fallback).
@@ -169,8 +169,8 @@ function getEntityDeltas(
 
   // Re-credit ancestor differences for updates inside the countable set.
   if (action === 'update' && oldRow) {
-    const oldIds = new Set(h.resolveNonNullAncestors(entityType, oldRow).map((a) => a.id));
-    const newIds = new Set(h.resolveNonNullAncestors(entityType, newRow).map((a) => a.id));
+    const oldIds = new Set(h.resolveNonNullAncestors(entityType, oldRow).map((ancestor) => ancestor.id));
+    const newIds = new Set(h.resolveNonNullAncestors(entityType, newRow).map((ancestor) => ancestor.id));
     const deltas: CountDelta[] = [];
     for (const id of newIds) {
       if (!oldIds.has(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });

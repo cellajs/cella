@@ -1,4 +1,5 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
+import { getIsoDate } from '#/utils/iso-date';
 import { resourceLimits } from '../constants';
 import { isPassingError } from './failure';
 
@@ -63,7 +64,7 @@ class ReplicationStateManager {
     const message = error instanceof Error ? error.message : String(error);
     const samePosition = this.failure?.position === position ? this.failure : null;
     const before = samePosition?.count ?? 0;
-    const since = samePosition?.since ?? new Date().toISOString();
+    const since = samePosition?.since ?? getIsoDate();
     this.failure = { position, count: passing ? before : before + 1, since, error: message, passing };
   }
 

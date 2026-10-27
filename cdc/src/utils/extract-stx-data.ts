@@ -29,8 +29,8 @@ export function extractStxData(row: RowData): StxBase | null {
 export function getStxChangedFields(row: RowData): string[] | null {
   const stx = row.stx;
   if (stx && typeof stx === 'object' && !Array.isArray(stx)) {
-    const cf = (stx as Record<string, unknown>).changedFields;
-    if (Array.isArray(cf)) return cf.filter((x): x is string => typeof x === 'string');
+    const changedFields = (stx as Record<string, unknown>).changedFields;
+    if (Array.isArray(changedFields)) return changedFields.filter((field): field is string => typeof field === 'string');
   }
   return null;
 }

@@ -3,9 +3,7 @@ import { hierarchy } from 'shared';
 import { isMaxMergeKey } from '#/modules/entities/counter-keys';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent, TableMeta } from '../types';
-import { getCountDeltas } from './update-counts';
-
-// ── Types ────────────────────────────────────────────────────────────────────
+import { getCountDeltas } from './count-deltas';
 
 /** One sequence group per organization (reserved by RETURNING UPSERT) plus accumulated count deltas. */
 export interface BatchUnifiedDeltaPlan {
@@ -15,6 +13,7 @@ export interface BatchUnifiedDeltaPlan {
   countDeltasByChannelKey: Map<string, Record<string, number>>;
 }
 
+/** The stampable changes of one organization in one flush, which take consecutive values of its sequence. */
 export interface OrgSequenceGroup {
   /** The organization whose sequence this group reserves from. */
   orgKey: string;
@@ -22,18 +21,16 @@ export interface OrgSequenceGroup {
   events: PendingEvent[];
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 /**
- * Home key of a product row: its deepest populated ancestor, falling back to the activity
- * organization; a missing organization violates the hierarchy and throws. The key groups audiences,
- * activity stamps, and unseen counts, never sequence allocation.
+ * Home key of a product row: its deepest populated ancestor, falling back to the activity organization; a missing
+ * organization violates the hierarchy and throws. The API messages group a row by it when its product path cannot be
+ * computed.
  */
 export function resolveChannelKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId, h: EntityHierarchy = hierarchy): string {
   const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
-  throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
+  throw new Error(`No channel for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
 }
 
 /**
@@ -52,8 +49,8 @@ export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organi
 export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);
   if (existing) {
-    for (const [k, v] of Object.entries(deltas)) {
-      existing[k] = isMaxMergeKey(k) ? Math.max(existing[k] ?? 0, v) : (existing[k] ?? 0) + v;
+    for (const [key, value] of Object.entries(deltas)) {
+      existing[key] = isMaxMergeKey(key) ? Math.max(existing[key] ?? 0, value) : (existing[key] ?? 0) + value;
     }
   } else {
     map.set(channelKey, { ...deltas });
@@ -61,7 +58,7 @@ export function mergeDelta(map: Map<string, Record<string, number>>, channelKey:
 }
 
 /** Whether a change gets a sequence value: the create or the update of a product row. */
-export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
+export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy = hierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 

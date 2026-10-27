@@ -6,8 +6,6 @@ import type { Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
 
-// ── Counter upsert ──────────────────────────────────────────────────────────────────────────────────────────────────
-
 /** Rows per stamp statement: two bind parameters each, far below the protocol's 65,535. */
 const stampChunkSize = 5000;
 
@@ -28,10 +26,8 @@ async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Reco
       updated_at = NOW()
     RETURNING counts
   `);
-  return result.rows[0].counts as Record<string, number>;
+  return result.rows[0].counts;
 }
-
-// ── Batch execution ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /**
  * Applies a batch delta plan on the flush's transaction and stamps eligible events with an organization sequence.
@@ -49,7 +45,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one RETURNING UPSERT per organization sequence.
-  for (const group of [...orgSequenceGroups].sort((a, b) => a.orgKey.localeCompare(b.orgKey))) {
+  for (const group of [...orgSequenceGroups].sort((a, b) => (a.orgKey < b.orgKey ? -1 : 1))) {
     const count = group.events.length;
     // The sequence reservation goes with the count deltas of the organization's own row, which never hold a sequence.
     const mergedDeltas = { ...countDeltasByChannelKey.get(group.orgKey), sequence: count };

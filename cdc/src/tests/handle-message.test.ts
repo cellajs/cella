@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks must precede the import of the module under test.
-vi.mock('../pipeline/process-events', () => ({ processFlush: vi.fn() }));
+vi.mock('../pipeline/process-flush', () => ({ processFlush: vi.fn() }));
 
 vi.mock('../pipeline/parse-message', () => ({
   parseMessage: vi.fn(() => ({
@@ -33,7 +33,7 @@ import { dmlMessage } from './factories';
 
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);
-const { processFlush } = await import('../pipeline/process-events');
+const { processFlush } = await import('../pipeline/process-flush');
 
 const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 

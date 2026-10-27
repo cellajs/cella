@@ -3,10 +3,11 @@ import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig, type ProductEntityType } from 'shared';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { getEntityTable } from '#/tables';
+import { getIsoDate } from '#/utils/iso-date';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
+import { isSoftDeleteTransition } from './is-soft-delete-transition';
 
 /** Columns the GC writes on an embedded row, beyond the scope and id columns. */
 const requiredEmbeddedColumns = ['id', 'deletedAt', 'deletedBy', 'updatedAt', 'updatedBy', 'stx'] as const;
@@ -35,7 +36,7 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     if (embedding.lifecycle !== 'owned') continue;
     const { embeddedProduct, hostProduct, hostColumn: hostColumnName } = embedding;
 
-    const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
+    const hostTable = getEntityTable(hostProduct);
     // getColumns returns literal-keyed columns; widened for runtime string lookup.
     const hostColumns = getColumns(hostTable) as Record<string, AnyPgColumn>;
     const hostColumn = hostColumns[hostColumnName];
@@ -43,7 +44,7 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     const hostDeletedAtColumn = hostColumns.deletedAt;
     if (!hostDeletedAtColumn) throw new Error(`owned embedding: column "deletedAt" not found on "${hostProduct}" table`);
 
-    const embeddedTable = getEntityTable(embeddedProduct as Parameters<typeof getEntityTable>[0]);
+    const embeddedTable = getEntityTable(embeddedProduct);
     const embeddedColumns = getColumns(embeddedTable) as Record<string, AnyPgColumn>;
     for (const required of requiredEmbeddedColumns) {
       if (!embeddedColumns[required]) throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
@@ -77,7 +78,10 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
 /** Owned embeddings keyed by HOST product type (host-side dispatch, unlike embedding-cleanup). */
 const ownedByHostProduct = resolveOwnedEmbeddings();
 
-const toIdArray = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
+/** The strings of an id array column; empty for any other value. */
+function toIdArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
 
 /** Per-scope removal candidates with the actor to attribute the soft-delete to. */
 interface ScopeCandidates {
@@ -142,12 +146,12 @@ export async function gcOwnedEmbeddedRows(
         const referencedRows = await cdcDb
           .selectDistinct({ id: sql<string>`referenced.id` })
           .from(sql`${hostTable}, unnest(${hostColumn}) AS referenced(id)`)
-          .where(and(sql`${hostScopeColumn} = ${scopeId}`, isNull(hostDeletedAtColumn), sql`referenced.id IN ${candidates}`));
+          .where(and(eq(hostScopeColumn, scopeId), isNull(hostDeletedAtColumn), sql`referenced.id IN ${candidates}`));
         const referenced = new Set(referencedRows.map((row) => row.id));
         const orphanIds = candidates.filter((id) => !referenced.has(id));
         if (orphanIds.length === 0) return;
 
-        const now = new Date().toISOString();
+        const now = getIsoDate();
         const deleted = await cdcDb
           .update(embeddedTable)
           .set({

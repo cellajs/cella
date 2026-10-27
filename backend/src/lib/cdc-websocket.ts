@@ -29,7 +29,7 @@ const messageTraceSchema = z
 
 /**
  * Validates the CDC worker payload: the product rows of one audience as `rows`, or the one whole row of a change that
- * is no product as `rowData`. @see cdc/src/services/activity-service.ts for the producing type.
+ * is no product as `rowData`. @see cdc/src/services/api-messages.ts for the producing type.
  */
 const cdcMessageSchema = z.union([
   z.object({ activity: z.object(messageActivityShape), rows: z.array(messageRowSchema).min(1), _trace: messageTraceSchema }),

@@ -55,6 +55,9 @@ export function addCounts(target: CounterDeltas, source: CounterDeltas, sign: 1 
   }
 }
 
+/** Prefix of the logical message a recount writes right after its snapshot: the marker. */
+export const fenceMarkerPrefix = 'sync-fence';
+
 interface OpenFence {
   mode: 'verify' | 'rebuild';
   snapshot: Snapshot;
@@ -67,7 +70,8 @@ interface OpenFence {
   settle: (passed: boolean) => void;
 }
 
-let open: OpenFence | null = null;
+/** The fence that is open; null when none is. */
+let current: OpenFence | null = null;
 
 /**
  * The fence around a count from the tables. The count is taken at a snapshot while the stream goes on, so until the
@@ -78,36 +82,36 @@ let open: OpenFence | null = null;
 export const fence = {
   /** Opens the fence at a snapshot. One fence is open at a time: one still open ends here, without having been passed. */
   open(mode: OpenFence['mode'], snapshotText: string, marker: string): void {
-    open?.settle(false);
+    current?.settle(false);
     let settle: OpenFence['settle'] = () => {};
     const passed = new Promise<boolean>((resolve) => {
       settle = resolve;
     });
-    open = { mode, snapshot: parseSnapshot(snapshotText), marker, counted: new Map(), passed, settle };
+    current = { mode, snapshot: parseSnapshot(snapshotText), marker, counted: new Map(), passed, settle };
   },
 
   get mode(): OpenFence['mode'] | null {
-    return open?.mode ?? null;
+    return current?.mode ?? null;
   },
 
   /** The marker of the open fence, which tells it from a later one; null when none is open. */
   get marker(): string | null {
-    return open?.marker ?? null;
+    return current?.marker ?? null;
   },
 
   /** Whether the count behind the open fence already saw this transaction. False when no fence is open. */
   sawTransaction(xid: number | undefined): boolean {
-    return open !== null && xid !== undefined && isVisibleIn(xid, open.snapshot);
+    return current !== null && xid !== undefined && isVisibleIn(xid, current.snapshot);
   },
 
   /** Records plain counts of already counted transactions that a flush has just committed. */
   addCounted(deltas: CounterDeltas): void {
-    if (open) addCounts(open.counted, deltas);
+    if (current) addCounts(current.counted, deltas);
   },
 
   /** Called when a marker message arrives and everything before it is recorded. */
   markerArrived(marker: string): void {
-    if (open?.marker === marker) open.settle(true);
+    if (current?.marker === marker) current.settle(true);
   },
 
   /**
@@ -115,14 +119,14 @@ export const fence = {
    * another fence took its place before that. False at once when no fence is open.
    */
   whenPassed(): Promise<boolean> {
-    return open?.passed ?? Promise.resolve(false);
+    return current?.passed ?? Promise.resolve(false);
   },
 
   /** Closes the fence. @returns The plain counts of the already counted transactions recorded while it was open. */
   close(): CounterDeltas {
-    const counted = open?.counted ?? new Map();
-    open?.settle(false);
-    open = null;
+    const counted = current?.counted ?? new Map();
+    current?.settle(false);
+    current = null;
     return counted;
   },
 };

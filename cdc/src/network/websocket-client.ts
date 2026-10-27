@@ -13,7 +13,7 @@ const baseReconnectDelayMs = 1_000;
 type WebSocketState = 'connecting' | 'open' | 'closed' | 'reconnecting';
 
 /**
- * Server-to-server channel from the CDC worker to the API's `/internal/cdc` endpoint, carrying full
+ * Server-to-server connection from the CDC worker to the API's `/internal/cdc` endpoint, carrying full
  * entity row data. The listener admits private-network and loopback peers only and the route checks the
  * shared secret, so it is never reachable from external networks or browser clients. Connects again with
  * a backoff and jitter. The worker's health push is its traffic: the API closes a socket it hears nothing
@@ -27,12 +27,20 @@ class WebSocketClient {
   /** Flushes waiting for the socket: resolved when it opens, rejected when the client is closed for good. */
   private waiters: { resolve: () => void; reject: (error: Error) => void }[] = [];
 
-  private _state: WebSocketState = 'closed';
-  private _lastMessageAt: Date | null = null;
-  private _messagesSent = 0;
-  private _apiAwaySince: Date | null = null;
   /** Set by `close()`: the worker is shutting down. */
   private closedForGood = false;
+
+  /** Where the connection stands; the client writes it, like the three fields after it. */
+  state: WebSocketState = 'closed';
+  /** When the last message went out; null before the first. */
+  lastMessageAt: Date | null = null;
+  /** Messages sent since the worker started, health pushes included. */
+  messagesSent = 0;
+  /**
+   * Since when the API is away: from the moment an open connection closed, or from the first attempt that failed
+   * when none was open yet. Null while a connection is open, and before the first attempt ended.
+   */
+  apiAwaySince: Date | null = null;
 
   /** Called each time a connection opens, before the flushes that waited for it go on. */
   onOpen: (() => void) | null = null;
@@ -41,13 +49,14 @@ class WebSocketClient {
     this.url = url;
   }
 
+  /** Opens the connection, and connects again whenever it closes, until `close`. Undoes an earlier `close`. */
   connect(): void {
-    if (this._state === 'connecting' || this._state === 'open') {
+    if (this.state === 'connecting' || this.state === 'open') {
       return;
     }
     this.closedForGood = false;
 
-    this._state = 'connecting';
+    this.state = 'connecting';
 
     const headers: Record<string, string> = { 'x-cdc-secret': env.CDC_SECRET };
 
@@ -56,11 +65,10 @@ class WebSocketClient {
     this.ws = new WebSocket(this.url, { headers });
 
     this.ws.on('open', () => {
-      this._state = 'open';
-      this._apiAwaySince = null;
+      this.state = 'open';
+      this.apiAwaySince = null;
       this.reconnectAttempt = 0;
 
-      // The boot smoke of the `verify` skill looks for the second half of this line in the log.
       log.info('API reachable');
 
       this.onOpen?.();
@@ -86,8 +94,8 @@ class WebSocketClient {
   send(data: unknown): void {
     if (!this.isConnected()) throw new ApiUnreachableError();
     this.ws?.send(JSON.stringify(data));
-    this._messagesSent++;
-    this._lastMessageAt = new Date();
+    this.messagesSent++;
+    this.lastMessageAt = new Date();
   }
 
   isConnected(): boolean {
@@ -100,36 +108,17 @@ class WebSocketClient {
    */
   whenConnected(): Promise<void> {
     if (this.isConnected()) return Promise.resolve();
-    if (this._state === 'closed' && this.closedForGood) return Promise.reject(new ApiUnreachableError());
+    if (this.state === 'closed' && this.closedForGood) return Promise.reject(new ApiUnreachableError());
     return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
   }
 
-  get state(): WebSocketState {
-    return this._state;
-  }
-
-  get lastMessageAt(): Date | null {
-    return this._lastMessageAt;
-  }
-
-  get messagesSent(): number {
-    return this._messagesSent;
-  }
-
-  /**
-   * Since when the API is away: from the moment an open connection closed, or from the first attempt that failed
-   * when none was open yet. Null while a connection is open, and before the first attempt ended.
-   */
-  get apiAwaySince(): Date | null {
-    return this._apiAwaySince;
-  }
-
+  /** Closes the connection for good: nothing connects again until `connect`, and every flush that waits fails. */
   close(): void {
     this.closedForGood = true;
     this.clearReconnect();
     this.ws?.close();
     this.ws = null;
-    this._state = 'closed';
+    this.state = 'closed';
     for (const waiter of this.waiters.splice(0)) waiter.reject(new ApiUnreachableError());
   }
 
@@ -138,11 +127,11 @@ class WebSocketClient {
     // A deliberate close also fires this event: nothing connects again after it.
     if (this.closedForGood) return;
 
-    this._state = 'reconnecting';
+    this.state = 'reconnecting';
 
     // Attempts that fail during an outage keep its first moment.
-    if (!this._apiAwaySince) {
-      this._apiAwaySince = new Date();
+    if (!this.apiAwaySince) {
+      this.apiAwaySince = new Date();
       log.warn('API away: flushes wait and the WAL keeps the changes');
     }
 
@@ -152,10 +141,7 @@ class WebSocketClient {
   private scheduleReconnect(): void {
     if (this.reconnectTimeout) return;
 
-    // min(5s, 1s * 2^attempt)
     const exponentialDelay = Math.min(maxReconnectDelayMs, baseReconnectDelayMs * 2 ** this.reconnectAttempt);
-
-    // Jitter: ±20%
     const jitter = exponentialDelay * 0.2 * (Math.random() * 2 - 1);
     const delay = Math.round(exponentialDelay + jitter);
 

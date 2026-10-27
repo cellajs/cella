@@ -5,7 +5,7 @@ vi.mock('../network/websocket-client', () => ({ wsClient: { send: vi.fn() } }));
 vi.mock('shared/utils/nanoid', () => ({ nanoid: () => 'mock-token', nanoidTenant: () => 'mock-t' }));
 
 import { wsClient } from '../network/websocket-client';
-import { generateActivityId, sendMessageToApi, sendProductMessagesToApi } from '../services/activity-service';
+import { generateActivityId, sendMessageToApi, sendProductMessagesToApi } from '../services/api-messages';
 
 describe('generateActivityId', () => {
   const idOf = (commitLsn: string, index = 0) => generateActivityId({ lsn: '0/1', commitLsn, index });

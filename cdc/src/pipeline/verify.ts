@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Tx } from '#/db/create-connection';
+import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { isForwardOnlyCounterKey, isPlainCountKey } from '#/modules/entities/counter-keys';
 import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
@@ -10,10 +11,10 @@ import { resourceLimits } from '../constants';
 import { cdcDb, type Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
-import { type CounterDeltas, fence } from '../services/fence';
+import { type CounterDeltas, fence, fenceMarkerPrefix } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
-import { fenceMarkerPrefix, runBetweenFlushes } from './handle-message';
+import { runBetweenFlushes } from './handle-message';
 
 const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
 
@@ -120,6 +121,12 @@ let lastRebuildAt = 0;
 
 /** True when the worker found a rebuild's fence in `sync_state` at its start: it ended before the stream had passed that rebuild. */
 let fenceLeftOpen = false;
+
+/** Whether `sync_state` was read since the worker started; a read that failed is made again before the lost cases. */
+let booksStateRestored = false;
+
+/** When a verify last started and ended without an answer: it timed out, failed, or the rebuild it asked for did. */
+let verifyGaveUpAt = 0;
 
 /**
  * Closes a rebuild's fence once the stream has passed its marker, and forgets it in the database. A fence another
@@ -253,11 +260,10 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
   }
 }
 
-/** When a verify last started and ended without an answer: it timed out, failed, or the rebuild it asked for did. */
-let verifyGaveUpAt = 0;
-
 /** A fault that repeats costs one rebuild and one refetch per interval, not one per failing change. */
-export const rebuildAllowed = (): boolean => Date.now() - lastRebuildAt >= rebuildIntervalMs;
+export function rebuildAllowed(): boolean {
+  return Date.now() - lastRebuildAt >= rebuildIntervalMs;
+}
 
 /**
  * Reads the sync state when the worker starts: the generation health reports, when the last rebuild was, and whether
@@ -271,18 +277,18 @@ export async function restoreBooksState(): Promise<void> {
   booksStateRestored = true;
 }
 
-let booksStateRestored = false;
-
 /** Reads the sync state if the read at the worker's start failed: without it an interrupted rebuild goes unnoticed. */
-export const ensureBooksStateRestored = async (): Promise<void> => {
+export async function ensureBooksStateRestored(): Promise<void> {
   if (!booksStateRestored) await restoreBooksState();
-};
+}
 
 /**
  * Whether the worker before this one ended inside the fence of a rebuild. What that fence left out is gone with its
  * process, so the changes it covered would count twice: the books are rebuilt again.
  */
-export const rebuildWasInterrupted = (): boolean => fenceLeftOpen;
+export function rebuildWasInterrupted(): boolean {
+  return fenceLeftOpen;
+}
 
 /**
  * What the lost-case checks before a subscription start from, in one query. `hasHistory`: the database has activities,
@@ -291,7 +297,7 @@ export const rebuildWasInterrupted = (): boolean => fenceLeftOpen;
  */
 export async function readLostCaseFacts(): Promise<{ hasHistory: boolean; countersAreLost: boolean }> {
   const result = await cdcDb.execute<{ counters: boolean; history: boolean }>(
-    sql`SELECT EXISTS (SELECT 1 FROM ${channelCountersTable}) AS counters, EXISTS (SELECT 1 FROM activities) AS history`,
+    sql`SELECT EXISTS (SELECT 1 FROM ${channelCountersTable}) AS counters, EXISTS (SELECT 1 FROM ${activitiesTable}) AS history`,
   );
   const { counters, history } = result.rows[0];
   return { hasHistory: history, countersAreLost: history && !counters };

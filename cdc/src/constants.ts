@@ -1,17 +1,21 @@
 import process from 'node:process';
+
+/** The publication the worker reads: the CDC migration builds it over the tracked tables. */
 export const cdcPublicationName = 'cdc_pub';
 
+/** The worker's replication slot; tests set `CDC_SLOT_NAME` to read a slot of their own. */
 // biome-ignore lint/style/noProcessEnv: constants must stay import-safe; pulling in the env module here would run its validation on every import
 export const cdcSlotName = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
+/** The limits and timings of reading, recording, the books and health. */
 export const resourceLimits = {
-  // The replication connection
+  /** The replication connection. */
   runtime: {
     /** How often the last acknowledged position is sent again: well inside Postgres's `wal_sender_timeout` of a minute. */
     statusIntervalMs: 10_000,
   },
 
-  // Reading again after a failed flush
+  /** Reading again after a failed flush. */
   reread: {
     /** The wait before each read after a failure, by how many failed in a row; the last one repeats. */
     delaysMs: [500, 2000, 5000, 15_000, 30_000],
@@ -19,7 +23,7 @@ export const resourceLimits = {
     stuckAfter: 5,
   },
 
-  // Checking the books against the tables, and rebuilding them when they are wrong or lost
+  /** Checking the books against the tables, and rebuilding them when they are wrong or lost. */
   books: {
     /** Statement timeout of a rebuild's recount, which reads every counted table once while the flushes wait. */
     countTimeoutMs: 10 * 60e3,
@@ -33,23 +37,23 @@ export const resourceLimits = {
     requestPollMs: 5000,
   },
 
-  // Limits Postgres applies to every session of the worker's pool
+  /** Limits Postgres applies to every session of the worker's pool. */
   database: { lockMs: 10_000, statementMs: 60_000, idleInTransactionMs: 30_000 },
 
-  // Subscribing again after a subscribe error
+  /** Subscribing again after a subscribe error. */
   reconnection: {
     /** Between two subscription attempts. */
     retryDelayMs: 5000,
   },
 
-  // The first attempts after a subscribe error come sooner: a rolling deployment hands the slot over within a second.
+  /** The first attempts after a subscribe error come sooner: a rolling deployment hands the slot over within a second. */
   slotTakeover: {
     /** How many attempts come at the short delay. */
     maxAttempts: 12,
     retryDelayMs: 500,
   },
 
-  // What the worker holds in memory
+  /** What the worker holds in memory. */
   buffers: {
     /** A flush starts this long after the first change is pending, when fewer than `flushBatchSize` arrive meanwhile. */
     flushWindowMs: 50,
@@ -63,7 +67,7 @@ export const resourceLimits = {
     maxTransactionEvents: 100_000,
   },
 
-  // What health grades the worker by
+  /** What health grades the worker by. */
   health: {
     /** How long the API may be away before the worker reports unhealthy: by then it is an outage of sync, not a restart. */
     apiAwayUnhealthyMs: 5 * 60e3,

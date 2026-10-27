@@ -1,7 +1,7 @@
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
 import type { DmlMessage, ParseMessageResult } from '../pipeline/parse-message';
-import type { ProductRow } from '../services/activity-service';
+import type { ProductRow } from '../services/api-messages';
 import type { PendingEvent, TableMeta } from '../types';
 
 /**

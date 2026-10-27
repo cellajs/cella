@@ -6,7 +6,7 @@ import type { CdcRowData, TableMeta } from '../types';
 /**
  * Varchar length at or above which a column is stripped from in-memory row data. The publication
  * always carries every column, since column lists are incompatible with REPLICA IDENTITY FULL, so
- * stripping happens in the handlers after change detection.
+ * stripping happens in the parser after change detection.
  */
 const cdcExcludeColumnLengthThreshold = 10_000;
 
@@ -15,9 +15,8 @@ const excludedRowDataKeys: Set<string> = (() => {
   const keys = new Set<string>();
   const allTables = [...Object.values(entityTables), ...Object.values(resourceTables)];
   for (const table of allTables) {
-    for (const [key, col] of Object.entries(getColumns(table))) {
-      const len = col.length;
-      if (len !== undefined && len >= cdcExcludeColumnLengthThreshold) keys.add(key);
+    for (const [key, column] of Object.entries(getColumns(table))) {
+      if (column.length !== undefined && column.length >= cdcExcludeColumnLengthThreshold) keys.add(key);
     }
   }
   return keys;
@@ -32,7 +31,7 @@ const secretKeysByTable: ReadonlyMap<string, ReadonlySet<string>> = new Map(
 );
 
 /**
- * Called in the handlers, after changedFields has been computed: drops large-text columns and the
+ * Called by the parser, after changedFields has been computed: drops large-text columns and the
  * table's secret columns, so neither crosses to the backend.
  */
 export function compactRowData(tableMeta: TableMeta, rowData: CdcRowData): CdcRowData {

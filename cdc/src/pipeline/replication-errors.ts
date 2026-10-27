@@ -8,7 +8,7 @@ export function isStalePublicationError(error: unknown): boolean {
     error instanceof Error
       ? error.message
       : typeof error === 'object' && error !== null && 'message' in error
-        ? String((error as { message: unknown }).message)
+        ? String(error.message)
         : String(error ?? '');
   return /publication .* does not exist/i.test(message);
 }

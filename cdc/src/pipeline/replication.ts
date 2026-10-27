@@ -53,8 +53,8 @@ export function createReplicationService(): LogicalReplicationService {
   // so a worker that is behind holds the stream where it is.
   // A service that was replaced can still hold queued messages. They belong to a stream that is read again, so they
   // are left alone.
-  service.on('data', (lsn: string, message: unknown) =>
-    replicationState.service === service ? handleDataMessage(lsn, message as Pgoutput.Message) : undefined,
+  service.on('data', (lsn: string, message: Pgoutput.Message) =>
+    replicationState.service === service ? handleDataMessage(lsn, message) : undefined,
   );
 
   // The stream is open: the slot is read once more and the API hears at once that the worker reads. The push at

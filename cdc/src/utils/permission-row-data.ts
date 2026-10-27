@@ -10,7 +10,7 @@ const permissionRowKeys: Set<string> = (() => {
   return keys;
 })();
 
-/** A product row as a message carries it: its permission columns and no content. */
+/** A row's permission columns and no content: a product row as a message carries it, and the place a moved row left. */
 export function pickPermissionRowData(rowData: CdcRowData): CdcRowData {
   const slim: RowData = {};
   for (const [key, value] of Object.entries(rowData)) {

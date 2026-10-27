@@ -7,9 +7,11 @@ export type RowData = Record<string, unknown>;
 /** Entity or resource row data after camelCase conversion, open to entity-specific fields. */
 export interface CdcRowData extends RowData {
   id: string;
+  /** A number once a flush stamped the row or read its value back; the row image holds the column as text. */
   seq?: number;
 }
 
+/** A tracked entity table: its Drizzle table, entity type and column names. */
 export interface EntityTableMeta {
   kind: 'entity';
   table: (typeof entityTables)[keyof typeof entityTables];
@@ -17,6 +19,7 @@ export interface EntityTableMeta {
   columnNameMap: Map<string, string>;
 }
 
+/** A tracked resource table (a membership, a tenant, an API key): no place of its own in the hierarchy. */
 export interface ResourceTableMeta {
   kind: 'resource';
   table: (typeof resourceTables)[keyof typeof resourceTables];
@@ -24,6 +27,7 @@ export interface ResourceTableMeta {
   columnNameMap: Map<string, string>;
 }
 
+/** What the worker knows of a tracked table, from the table registry. */
 export type TableMeta = EntityTableMeta | ResourceTableMeta;
 
 /** A change the worker keeps, on its way from its source transaction to a flush. */

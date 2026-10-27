@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, asc, getColumns, inArray, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, asc, eq, getColumns, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
@@ -6,7 +6,7 @@ import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
+import { isSoftDeleteTransition } from './is-soft-delete-transition';
 import { isEmbeddingColumn } from './reference-columns';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
@@ -31,7 +31,7 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
   const resolved: ResolvedEmbedding[] = [];
 
   for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
-    const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
+    const hostTable = getEntityTable(hostProduct);
     // getColumns returns literal-keyed columns; widened for runtime string lookup.
     const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
 
@@ -43,12 +43,12 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
       throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
     }
 
-    // Scope by the deepest STRICT ancestor, not the parent: a nullable placement column may
-    // be null on the deleted row (which would silently skip cleanup), while the strict ancestor
-    // (ultimately the org root) is present on the row and on every host table.
+    // Scope by the deepest strict ancestor, not the parent: a nullable placement column may be null on the deleted row,
+    // which would skip the cleanup with no error, while the strict ancestor (ultimately the organization) is present on
+    // the row and on every host table.
     const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProduct));
     const parentType = hierarchy.getOrderedAncestors(embeddedProduct).find((ancestor) => !nullableAncestors.has(ancestor));
-    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent context: cleanup requires a scoping column`);
+    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent channel: cleanup requires a scoping column`);
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
@@ -108,7 +108,7 @@ export async function cleanupEmbeddingReferences(
         const hosts = await tx
           .select({ id: hostIdColumn })
           .from(hostTable)
-          .where(and(arrayOverlaps(hostColumn, embeddedIds), sql`${parentColumn} = ${parentId}`))
+          .where(and(arrayOverlaps(hostColumn, embeddedIds), eq(parentColumn, parentId)))
           .orderBy(asc(hostIdColumn))
           .for('no key update');
         if (hosts.length === 0) return;

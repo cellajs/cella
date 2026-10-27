@@ -43,10 +43,11 @@ interface CdcProductMessage extends CdcMessageBase {
  */
 export type CdcOutboundMessage = CdcRowMessage | CdcProductMessage;
 
-const padLsn = (lsn: string): string | null => {
+/** Both halves of an LSN zero-padded to eight digits and dash-joined; null for a string that is no LSN. */
+function padLsn(lsn: string): string | null {
   const [hi, lo] = lsn.split('/');
   return lo === undefined ? null : `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
-};
+}
 
 /**
  * Activity id of a change: the commit position of its transaction and its index in that transaction. Both are the
