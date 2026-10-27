@@ -1,6 +1,7 @@
 import type { Block } from '@blocknote/core';
 import { isRecord } from './as-record.ts';
 
+/** Block types that hold one file: its reference in the `url` prop, its file name in `name`. */
 export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
 type InlineContentLike = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: unknown };
@@ -95,8 +96,8 @@ export const getTextFromBlock = (block: Block): string => {
 };
 
 /** `inlineText` plus link URL metadata, so the domain and slug of a link are searchable too. */
-const getSearchableTextFromInlineContent = (content: unknown[]): string => {
-  return collapseWhitespace(
+const getSearchableTextFromInlineContent = (content: unknown[]): string =>
+  collapseWhitespace(
     content
       .map((item) => {
         const inline = item as InlineContentLike;
@@ -105,7 +106,6 @@ const getSearchableTextFromInlineContent = (content: unknown[]): string => {
       })
       .join(' '),
   );
-};
 
 /** For search indexing: adds URL metadata from link and media URLs to `getTextFromBlock`. */
 export const getSearchableTextFromBlock = (block: Block): string => {
@@ -129,9 +129,10 @@ export const getSearchableTextFromBlock = (block: Block): string => {
     .trim();
 };
 
+/** {@link getSearchableTextFromBlock} of every block, joined by spaces. */
 export const getSearchableTextFromBlocks = (blocks: Block[]): string => blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
 
-/** Blocks of a stored document (`description` as composer output); null for absent, legacy HTML or malformed input. */
+/** Blocks of a stored document (`description` as composer output); null for an absent, HTML or malformed body. */
 export const parseBlocks = (description: string | null | undefined): Block[] | null => {
   if (!description) return null;
   try {

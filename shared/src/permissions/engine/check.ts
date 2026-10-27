@@ -48,8 +48,8 @@ export const getMembershipIndex = <T extends AccessMembership>(memberships: T[])
 export const buildPolicyIndex = (policies: PolicyMatrix, entityType: ChannelEntityType | ProductEntityType): PolicyIndex => {
   const index: PolicyIndex = new Map();
   const entityPolicies = policies[entityType] ?? [];
-  for (const p of entityPolicies) {
-    index.set(`${p.channelType}:${p.role}`, p.permissions);
+  for (const policy of entityPolicies) {
+    index.set(`${policy.channelType}:${policy.role}`, policy.permissions);
   }
   return index;
 };
@@ -76,7 +76,7 @@ export const checkWithIndices = <T extends AccessMembership>(
 ): PermissionDecision<T> => {
   const { actorId, publicGrants, elevatedGrants } = options;
   const primaryChannel = orderedChannels[0];
-  if (primaryChannel === undefined) throw new Error('checkSubject: orderedChannels must not be empty');
+  if (primaryChannel === undefined) throw new Error(`[Permission] ${subject.entityType} has no channel to check`);
 
   const primaryChannelId = getSubjectChannelId(subject, primaryChannel);
   const primaryMemberships = primaryChannelId ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`) ?? []) : [];
@@ -110,8 +110,9 @@ export const checkWithIndices = <T extends AccessMembership>(
 
   // Non-elevated grants apply only at the row's home channel; channel subjects keep ancestor
   // elevation. Elevation is per (channelType, role): `${channelType}:${role}` ∈ elevatedGrants.
-  const isProductSubject = (subject.entityType as string) !== primaryChannel;
-  const homeChannel = elevatedGrants && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
+  const isProductSubject = subject.entityType !== primaryChannel;
+  const homeChannel =
+    elevatedGrants && isProductSubject ? orderedChannels.find((channelType) => getSubjectChannelId(subject, channelType)) : undefined;
 
   for (const channelType of orderedChannels) {
     const channelRoles = getRoles(channelType);
@@ -126,22 +127,21 @@ export const checkWithIndices = <T extends AccessMembership>(
 
     const matchingMemberships = membershipIndex.get(`${channelType}:${subjectChannelId}`) ?? [];
 
-    for (const m of matchingMemberships) {
-      const permissions = policyIndex.get(`${channelType}:${m.role}`);
+    for (const membership of matchingMemberships) {
+      const permissions = policyIndex.get(`${channelType}:${membership.role}`);
       // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
 
-      const outsideElevation = elevatedGrants && isProductSubject && !elevatedGrants.has(`${channelType}:${m.role}`) && channelType !== homeChannel;
-      if (outsideElevation) {
-        continue;
-      }
+      const outsideElevation =
+        elevatedGrants && isProductSubject && !elevatedGrants.has(`${channelType}:${membership.role}`) && channelType !== homeChannel;
+      if (outsideElevation) continue;
 
       for (const action of appConfig.entityActions) {
         const policyValue = permissions[action];
 
         if (policyValue === 1) {
           actions[action].allowed = true;
-          actions[action].grantedBy.push({ type: 'membership', channelType, channelId: subjectChannelId, role: m.role });
+          actions[action].grantedBy.push({ type: 'membership', channelType, channelId: subjectChannelId, role: membership.role });
           continue;
         }
 
@@ -170,7 +170,7 @@ export const checkWithIndices = <T extends AccessMembership>(
   };
 };
 
-/** One subject returns a `PermissionDecision`; an array returns a `Map` keyed by subject.id. */
+/** One subject returns a `PermissionDecision`; an array returns a `Map` keyed by subject id, or `_idx:<position>` without one. */
 export function getAllDecisions<T extends AccessMembership>(
   policies: PolicyMatrix,
   memberships: T[],

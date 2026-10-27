@@ -1,7 +1,7 @@
 import { hierarchy } from '../../config/config.default.ts';
 import type { ChannelEntityType, EntityIdColumnKey, EntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
-import { toColumnName, toTableName } from '../permissions/index.ts';
+import { toColumnName, toTableName } from '../utils/schema-naming.ts';
 
 export interface TestChannelColumn {
   channelType: ChannelEntityType;

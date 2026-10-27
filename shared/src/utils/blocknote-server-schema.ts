@@ -7,7 +7,7 @@ import {
   defaultBlockSpecs,
   type StyleSchema,
 } from '@blocknote/core';
-import { checklistItemConfig, codeBlockConfig, mentionConfig, notifyConfig, withAttachmentRef } from './blocknote-schema-configs';
+import { checklistItemConfig, codeBlockConfig, mentionConfig, notifyConfig, withAttachmentRef } from './blocknote-schema-configs.ts';
 
 type MentionImplementation = CustomInlineContentImplementation<typeof mentionConfig, StyleSchema>;
 /** BlockNote's `HTMLElement` plus the two members used here, spelled out because workers compile without the DOM lib. */
@@ -16,13 +16,16 @@ type RenderedDom = ReturnType<MentionImplementation['render']>['dom'] & {
   textContent: string | null;
 };
 
-/** The document `ServerBlockNoteEditor` installs on `globalThis` for the duration of an HTML conversion. */
+/** The DOM document a render creates its elements in, which a server process has only where a caller installs one. */
 type ServerDocument = { createElement(tag: string): RenderedDom };
 
-/** Renders run only inside `blocksToHTMLLossy` and friends (block to Y.Doc conversion never renders). */
+/**
+ * Renders exist because `createBlockSpec` requires one. They run only when a caller converts blocks to HTML; converting
+ * between blocks and a Y.Doc never renders.
+ */
 const serverDocument = (): ServerDocument => {
   const { document } = globalThis as { document?: ServerDocument };
-  if (!document) throw new Error('BlockNote server render needs the jsdom document ServerBlockNoteEditor installs');
+  if (!document) throw new Error('BlockNote server render needs a DOM document on globalThis');
   return document;
 };
 
@@ -44,10 +47,9 @@ const renderMention: MentionImplementation['render'] = (inlineContent) => {
 };
 
 /**
- * Server mirror of the frontend custom schema (`blocknote-config.ts`), from the same shared configs:
- * the ProseMirror node specs must stay identical for Y.Doc round-tripping. One schema for every
- * `ServerBlockNoteEditor` (Yjs relay seeding, backend HTML conversion), so a body containing a
- * mention converts everywhere (the default schema throws "node type mention not found").
+ * The backend's schema for converting between blocks and a Y.Doc, mirroring the frontend editor's (`blocknote-schema.ts`)
+ * from the same shared configs: the ProseMirror node specs must stay identical for Y.Doc round-tripping, and a body
+ * containing a mention converts (the default schema throws "node type mention not found").
  */
 export const serverBlockNoteSchema = BlockNoteSchema.create().extend({
   blockSpecs: {

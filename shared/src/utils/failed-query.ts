@@ -24,10 +24,8 @@ export const redactFailedQuery = (text: string): string =>
  * problem without the SQL or its values.
  * @param cause - The failed query's cause.
  */
-export const failedQueryReason = (cause: unknown): string => {
-  const message = typeof cause === 'object' && cause !== null ? (cause as { message?: unknown }).message : undefined;
-  return typeof message === 'string' ? message : redactedFailedQuery;
-};
+export const failedQueryReason = (cause: unknown): string =>
+  typeof cause === 'object' && cause !== null && 'message' in cause && typeof cause.message === 'string' ? cause.message : redactedFailedQuery;
 
 /**
  * A stack with `replacement` wherever it quotes `message`: a stack opens with its error's message, so the SQL and

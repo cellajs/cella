@@ -42,12 +42,12 @@ const deniedDecision = <T extends AccessMembership>(subject: SubjectForPermissio
  * cover system-admin state, referenced row conditions and roles at each subject channel level.
  * Each class result is then paired with the access's own membership.
  */
-export function getDecisionsForAccesses<T extends AccessMembership>(
+export const getDecisionsForAccesses = <T extends AccessMembership>(
   policies: PolicyMatrix,
   accesses: EngineAccess<T>[],
   subject: SubjectForPermission,
   options?: ResolveAccessOptions,
-): PermissionDecision<T>[] {
+): PermissionDecision<T>[] => {
   const { hierarchy, getRoles, orderedChannels } = resolveHierarchy(options);
   validateSubject(subject, undefined, hierarchy);
 
@@ -96,7 +96,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
       for (const [channelType, channelId] of channelLevels) {
         const held = membershipIndex.get(`${channelType}:${channelId}`);
         if (held?.length) {
-          const roles = held.map((m) => m.role as string);
+          const roles = held.map((membership) => membership.role);
           if (roles.length > 1) roles.sort();
           key += `|${channelType}:${roles.join('+')}`;
         }
@@ -118,4 +118,4 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
     const membership = primaryChannelId ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`)?.[0] ?? null) : null;
     return decision.membership === membership ? decision : { ...decision, membership };
   });
-}
+};

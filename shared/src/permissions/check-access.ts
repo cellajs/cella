@@ -40,7 +40,7 @@ const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAc
 
 export interface PermissionResult<T extends AccessMembership = AccessMembership> {
   allowed: boolean;
-  /** The user's membership for this entity, null when none applies. */
+  /** The decision's `membership` (`PermissionDecision`). */
   membership: T | null;
 }
 
@@ -65,22 +65,22 @@ const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>
 });
 
 /** The request-path check. @see cella/PERMISSIONS.md */
-export function checkAccess<T extends AccessMembership>(
+export const checkAccess = <T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,
   subject: SubjectForPermission,
-): PermissionResult<T> {
+): PermissionResult<T> => {
   const engineAccess = toEngineAccess(access);
   const { can, membership } = getAllDecisions(policyMatrix, engineAccess.memberships, subject, accessOptions(engineAccess));
   return { allowed: can[action] && scopeAllows(access, subject.entityType, action), membership };
-}
+};
 
-/** One actor, many rows: `splitByPermission`, in one engine pass. */
-export function checkAccessBatch<T extends AccessMembership>(
+/** One actor, many rows (bulk splits and list reads), in one engine pass. */
+export const checkAccessBatch = <T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,
   subjects: SubjectForPermission[],
-): BatchPermissionResult<T> {
+): BatchPermissionResult<T> => {
   const engineAccess = toEngineAccess(access);
   const decisions = getAllDecisions(policyMatrix, engineAccess.memberships, subjects, accessOptions(engineAccess));
   const results = new Map<string, PermissionResult<T>>();
@@ -88,15 +88,15 @@ export function checkAccessBatch<T extends AccessMembership>(
     results.set(id, { allowed: decision.can[action] && scopeAllows(access, decision.subject.entityType, action), membership: decision.membership });
   }
   return { results, decisions };
-}
+};
 
 /** Many actors, one row: stream fan-out. @see resolve-access.ts */
-export function checkAccessFanout<T extends AccessMembership>(
+export const checkAccessFanout = <T extends AccessMembership>(
   accesses: Access<T>[],
   action: EntityActionType,
   subject: SubjectForPermission,
   options?: CheckAccessFanoutOptions,
-): PermissionResult<T>[] {
+): PermissionResult<T>[] => {
   const decisions = getDecisionsForAccesses(policyMatrix, accesses.map(toEngineAccess), subject, {
     ...boundOptions,
     onInvalidMembership: options?.onInvalidMembership,
@@ -108,4 +108,4 @@ export function checkAccessFanout<T extends AccessMembership>(
       membership: decision.membership,
     };
   });
-}
+};

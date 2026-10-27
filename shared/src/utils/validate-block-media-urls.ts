@@ -6,7 +6,7 @@ import { mediaBlockTypes } from './text-from-block.ts';
  * Whether a media block's `url` prop may be stored and rendered: absent or blank (no file yet), or a string the media
  * grammar accepts. A non-string never passes, since a renderer would coerce it to a URL.
  */
-export const isAcceptedMediaUrl = (url: unknown, ctx: MediaRefContext): boolean =>
+const isAcceptedMediaUrl = (url: unknown, ctx: MediaRefContext): boolean =>
   url === undefined || url === '' || (typeof url === 'string' && parseMediaRef(url, ctx).kind !== 'invalid');
 
 /** A node of a stored document, which is client input: any object, whatever its `type`, `props` or `children`. */

@@ -1,12 +1,12 @@
 import process from 'node:process';
+
 export interface GracefulShutdownOptions {
   /** Service name for log messages. */
   name: string;
-  /** Async cleanup function called on shutdown signals. */
+  /** Runs once, on the first SIGINT or SIGTERM. */
   cleanup: () => Promise<void>;
-  /** Log function for shutdown messages. */
   log: (msg: string) => void;
-  /** Max time (ms) to wait for cleanup before force-exiting (default: 10000). */
+  /** How long cleanup may run before the process force-exits. */
   timeoutMs?: number;
 }
 

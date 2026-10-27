@@ -56,7 +56,7 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
 }: ChannelCollectionScopeInput): ChannelCollectionReadScope => {
   if (!('anonymous' in actor) && actor.isSystemAdmin) return { orgWide: 'all', ancestorScopes: [] };
 
-  const policies = getEntityPolicies(channelType, allPolicies);
+  const policies = getEntityPolicies(allPolicies, channelType);
   const ancestors = hierarchy.getOrderedAncestors(channelType) as ChannelEntityType[];
 
   let orgWide: ChannelCollectionReadScope['orgWide'] = null;

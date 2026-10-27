@@ -18,6 +18,7 @@ export type RowForCondition = { createdBy?: string | null } & Record<string, unk
  */
 export const conditionRowOf = (subject: SubjectForPermission): RowForCondition => ({ ...subject.row, createdBy: subject.createdBy });
 
+/** Whether a policy cell is a row condition name. */
 export const isRowCondition = (value: unknown): value is RowConditionName => value === 'own' || value === 'public';
 
 /**

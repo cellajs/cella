@@ -1,4 +1,4 @@
-import { toColumnName } from '../permissions/schema-naming.ts';
+import { toColumnName } from '../utils/schema-naming.ts';
 
 /**
  * The id-column key convention (`project` to `projectId`). Config validation pins

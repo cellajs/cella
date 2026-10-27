@@ -25,10 +25,10 @@ function ensureStarted(): ELDHistogram {
 }
 
 /** A mean of the histogram as delay in milliseconds: the time between two samples, less the timer's own interval. */
-const toDelayMs = (meanNs: number | null): number => {
+function toDelayMs(meanNs: number | null): number {
   if (meanNs === null || !Number.isFinite(meanNs)) return 0;
   return Math.max(0, Math.round((meanNs / 1e6 - resolutionMs) * 10) / 10);
-};
+}
 
 /**
  * Mean event-loop delay in milliseconds, reported by `/health`: the worse of the window that ended last and the one

@@ -3,17 +3,20 @@ import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { isFailedQueryMessage, redactedFailedQuery, replaceInStack } from '../utils/failed-query.ts';
 import { scrubText, scrubUrl } from '../utils/scrub-url.ts';
 
-const isStringArray = (value: AttributeValue): value is (string | null | undefined)[] =>
-  Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
+function isStringArray(value: AttributeValue): value is (string | null | undefined)[] {
+  return Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
+}
 
 /**
- * Where the HTTP instrumentation puts the caller's IP address, under both semantic conventions. No trace needs it: the
- * request id ties a span to the request log, and the session behind it holds the IP as a hash.
+ * Where the HTTP instrumentation puts the caller's IP address and port, under both semantic conventions. No trace needs
+ * them: the request id ties a span to the request log, and the session behind it holds the IP as a hash.
  */
 const ipAttributes = ['client.address', 'network.peer.address', 'network.peer.port', 'http.client_ip', 'net.peer.ip', 'net.sock.peer.addr'];
 
 /** An error message: a failed query's whole message goes, since its values may span any number of lines. */
-const scrubMessage = (message: string): string => (isFailedQueryMessage(message) ? redactedFailedQuery : scrubText(message));
+function scrubMessage(message: string): string {
+  return isFailedQueryMessage(message) ? redactedFailedQuery : scrubText(message);
+}
 
 /** Scrubs every string and string-array value in place. */
 function scrubAttributes(attributes: Attributes): void {
@@ -40,8 +43,8 @@ function scrubException(attributes: Attributes): void {
  * (`url.full`, `url.query`, `url.path` and the rest), event attributes such as an exception's message and stack, and
  * the status message. A failed query quoted anywhere loses its SQL and values (`redactFailedQuery`). `createOtelSDK`
  * registers it before every other processor, so the exporter and any debug processor only ever read the scrubbed span.
- * It mutates the ended span in place: `onEnd` is the one hook every processor runs in order, and the span is no longer
- * writable through its API by then.
+ * It mutates the ended span in place: `onEnd` is the one hook every processor runs in order, and by then the span's API
+ * takes no writes.
  */
 export function createRedactingSpanProcessor(): SpanProcessor {
   return {

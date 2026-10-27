@@ -1,16 +1,16 @@
 import { type Context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api';
 import type { EntityType } from '../../types.ts';
 
-export * from './span-names.ts';
-export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor.ts';
-
 /** Aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 
 /** No undefined values. */
 export type CleanSpanAttributes = Record<string, string | number | boolean | null>;
 
-/** Stored and displayed shape; real OTel tracers create the spans. @see span-store-processor.ts */
+/**
+ * Stored and displayed shape; real OTel tracers create the spans. Times are epoch milliseconds, here and in `events`.
+ * @see span-store-processor.ts
+ */
 export interface SpanData {
   traceId: string;
   spanId: string;
@@ -35,6 +35,7 @@ export interface TraceContext {
   spanId: string;
   /** W3C trace flags of the span, so a process that continues the trace keeps its sampling decision. */
   traceFlags?: number;
+  /** When the context was built, in epoch milliseconds. */
   cdcTimestamp: number;
   lsn?: string;
 }
@@ -58,8 +59,6 @@ export interface SpanStats {
   avgDurationMs: Record<string, number>;
   errorCount: number;
 }
-
-// Span store
 
 export type SpanSubscriber = (spans: SpanData[]) => void;
 
@@ -103,10 +102,10 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
 
 export type SpanStore = ReturnType<typeof createSpanStore>;
 
+/** Counts and mean durations per name prefix (the first two dot segments, `cdc.wal`), and the error count. */
 export function computeSpanStats(spans: SpanData[]): SpanStats {
   const byPrefix: Record<string, number> = {};
-  const durationSums: Record<string, number> = {};
-  const durationCounts: Record<string, number> = {};
+  const durations: Record<string, { sum: number; count: number }> = {};
   let errorCount = 0;
 
   for (const span of spans) {
@@ -114,22 +113,22 @@ export function computeSpanStats(spans: SpanData[]): SpanStats {
     byPrefix[prefix] = (byPrefix[prefix] || 0) + 1;
 
     if (span.duration != null) {
-      durationSums[prefix] = (durationSums[prefix] || 0) + span.duration;
-      durationCounts[prefix] = (durationCounts[prefix] || 0) + 1;
+      const total = durations[prefix] ?? { sum: 0, count: 0 };
+      total.sum += span.duration;
+      total.count++;
+      durations[prefix] = total;
     }
 
     if (span.status === 'error') errorCount++;
   }
 
   const avgDurationMs: Record<string, number> = {};
-  for (const [prefix, sum] of Object.entries(durationSums)) {
-    avgDurationMs[prefix] = Math.round(sum / (durationCounts[prefix] ?? 1));
+  for (const [prefix, { sum, count }] of Object.entries(durations)) {
+    avgDurationMs[prefix] = Math.round(sum / count);
   }
 
   return { total: spans.length, byPrefix, avgDurationMs, errorCount };
 }
-
-// Span attribute types
 
 /** Carried in message payloads for end-to-end correlation. */
 export interface IncomingTraceContext {
@@ -139,14 +138,13 @@ export interface IncomingTraceContext {
   lsn?: string;
 }
 
-// Attribute helpers
-
 export interface CdcInput {
   lsn: string;
   tag?: string;
   table?: string;
 }
 
+/** The attributes of a CDC span; an absent tag or table reads `'unknown'`. */
 export function cdcAttrs(input: CdcInput): CleanSpanAttributes {
   return { 'cdc.lsn': input.lsn, 'cdc.tag': input.tag ?? 'unknown', 'cdc.table': input.table ?? 'unknown' };
 }
@@ -158,6 +156,7 @@ export interface ActivityInput {
   entityType?: EntityType | null;
 }
 
+/** The attributes of an activity span; an absent field reads `'unknown'`, an absent entity type `null`. */
 export function activityAttrs(input: ActivityInput): CleanSpanAttributes {
   return {
     'activity.type': input.type ?? 'unknown',
@@ -173,6 +172,7 @@ export interface EventInput {
   entityType?: EntityType | null;
 }
 
+/** The attributes of an event span; an absent subject or entity type reads `null`. */
 export function eventAttrs(input: EventInput): CleanSpanAttributes {
   return { 'event.type': input.type, 'event.subject_id': input.subjectId ?? null, 'event.entity_type': input.entityType ?? null };
 }

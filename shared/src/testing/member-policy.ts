@@ -11,7 +11,7 @@ import type { EntityActionPermissions } from '../permissions/types.ts';
  */
 export function assumeMemberAttachmentPolicy(permissions: Partial<EntityActionPermissions>) {
   const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-  const policies = getEntityPolicies('attachment', policyMatrix);
+  const policies = getEntityPolicies(policyMatrix, 'attachment');
   const channelTypes = new Set(['organization', ...hierarchy.possibleHomeChannels('attachment')]);
   const assumed = [...channelTypes].flatMap((channelType) => getPolicyPermissions(policies, channelType, memberRole) ?? []);
   let configured: EntityActionPermissions[] = [];

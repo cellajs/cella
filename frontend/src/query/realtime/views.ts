@@ -38,7 +38,7 @@ export function deriveGrantBoundaryViews({
   const views = new Map<string, DerivedSyncView>();
 
   for (const entityType of entityTypes) {
-    const entityPolicies = getEntityPolicies(entityType, policies);
+    const entityPolicies = getEntityPolicies(policies, entityType);
     // Ancestors are most-specific → organization; the home level is the first one below it.
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     const homeLevel = ancestors.find((ancestor) => ancestor !== 'organization') ?? 'organization';

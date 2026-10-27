@@ -20,13 +20,13 @@ export interface ResolvedHierarchy {
   orderedChannels: (entityType: string) => ChannelEntityType[];
 }
 
-/** Synthetic channel types come from their own hierarchy, and wrapped methods keep its binding. */
+/** The injected hierarchy, or the app's: a synthetic hierarchy brings its own channel types and roles. */
 export const resolveHierarchy = (overrides?: HierarchyOverrides): ResolvedHierarchy => {
   const h: EntityHierarchy = overrides?.hierarchy ?? appHierarchy;
   return {
     hierarchy: h,
     channelEntityTypes: (overrides?.hierarchy ? h.channelTypes : appConfig.channelEntityTypes) as readonly ChannelEntityType[],
-    getRoles: (type) => h.getRoles(type),
+    getRoles: h.getRoles,
     orderedChannels: (entityType) => {
       const ancestors = h.getOrderedAncestors(entityType);
       // The injected hierarchy's channel type is `string`, so `isChannel` narrows to no type the engine knows.

@@ -22,16 +22,14 @@ export type EntityCanMap = Partial<Record<EntityType, ActionStates>>;
  * `'home:own'` (`'own'`), except `create`: it has no row and the frontend creates at the
  * membership's channel, the new row's home.
  */
-function computeEntityPermissions(
-  entityType: ChannelEntityType | EntityType,
+const computeEntityPermissions = (
+  policies: PolicyMatrix,
+  entityType: EntityType,
   channelType: ChannelEntityType,
   role: EntityRole,
-  policies: PolicyMatrix,
   homeScoped: boolean,
-): ActionStates {
-  const entityPolicies = getEntityPolicies(entityType, policies);
-  const permissions = getPolicyPermissions(entityPolicies, channelType, role);
-
+): ActionStates => {
+  const permissions = getPolicyPermissions(getEntityPolicies(policies, entityType), channelType, role);
   if (!permissions) return allActionsDenied;
 
   return recordFromKeys(appConfig.entityActions, (action) => {
@@ -41,8 +39,8 @@ function computeEntityPermissions(
     // The condition name is the cell value; the frontend resolves it per row via resolveCan.
     if (isRowCondition(value)) return scoped && value === 'own' ? 'home:own' : value;
     return false;
-  }) as ActionStates;
-}
+  });
+};
 
 /** What the map reads of a grant: a membership, or a service account's binding. */
 export type CanGrant = { channelType: ChannelEntityType; role: EntityRole };
@@ -88,7 +86,7 @@ export const computeCan = (
 
   /** One grant's cells for an entity type of the map. */
   const statesOf = ({ channelType: grantChannel, role }: CanGrant, entityType: EntityType): ActionStates => {
-    const cells = (homeScoped: boolean) => computeEntityPermissions(entityType, grantChannel, role, policies, homeScoped);
+    const cells = (homeScoped: boolean) => computeEntityPermissions(policies, entityType, grantChannel, role, homeScoped);
     if (!h.isProduct(entityType) || h.elevatedGrants.has(`${grantChannel}:${role}`)) return cells(false);
     if (grantChannel !== channelType) return allActionsDenied;
     return cells(h.getParent(entityType) !== grantChannel);

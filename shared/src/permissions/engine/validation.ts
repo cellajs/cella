@@ -2,8 +2,9 @@ import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 /**
- * The engine passes its own hierarchy as `entityGuards`, possibly synthetic, so a subject whose entity type exists only
- * in a fixture still validates.
+ * Refuses a subject whose entity type `entityGuards` does not know, or whose id is blank. The engine passes its own
+ * hierarchy, possibly synthetic, so a subject whose entity type exists only in a fixture still validates.
+ * @throws Error naming `Subject[index]`
  */
 export const validateSubject = (
   subject: SubjectForPermission,
@@ -27,6 +28,10 @@ export const validateSubject = (
   }
 };
 
+/**
+ * Refuses a membership the engine cannot index: one without a `channelType`, a string `role` or a `channelId`.
+ * @throws Error naming `Membership[index]`
+ */
 export const validateMembership = <T extends AccessMembership>(membership: T, index: number): void => {
   if (!membership.channelType) {
     throw new Error(`[Permission] Membership[${index}] missing channelType`);

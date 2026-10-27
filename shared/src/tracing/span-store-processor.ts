@@ -1,11 +1,9 @@
-import type { Context } from '@opentelemetry/api';
+import { SpanStatusCode } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import type { CleanSpanAttributes, SpanData, SpanStore } from './tracing.ts';
 
 export interface SpanStoreProcessorOptions {
-  /** SpanStore to push completed spans into. */
   store?: SpanStore;
-  /** Callback fired when a span ends (for debug logging). */
   onSpanEnd?: (data: SpanData) => void;
 }
 
@@ -20,7 +18,7 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
 
   const attributes: CleanSpanAttributes = {};
   for (const [key, value] of Object.entries(span.attributes)) {
-    if (value !== undefined && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       attributes[key] = value;
     }
   }
@@ -34,12 +32,8 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
     endTime,
     duration: endTime - startTime,
     attributes,
-    status: span.status.code === 2 ? 'error' : span.status.code === 1 ? 'ok' : 'unset',
-    events: span.events.map((e) => ({
-      name: e.name,
-      time: hrTimeToMs(e.time),
-      attributes: e.attributes as Record<string, unknown> | undefined,
-    })),
+    status: span.status.code === SpanStatusCode.ERROR ? 'error' : span.status.code === SpanStatusCode.OK ? 'ok' : 'unset',
+    events: span.events.map((event) => ({ name: event.name, time: hrTimeToMs(event.time), attributes: event.attributes })),
   };
 }
 
@@ -51,7 +45,7 @@ export function createSpanStoreProcessor(options: SpanStoreProcessorOptions): Sp
   const { store, onSpanEnd } = options;
 
   return {
-    onStart(_span: ReadableSpan, _parentContext: Context): void {},
+    onStart(): void {},
     onEnd(span: ReadableSpan): void {
       const data = readableSpanToSpanData(span);
       store?.addSpan(data);

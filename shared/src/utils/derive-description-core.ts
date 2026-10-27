@@ -7,6 +7,7 @@ import { getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } 
 export type DescriptionBlock = { type: string; props?: Record<string, unknown>; content?: unknown[]; children?: DescriptionBlock[] };
 
 export type DescriptionCounts = {
+  /** True with more than one top-level block. */
   expandable: boolean;
   checkboxCount: number;
   checkedCount: number;
@@ -15,7 +16,7 @@ export type DescriptionCounts = {
   attachments: string[];
 };
 
-export const emptyDescriptionCounts = (): DescriptionCounts => ({
+const emptyDescriptionCounts = (): DescriptionCounts => ({
   expandable: false,
   checkboxCount: 0,
   checkedCount: 0,

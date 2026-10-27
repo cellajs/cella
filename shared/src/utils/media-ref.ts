@@ -31,11 +31,11 @@ const separatorLikePattern = /[\\\p{Cc}]|%2f|%5c/iu;
  * Whether `key` lies under the organization's upload prefix. The upload token signs `<organizationId>/<userId>` as the
  * storage path, so every object the app stores for an organization starts there; a leading slash is tolerated.
  */
-export function isOrganizationKey(key: string, organizationId: string): boolean {
+export const isOrganizationKey = (key: string, organizationId: string): boolean => {
   const path = key.startsWith('/') ? key.slice(1) : key;
   if (!organizationId || !path.startsWith(`${organizationId}/`) || separatorLikePattern.test(path)) return false;
   return !path.split('/').some(isDotSegment);
-}
+};
 
 /** An asset is an immutable content-hash object at the CDN root: a SHA-256 hex name with a raster extension. */
 const assetPathPattern = /^\/[0-9a-f]{64}\.(?:webp|png)$/;
@@ -49,9 +49,9 @@ const isAssetUrl = (ref: string): boolean => {
 };
 
 /** Classifies a media block reference for the document described by `ctx`. */
-export function parseMediaRef(ref: string, ctx: MediaRefContext): MediaRef {
+export const parseMediaRef = (ref: string, ctx: MediaRefContext): MediaRef => {
   if (isUuid(ref)) return { kind: 'attachment', id: ref };
   if (ctx.organizationId && isOrganizationKey(ref, ctx.organizationId)) return { kind: 'orgKey', key: ref };
   if (isAssetUrl(ref)) return { kind: 'asset', url: ref };
   return { kind: 'invalid' };
-}
+};

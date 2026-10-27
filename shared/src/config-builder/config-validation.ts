@@ -16,7 +16,7 @@ void _configValid;
 // Unseen tracking needs unconditional channel reads for tracked types; conditional visibility
 // keeps endpoint-based counting.
 for (const entityType of appConfig.seenTrackedProductTypes) {
-  for (const policy of getEntityPolicies(entityType, policyMatrix)) {
+  for (const policy of getEntityPolicies(policyMatrix, entityType)) {
     if (isRowCondition(policy.permissions.read)) {
       throw new Error(
         `[Config] Seen-tracked entity type "${entityType}" has a row-conditional read grant ` +

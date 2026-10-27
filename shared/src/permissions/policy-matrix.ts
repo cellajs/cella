@@ -47,7 +47,10 @@ export interface PermissionsConfigResult {
   accessScopes: AccessScopes;
 }
 
-/** @see public-read.ts */
+/**
+ * Builds the policy matrix, the public read grants and the access scopes from the app's callback, which runs once per
+ * channel and product type; an omitted action denies. @see public-read.ts
+ */
 export const configurePermissions = (
   entityTypes: readonly EntityType[],
   callback: PolicyCallback,
@@ -85,22 +88,19 @@ export const configurePermissions = (
   return { policyMatrix: policies, publicReadGrants, accessScopes: deriveAccessScopes(policies) };
 };
 
-/** No public read grants. For tests and callers driving the engine with synthetic policies. */
-export const configurePolicyMatrix = (entityTypes: readonly EntityType[], callback: PolicyCallback, overrides?: HierarchyOverrides): PolicyMatrix => {
-  return configurePermissions(entityTypes, callback, overrides).policyMatrix;
-};
+/** The policy matrix alone, without public read grants: for tests and callers driving the engine with synthetic policies. */
+export const configurePolicyMatrix = (entityTypes: readonly EntityType[], callback: PolicyCallback, overrides?: HierarchyOverrides): PolicyMatrix =>
+  configurePermissions(entityTypes, callback, overrides).policyMatrix;
 
 /**
  * Total lookup: an entity type the matrix does not cover yields no entries, which the engine
  * reads as denied. Callers hold runtime strings, so a miss is a normal result.
  */
-export const getEntityPolicies = (entityType: string, policies: PolicyMatrix): EntityPolicies => {
+export const getEntityPolicies = (policies: PolicyMatrix, entityType: string): EntityPolicies => {
   const byEntityType: Partial<Record<string, EntityPolicies>> = policies;
   return byEntityType[entityType] ?? [];
 };
 
 /** A channel/role pair with no entry yields `undefined`, which callers read as denied. */
-export const getPolicyPermissions = (policies: EntityPolicies, channelType: string, role: string): EntityActionPermissions | undefined => {
-  const entry = policies.find((p) => p.channelType === channelType && p.role === role);
-  return entry?.permissions;
-};
+export const getPolicyPermissions = (policies: EntityPolicies, channelType: string, role: string): EntityActionPermissions | undefined =>
+  policies.find((policy) => policy.channelType === channelType && policy.role === role)?.permissions;
