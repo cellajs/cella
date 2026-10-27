@@ -29,6 +29,12 @@ describe('the environments file', () => {
     expect(() => parseEnvironmentsFile('staging releases\nstaging branch:main')).toThrow(/has a line already/);
     expect(() => parseEnvironmentsFile('staging releases retry')).toThrow(/expected/);
   });
+
+  it('must not let a merged line put production on a commit or a branch: only a release or the releases', () => {
+    expect(() => parseEnvironmentsFile(`production ${sha('d')}`)).toThrow(/releases only/);
+    expect(() => parseEnvironmentsFile('production branch:main')).toThrow(/releases only/);
+    expect(parseEnvironmentsFile('production releases retry 1').get('production')?.rule).toEqual({ kind: 'releases' });
+  });
 });
 
 describe('resolveTarget', () => {
@@ -47,14 +53,6 @@ describe('resolveTarget', () => {
     });
     expect(await resolveTarget({ environment: 'staging', line: lines.get('staging'), listRemote })).toMatchObject({ sha: sha('c') });
     expect(await resolveTarget({ environment: 'preview', line: lines.get('preview'), listRemote })).toMatchObject({ sha: sha('b') });
-  });
-
-  it('deploys the commit a manual run was started on, unless the environment has a line', async () => {
-    const lines = parseEnvironmentsFile('production 0.9.8');
-    expect(await resolveTarget({ environment: 'staging', startedOn: sha('d'), listRemote })).toMatchObject({ sha: sha('d') });
-    expect(await resolveTarget({ environment: 'production', line: lines.get('production'), startedOn: sha('d'), listRemote })).toMatchObject({
-      sha: sha('1'),
-    });
   });
 
   it('says what is missing when a branch or a release is not there', async () => {

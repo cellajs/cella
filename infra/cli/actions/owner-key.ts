@@ -1,4 +1,3 @@
-import { createApiKey, deleteApiKey } from '../../lib/scaleway/iam-client';
 import {
   assertIamManager,
   formatKeyLine,
@@ -14,10 +13,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
 import { endAction, keyPairOrPrompt } from '../shared';
 
-/** Lifetime of the key a privileged run mints from a durable Owner API key. */
-const MINTED_KEY_TTL_MS = 30 * 60_000;
-
-/** A user key with more life than this is durable: a run mints a short-lived key from it and never drives Pulumi with the durable key itself. */
+/** A key with more life than this is durable: it writes IAM from every address until it ends, so the run says so. */
 const DURABLE_KEY_HOURS = 24;
 
 /** The prompt hint for an Owner API key. */
@@ -25,9 +21,7 @@ export const OWNER_KEY_HINT = 'console → your user → API keys; any key holdi
 
 export interface OwnerKey extends KeyPair {
   organizationId: string;
-  /** True when this run minted the key from a durable Owner API key and revokes it on release. */
-  minted: boolean;
-  /** Revoke a minted key; a supplied key is left alone. Safe to call twice. */
+  /** Let go of the key at the end of the action; the key itself stays valid until it is revoked or ends. Safe to call twice. */
   release(): Promise<void>;
 }
 
@@ -35,8 +29,8 @@ export interface OwnerKey extends KeyPair {
  * An Owner API key for a run that cannot take the operator key: creating the operator key itself, and a privileged action on a stack that
  * has no operator application yet. It is typed at the prompt, never read from the environment.
  * The bearer is validated first: an organization Owner, or a principal holding IAMManager; an application the engine created is refused by name.
- * A durable user key (no expiry, or more than a day left) never drives Pulumi itself: the run mints a 30-minute key from it and revokes that at
- * the end. A short-lived user key or an application key is used as it is. Every failure names the fix and exits before the stack is touched.
+ * The key is used as it is: an Owner moment runs no Pulumi and no child process. A durable key (no expiry, or more than a day left) is named as
+ * such, as it writes IAM from every address until it is revoked. Every failure names the fix and exits before the stack is touched.
  * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  */
 export async function acquireOwnerKey(opts: {
@@ -73,35 +67,13 @@ export async function acquireOwnerKey(opts: {
   if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
 
   const hours = hoursUntilExpiry(desc);
-  const durableUserKey = desc.bearer !== 'application' && (hours === undefined || hours > DURABLE_KEY_HOURS);
-  if (!durableUserKey) {
-    console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
-    return { ...pair, organizationId, minted: false, release: async () => {} };
+  console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
+  if (hours === undefined || hours > DURABLE_KEY_HOURS) {
+    console.warn(
+      `${warningMark} This key writes IAM from every address ${hours === undefined ? 'until it is revoked' : `for ${Math.round(hours / 24)} more day(s)`}: make one with an expiry of hours for an Owner moment, and revoke it after.`,
+    );
   }
-
-  const expiresAt = new Date(Date.now() + MINTED_KEY_TTL_MS).toISOString();
-  const minted = await createApiKey(
-    { secretKey: pair.secretKey },
-    { userId: desc.bearerId, description: `${opts.slug}-${opts.mode} privileged run (auto-revoked)`, defaultProjectId: projectId, expiresAt },
-  );
-  console.info(
-    `${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}\n  ${pc.dim('minted')} ${minted.access_key} ${pc.dim(`for this run, expires ${expiresAt.slice(0, 16).replace('T', ' ')} UTC, revoked when the run ends`)}`,
-  );
-  let released = false;
-  return {
-    accessKey: minted.access_key,
-    secretKey: minted.secret_key,
-    organizationId,
-    minted: true,
-    async release() {
-      if (released) return;
-      released = true;
-      await deleteApiKey({ secretKey: pair.secretKey }, minted.access_key).catch((error) =>
-        console.warn(`${warningMark} could not revoke the minted key ${minted.access_key} (${errorMessage(error)}); it expires at ${expiresAt}.`),
-      );
-      console.info(pc.dim(`Minted key ${minted.access_key} revoked.`));
-    },
-  };
+  return { ...pair, organizationId, release: async () => {} };
 }
 
 let revokeReminderShown = false;

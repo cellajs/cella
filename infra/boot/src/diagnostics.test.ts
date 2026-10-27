@@ -61,10 +61,10 @@ describe('uploadBootDiagnostics', () => {
     expect(bodies[0]).toContain('boot_rc=1\nfailed_phase=release-command\n\n--- boot error ---\ndocker compose run timed out after 180s');
   });
 
-  it('uploads full and failure logs for failed boots', async () => {
+  it('uploads one account for a failed boot', async () => {
     const { keys, requests } = await upload({ logFile: await bootLog('hello boot') });
-    expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log', 'boot-diag/backend-failed-20260619T120000Z.log']);
-    expect(requests).toHaveLength(2);
+    expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log']);
+    expect(requests).toHaveLength(1);
     const first = requests[0]!;
     expect(first.url).toContain('https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log');
     expect(first.auth).toMatch(/AWS4-HMAC-SHA256 Credential=access\/20260619\/nl-ams\/s3\/aws4_request/);
@@ -98,7 +98,7 @@ describe('uploadBootDiagnostics', () => {
     expect(body).toContain('[line scrubbed: matched secret pattern]');
   });
 
-  it('must not upload a secret value via the events JSONL, the boot log or the app logs', async () => {
+  it('must not upload a secret value via the boot log or the app logs', async () => {
     const { password: dbPassword, dsn } = leakableDsn();
     const cookieSecret = 'ck-9d1e77a0b3ff';
     const redactor = createSecretRedactor();
@@ -108,18 +108,13 @@ describe('uploadBootDiagnostics', () => {
       logFile: await bootLog(`boot start\nrelease failed: dial ${dsn}\nboot end`),
       redact: redactor.redact,
       appLogs: `backend  | token ${cookieSecret} rejected\nbackend  | pg auth failed for ${dbPassword}`,
-      events: [
-        JSON.stringify({ eventName: 'boot.step.failed', body: { stringValue: `release-command FAILED: ${dsn}` } }),
-        JSON.stringify({ eventName: 'boot.failed', body: { stringValue: `app log tail: ${cookieSecret}` } }),
-      ].join('\n'),
     });
 
-    // Positive control: all three objects uploaded, with the diagnostic text around each secret.
-    expect(bodies).toHaveLength(3);
+    // Positive control: the account uploaded, with the diagnostic text around each secret.
+    expect(bodies).toHaveLength(1);
     const uploaded = bodies.join('\n');
     expect(uploaded).toContain('release failed: dial [REDACTED]');
     expect(uploaded).toContain('token [REDACTED] rejected');
-    expect(uploaded).toContain('boot.step.failed');
     for (const secret of [dbPassword, cookieSecret, `app:${dbPassword}`]) expect(uploaded).not.toContain(secret);
   });
 });

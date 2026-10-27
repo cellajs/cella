@@ -1,21 +1,26 @@
-import { operatorManagedRuntimeSecrets } from '../../runtime-secrets';
-import { createSecretManagerClient } from '../../scaleway/scaleway-secret-manager';
-import { secretManagerPath } from '../../scaleway/secret-paths';
+import { assertSecretsDeliverable, secretsForServices } from '../../../tasks/assert-secrets-deliverable';
+import { enabledServices } from '../../services';
 import { check, manageSecrets, probed } from '../check';
 import type { StatusProvider } from '../types';
 
-/** Names of required operator-managed secrets with zero versions. */
+/** The required copies with no version, as `name in path`: a machine reading one would stop at hydration. */
 export type SecretsFacts = string[];
 
+/** Every required copy the enabled services read, checked one by one as the deploy checks them: a secret set in one folder and not another counts as missing. */
 export const secretsProvider: StatusProvider<SecretsFacts> = {
   domain: 'secrets',
   async gather(session) {
     if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
-      const client = createSecretManagerClient({ secretKey: session.secretKey, region: session.appConfig.s3.region, projectId: session.projectId });
-      const existing = await client.listSecretsUnder(secretManagerPath(session.appConfig.slug, session.mode));
-      const versioned = new Set(existing.filter((s) => (s.version_count ?? 0) > 0).map((s) => s.name));
-      return operatorManagedRuntimeSecrets.filter((s) => s.required && !versioned.has(s.secretName)).map((s) => s.secretName);
+      const enabled = enabledServices(session.appConfig.services).map((service) => service.slug);
+      const { offenders } = await assertSecretsDeliverable({
+        secretKey: session.secretKey,
+        region: session.appConfig.s3.region,
+        projectId: session.projectId,
+        secrets: secretsForServices(enabled, session.appConfig.slug, session.mode),
+        log: () => {},
+      });
+      return offenders.map((offender) => `${offender.secretName}${offender.path ? ` in ${offender.path}` : ''}`);
     } catch {
       return undefined;
     }
@@ -25,8 +30,8 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
     return [
       probed(secrets, session.scalewayKeyAvailable, facts, 'could not read Secret Manager', (missing) =>
         missing.length === 0
-          ? secrets.ok('all required secrets set')
-          : secrets.missing(`unset required secret(s): ${missing.join(', ')}`, manageSecrets),
+          ? secrets.ok('every required copy holds a value')
+          : secrets.missing(`required copies without a value: ${missing.join(', ')}`, manageSecrets),
       ),
     ];
   },

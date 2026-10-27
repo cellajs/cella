@@ -2,11 +2,12 @@
  * The builder's Object Storage client: a script on Node's built-ins alone (SigV4 with `node:crypto`, `fetch`), so the uploads depend neither on
  * the machine image's curl nor on any package. The builder runs it in its `node` image with a key in `S3_AK`/`S3_SK` and nothing of the app.
  *   node s3.mjs put <bucket> <key> <file> [content-type] [cache-control]
- *   node s3.mjs upload <bucket> <list>    (the tab-separated list of tasks/release-files.ts; `releases/` lines last)
+ *   node s3.mjs upload <bucket> <list> <root> <entry prefix>    (the tab-separated list of tasks/release-files.ts; entry files last)
  * Written with String.raw and without a dollar-brace, as it is a file of the builder's cloud-init.
  */
 export const S3_SCRIPT = String.raw`import { createHash, createHmac } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { relative, sep } from 'node:path';
 
 const region = process.env.REGION;
 const accessKey = process.env.S3_AK;
@@ -49,7 +50,18 @@ if (command === 'put') {
   const [key, file, contentType, cacheControl] = rest;
   await put(bucket, key, readFileSync(file), contentType, cacheControl);
 } else if (command === 'upload') {
-  const lines = readFileSync(rest[0], 'utf8').split('\n').filter(Boolean).map((line) => line.split('\t'));
+  const [list, root, entryPrefix] = rest;
+  if (!list || !root || !entryPrefix) throw new Error('usage: s3.mjs upload <bucket> <list> <root> <entry prefix>');
+  const lines = readFileSync(list, 'utf8').split('\n').filter(Boolean).map((line) => line.split('\t'));
+  // Every row is checked before the first upload, as the files come from the app's build: a plain file under the root, reached through no
+  // link, stored at its own place there or, for an entry file, under the release's entry prefix. Any other row fails the upload.
+  const rootReal = realpathSync(root);
+  for (const [path, key] of lines) {
+    const place = relative(rootReal, realpathSync(path)).split(sep).join('/');
+    const inside = place !== '' && place !== '..' && !place.startsWith('../') && !lstatSync(path).isSymbolicLink() && lstatSync(path).isFile();
+    const keyFits = (key === place && !place.startsWith('releases/')) || (key === entryPrefix + place && !place.includes('/'));
+    if (!inside || !keyFits) throw new Error('refused: ' + path + ' -> ' + key + ' is not a file of ' + root + ' at its own place');
+  }
   const send = async (rows, width) => {
     const queue = [...rows];
     await Promise.all(Array.from({ length: width }, async () => {

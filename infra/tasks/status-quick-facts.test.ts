@@ -12,7 +12,6 @@ describe('formatQuickFacts', () => {
     const facts: QuickFacts = {
       control: {
         schemaVersion: 2,
-        bootstrap: {},
         rollout: { backend: { active: { id: 'e67a', sha: '117397c20f0dd', seq: 12 }, seq: 12 } },
         updatedAt: '2026-09-23T21:37:29.000Z',
         updatedBy: 'ci:run-590',

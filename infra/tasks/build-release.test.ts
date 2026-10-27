@@ -4,12 +4,17 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { type BuildEffects, type BuildReleaseOptions, buildRelease } from './build-release';
 
-function fake(opts: { present?: boolean; result?: string; never?: boolean; step?: string } = {}) {
+const epoch = '0123456789ab';
+
+function fake(opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string } = {}) {
   const ops: string[] = [];
   let built = false;
   const fx: BuildEffects = {
     imagePresent: async () => opts.present === true || built,
-    entryFile: async (name) => (opts.present || built ? Buffer.from(`<${name}>`) : undefined),
+    entryFile: async (name) => {
+      if (!opts.present && !built) return undefined;
+      return Buffer.from(name === 'epoch' ? (built ? epoch : (opts.epochOnFiles ?? epoch)) : `<${name}>`);
+    },
     keys: async () => {
       ops.push('keys');
       return { bundleId: 'bundle-1', boot: { accessKey: 'SCWBOOT', secretKey: 'boot-secret' } };
@@ -35,6 +40,7 @@ function fake(opts: { present?: boolean; result?: string; never?: boolean; step?
 
 const options = (overrides: Partial<BuildReleaseOptions> = {}): BuildReleaseOptions => ({
   sha: 'c'.repeat(40),
+  epoch,
   builderName: 'app-builder-cccccccccc',
   images: ['backend', 'infra-boot'],
   withFrontend: true,
@@ -51,6 +57,12 @@ describe('buildRelease', () => {
     expect(await buildRelease(opts, fx)).toBe('present');
     expect(ops).toEqual(['remove']);
     expect(readFileSync(join(opts.distDir ?? '', 'index.html'), 'utf8')).toBe('<index.html>');
+  });
+
+  it('must not trust frontend files pushed before the last rotation: their epoch differs, so the release is built again', async () => {
+    const { fx, ops } = fake({ present: true, epochOnFiles: 'before-rotation' });
+    expect(await buildRelease(options(), fx)).toBe('built');
+    expect(ops).toContain('start:app-builder-cccccccccc');
   });
 
   it('builds a missing release on a builder it deletes afterwards, a leftover one deleted first', async () => {

@@ -1,13 +1,15 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { listRemoteRefs } from '../../lib/deploy/git-remote';
-import { mainJobImage, rootNodeVersion } from '../../lib/deploy/main-job';
+import { rootNodeVersion } from '../../lib/deploy/main-job';
+import { pinnedNodeImage } from '../../lib/deploy/node-image';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { resolveTarget } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { RUNNER_FILE, readRunnerFile, withEnvironment, writeRunnerFile } from '../../lib/runner/runner-file';
-import { RUNNER_KEY, runnerCloudConfig, runnerName } from '../../lib/runner/runner-machine';
+import { RUNNER_KEY, RUNNER_REPOSITORY_KEY, runnerCloudConfig, runnerName } from '../../lib/runner/runner-machine';
+import { createApiKey, deleteApiKey, listApiKeys, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import { ipCondition } from '../../lib/scaleway/ip-lock';
 import { removeMachines, type ScwServer } from '../../lib/scaleway/machines';
 import { RUNNER_PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions';
@@ -62,8 +64,9 @@ function checkoutCommit(): string {
  * Set up the runner, at an Owner moment (D5, D28-D30): the organization's runner project and its reserved address, the runner application
  * with the right to start and read job runs in every environment it serves from that address only, the runner key in its project, and the
  * app operator's reach over the runner project; then this environment in `infra/runner.json`. The first run makes the key; a later one
- * extends the policy in place, so the key the running machine holds keeps working. The address is made here, though it is no IAM: the
- * policy's condition names it.
+ * extends the policy in place, so the key the running machine holds keeps working, unless `--rotate-key` asks for a new key, which deletes
+ * every other key of the runner (it can start the main job of every environment it serves, and so read their deploy keys). The address is
+ * made here, though it is no IAM: the policy's condition names it.
  */
 export async function runRunnerIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -79,6 +82,7 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
     ),
   );
 
+  const rotateKey = process.argv.includes('--rotate-key');
   const ownerKey = await acquireIdentityKey(context, "Setting up the runner writes its application and policy, and the operator's reach.");
   try {
     const { organizationId } = ownerKey;
@@ -138,6 +142,23 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
       console.info(
         `  ${reach === 'extended' ? changeMark : checkMark} '${name}' ${reach === 'extended' ? 'now reaches' : 'reaches'} ${context.environment}.`,
       );
+      if (rotateKey) {
+        const applicationId = await resolveApplicationIdByName(auth, organizationId, name);
+        if (!applicationId) throw new Error(`no application '${name}' to rotate the key of`);
+        const old = await listApiKeys(auth, organizationId, applicationId);
+        const key = await createApiKey(auth, { applicationId, description: `${name} key`, defaultProjectId: project.id });
+        if (!key.secret_key) throw new Error(`the new key of '${name}' came without its secret`);
+        await secrets.putSecretValue({
+          secretId: stored.id,
+          value: key.secret_key,
+          description: 'Written when the runner key was rotated',
+          disablePrevious: true,
+        });
+        for (const previous of old) await deleteApiKey(auth, previous.access_key);
+        console.info(
+          `  ${changeMark} A new runner key replaced ${old.length} key(s): \`${actionCommand('runner-replace')}\` gives it to the machine.`,
+        );
+      }
     }
 
     const operator = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
@@ -191,16 +212,23 @@ export async function runRunnerReplace(context: InfraContext): Promise<void> {
   const name = runnerName(context.appConfig.appSlug);
   const { zone, region } = deriveInfra(context.appConfig);
   const repository = repositoryUrl();
+  const operator = await acquirePrivilegedKey(context);
+  const auth = { secretKey: operator.secretKey };
+  const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region, projectId: file.projectId });
+  const readKeyStored = await secrets.getSecretByName(RUNNER_REPOSITORY_KEY.name, RUNNER_REPOSITORY_KEY.path);
+  const readKey = readKeyStored?.version_count ? (await secrets.accessLatestValue(readKeyStored.id)).trim() : '';
   const release = await resolveTarget({
     environment: name,
     line: { environment: name, rule: { kind: 'pin', ref: file.release }, retry: 0 },
-    listRemote: listRemoteRefs(repository, process.env.REPOSITORY_READ_KEY),
+    listRemote: listRemoteRefs(repository, readKey || undefined),
   });
-  const tags = [`release=${release.sha}`, `config=${createHash('sha256').update(JSON.stringify(file.environments)).digest('hex').slice(0, 12)}`];
+  const tags = [
+    `release=${release.sha}`,
+    `config=${createHash('sha256').update(JSON.stringify(file.environments)).digest('hex').slice(0, 12)}`,
+    `read-key=${readKey ? 'yes' : 'no'}`,
+  ];
   const serves = file.environments.map((environment) => environment.definition).join(', ');
 
-  const operator = await acquirePrivilegedKey(context);
-  const auth = { secretKey: operator.secretKey };
   const { servers = [] } = await scwFetch<{ servers?: Array<ScwServer & { tags?: string[] }> }>(
     auth,
     'GET',
@@ -217,7 +245,6 @@ export async function runRunnerReplace(context: InfraContext): Promise<void> {
   if (!(await confirmOrDefault({ message: running ? 'Replace the runner machine?' : 'Start the runner machine?', default: true }))) return;
 
   const address = await findRunnerAddress(auth, { zone, projectId: file.projectId, name });
-  const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region, projectId: file.projectId });
   const stored = await secrets.getSecretByName(RUNNER_KEY.name, RUNNER_KEY.path);
   if (!address || !stored?.version_count) {
     console.error(`${crossMark} '${name}' has no ${address ? 'key' : 'address'}: \`${actionCommand('runner-identity')}\` makes it.`);
@@ -242,7 +269,13 @@ export async function runRunnerReplace(context: InfraContext): Promise<void> {
     volumes: { 0: { size: RUNNER_DISK_BYTES, volume_type: 'sbs_volume' } },
   });
   const userData = runnerCloudConfig({
-    values: { SCW_SECRET_KEY: secretKey, RELEASE: release.sha, REPO: repository, NODE_IMAGE: mainJobImage(rootNodeVersion()) },
+    values: {
+      SCW_SECRET_KEY: secretKey,
+      RELEASE: release.sha,
+      REPO: repository,
+      NODE_IMAGE: pinnedNodeImage(rootNodeVersion(), 'bookworm'),
+      REPOSITORY_READ_KEY: readKey,
+    },
     environments: file.environments,
   });
   const set = await fetch(`${instanceApi(zone)}/servers/${server.id}/user_data/cloud-init`, {

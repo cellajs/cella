@@ -9,9 +9,9 @@ const runTask: RunTask = (script, args) =>
   spawnSync('pnpm', ['--silent', 'run', script, ...args], { cwd: infraDir, stdio: 'inherit', env: process.env }).status ?? MAIN_JOB_EXIT.failed;
 
 /**
- * One run of the main job, on the target commit's own engine (plan §3.5): the deploy of `TARGET_SHA` to `MODE`, then the reap of the
- * generation it displaced. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed; blocked, when the deploy stopped on an owed
- * privileged change; or failed. A reap that fails fails the run too: the old machines it leaves can hold what the new ones need.
+ * One run of the main job, on the target commit's own engine (plan §3.5): the deploy of `TARGET_SHA` to `MODE`, the reap of the generation it
+ * displaced included. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed; blocked, when the deploy stopped on an owed privileged
+ * change; or failed.
  */
 export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number {
   const mode = env.MODE;
@@ -21,16 +21,12 @@ export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number 
     return MAIN_JOB_EXIT.failed;
   }
   console.info(`[main-job] ${mode}: ${sha} (retry ${env.RETRY ?? '0'})`);
-  const deployed = run('deploy', ['--mode', mode, '--sha', sha, '--defer-reap']);
+  const deployed = run('deploy', ['--mode', mode, '--sha', sha]);
   if (deployed === MAIN_JOB_EXIT.blocked) {
     console.info('[main-job] blocked: a privileged change is owed; an apply first, then this target again');
     return MAIN_JOB_EXIT.blocked;
   }
   if (deployed !== MAIN_JOB_EXIT.deployed) return MAIN_JOB_EXIT.failed;
-  if (run('reap', ['--mode', mode, '--sha', sha]) !== 0) {
-    console.error('[main-job] the target is live, and the reap of the displaced generation failed');
-    return MAIN_JOB_EXIT.failed;
-  }
   console.info('[main-job] deployed');
   return MAIN_JOB_EXIT.deployed;
 }

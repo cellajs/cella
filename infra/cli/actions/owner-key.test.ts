@@ -18,7 +18,7 @@ const { acquireOwnerKey } = await import('./owner-key');
 const { forgetSession, rememberedOwnerKey } = await import('../session');
 
 const typed = { accessKey: 'SCWTYPED', secretKey: 'typed-secret' };
-/** An application key: used as it is, so no key is minted and nothing else calls Scaleway. */
+/** An application key: used as it is, so nothing else calls Scaleway. */
 const application = { desc: { accessKey: 'SCWTYPED', bearer: 'application', bearerId: 'app-1', bearerName: 'operator' }, role: 'application' };
 
 const acquire = () =>
@@ -49,7 +49,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
 
     expect(keyPairOrPrompt).toHaveBeenCalledTimes(1);
     expect(assertIamManager).toHaveBeenCalledTimes(2);
-    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret', minted: false });
+    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret' });
   });
 
   it('must not offer a key again that failed its validation: the next action asks for one', async () => {

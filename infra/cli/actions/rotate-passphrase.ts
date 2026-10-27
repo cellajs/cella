@@ -18,9 +18,9 @@ import {
 import { operatorKeys } from './operator-unlock';
 
 /**
- * Rotates and verifies the Pulumi passphrase, then stores it in Secret Manager, where the operator key and the main job read it.
- * The stack lock prevents CI reads during state re-encryption. No Scaleway resources are touched,
- * so state-bucket access is sufficient.
+ * Rotates and verifies the Pulumi passphrase, then stores it and the stack's new salt in Secret Manager, where the operator key and the main
+ * job read them, so a deploy of any commit, an older release's too, decrypts the state. The stack lock keeps deploys out during the
+ * re-encryption. No Scaleway resources are touched, so state-bucket access is sufficient.
  */
 export async function runRotatePassphrase(context: InfraContext): Promise<void> {
   if (!context.stackYaml || !/^encryptionsalt:/m.test(context.stackYaml)) {
@@ -113,11 +113,11 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(`\n${checkMark} ${pc.bold(pc.greenBright('Passphrase rotated.'))}`);
   console.info(
-    `  1. Commit the updated ${pc.cyan(`infra/Pulumi.${stackShort}.yaml`)} (the encryptionsalt changed): a deploy runs on its target's stack file, so a target without this commit cannot read the state.`,
+    custodied
+      ? '  1. Secret Manager holds the new passphrase and salt: the operator key and the main job read them from now on.'
+      : `  1. ${warningMark} Secret Manager was not updated (the session was unlocked with the passphrase, not the operator key): the next run asks for the new passphrase once and stores it.`,
   );
   console.info(
-    custodied
-      ? '  2. Secret Manager holds the new passphrase: the operator key and the main job read it from now on.'
-      : `  2. ${warningMark} Secret Manager was not updated (the session was unlocked with the passphrase, not the operator key): the next run asks for the new passphrase once and stores it.`,
+    `  2. Commit the updated ${pc.cyan(`infra/Pulumi.${stackShort}.yaml`)} (the encryptionsalt changed), so other checkouts verify the new passphrase.`,
   );
 }

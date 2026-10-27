@@ -30,7 +30,7 @@ export interface TelemetryOptions {
   fetchImpl?: FetchLike;
   /** Telemetry must never fail the operation it observes; failures land here. */
   onError?: (message: string) => void;
-  /** Applied to every string value when records are serialized (export and black box), so a secret learned after a record was buffered still leaves it redacted. */
+  /** Applied to every string value when records are serialized for export, so a secret learned after a record was buffered still leaves it redacted. */
   redact?: (text: string) => string;
   now?: () => number;
   /** Abort one export request after this long (default 10s), so an unresponsive sink delays a flush, never hangs it. */
@@ -55,8 +55,6 @@ export interface Telemetry {
     opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
   ): void;
   event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void;
-  /** Every buffered log record, JSONL-encoded: the black-box sink's exact payload. */
-  eventsJsonl(): string;
   /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void;
   /** Export the spans + events buffered since the last export over OTLP/HTTP. Swallows failures; calls queue behind each other, so concurrent ones never export a record twice. */
@@ -160,9 +158,6 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
           ctx: eventOpts.ctx ?? rootCtx,
         }),
       );
-    },
-    eventsJsonl() {
-      return records.map((record) => serialize(record)).join('\n');
     },
     configureExport(config) {
       exporter = config;

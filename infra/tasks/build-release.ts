@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { builderCloudConfig, builderReportPrefix, containerScript } from '../lib/builder/builder-machine';
+import { bootBundleScript, builderCloudConfig, builderReportPrefix, frontendScript } from '../lib/builder/builder-machine';
+import { pinnedNodeImage } from '../lib/deploy/node-image';
 import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand } from '../lib/operator-actions';
@@ -10,7 +12,6 @@ import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
-import { controlKey, makeControlClient, readControlState, stateBucket } from '../lib/stack/control-store';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -20,18 +21,24 @@ import { frontendBuildEnv } from './frontend-build-env';
 import { releaseEntryPrefix } from './release-files';
 import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 
-/** The node image the builder installs and builds the workspace in: the boot image's base, at the root `engines.node`. */
-const nodeImage = (nodeVersion: string) => `node:${nodeVersion}-bookworm-slim`;
 // 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
 const BUILDER_TYPE = 'POP2-HC-8C-16G';
 const BUILDER_IMAGE = 'docker';
 const BUILDER_DISK_BYTES = 40_000_000_000;
 
+/**
+ * The build epoch: a short hash of the builder key's access key id. Every Rotate keys makes a new builder key, and nobody knows its id
+ * before, so an image or a frontend file pushed before a rotation never carries the epoch after it, and the release is built again.
+ */
+export function buildEpoch(builderAccessKey: string): string {
+  return createHash('sha256').update(builderAccessKey).digest('hex').slice(0, 12);
+}
+
 /** What building a release does outside this module, so a test passes its own. */
 export interface BuildEffects {
-  /** True when the registry holds the image under the release's tag. */
+  /** True when the registry holds the image under the release's tag of this epoch. */
   imagePresent(image: string): Promise<boolean>;
-  /** One of the release's entry files from the frontend bucket, or undefined when it is not there. */
+  /** A file under the release's entry prefix in the frontend bucket (an entry file, or the `epoch` marker), or undefined when it is not there. */
   entryFile(name: string): Promise<Buffer | undefined>;
   /** Stage the builder key's read-once bundle; returns its id and the boot key the machine reads it with. */
   keys(): Promise<{ bundleId: string; boot: { accessKey: string; secretKey: string } }>;
@@ -46,6 +53,8 @@ export interface BuildEffects {
 
 export interface BuildReleaseOptions {
   sha: string;
+  /** The build epoch (`buildEpoch`): a release counts as built only when its images and entry files carry it. */
+  epoch: string;
   builderName: string;
   /** Every image repository the release has, the boot runner's included. */
   images: readonly string[];
@@ -71,7 +80,9 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
   for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
   const missing: string[] = [];
   for (const image of opts.images) if (!(await fx.imagePresent(image))) missing.push(image);
-  if (opts.withFrontend && !(await fx.entryFile('index.html'))) missing.push('the frontend files');
+  if (opts.withFrontend && (!(await fx.entryFile('index.html')) || (await fx.entryFile('epoch'))?.toString() !== opts.epoch)) {
+    missing.push('the frontend files');
+  }
 
   let outcome: 'present' | 'built' = 'present';
   if (missing.length > 0) {
@@ -142,6 +153,7 @@ function liveEffects(opts: {
   slug: string;
   mode: string;
   sha: string;
+  epoch: string;
   registry: string;
   namespace: string;
   frontendBucket: string;
@@ -157,7 +169,12 @@ function liveEffects(opts: {
 
   return {
     imagePresent: (image) =>
-      resolveImageDigest({ registry: `${opts.registry}/${opts.namespace}`, image, tag: opts.sha, secretKey: opts.secretKey }).then(
+      resolveImageDigest({
+        registry: `${opts.registry}/${opts.namespace}`,
+        image,
+        tag: `${opts.sha}-e${opts.epoch}`,
+        secretKey: opts.secretKey,
+      }).then(
         () => true,
         () => false,
       ),
@@ -248,17 +265,17 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
-  // The layer cache is named after the rotation counter, so a rotation (after a compromise, keys first) starts a clean one (D13).
-  const control = await makeControlClient(region, projectAccessKey(accessKey, projectId), secretKey);
-  const { state } = await readControlState(control, stateBucket(appConfig.slug), controlKey(mode));
-  const cacheTag = `buildcache-r${state.rotations?.counter ?? 0}`;
+  const secrets = createSecretManagerClient({ secretKey, region, projectId });
+  const epoch = buildEpoch((await readStandingKey(secrets, appConfig.slug, mode, 'builder')).accessKey);
+  // The layer cache is the epoch's too, so a rotation (after a compromise, keys first) starts a clean one (D13).
+  const cacheTag = `buildcache-e${epoch}`;
   const frontendBucket = distDir ? naming.frontendBucket : '';
-  const frontendBucketUrl = frontendBucket ? `https://${frontendBucket}.s3.${region}.scw.cloud` : undefined;
   const prefix = builderPrefix(naming.resource);
 
   await buildRelease(
     {
       sha,
+      epoch,
       builderName: `${prefix}${sha.slice(0, 10)}`,
       images: [...rows.map((row) => row.service), BOOT_IMAGE_NAME],
       withFrontend: Boolean(frontendBucket),
@@ -276,11 +293,22 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             BUNDLE_ID: bundleId,
             BOOT_AK: boot.accessKey,
             BOOT_SK: boot.secretKey,
-            NODE_IMAGE: nodeImage(nodeVersion),
+            // The boot image's base, at the root `engines.node`, by digest: the builder's keys meet it.
+            NODE_IMAGE: pinnedNodeImage(nodeVersion, 'bookworm-slim'),
+            EPOCH: epoch,
           },
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
-          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, nodeVersion, context: '/build', cacheTag }),
-          container: containerScript({ pnpmVersion, sha, frontendBucketUrl }),
+          bake: bakeDefinition(rows, {
+            registry,
+            namespace: naming.registryNamespace,
+            releaseSha: sha,
+            epoch,
+            nodeVersion,
+            context: '/build',
+            cacheTag,
+          }),
+          boot: bootBundleScript(pnpmVersion),
+          frontend: frontendBucket ? frontendScript(pnpmVersion) : '',
         }),
     },
     liveEffects({
@@ -292,6 +320,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       slug: appConfig.slug,
       mode,
       sha,
+      epoch,
       registry,
       namespace: naming.registryNamespace,
       frontendBucket,

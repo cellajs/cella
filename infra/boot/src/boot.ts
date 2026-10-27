@@ -292,7 +292,6 @@ export async function boot(opts: BootOptions): Promise<void> {
         failure,
         logFile: plan.bootDiagnostics.logFile,
         appLogs,
-        events: telemetry.eventsJsonl(),
         redact: redactor.redact,
       });
     } catch (err) {

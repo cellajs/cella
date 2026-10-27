@@ -6,7 +6,7 @@ import { actionCommand } from '../lib/operator-actions';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { deployFolderPath } from '../lib/scaleway/secret-paths';
 import { mode, naming, organizationId, projectId, region } from '../pulumi-context';
-import { PASSPHRASE_SECRET_NAME } from '../tasks/passphrase-custody';
+import { ENCRYPTION_SALT_SECRET_NAME, PASSPHRASE_SECRET_NAME } from '../tasks/passphrase-custody';
 
 // The main job (plan §3.5): one definition per environment, privileged like the rest of what decides who may do what. Its two keys are
 // referenced, never copied: the deploy key and the passphrase, both in the engine folder. A run gets its target from the start call.
@@ -14,9 +14,10 @@ import { PASSPHRASE_SECRET_NAME } from '../tasks/passphrase-custody';
 // copy yet (one made before the main job) gets the definition after its next rotation of keys, and a warning until then.
 const folder = mainJobSecretFolder(naming.slug, mode);
 const secrets = createSecretManagerClient({ secretKey: process.env.SCW_SECRET_KEY ?? '', region, projectId });
-const [deployKey, passphrase] = await Promise.all([
+const [deployKey, passphrase, salt] = await Promise.all([
   secrets.getSecretByName(DEPLOY_KEY_SECRET_NAME, folder),
   secrets.getSecretByName(PASSPHRASE_SECRET_NAME, folder),
+  secrets.getSecretByName(ENCRYPTION_SALT_SECRET_NAME, folder),
 ]);
 
 if (deployKey && passphrase) {
@@ -42,6 +43,8 @@ if (deployKey && passphrase) {
     secretReferences: [
       { secretId: deployKey.id, secretVersion: 'latest', environment: 'DEPLOY_KEY_JSON' },
       { secretId: passphrase.id, secretVersion: 'latest', environment: 'PULUMI_CONFIG_PASSPHRASE' },
+      // A stack set up before the salt was kept beside the passphrase has none yet: its runs read the target's stack file, as before.
+      ...(salt?.version_count ? [{ secretId: salt.id, secretVersion: 'latest', environment: 'PULUMI_ENCRYPTION_SALT' }] : []),
     ],
   });
 } else {

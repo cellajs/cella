@@ -15,7 +15,7 @@ const expect_ = {
 };
 
 describe('the inventory', () => {
-  it('finds a planted key, a planted machine, a planted policy and an application that can act here, and nothing that belongs (C11)', () => {
+  it('finds a planted key, a planted machine (a stale generation or builder too, when no deploy runs), a planted policy and an application that can act here, and nothing that belongs (C11)', () => {
     const facts: InventoryFacts = {
       applications: [
         { id: 'boot', name: 'app-staging-boot' },
@@ -46,15 +46,26 @@ describe('the inventory', () => {
         },
         { name: 'other-production-admin-policy', application_id: 'reader', rules: [{ organization_id: 'o', permission_set_names: ['IAMReadOnly'] }] },
       ],
-      machines: ['app-backend-g1', 'app-builder-abc', 'mallory'],
+      machines: ['app-backend-g1', 'app-backend-g0', 'app-builder-abc', 'mallory'],
       activeGenerations: { backend: 'g1' },
+      mainJob: { running: false },
     };
     expect(inventoryFindings(facts, expect_)).toEqual({
       applications: ['other-production-ci-deploy: can act in this environment through other-production-ci-deploy-policy: IAMApplicationManager'],
       keys: ['app-staging-boot holds 2 keys: SCWBOOT (no description), SCWPLANTED (planted)'],
       policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
-      machines: ['mallory: not made by the engine'],
-      passing: ['app-builder-abc: a builder (a deploy runs, or the next one deletes it)'],
+      machines: [
+        'app-backend-g0: a generation that is not active, and no deploy runs (a failed run left it, or someone named it so)',
+        'app-builder-abc: a builder, and no deploy runs (a failed run left it, or someone named it so)',
+        'mallory: not made by the engine',
+      ],
+      passing: [],
     });
+    const deploying = inventoryFindings({ ...facts, mainJob: { running: true } }, expect_);
+    expect(deploying.machines).toEqual(['mallory: not made by the engine']);
+    expect(deploying.passing).toEqual([
+      'app-backend-g0: a generation that is not active, while a deploy runs',
+      'app-builder-abc: a builder, while a deploy runs',
+    ]);
   });
 });
