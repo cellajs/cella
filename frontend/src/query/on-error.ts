@@ -9,7 +9,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
-import { getErrorInfo, getOwnMessage } from '~/utils/get-error-info';
+import { getErrorInfo, getErrorMessage } from '~/utils/get-error-info';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
 const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'error' | 'warning' | 'info'> = {
@@ -34,8 +34,8 @@ const getToastDescription = (error: ApiError, message: string): ReactNode => {
   }
 
   // A server answers a 5xx with its own message in development only; elsewhere that message is a fixed text.
-  const ownMessage = error.status >= 500 && appConfig.mode === 'development' ? getOwnMessage(error) : '';
-  const cause = ownMessage && ownMessage !== message ? ownMessage : undefined;
+  const errorMessage = error.status >= 500 && appConfig.mode === 'development' ? getErrorMessage(error) : '';
+  const cause = errorMessage && errorMessage !== message ? errorMessage : undefined;
   const report = error.severity === 'error' && error.requestId ? error : undefined;
 
   if (!message && !cause && !report) return undefined;

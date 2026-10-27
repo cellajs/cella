@@ -9,6 +9,7 @@ import {
   type InviteOutcome,
 } from 'sdk';
 import { appConfig } from 'shared';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
@@ -49,7 +50,7 @@ export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined,
     queryKey: ['invites', 'check', channel?.id, emails] as const,
     queryFn: async ({ signal }): Promise<InviteOutcome[]> => {
       if (!channel) return [];
-      const path = { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id };
+      const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
       const query = { entityId: channel.id, entityType: channel.entityType };
       const results = await Promise.all(
         inviteBatches(emails).map((batch) => checkMembershipInvite({ path, query, body: { emails: batch }, signal })),

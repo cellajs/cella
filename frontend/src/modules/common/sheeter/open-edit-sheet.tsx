@@ -50,7 +50,6 @@ export function openEditSheet({
       id,
       triggerRef,
       side: 'right',
-      className: tw('max-w-full lg:max-w-4xl'),
       title,
       description,
       // A sectioned sheet shows the badge per section, on the card the form marks.

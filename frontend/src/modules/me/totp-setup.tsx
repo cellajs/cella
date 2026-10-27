@@ -1,13 +1,12 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { CopyIcon, RefreshCwIcon } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
-import { CopiedIcon } from '~/modules/common/copied-icon';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
+import { SecretBox } from '~/modules/common/secret-box';
 import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
 import { WarningNote } from '~/modules/me/warning-note';
 import { Button } from '~/modules/ui/button';
@@ -38,7 +37,7 @@ export function TotpSetup() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openManualKey = () => {
-    dialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
+    dialoger.getState().create(<SecretBox value={data.manualKey} />, {
       id: 'totp-manual-key',
       triggerRef,
       title: t('c:totp_manual.title'),
@@ -65,28 +64,6 @@ export function TotpSetup() {
       ) : (
         <TotpConfirmationForm key={formVersion} onSubmit={onSubmit} loading={isPending} onCancel={closeSetup} />
       )}
-    </div>
-  );
-}
-
-function TotpManualKey({ manualKey }: { manualKey: string }) {
-  const { t } = useTranslation();
-  const { copyToClipboard, copied } = useCopyToClipboard();
-
-  return (
-    <div className="flex gap-2 rounded-lg bg-card px-3 py-2 font-mono text-card-foreground sm:text-lg">
-      <div className="w-full truncate">{manualKey}</div>
-      <Button
-        variant="cell"
-        size="icon"
-        className="h-full"
-        aria-label={t('c:copy')}
-        data-tooltip="true"
-        data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
-        onClick={() => copyToClipboard(manualKey)}
-      >
-        <CopiedIcon copied={copied} icon={CopyIcon} />
-      </Button>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
-import { WaitlistForm } from '~/modules/requests/waitlist-form';
+import { WaitlistForm, waitlistDialogId } from '~/modules/requests/waitlist-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -59,7 +59,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
     }
     if (action === 'waitlist_request') {
       dialoger.getState().create(<WaitlistForm dialog />, {
-        id: 'waitlist-form',
+        id: waitlistDialogId,
         triggerRef: buttonRef,
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',

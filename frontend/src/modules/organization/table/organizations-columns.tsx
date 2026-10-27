@@ -55,7 +55,7 @@ export const useColumns = () => {
             />
           }
         >
-          <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <EntityAvatar type="organization" className="size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name || '-'}</span>
         </Button>
       ),

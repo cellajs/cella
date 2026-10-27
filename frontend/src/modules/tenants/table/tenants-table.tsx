@@ -4,17 +4,13 @@ import type { Tenant } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/types';
-
-function rowKeyGetter(row: Tenant) {
-  return row.id;
-}
 
 export function TenantsTable() {
   const { t } = useTranslation();
@@ -43,7 +39,7 @@ export function TenantsTable() {
       <DataTable<Tenant>
         {...{
           ...list,
-          rowKeyGetter,
+          rowKeyGetter: rowKeyById,
           onRowsChange,
           columns,
           enableVirtualization: true,

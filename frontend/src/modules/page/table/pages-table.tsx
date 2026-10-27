@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid/types';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
@@ -18,10 +18,6 @@ import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { canEditDocs, type DocEditOps, editDocPage } from '~/modules/page/utils/edit-doc-page';
 
 // Module scope keeps these prop identities stable, which DataGrid's memoized rows depend on.
-function rowKeyGetter(row: PageTreeRow) {
-  return row.id;
-}
-
 function renderRowDragPreview(row: PageTreeRow) {
   return <RowDragPreview name={row.name} />;
 }
@@ -61,7 +57,7 @@ export function PagesTable() {
   const [columns, setColumns] = useColumns(
     canEditDocs
       ? reorderColumn<PageTreeRow>({
-          getId: rowKeyGetter,
+          getId: rowKeyById,
           getName: (row) => row.name,
           rowCount: rows.length,
           getPosition: (rowIdx) => siblingPosition(rows, rowIdx),
@@ -97,7 +93,7 @@ export function PagesTable() {
         <DataTable
           rows={rows}
           rowHeight={tree.rowHeight}
-          rowKeyGetter={rowKeyGetter}
+          rowKeyGetter={rowKeyById}
           columns={columns}
           enableVirtualization
           isFiltered={!!q}

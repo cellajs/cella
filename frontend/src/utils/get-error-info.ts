@@ -48,7 +48,7 @@ function getFallbackTitle(error?: ErrorNoticeError): string {
 }
 
 /** The sentence the error brought along. An ApiError built without one carries its type, name or status in its place. */
-export function getOwnMessage(error?: ErrorNoticeError): string {
+export function getErrorMessage(error?: ErrorNoticeError): string {
   if (!error) return '';
   if (!(error instanceof ApiError)) return error.message;
 
@@ -74,9 +74,9 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
 
   const title = key ? i18n.t(key as TKey, options) : getFallbackTitle(error);
 
-  const ownMessage = getOwnMessage(error);
+  const errorMessage = getErrorMessage(error);
   const isInfo = error instanceof ApiError && error.severity === 'info';
-  const text = textKey && !isInfo ? i18n.t(textKey as TKey, options) : ownMessage;
+  const text = textKey && !isInfo ? i18n.t(textKey as TKey, options) : errorMessage;
 
   return { title, message: text === title ? '' : text };
 };

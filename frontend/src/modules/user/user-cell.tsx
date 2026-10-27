@@ -1,4 +1,5 @@
 import type { UserMinimalBase } from 'sdk';
+import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Button } from '~/modules/ui/button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
@@ -42,15 +43,8 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: U
       {...compactTooltip}
       onClick={() => openUserSheet(user.id)}
     >
-      <EntityAvatar type="user" className="group-active/cell-button:press size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-      <span
-        className={cn(
-          'group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline',
-          compactable && compactUserNameClass,
-        )}
-      >
-        {user.name || '-'}
-      </span>
+      <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+      <span className={cn(cellLinkTextClass, compactable && compactUserNameClass)}>{user.name || '-'}</span>
     </Button>
   );
 }

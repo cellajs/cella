@@ -21,7 +21,7 @@ vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'], invites: ['me', 'invites'] } }));
 vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredEntityTypes: mockGetRegisteredEntityTypes }));
 
-const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
+const { initChannelEnrichment } = await import('~/query/enrichment/init-channel-enrichment');
 
 describe('membership enrichment', () => {
   let unsubscribe: (() => void) | undefined;

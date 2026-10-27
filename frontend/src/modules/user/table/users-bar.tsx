@@ -4,16 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
-import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
-import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
-import { InviteUsers } from '~/modules/user/invite-users';
+import { openInviteDialog } from '~/modules/user/invite-users';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
-import { tw } from '~/utils/tw';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
@@ -34,18 +31,8 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
     setSearch({ role: role as UsersRouteSearchParams['role'] });
   };
 
-  const openInviteDialog = () => {
-    dialoger.getState().create(<InviteUsers mode="email" dialog />, {
-      id: 'invite-users',
-      triggerRef: inviteButtonRef,
-      drawerOnMobile: false,
-      className: tw('w-auto max-w-4xl border shadow-none'),
-      container: { ref: inviteContainerRef, overlay: true },
-      title: t('c:invite'),
-      titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: t('c:invite_users.text'),
-    });
-  };
+  const openInvite = () =>
+    openInviteDialog({ mode: 'email', description: t('c:invite_users.text'), triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
 
   const confirmDelete = () =>
     openDeleteDialog({
@@ -71,7 +58,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       {...{ searchVars, total, columns, setColumns }}
       label="c:user"
       searchName="userSearch"
-      actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
+      actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInvite} />}
       filters={<SelectRole value={role} onChange={handleRoleChange} className="h-10" />}
       selection={{
         count: selected.length,

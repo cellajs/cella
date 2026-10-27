@@ -1,5 +1,6 @@
 import { appConfig, type ProductEntityType } from 'shared';
 import { reportCriticalError } from '~/lib/tracing';
+import { productTypeOf } from '~/query/cache-migration';
 import { getLocalUserDb } from '~/query/local-user-db';
 
 /** Client-side `failed_sync` quarantine row for failed offline mutation replay. */
@@ -22,13 +23,8 @@ export interface FailedSyncRecord {
   createdAt: number;
 }
 
-function productTypeOf(mutationKey: unknown): ProductEntityType | undefined {
-  const head = Array.isArray(mutationKey) ? mutationKey[0] : undefined;
-  return appConfig.productEntityTypes.find((type) => type === head);
-}
-
 /** What a caller passes: `mutationKey` names the product type, and the running bundle's cache version is stamped here. */
-type QuarantineInput = Omit<FailedSyncRecord, 'id' | 'createdAt' | 'clientCacheVersion'> & { mutationKey?: unknown; clientCacheVersion?: string };
+type QuarantineInput = Omit<FailedSyncRecord, 'id' | 'createdAt' | 'clientCacheVersion' | 'entityType'> & { mutationKey?: unknown };
 
 /** Quarantine a failed mutation. De-duplicates on `mutationId`. No-ops while signed out. */
 export async function quarantineFailedSync({ mutationKey, ...record }: QuarantineInput): Promise<void> {

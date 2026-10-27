@@ -15,6 +15,7 @@ import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio'
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
@@ -26,10 +27,13 @@ type InviteFormValues = z.infer<typeof zMembershipInviteBody>;
 const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
   hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
 
+/** The invite dialog's id, which the form reads its description from and closes by. */
+export const inviteDialogId = 'invite-users';
+
 /** The three invite forms of one channel share this form and its draft, so a switch of mode keeps the addresses. */
 export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
-    formContainerId: 'invite-users',
+    formContainerId: inviteDialogId,
     formOptions: {
       resolver: formResolver(zMembershipInviteBody),
       defaultValues: { emails: [], role: defaultInviteRole(entityType) },
@@ -96,7 +100,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
 
   const close = () => {
     onSent();
-    if (isDialog) dialoger.getState().remove('invite-users');
+    if (isDialog) dialoger.getState().remove(inviteDialogId);
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
@@ -115,8 +119,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
   const onSubmit = (body: InviteFormValues) => {
     if (!channel) return systemInvite(body);
 
-    const organizationId = channel.organizationId || channel.id;
-    const path = { tenantId: channel.tenantId, organizationId };
+    const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
     const query = { entityId: channel.id, entityType: channel.entityType };
 
     membershipInvite(

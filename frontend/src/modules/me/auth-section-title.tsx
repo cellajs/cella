@@ -13,7 +13,7 @@ interface AuthSectionTitleProps {
 /** A section heading of the authentication card, its help text behind a toggle. */
 export function AuthSectionTitle({ title, help, children, action }: AuthSectionTitleProps) {
   return (
-    <HelpText content={help} action={action}>
+    <HelpText content={help} action={action} className="mb-4">
       <h3 className="font-semibold">{title}</h3>
       {children}
     </HelpText>
