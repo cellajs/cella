@@ -26,7 +26,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 ## How it works
 
-**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, from an Owner API key and the operator key it makes; the runner then deploys the first release like every other ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
+**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, from an Owner API key and the operator key it makes; the runner then deploys the first release like every other ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
 
 **Release** is one command, which the environment's main job runs on a checkout of the target when the runner sees the target move (a published release, a new commit on a followed branch, a line in `infra/environments`):
 
@@ -36,7 +36,7 @@ pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 
 It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)): when the release's images or frontend files are missing, a builder machine it makes builds them from the pushed commit. Its last step, once smoke passed, destroys the displaced VMs, which every LB pool left before.
 
-**Manage** is the same `pnpm infra` entrypoint on an existing stack: one menu for status, reviewing and applying privileged changes (database, VPC, buckets, DNS; IAM is **Update identities**, with an Owner API key), key and passphrase rotation, runtime secrets, database access and reset, repair (a stale lock, interrupted Pulumi operations, a re-sync of the setup) and [teardown](../cella/DEPLOYMENT.md#teardown). Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help` ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
+**Manage** is the same `pnpm infra` entrypoint on an existing stack: one menu for status, reviewing and applying privileged changes (database, VPC, buckets, DNS; IAM is **Update identities**, with an Owner API key), key and passphrase rotation, runtime secrets, database access and reset, repair (a stale lock, interrupted Pulumi operations, a re-sync of the setup) and [teardown](../cella/deployment/RUNBOOKS.md#teardown). Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help` ([advanced operations](../cella/deployment/FRESH_INSTALLATION.md#how-the-cli-runs)).
 
 ## Core philosophy
 
@@ -44,7 +44,7 @@ Three rules:
 
 1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Under `singleVM` the backend host overlaps too, and its in-process cdc and jobs move once the old VM is reaped ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
 2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
-3. **Least-privilege keys.** The machine and deploy principals are per app×mode (`<slug>-<mode>-…`), the operator, observer and runner per app (`<app>-…`), all resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([key tiers](../cella/DEPLOYMENT.md#credentials)).
+3. **Least-privilege keys.** The machine and deploy principals are per app×mode (`<slug>-<mode>-…`), the operator, observer and runner per app (`<app>-…`), all resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([key tiers](../cella/deployment/KEYS.md#api-keys)).
 
 ## Security boundaries
 

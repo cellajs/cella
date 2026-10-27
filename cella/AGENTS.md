@@ -219,7 +219,7 @@ A deploy is one run of the environment's main job (Serverless Jobs), which the r
 - `pnpm seed`: Seed database with test data.
 - `pnpm sync:verify` / `pnpm sync:rebuild`: Ask the running CDC worker to check its counters against the tables, or to rebuild them: [CDC worker](../cdc/README.md#verify-and-rebuild).
 - `pnpm test`: Run the full test suite with summary coverage.
-- `pnpm infra`: Infra CLI for deployment: [Infra docs](/docs/page/operations/deployment)
+- `pnpm infra`: Infra CLI for deployment: [Infra docs](/docs/page/guides/deployment/infra-cli)
 - `pnpm bench`: Run benchmark scenarios: [Bench docs](/docs/page/guides/load-testing)
 - `pnpm cella`: Sync with cella and more (`@cellajs/cli`).
 - `pnpm story`: Start storybook

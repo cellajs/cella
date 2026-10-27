@@ -38,7 +38,15 @@ const RETIRED_LABELS = [
   '"Stack setup"',
 ];
 
-const DOCS = ['cella/DEPLOYMENT.md', 'infra/README.md', 'infra/tasks/README.md'];
+const DOCS = [
+  'cella/DEPLOYMENT.md',
+  'cella/deployment/FRESH_INSTALLATION.md',
+  'cella/deployment/KEYS.md',
+  'cella/deployment/CHANGING_INFRASTRUCTURE.md',
+  'cella/deployment/RUNBOOKS.md',
+  'infra/README.md',
+  'infra/tasks/README.md',
+];
 
 /** Every TypeScript source file of the infra package, relative to the repo root. */
 function infraSources(dir = infraRoot): string[] {

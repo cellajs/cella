@@ -1,6 +1,6 @@
 # Authentication
 
-This document explains everything authentication.
+This document explains how people sign in and sign up, and the tokens, second factors and step-up behind it.
 
 ### TL;DR
 
@@ -16,11 +16,12 @@ actions that change how an account is protected first ask the session to prove i
 | Magic link | The inbox: a link mailed to the address, opened in the browser that asked for it | `auth/magic/` |
 | Passkey | A WebAuthn credential on the device, answering a challenge issued for `authentication` | `auth/passkeys/` |
 | Provider sign-in | An account at GitHub, Google or Microsoft, stored in `identities` by issuer and subject | `auth/oauth/` |
+| Institutional sign-in | An account at the institution, asserted through an identity federation ([Institutional sign-in](./authentication/SSO.md)) | `auth/sso/` |
 | TOTP | A code from an authenticator app; a second factor only, never a first | `auth/totps/` |
 
 `appConfig.enabledAuthStrategies` says which methods are on. A route of a method that is off refuses before its guards run; deleting a passkey or TOTP stays reachable. The sign-in page first asks whether the address is known, and learns it only in a browser that signed in to that account before. Every other browser gets the neutral sign-in step, whether or not the address has an account.
 
-A magic-link or provider sign-in ends in a session, or first in an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`, which defaults to `none`.
+A magic-link or provider sign-in ends in a [session](./authentication/SESSIONS.md), or first in an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`, which defaults to `none`.
 
 ## Sign-up
 
@@ -33,79 +34,6 @@ An account exists only once its inbox is proven:
 - **Who may sign up.** Open registration, or an invitation that still stands. It is asked at the start of a sign-up and again at its completion, since either may have changed in between.
 
 An account is identified by the proofs it holds (`identities`, `emails`), never by an address: [Architecture](./ARCHITECTURE.md#trust-boundaries).
-
-## Institutional sign-in (SSO)
-
-Institutions sign their members in through an identity federation (`sso`), SURFconext first.
-
-| Concept | Meaning |
-| --- | --- |
-| **Federation** | Declared in `appConfig.federations` as public metadata. Its key is also the session strategy, the identities issuer slug and the env prefix of the client this deployment registered there (`SSO_<KEY>_CLIENT_ID`, `SSO_<KEY>_CLIENT_SECRET`). A mode config can point a key at the federation's test issuer. |
-| **Connection** | A tenant's trust in one institution (`backend/src/modules/connections/`): the federation, the institution's domains and IdPs, a status that stays `pending` until the institution activated the app at the federation, and `jitProvisioning`. System admins manage connections per tenant, and a domain belongs to one connection. |
-| **Entry** | The connection's id is the public entry key. `/auth/sso/:connectionId` is the link an institution shares, pinned to its IdPs. Starting from the federation goes without a pin, so the federation's own picker lists the connected institutions. |
-| **Callback** | One redirect URI, registered at every federation. A state cookie says which federation and connection a round trip belongs to. |
-
-A sign-in at the callback:
-
-1. **Verifies** the `id_token` in full and reads userinfo.
-2. **Asserts the institution.** The connection the round trip started from, or the active connection whose domains hold the asserted value, must accept the claim. Otherwise the sign-in is refused.
-3. **Finds or creates the account.** The identity is the federation's issuer and subject. A first sign-in creates the account with its address proven by the institution. It is refused without an address, when an account already holds the address (see below), or when neither the connection's `jitProvisioning` nor an invitation admits the address.
-4. **Makes it a member** of the tenant's organization, unless an invitation to that organization already names the role.
-5. **Records the method.** The session carries the federation and the connection, which the tenant's sign-in policy reads.
-
-A connect links the institution account to a signed-in user, as a provider connect does. Where the federation operates the mailboxes it asserts (`addressAuthority`), a changed institutional address joins the account's `emails`; a magic link later resumes from there.
-
-**The role of that membership** comes from `roleFromClaims` (`backend/src/modules/auth/sso/role-from-claims.ts`), a pinned file an app fills to map what the institution asserts, such as `eduperson_affiliation`, to its own organization roles. The default is the least-privileged role. It is asked once, when the membership is created; later sign-ins never change a role.
-
-**An address that already has an account.** A person who signed up before their institution was connected, or whose identifier at the institution changed, is refused, and the error page offers a sign-in link for ten minutes. It mails a magic link to the asserted address, and the link lands on the account page with an offer to connect the institution account. The address never travels in a URL, and no one can ask for the link without first signing in at the institution. Without the `magic` strategy the page keeps its plain sign-in button.
-
-**Where SSO shows.** On the entry page an institution shares; on the authenticate page, as "sign in with <institution>" when an invitation names an organization whose tenant has an active connection, and as one "sign in with your institution" button per federation with a connected institution; on the account page, as a connect button per institution of the user's organizations; and in the tenant sheet, where system admins manage connections and the tenant's allowed sign-in methods.
-
-**The tenant's sign-in policy.** `tenants.authStrategies` (empty = every enabled method) is enforced by `tenantGuard`. A person who holds an identity through the tenant's connection must act with an allowed method, by session or by a delegated token, else 403 `sso_required` with the connection and its entry path in `meta`. Externals without such an identity are untouched. System admins are exempt, also while they act as a user through an impersonation.
-
-A delegated token carries the method and connection of the session that consented, so a token minted from a magic-link session cannot bypass a tenant that requires SSO. An address proven through a federation inherits the policy for magic links: while the tenant excludes `magic`, a magic link for that address is not sent and the request answers `sso_required`; the user keeps every other method and address. The recovery link above is the one exception, and only for a collision at the connection that governs the address: it takes the institution account and the mailbox together.
-
-## Sessions
-
-The session cookie carries a random token; `sessions.secret` stores its SHA-256 hash, so reading the table yields no session. `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. A session lives a week. A browser holds one live session per account, and an account at most `maxSessionsPerUser` (10) besides impersonations.
-
-Session rows are cached for 10 seconds. The process that revokes a session drops it at once, the API process drops a user's entries when CDC reports a change to the user, a membership or the system role, and any other process stops serving a revoked session within those 10 seconds. A session read that fails stays the request's failure, so the database being away never reads as signed out.
-
-Every revocation before expiry goes through `revokeSessions`: it stamps the rows with who, when and why, drops the user's cached sessions and closes the streams bound to them. The row stays for the sessions list.
-
-| Reason | When |
-| --- | --- |
-| `sign_out` | The browser signs out |
-| `other_session` | The user ends it from another of their sessions |
-| `mfa_enabled` | Turning MFA on ends every other regular session |
-| `replaced` | A new sign-in in the same browser |
-| `session_cap` | The oldest sessions beyond the cap, at a sign-in |
-| `impersonation_stopped` | The admin stops, or the admin session under it ends |
-| `user_deleted` | The account is deleted; the rows go with it, unstamped |
-
-A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone, since any other 401 refuses a proof while signed in. What an open stream hears when its session ends or changes: [Sync engine](./SYNC_ENGINE.md#sse-wire).
-
-**Devices.** A sign-in sets a 400-day `device-id` cookie and records its per-user hash in `devices`. `PII_HASH_SECRET` peppers the hash so a database leak cannot correlate browsers across accounts. A sign-in from a browser the account has not used before mails the owner, and the address lookup of the sign-in page recognizes a browser by it.
-
-**Impersonation.** A system admin's impersonation is a session of its own, one hour long, in its own cookie on top of the admin's session cookie. It authenticates only while that admin session lives, the admin holds the system role and the request comes from an allowed address. The admin acts as the user, never on the account: stepping up, revoking the user's sessions and every system route, impersonating again included, are refused. The server says who acts: `GET /me` names the admin as `impersonator` and the request log adds `impersonatorId`. The client keeps no impersonation state of its own.
-
-## Cookies
-
-Every auth cookie is signed, in every mode. The signature covers the cookie's versioned name and its expiry with the content, so a value handed out for one cookie, or kept past its max age, reads as nothing. `COOKIE_SECRET` is one secret or a comma-separated list: the first signs, any verifies, so a new secret rolls out before the old one retires. Cookies are named `<slug>-<name>-<cookieVersion>` (bumping `cookieVersion` signs everyone out), carry the `__Host-` prefix outside development, and are `HttpOnly`.
-
-| Cookie | Holds | SameSite |
-| --- | --- | --- |
-| `session` | The session token | Strict |
-| `impersonation` | An impersonation's session token, on top of `session` | Strict |
-| `device-id` | The browser's device id, 400 days | Lax |
-| `magic-requested` | The id of the magic link this browser asked for | Lax |
-| `magic-pending` | A link opened here that waits for confirmation | Strict |
-| `oauth-state-<state>` | The provider round trip: flow type, PKCE verifier and nonce, five minutes | Lax |
-| `sso-recovery` | An institution's refused sign-in: the asserted address and the connection, ten minutes | Strict |
-| `passkey-challenge`, `totp-challenge` | The WebAuthn challenge; the TOTP secret being set up | Strict |
-| A token type's own cookie | The token, or a redeemed link's single-use value | Its policy |
-
-Lax cookies are the ones a navigation from another site must carry: the click from a mail, the provider's callback. Every other cookie, the session first of all, is same-origin only.
 
 ## Tokens
 

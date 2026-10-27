@@ -30,6 +30,6 @@ Rules:
 
 ## Database reset rules
 
-- Order pinned by tests: confirmation and backup-ready precede the delete; steps after the delete rethrow as `ResetIrrecoverableError` (behavior: [Reset the database](../../cella/DEPLOYMENT.md#reset-the-database)).
+- Order pinned by tests: confirmation and backup-ready precede the delete; steps after the delete rethrow as `ResetIrrecoverableError` (behavior: [Reset the database](../../cella/deployment/RUNBOOKS.md#reset-the-database)).
 - Tests assert each URL and method of `lib/scaleway/scaleway-rdb.ts` (captured live with `scw --debug`).
 - Printed by `rebuildSteps()`: a reboot of the backend machine rebuilds the database, as `infra-boot.service` runs the boot, the migrate companion included, on every boot. The machines have no login, so no step is typed on them.
