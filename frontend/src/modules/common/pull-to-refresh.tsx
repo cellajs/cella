@@ -1,8 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
@@ -50,7 +49,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
   const pullPositionRef = useRef(0);
   // Whether any query actually fetched during the current refresh cycle.
   const sawFetchRef = useRef(false);
-  const onRefreshRef = useLatestRef(onRefresh);
+  const refresh = useEffectEvent(onRefresh);
 
   const isRefreshing = phase === 'refreshing';
   // Indicator stays styled as a spinner through both refreshing and exiting.
@@ -125,7 +124,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       setPhase('refreshing');
       sawFetchRef.current = false;
 
-      Promise.resolve(onRefreshRef.current()).finally(() => {
+      Promise.resolve(refresh()).finally(() => {
         // Static routes have nothing to refetch, so skip the animation and hard-reload.
         if (!sawFetchRef.current) {
           void reloadApp();
@@ -180,7 +179,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
   // Moved by transform, so the release and exit glides run on the compositor while the refresh re-renders the page
   const offset = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
   const opacity = isExiting ? 0 : isActive || isPulling ? 1 : 0;
-  const transition = isDraggingRef.current
+  const transition = isPulling
     ? 'none'
     : isExiting
       ? `transform ${exitDuration}ms ease-in ${exitHold}ms, opacity ${exitDuration}ms ease-in ${exitHold}ms`

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { appConfig, type Theme } from 'shared';
 import { type Contrast, type Mode, uiStore } from '~/modules/ui/ui-store';
 
@@ -49,19 +49,19 @@ function setBrandColor(theme: Theme) {
 
 export function Themer() {
   // The listener fires on every uiStore write (overlay locks, focus view), so it acts only on the appearance changes.
-  useEffect(
-    () =>
-      uiStore.subscribe((state, prev) => {
-        if (state.mode !== prev.mode) setModeClass(state.mode);
-        if (state.theme !== prev.theme) setBrandColor(state.theme);
-        if (state.contrast !== prev.contrast) setContrastAttribute(state.contrast);
-      }),
-    [],
-  );
+  // Before paint, so the first frame already has the stored appearance.
+  useLayoutEffect(() => {
+    const { mode, theme, contrast } = uiStore.getState();
+    setModeClass(mode);
+    setBrandColor(theme);
+    setContrastAttribute(contrast);
 
-  setModeClass(uiStore.getState().mode);
-  setBrandColor(uiStore.getState().theme);
-  setContrastAttribute(uiStore.getState().contrast);
+    return uiStore.subscribe((state, prev) => {
+      if (state.mode !== prev.mode) setModeClass(state.mode);
+      if (state.theme !== prev.theme) setBrandColor(state.theme);
+      if (state.contrast !== prev.contrast) setContrastAttribute(state.contrast);
+    });
+  }, []);
 
   return null;
 }
