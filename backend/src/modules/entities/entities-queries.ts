@@ -1,4 +1,4 @@
-import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, roles } from 'shared';
 import type z from 'zod';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -8,6 +8,7 @@ import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { zeroChannelCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { syncStateTable } from '#/modules/entities/sync-state-db';
 import type { membershipCountSchema } from '#/schemas';
@@ -113,23 +114,7 @@ export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }:
   const { countsSelect } = getChannelCountsSelect(entityType);
 
   const [counts] = await db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
-
-  // No row yet: activity stamps stay null until a first post.
-  if (!counts) {
-    const descendants = hierarchy.getOrderedDescendants(entityType);
-    const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
-    const zeroEntities = Object.fromEntries(descendants.map((e) => [e, 0]));
-    const productDescendants = descendants.filter((e) => isProduct(e));
-    const nullActivity = Object.fromEntries(productDescendants.map((e) => [e, { created: null, updated: null }]));
-    return {
-      membership: zeroMembership as z.infer<typeof membershipCountSchema>,
-      entities: zeroEntities as Record<string, number>,
-      entitiesSelf: { ...zeroEntities } as Record<string, number>,
-      activity: nullActivity as Record<string, { created: number | null; updated: number | null }>,
-    };
-  }
-
-  return counts;
+  return counts ?? zeroChannelCounts(entityType);
 };
 
 interface GetOrganizationEntityCountOpts {
@@ -175,9 +160,9 @@ export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds
     .select({ id: activitiesTable.id })
     .from(activitiesTable)
     .where(
-      or(
-        and(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.organizationId, organizationIds)),
-        and(inArray(activitiesTable.entityType, entityTypes), inArray(activitiesTable.organizationId, organizationIds)),
+      and(
+        inArray(activitiesTable.organizationId, organizationIds),
+        or(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.entityType, entityTypes)),
       ),
     )
     .orderBy(desc(activitiesTable.id))
@@ -263,10 +248,15 @@ interface FindChangedEntityIdsOpts {
   entityType: EntityType;
   organizationId: string;
   afterSeq: number;
+  /** The rows the caller may read (`buildCollectionReadWhere`); unset reads every row of the organization. */
+  readWhere?: SQL;
 }
 
-/** Split into live updates and soft-delete tombstones. */
-export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts) => {
+/**
+ * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones. A
+ * tombstone is read only in a transaction that includes deleted rows.
+ */
+export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, organizationId, afterSeq, readWhere }: FindChangedEntityIdsOpts) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
@@ -274,7 +264,7 @@ export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, or
   const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt"
     FROM ${table}
-    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${publishedSqlFilter(table)}
+    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${publishedSqlFilter(table)}${readWhere ? sql` AND ${readWhere}` : sql``}
   `);
 
   const updatedIds: string[] = [];

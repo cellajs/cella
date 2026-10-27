@@ -8,12 +8,12 @@ import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
-import { actorFrom } from '#/permissions/access';
+import { organizationStreamKey, streamSubscriberManager, userStreamKey } from '#/modules/entities/stream/subscriber-manager';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
-import { keepAlive, streamSubscriberManager, workerAwayPing, writeOffset } from './stream';
+import { keepAlive, workerAwayPing, writeOffset } from './stream';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -31,21 +31,22 @@ const maxStreamSubscribers = 5000;
 app.openapi(entityRoutes.appStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
 
-  if (streamSubscriberManager.size >= maxStreamSubscribers || streamSubscriberManager.getByChannel(`user:${user.id}`).length >= maxStreamsPerUser) {
+  if (
+    streamSubscriberManager.size >= maxStreamSubscribers ||
+    streamSubscriberManager.getByChannel(userStreamKey(user.id)).length >= maxStreamsPerUser
+  ) {
     throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
   }
 
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
-  const cursor = await getLatestUserActivityId(organizationIds);
+  const cursor = await getLatestUserActivityId(ctx, organizationIds);
 
   return streamSSE(ctx, async (stream) => {
-    ctx.header('Content-Encoding', '');
     await writeOffset(stream, cursor);
 
-    const orgChannels = [...organizationIds].map((id) => `org:${id}`);
     const subscriber: AppStreamSubscriber = {
       id: crypto.randomUUID(),
-      channel: orgChannels[0] ?? '',
+      channel: userStreamKey(user.id),
       stream,
       userId: user.id,
       sessionId,
@@ -57,7 +58,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 
     // The user channel carries self-membership events regardless of org registration, so a
     // membership in a new org reaches the user here and the frontend reconnects to re-register.
-    streamSubscriberManager.register(subscriber, [...orgChannels.slice(1), `user:${user.id}`]);
+    streamSubscriberManager.register(subscriber, [...organizationIds].map(organizationStreamKey));
     ensureAppStreamSessionSweep();
     log.debug('App stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
@@ -73,9 +74,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 });
 
 app.openapi(entityRoutes.appCatchup, async (ctx) => {
-  const { cursor, views } = ctx.req.valid('json');
-  const actor = actorFrom(ctx);
-  const result = await appCatchupOp(ctx.var.memberships, cursor, actor, views);
+  const result = await appCatchupOp(ctx, ctx.req.valid('json'));
   return ctx.json(result);
 });
 

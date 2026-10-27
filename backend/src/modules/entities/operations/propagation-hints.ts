@@ -1,33 +1,33 @@
-import { appConfig, type ProductEntityType } from 'shared';
-import type { DbContext } from '#/core/context';
-import { baseDb as db } from '#/db/db';
+import { appConfig } from 'shared';
+import type { UserContext } from '#/core/context';
+import { tenantReadAsIncludingDeleted } from '#/db/tenant-context';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
+import { actorFrom } from '#/permissions/access';
+import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { AppCatchupResponse, CatchupChangeSummary, CatchupView } from '#/schemas';
+import { getEntityTable } from '#/tables';
 
-const dbCtx: DbContext = { var: { db } };
-
-type EmbeddingHost = { hostProduct: ProductEntityType; hostColumn: string };
-
-/** Embedded product type to the host products that embed it, derived from productEmbeddings config. */
-const hostsByEmbeddedProduct: Partial<Record<ProductEntityType, EmbeddingHost[]>> = {};
-for (const embedding of appConfig.productEmbeddings) {
-  const hosts = hostsByEmbeddedProduct[embedding.embeddedProduct] ?? [];
-  hosts.push({ hostProduct: embedding.hostProduct, hostColumn: embedding.hostColumn });
-  hostsByEmbeddedProduct[embedding.embeddedProduct] = hosts;
-}
+/** The embeddings of each embedded product type, from productEmbeddings config. */
+const embeddingsByProduct = Map.groupBy(appConfig.productEmbeddings, (embedding) => embedding.embeddedProduct);
 
 /**
- * An embedded product changed when the org's `e:f:{embeddedProduct}` rollup exceeds the client's
- * org-view cursor; ids come from an org-wide delta read and tombstones return as removal hints.
+ * An embedded product changed when the org's `e:f:{embeddedProduct}` rollup exceeds the client's org-view cursor. The
+ * ids come from a delta read in the caller's tenant that keeps the rows the caller may read, as a list does, so a hint
+ * names no row the caller cannot fetch; tombstones return as removal hints.
+ * @param orgCounters - The counter row of each organization in `changes`.
  */
 export async function buildPropagationHints(
+  ctx: UserContext,
   changes: AppCatchupResponse['changes'],
-  views?: CatchupView[],
-  orgCounters?: Map<string, Record<string, number> | null>,
+  views: CatchupView[] | undefined,
+  orgCounters: Map<string, Record<string, number> | null>,
 ): Promise<void> {
-  const embeddedProducts = Object.keys(hostsByEmbeddedProduct) as ProductEntityType[];
-  if (embeddedProducts.length === 0 || !views?.length) return;
+  if (embeddingsByProduct.size === 0 || !views?.length) return;
+  const { memberships } = ctx.var;
+  const actor = actorFrom(ctx);
+  const tenantByOrganization = new Map(memberships.map((membership) => [membership.organizationId, membership.tenantId]));
 
   // Org-view cursors per (org, embeddedProduct).
   const cursorFor = new Map<string, number>();
@@ -39,13 +39,14 @@ export async function buildPropagationHints(
   }
 
   for (const [organizationId, scope] of Object.entries(changes)) {
+    // Without a membership in the organization the caller has no tenant there and reads nothing.
+    const tenantId = tenantByOrganization.get(organizationId);
+    if (!tenantId) continue;
+
     const hints: CatchupChangeSummary['propagation'] = [];
-    const { frontiers } = parseCounterCounts(orgCounters?.get(organizationId));
+    const { frontiers } = parseCounterCounts(orgCounters.get(organizationId));
 
-    for (const embeddedProduct of embeddedProducts) {
-      const hosts = hostsByEmbeddedProduct[embeddedProduct];
-      if (!hosts?.length) continue;
-
+    for (const [embeddedProduct, embeddings] of embeddingsByProduct) {
       const clientCursor = cursorFor.get(`${organizationId}:${embeddedProduct}`);
       // No declared view for this embedded product, or no baseline yet.
       if (clientCursor === undefined || clientCursor === 0) continue;
@@ -53,22 +54,22 @@ export async function buildPropagationHints(
       const frontier = frontiers[embeddedProduct] ?? 0;
       if (frontier <= clientCursor) continue;
 
-      const { updatedIds, deletedIds } = await findChangedEntityDeltaIds(dbCtx, {
-        entityType: embeddedProduct,
-        organizationId,
-        afterSeq: clientCursor,
-      });
+      const readFilter = resolveCollectionReadFilter(memberships, embeddedProduct, organizationId, actor);
+      const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProduct), embeddedProduct, actor);
+      if (readWhere.kind === 'none') continue;
 
-      for (const host of hosts) {
-        if (updatedIds.length > 0 || deletedIds.length > 0) {
-          hints.push({
-            embeddedProduct,
-            hostProduct: host.hostProduct,
-            hostColumn: host.hostColumn,
-            update: updatedIds,
-            remove: deletedIds,
-          });
-        }
+      const { updatedIds, deletedIds } = await tenantReadAsIncludingDeleted(ctx, tenantId, (readCtx) =>
+        findChangedEntityDeltaIds(readCtx, {
+          entityType: embeddedProduct,
+          organizationId,
+          afterSeq: clientCursor,
+          readWhere: readWhere.kind === 'where' ? readWhere.where : undefined,
+        }),
+      );
+      if (updatedIds.length === 0 && deletedIds.length === 0) continue;
+
+      for (const { hostProduct, hostColumn } of embeddings) {
+        hints.push({ embeddedProduct, hostProduct, hostColumn, update: updatedIds, remove: deletedIds });
       }
     }
 

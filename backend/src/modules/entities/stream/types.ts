@@ -8,8 +8,6 @@ export interface BaseStreamSubscriber {
   stream: SSEStreamingApi;
   /** Primary channel for event routing, e.g. 'org:abc' or 'user:123'. */
   channel?: string;
-  /** @internal Every channel this subscriber is registered on; set by the manager. */
-  _channels?: string[];
 }
 
 export interface DispatcherConfig<T extends BaseStreamSubscriber, E extends ActivityEvent = ActivityEvent> {

@@ -1,6 +1,14 @@
-const plainCountPrefixes = ['e:c:', 'm:c:'];
+/** The live rows of a type in a channel's subtree: `e:c:{type}`. */
+export const entityCountPrefix = 'e:c:';
+/** The live rows of a type homed at the channel itself: `e:c:h:{type}`. */
+export const entityCountHomePrefix = 'e:c:h:';
+/** The newest sequence position of a type in a channel's subtree: `e:f:{type}`. */
+export const frontierPrefix = 'e:f:';
+/** The newest sequence position of a type's rows homed at the channel itself: `e:f:h:{type}`. */
+export const frontierHomePrefix = 'e:f:h:';
+
+const plainCountPrefixes = [entityCountPrefix, 'm:c:'];
 const stampPrefixes = ['e:li:', 'e:lu:'];
-const frontierPrefix = 'e:f:';
 const sequenceKey = 'sequence';
 
 const startsWithAny = (key: string, prefixes: string[]) => prefixes.some((prefix) => key.startsWith(prefix));

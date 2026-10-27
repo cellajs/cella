@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getSeedDb } from '#/db/db';
+import { baseDb, getSeedDb } from '#/db/db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { answerCatchupViews } from './app-catchup';
 
 const seedDb = getSeedDb();
+const ctx = { var: { db: baseDb } };
 
 /** Authorization via resolveViewReadStatus, summaries from channel_counters f:/e: rollups. */
 
@@ -40,7 +41,7 @@ afterAll(async () => {
 
 describe('answerCatchupViews', () => {
   it('answers an authorized org view with frontier/count summaries', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v1', organizationId: org, prefixes: [org], entityTypes: [productType], cursor: 30 },
     ]);
 
@@ -49,7 +50,7 @@ describe('answerCatchupViews', () => {
 
   it('answers a view outside the caller memberships without leaking numbers', async () => {
     // The exact non-'ok' status is app-dependent; the shared guarantee is: not 'ok', no numbers.
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v2', organizationId: otherOrg, prefixes: [otherOrg], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -61,7 +62,7 @@ describe('answerCatchupViews', () => {
   });
 
   it('a mixed request answers each view independently', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'a', organizationId: org, prefixes: [org], entityTypes: [productType], cursor: 37 },
       { key: 'b', organizationId: otherOrg, prefixes: [otherOrg], entityTypes: [productType], cursor: 5 },
     ]);
@@ -73,7 +74,7 @@ describe('answerCatchupViews', () => {
   });
 
   it('a forged prefix pointing at another org is forbidden even with real memberships', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v3', organizationId: org, prefixes: [`${otherOrg}/x`], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -81,7 +82,7 @@ describe('answerCatchupViews', () => {
   });
 
   it("must not read another org's frontiers via a forged prefix on a counters row without a path", async () => {
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v4', organizationId: org, prefixes: [`${org}/${otherOrg}`], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -89,7 +90,7 @@ describe('answerCatchupViews', () => {
   });
 
   it('answers a deeper node whose verified path lies in the org (positive control)', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v5', organizationId: org, prefixes: [`${org}/${child}`], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -97,6 +98,6 @@ describe('answerCatchupViews', () => {
   });
 
   it('returns empty for no views', async () => {
-    expect(await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual([]);
+    expect(await answerCatchupViews(ctx, orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual([]);
   });
 });

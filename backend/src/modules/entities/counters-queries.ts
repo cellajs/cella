@@ -1,6 +1,5 @@
 import { getColumns, getTableName, sql } from 'drizzle-orm';
-import type { EntityHierarchy } from 'shared';
-import { appConfig, type EntityType, entityIdColumnName, hierarchy, roles } from 'shared';
+import { appConfig, type EntityType, entityIdColumnName, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -18,9 +17,6 @@ const livePredicate = (et: EntityType, alias: string) => ('deletedAt' in getColu
 /** CDC never counts drafts, so recalculation must exclude them from the table to agree. */
 const publishedPredicate = (et: EntityType, alias: string) =>
   'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
-
-/** Matches CDC's `resolveChannelKey`; the hierarchy parameter lets tests use synthetic trees. */
-export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) => h.deepestAncestorSql(et, alias);
 
 /** JSONB pair with a COUNT subquery: 'key', COALESCE((SELECT COUNT(*) …), 0) */
 const countPair = (key: string, from: string, where: string) => `'${key}', COALESCE((SELECT COUNT(*) FROM ${from} WHERE ${where}), 0)`;
@@ -58,38 +54,14 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
  */
 function channelCounterSelects(): string[] {
   const selects: string[] = [];
-  // ── Phase 1: Organization-level counters ──────────────────────────────
-  const orgPairs = [
-    ...membershipPairs('o', 'organization_id', 'organization', roles.all),
-    ...hierarchy
-      .getOrderedDescendants('organization')
-      .map((et) =>
-        countPair(
-          `e:c:${et}`,
-          `${tbl(et as EntityType)} e`,
-          `e.organization_id = o.id${livePredicate(et as EntityType, 'e')}${publishedPredicate(et as EntityType, 'e')}`,
-        ),
-      ),
-  ].join(', ');
-
-  selects.push(`
-    SELECT o.id, jsonb_build_object(${orgPairs}), NOW()
-    FROM organizations o
-  `);
-
-  // ── Phase 2: Sub-org context counters (e.g. project-level) ────────────
   // Every descendant counts on every ancestor level it has a non-null FK for, as in getEntityDeltas.
-  for (const ctxType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
+  for (const ctxType of hierarchy.channelTypes) {
     const fk = entityIdColumnName(ctxType);
     const descendants = hierarchy.getOrderedDescendants(ctxType);
     const allPairs = [
       ...membershipPairs('ctx', fk, ctxType, hierarchy.getRoles(ctxType)),
       ...descendants.map((et) =>
-        countPair(
-          `e:c:${et}`,
-          `${tbl(et as EntityType)} ce`,
-          `ce.${fk} = ctx.id${livePredicate(et as EntityType, 'ce')}${publishedPredicate(et as EntityType, 'ce')}`,
-        ),
+        countPair(`e:c:${et}`, `${tbl(et)} ce`, `ce.${fk} = ctx.id${livePredicate(et, 'ce')}${publishedPredicate(et, 'ce')}`),
       ),
     ].join(', ');
 
@@ -114,17 +86,8 @@ function channelCounterSelects(): string[] {
     // Unpublished drafts are not delta-fetchable so they are excluded; tombstones are retained.
     const frontierPredicate = publishedPredicate(entityType, 't');
 
-    // Org node: every stamped countable row rolls up to its organization.
-    selects.push(`
-      SELECT t.organization_id, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
-      FROM ${tableName} t
-      WHERE t.organization_id IS NOT NULL${frontierPredicate}
-      GROUP BY t.organization_id
-    `);
-
-    // Every sub-organization ancestor level with a FK column, matching CDC's frontierNodeKeys.
+    // Every ancestor level with a FK column, the organization included, matching CDC's frontierNodeKeys.
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-      if (ancestor === 'organization') continue;
       const col = entityIdColumnName(ancestor);
       selects.push(`
         SELECT t.${col}, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
@@ -134,54 +97,47 @@ function channelCounterSelects(): string[] {
       `);
     }
 
+    const homeExpr = hierarchy.deepestAncestorSql(entityType, 't');
+    if (!homeExpr) continue;
     // Self family, home node only: e:f:h:{type} = MAX(seq) of homed rows (drafts excluded,
     // tombstones included); e:c:h:{type} = COUNT of live and published homed rows.
-    const homeExpr = deepestAncestorExpr(entityType, 't');
-    if (homeExpr) {
-      selects.push(`
-        SELECT ${homeExpr}, jsonb_build_object('e:f:h:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
-        FROM ${tableName} t
-        WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
-        GROUP BY ${homeExpr}
-      `);
-      selects.push(`
-        SELECT ${homeExpr}, jsonb_build_object('e:c:h:${entityType}', COUNT(*)::int), NOW()
-        FROM ${tableName} t
-        WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
-        GROUP BY ${homeExpr}
-      `);
-    }
+    selects.push(`
+      SELECT ${homeExpr}, jsonb_build_object('e:f:h:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+      FROM ${tableName} t
+      WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
+      GROUP BY ${homeExpr}
+    `);
+    selects.push(`
+      SELECT ${homeExpr}, jsonb_build_object('e:c:h:${entityType}', COUNT(*)::int), NOW()
+      FROM ${tableName} t
+      WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
+      GROUP BY ${homeExpr}
+    `);
+
+    // Home-only stamps: no fan-out to ancestors, and null update maxima are omitted from the JSON.
+    // COALESCE mirrors CDC's e:li:h: stamp source (publishedAt ?? createdAt).
+    const liSource = 'publishedAt' in getColumns(getEntityTable(entityType)) ? 'COALESCE(t.published_at, t.created_at)' : 't.created_at';
+    selects.push(`
+      SELECT ${homeExpr}, jsonb_strip_nulls(jsonb_build_object(
+        'e:li:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
+        'e:lu:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
+      )), NOW()
+      FROM ${tableName} t
+      WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
+      GROUP BY ${homeExpr}
+    `);
   }
 
   // A channel below the organization is homed too, at its deepest ancestor: the worker counts it there as it does a
   // product row, and the channel counts of the API read that key for every descendant type.
   for (const channelType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
-    const homeExpr = deepestAncestorExpr(channelType, 't');
+    const homeExpr = hierarchy.deepestAncestorSql(channelType, 't');
     if (!homeExpr) continue;
     selects.push(`
       SELECT ${homeExpr}, jsonb_build_object('e:c:h:${channelType}', COUNT(*)::int), NOW()
       FROM ${tbl(channelType)} t
       WHERE ${homeExpr} IS NOT NULL${livePredicate(channelType, 't')}${publishedPredicate(channelType, 't')}
       GROUP BY ${homeExpr}
-    `);
-  }
-
-  // Home-only stamps: no fan-out to ancestors, and null update maxima are omitted from the JSON.
-  for (const entityType of appConfig.productEntityTypes) {
-    const tableName = tbl(entityType);
-    const ctxExpr = deepestAncestorExpr(entityType, 't');
-    if (!ctxExpr) continue;
-    // COALESCE mirrors CDC's e:li:h: stamp source (publishedAt ?? createdAt).
-    const liSource = 'publishedAt' in getColumns(getEntityTable(entityType)) ? 'COALESCE(t.published_at, t.created_at)' : 't.created_at';
-
-    selects.push(`
-      SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
-        'e:li:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
-        'e:lu:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
-      )), NOW()
-      FROM ${tableName} t
-      WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
-      GROUP BY ${ctxExpr}
     `);
   }
 
@@ -231,7 +187,7 @@ export const recalculateCounters = async (ctx: DbContext) => {
   for (const channelType of hierarchy.channelTypes) {
     await db.execute(
       sql.raw(`UPDATE channel_counters cc SET path = c.path
-      FROM ${tbl(channelType as EntityType)} c
+      FROM ${tbl(channelType)} c
       WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path`),
     );
   }

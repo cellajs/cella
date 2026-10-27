@@ -7,8 +7,8 @@ import { log } from '#/utils/logger';
 import type { BaseStreamSubscriber } from '../stream';
 import { buildMoveOutNotification, isMembershipEvent } from '../stream/build-message';
 import { createStreamDispatcher } from '../stream/dispatcher';
-import { sendNotificationToSubscriber } from '../stream/send-to-subscriber';
-import { streamSubscriberManager } from '../stream/subscriber-manager';
+import { sendToSubscribers } from '../stream/helpers';
+import { organizationStreamKey, streamSubscriberManager, userStreamKey } from '../stream/subscriber-manager';
 import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
 
 /** An authenticated subscriber; receives membership, product and org events via org channels. */
@@ -97,9 +97,9 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
   getChannel: (event) => {
     if (isMembershipEvent(event)) {
       const membership = getEventData(event, 'membership');
-      return membership?.userId ? `user:${membership.userId}` : null;
+      return membership?.userId ? userStreamKey(membership.userId) : null;
     }
-    return `org:${event.organizationId}`;
+    return organizationStreamKey(event.organizationId);
   },
   selectEligible: (subscribers, event) => {
     // The user channel already targets the subject; this check is the safety net.
@@ -135,7 +135,7 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
   if (moves.length === 0) return;
 
   const subscribers = streamSubscriberManager
-    .getByChannel<AppStreamSubscriber>(`org:${event.organizationId}`)
+    .getByChannel<AppStreamSubscriber>(organizationStreamKey(event.organizationId))
     .filter((subscriber) => subscriber.organizationIds.has(event.organizationId));
   if (subscribers.length === 0) return;
 
@@ -146,14 +146,6 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
     if (eligible.length === 0) continue;
 
     const oldEvent = rowScopedEvent(event, movedFrom);
-    const preSerialized = JSON.stringify(buildMoveOutNotification(oldEvent, movedFrom));
-
-    await Promise.allSettled(
-      eligible.map((subscriber) =>
-        sendNotificationToSubscriber(subscriber, oldEvent, preSerialized).catch((error) => {
-          log.error('Failed to dispatch move-out', { subscriberId: subscriber.id, activityId: event.id, error });
-        }),
-      ),
-    );
+    await sendToSubscribers(eligible, oldEvent, buildMoveOutNotification(oldEvent, movedFrom), 'Failed to dispatch move-out');
   }
 }

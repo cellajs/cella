@@ -4,9 +4,9 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
 import { type AppStreamSubscriber, dispatchMoveOuts, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { streamSubscriberManager, userStreamKey } from '#/modules/entities/stream/subscriber-manager';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
-import { streamSubscriberManager } from './stream';
 import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 // Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
@@ -29,7 +29,7 @@ for (const entityType of appConfig.productEntityTypes) {
 authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
   const payload = streamErrorForEnding(reason);
   const ended = streamSubscriberManager
-    .getByChannel<AppStreamSubscriber>(`user:${userId}`)
+    .getByChannel<AppStreamSubscriber>(userStreamKey(userId))
     .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
     .map((subscriber) => ({ subscriber, payload }));
   await closeAppStreams(ended, 'Failed to close the stream of an ended session');
@@ -42,10 +42,10 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
     // Refresh subscriber memberships before dispatch so SSE mirrors live API access.
     const membership = getEventData(event, 'membership');
     if (membership?.userId) {
-      const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${membership.userId}`);
+      const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(userStreamKey(membership.userId));
       for (const subscriber of subscribers) {
         const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
-        subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership as Record<string, unknown>)];
+        subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership)];
       }
     }
 

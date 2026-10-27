@@ -1,9 +1,9 @@
-import { appConfig, type ChannelEntityType, hierarchy, isProduct, pathHomeId } from 'shared';
+import { appConfig, hierarchy, isProduct, pathHomeId } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { dbPoolPressure } from '#/db/db';
 import { type ActivityEvent, getEventData } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
-import { streamSubscriberManager } from './subscriber-manager';
+import { organizationStreamKey, streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
@@ -17,7 +17,7 @@ const maxSpreadWindowMs = 120_000;
  */
 function computeSpreadWindow(organizationId: string | null): number | null {
   if (!organizationId) return null;
-  const audience = streamSubscriberManager.getByChannel(`org:${organizationId}`).length;
+  const audience = streamSubscriberManager.getByChannel(organizationStreamKey(organizationId)).length;
   if (audience <= 1) return 0;
   const pressure = Math.min(dbPoolPressure(), 2);
   return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
@@ -45,11 +45,11 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const isProductEvent = isProduct(entityType);
 
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
-  const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
+  const channelType = membership?.channelType ?? null;
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   let channelId: string | null = null;
-  if (isProductEvent && entityType) {
+  if (isProductEvent) {
     channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
   }
 
@@ -62,28 +62,26 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const several = rows.length > 1;
 
   let propagation: StreamNotification['propagation'] = null;
-  if (entityType) {
-    const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
-    if (embedding) {
-      // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
-      // delete arrives as an update, and the host drops its copy of that row.
-      const update: string[] = [];
-      const remove: string[] = [];
-      for (const { rowData } of rows) {
-        if (typeof rowData.id !== 'string') continue;
-        if (event.action === 'delete' || rowData.deletedAt != null) remove.push(rowData.id);
-        else update.push(rowData.id);
-      }
-      propagation = {
-        embeddedProduct: embedding.embeddedProduct,
-        hostProduct: embedding.hostProduct,
-        hostColumn: embedding.hostColumn,
-        update,
-        remove,
-      };
+  const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
+  if (embedding) {
+    // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
+    // delete arrives as an update, and the host drops its copy of that row.
+    const update: string[] = [];
+    const remove: string[] = [];
+    for (const { rowData } of rows) {
+      if (typeof rowData.id !== 'string') continue;
+      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(rowData.id);
+      else update.push(rowData.id);
     }
+    propagation = {
+      embeddedProduct: embedding.embeddedProduct,
+      hostProduct: embedding.hostProduct,
+      hostColumn: embedding.hostColumn,
+      update,
+      remove,
+    };
   }
-  const path = isProductEvent && first && entityType ? hierarchy.computeProductPath(entityType, first) : null;
+  const path = isProductEvent && first ? hierarchy.computeProductPath(entityType, first) : null;
 
   return {
     // Product entities take the seq sync path; everything else here is a membership change.

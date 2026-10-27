@@ -10,7 +10,7 @@ import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 
 interface GetOrganizationsInput {
   q?: string;
-  sort?: 'id' | 'name' | 'createdAt' | 'userRole' | 'displayOrder';
+  sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
   order?: 'asc' | 'desc';
   offset: number;
   limit: number;

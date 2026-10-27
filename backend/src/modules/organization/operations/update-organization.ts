@@ -3,12 +3,10 @@ import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { withActorRef } from '#/modules/actors/actor-refs';
 import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
-import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
-import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
+import { toOrganizationResponse } from '#/modules/organization/operations/to-organization-response';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
 import { getValidChannel } from '#/permissions';
@@ -47,15 +45,5 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
-  const counts = await getChannelCounts(ctx, { entityType: organization.entityType, entityId: organization.id });
-
-  const included = {
-    // A service account's grant is not a membership row; only a user's row is returned.
-    ...(membership && isMembershipRow(membership) && { membership: toMembershipBase(membership) }),
-    counts,
-  };
-
-  const organizationWithAudit = await withActorRef(ctx, updatedOrganizationRecord);
-
-  return { ...organizationWithAudit, included };
+  return toOrganizationResponse(ctx, updatedRecord, membership, { counts: true, membership: true });
 }

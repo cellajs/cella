@@ -1,4 +1,4 @@
-import type { UserContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
@@ -12,16 +12,13 @@ import { log } from '#/utils/logger';
  * and the archived-tenant sweep removes the organization with everything in it `archivedTenantDays` later. Until then a
  * system admin restores it by setting the tenant active.
  */
-export async function deleteOrganizationsOp(ctx: UserContext, ids: string[], tenantId: string) {
-  const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-
-  const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds);
+export async function deleteOrganizationsOp(ctx: ActorContext, ids: string[]) {
+  const { actor, tenantId } = ctx.var;
+  const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'organization', ids);
 
   if (allowedIds.length > 0) {
-    await updateTenant(ctx, {
-      targetTenantId: tenantId,
-      values: { status: 'archived', statusChangedAt: getIsoDate(), ...updateStamps(ctx.var.user.id) },
-    });
+    const at = getIsoDate();
+    await updateTenant(ctx, { targetTenantId: tenantId, values: { status: 'archived', statusChangedAt: at, ...updateStamps(actor.id, at) } });
     invalidateCache.tenant(tenantId);
     for (const id of allowedIds) invalidateCache.org(tenantId, id);
     await applyTenantStatusChange(ctx, tenantId);

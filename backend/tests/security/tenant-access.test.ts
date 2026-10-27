@@ -1,9 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createOrganizations } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { clearTenantCache } from '#/middlewares/guard/tenant-cache';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
@@ -100,5 +100,38 @@ describe('Tenant access', async () => {
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     expect(response.status).toBe(201);
+  });
+
+  it("must not leave the tenant's one organization without its creator when the create fails halfway", async () => {
+    const creator = await createTestUser('tenant-access-interrupted@security-test.com');
+    const sessionCookie = await createTestSession(creator);
+    const tenant = await createdTenant(creator.id, false);
+    const create = () =>
+      call(createOrganizations, {
+        path: { tenantId: tenant.id },
+        body: [{ id: `temp-${generateId()}`, name: 'Interrupted', slug: 'tenant-access-interrupted' }],
+        headers: { ...defaultHeaders, Cookie: sessionCookie },
+      });
+
+    // The creator's membership insert fails after the organization's, as a lost connection would.
+    const adminDb = getAdminDb('test trigger');
+    await adminDb.execute(
+      sql.raw(`
+        CREATE OR REPLACE FUNCTION test_fail_membership_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN RAISE EXCEPTION 'membership insert refused by a test trigger'; END $$;
+        CREATE TRIGGER test_fail_membership_insert BEFORE INSERT ON memberships
+          FOR EACH ROW WHEN (NEW.user_id = '${creator.id}') EXECUTE FUNCTION test_fail_membership_insert();
+      `),
+    );
+    try {
+      expect((await create()).response.status).toBe(500);
+    } finally {
+      await adminDb.execute(
+        sql.raw('DROP TRIGGER IF EXISTS test_fail_membership_insert ON memberships; DROP FUNCTION IF EXISTS test_fail_membership_insert();'),
+      );
+    }
+
+    expect(await db.select().from(organizationsTable).where(eq(organizationsTable.tenantId, tenant.id))).toEqual([]);
+    expect((await create()).response.status).toBe(201);
   });
 });

@@ -32,7 +32,7 @@ interface CountOrganizationsByTenantOpts {
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
   const { db } = ctx.var;
   const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
-  return result?.count ?? 0;
+  return result.count;
 };
 
 interface InsertOrganizationsOpts {
@@ -96,7 +96,7 @@ interface FindOrganizationsPaginatedOpts {
   /** Limits the list, its total and its includes to these organizations; unset lists every one the target belongs to. */
   organizationIds?: string[];
   q?: string;
-  sort?: 'id' | 'name' | 'createdAt' | 'userRole' | 'displayOrder';
+  sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
   order?: 'asc' | 'desc';
   offset: number;
   limit: number;
@@ -144,7 +144,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
       id: organizationsTable.id,
       name: organizationsTable.name,
       createdAt: organizationsTable.createdAt,
-      userRole: membershipsTable.role,
       displayOrder: membershipsTable.displayOrder,
     },
     tieBreaker: organizationsTable.id,
