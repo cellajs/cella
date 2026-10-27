@@ -7,6 +7,7 @@ import { attachmentsCanonicalOptions, useAttachmentUpdateMutation } from '~/modu
 import { createDescriptionUpdater } from '~/modules/common/blocknote/description-updater';
 import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
@@ -101,7 +102,7 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
       triggerRef,
       side: 'right',
       className: tw('max-w-full lg:max-w-3xl'),
-      title: attachment.name,
+      title: <MiddleCut text={attachment.name} />,
       description: i18n.t('c:attachment_description.text'),
     },
   );

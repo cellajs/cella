@@ -57,7 +57,7 @@ function Cell<R, SR>({
     },
     // Without cell selection the focus outline comes from :focus-visible on an interactive child, so mouse clicks draw none.
     !isCellSelectionEnabled &&
-      'has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
+      'has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
     editorCursor,
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
     className,

@@ -15,6 +15,7 @@ import type { PendingUpload } from '~/modules/attachment/helpers/pending-uploads
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import {
@@ -63,7 +64,6 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
   const { download, isInProgress } = useDownloader();
 
   const nextButtonRef = useRef<HTMLButtonElement>(null);
-  const [watchDrag, setWatchDrag] = useState(items.length > 1);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
 
   // The slide Embla shows, kept by id so a change in the item set keeps it.
@@ -74,7 +74,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
   // Editing lives in the attachments table; the dialog only shows the text, so the toggle needs something to show.
   const descriptionText = textFromDocument(currentItem?.description);
 
-  // Embla restarts on `startIndex` whenever its options change, so it moves only with the item count and the drag toggle.
+  // Embla restarts on `startIndex` whenever its options change, so it moves only with the item count.
   const [start, setStart] = useState({ index: currentItemIndex, count: items.length });
   if (start.count !== items.length) setStart({ index: currentItemIndex, count: items.length });
 
@@ -89,11 +89,6 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     }
 
     navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [attachmentDialogParam]: item.id }) });
-  };
-
-  const handlePanModeChange = (panning: boolean) => {
-    setWatchDrag(!panning && items.length > 1);
-    setStart({ index: currentItemIndex, count: items.length });
   };
 
   // Autoplay pauses under the pointer or keyboard focus; with reduced motion it starts only from the play control.
@@ -124,7 +119,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: start.index, watchDrag }}
+      opts={{ duration: 20, loop: true, startIndex: start.index, watchDrag: items.length > 1 }}
       plugins={
         isDialog
           ? []
@@ -139,18 +134,19 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               }),
             ]
       }
-      className="group/carousel size-full"
+      className={cn('group/carousel size-full', isDialog && 'p-2')}
       setApi={handleSetApi}
     >
-      {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
+      {/* Positioned on the carousel's padding box, so the bar spans the dialog edge to edge past the p-2 around the slides.
+          z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
       {isDialog && (
-        <div className="fixed top-0 left-0 z-20 w-full bg-background/60 p-3 backdrop-blur-xs">
+        <div className="absolute top-0 left-0 z-20 w-full bg-background/60 p-3 backdrop-blur-xs">
           <div className="flex gap-2">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
               <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
                 {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="size-4 shrink-0" strokeWidth={2} />}
-                <span className="truncate">{currentItem.name}</span>
+                <MiddleCut text={currentItem.name} />
               </DialogTitle>
             ) : (
               <DialogTitle className="sr-only">{currentItem.filename || t('c:attachment')}</DialogTitle>
@@ -231,7 +227,6 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               pendingUpload={pendingUpload}
               filename={filename}
               alt={name || filename || t('c:attachment')}
-              onPanModeChange={handlePanModeChange}
               onBackdropClick={isDialog ? () => removeDialog() : undefined}
             />
           </CarouselItem>
@@ -241,10 +236,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {items.length > 1 && (
         <>
           {/* Solid on every backdrop: the slide behind can be any image, so neither the button nor its hover fill lets it through. */}
-          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
+          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
           <CarouselNext
             ref={nextButtonRef}
-            className="right-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
+            className="right-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
           />
         </>
       )}

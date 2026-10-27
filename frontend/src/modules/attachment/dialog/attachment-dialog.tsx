@@ -4,7 +4,7 @@ import { FlameKindlingIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AttachmentsCarousel, headerButtonClass } from '~/modules/attachment/attachments-carousel';
-import { attachmentDialogContentClassName, attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
+import { attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
 import { type ResolvableItem, useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
 import { attachmentQueryOptions, useGroupAttachments } from '~/modules/attachment/query';
 import { CloseButton } from '~/modules/common/close-button';
@@ -51,7 +51,7 @@ export function AttachmentDialog() {
   const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
   if (blocking && !carouselShown) {
     return (
-      <div className="flex h-dvh items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
@@ -60,7 +60,7 @@ export function AttachmentDialog() {
   if (!resolvedItems.length || errorIds.includes(initialAttachmentId)) {
     return (
       <>
-        <div className="fixed top-0 left-0 z-20 flex w-full justify-end bg-background/60 p-3 backdrop-blur-xs">
+        <div className="absolute top-0 left-0 z-20 flex w-full justify-end bg-background/60 p-3 backdrop-blur-xs">
           <CloseButton onClick={() => removeDialog()} className={headerButtonClass} />
         </div>
         <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text">
@@ -73,9 +73,5 @@ export function AttachmentDialog() {
   }
 
   if (!carouselShown) setCarouselShown(true);
-  return (
-    <div className={attachmentDialogContentClassName}>
-      <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />
-    </div>
-  );
+  return <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />;
 }

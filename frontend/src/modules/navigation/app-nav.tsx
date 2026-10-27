@@ -10,6 +10,7 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
+import { menuOrganizations, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { organizationLanding } from '~/modules/navigation/menu-sheet/helpers/organization-landing';
 import { navItems } from '~/modules/navigation/nav-items';
 import { closeNavSheet, openNavSheet } from '~/modules/navigation/nav-sheet';
@@ -20,8 +21,15 @@ import { getCurrentUser } from '~/modules/user/user-store';
 import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
 import { getChannelRoute } from '~/utils/channel-route';
 
-const { navBar } = appConfig.navigation;
+const { navBar, menu } = appConfig.navigation;
 const { sheetPanelWidth } = appConfig.theme.navigation;
+
+/** The organization a phone's menu per organization opens on, as its switcher would pick it. */
+function phoneMenuOrganization() {
+  if (menu !== 'perOrganization') return undefined;
+  const organizations = menuOrganizations(buildMenuFromCache(getCurrentUser().id));
+  return pickMenuOrganization(organizations, false, [getRouteOrganizationId(), navigationStore.getState().lastOrganizationId]);
+}
 
 type FloatingNavConfig = { left: NavItemId[]; right: NavItemId[]; ownerPathname?: string };
 
@@ -78,7 +86,8 @@ export function AppNav() {
       return navigate({ to: navItem.href });
     }
 
-    openItemSheet(navItem, triggerRef);
+    // A phone's menu holds its organization from the start, so a wider screen keeps it beside its rail button
+    openItemSheet(navItem, triggerRef, id === 'menu' && isMobile ? phoneMenuOrganization() : undefined);
   };
 
   // A second press on the same organization closes its sheet. Coming from elsewhere, it also lands on a channel of it.

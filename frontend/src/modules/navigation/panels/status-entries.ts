@@ -31,11 +31,15 @@ const statusEntries: readonly StatusEntry[] = [
 
 const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
 
+/** The worst status among graded entries; healthy when there are none. */
+export const worstStatus = (graded: GradedStatusEntry[]) =>
+  graded.reduce<HealthStatus>((worst, { status }) => (statusRank[status] > statusRank[worst] ? status : worst), 'healthy');
+
 /**
  * Grades each entry by its worst component. An entry none of whose components the response carries (the service is
  * off) drops out; without a response the backend is unreachable, so only the app entry shows, unhealthy.
  */
-export function gradeStatusEntries(health: HealthResponse | undefined): GradedStatusEntry[] {
+export function gradeStatusEntries(health: HealthResponse | null): GradedStatusEntry[] {
   if (!health) return [{ entry: appEntry, status: 'unhealthy', component: 'api', reason: 'unreachable' }];
 
   return statusEntries.flatMap((entry) => {

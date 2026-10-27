@@ -11,6 +11,7 @@ import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { InputTriggerChevron } from '~/modules/common/form-fields/input-trigger-button';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
 import { Chip } from '~/modules/ui/chip';
@@ -75,7 +76,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       onInputValueChange={setSearchQuery}
       filter={() => true}
     >
-      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input bg-background p-1.5 pr-10">
+      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input field-hover:border-input-hover bg-background p-1.5 pr-10">
         {/* Lies behind the chip row, whose remove buttons cannot nest in a button, and reads out the selection itself */}
         <ComboboxPrimitive.Trigger
           ref={triggerRef}
@@ -87,7 +88,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
           {value.length ? (
             value.map((email) => (
               <Chip key={email} onRemove={() => handleUnselect(email)} removeLabel={t('c:remove_resource', { resource: email })} className="max-w-60">
-                {email}
+                <MiddleCut text={email} />
               </Chip>
             ))
           ) : (
@@ -127,10 +128,10 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                     const invitedNote = outcome?.outcome === 'remind' ? inviteNote(outcome, t) : undefined;
                     return (
                       <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
                           <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
                           <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
-                            {isMobile ? email : name}
+                            {isMobile ? <MiddleCut text={email} /> : name}
                           </span>
                         </div>
 
@@ -145,7 +146,10 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                               <span className="max-sm:hidden">{invitedNote}</span>
                             </Badge>
                           )}
-                          <span className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden">{email}</span>
+                          <MiddleCut
+                            text={email}
+                            className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden"
+                          />
                           <ComboboxItemIndicator />
                         </div>
                       </ComboboxItem>

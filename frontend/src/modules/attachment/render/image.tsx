@@ -1,17 +1,6 @@
-import {
-  ArrowDownIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  ArrowUpIcon,
-  HandGrabIcon,
-  HandIcon,
-  MinusIcon,
-  PlusIcon,
-  RefreshCwIcon,
-  RotateCwSquareIcon,
-} from 'lucide-react';
-import { useState } from 'react';
+import { MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSquareIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { usePanZoom } from '~/modules/attachment/render/use-pan-zoom';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -24,13 +13,20 @@ interface RenderImageProps {
   alt?: string;
   imageClassName?: string;
   showButtons?: boolean;
-  onPanModeChange?: (panning: boolean) => void;
   /** Dialog viewer: sizes the image to its content so the letterbox falls through to the backdrop, while panning on the image still works. */
   backdropDismiss?: boolean;
 }
 
-/** Pixels one press of a pan button moves the zoomed image. */
+/** Pixels one arrow key moves the zoomed image. */
 const panStep = 120;
+
+/** Arrow keys move the view as a scroll would: left brings the image's left side into view. */
+const panKeys: Record<string, [number, number]> = {
+  ArrowLeft: [panStep, 0],
+  ArrowRight: [-panStep, 0],
+  ArrowUp: [0, panStep],
+  ArrowDown: [0, -panStep],
+};
 
 interface ControlButtonProps {
   tooltipContent: string;
@@ -49,11 +45,21 @@ function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonPro
   );
 }
 
-export function RenderImage({ image, alt, showButtons, imageClassName, onPanModeChange, backdropDismiss = false }: RenderImageProps) {
+export function RenderImage({ image, alt, showButtons, imageClassName, backdropDismiss = false }: RenderImageProps) {
   const { t } = useTranslation();
-  // Without onPanModeChange there is no pan toggle, so pan stays on.
-  const [panEnabled, setPanEnabled] = useState(!onPanModeChange);
-  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panEnabled);
+  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom();
+
+  // Only the shown slide pans: the carousel leaves the arrow keys to a slide that holds them (data-carousel-hold below).
+  useEventListener(
+    'keydown',
+    (event) => {
+      const step = panKeys[event.key];
+      if (!step) return;
+      event.preventDefault();
+      panBy(...step);
+    },
+    { enabled: zoomed && !!showButtons, capture: true },
+  );
 
   return (
     <>
@@ -62,32 +68,15 @@ export function RenderImage({ image, alt, showButtons, imageClassName, onPanMode
           <ControlButton tooltipContent={t('c:zoom_in')} onClick={zoomIn} icon={PlusIcon} />
           <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={MinusIcon} />
           <ControlButton tooltipContent={t('c:rotate_right')} onClick={rotateRight} icon={RotateCwSquareIcon} />
-
-          {onPanModeChange && (
-            <ControlButton
-              tooltipContent={t('c:toggle_pan_view')}
-              onClick={() => {
-                setPanEnabled(!panEnabled);
-                onPanModeChange(!panEnabled);
-              }}
-              icon={panEnabled ? HandGrabIcon : HandIcon}
-            />
-          )}
-
-          {zoomed && (
-            <>
-              <ControlButton tooltipContent={t('c:move_left')} onClick={() => panBy(-panStep, 0)} icon={ArrowLeftIcon} />
-              <ControlButton tooltipContent={t('c:move_up')} onClick={() => panBy(0, -panStep)} icon={ArrowUpIcon} />
-              <ControlButton tooltipContent={t('c:move_down')} onClick={() => panBy(0, panStep)} icon={ArrowDownIcon} />
-              <ControlButton tooltipContent={t('c:move_right')} onClick={() => panBy(panStep, 0)} icon={ArrowRightIcon} />
-            </>
-          )}
-
           <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={RefreshCwIcon} />
         </ButtonGroup>
       )}
 
-      <div className={cn('flex size-full items-center justify-center', backdropDismiss && 'pointer-events-none')} {...panProps}>
+      <div
+        data-carousel-hold={zoomed || undefined}
+        className={cn('flex size-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
+        {...panProps}
+      >
         <div className="flex size-full items-center justify-center" style={layerStyle}>
           <img
             style={{ transform: `rotate(${rotation * 90}deg)` }}

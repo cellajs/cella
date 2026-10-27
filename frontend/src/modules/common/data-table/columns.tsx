@@ -6,6 +6,7 @@ import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
 import { tw } from '~/utils/tw';
@@ -103,7 +104,7 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
         draggable={false}
         className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 hover:underline hover:opacity-100"
       >
-        {row.email}
+        <MiddleCut text={row.email} />
       </a>
     ) : null,
 });
@@ -127,6 +128,8 @@ export const ellipsisColumn = <T extends { id: string }>(
   name: '',
   ...(maxBreakpoint && { maxBreakpoint }),
   width: 32,
+  // The whole cell marks the row whose menu is open, padding included
+  cellClass: 'has-data-dropdowner-active:bg-accent/50',
   renderHeaderCell: () => <SrOnlyHeader label="c:actions" />,
   renderCell: ({ row, tabIndex }) => {
     const options = getOptions(row);

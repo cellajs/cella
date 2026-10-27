@@ -3,10 +3,8 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getMenuSection } from '~/lib/entity-modules';
 import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { Spinner } from '~/modules/common/spinner';
-import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { menuOrganizations, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { MenuSheetOrganization } from '~/modules/navigation/menu-sheet/organization-menu';
 import { OrganizationSwitcher } from '~/modules/navigation/menu-sheet/organization-switcher';
@@ -18,19 +16,6 @@ import { useUserStore } from '~/modules/user/user-store';
 
 const { navBar, menu: menuMode } = appConfig.navigation;
 const isMenuPerOrganization = menuMode === 'perOrganization';
-
-/**
- * The organization a menu per organization holds. Picked with a nav bar button, it is that button's; picked with the
- * switcher, the switcher's pick, else the page's, else the last one opened, else the first.
- */
-function pickOrganization(organizations: UserMenuItem[], hasOrganizationButtons: boolean, candidateIds: (string | null | undefined)[]) {
-  const ids = hasOrganizationButtons ? candidateIds.slice(0, 1) : candidateIds;
-  for (const id of ids) {
-    const organization = id && organizations.find((item) => item.id === id);
-    if (organization) return organization;
-  }
-  return hasOrganizationButtons ? undefined : sortAndFilterMenu(organizations, false)[0];
-}
 
 export function MenuSheet() {
   const user = useUserStore((state) => state.user);
@@ -48,7 +33,7 @@ export function MenuSheet() {
   if (isLoading || !user) return <Spinner />;
 
   const organization = isMenuPerOrganization
-    ? pickOrganization(organizations, hasOrganizationButtons, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
+    ? pickMenuOrganization(organizations, hasOrganizationButtons, [navSheetOrganizationId, routeOrganizationId, lastOrganizationId])
     : undefined;
 
   const menuSections = appConfig.menuStructure.flatMap(({ entityType }) => {

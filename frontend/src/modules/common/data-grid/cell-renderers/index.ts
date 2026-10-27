@@ -1,4 +1,5 @@
 export * from './render-checkbox';
+export * from './render-edit-status';
 export * from './render-enum-select';
 export * from './render-expand-toggle';
 export * from './render-external-editor';

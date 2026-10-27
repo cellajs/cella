@@ -14,14 +14,16 @@ export const attachmentUrlDialogId = 'attachment-url-dialog';
 /** Dialog id of the viewer `openAttachmentDialog` opens, apart from the URL-driven one. */
 export const attachmentDialogId = 'attachment-dialog';
 
-/** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
-const attachmentDialogClassName = tw('flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0');
-
-/** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = tw('relative h-dvh p-2');
+/**
+ * Chrome shared by both ways of opening the carousel (URL-driven and imperative): full screen below `lg`, from `lg` a
+ * panel 1.25rem inside the viewport, so the page stays in view around it under the scrim.
+ */
+const attachmentDialogClassName = tw(
+  'flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0 lg:h-[calc(100%-2.5rem)] lg:w-[calc(100%-2.5rem)] lg:min-w-0 lg:rounded-lg',
+);
 
 /**
- * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom
+ * Per-slide stage insets: a fitted image stays clear of the header (3rem) and, from `sm` up where the pan/zoom
  * viewer renders them, the zoom controls (3.25rem from the bottom). Zoomed-in content still slides under the
  * translucent chrome because overflow clips at the padding edge.
  */

@@ -58,8 +58,8 @@ function ToastList({ position }: { position: ToastPosition }) {
           className="flex min-w-0 flex-1 select-text flex-col gap-1"
           onPointerDown={(event) => event.pointerType === 'mouse' && event.stopPropagation()}
         >
-          <ToastPrimitive.Title data-slot="toast-title" className="font-medium text-sm" />
-          <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="text-muted-foreground text-sm" />
+          <ToastPrimitive.Title data-slot="toast-title" className="wrap-break-word font-medium text-sm" />
+          <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="wrap-break-word text-muted-foreground text-sm" />
         </div>
         <ToastPrimitive.Action data-slot="toast-action" render={<Button variant="outline" size="xs" />} className="shrink-0" />
         <ToastPrimitive.Close

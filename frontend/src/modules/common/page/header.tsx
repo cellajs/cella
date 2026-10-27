@@ -42,7 +42,9 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
         />
 
         <div className="flex flex-col truncate py-1.5 pl-1">
-          <h1 className="mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">{entity.name}</h1>
+          <h1 className="max-sm:wrap-break-word mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">
+            {entity.name}
+          </h1>
 
           <div className="flex items-center gap-2 text-sm">
             {subline ?? (
@@ -60,12 +62,12 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
                     const crumbRoute = getChannelRoute(crumb);
                     return (
                       <Fragment key={crumb.id}>
-                        <BreadcrumbItem className="max-sm:hidden">
+                        <BreadcrumbItem className="min-w-0 max-sm:hidden">
                           <BreadcrumbLink
-                            className="flex items-center"
+                            className="flex min-w-0 items-center"
                             render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} draggable={false} />}
                           >
-                            <span className="truncate">{crumb.name}</span>
+                            <span className="max-w-48 truncate">{crumb.name}</span>
                           </BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden" />

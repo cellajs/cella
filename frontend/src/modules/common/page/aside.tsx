@@ -11,6 +11,8 @@ import { cn } from '~/utils/cn';
 
 interface PageAsideItem extends PlacementDescriptor {
   icon?: IconComponent;
+  /** Classes for this tab's row, applied after the shared ones. */
+  className?: string;
 }
 
 interface PageAsideProps<T> {
@@ -35,7 +37,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
 
   return (
     <div className={cn('flex w-full flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon: Icon, resource }, index) => {
+      {tabs.map(({ id, label, icon: Icon, resource, className: tabClassName }, index) => {
         const destructive = id.includes('delete');
         return (
           <Button
@@ -52,6 +54,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
               'more-contrast:opacity-100 transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
               // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
               'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
+              tabClassName,
             )}
             render={
               <Link

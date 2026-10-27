@@ -1,4 +1,5 @@
 import { ChevronDownIcon } from 'lucide-react';
+import { MiddleCut } from '~/modules/common/middle-cut';
 import { Button } from '~/modules/ui/button';
 
 interface AuthEmailButtonProps {
@@ -15,7 +16,7 @@ export function AuthEmailButton({ email, onClick, disabled }: AuthEmailButtonPro
       disabled={disabled}
       className="group/email-button max-w-full bg-foreground/10 font-normal hover:bg-foreground/15 sm:text-lg"
     >
-      <span className="truncate">{email}</span>
+      <MiddleCut text={email} />
       <ChevronDownIcon className="group-disabled/email-button:hidden" />
     </Button>
   );

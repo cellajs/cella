@@ -44,7 +44,7 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden scroll-mt-32 border-t-[0.05rem] border-border ${textOverflow}`,
     'sm:group-hover/row:bg-accent/40',
-    'aria-selected:outline-2 aria-selected:outline-primary aria-selected:outline-solid aria-selected:-outline-offset-2',
+    'aria-selected:outline-2 aria-selected:outline-ring aria-selected:outline-solid aria-selected:-outline-offset-2',
     '[&:not([aria-readonly=true])]:aria-selected:bg-accent/60',
     'max-xs:aria-selected:bg-transparent max-xs:aria-selected:outline-hidden',
     '[.rdg-readonly_&]:aria-selected:outline-hidden',

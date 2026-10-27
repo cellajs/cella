@@ -9,6 +9,8 @@ import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-b
 interface SelectLanguagesProps {
   value: Language[];
   onChange: (value: Language[]) => void;
+  /** The trigger's id, for a label's `htmlFor`: a click on that label opens the list. */
+  id?: string;
 }
 
 interface SelectLanguagesContentProps extends Pick<SelectLanguagesProps, 'onChange'> {
@@ -62,7 +64,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
   );
 }
 
-export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
+export function SelectLanguages({ value, onChange, id }: SelectLanguagesProps) {
   const { t } = useTranslation();
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();
 
@@ -77,6 +79,7 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   return (
     <InputTriggerButton
       ref={triggerRef}
+      id={id}
       disabled={appConfig.languages.length < 2}
       aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
       className="w-full data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"

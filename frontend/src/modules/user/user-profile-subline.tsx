@@ -2,6 +2,7 @@ import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GetUserResponse } from 'sdk';
 import { appConfig } from 'shared';
+import { MiddleCut } from '~/modules/common/middle-cut';
 
 interface UserProfileSublineProps {
   user: GetUserResponse;
@@ -15,7 +16,7 @@ export function UserProfileSubline({ user }: UserProfileSublineProps) {
     // The text column clips: the link's ring sits in a padding its negative margin takes back, and pr-1 keeps the column from scrolling on focus.
     <div className="flex min-w-0 items-center gap-2 pr-1 text-muted-foreground">
       <a href={`mailto:${user.email}`} className="focus-inset -m-1 truncate rounded-sm p-1 transition-colors hover:text-foreground">
-        {user.email}
+        <MiddleCut text={user.email} />
       </a>
       {user.mfaRequired !== undefined && (
         <>

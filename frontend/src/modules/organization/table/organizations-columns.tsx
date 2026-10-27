@@ -3,7 +3,7 @@ import { PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { hierarchy, isChannel, isProduct } from 'shared';
-import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
+import { enumSelectEditorOptions, RenderEditStatus, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { cellLinkTextClass, countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -88,7 +88,11 @@ export const useColumns = () => {
       placeholderValue: '-',
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : null),
+      renderCell: ({ row, column }) => (
+        <RenderEditStatus row={row} column={column}>
+          {row.membership?.role && t(row.membership.role)}
+        </RenderEditStatus>
+      ),
       // Table rows carry the role from the cache; export rows fetched from the API carry it under `included`.
       exportValue: (row) => {
         const role = row.membership?.role ?? row.included?.membership?.role;

@@ -36,7 +36,6 @@ interface AttachmentRenderProps {
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
-  onPanModeChange?: (panning: boolean) => void;
   /** A click on the empty letterbox dismisses the viewer; it also sizes the media to its content so that area is a click target. */
   onBackdropClick?: () => void;
 }
@@ -52,7 +51,6 @@ export function AttachmentRender({
   imagePanZoom = false,
   itemClassName,
   containerClassName,
-  onPanModeChange,
   onBackdropClick,
 }: AttachmentRenderProps) {
   const { t } = useTranslation();
@@ -97,14 +95,7 @@ export function AttachmentRender({
         <Suspense fallback={<Spinner size="lg" />}>
           {kind === 'image' &&
             (imagePanZoom && !isMobile ? (
-              <RenderImage
-                image={url}
-                alt={alt}
-                onPanModeChange={onPanModeChange}
-                imageClassName={itemClassName}
-                showButtons={showButtons}
-                backdropDismiss={!!onBackdropClick}
-              />
+              <RenderImage image={url} alt={alt} imageClassName={itemClassName} showButtons={showButtons} backdropDismiss={!!onBackdropClick} />
             ) : (
               <img src={url} alt={alt} className={cn(onBackdropClick ? 'max-h-full max-w-full' : 'size-full', itemClassName)} />
             ))}

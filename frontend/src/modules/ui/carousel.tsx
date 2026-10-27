@@ -31,6 +31,11 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
+/** Slide content marked `data-carousel-hold`, such as a zoomed image, keeps the drags and arrow keys that otherwise page the carousel. */
+const holdSelector = '[data-carousel-hold]';
+
+const dragOutsideHold = (_api: unknown, event: MouseEvent | TouchEvent) => !(event.target instanceof Element && event.target.closest(holdSelector));
+
 function useCarousel() {
   const context = React.useContext(CarouselContext);
 
@@ -52,7 +57,10 @@ function Carousel({
   ...props
 }: React.ComponentProps<'div'> & CarouselProps) {
   const { t } = useTranslation();
-  const [carouselRef, api] = useEmblaCarousel({ ...opts, axis: orientation === 'horizontal' ? 'x' : 'y' }, plugins);
+  const [carouselRef, api] = useEmblaCarousel(
+    { ...opts, axis: orientation === 'horizontal' ? 'x' : 'y', watchDrag: opts?.watchDrag === false ? false : dragOutsideHold },
+    plugins,
+  );
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
 
@@ -88,7 +96,7 @@ function Carousel({
     };
   }, [api, onSelect]);
 
-  // Arrow keys page the carousel in a dialog, or while the pointer or focus is inside it; text fields keep their arrows.
+  // Arrow keys page the carousel in a dialog, or while the pointer or focus is inside it; text fields and a held slide keep their arrows.
   const [pointerInside, setPointerInside] = React.useState(false);
   const [focusInside, setFocusInside] = React.useState(false);
   const arrowKeysActive = !!api && (isDialog || pointerInside || focusInside);
@@ -97,6 +105,7 @@ function Carousel({
     'keydown',
     (event) => {
       if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (api?.slideNodes()[api.selectedScrollSnap()]?.querySelector(holdSelector)) return;
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
         scrollPrev();

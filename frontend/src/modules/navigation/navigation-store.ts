@@ -13,11 +13,11 @@ interface NavigationStoreState {
   removeRecentSearch: (value: string) => void;
 
   navSheetOpen: NavItemId | null;
-  navSheetOrganizationId: string | null; // Organization the open menu sheet holds alone; null while it lists every channel
-  /** Opening with an `organizationId` also makes it the `lastOrganizationId`. */
+  navSheetOrganizationId: string | null; // Organization the menu sheet holds alone; null while it lists every channel
+  /** Opening with an `organizationId` also makes it the `lastOrganizationId`. Closing keeps the organization, so the sheet leaves as it was. */
   setNavSheetOpen: (navSheetOpen: NavItemId | null, organizationId?: string | null) => void;
 
-  lastOrganizationId: string | null; // Organization last opened from the rail or the switcher, where the mobile menu opens outside organization pages
+  lastOrganizationId: string | null; // Organization the menu sheet last held alone, where the mobile menu opens outside organization pages
 
   lastChannelIds: Record<string, string>; // Per organization id, the channel below it that its pages last showed, where its rail button lands
   setLastChannelId: (organizationId: string, channelId: string) => void;
@@ -98,9 +98,12 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setNavSheetOpen: (navSheetOpen, organizationId = null) => {
             set((state) => {
               state.navSheetOpen = navSheetOpen;
-              state.navSheetOrganizationId = navSheetOpen ? organizationId : null;
-              if (navSheetOpen && organizationId) state.lastOrganizationId = organizationId;
-              if (!navSheetOpen) state.navSheetPanel = null;
+              if (!navSheetOpen) {
+                state.navSheetPanel = null;
+                return;
+              }
+              state.navSheetOrganizationId = organizationId;
+              if (organizationId) state.lastOrganizationId = organizationId;
             });
           },
           setLastChannelId: (organizationId, channelId) => {

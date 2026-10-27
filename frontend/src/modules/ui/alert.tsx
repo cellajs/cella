@@ -70,7 +70,13 @@ export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="alert-description" className={cn('col-start-2 w-full justify-items-start gap-1 text-sm', className)} {...props} />;
+  return (
+    <div
+      data-slot="alert-description"
+      className={cn('wrap-break-word col-start-2 w-full min-w-0 justify-items-start gap-1 text-sm', className)}
+      {...props}
+    />
+  );
 }
 
 /** The alert's button or link: beside the text, centered on it, from `sm` up; under the text on a phone. */

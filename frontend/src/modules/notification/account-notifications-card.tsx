@@ -64,7 +64,7 @@ export function AccountNotificationsCard() {
             className="lg:grid-cols-3"
           >
             {digestOptions.map(({ value, label }) => (
-              <FieldLabel key={value} htmlFor={`digest-${value}`} className="cursor-pointer">
+              <FieldLabel key={value} htmlFor={`digest-${value}`} card>
                 <FieldLayout orientation="horizontal">
                   <RadioGroupItem id={`digest-${value}`} value={value} />
                   <FieldContent>
