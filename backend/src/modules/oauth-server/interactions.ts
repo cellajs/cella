@@ -1,5 +1,6 @@
 import type { HttpBindings } from '@hono/node-server';
-import { type Context, type ErrorHandler, Hono } from 'hono';
+import { z } from '@hono/zod-openapi';
+import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { errors } from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
@@ -16,6 +17,9 @@ import { deleteProviderSession, getConsentTargetNames, stampGrantSignIn } from '
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
+
+/** The consent page's decision; a missing `accept` refuses. */
+const decisionBodySchema = z.object({ accept: z.boolean().optional() });
 
 interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
@@ -34,14 +38,8 @@ interface ConsentDetails {
 /** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
 export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> {
   const app = new Hono<InteractionEnv>();
-  // The interactions app binds Node's request objects; the handler reads only what every Hono context has. An
-  // interaction this browser no longer holds (expired, or ended with a sign-out) is the request's refusal, not a fault.
-  app.onError((err, c) =>
-    (appErrorHandler as never as ErrorHandler<InteractionEnv>)(
-      err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err,
-      c,
-    ),
-  );
+  // An interaction this browser no longer holds (expired, or ended with a sign-out) is the request's refusal, not a fault.
+  app.onError((err, c) => appErrorHandler(err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err, c));
   // Consent resolves the client again, which may fetch its metadata document: that fetch draws on the budget the
   // provider's own routes charge (`server.ts`).
   app.use(limiterScope);
@@ -56,9 +54,11 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 
   app.post('/oauth/interaction/:uid/consent', async (c) => {
     const { signedIn, details, interaction, clientId } = await loadInteraction(provider, c);
-    if (!signedIn) throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+    if (!signedIn) throw new AppError(401, 'no_session', 'warn');
     const { user, session } = signedIn;
-    const { accept } = (await c.req.json()) as { accept?: boolean };
+    const decision = decisionBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!decision.success) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Invalid body' } });
+    const { accept } = decision.data;
 
     if (!accept || details.refusal) {
       const redirectTo = await provider.interactionResult(
@@ -120,7 +120,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const user = signedIn?.user ?? null;
   const refusal = user ? await grantRefusal({ userId: user.id, clientId, tenantId: resource.tenantId }) : null;
   // The session's user is gone since the session was read: consent starts over from sign-in.
-  if (refusal === 'unknown_user') throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+  if (refusal === 'unknown_user') throw new AppError(401, 'no_session', 'warn');
 
   // Where the grant reaches is named by the server, as the client is, and never to someone outside it.
   const target =

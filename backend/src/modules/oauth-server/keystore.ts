@@ -1,6 +1,5 @@
 import { inArray } from 'drizzle-orm';
 import { calculateJwkThumbprint, createLocalJWKSet, exportJWK, generateKeyPair, type JWK } from 'jose';
-import type { DbOrTx } from '#/db/db';
 import { baseDb } from '#/db/db';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
@@ -11,13 +10,13 @@ const encryptionPurpose = 'signing-key';
 /** How long a process verifies with the public keys it read before it reads them again. */
 const verifyCacheMs = 5 * 60 * 1000;
 
-async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
+async function mintKey(status: 'current' | 'next'): Promise<void> {
   const { privateKey, publicKey } = await generateKeyPair(alg, { extractable: true });
   const publicJwk = { ...(await exportJWK(publicKey)), alg: alg, use: 'sig' };
   const kid = await calculateJwkThumbprint(publicJwk);
   const privateJwk = { ...(await exportJWK(privateKey)), kid, alg: alg, use: 'sig' };
   // Two processes booting at once both try; the unique index lets one win and the other keeps that key.
-  const inserted = await db
+  const inserted = await baseDb
     .insert(signingKeysTable)
     .values({
       id: kid,
@@ -32,19 +31,19 @@ async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
 }
 
 /** Guarantees a `current` and a `next` key exist; the next key is public before it ever signs (LTI §6.4, Canvas's rule). */
-export async function ensureSigningKeys(db: DbOrTx = baseDb): Promise<void> {
-  const rows = await db
+export async function ensureSigningKeys(): Promise<void> {
+  const rows = await baseDb
     .select({ status: signingKeysTable.status })
     .from(signingKeysTable)
     .where(inArray(signingKeysTable.status, ['current', 'next']));
   const have = new Set(rows.map((row) => row.status));
-  if (!have.has('current')) await mintKey(db, 'current');
-  if (!have.has('next')) await mintKey(db, 'next');
+  if (!have.has('current')) await mintKey('current');
+  if (!have.has('next')) await mintKey('next');
 }
 
 /** Private JWKs the authorization server signs with: current first (it signs), next second (published only). */
-export async function loadSigningJwks(db: DbOrTx = baseDb): Promise<{ keys: JWK[] }> {
-  const rows = await db
+export async function loadSigningJwks(): Promise<{ keys: JWK[] }> {
+  const rows = await baseDb
     .select()
     .from(signingKeysTable)
     .where(inArray(signingKeysTable.status, ['current', 'next']));

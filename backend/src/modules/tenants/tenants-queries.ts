@@ -31,10 +31,12 @@ const selectTenants = (ctx: DbContext) => {
   return db
     .select({
       ...tenantColumns,
-      organizationId: organizationsTable.id,
-      organizationName: organizationsTable.name,
-      organizationSlug: organizationsTable.slug,
-      organizationThumbnailUrl: organizationsTable.thumbnailUrl,
+      organization: {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        slug: organizationsTable.slug,
+        thumbnailUrl: organizationsTable.thumbnailUrl,
+      },
     })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
@@ -44,22 +46,13 @@ const selectTenants = (ctx: DbContext) => {
 type TenantRow = Awaited<ReturnType<typeof selectTenants>>[number];
 
 /**
- * Folds the flat org columns into `organization` (null for an orphan tenant) and gives a stored row the
- * restriction fields it predates, so one such row cannot fail a whole list.
+ * Marks the organization (null for an orphan tenant) with its entity type and gives a stored row the restriction
+ * fields it predates, so one such row cannot fail a whole list.
  */
-const toTenant = ({ organizationId, organizationName, organizationSlug, organizationThumbnailUrl, ...tenant }: TenantRow) => ({
+const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   ...tenant,
   restrictions: normalizeRestrictions(tenant.restrictions),
-  organization: organizationId
-    ? {
-        id: organizationId,
-        // Non-null within this branch: the left join returns them on the same row as the id.
-        name: organizationName as string,
-        slug: organizationSlug as string,
-        thumbnailUrl: organizationThumbnailUrl,
-        entityType: 'organization' as const,
-      }
-    : null,
+  organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
 interface FindTenantsPaginatedOpts {
@@ -131,22 +124,39 @@ interface FindArchivedTenantsOpts {
   archivedBefore: string;
 }
 
+/** The sweep's condition: read when it lists the tenants, and again under the row lock before each delete. */
+const dueForRemoval = (archivedBefore: string) => and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore));
+
 /** Tenants archived before `archivedBefore`, the ones the archived-tenant sweep removes. */
 export const findArchivedTenants = async (ctx: DbContext, { archivedBefore }: FindArchivedTenantsOpts) => {
   return ctx.var.db
     .select({ id: tenantsTable.id, name: tenantsTable.name, statusChangedAt: tenantsTable.statusChangedAt })
     .from(tenantsTable)
-    .where(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)));
+    .where(dueForRemoval(archivedBefore));
 };
 
+interface DeleteArchivedTenantOpts extends FindArchivedTenantsOpts {
+  tenantId: string;
+}
+
 /**
- * Deletes a tenant and its organization in one transaction. The organization goes first: its cascade takes the
- * channels, products, memberships and collaborative documents, and their delete triggers queue the stored files. The
- * tenant row then takes its service accounts, API keys and connections.
+ * Deletes a tenant archived before `archivedBefore` and its organization in one transaction. It first locks the tenant
+ * row and reads it again: a tenant restored, or archived again, since the sweep listed it stays, and a restore that
+ * comes later waits for the delete and then finds no row. The organization goes first: its cascade takes the channels,
+ * products, memberships and collaborative documents, and their delete triggers queue the stored files. The tenant row
+ * then takes its service accounts, API keys and connections.
+ * @returns Whether the tenant was still due and is deleted.
  */
-export const deleteTenantWithOrganization = async (ctx: DbContext, { tenantId }: { tenantId: string }): Promise<void> => {
-  await ctx.var.db.transaction(async (tx) => {
+export const deleteArchivedTenant = async (ctx: DbContext, { tenantId, archivedBefore }: DeleteArchivedTenantOpts): Promise<boolean> => {
+  return ctx.var.db.transaction(async (tx) => {
+    const [due] = await tx
+      .select({ id: tenantsTable.id })
+      .from(tenantsTable)
+      .where(and(eq(tenantsTable.id, tenantId), dueForRemoval(archivedBefore)))
+      .for('update');
+    if (!due) return false;
     await tx.delete(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
     await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
+    return true;
   });
 };

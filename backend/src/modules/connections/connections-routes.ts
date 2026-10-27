@@ -2,9 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { tenantOnlyParamSchema } from '#/schemas';
+import { tenantIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
 import { mockConnectionResponse } from './connections-mocks';
-import { connectionParamSchema, connectionSchema, createConnectionBodySchema, updateConnectionBodySchema } from './connections-schema';
+import { connectionSchema, createConnectionBodySchema, updateConnectionBodySchema } from './connections-schema';
 
 export const connectionRoutes = createXRoutes(['connections', 'cella'], {
   getConnections: xRoute({
@@ -38,7 +38,7 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update connection',
     description: 'Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.',
-    request: { params: connectionParamSchema, body: jsonBody(updateConnectionBodySchema) },
+    request: { params: tenantIdParamSchema, body: jsonBody(updateConnectionBodySchema) },
     responses: { 200: json('Updated connection', connectionSchema) },
   }),
   deleteConnection: xRoute({
@@ -49,7 +49,7 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Delete connection',
     description: 'Removes a connection. Identities and sessions that came through it keep their rows; members stay members.',
-    request: { params: connectionParamSchema },
+    request: { params: tenantIdParamSchema },
     responses: { 200: json('Removed connection', connectionSchema) },
   }),
 });

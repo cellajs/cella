@@ -26,7 +26,7 @@ REST API (serviceGuard / actorGuard)   MCP endpoint (tokenGuard)
 
 The worker is one more `MODE` of the backend image: a process of its own on `devPorts.oauth`, or folded into the API under `singleVM`. The reverse proxy routes `/oauth/*` to it, so the issuer (`appConfig.oauthUrl`) shares the app origin with the API and the consent page. The provider runs with its own Postgres adapter, no dynamic client registration, no developer interactions, no id tokens: the app is an authorization server, not an identity provider. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md).
 
-The code is in `backend/src/modules/oauth-server/`: the provider configuration, the adapter, the keystore, the interaction routes, the grant policy, the token verifier the guards use, and the sweep job. `oauth/src/oauth-worker.ts` is the development entry. Claim names, limits and other details are documented there, at their declarations.
+The code is in `backend/src/modules/oauth-server/`: the provider configuration, the adapter, the keystore, the interaction routes, the grant policy and the token verifier the guards use. `oauth/src/oauth-worker.ts` is the development entry. Claim names, limits and other details are documented there, at their declarations.
 
 ## Clients and consent
 
@@ -66,7 +66,7 @@ A change to the rest of what the grant policy reads (the user row, an installed 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store: grants, sessions, interactions, authorization codes and refresh tokens. A code or a refresh token is stored under the hash of its value, with no copy of the value, so reading the store yields nothing a client could present. Each is spent once: a second spend, sequential or concurrent, is a replay and revokes the grant with every token issued under it. An hourly job on the [jobs worker](../jobs/README.md) deletes expired rows and, after thirty days, spent ones.
+`oidc_payloads` is the provider's store: grants, sessions, interactions, authorization codes and refresh tokens. A code or a refresh token is stored under the hash of its value, with no copy of the value, so reading the store yields nothing a client could present. Each is spent once: a second spend, sequential or concurrent, is a replay and revokes the grant with every token issued under it. The database's nightly retention procedure deletes expired rows and, after the retention period, spent ones ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
 
 ## Operational constraints
 

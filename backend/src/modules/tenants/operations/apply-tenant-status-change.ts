@@ -1,9 +1,8 @@
-import { eq } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { endOrganizationStreams } from '#/modules/entities/helpers/session-streams';
 import { rotateTenantMemberBindings } from '#/modules/memberships/memberships-queries';
-import { organizationsTable } from '#/modules/organization/organization-db';
+import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 
 /**
  * What a tenant's status change does beyond its row. A membership of an archived tenant counts for no one
@@ -12,12 +11,6 @@ import { organizationsTable } from '#/modules/organization/organization-db';
  */
 export async function applyTenantStatusChange(ctx: DbContext, tenantId: string): Promise<void> {
   for (const userId of await rotateTenantMemberBindings(ctx, { tenantId })) invalidateCache.user(userId);
-  const organizations = await ctx.var.db
-    .select({ id: organizationsTable.id })
-    .from(organizationsTable)
-    .where(eq(organizationsTable.tenantId, tenantId));
-  await endOrganizationStreams(
-    organizations.map(({ id }) => id),
-    'The organization was archived or restored',
-  );
+  const organization = await findOrganizationByTenant(ctx, { tenantId });
+  if (organization) await endOrganizationStreams([organization.id], 'The organization was archived or restored');
 }

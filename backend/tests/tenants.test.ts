@@ -145,4 +145,21 @@ describe('archived-tenant sweep', () => {
     const mailed = vi.mocked(mailer.sendEmails).mock.calls.map(([, statics]) => (statics as { tenantId: string }).tenantId);
     expect(mailed).toEqual([expired.tenantId]);
   });
+
+  it('keeps a tenant restored after the sweep listed it', async () => {
+    const period = appConfig.retention.archivedTenantDays;
+    const tenantIds = [(await archivedDaysAgo(period + 1)).tenantId, (await archivedDaysAgo(period + 1)).tenantId];
+    let restored = '';
+    // The first removal's mail goes out before the sweep reaches the other tenant: a system admin restores that one then.
+    vi.mocked(mailer.sendEmails)
+      .mockClear()
+      .mockImplementationOnce(async (_template, statics) => {
+        restored = tenantIds.find((id) => id !== (statics as { tenantId: string }).tenantId) ?? '';
+        await db.update(tenantsTable).set({ status: 'active' }).where(eq(tenantsTable.id, restored));
+      });
+
+    expect(await removeArchivedTenants()).toBe(1);
+    expect(await tenantExists(restored)).toBe(true);
+    expect(vi.mocked(mailer.sendEmails)).toHaveBeenCalledTimes(1);
+  });
 });

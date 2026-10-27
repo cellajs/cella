@@ -1,13 +1,14 @@
-import { z } from '@hono/zod-openapi';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, type SQL } from 'drizzle-orm';
 import { type Adapter, type AdapterPayload, errors } from 'oidc-provider';
+import { isUuid } from 'shared/utils/entity-id';
 import { baseDb } from '#/db/db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { hashToken } from '#/utils/hash-token';
-import { getIsoDate } from '#/utils/iso-date';
+import { getIsoDate, isoDateIn } from '#/utils/iso-date';
+import { TimeSpan } from '#/utils/time-span';
 
 /** Client metadata as the provider reads it; `client_kind` names the table the adapter read the client from. */
 export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
@@ -43,7 +44,7 @@ async function findClient(id: string): Promise<AppClientMetadata | undefined> {
   }
   // A service account is its own client_credentials client; its secret keys are the client secrets (compared by hash).
   // Its id is a UUID: any other id (a metadata document URL) would make the uuid column refuse the query.
-  if (!z.uuid().safeParse(id).success) return undefined;
+  if (!isUuid(id)) return undefined;
   const [account] = await baseDb
     .select()
     .from(serviceAccountsTable)
@@ -85,16 +86,21 @@ export class DrizzleAdapter implements Adapter {
     return this.hashed ? hashToken(id) : id;
   }
 
+  /** This model's rows that match the conditions: a row of another model with the same id never answers. */
+  private modelRows(...conditions: SQL[]): SQL | undefined {
+    return and(eq(oidcPayloadsTable.type, this.name), ...conditions);
+  }
+
   async upsert(id: string, payload: AdapterPayload, expiresIn?: number): Promise<void> {
-    const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
+    const expiresAt = expiresIn ? isoDateIn(new TimeSpan(expiresIn, 's')) : null;
     const { jti: _value, ...withoutValue } = payload;
     const row = {
       type: this.name,
       id: this.rowId(id),
       payload: this.hashed ? withoutValue : payload,
-      grantId: (payload.grantId as string | undefined) ?? null,
-      accountId: (payload.accountId as string | undefined) ?? null,
-      uid: (payload.uid as string | undefined) ?? null,
+      grantId: payload.grantId ?? null,
+      accountId: payload.accountId ?? null,
+      uid: payload.uid ?? null,
       expiresAt,
     };
     // A save over an existing row leaves `consumedAt` alone: what was spent stays spent.
@@ -109,7 +115,7 @@ export class DrizzleAdapter implements Adapter {
     const [row] = await baseDb
       .select()
       .from(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))))
+      .where(this.modelRows(eq(oidcPayloadsTable.id, this.rowId(id))))
       .limit(1);
     if (!row) return undefined;
     return this.hashed ? { ...toPayload(row), jti: id } : toPayload(row);
@@ -119,7 +125,7 @@ export class DrizzleAdapter implements Adapter {
     const [row] = await baseDb
       .select()
       .from(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.uid, uid)))
+      .where(this.modelRows(eq(oidcPayloadsTable.uid, uid)))
       .limit(1);
     return row ? toPayload(row) : undefined;
   }
@@ -140,14 +146,14 @@ export class DrizzleAdapter implements Adapter {
     const [spent] = await baseDb
       .update(oidcPayloadsTable)
       .set({ consumedAt: getIsoDate() })
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, rowId), isNull(oidcPayloadsTable.consumedAt)))
+      .where(this.modelRows(eq(oidcPayloadsTable.id, rowId), isNull(oidcPayloadsTable.consumedAt)))
       .returning({ id: oidcPayloadsTable.id });
     if (spent) return;
 
     const [replayed] = await baseDb
       .select({ grantId: oidcPayloadsTable.grantId })
       .from(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, rowId)))
+      .where(this.modelRows(eq(oidcPayloadsTable.id, rowId)))
       .limit(1);
     if (replayed?.grantId) await revokeGrant({ var: { db: baseDb } }, { grantId: replayed.grantId });
     throw new errors.InvalidGrant(`${this.name} already consumed`);
@@ -156,11 +162,11 @@ export class DrizzleAdapter implements Adapter {
   /** A grant the provider deletes itself (a revoked refresh token, a replayed code) takes its tokens' verdicts along. */
   async destroy(id: string): Promise<void> {
     if (this.name === 'Grant') return revokeGrant({ var: { db: baseDb } }, { grantId: id, withTokens: false });
-    await baseDb.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))));
+    await baseDb.delete(oidcPayloadsTable).where(this.modelRows(eq(oidcPayloadsTable.id, this.rowId(id))));
   }
 
   async revokeByGrantId(grantId: string): Promise<void> {
-    await baseDb.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.grantId, grantId)));
+    await baseDb.delete(oidcPayloadsTable).where(this.modelRows(eq(oidcPayloadsTable.grantId, grantId)));
   }
 }
 

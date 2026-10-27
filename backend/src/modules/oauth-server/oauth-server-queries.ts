@@ -1,5 +1,5 @@
-import { z } from '@hono/zod-openapi';
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { isUuid } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -24,7 +24,7 @@ export async function getConsentTargetNames(
 ): Promise<{ tenant: string | null; organization: string | null }> {
   const [tenant] = await ctx.var.db.select({ name: tenantsTable.name }).from(tenantsTable).where(eq(tenantsTable.id, resource.tenantId)).limit(1);
   // The resource grammar takes any path segment for the organization; only a uuid can name one.
-  if (resource.face !== 'mcp' || !z.uuid().safeParse(resource.organizationId).success) {
+  if (resource.face !== 'mcp' || !isUuid(resource.organizationId)) {
     return { tenant: tenant?.name ?? null, organization: null };
   }
   const [organization] = await ctx.var.db

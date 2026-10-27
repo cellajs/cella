@@ -6,7 +6,7 @@ import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
-import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { mergeRestrictions, normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
@@ -21,20 +21,11 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
 
   const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
 
-  // Deep-merge restrictions so partial updates don't clobber existing values; `existing` already has every field
-  const current = existing.restrictions;
-  const mergedRestrictions = restrictionsUpdate
-    ? {
-        quotas: { ...current.quotas, ...restrictionsUpdate.quotas },
-        rateLimits: { ...current.rateLimits, ...restrictionsUpdate.rateLimits },
-        allowUnregisteredClients: restrictionsUpdate.allowUnregisteredClients ?? current.allowUnregisteredClients,
-      }
-    : undefined;
-
   const statusChanged = otherUpdates.status !== undefined && otherUpdates.status !== existing.status;
   const values = {
     ...otherUpdates,
-    ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
+    // `existing` already has every field, so a partial update stores the full shape.
+    ...(restrictionsUpdate ? { restrictions: mergeRestrictions(existing.restrictions, restrictionsUpdate) } : {}),
     ...(statusChanged ? { statusChangedAt: getIsoDate() } : {}),
     ...updateStamps(ctx.var.user.id),
   };

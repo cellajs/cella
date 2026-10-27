@@ -38,24 +38,18 @@ export const findConnectionEntry = async (ctx: DbContext, { id }: FindConnection
   const [row] = await ctx.var.db
     .select({
       connection: connectionsTable,
-      organizationId: organizationsTable.id,
-      organizationName: organizationsTable.name,
-      organizationSlug: organizationsTable.slug,
-      organizationThumbnailUrl: organizationsTable.thumbnailUrl,
+      organization: {
+        id: organizationsTable.id,
+        name: organizationsTable.name,
+        slug: organizationsTable.slug,
+        thumbnailUrl: organizationsTable.thumbnailUrl,
+      },
     })
     .from(connectionsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, connectionsTable.tenantId))
     .where(eq(connectionsTable.id, id))
     .limit(1);
-  if (!row) return undefined;
-  const { connection, organizationId, organizationName, organizationSlug, organizationThumbnailUrl } = row;
-  return {
-    connection,
-    organization: organizationId
-      ? // Non-null within this branch: the left join returns them on the same row as the id.
-        { id: organizationId, name: organizationName as string, slug: organizationSlug as string, thumbnailUrl: organizationThumbnailUrl }
-      : null,
-  };
+  return row;
 };
 
 interface FindActiveSsoConnectionByClaimOpts {
@@ -81,14 +75,14 @@ export const findActiveSsoConnectionByClaim = async (ctx: DbContext, { issuer, c
   return row;
 };
 
-interface FindConnectionsClaimingOpts {
+export interface FindConnectionsClaimingOpts {
   issuer: string;
   claimValues: string[];
   /** The connection being updated, whose own values do not collide. */
   excludeId?: string;
 }
 
-/** SSO connections of any tenant that already accept one of the values: a domain names one institution, so one connection. */
+/** SSO connections of any tenant that already accept one of the values. */
 export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimValues, excludeId }: FindConnectionsClaimingOpts) => {
   return ctx.var.db
     .select({ id: connectionsTable.id, tenantId: connectionsTable.tenantId, claimValues: connectionsTable.claimValues })
