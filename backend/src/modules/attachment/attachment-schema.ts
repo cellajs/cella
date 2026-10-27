@@ -3,11 +3,11 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
 import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { auditShape, tombstoneShape } from '#/schemas/entity-base';
-import { mockAttachmentResponse } from './attachment-mocks';
 
 /** The single place the storage-key variant set is enumerated. `original` is always present. */
 const attachmentKeysSchema = z.object({
@@ -58,8 +58,7 @@ const attachmentCreateBodySchema = attachmentInsertSchema
   })
   .extend({
     id: validUuidSchema,
-    // The column defaults to {}, making `keys` optional on the generated insert schema; a create
-    // must carry at least the original key.
+    /** The column defaults to {}, making `keys` optional on the generated insert schema; a create must carry at least the original key. */
     keys: attachmentKeysSchema,
     // The home id of a row that lives in a channel; none while attachments live in the organization.
     ...placementFieldsSchema('attachment'),
@@ -101,24 +100,22 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = productListQuerySchema({
   sort: attachmentSortKeys.default('createdAt').optional(),
-  // Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide.
+  /** Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide. */
   channelId: validUuidSchema.optional(),
 });
 
-/** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
+/** Selectable stored-file variants: the cloud variants of the frontend `BlobVariant`. */
 export const attachmentVariantSchema = attachmentKeysSchema.keyof();
 
 /**
- * Callers reference private attachments by `attachmentId` plus `variant`; clients never submit
- * storage keys. The server resolves the owning rows under RLS and permission, and fails closed
- * before signing. Public media is served from the CDN and never reaches this endpoint.
+ * Callers name private attachments by `attachmentId` plus `variant`; clients never submit storage keys. Public media is
+ * served from the CDN and never reaches this endpoint.
  */
-export const presignedUrlsBodySchema = z.object({
+export const attachmentPresignedUrlsBodySchema = z.object({
   items: z
     .array(z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema.default('original') }))
     .min(1)
     .max(50),
 });
 
-/** Missing and denied ids collapse into one `rejectedIds` list, so the two are indistinguishable. */
-export const presignedUrlItemSchema = z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema, url: z.string() });
+export const attachmentPresignedUrlSchema = z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema, url: z.string() });

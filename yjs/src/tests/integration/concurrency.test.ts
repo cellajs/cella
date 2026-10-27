@@ -46,7 +46,7 @@ const seedDescription = paragraph(' could you have a look?');
 let description = seedDescription;
 vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#/modules/yjs/yjs-queries')>()),
-  findEntityDescriptionForShare: vi.fn(async () => ({ description })),
+  findEntityDescription: vi.fn(async () => ({ description })),
 }));
 
 const { runCompaction } = await import('../../sync/relay');

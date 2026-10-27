@@ -7,10 +7,10 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
  * Compacted base state, one row per document: seeded from the entity's description on the first WS connect or HTTP
- * pull, and kept across sessions, so a client's surviving document shares its history. Updates land in `yjs_updates`
- * first and fold into `state` on compaction; a description written outside the relay lands there too, as a
- * server-origin update. The row goes when the document is retired, with its entity's deletion (the yjs module's
- * mutation handlers). The entity's own table owns the description.
+ * pull, and kept across sessions, so a client's surviving document shares its history. Updates are logged in
+ * `yjs_updates` first and fold into `state` on compaction; a description written outside the relay is logged there
+ * too, as a server-origin update. The row goes when the document is retired, with its entity's deletion (the yjs
+ * module's mutation handlers). The entity's own table holds the description.
  */
 export const yjsDocumentsTable = snakeCase.table(
   'yjs_documents',
@@ -22,9 +22,15 @@ export const yjsDocumentsTable = snakeCase.table(
       .references(() => tenantsTable.id),
     organizationId: uuid(),
     state: bytea().notNull(),
-    /** Names one seed of the document. The relay announces it at every handshake; a client whose document is of another generation rebuilds from the server state. */
+    /**
+     * Names one seed of the document. The relay announces it at every handshake; a client whose document is of another
+     * generation rebuilds from the server state.
+     */
     generation: uuid().defaultRandom().notNull(),
-    /** Stamped on seeding, on compaction and every minute while a relay holds a session; the relay's sweep takes an unstamped row with an uncompacted log for one no session holds. */
+    /**
+     * Stamped on seeding, on compaction and every minute while a relay holds a session; the relay's sweep takes an
+     * unstamped row with an uncompacted log for one no session holds.
+     */
     updatedAt: isoTimestamp().defaultNow().notNull(),
   },
   (table) => [

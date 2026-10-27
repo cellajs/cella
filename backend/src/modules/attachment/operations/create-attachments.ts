@@ -21,6 +21,15 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
+
+/**
+ * Creates the attachments of a batch after their upload; the server stamps the bucket, reads each size from storage and
+ * places each row in its home channel. An item an earlier attempt of this create wrote comes back as its stored row; an
+ * item neither created nor the caller's live row is listed in `rejectedIds`.
+ * @returns The rows, the rejected ids, and `created` when this request inserted a row.
+ * @throws AppError 403 `restrict_by_app` past the tenant's attachment quota; 400 `storage_key` for a key outside the
+ * uploader's prefix; 400 `missing_object` for a key that names no stored object.
+ */
 export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttachmentsInput) {
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization } = ctx.var;
@@ -33,7 +42,6 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   );
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
-  // `created` tells the handler whether this request inserted a row.
   if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });

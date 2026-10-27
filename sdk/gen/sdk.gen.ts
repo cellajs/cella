@@ -2466,7 +2466,7 @@ export const publishOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Delete attachments
  *
- * Deletes one or more attachment records by ID. This does not delete the underlying file in storage.
+ * Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.
  *
  * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/DELETE/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
  *
@@ -2600,7 +2600,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Update attachment
  *
- * Updates metadata of an attachment, such as its name or associated entity.
+ * Renames an attachment or replaces its description.
  *
  * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
  *
@@ -2608,7 +2608,6 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
- * @param {enum | boolean=} options.query.fullResponse - `enum | boolean` (optional)
  * @param {object=} options.body.ops - `object` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429

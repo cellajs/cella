@@ -66,8 +66,8 @@ vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/modules/yjs/yjs-queries')>();
   return {
     ...actual,
-    findEntityDescriptionForShare: async (...args: Parameters<typeof actual.findEntityDescriptionForShare>) => {
-      const read = await actual.findEntityDescriptionForShare(...args);
+    findEntityDescription: async (...args: Parameters<typeof actual.findEntityDescription>) => {
+      const read = await actual.findEntityDescription(...args);
       const hold = seedHold;
       seedHold = null;
       if (hold) {

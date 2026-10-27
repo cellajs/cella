@@ -1,8 +1,6 @@
 import type { DbContext } from '#/core/context';
 import type { YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
-import { findEntityDescriptionForShare, findYjsDocument, insertYjsDocument } from '#/modules/yjs/yjs-queries';
-
-// No `#/env` import and no pool: the Yjs relay imports this file, and passes its own transaction as `ctx.var.db`.
+import { findEntityDescription, findYjsDocument, insertYjsDocument } from '#/modules/yjs/yjs-queries';
 
 interface SeedYjsDocumentOpts {
   /** The document, with the organization its row carries. */
@@ -21,7 +19,7 @@ interface SeedYjsDocumentOpts {
  * context, as `findYjsDocument` does.
  */
 export async function seedYjsDocument(ctx: DbContext, { doc, toSeed }: SeedYjsDocumentOpts): Promise<YjsDocumentRead | null> {
-  const entity = await findEntityDescriptionForShare(ctx, { doc });
+  const entity = await findEntityDescription(ctx, { doc });
   if (!entity) return null;
   await insertYjsDocument(ctx, { doc, state: toSeed(entity.description) });
   return findYjsDocument(ctx, { doc });

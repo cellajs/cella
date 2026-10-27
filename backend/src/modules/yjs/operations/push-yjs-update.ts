@@ -4,9 +4,9 @@ import { AppError } from '#/core/error';
 import { tenantContext } from '#/db/tenant-context';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { authorizeYjsEditor } from '#/modules/yjs/operations/authorize-yjs-editor';
-import { queueYjsLogNotice } from '#/modules/yjs/operations/queue-yjs-log-notice';
+import { notifyYjsLogAfterCommit } from '#/modules/yjs/operations/notify-yjs-log-after-commit';
 
-export interface PushYjsUpdateOpts {
+interface PushYjsUpdateOpts {
   entityType: ProductEntityType;
   entityId: string;
   /** The generation the update was made in. */
@@ -16,10 +16,10 @@ export interface PushYjsUpdateOpts {
 
 /**
  * Logs one update of a client that cannot reach the relay, under the caller, whom a materialization may credit, through
- * the log's one way in (`appendYjsUpdate`). The append notifies nothing in its transaction (F9 in
- * DESCRIPTION_SYNC_RELEASE3.md): once it committed, the notice is queued for the relays, which relay the row to live
- * sessions and fold it at compaction, or at their sweep when no session holds the document. The answer follows the
- * commit, so `appended` and `empty` both mean the server holds the update.
+ * the log's one way in (`appendYjsUpdate`). The append notifies nothing in its transaction: once it committed, the
+ * relays are notified, and they relay the row to live sessions and fold it at compaction, or at their sweep when no
+ * session holds the document. The answer follows the commit, so `appended` and `empty` both mean the server holds the
+ * update.
  * @param ctx - A user acting in a resolved organization.
  * @param opts - The document, the generation the update extends, and the update.
  * @returns `appended`, or `empty` for an update that carries nothing.
@@ -37,7 +37,7 @@ export async function pushYjsUpdateOp(
 
   switch (result.status) {
     case 'appended':
-      await queueYjsLogNotice({ tenantId: doc.tenantId, entityType, entityId: doc.entityId, logIds: [result.id] });
+      await notifyYjsLogAfterCommit({ tenantId: doc.tenantId, entityType, entityId: doc.entityId, logIds: [result.id] });
       return { status: 'appended' };
     case 'empty':
       return { status: 'empty' };

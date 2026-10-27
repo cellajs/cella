@@ -1,7 +1,7 @@
 import type { ProductEntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { yjsMaterializeScope } from '#/modules/yjs/helpers/materialize-window';
+import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { findServerYjsUpdate } from '#/modules/yjs/yjs-queries';
 
 interface AssertMaterializeWindowOpts {
@@ -18,7 +18,7 @@ interface AssertMaterializeWindowOpts {
  * the row. A materialized write outside materializeDescriptionOp carries no window and is not checked.
  */
 export async function assertMaterializeWindow(ctx: DbContext, { entityType, rows }: AssertMaterializeWindowOpts): Promise<void> {
-  const window = yjsMaterializeScope.getStore();
+  const window = yjsMaterializeWindow.getStore();
   if (!window) return;
   for (const { id, tenantId } of rows) {
     if (id !== window.entityId || typeof tenantId !== 'string') continue;

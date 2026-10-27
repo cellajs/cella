@@ -49,7 +49,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });
   invalidateCache.user(updatedUser.id);
-  await releaseReplacedImages({ owner: { userId: targetUser.id }, before: targetUser, after: { thumbnailUrl, bannerUrl } });
+  await releaseReplacedImages({ holder: { userId: targetUser.id }, before: targetUser, after: { thumbnailUrl, bannerUrl } });
   log.info('User updated', { userId: updatedUser.id });
 
   // Re-select to include the activity times of the user's actors row

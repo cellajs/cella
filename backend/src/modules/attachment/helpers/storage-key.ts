@@ -4,10 +4,10 @@ import { isLocalStorageKey } from 'shared/utils/storage-key';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 
 /** The storage key of a URL on the public CDN, without the leading slash an upload path may keep; null for any other URL. */
-export const publicKeyOf = (url: string): string | null => {
+export function publicKeyOf(url: string): string | null {
   const base = `${appConfig.s3.publicCDNUrl}/`;
   return url.startsWith(base) ? url.slice(base.length).replace(/^\/+/, '') : null;
-};
+}
 
 /**
  * Whether every variant key lies under the uploader's own prefix, `<organizationId>/<userId>`: the storage path the

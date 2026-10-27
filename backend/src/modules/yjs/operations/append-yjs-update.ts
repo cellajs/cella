@@ -2,9 +2,7 @@ import type { DbContext } from '#/core/context';
 import { type YjsDocScope, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate } from '#/modules/yjs/helpers/yjs-state';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
-import { findYjsDocumentUnderKeyShare, insertYjsUpdate } from '#/modules/yjs/yjs-queries';
-
-// No `#/env` import and no pool: the Yjs relay imports this file, and passes its own transaction as `ctx.var.db`.
+import { findYjsDocumentGeneration, insertYjsUpdate } from '#/modules/yjs/yjs-queries';
 
 /**
  * The outcome of an append. `empty`: the update carries nothing, so nothing was logged and nothing is missing.
@@ -30,13 +28,14 @@ export interface AppendYjsUpdateOpts {
 }
 
 /**
- * The one way into the log, for the relay, outside writes and (release 3) client updates over HTTP. An update larger
- * than yjsMaxUpdateBytes, one Yjs cannot decode and one that carries nothing are answered before any query. Then the
- * document row of `generation` is held under FOR KEY SHARE until the caller's transaction ends, so a retirement, which
- * deletes that row first, waits for the insert and then deletes the log row too. The row is inserted and, unless
- * `notify` is false, announced on yjsLogChannel in the same transaction: relays hear of it at commit, and never of a
- * row that rolled back. The relay passes false: one notifying commit per keystroke would serialize its appends, so it
- * announces them after commit, batched. Runs under the document's tenant context, as `findYjsDocument` does.
+ * The one way into the log, for the relay, outside writes and client updates over HTTP (`pushYjsUpdateOp`). An update
+ * larger than yjsMaxUpdateBytes, one Yjs cannot decode and one that carries nothing are answered before any query.
+ * Then the document row of `generation` is held under FOR KEY SHARE until the caller's transaction ends, so a
+ * retirement, which deletes that row first, waits for the insert and then deletes the log row too. The row is inserted
+ * and, unless `notify` is false, announced on yjsLogChannel in the same transaction: relays hear of it at commit, and
+ * never of a row that rolled back. The relay passes false: one notifying commit per keystroke would serialize its
+ * appends, so it announces them after commit, batched. Runs under the document's tenant context, as `findYjsDocument`
+ * does.
  */
 export async function appendYjsUpdate(
   ctx: DbContext,
@@ -47,7 +46,7 @@ export async function appendYjsUpdate(
   if (kind === 'malformed') return { status: 'malformed' };
   if (kind === 'empty') return { status: 'empty' };
 
-  const document = await findYjsDocumentUnderKeyShare(ctx, { doc });
+  const document = await findYjsDocumentGeneration(ctx, { doc });
   if (!document) return { status: 'no-document' };
   if (document.generation !== generation) return { status: 'stale-generation', generation: document.generation };
 

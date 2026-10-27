@@ -15,6 +15,10 @@ import { seqRangeOf } from '#/utils/seq-range';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
+/**
+ * A page of the attachments the caller may read in the organization; `channelId` narrows it to one channel's subtree.
+ * A range read (`afterSeq`, `untilSeq`) includes deleted rows.
+ */
 export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
   const { q, sort, order, limit, offset, channelId } = input;
@@ -30,8 +34,6 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
 
   // Trusted tenant + organization predicate from guarded context, independent of RLS.
   const filters: SQL[] = [requestScopeWhere(ctx, attachmentsTable, 'attachment')];
-
-  // Restrict to the caller's readable scope unless org-wide (kind 'all').
   if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
 
   // A channel narrows the read to the rows homed at or below it, on top of the read scope and never through it;

@@ -9,7 +9,7 @@ import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { deleteStamps } from '#/db/utils/stamps';
-import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -21,7 +21,12 @@ import { textSearchFilter } from '#/utils/sql';
 // same with RLS bypassed; the RLS transaction wrappers stay the backstop. `findLiveAttachmentKeys` carries none and
 // reads under its caller's tenant transaction.
 
-export const insertAttachments = async (ctx: DbContext, { attachments }: { attachments: (typeof attachmentsTable.$inferInsert)[] }) => {
+interface InsertAttachmentsOpts {
+  attachments: InsertAttachmentModel[];
+}
+
+/** Inserts the rows and returns those it inserted: a row whose id exists is skipped and absent from the result. */
+export const insertAttachments = async (ctx: DbContext, { attachments }: InsertAttachmentsOpts) => {
   const { db } = ctx.var;
   return db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
 };
@@ -31,6 +36,7 @@ interface UpdateAttachmentOpts {
   values: PgUpdateSetSource<typeof attachmentsTable>;
 }
 
+/** Writes `values` to the attachment within the request's tenant and organization; undefined when no such row exists. */
 export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
   const { db } = ctx.var;
   const [updated] = await db
@@ -81,7 +87,7 @@ interface FindAttachmentsPaginatedOpts {
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
-  /** A range read for sync: deleted rows included, in sequence order, total from the page length. */
+  /** A range read for sync (`seqRangeRead`). */
   range?: SeqRange;
 }
 
@@ -96,8 +102,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const rangeRead = seqRangeRead(attachmentsTable, range);
   const filters = [...opts.filters, ...rangeRead.where];
 
-  // Unpublished drafts stay out of every read, range reads included. A no-op for attachments, which
-  // carry no publishedAt; kept as the pattern app-specific entity queries copy.
+  // A no-op for attachments, which carry no `publishedAt`; kept as the pattern app entity queries copy.
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
@@ -135,8 +140,6 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     .limit(limit)
     .offset(offset);
 
-  // Range reads discard `total`; an org-wide read with no search maps to the pre-computed
-  // `e:c:attachment` channel counter; anything narrower needs COUNT(*).
   const totalSource: ListTotalSource = range
     ? { kind: 'pageLength' }
     : orgWide && !search

@@ -7,6 +7,7 @@ export {
   entityTypeSchema,
   entityWithTypeQuerySchema,
   excludeArchivedQuerySchema,
+  /** @public */
   fullResponseQuerySchema,
   type IncludeOption,
   idInTenantOrgParamSchema,
