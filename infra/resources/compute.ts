@@ -45,7 +45,7 @@ const generationKeys = readGenerationKeysFile();
 const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey) : pulumi.secret('');
 const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : pulumi.secret('');
 
-// Fully closed inbound: the LB reaches VMs over the private network and break-glass access is Scaleway's serial console, never SSH on the public internet.
+// Fully closed inbound: the LB reaches VMs over the private network, and no machine takes a login; the serial console shows its output.
 
 const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   name: naming.resource('compute-sg'),

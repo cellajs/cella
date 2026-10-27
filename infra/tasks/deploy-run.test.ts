@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RunRecord } from '../lib/deploy/run-record';
 import { ExitCodeError } from '../lib/utils/errors';
 import type { AllowedKey } from './deploy-env';
-import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
+import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, runDeploy } from './deploy-run';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -51,7 +51,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
   };
 }
 
-function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean } = {}) {
+function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean; leaseLost?: boolean } = {}) {
   const ops: string[] = [];
   const rolloutArgs: string[][] = [];
   const grantArgs: string[][] = [];
@@ -73,6 +73,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
         release: async () => {
           ops.push('lease:release');
         },
+        lost: opts.leaseLost === true,
       };
     },
     exec: async (cmd, args, execOpts) => {
@@ -118,9 +119,7 @@ describe('parseDeployArgs', () => {
       mode: 'staging',
       sha: 'abc',
       run: undefined,
-      deferReap: false,
     });
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--defer-reap']).deferReap).toBe(true);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
   });
@@ -164,6 +163,7 @@ describe('runDeploy sequencing', () => {
       // Leftover pointers are reconciled before anything plans the stack.
       'task:sync-rollout-config',
       'task:preflight-privileged',
+      'task:assert-deploy-policy',
       'task:build-release',
       'task:stage-generation-keys',
       'update:production',
@@ -171,6 +171,8 @@ describe('runDeploy sequencing', () => {
       'rollout',
       'publish-entry',
       'task:smoke',
+      // The displaced generations are reaped last, once smoke passed, under the same lock.
+      'update:production',
       'lease:release',
     ];
     let cursor = -1;
@@ -232,7 +234,7 @@ describe('runDeploy sequencing', () => {
   it('names the release’s boot accounts in the record, releases the lock, and skips publish when the rollout fails', async () => {
     const { fx, ops, records } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(records[0]?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
+    expect(records.at(-1)?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
     expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
@@ -273,43 +275,18 @@ describe('runDeploy sequencing', () => {
     expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-boot']);
   });
 
-  it('passes --skip-reap to the rollout only with deferReap', async () => {
-    const withDefer = makeFake();
-    await runDeploy({ ...baseOpts, deferReap: true }, withDefer.fx, fakeDeployEnv);
-    expect(withDefer.rolloutArgs[0]).toContain('--skip-reap');
-
-    const without = makeFake();
-    await runDeploy(baseOpts, without.fx, fakeDeployEnv);
-    expect(without.rolloutArgs[0]).not.toContain('--skip-reap');
-  });
-});
-
-describe('parseReapArgs', () => {
-  it('requires mode and sha', () => {
-    expect(parseReapArgs(['--mode', 'production', '--sha', 'abc123'])).toEqual({ mode: 'production', sha: 'abc123' });
-    expect(() => parseReapArgs(['--mode', 'production'])).toThrow(/Usage/);
-    expect(() => parseReapArgs(['--sha', 'abc123'])).toThrow(/Usage/);
-  });
-});
-
-describe('runReap sequencing', () => {
-  it('logs in, locks, updates the stack, then releases the lock', async () => {
-    const { fx, ops } = makeFake();
-    await runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-    expect(ops).toEqual([
-      'exec:pulumi:login',
-      'exec:pulumi:stack',
-      'lease:acquire:reap',
-      'task:install-pulumi-providers',
-      'update:production',
-      'lease:release',
-    ]);
+  it('must not change the stack once another run took its lock (C7): the next step stops the run', async () => {
+    const { fx, ops } = makeFake({ leaseLost: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/taken by another run/);
+    expect(ops).not.toContain('update:production');
+    expect(ops).not.toContain('rollout');
   });
 
-  it('releases the lock when the update fails', async () => {
-    const { fx, ops } = makeFake({ updateFails: true });
-    await expect(runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)).rejects.toThrow(/stack update failed/);
-    expect(ops.at(-1)).toBe('lease:release');
+  it('keeps the displaced machines until smoke passed: the rollout skips the reap, the deploy reaps last', async () => {
+    const { fx, ops, rolloutArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(rolloutArgs[0]).toContain('--skip-reap');
+    expect(ops.lastIndexOf('update:production')).toBeGreaterThan(ops.indexOf('task:smoke'));
   });
 });
 
@@ -325,20 +302,22 @@ describe('the run record', () => {
   it('keeps every step with its duration, and ends deployed, in the diagnostics bucket', async () => {
     const { fx, records, ops } = makeFake();
     await runDeploy({ ...baseOpts, run: 'run-1' }, fx, fakeDeployEnv);
-    const [written] = records;
+    const written = records.at(-1);
     expect(written?.bucket).toBe('cella-boot-diag');
     expect(written?.record).toMatchObject({ run: 'run-1', environment: 'production', target: 'abc123', outcome: 'deployed' });
     expect(written?.record.failedStep).toBeUndefined();
     expect(written?.record.steps.map((step) => step.title)).toContain('Waved rollout');
     expect(written?.log).toContain('[deploy] Smoke tests: ok');
     expect(ops.at(-1)).toBe('record');
+    // Written as the run goes too: a run killed at the job's limit leaves the steps it got through.
+    expect(records.some(({ record }) => record.outcome === 'running' && record.steps.some((step) => step.title === 'Waved rollout'))).toBe(true);
   });
 
   it('is written when the deploy fails too, naming the step and the error', async () => {
     const { fx, records } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(records[0]?.record).toMatchObject({ outcome: 'failed', failedStep: 'Waved rollout', error: 'cutover failed' });
-    expect(records[0]?.log).toContain('[deploy] Waved rollout: failed');
+    expect(records.at(-1)?.record).toMatchObject({ outcome: 'failed', failedStep: 'Waved rollout', error: 'cutover failed' });
+    expect(records.at(-1)?.log).toContain('[deploy] Waved rollout: failed');
   });
 
   it('ends blocked, not failed, when the preflight found an owed privileged change', async () => {
@@ -349,7 +328,7 @@ describe('the run record', () => {
       return task(name, argv);
     };
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/apply is owed/);
-    expect(records[0]?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Preflight privileged changes' });
+    expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Preflight privileged changes' });
   });
 
   it('must not fail a deploy whose record cannot be written', async () => {

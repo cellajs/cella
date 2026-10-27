@@ -58,12 +58,17 @@ describe('storage module', () => {
     }
   });
 
-  it('lets the deploy key at objects only: no bucket configuration, no policy, no version deleted', () => {
-    type Statement = { Sid: string; Action: string[] };
+  it("lets the deploy key at objects only, and at no user's file: no bucket configuration, no policy, no version deleted", () => {
+    type Statement = { Sid: string; Action: string[]; Resource: string[] };
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const deploy = Statement.find((statement) => statement.Sid === 'DeployAccess');
+      if (policy.name === 'private-uploads-policy') {
+        expect(deploy, policy.name).toBeUndefined();
+        continue;
+      }
       expect(deploy, policy.name).toBeDefined();
+      if (policy.name === 'public-uploads-policy') expect(deploy?.Resource.at(-1), policy.name).toMatch(/\/geoip\/\*$/);
       for (const action of deploy?.Action ?? []) {
         expect(action, policy.name).toMatch(
           /^s3:(ListBucket|ListBucketMultipartUploads|ListMultipartUploadParts|GetObject|PutObject|DeleteObject|AbortMultipartUpload)$/,

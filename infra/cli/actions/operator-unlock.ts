@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
 import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scaleway/iam-client';
@@ -8,7 +10,8 @@ import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
+import { infraDir } from '../../lib/utils/paths';
+import { ensureCustodiedSalt, readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
   forgetOperatorKey,
@@ -36,8 +39,8 @@ export function readOperatorLock(rules: readonly Pick<GrantedRule, 'condition'>[
 }
 
 /**
- * Whether the stack has an operator application and which addresses its policy names, read with the admin application key (IAM read). Kept
- * for the run: an action that changes it calls `forgetOperatorLock`. Without an admin key on this machine the answer is `unknown`.
+ * Whether the stack has an operator application and which addresses its policy names, read with the observer key (IAM read). Kept for
+ * the run: an action that changes it calls `forgetOperatorLock`. Without an observer key on this machine the answer is `unknown`.
  */
 export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
   const known = rememberedOperatorLock();
@@ -244,9 +247,13 @@ export async function acquireIdentityKey(stack: StackRef, why: string): Promise<
 /**
  * Let the passphrase come from Secret Manager for this run. Reading it unlocks the session, so nobody types the passphrase; a stack without
  * an operator application has nothing to unlock with, and the passphrase is typed as before. A passphrase typed while the session is
- * unlocked is stored, which is how an existing stack gets its copy.
+ * unlocked is stored, which is how an existing stack gets its copy; the stack file's salt goes beside it, from this checkout when it verifies.
  */
 export function installPassphraseCustody(stack: StackRef): void {
+  const stackYaml = () => {
+    const file = join(infraDir, `Pulumi.${stack.environment}.yaml`);
+    return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+  };
   const custody = {
     secretKey: '',
     region: stack.appConfig.s3.region,
@@ -259,15 +266,21 @@ export function installPassphraseCustody(stack: StackRef): void {
       if ((await operatorLock(stack)).state === 'absent') return undefined;
       const unlocked = await unlock(stack, { optional: 'Enter to type the Pulumi passphrase' });
       if (!unlocked) return undefined;
-      return readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
+      const passphrase = await readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
         console.warn(`${warningMark} Could not read the passphrase from Secret Manager (${errorMessage(error)}); type it once.`);
         return undefined;
       });
+      if (passphrase) {
+        await ensureCustodiedSalt({ ...custody, secretKey: unlocked.secret, passphrase, stackYaml: stackYaml() }).catch((error) =>
+          console.warn(`${warningMark} Could not store the stack's salt beside the passphrase (${errorMessage(error)}).`),
+        );
+      }
+      return passphrase;
     },
     async store(passphrase) {
       const key = rememberedOperatorKey();
       if (!key) return false;
-      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase }).then(
+      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase, stackYaml: stackYaml() }).then(
         () => true,
         (error) => {
           console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked again next time.`);

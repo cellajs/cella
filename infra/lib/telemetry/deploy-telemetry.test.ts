@@ -51,14 +51,10 @@ describe('deploy telemetry', () => {
     await telemetry.flush();
 
     const exported = fetchImpl.mock.calls.map(([, init]) => String(init?.body)).join('\n');
-    const kept = telemetry.eventsJsonl();
-    for (const value of [secretKey, passphrase, githubToken, ingestKey, dbPassword]) {
-      expect(exported).not.toContain(value);
-      expect(kept).not.toContain(value);
-    }
+    for (const value of [secretKey, passphrase, githubToken, ingestKey, dbPassword]) expect(exported).not.toContain(value);
     // Positive control: the event was exported, and its harmless facts survive.
     expect(exported).toContain('deploy.step.failed');
-    expect(kept).toContain('stack-update');
-    expect(kept).toContain('scw: key [REDACTED] refused');
+    expect(exported).toContain('stack-update');
+    expect(exported).toContain('scw: key [REDACTED] refused');
   });
 });

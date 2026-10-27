@@ -1,6 +1,6 @@
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 
-/** What the CLI learned about the operator application through the admin application key. */
+/** What the CLI learned about the operator application through the observer key. */
 export interface OperatorLock {
   /** `absent`: the stack has no operator application yet. `unknown`: this machine holds no key that can tell. */
   state: 'present' | 'absent' | 'unknown';
@@ -70,7 +70,7 @@ export function forgetOperatorKey(): void {
   session.operatorKey = undefined;
 }
 
-/** Keep what the admin application key showed about the operator application. */
+/** Keep what the observer key showed about the operator application. */
 export function rememberOperatorLock(lock: OperatorLock): void {
   session.operatorLock = lock;
 }

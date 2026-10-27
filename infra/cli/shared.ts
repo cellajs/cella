@@ -178,6 +178,8 @@ export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, a
 /** Handle to a held stack lease; `release` logs failures, never throws, and does nothing on a second call. */
 export interface StackLockHandle {
   release: () => Promise<void>;
+  /** True once a renewal found the lock taken by another run: nothing may change after that. */
+  readonly lost: boolean;
 }
 
 /** The leases this process holds, so an action that ends without releasing its own cannot leave the stack locked under the menu. */
@@ -244,6 +246,9 @@ export async function acquireStackLockOrExit(opts: {
       if (!heldLocks.delete(handle)) return;
       uninstall();
       await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+    },
+    get lost() {
+      return result.lease.lost;
     },
   };
   heldLocks.add(handle);

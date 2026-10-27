@@ -28,11 +28,10 @@ describe('isPrivilegedUrn', () => {
     expect(isPrivilegedUrn(urn('scaleway:network/privateNetwork:PrivateNetwork', 'main-pn'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:object/bucketPolicy:BucketPolicy', 'state-bucket-policy'))).toBe(true);
   });
-  it('leaves the machines and secret versions to the deploy', () => {
+  it("leaves the machines to the deploy, and no app secret: a secret version is the apply's", () => {
     expect(isPrivilegedUrn(urn('scaleway:instance/server:Server', 'vm-backend-e67a0456e8'))).toBe(false);
     expect(isPrivilegedUrn(urn('scaleway:instance/privateNic:PrivateNic', 'pnic-backend-e67a0456e8'))).toBe(false);
-
-    expect(isPrivilegedUrn(urn('scaleway:secrets/version:Version', 'x'))).toBe(false);
+    expect(isPrivilegedUrn(urn('scaleway:secrets/version:Version', 'x'))).toBe(true);
   });
   it('splits a URN into type and name', () => {
     expect(splitUrn(urn('scaleway:iam/policy:Policy', 'vm-backend-policy'))).toEqual({

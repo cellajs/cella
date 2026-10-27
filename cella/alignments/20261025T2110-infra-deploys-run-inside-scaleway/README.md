@@ -9,14 +9,14 @@ grep: valueSource: 'pulumi', INFRA_NON_INTERACTIVE, INFRA_DEPLOY_NOW, PULUMI_CON
 
 A runner machine in the organization starts each deploy as a run of the environment's main job; the GitHub deploy
 workflows (`deploy.yml`, `deploy-pipeline.yml`, `geoip-refresh.yml`, `infra-state-prune.yml`) and the GitHub
-Environments' Scaleway secrets go. Each environment's operator sets up its identities, operator key and runner once,
+Environments' Scaleway secrets go. The app's operator sets up its identities, operator key and runner once,
 by hand, at the dedicated address; `valueSource: 'pulumi'` in an app's `runtime-secrets.config.ts` becomes `'engine'`.
 
 ## What & why
 
 Every key now does one kind of work: Owner moments write IAM, an address-locked operator key makes privileged changes, a
-deploy key reachable only from the main job deploys, and the runner key only starts runs. The Pulumi state holds no secret
-value, and every run leaves a record that `pnpm infra runs` reads. `pnpm infra` has no unattended mode and reads no key
+deploy key reachable only from the main job deploys, and the runner key starts runs. The Pulumi state holds no runtime
+secret, the boot key aside, and every run leaves a record that `pnpm infra runs` reads. `pnpm infra` has no unattended mode and reads no key
 or passphrase from disk. Design: `cella/DEPLOYMENT.md`.
 
 ## Blast radius

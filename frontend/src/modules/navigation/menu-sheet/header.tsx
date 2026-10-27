@@ -1,16 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { BellIcon, UserIcon } from 'lucide-react';
-import { type ReactNode, type RefObject, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { Logo } from '~/modules/common/logo';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
-import { navSheetOptions } from '~/modules/navigation/nav-sheet';
-import { navigationStore } from '~/modules/navigation/navigation-store';
-import type { NavItemId } from '~/modules/navigation/types';
+import { openNavSheet } from '~/modules/navigation/nav-sheet';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
 import { Button } from '~/modules/ui/button';
@@ -20,12 +17,6 @@ import { cn } from '~/utils/cn';
 const { navBar, menu } = appConfig.navigation;
 // A desktop nav bar of organization buttons leads with the app icon going home, so the logo here would repeat it
 const hasHomeOnNavBar = navBar && menu === 'perOrganization';
-
-/** Stacks a nav sheet over the menu sheet, for layouts with no nav bar to open it from: no bar at all, or a floating-nav page. */
-function openStackedNavSheet(id: NavItemId, content: ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
-  navigationStore.getState().setNavSheetOpen(id);
-  sheeter.getState().create(content, { ...navSheetOptions(id, triggerRef), id: `${id}-sheet`, side: 'left', disablePointerDismissal: true });
-}
 
 /** The logo home link, wherever no nav bar has a home button, and the notifications and account buttons where no nav bar holds them. */
 export function MenuSheetHeader() {
@@ -53,7 +44,7 @@ export function MenuSheetHeader() {
               size="icon"
               variant="ghost"
               aria-label={t('c:notifications')}
-              onClick={() => openStackedNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef)}
+              onClick={() => openNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef, { stacked: true })}
               className="relative"
             >
               <BellIcon className="size-5" strokeWidth={navIconStrokeWidth} />
@@ -64,7 +55,7 @@ export function MenuSheetHeader() {
               size="icon"
               variant="ghost"
               aria-label={t('c:account')}
-              onClick={() => openStackedNavSheet('account', <AccountSheet />, accountButtonRef)}
+              onClick={() => openNavSheet('account', <AccountSheet />, accountButtonRef, { stacked: true })}
               className="group"
             >
               <AccountNavIcon icon={UserIcon} />

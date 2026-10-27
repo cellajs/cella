@@ -6,7 +6,7 @@ const argv = process.argv.slice(2);
 const modeIndex = argv.indexOf('--mode');
 const mode = modeIndex >= 0 ? argv[modeIndex + 1] : undefined;
 if (!mode) {
-  console.error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--defer-reap]');
+  console.error('Usage: deploy.ts --mode <staging|production> --sha <git-sha>');
   process.exit(1);
 }
 process.env.APP_MODE = mode;

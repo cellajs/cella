@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { appConfig } from 'shared';
 import { navSheetId, type SheetData, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -24,20 +24,39 @@ const navSheetIdentity = (id: NavItemId, organization?: SheetOrganization) => ({
   contentKey: id,
 });
 
-/** Options every nav sheet opens with; the caller adds the sheet id and side. */
-export function navSheetOptions(
+interface OpenNavSheetOptions {
+  /** The organization the menu sheet shows alone. */
+  organization?: SheetOrganization;
+  side?: 'left' | 'right';
+  /** Opens over the menu sheet, for layouts with no nav bar to open it from: no bar at all, or a floating-nav page. */
+  stacked?: boolean;
+}
+
+/** Opens the sheet of nav item `id` with `content` and records that item as the one with its sheet open. */
+export function openNavSheet(
   id: NavItemId,
+  content: ReactNode,
   triggerRef: RefObject<HTMLButtonElement | null>,
-  organization?: SheetOrganization,
-): Omit<SheetData, 'id' | 'side'> {
-  return {
+  { organization, side = 'left', stacked = false }: OpenNavSheetOptions = {},
+) {
+  navigationStore.getState().setNavSheetOpen(id, organization?.id);
+
+  const data: Omit<SheetData, 'id'> = {
     triggerRef,
     ...navSheetIdentity(id, organization),
+    side,
     headerClassName: 'hidden',
     modal: 'trap-focus',
     className: navSheetClassName,
     onClose: () => navigationStore.getState().setNavSheetOpen(null),
   };
+
+  if (stacked) {
+    sheeter.getState().create(content, { ...data, id: `${id}-sheet`, disablePointerDismissal: true });
+    return;
+  }
+  // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
+  sheeter.getState().replace(content, { ...data, id: navSheetId, disablePointerDismissal: false, autoScrollOnDrag: 'vertical' });
 }
 
 /** Shows `organization` alone in the open menu sheet. */

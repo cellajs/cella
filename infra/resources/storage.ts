@@ -40,11 +40,12 @@ const humanAccess = (bucketName: pulumi.Input<string>) =>
   );
 
 /**
- * The deploy key's access on every bucket policy: objects only (the frontend's files, GeoIP data, boot diagnostics). A bucket's configuration
- * and its policy are the apply's, a privileged change the deploy stops on, and no version is deleted, so a leaked deploy key can delete
- * objects but not their history. Policies are deny-by-default, so without this statement the deploy key cannot touch the bucket.
+ * The deploy key's access on a bucket policy: objects only, under `prefix` when given (the frontend's files, GeoIP data, boot diagnostics). A
+ * bucket's configuration and its policy are the apply's, a privileged change the deploy stops on, and no version is deleted, so on a
+ * versioned bucket a leaked deploy key can delete objects but not their history. Policies are deny-by-default, so a bucket without this
+ * statement, the private uploads bucket, is out of the deploy key's reach.
  */
-const deployAccess = (bucketName: pulumi.Input<string>) => ({
+const deployAccess = (bucketName: pulumi.Input<string>, prefix = '') => ({
   Sid: 'DeployAccess',
   Effect: 'Allow',
   Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
@@ -57,10 +58,10 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
     's3:DeleteObject',
     's3:AbortMultipartUpload',
   ],
-  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+  Resource: [bucketName, pulumi.interpolate`${bucketName}/${prefix}*`],
 });
 
-/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its per-deploy service key. An absent app drops the statement. */
+/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its standing service key. An absent app drops the statement. */
 const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
   backendServiceApplicationId.apply((backendId) =>
     backendId
@@ -186,7 +187,8 @@ if (publicUploadsBucket) {
           Action: ['s3:GetObject'],
           Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
         },
-        deployAccess(publicUploadsBucket.name),
+        // The deploy writes GeoIP data and nothing else here: the users' files are the backend's.
+        deployAccess(publicUploadsBucket.name, 'geoip/'),
         ...admin,
         ...signers,
       ]),
@@ -218,7 +220,7 @@ const privateUploadsBucket = needs.uploadBuckets
     )
   : undefined;
 
-/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer, CI without version deletes, and the admin app; every other key, including a VM boot key, is denied. */
+/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer and the people's applications; every other key, the deploy key and a machine's boot key included, is denied. */
 if (privateUploadsBucket) {
   new scaleway.object.BucketPolicy('private-uploads-policy', {
     bucket: privateUploadsBucket.name,
@@ -227,7 +229,7 @@ if (privateUploadsBucket) {
       Version: '2023-04-17',
       Statement: pulumi
         .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
-        .apply(([admin, signers]) => [deployAccess(privateUploadsBucket.name), ...admin, ...signers]),
+        .apply(([admin, signers]) => [...admin, ...signers]),
     }),
   });
 }
@@ -239,10 +241,17 @@ const bootDiagBucket = new scaleway.object.Bucket(
     region,
     tags: tagsAsMap,
     forceDestroy: !isProduction,
-    versioning: { enabled: false },
-    // Run records keep as long as Scaleway keeps the job runs they describe (D25).
+    // Versioned, so the deploy key, which may delete objects, cannot erase a run record or a boot account: a deleted one stays for 60 days.
+    versioning: { enabled: true },
+    // Records and boot accounts keep as long as Scaleway keeps the job runs they describe (D25).
     lifecycleRules: [
-      { id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' },
+      {
+        id: 'cleanup-old-versions',
+        enabled: true,
+        noncurrentVersionExpiration: { noncurrentDays: 60 },
+        expiration: { expiredObjectDeleteMarker: true },
+      },
+      { id: 'expire-boot-diag', enabled: true, expiration: { days: 60 }, prefix: 'boot-diag/' },
       { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: 'runs/' },
     ],
   },

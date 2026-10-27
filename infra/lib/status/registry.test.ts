@@ -3,9 +3,9 @@ import type { ComponentsFact } from './providers/components';
 import type { DbEndpointFacts } from './providers/database';
 import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
+import type { RunsFacts } from './providers/runs';
 import type { IdentityFacts } from './providers/stack';
 import type { StoreValidationFact } from './providers/stores';
-import type { ToolingFacts } from './providers/tooling';
 import { assembleReport, statusProviders } from './registry';
 import type { Check, ProbeSession, ScalewayFacts } from './types';
 
@@ -16,14 +16,14 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
  */
 
 interface Facts {
-  tooling?: ToolingFacts;
   identity?: IdentityFacts;
+  runs?: RunsFacts;
   inventory?: InventoryFacts;
   state?: ScalewayFacts;
   secrets?: string[];
   live?: LiveServiceFact[];
   components?: ComponentsFact;
-  dns?: { host: string; resolvedIps?: string[] };
+  dns?: { host: string; resolvedIps?: string[]; loadBalancerIps?: string[] };
   stores?: StoreValidationFact[];
   db?: DbEndpointFacts;
 }
@@ -31,8 +31,8 @@ interface Facts {
 /** A fully-healthy bootstrapped staging stack; override per test. */
 function base(overrides: Partial<Facts> = {}): Facts {
   return {
-    tooling: { pulumi: true },
     identity: { observerAppId: 'app-1', keyAges: [] },
+    runs: { last: { id: 'r1', state: 'succeeded', environment_variables: { TARGET_SHA: 'abc123def456' } } },
     inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {} },
     state: {
       stateBucketExists: true,
@@ -72,8 +72,8 @@ function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
 function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
   const s = session(sessionOverrides);
   const factsByDomain: Record<string, unknown> = {
-    tooling: facts.tooling,
     config: {},
+    runs: facts.runs,
     identity: facts.identity,
     inventory: facts.inventory,
     state: facts.state,
@@ -94,7 +94,7 @@ describe('report envelope (public contract)', () => {
   it('has the documented top-level shape and schema version', () => {
     const report = reportFor(base());
     expect(Object.keys(report).sort()).toEqual(['checks', 'mode', 'nextAction', 'schemaVersion', 'stackState', 'summary']);
-    expect(report.schemaVersion).toBe(1);
+    expect(report.schemaVersion).toBe(2);
     expect(report.mode).toBe('staging');
     expect(report.stackState).toBe('bootstrapped');
   });
@@ -124,8 +124,8 @@ describe('report envelope (public contract)', () => {
 
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
-    const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), { scalewayKeyAvailable: false });
-    for (const id of ['identity.observerApp', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
+    const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined, runs: undefined }), { scalewayKeyAvailable: false });
+    for (const id of ['runs.last', 'identity.keyAges', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
       expect(check?.credential).toBe('scaleway');
@@ -135,36 +135,32 @@ describe('key degradation', () => {
   });
 });
 
-describe('admin app identity', () => {
-  it('reports the id resolved from IAM by name', () => {
-    expect(find(reportFor(base()).checks, 'identity.observerApp')?.status).toBe('ok');
+describe('DNS', () => {
+  it('must not call a host fine that resolves elsewhere than the load balancer: a changed record sends the users away', () => {
+    const moved = find(
+      reportFor(base({ dns: { host: 'app.example.com', resolvedIps: ['6.6.6.6'], loadBalancerIps: ['1.2.3.4'] } })).checks,
+      'dns.zone',
+    );
+    expect(moved?.status).toBe('error');
+    expect(moved?.detail).toContain('6.6.6.6');
   });
+});
 
-  it('warns and points at setup when the application does not exist', () => {
-    const check = find(reportFor(base({ identity: { observerAppId: null, keyAges: [] } })).checks, 'identity.observerApp');
-    expect(check?.status).toBe('warn');
-    expect(check?.detail).toContain('not found');
-    expect(check?.nextAction?.command).toBe('pnpm infra');
-  });
-
-  it('is unknown, not a warning, when the IAM probe could not run', () => {
-    const check = find(reportFor(base({ identity: undefined })).checks, 'identity.observerApp');
-    expect(check?.status).toBe('unknown');
-  });
-
-  it('is absent on a stack that has not been bootstrapped', () => {
-    const report = reportFor(base({ identity: undefined }), { stackState: 'fresh' });
-    expect(find(report.checks, 'identity.observerApp')).toBeUndefined();
+describe('the last deploy', () => {
+  it('points a blocked run at the apply, and a failed one at Show runs', () => {
+    const blocked = find(
+      reportFor(base({ runs: { last: { id: 'r2', state: 'failed', exit_code: 2, environment_variables: { TARGET_SHA: 'abc' } } } })).checks,
+      'runs.last',
+    );
+    expect(blocked?.status).toBe('warn');
+    expect(blocked?.nextAction?.command).toContain('apply');
+    const failed = find(reportFor(base({ runs: { last: { id: 'r3', state: 'failed', exit_code: 1 } } })).checks, 'runs.last');
+    expect(failed?.status).toBe('error');
+    expect(failed?.nextAction?.command).toContain('runs');
   });
 });
 
 describe('nextAction priority (lifecycle order)', () => {
-  it('missing pulumi outranks everything', () => {
-    const report = reportFor(base({ tooling: { pulumi: false } }), { stackState: 'fresh', projectId: undefined });
-    expect(find(report.checks, 'tooling.pulumi')?.status).toBe('error');
-    expect(report.nextAction?.command).toBe('brew install pulumi/tap/pulumi');
-  });
-
   it('a fresh stack points at setup', () => {
     const report = reportFor(base({ state: { stateBucketExists: false }, secrets: undefined, live: undefined }), {
       stackState: 'fresh',
@@ -276,7 +272,7 @@ describe('primary components check (same verdict rule as the smoke step)', () =>
     const check = find(report.checks, 'live.components');
     expect(check?.status).toBe('error');
     expect(check?.detail).toBe('cdc=unhealthy(rls_bypass_missing)');
-    expect(check?.nextAction?.command).toContain('diag');
+    expect(check?.nextAction?.command).toContain('runs');
   });
 
   it('an unreachable aggregate is missing', () => {

@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
@@ -58,6 +58,13 @@ export interface OperatorApplyResult {
   completed: boolean;
   /** Set only with `verifyAfter`: false when the live grants or privileges still differ from the program after a completed `up`. */
   verified?: boolean;
+}
+
+/** One infra task under the lock, as a child that leaves the event loop free, so the stack lease keeps renewing while it runs. */
+function infraTask(env: NodeJS.ProcessEnv, args: string[]): Promise<{ status: number }> {
+  return new Promise((done) => {
+    spawn('pnpm', ['--filter', 'infra', ...args], { cwd: infraDir, env, stdio: 'inherit' }).once('close', (code) => done({ status: code ?? 1 }));
+  });
 }
 
 /**
@@ -124,7 +131,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
       // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
       console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));
-      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-retired-resources', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      const forget = await infraTask(env, ['forget-retired-resources', '--stack', stack]);
       if (forget.status !== 0) {
         await releaseAll();
         console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing applied.`);
@@ -133,7 +140,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
       // An errored certificate leaves the state and Scaleway here, so the `up` makes it anew behind its DNS gate; certificates are the apply's (D15).
       console.info(pc.dim('\n→ Clearing errored load balancer certificates (repair-certs)…'));
-      const repair = spawnSync('pnpm', ['--filter', 'infra', 'repair-certs', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      const repair = await infraTask(env, ['repair-certs', '--stack', stack]);
       if (repair.status !== 0) {
         await releaseAll();
         console.error(`${warningMark} repair-certs failed (exit ${repair.status}). Nothing applied.`);
@@ -142,7 +149,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
       // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
       console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-      const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      const sync = await infraTask(env, ['sync-rollout-config', '--stack', stack]);
       if (sync.status !== 0) {
         await releaseAll();
         console.error(`${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`);
@@ -178,6 +185,11 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         debugLogPath = resolve(dir, `${opts.operation}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
       }
 
+      if (stackLock.lost) {
+        await releaseAll();
+        console.error(`${warningMark} This run lost the stack lock to another one; nothing applied. Run "${opts.operation}" again.`);
+        endAction(1);
+      }
       while (true) {
         const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
           configFile,
@@ -216,7 +228,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       await copySharedSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
         (error) =>
           console.warn(
-            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next deploy tries again.`,
+            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next apply tries again.`,
           ),
       );
       // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any

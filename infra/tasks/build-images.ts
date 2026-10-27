@@ -2,7 +2,7 @@ import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { parseServiceRows } from '../lib/utils/service-rows';
 
 // The bake definition the builder machine runs: targets derive from the deploy's
-// build matrix; the builder shares no cache between two builds.
+// build matrix; two builds share only the layer cache of their epoch.
 
 export interface BuildImageRow {
   service: string;
@@ -18,7 +18,10 @@ export function parseBuildRows(raw: string): BuildImageRow[] {
 export interface BakeOptions {
   registry: string;
   namespace: string;
-  tag: string;
+  /** The release sha: every image's tag and its `RELEASE_SHA`. */
+  releaseSha: string;
+  /** The build epoch: a second tag on every image, which says it was built under the current builder key. */
+  epoch: string;
   /** The root package.json `engines.node`: the Node every image's `FROM` uses. */
   nodeVersion: string;
   /** Path of the build context relative to the bake process cwd (the repo root). */
@@ -33,7 +36,8 @@ export interface BakeOptions {
  */
 export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { group: unknown; target: Record<string, unknown> } {
   const context = opts.context ?? '.';
-  const image = (service: string) => `${opts.registry}/${opts.namespace}/${service}:${opts.tag}`;
+  const image = (service: string) => `${opts.registry}/${opts.namespace}/${service}:${opts.releaseSha}`;
+  const tags = (service: string) => [image(service), `${image(service)}-e${opts.epoch}`];
   const cache = (service: string) =>
     opts.cacheTag
       ? {
@@ -47,15 +51,15 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
       context,
       dockerfile: row.dockerfile,
       ...(row.target ? { target: row.target } : {}),
-      tags: [image(row.service)],
-      args: { RELEASE_SHA: opts.tag, NODE_VERSION: opts.nodeVersion },
+      tags: tags(row.service),
+      args: { RELEASE_SHA: opts.releaseSha, NODE_VERSION: opts.nodeVersion },
       ...cache(row.service),
     };
   }
   target['boot-runner'] = {
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
-    tags: [image(BOOT_IMAGE_NAME)],
+    tags: tags(BOOT_IMAGE_NAME),
     args: { NODE_VERSION: opts.nodeVersion },
     ...cache(BOOT_IMAGE_NAME),
   };

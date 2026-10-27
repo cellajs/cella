@@ -19,13 +19,6 @@ export interface ServiceRollout {
   seq: number;
 }
 
-export interface BootstrapState {
-  /** ISO timestamp stamped once the CI deploy key is minted. */
-  completedAt?: string;
-  /** ISO timestamp set while a fresh provision defers compute; cleared after. */
-  computeDeferredSince?: string;
-}
-
 /** One rotation: when, and who ran it. */
 export interface RotationRecord {
   at: string;
@@ -46,7 +39,6 @@ export interface Rotations {
 
 export interface ControlState {
   schemaVersion: 2;
-  bootstrap: BootstrapState;
   /** Keyed by service slug. */
   rollout: Record<string, ServiceRollout>;
   rotations?: Rotations;
@@ -127,7 +119,7 @@ function isPreconditionFailed(err: unknown): boolean {
 }
 
 export function emptyControlState(): ControlState {
-  return { schemaVersion: 2, bootstrap: {}, rollout: {} };
+  return { schemaVersion: 2, rollout: {} };
 }
 
 /** Bucket holding the Pulumi state and the control object. Must live in the app project: Scaleway Object Storage pins API keys to their preferred project, so a bucket elsewhere is unreachable for the project-scoped CI key. */
@@ -199,26 +191,14 @@ export function parseControlState(text: string): ControlState {
   if (!isRecord(raw)) throw new Error('control: root must be an object');
   if (raw.schemaVersion !== 2) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`);
 
-  const bootstrap: BootstrapState = {};
-  if (raw.bootstrap !== undefined) {
-    if (!isRecord(raw.bootstrap)) throw new Error('control: bootstrap must be an object');
-    if (raw.bootstrap.completedAt !== undefined) {
-      if (typeof raw.bootstrap.completedAt !== 'string') throw new Error('control: bootstrap.completedAt must be a string');
-      bootstrap.completedAt = raw.bootstrap.completedAt;
-    }
-    if (raw.bootstrap.computeDeferredSince !== undefined) {
-      if (typeof raw.bootstrap.computeDeferredSince !== 'string') throw new Error('control: bootstrap.computeDeferredSince must be a string');
-      bootstrap.computeDeferredSince = raw.bootstrap.computeDeferredSince;
-    }
-  }
-
+  // A stored `bootstrap` block, which older engines wrote, is read past: nothing reads it.
   const rollout: Record<string, ServiceRollout> = {};
   if (raw.rollout !== undefined) {
     if (!isRecord(raw.rollout)) throw new Error('control: rollout must be an object');
     for (const [slug, value] of Object.entries(raw.rollout)) rollout[slug] = parseServiceRollout(slug, value);
   }
 
-  const state: ControlState = { schemaVersion: 2, bootstrap, rollout };
+  const state: ControlState = { schemaVersion: 2, rollout };
   if (raw.rotations !== undefined) state.rotations = parseRotations(raw.rotations);
   if (typeof raw.updatedAt === 'string') state.updatedAt = raw.updatedAt;
   if (typeof raw.updatedBy === 'string') state.updatedBy = raw.updatedBy;

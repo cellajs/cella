@@ -20,8 +20,7 @@ export interface GeoipManifest {
 /**
  * Publishing the DB-IP Lite GeoIP databases (CC BY 4.0) to the `geoip/` prefix of the app's public bucket, where every
  * API process downloads them from at boot and daily (backend/src/lib/geoip.ts). Effects are injected like
- * reset-database, so unit tests assert the order and every guard; `main` supplies the live ones for `pnpm infra`
- * (`pnpm infra geoip-refresh`), the deploy pipeline (staleness-gated) and the monthly workflow.
+ * reset-database, so unit tests assert the order and every guard; `main` supplies the live ones for the deploy, which runs it staleness-gated.
  */
 export interface GeoipRefreshPlan {
   bucket: string;
@@ -132,7 +131,7 @@ export async function sequenceGeoipRefresh(plan: GeoipRefreshPlan): Promise<Geoi
   return { published: true, manifest };
 }
 
-/** Live effects: DB-IP over HTTPS, the bucket over the S3 API with `key` (the CLI's admin application key) or the SCW key in the environment (a deploy). */
+/** Live effects: DB-IP over HTTPS, the bucket over the S3 API with `key` when given, else the deploy key in the environment. */
 export async function createLiveEffects(opts: { bucket: string; region: string; prefix: string; key?: KeyPair }) {
   const { GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
   const { accessKey, secretKey } = opts.key ?? deployS3Key();

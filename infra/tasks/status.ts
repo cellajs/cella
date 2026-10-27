@@ -13,7 +13,7 @@ import {
   type PrincipalRole,
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
-import { allPrincipalNames, appPrincipalNames } from '../lib/scaleway/principals';
+import { allPrincipalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
@@ -203,6 +203,20 @@ export async function runStatus(context: {
   printReport(report, { json: false });
 }
 
+/** The inventory alone (`inventory.*`), as Rotate keys prints it at its end: what remains beside the declared identities and machines. */
+export async function printInventory(context: Parameters<typeof runStatus>[0]): Promise<void> {
+  const report = await buildReport({
+    mode: context.environment,
+    appConfig: context.appConfig,
+    stackState: context.state,
+    stackYaml: context.stackYaml,
+    projectId: context.projectId || undefined,
+  });
+  const inventory = report.checks.filter((check) => check.id.startsWith('inventory.'));
+  console.info(`\n${pc.bold('Inventory')} ${pc.dim('(what exists beside what the environment declares)')}`);
+  for (const check of inventory) console.info(`${MARKS[check.status]} ${pc.bold(check.title)}  ${check.detail}`);
+}
+
 /** Standalone entry: `pnpm --filter infra status [--mode <m>] [--json]`. */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const flagMode = getFlag(argv, '--mode') ?? process.env.INFRA_MODE;
@@ -337,16 +351,4 @@ export function formatQuickFacts(
   }
   if (facts.unavailable.length > 0) lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
   return lines;
-}
-
-/** Print the quick facts for a loaded CLI context; never throws, never blocks longer than the budget. */
-export async function printQuickFacts(context: { environment: string; appConfig: EngineConfig; projectId: string }): Promise<void> {
-  const facts = await withSpinner('Checking lock, rollout and key', () =>
-    collectQuickFacts({ environment: context.environment, appConfig: context.appConfig, projectId: context.projectId || undefined }),
-  );
-  const identity = resolveOperatorIdentity();
-  const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
-  const observerApplication = appPrincipalNames(context.appConfig.appSlug).observer;
-  for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
-  console.info('');
 }

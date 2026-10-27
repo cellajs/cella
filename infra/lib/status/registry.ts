@@ -3,23 +3,23 @@ import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
 import { inventoryProvider } from './providers/inventory';
 import { liveProvider } from './providers/live';
+import { runsProvider } from './providers/runs';
 import { secretsProvider } from './providers/secrets';
 import { identityProvider, stackProvider } from './providers/stack';
 import { stateProvider } from './providers/state';
 import { storesProvider } from './providers/stores';
-import { toolingProvider } from './providers/tooling';
 import type { Check, CheckStatus, NextAction, ProbeSession, StatusProvider, StatusReport } from './types';
 import { STATUS_SCHEMA_VERSION } from './types';
 
 /** The registered status providers, in report order. Each owns its domain's gather and evaluate; this module owns the envelope, summary, and cross-domain next-action priority. */
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous provider fact types collapse at the registry boundary
 export const statusProviders: readonly StatusProvider<any>[] = [
-  toolingProvider,
   stackProvider,
   identityProvider,
   inventoryProvider,
   stateProvider,
   secretsProvider,
+  runsProvider,
   liveProvider,
   componentsProvider,
   dnsProvider,
@@ -29,14 +29,13 @@ export const statusProviders: readonly StatusProvider<any>[] = [
 
 /** Priority order for the single top-level `nextAction`: the earliest problematic check wins, following the setup to deploy to operate lifecycle. A trailing `.` matches by id prefix. */
 const NEXT_ACTION_PRIORITY = [
-  'tooling.pulumi',
   'identity.project',
   'inventory.',
   'config.stackState',
   'stores.',
   'state.bucket',
   'secrets.required',
-  'config.computeDeferred',
+  'runs.last',
   'rollout',
   'live.',
   'db.publicEndpoint',

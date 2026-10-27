@@ -1,3 +1,5 @@
+import { findJobDefinition, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
+import { MAIN_JOB_SCRIPT, mainJobImage, rootNodeVersion } from '../../deploy/main-job';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
@@ -24,9 +26,12 @@ export interface InventoryFacts {
   apiKeys: Array<{ access_key: string; application_id?: string | null; user_id?: string | null; description?: string; expires_at?: string | null }>;
   /** The policies bound to an application or a group, with their rules. */
   policies: InventoryPolicy[];
+  /** The project's machines, in every zone of the region. */
   machines: string[];
   /** Each service's active generation, from the control object. */
   activeGenerations: Record<string, string>;
+  /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
+  mainJob?: { running: boolean; imageUri?: string; command?: string };
 }
 
 /** What an environment's code declares (C11): its applications, the ones that hold one key, its project and how its machines are named. */
@@ -48,7 +53,7 @@ export interface InventoryFindings {
   policies: string[];
   /** A machine the engine did not make. */
   machines: string[];
-  /** A machine the engine made that is not live: a generation not yet reaped, or a builder. */
+  /** A machine the engine made that is not live while a deploy runs: a generation not yet reaped, or a builder. */
   passing: string[];
 }
 
@@ -108,15 +113,38 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   }
   const live = new Set(Object.entries(facts.activeGenerations).map(([service, id]) => `${expect.machinePrefix}${service}-${id}`));
   const services = Object.keys(facts.activeGenerations);
+  // A deploy reaps what it displaced and deletes its builder before it ends, so with no run going on such a machine is a finding too.
+  const deploying = facts.mainJob?.running === true;
   for (const machine of facts.machines) {
     if (live.has(machine)) continue;
-    if (machine.startsWith(`${expect.machinePrefix}builder-`))
-      found.passing.push(`${machine}: a builder (a deploy runs, or the next one deletes it)`);
-    else if (services.some((service) => machine.startsWith(`${expect.machinePrefix}${service}-`))) {
-      found.passing.push(`${machine}: a generation that is not active (a deploy runs, or a reap is owed)`);
-    } else found.machines.push(`${machine}: not made by the engine`);
+    const kind = machine.startsWith(`${expect.machinePrefix}builder-`)
+      ? 'a builder'
+      : services.some((service) => machine.startsWith(`${expect.machinePrefix}${service}-`))
+        ? 'a generation that is not active'
+        : undefined;
+    if (!kind) found.machines.push(`${machine}: not made by the engine`);
+    else if (deploying) found.passing.push(`${machine}: ${kind}, while a deploy runs`);
+    else found.machines.push(`${machine}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
   }
   return found;
+}
+
+/**
+ * Whether the main job's definition runs what this checkout declares: the runner key may edit a definition, and a run of an edited one reads
+ * the deploy key and the passphrase. A difference is an apply owed, or an edit nobody declared.
+ */
+function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob']): Check {
+  if (!mainJob) return builder.ok('no main job yet');
+  if (!mainJob.command || !mainJob.imageUri) return builder.warn('its command or image could not be read');
+  const differs = [
+    mainJob.imageUri === mainJobImage(rootNodeVersion()) ? '' : `image ${mainJob.imageUri}`,
+    mainJob.command.includes(MAIN_JOB_SCRIPT.trim()) ? '' : 'its command',
+  ].filter(Boolean);
+  if (differs.length === 0) return builder.ok('runs the declared script and image');
+  return builder.error(`${differs.join(' and ')} differ from this checkout's: an apply is owed, or someone edited the definition`, {
+    description: 'An apply writes the declared definition again',
+    command: actionCommand('apply'),
+  });
 }
 
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
@@ -163,20 +191,34 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     try {
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
-      const { zone } = deriveInfra(session.appConfig);
+      const { naming, region } = deriveInfra(session.appConfig);
       const rollout = (await session.scalewayFacts()).rollout;
       if (!rollout) return undefined;
+      // Every zone of the region: a machine an intruder made in another zone of the project is still the project's.
+      const zones = [1, 2, 3].map((index) => `${region}-${index}`);
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
-      const [applications, groups, apiKeys, policies, servers] = await Promise.all([
+      const [applications, groups, apiKeys, policies, servers, mainJob] = await Promise.all([
         listAll<InventoryFacts['applications'][number]>(auth, org('applications'), 'applications'),
         listAll<InventoryFacts['groups'][number]>(auth, org('groups'), 'groups'),
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
-        listAll<{ name: string }>(
-          auth,
-          (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
-          'servers',
-        ),
+        Promise.all(
+          zones.map((zone) =>
+            listAll<{ name: string }>(
+              auth,
+              (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
+              'servers',
+            ),
+          ),
+        ).then((perZone) => perZone.flat()),
+        findJobDefinition(auth, { region, projectId: session.projectId, name: naming.resource('main') }).then(async (definitionId) => {
+          if (!definitionId) return undefined;
+          const [runs, definition] = await Promise.all([
+            listJobRuns(auth, { region, projectId: session.projectId ?? '', definitionId }),
+            readJobDefinition(auth, { region, definitionId }),
+          ]);
+          return { running: runs.some((run) => !runEnded(run)), ...definition };
+        }),
       ]);
       const withRules = await Promise.all(
         policies
@@ -189,7 +231,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           })),
       );
       const activeGenerations = Object.fromEntries(rollout.flatMap((row) => (row.activeGeneration ? [[row.slug, row.activeGeneration]] : [])));
-      return { applications, groups, apiKeys, policies: withRules, machines: servers.map((server) => server.name), activeGenerations };
+      return { applications, groups, apiKeys, policies: withRules, machines: servers.map((server) => server.name), activeGenerations, mainJob };
     } catch {
       return undefined;
     }
@@ -218,6 +260,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
             ? b.warn(found.passing.join('; '))
             : b.ok(`${facts.machines.length} machine(s), each an active generation`),
       ),
+      item('inventory.mainJob', 'Main job', (b, { facts }) => mainJobVerdict(b, facts.mainJob)),
     ];
   },
 };

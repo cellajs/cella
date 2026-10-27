@@ -1,14 +1,24 @@
 import { select } from '@inquirer/prompts';
-import { accountExcerpt } from '../../lib/deploy/boot-accounts';
+import {
+  accountExcerpt,
+  accountFailed,
+  type BootAccountReader,
+  bucketBootAccountReader,
+  releaseAccounts,
+  serviceAccountKeys,
+} from '../../lib/deploy/boot-accounts';
 import { findJobDefinition, type JobRun, listJobRuns, runEnded } from '../../lib/deploy/job-runs';
+import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { type RunRecord, runSummaryLine } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
+import { deployedServices } from '../../lib/services';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { getFlag } from '../../tasks/args';
 import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 
 const LIST_LENGTH = 10;
@@ -71,6 +81,17 @@ function wroteRecord(run: JobRun, record: RunRecord): boolean {
 }
 
 /**
+ * What Scaleway says of the job run that wrote a record, when that differs from the record: a record cut short by the job's time limit, or one
+ * a key that may write the bucket changed. Scaleway's list of runs is written by no key of the engine.
+ */
+function disagreement(record: RunRecord, jobRuns: readonly JobRun[]): string {
+  const run = jobRuns.find((candidate) => wroteRecord(candidate, record));
+  if (!run || !runEnded(run)) return '';
+  const outcome = mainJobOutcome(run);
+  return outcome === record.outcome ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
+}
+
+/**
  * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. The environment's job runs that left
  * no record are listed beside the records (D27), so a run is never missing from the list.
  */
@@ -86,7 +107,7 @@ export async function showRuns(
   const since = records.length === LIST_LENGTH ? (records.at(-1)?.startedAt ?? '') : '';
   const unrecorded = (opts.jobRuns ?? []).filter((run) => (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record)));
   const rows = [
-    ...records.map((record) => ({ at: record.startedAt, line: runSummaryLine(record) })),
+    ...records.map((record) => ({ at: record.startedAt, line: `${runSummaryLine(record)}${disagreement(record, opts.jobRuns ?? [])}` })),
     ...unrecorded.map((run) => ({ at: run.created_at ?? '', line: runWithoutRecordLine(run, opts.environment ?? '') })),
   ].sort((a, b) => b.at.localeCompare(a.at));
   if (rows.length === 0) return print('No run has left a record yet.');
@@ -101,8 +122,49 @@ export async function showRuns(
 }
 
 /**
+ * The machines' own accounts, beside the runs: with `sha`, each service's account of that release and the builder's report; without, each
+ * service's newest account, a boot outside any run included (a reboot that could not hydrate).
+ */
+async function showMachines(
+  reader: BootAccountReader,
+  services: readonly string[],
+  opts: { sha?: string; print?: (...lines: string[]) => void },
+): Promise<void> {
+  const print = opts.print ?? ((...lines: string[]) => console.info(lines.join('\n')));
+  if (opts.sha) {
+    for (const found of await releaseAccounts(reader, services, opts.sha)) {
+      if (!found.account) {
+        print(
+          `${warningMark} ${found.service}: no account of ${opts.sha.slice(0, 10)}: its boot runner has not finished (its serial console says more)`,
+        );
+        continue;
+      }
+      print('', pc.bold(`${found.service} (boot-diag/${found.account.key})${found.account.failed ? ': boot failed' : ''}`), found.account.body);
+    }
+    const keys = await reader.list();
+    const builder = (name: string) => keys.find((key) => key.startsWith('builder/') && key.endsWith(`/${name}`) && key.includes(opts.sha ?? ''));
+    for (const name of ['result', 'log']) {
+      const key = builder(name);
+      if (key) print('', pc.bold(`builder (boot-diag/${key})`), await reader.read(key));
+    }
+    return;
+  }
+  const keys = await reader.list();
+  for (const service of services) {
+    const [newest] = serviceAccountKeys(keys, service);
+    if (!newest) {
+      print(`${warningMark} ${service}: no account was ever uploaded`);
+      continue;
+    }
+    const body = await reader.read(newest);
+    print('', pc.bold(`${service} (boot-diag/${newest})${accountFailed(body) ? ': boot failed' : ''}`), ...accountExcerpt(body));
+  }
+}
+
+/**
  * The environment's runs, on the observer key: what was deployed when, how it ended and where it stopped, read from the records each deploy
- * writes to the diagnostics bucket (plan §3.8), beside the main job's runs that left none. Reads only.
+ * writes to the diagnostics bucket (plan §3.8), beside the main job's runs that left none. With `--machines` it shows each service's newest
+ * boot account, and with `--sha <sha>` every account of that release with the builder's report. Reads only.
  */
 export async function runRuns(context: InfraContext): Promise<void> {
   const { observer } = resolveOperatorIdentity();
@@ -114,6 +176,15 @@ export async function runRuns(context: InfraContext): Promise<void> {
   }
   const { naming, region } = deriveInfra(context.appConfig);
   const s3 = await makeS3Client(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
+  const sha = getFlag(process.argv, '--sha');
+  if (sha !== undefined && !/^[0-9a-f]{7,40}$/.test(sha)) {
+    console.error(`${crossMark} --sha takes a git SHA of 7 to 40 hex characters, got '${sha}'`);
+    return endAction(1);
+  }
+  if (sha || process.argv.includes('--machines')) {
+    const services = deployedServices(context.appConfig.services, context.appConfig.singleVM).map((service) => service.slug);
+    return showMachines(bucketBootAccountReader(s3, naming.bootDiagBucket), services, { sha });
+  }
   const auth = { secretKey: observer.secretKey };
   const jobRuns = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') })
     .then((definitionId) => (definitionId ? listJobRuns(auth, { region, projectId: context.projectId, definitionId }) : []))

@@ -1,13 +1,16 @@
 import type { RunnerEnvironment } from '../../runner/src/config';
 import { type CloudConfigFile, cloudConfigDocument } from '../utils/cloud-config';
 
-/** The name of the runner's project, application, address, security group and machine: one runner per organization (D5), the app's (D30). */
+/** The name of the runner's project, application, address, security group and machine: one runner per app, named after it. */
 export function runnerName(appSlug: string): string {
   return `${appSlug}-runner`;
 }
 
 /** Where the runner key is kept in the runner's project, for the replace to put into the machine's user data (D28). */
 export const RUNNER_KEY = { name: 'runner-key', path: '/runner' } as const;
+
+/** Where a private repository's read key is kept for the runner (D22), beside its key: Set repository read key writes it. */
+export const RUNNER_REPOSITORY_KEY = { name: 'repository-read-key', path: '/runner' } as const;
 
 /** What the runner machine's script reads from `/etc/runner/env`, a file only root reads. */
 export interface RunnerValues {
@@ -19,6 +22,8 @@ export interface RunnerValues {
   REPO: string;
   /** The `node` image at the root `engines.node`, which has git. */
   NODE_IMAGE: string;
+  /** A private repository's read key (D22), sent as a header with each fetch; empty for a repository anyone may read. */
+  REPOSITORY_READ_KEY: string;
 }
 
 /**
@@ -32,7 +37,11 @@ mkdir -p /var/lib/runner
 exec docker run --rm --name runner --env-file /etc/runner/env -v /etc/runner/config.json:/etc/runner/config.json:ro -v /var/lib/runner:/var/lib/runner "$NODE_IMAGE" bash -euo pipefail -c '
 src=/var/lib/runner/src
 [ -d "$src/.git" ] || { git init -q "$src"; git -C "$src" remote add origin "$REPO"; }
-git -C "$src" fetch -q --depth 1 origin "$RELEASE"
+if [ -n "$REPOSITORY_READ_KEY" ]; then
+  git -C "$src" -c http.extraHeader="Authorization: Basic $(printf "x-access-token:%s" "$REPOSITORY_READ_KEY" | base64 -w0)" fetch -q --depth 1 origin "$RELEASE"
+else
+  git -C "$src" fetch -q --depth 1 origin "$RELEASE"
+fi
 git -C "$src" checkout -q --force FETCH_HEAD
 echo "runner: release $RELEASE"
 exec node "$src/infra/runner/src/main.ts" --config /etc/runner/config.json --state-dir /var/lib/runner/state'

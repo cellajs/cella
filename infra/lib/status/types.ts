@@ -2,7 +2,7 @@ import type { StackState } from '../stack/bootstrap-stack-state';
 import type { PendingOperation } from '../stack/pending-operations';
 
 /** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
-export const STATUS_SCHEMA_VERSION = 1;
+export const STATUS_SCHEMA_VERSION = 2;
 
 /** A check's verdict. `unknown` means "could not be evaluated", usually a missing key; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
@@ -79,7 +79,7 @@ export interface ProbeSession {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
-  /** True when a Scaleway key (the admin application key, else the process's SCW_* or AWS_* pair) is present for `scaleway`-tier checks. */
+  /** True when a Scaleway key (the observer key, else the process's SCW_* or AWS_* pair) is present for `scaleway`-tier checks. */
   scalewayKeyAvailable: boolean;
   accessKey?: string;
   secretKey?: string;

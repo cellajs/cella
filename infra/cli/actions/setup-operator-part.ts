@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { deriveInfra } from '../../lib/naming';
@@ -26,7 +28,6 @@ import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
 import {
   acquireStackLockOrExit,
-  autoAcceptDefaults,
   confirmOrDefault,
   createStepRunner,
   endAction,
@@ -39,7 +40,7 @@ import {
 } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
 import type { OperatorKey } from './operator-unlock';
-import type { CiKeyResult, OwnerMomentResult } from './setup-owner-moment';
+import type { OwnerMomentResult } from './setup-owner-moment';
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
 async function optionalSecret(message: string): Promise<string> {
@@ -143,7 +144,9 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     }
   }
   if (firstProvision) {
-    console.info(`${pc.dim('  the first provisioning runs on the operator key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
+    console.info(
+      `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
+    );
     // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
@@ -199,70 +202,6 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
   });
 
   await stackLock.release();
-}
-
-/**
- * Offer to run the first deploy here, so a fresh setup ends with a live app.
- * Runs the same one-command deploy the main job runs, whose builder machine builds the release, authenticated with the freshly minted deploy key so it also proves that key's rights.
- * Skipped when git HEAD is unavailable.
- */
-async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorSecrets: OperatorSecretValues): Promise<void> {
-  const mode = ctx.context.environment;
-  const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha}`;
-  const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: infraDir, encoding: 'utf8' }).stdout?.trim();
-  if (!sha) {
-    console.info(`\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
-    return;
-  }
-  const hasAdminEmail = !!operatorSecrets.adminEmail;
-  if (!hasAdminEmail) {
-    console.warn(
-      `  ${warningMark} No admin email is set, and the deploy preflight requires the ${pc.bold('admin-email')} runtime secret.\n` +
-        `    Set it first via "Manage runtime secrets", or the deploy will fail before rolling anything.`,
-    );
-  }
-  const deployNow = autoAcceptDefaults()
-    ? hasAdminEmail
-    : await confirm({
-        message: `Deploy ${sha.slice(0, 7)} to ${mode} now? A builder machine builds the release, then it rolls out (10-20 min).`,
-        default: hasAdminEmail,
-      });
-  if (!deployNow) {
-    console.info(
-      `  ${pc.dim('Deploy later: the runner starts it once this environment is on its list, or')} ${pc.cyan(`${actionCommand('start-deploy')} --mode ${mode}`)}`,
-    );
-    // A deploy runs on its target's committed stack file, whose encryption salt the setup just wrote: without it the passphrase is "incorrect".
-    console.info(
-      `  ${pc.bold('Before the first deploy')}: commit and push ${pc.cyan(`infra/Pulumi.${mode}.yaml`)} (its encryption salt and bootstrap marker are new).`,
-    );
-    return;
-  }
-  // The env the main job runs with: the deploy key as both the provider key and the state-backend key, plus the passphrase and project ids from childEnv.
-  const deployEnv: NodeJS.ProcessEnv = {
-    ...ctx.childEnv,
-    SCW_ACCESS_KEY: ciKey.accessKey,
-    SCW_SECRET_KEY: ciKey.secretKey,
-    AWS_ACCESS_KEY_ID: ciKey.accessKey,
-    AWS_SECRET_ACCESS_KEY: ciKey.secretKey,
-    ...(ciKey.organizationId ? { SCW_DEFAULT_ORGANIZATION_ID: ciKey.organizationId } : {}),
-  };
-  const { status } = spawnSync('pnpm', ['run', 'deploy', '--mode', mode, '--sha', sha], {
-    cwd: infraDir,
-    env: deployEnv,
-    stdio: 'inherit',
-  });
-  if (status === 0) {
-    const { serviceEndpoints } = await import('../../lib/services');
-    const frontendUrl = serviceEndpoints(ctx.appConfig).find((endpoint) => endpoint.slug === 'frontend')?.url;
-    const liveUrl = frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : '';
-    console.info(`\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${liveUrl}`);
-    if (hasAdminEmail) console.info(`  ${pc.dim('Sign in by requesting a magic link for the admin email you provided.')}`);
-  } else {
-    console.warn(
-      `\n${warningMark} First deploy failed (exit ${status}). Boot diagnostics were collected; inspect with ${pc.cyan('pnpm --filter infra diag')}.\n` +
-        `  Re-running the same deploy is safe (generations are content-addressed): ${pc.cyan(manualCmd(sha))}`,
-    );
-  }
 }
 
 /**
@@ -328,7 +267,9 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
   if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
 
-  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
+  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it; the new stack's salt goes
+  // beside it, so the main job can deploy any commit without this stack file.
+  const stackFile = resolve(infraDir, `Pulumi.${environment}.yaml`);
   await storeCustodiedPassphrase({
     secretKey: operatorKey.secretKey,
     region: appConfig.s3.region,
@@ -336,6 +277,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     slug: appConfig.slug,
     mode: environment,
     passphrase: pulumiPassphrase,
+    stackYaml: existsSync(stackFile) ? readFileSync(stackFile, 'utf8') : undefined,
   }).catch((error) =>
     console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
   );
@@ -363,8 +305,12 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     return;
   }
   await provisionBaseInfra(ctx, operatorSecrets);
-  // Only a first setup still holds the CI key secret in memory; rotate and resume leave deploys to CI.
-  if (firstSetup && ciKey?.secretKey) await offerFirstDeploy(ctx, ciKey, operatorSecrets);
+  if (firstSetup) {
+    console.info(
+      `\n${checkMark} ${environment} is provisioned. The first release is deployed like every other: \`${actionCommand('runner-identity')}\` and \`${actionCommand('runner-replace')}\` set up the runner, which starts it, or \`${actionCommand('start-deploy')}\` starts it now.`,
+    );
+    console.info(`  ${pc.dim(`Commit infra/Pulumi.${environment}.yaml, so other checkouts see the stack set up; deploys do not need it.`)}`);
+  }
 }
 
 /** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
@@ -402,9 +348,7 @@ export async function recordKeyRotation(context: InfraContext, operatorKey: Oper
   try {
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
     const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'keys', by: controlActor() });
-    console.info(
-      `${checkMark} Rotation ${rotations.counter} recorded. ${pc.bold('Deploy now')}: every machine is replaced with the new machine keys.`,
-    );
+    console.info(`${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine with the new machine keys.`);
   } finally {
     await lock.release();
   }

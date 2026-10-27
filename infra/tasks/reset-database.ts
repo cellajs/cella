@@ -139,17 +139,13 @@ export function backupName(databaseName: string, now: Date): string {
   return `pre-reset-${databaseName}-${stamp}`;
 }
 
-/** The two steps the CLI cannot run: they need the image on the VM, over the serial console. */
-export function serialConsoleSteps(databaseName: string): string {
+/** The step left after a reset: a reboot of the backend machine, whose boot migrates the empty database and seeds the admin. */
+export function rebuildSteps(databaseName: string): string {
   return [
-    `${warningMark} ${pc.bold('Two steps remain, on the Scaleway serial console')} ${pc.dim(`(${databaseName} is empty until they run)`)}:`,
+    `${warningMark} ${pc.bold('One step remains')} ${pc.dim(`(${databaseName} is empty until it runs)`)}:`,
     '',
-    `  ${pc.dim('# 1. schema: self-verifying since the 99-verify block; a bad migrate aborts loudly')}`,
-    '  cd /opt/app && docker compose --profile backend run --rm backend-release',
-    '',
-    `  ${pc.dim('# 2. first admin: signs in by magic link')}`,
-    '  cd /opt/app && docker compose --profile backend run --rm \\',
-    '    -e ADMIN_EMAIL=you@example.com backend-release node dist/seeds-bundle.js init',
+    '  Reboot the backend machine: Scaleway console → Instances → the machine → Reboot.',
+    `  ${pc.dim('Every boot runs the migrate companion, which migrates the empty database and seeds the admin from admin-email while the users table is empty.')}`,
     '',
     `  ${pc.dim('The CDC worker needs no restart: it re-ensures its replication slot on every retry.')}`,
   ].join('\n');

@@ -75,7 +75,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Set up the runner',
     key: 'owner',
     description:
-      "Make the organization's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json.",
+      "Make the app's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json. With --rotate-key it replaces the runner's key; Replace the runner then gives it to the machine.",
   },
   'runner-replace': {
     label: 'Replace the runner',
@@ -128,11 +128,6 @@ export const OPERATOR_ACTIONS = {
     key: 'operator',
     description: "Remove one resource from the stack's Pulumi state: one the program no longer declares and whose live object is gone already.",
   },
-  'geoip-refresh': {
-    label: 'Refresh GeoIP data',
-    key: 'operator',
-    description: "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
-  },
   teardown: {
     label: 'Tear down stack',
     key: 'owner',
@@ -167,7 +162,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
+ * An action no row lists (`preview`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
  * runs only by its command.
  */
 export const MENU_ROWS = {

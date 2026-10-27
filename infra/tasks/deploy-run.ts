@@ -21,18 +21,13 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 /**
  * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
  * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
- * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* key can run it.
+ * The main job runs this with the deploy key in `SCW_*`, the one key it needs.
  */
 export interface DeployOptions {
   mode: string;
   sha: string;
   /** The run's id in its record; a new one (start time and target) when not given. */
   run?: string;
-  /**
-   * Skip the rollout's final displaced-generation reap so verification, entry publish, and smoke run right after cutover.
-   * The displaced VMs stay off every LB pool until a follow-up `reap` run destroys them.
-   */
-  deferReap?: boolean;
 }
 
 /** Deploy step tasks runnable in-process (tasks/<name>.ts, main(argv) throws on failure). */
@@ -45,6 +40,7 @@ export type TaskName =
   | 'sync-rollout-config'
   | 'stage-generation-keys'
   | 'assert-grants'
+  | 'assert-deploy-policy'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -56,7 +52,7 @@ export interface DeployEffects {
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
-  lease(stack: string, operation: 'deploy' | 'reap'): Promise<{ release(): Promise<void> }>;
+  lease(stack: string, operation: 'deploy'): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
   /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async, so the stack lease keeps renewing while it runs. */
   exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): Promise<void>;
   /** One full stack update through the configured Pulumi driver. */
@@ -64,8 +60,8 @@ export interface DeployEffects {
   rollout(argv: string[]): Promise<void>;
   verifyVersion(url: string, sha: string): Promise<boolean>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
-  /** The boot accounts of release `sha`, one per service that boots a machine of its own; its black-box events from `sinceIso` on are replayed. */
-  bootAccounts(opts: { mode: string; sha: string; sinceIso?: string }): Promise<RunBootAccount[]>;
+  /** The boot accounts of release `sha`, one per service that boots a machine of its own. */
+  bootAccounts(opts: { mode: string; sha: string }): Promise<RunBootAccount[]>;
   /** Write a run's record and log to the environment's diagnostics bucket. */
   writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
   group(title: string): void;
@@ -95,13 +91,12 @@ export function deployFailureHint(err: unknown, mode: string): { description: st
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--defer-reap]');
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha>');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
     sha,
     run: getFlag(argv, '--run'),
-    deferReap: argv.includes('--defer-reap'),
   };
 }
 
@@ -125,14 +120,20 @@ export async function runDeploy(
   // The state backend reads AWS_* and region conventions; derived once here.
   adoptStateBackendEnv(env.region);
 
-  const startedAtIso = new Date().toISOString();
-  // One run, one record (plan §3.8): kept while the deploy runs, written at its end whatever the outcome.
+  // One run, one record (plan §3.8): written at the start, after every step and at the end, so a run killed at the job's limit still shows how far it came.
   const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
   const say = (message: string) => {
     recorder.line(message);
     fx.info(message);
   };
+  let recordUnwritable = false;
+  const persist = () =>
+    fx.writeRunRecord({ bucket: env.diag_bucket, region: env.region, record: recorder.record(), log: recorder.log() }).catch((err) => {
+      if (!recordUnwritable) fx.info(`[deploy] the record of run ${recorder.record().run} could not be written: ${errorMessage(err)}`);
+      recordUnwritable = true;
+    });
   say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode}`);
+  await persist();
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
   const telemetry = deployTelemetry();
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
@@ -141,6 +142,8 @@ export async function runDeploy(
   telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha });
 
   const step = async (title: string, run: () => void | Promise<void>): Promise<void> => {
+    // A run whose lease another took must change nothing more: the other run holds the stack now.
+    if (lease?.lost) throw new Error(`the stack lock was taken by another run before "${title}": this run stops`);
     fx.group(title);
     const span = telemetry?.startSpan(title, { step: title }, deploySpan?.ctx);
     const startedAt = Date.now();
@@ -151,6 +154,7 @@ export async function runDeploy(
       telemetry?.event(deployEvents.stepCompleted, { step: title, duration_s: seconds }, { ctx: span?.ctx });
       recorder.step(title, seconds, 'ok');
       say(`[deploy] ${title}: ok (${seconds}s)`);
+      await persist();
     } catch (err) {
       const seconds = Math.round((Date.now() - startedAt) / 1000);
       recorder.step(title, seconds, 'error');
@@ -166,7 +170,7 @@ export async function runDeploy(
     }
   };
 
-  let lease: { release(): Promise<void> } | undefined;
+  let lease: { release(): Promise<void>; readonly lost: boolean } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
   let failure: unknown;
   try {
@@ -188,6 +192,14 @@ export async function runDeploy(
     // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
     await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
+    await step("Check the deploy key's policy", () =>
+      fx.task('assert-deploy-policy', [
+        '--project-id',
+        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+        '--organization-id',
+        process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
+      ]),
+    );
 
     // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
     // their own for the publish below. No app code runs beside the deploy key.
@@ -279,13 +291,14 @@ export async function runDeploy(
           env.primary_rollout_matrix,
           '--rest-json',
           env.roll_rest_matrix,
-          ...(opts.deferReap ? ['--skip-reap'] : []),
+          // The displaced generations stay off every pool and are reaped last, once smoke passed.
+          '--skip-reap',
         ]),
       );
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
       say("[deploy] rollout failed; reading the release's boot accounts");
-      const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha, sinceIso: startedAtIso }).catch((diagErr) => {
+      const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha }).catch((diagErr) => {
         say(`[deploy] the boot accounts could not be read: ${errorMessage(diagErr)}`);
         return undefined;
       });
@@ -328,6 +341,7 @@ export async function runDeploy(
         ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
       ]),
     );
+    await step('Reap displaced generations', () => fx.update(stack));
   } catch (err) {
     outcome = 'error';
     failure = err;
@@ -338,10 +352,8 @@ export async function runDeploy(
     const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
     recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
     const run = recorder.record().run;
-    await fx.writeRunRecord({ bucket: env.diag_bucket, region: env.region, record: recorder.record(), log: recorder.log() }).then(
-      () => fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`),
-      (err) => fx.info(`[deploy] the record of run ${run} could not be written: ${errorMessage(err)}`),
-    );
+    await persist();
+    if (!recordUnwritable) fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`);
     deploySpan?.end(outcome);
     telemetry?.event(
       outcome === 'ok' ? deployEvents.completed : deployEvents.failed,
@@ -350,52 +362,6 @@ export async function runDeploy(
     );
     await telemetry?.flush();
   }
-}
-
-export interface ReapOptions {
-  mode: string;
-  sha: string;
-}
-
-export function parseReapArgs(argv: string[]): ReapOptions {
-  const mode = getFlag(argv, '--mode');
-  const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: reap.ts --mode <staging|production> --sha <git-sha>');
-  return { mode, sha };
-}
-
-/**
- * Converge the stack on the control object's promoted pointers, destroying the generations a `--defer-reap` deploy displaced. Runs off the deploy's critical path.
- * The generation keys file is not needed because only planning a NEW generation requires it and a reap plans none.
- * Idempotent: with nothing displaced the update is a no-op, and a skipped reap is recovered by any later stack update.
- */
-export async function runReap(
-  opts: ReapOptions,
-  fx: DeployEffects,
-  loadDeployEnv: (opts: DeployOptions) => Promise<Record<AllowedKey, string>> = loadDeployEnvFromConfig,
-): Promise<void> {
-  const env = await loadDeployEnv(opts);
-  const stack = env.pulumi_stack;
-
-  adoptStateBackendEnv(env.region);
-
-  let lease: { release(): Promise<void> } | undefined;
-  try {
-    await fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]);
-    await fx.exec('pulumi', ['stack', 'select', stack]);
-    lease = await fx.lease(stack, 'reap');
-    await fx.task('install-pulumi-providers');
-    fx.info(`[reap] converging '${stack}' on promoted generations (destroys displaced VMs)`);
-    await fx.update(stack);
-    fx.info('[reap] displaced generations reaped');
-  } finally {
-    await lease?.release().catch((err) => fx.info(`[reap] lock release failed: ${errorMessage(err)}`));
-  }
-}
-
-/** Entry called by tasks/reap.ts once APP_MODE is set (imports here evaluate shared). */
-export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
-  await runReap(parseReapArgs(argv), createRealEffects());
 }
 
 /** The environment `exec` hands a child: the deploy's own, with `env` layered on top. */
@@ -459,6 +425,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
   'assert-grants': async (argv) => (await import('./assert-grants')).main(argv),
+  'assert-deploy-policy': async (argv) => (await import('./assert-deploy-policy')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
@@ -528,6 +495,9 @@ function createRealEffects(): DeployEffects {
           uninstall();
           await result.lease.release();
         },
+        get lost() {
+          return result.lease.lost;
+        },
       };
     },
     exec(cmd, args, opts = {}) {
@@ -560,16 +530,22 @@ function createRealEffects(): DeployEffects {
     },
     publishEntryFiles: publishEntryFilesToBucket,
     writeRunRecord: writeRunRecordToBucket,
-    async bootAccounts({ mode, sha, sinceIso }) {
-      const { bootAccountReader, diagTarget, replayEvents } = await import('./diag');
-      const { releaseAccounts } = await import('../lib/deploy/boot-accounts');
-      const target = await diagTarget(mode);
-      const reader = await bootAccountReader(target, mode);
-      // Re-ship black-box events from VMs that died before their exporter was configured; best-effort like all telemetry.
-      await replayEvents(reader, target.serviceNames, { sha, sinceIso }).catch((err) => {
-        console.warn(`[deploy] black-box replay failed: ${err instanceof Error ? err.message : String(err)}`);
-      });
-      return (await releaseAccounts(reader, target.serviceNames, sha)).map(({ service, account }) =>
+    async bootAccounts({ sha }) {
+      const [{ bucketBootAccountReader, releaseAccounts }, { loadEngineConfig }, { deriveInfra }, { deployedServices }, { projectAccessKey }] =
+        await Promise.all([
+          import('../lib/deploy/boot-accounts'),
+          import('../config/engine-config'),
+          import('../lib/naming'),
+          import('../lib/services'),
+          import('../lib/scaleway/s3-client'),
+        ]);
+      const appConfig = await loadEngineConfig();
+      const { naming, region } = deriveInfra(appConfig);
+      const { accessKey, secretKey } = deployS3Key();
+      const s3 = await makeS3Client(region, projectAccessKey(accessKey, process.env.SCW_DEFAULT_PROJECT_ID ?? ''), secretKey);
+      // Only services that boot a machine of their own give an account: under singleVM, the host alone.
+      const services = deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug);
+      return (await releaseAccounts(bucketBootAccountReader(s3, naming.bootDiagBucket), services, sha)).map(({ service, account }) =>
         account ? { service, key: account.key, failed: account.failed } : { service },
       );
     },

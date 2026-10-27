@@ -23,6 +23,28 @@ const store = (records: RunRecord[], log = 'line 1\nline 2\n'): RunStore => ({
 });
 
 describe('Show runs', () => {
+  it('must not let a record that says deployed hide a job run that failed: a cut-short or rewritten record is flagged', async () => {
+    const lines: string[] = [];
+    const jobRuns = [
+      {
+        id: 'r1',
+        state: 'failed',
+        exit_code: 1,
+        created_at: '2026-10-14T23:59:00Z',
+        terminated_at: '2026-10-15T00:07:00Z',
+        environment_variables: { TARGET_SHA: 'b'.repeat(40) },
+      },
+    ];
+    await showRuns(store([record('20261015T000000Z-bbbbbbbbbb')]), {
+      pick: false,
+      print: (line) => lines.push(line),
+      jobRuns,
+      environment: 'staging',
+    });
+    expect(lines[0]).toContain('deployed');
+    expect(lines[0]).toContain('the job run ended failed');
+  });
+
   it('lists every run, one that left no record too (D27), and shows the newest in full with a failed machine’s boot error and the end of its log', async () => {
     const lines: string[] = [];
     const failed = record('20261015T010000Z-bbbbbbbbbb', {
