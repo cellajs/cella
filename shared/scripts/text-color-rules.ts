@@ -1,8 +1,3 @@
-/**
- * Text takes its color from four steps: `text-foreground`, `text-foreground-soft`, `text-muted-foreground` and
- * `text-faint-foreground`, which increased contrast can raise. A text token with an opacity modifier and a palette gray
- * fail. Under `--audit`, opacity at rest on an element that holds text is a review marker: on an icon it is fine.
- */
 import ts from 'typescript';
 import { splitToken, stringTokens, type Token } from './class-tokens.ts';
 import { type Finding, isFrontendSource, lineColumn } from './repo-files.ts';
@@ -23,10 +18,10 @@ const textHint = /^(?:text-(?:2xs|xs|sm|md|base|lg|\d?xl|\[[^\]]+\])|font-(?:lig
 /** Elements that draw a picture, where opacity is not text dimming. */
 const pictureTag = /(?:Icon|Avatar|Spinner)$|^(?:svg|img)$/;
 
-const isRestOpacity = (token: string) => {
+function isRestOpacity(token: string): boolean {
   const { variants, base } = splitToken(token);
   return restOpacity.test(base) && variants.every((variant) => restVariant.test(variant));
-};
+}
 
 /** Whether visible text sits in this element: a text child or a value such as `{title}`, outside `sr-only` spans and `{icon}`. */
 function holdsText(sourceFile: ts.SourceFile, node: ts.JsxElement | ts.JsxFragment): boolean {
@@ -46,7 +41,7 @@ function holdsText(sourceFile: ts.SourceFile, node: ts.JsxElement | ts.JsxFragme
   });
 }
 
-/** Text color findings in one frontend file. */
+/** Text color findings in one frontend file; opacity on text at rest is a review marker. */
 export function textColorFindings(file: string, source: string): Finding[] {
   if (!isFrontendSource(file) || !/opacity-|text-/.test(source)) return [];
   const sourceFile = parseSource(file, source);

@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite --mode development",
     "dev:run": "cross-env NODE_ENV=development vite --mode development",
-    "tunnel": "tsx ../shared/scripts/wait-backend.ts && cross-env NODE_ENV=tunnel vite --mode tunnel",
+    "tunnel": "node ../shared/scripts/wait-backend.ts && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "test": "vitest run",
     "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",

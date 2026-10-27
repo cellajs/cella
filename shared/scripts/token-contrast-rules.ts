@@ -1,8 +1,3 @@
-/**
- * Contrast of the color tokens in the theme stylesheet, in light and dark mode: text on its own fill, the status
- * colors as text on the page, hint text on a highlighted row, and `--edge-raised`, the control edge increased contrast
- * paints and the audit measures. A token below WCAG's ratio fails here, before any page is opened.
- */
 import { type Finding, lineColumn } from './repo-files.ts';
 
 const themeFile = 'frontend/src/styling/tailwind.css';
@@ -11,16 +6,17 @@ const themeFile = 'frontend/src/styling/tailwind.css';
 const fills = ['background', 'card', 'popover', 'primary', 'secondary', 'muted', 'accent', 'destructive', 'success', 'warning', 'brand'];
 /** Tokens also used as text on the page and on a card. */
 const textTokens = ['destructive', 'success', 'warning'];
-const surfaces = ['background', 'card'];
-/** A hint can sit on a highlighted row, the lowest-contrast surface text meets. */
-const hintSurface = 'muted';
+/** The page and card fills that status text and a raised control edge sit on. */
+const pageFills = ['background', 'card'];
+/** A hint can sit on a highlighted row, the lowest-contrast fill text meets. */
+const hintFill = 'muted';
 
 type Oklch = [lightness: number, chroma: number, hue: number];
 /** A declaration holds a color or names another token (`var(--foreground)`), which the mode resolves. */
 type Declaration = { value?: Oklch; alias?: string; offset: number };
 
 /** `--name: oklch(L C H)` and `--name: var(--other)` declarations of the first `selector` block in the theme layer that declares `--background`. */
-function tokens(source: string, selector: string): Map<string, Declaration> {
+function themeDeclarations(source: string, selector: string): Map<string, Declaration> {
   const found = new Map<string, Declaration>();
   const blockAt = (start: number) => source.slice(start, source.indexOf('\n  }', start));
   const opening = new RegExp(`^\\s*${selector.replace('.', '\\.')}\\s*\\{`, 'gm');
@@ -63,17 +59,18 @@ function luminance([lightness, chroma, hue]: Oklch): number {
   return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
-const ratio = (one: Oklch, other: Oklch) => {
+/** WCAG contrast ratio of two colors, from 1 to 21. */
+function ratio(one: Oklch, other: Oklch): number {
   const [x, y] = [luminance(one), luminance(other)];
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-};
+}
 
 /** Findings for token pairs below their ratio. A token the dark block leaves out keeps its light value there. */
 export function tokenContrastFindings(file: string, source: string): Finding[] {
   if (file !== themeFile) return [];
-  const light = tokens(source, ':root');
+  const light = themeDeclarations(source, ':root');
   if (light.size === 0) return [{ file, rule: 'token-contrast', message: 'no :root block declares --background, so no token is measured' }];
-  const dark = new Map([...light, ...tokens(source, '.dark')]);
+  const dark = new Map([...light, ...themeDeclarations(source, '.dark')]);
   const findings: Finding[] = [];
 
   for (const [mode, set] of [
@@ -94,11 +91,11 @@ export function tokenContrastFindings(file: string, source: string): Finding[] {
       });
     };
     for (const fill of fills) check(fill === 'background' ? 'foreground' : `${fill}-foreground`, fill, 4.5, 'text on its fill');
-    for (const token of textTokens) for (const surface of surfaces) check(token, surface, 4.5, 'status color as text');
-    check('faint-foreground', hintSurface, 4.5, 'hint text on a highlighted row');
+    for (const token of textTokens) for (const pageFill of pageFills) check(token, pageFill, 4.5, 'status color as text');
+    check('faint-foreground', hintFill, 4.5, 'hint text on a highlighted row');
     // The tooltip (ui/tooltip.tsx) borrows the support text color as its fill
     check('primary-foreground', 'muted-foreground', 4.5, 'tooltip text on its fill');
-    for (const surface of surfaces) check('edge-raised', surface, 3, 'raised control edge');
+    for (const pageFill of pageFills) check('edge-raised', pageFill, 3, 'raised control edge');
 
     // A theme that drops the token has nothing to measure, which would pass every check above in silence
     const anchor = set.get('background');

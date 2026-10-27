@@ -1,8 +1,3 @@
-/**
- * Enforces frontend conventions Biome cannot express reliably: named function components, `ComponentType<Props>` values,
- * stores and route context read through a selector, `press={false}` on a Button, `formResolver` and `noValidate` on a
- * form, a drag grip through the reorder handle. Each check below states its rule.
- */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
@@ -26,6 +21,7 @@ function importsOf(sourceFile: ts.SourceFile) {
   });
 }
 
+/** A component is a function; one kept as a value is typed `ComponentType<Props>`, never `FC`. */
 function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
   if (!ts.isTypeReferenceNode(node)) return;
   const name = node.typeName.getText(sourceFile);
@@ -33,6 +29,7 @@ function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, repor
   report(node, 'react-component-type', 'declare components with functions; use ComponentType<Props> when a component is stored as a value');
 }
 
+/** A component is a named function declaration, and a helper such as `memo` wraps a function expression of its name. */
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement, report: Report): void {
   if (extname(sourceFile.fileName) !== '.tsx') return;
   for (const declaration of node.declarationList.declarations) {
@@ -55,6 +52,7 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
   }
 }
 
+/** Adds the stores `sourceFile` declares with zustand's `create` to `stores`. */
 function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
   const createNames = new Set(
     importsOf(sourceFile)
@@ -73,6 +71,7 @@ function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
   }
 }
 
+/** A store is read through a selector: called with no argument, it renders the component again on every field change. */
 function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report): void {
   if (!ts.isCallExpression(node) || node.arguments.length > 0 || !ts.isIdentifier(node.expression)) return;
   const name = node.expression.text;
@@ -84,7 +83,7 @@ function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report):
  * Route context is rebuilt on every navigation, search-only ones included, so a component that reads it whole renders
  * again on each one. `select` narrows the read to a value that stays equal between navigations.
  */
-function checkRouteContextSelector(node: ts.Node, report: Report): void {
+function checkRouteContextSelector(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
   if (!ts.isCallExpression(node)) return;
   const callee = node.expression;
   const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : undefined;
@@ -92,7 +91,7 @@ function checkRouteContextSelector(node: ts.Node, report: Report): void {
   const [options] = node.arguments;
   // Options passed by name or spread have their `select` elsewhere
   if (options && (!ts.isObjectLiteralExpression(options) || options.properties.some(ts.isSpreadAssignment))) return;
-  if (options?.properties.some((property) => property.name?.getText() === 'select')) return;
+  if (options?.properties.some((property) => property.name?.getText(sourceFile) === 'select')) return;
   report(
     node,
     'route-context-selector',
@@ -219,7 +218,7 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
-    checkRouteContextSelector(node, report);
+    checkRouteContextSelector(sourceFile, node, report);
     checkButtonPressCancel(sourceFile, node, report);
     checkFormNoValidate(sourceFile, node, report);
     checkMemoDependencies(node, report);

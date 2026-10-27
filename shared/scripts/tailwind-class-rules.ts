@@ -1,13 +1,8 @@
-/**
- * Flags frontend class names that compile to no CSS: typos, utilities the theme lacks, and markers nothing selects.
- * A class passes when the Tailwind design system compiles it, a stylesheet under frontend/src defines or selects it,
- * a script or an arbitrary Tailwind selector references it, or `markerClasses` lists it.
- */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import ts from 'typescript';
-import { splitToken } from './class-tokens.ts';
+import { splitToken, type Token } from './class-tokens.ts';
 import { type Finding, lineColumn, repoRoot } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
@@ -45,7 +40,9 @@ export interface TailwindContext {
   /** Absent when loading failed, as on an `@apply` of an unknown class; `loadError` then holds Tailwind's message. */
   designSystem?: DesignSystem;
   loadError?: string;
+  /** Class names a stylesheet, script or arbitrary selector uses, and the marker classes. */
   knownClasses: Set<string>;
+  /** Every candidate sent to Tailwind so far, and whether it compiled to CSS. */
   compiles: Map<string, boolean>;
 }
 
@@ -53,18 +50,28 @@ type Mode = 'class' | 'clsx';
 
 /** Text of one string or template piece in a class position; `open*` marks a side that touches a `${...}` placeholder. */
 interface ClassText {
+  /** Offset of `raw` in the source file. */
   start: number;
+  /** The value, escapes resolved. */
   text: string;
+  /** The source text of the value, which `start` locates. */
   raw: string;
   openStart: boolean;
   openEnd: boolean;
 }
 
-const isFrontendScript = (file: string) => /^frontend\/src\/.*\.tsx?$/.test(file) && !file.endsWith('.d.ts') && !file.includes('.gen.');
-const isFrontendStylesheet = (file: string) => /^frontend\/src\/.*\.css$/.test(file);
+function isFrontendScript(file: string): boolean {
+  return /^frontend\/src\/.*\.tsx?$/.test(file) && !file.endsWith('.d.ts') && !file.includes('.gen.');
+}
+
+function isFrontendStylesheet(file: string): boolean {
+  return /^frontend\/src\/.*\.css$/.test(file);
+}
 
 /** Test files pass made-up class names to check prop forwarding and merging. */
-const isClassSource = (file: string) => isFrontendScript(file) && !/\.test\.tsx?$/.test(file);
+function isClassSource(file: string): boolean {
+  return isFrontendScript(file) && !/\.test\.tsx?$/.test(file);
+}
 
 /** `@tailwindcss/node` from the frontend package, directly or through `@tailwindcss/vite`, which depends on it. */
 function loadTailwindNode(): TailwindNode {
@@ -124,7 +131,9 @@ function propertyName(name: ts.PropertyName | ts.BindingName | undefined): strin
   return name && (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isPrivateIdentifier(name)) ? name.text : undefined;
 }
 
-const isClassNamed = (...names: (string | undefined)[]) => names.some((name) => name !== undefined && classNamePattern.test(name));
+function isClassNamed(...names: (string | undefined)[]): boolean {
+  return names.some((name) => name !== undefined && classNamePattern.test(name));
+}
 
 /** Strings in class positions: class attributes, class helper calls, cva, `tw` templates and class-named values. */
 function classTexts(sourceFile: ts.SourceFile): ClassText[] {
@@ -281,8 +290,8 @@ function classTexts(sourceFile: ts.SourceFile): ClassText[] {
 }
 
 /** Whole tokens of `text` with their offsets; a token touching an open side is part of a dynamic class and skipped. */
-function tokens({ start, text, raw, openStart, openEnd }: ClassText): { token: string; offset: number }[] {
-  const result: { token: string; offset: number }[] = [];
+function classTokens({ start, text, raw, openStart, openEnd }: ClassText): Token[] {
+  const result: Token[] = [];
   for (const match of text.matchAll(/\S+/g)) {
     const end = match.index + match[0].length;
     if ((openStart && match.index === 0) || (openEnd && end === text.length)) continue;
@@ -291,7 +300,8 @@ function tokens({ start, text, raw, openStart, openEnd }: ClassText): { token: s
   return result;
 }
 
-function compiles(context: TailwindContext, designSystem: DesignSystem, candidates: string[]): void {
+/** Compiles the candidates `context.compiles` does not hold yet, in one call, and records each result there. */
+function compileCandidates(context: TailwindContext, designSystem: DesignSystem, candidates: string[]): void {
   const unknown = [...new Set(candidates)].filter((candidate) => !context.compiles.has(candidate));
   const css = designSystem.candidatesToCss(unknown);
   for (const [index, candidate] of unknown.entries()) context.compiles.set(candidate, css[index] !== null);
@@ -319,8 +329,8 @@ export function tailwindFindings(file: string, source: string, context: Tailwind
     return file === context.entry ? [{ file, rule: 'tailwind-class', message: `Tailwind cannot load this stylesheet: ${loadError}` }] : [];
   if (!isClassSource(file)) return [];
   const sourceFile = parseSource(file, source);
-  const found = classTexts(sourceFile).flatMap(tokens);
-  compiles(
+  const found = classTexts(sourceFile).flatMap(classTokens);
+  compileCandidates(
     context,
     designSystem,
     found.map(({ token }) => token),

@@ -1,13 +1,16 @@
-/** Comments of a source file: the TypeScript AST for scripts, a string-aware scanner for JSONC, patterns for the rest. */
 import { extname } from 'node:path';
 import ts from 'typescript';
 
+/** One comment of a source file, with its delimiters. */
 export interface Comment {
+  /** Offset of the comment's first character in the file. */
   offset: number;
+  /** Offset just past its last character. */
   end: number;
   text: string;
 }
 
+/** Extensions of the script files, whose comments come from the TypeScript parse. */
 export const scriptExtensions = new Set(['.cjs', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
 
 let lastParsed: ts.SourceFile | undefined;
@@ -106,8 +109,9 @@ function yamlTrailingComments(source: string): Comment[] {
 }
 
 /**
- * Block comments first, then line comments, for SQL. `#` comments that start a line for YAML, Dockerfile, Caddyfile
- * and env files, with the comments after a YAML value in document order. JSON has none.
+ * The comments of a source file: the TypeScript parse for scripts, a string-aware scanner for JSONC, block comments for
+ * CSS and SCSS, block then line comments for SQL, and `#` lines for YAML (with the comments after a value, in document
+ * order), Dockerfile, Caddyfile and env files. JSON has none.
  */
 export function sourceComments(file: string, source: string): Comment[] {
   const extension = extname(file);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alignmentFindings, owedAlignmentFindings, ownedPaths, parseAlignment } from './check-alignments.ts';
+import { alignmentFindings, checkAlignmentReadme, owedAlignmentFindings, ownedPaths } from './alignment-rules.ts';
 
 const lines = (...rows: string[]) => rows.join('\n');
 const alignment = lines(
@@ -21,17 +21,17 @@ const alignment = lines(
   '## What & why',
 );
 
-describe('parseAlignment', () => {
+describe('checkAlignmentReadme', () => {
   it('reads the codemod roots of a well-formed README', () => {
-    expect(parseAlignment(alignment)).toEqual({ roots: ['backend/src', 'frontend/src'], errors: [] });
+    expect(checkAlignmentReadme(alignment)).toEqual({ roots: ['backend/src', 'frontend/src'], errors: [] });
   });
 
   it('reports a missing frontmatter block, title and summary', () => {
-    expect(parseAlignment(lines('# Title', '', '## What & why')).errors).toEqual([
+    expect(checkAlignmentReadme(lines('# Title', '', '## What & why')).errors).toEqual([
       'must open with a `---` frontmatter block',
       'the title must be followed by a one-paragraph summary',
     ]);
-    expect(parseAlignment(lines('---', 'syncBreaking: false', 'clientCacheBump: false', '---', '', 'Text')).errors).toEqual([
+    expect(checkAlignmentReadme(lines('---', 'syncBreaking: false', 'clientCacheBump: false', '---', '', 'Text')).errors).toEqual([
       'the first line after the frontmatter must be the `# ` title',
       'the title must be followed by a one-paragraph summary',
     ]);
@@ -39,13 +39,13 @@ describe('parseAlignment', () => {
 
   it('reports unknown keys, missing flags, flags that are not booleans and a sync-breaking change without caughtBy', () => {
     const source = lines('---', 'syncBreaking: yes', 'version: next', '---', '', '# Title', '', 'Summary.');
-    expect(parseAlignment(source).errors).toEqual([
+    expect(checkAlignmentReadme(source).errors).toEqual([
       'syncBreaking must be true or false',
       'unknown frontmatter key: version',
       'frontmatter is missing clientCacheBump',
     ]);
     const breaking = (...keys: string[]) =>
-      parseAlignment(lines('---', 'syncBreaking: true', 'clientCacheBump: false', ...keys, '---', '', '# Title', '', 'Summary.')).errors;
+      checkAlignmentReadme(lines('---', 'syncBreaking: true', 'clientCacheBump: false', ...keys, '---', '', '# Title', '', 'Summary.')).errors;
     expect(breaking()).toEqual(['a sync-breaking alignment says how an app finds its leftovers: caughtBy']);
     expect(breaking('caughtBy: typecheck')).toEqual(['caughtBy must be one of compiler, tests, nothing']);
   });

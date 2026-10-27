@@ -1,8 +1,3 @@
-/**
- * Typechecks the repo as a new app has it (`pnpm template:check`): the config the scaffolder writes, which declares no
- * federation and leaves `sso` out, plus a regenerated SDK. `--tests` also runs the sign-in and connections suites.
- * The swapped files are restored at the end; an app has no template and passes without doing anything.
- */
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,7 +6,6 @@ import { repoRoot, withRestoredPaths } from './repo-files.ts';
 
 const configDir = join(repoRoot, 'shared/config');
 const templatePath = join(configDir, 'config.template.ts');
-/** Restored from git afterwards, so they must be clean before the swap. */
 const swappedPaths = ['shared/config', 'sdk/gen'];
 /** Ignored by git: the spec the SDK is generated from and the fingerprint that lets a later run skip generating it. */
 const specFiles = ['backend/openapi.cache.json', 'backend/openapi.manifest.json'];

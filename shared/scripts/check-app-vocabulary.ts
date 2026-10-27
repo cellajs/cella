@@ -1,8 +1,3 @@
-/**
- * Rejects source-control-oriented template terminology outside explicit compatibility files, and the template's product
- * name in identifiers and wire strings of app logic (claims, headers, DNS records, URLs), which an app would otherwise
- * ship to its own users.
- */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -22,7 +17,7 @@ const productNameAllowlist: VocabularyAllowlist = {
  * ` * fork: <why>` line inside a JSDoc block. YAML has a `# fork: <why>` line, which elsewhere could be a private field.
  */
 const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
-// A YAML comment starts at a line start or after whitespace; a `#` inside a value is text
+/** The YAML marker: a comment starts a line or follows whitespace, and a `#` inside a value is text. */
 const yamlMarkerComment = /(^|[ \t])#[ \t]*fork:[^\n]*/gim;
 const sourceControlAdvice = 'use template/app terminology';
 const productNameAdvice = 'derive it from appConfig or use a neutral name; the product name is not an identifier or wire string';
@@ -39,18 +34,16 @@ export interface VocabularyAllowlist {
 
 const templateAllowlist: VocabularyAllowlist = {
   files: [
-    // release-please copies merged commit titles into the changelog verbatim, so any
-    // title using the CLI's source-control term would otherwise fail the release PR.
+    // release-please copies merged commit titles verbatim, so a title with the CLI's term must not fail the release PR
     'CHANGELOG.md',
     'cella/CHANGELOG.md',
     'cella/cella.config.ts',
-    // The cella-sync skill documents the CLI sync workflow and the app-side marker convention,
-    // both of which use the CLI's source-control term. It must stay byte-identical with the
-    // copies shipped to apps so `pnpm cella sync` reports it as identical.
+    // The cella-sync skill documents the CLI's sync workflow and the app-side marker, both in the CLI's term; it stays
+    // byte-identical with the apps' copies, so `pnpm cella sync` reports it as identical
     'cella/skills/cella-sync/SKILL.md',
     'shared/scripts/check-app-vocabulary.ts',
   ],
-  // Alignment READMEs address app maintainers pulling template changes, an audience the CLI's source-control term describes precisely.
+  // Alignment READMEs address app maintainers pulling template changes, whom the CLI's term describes precisely
   prefixes: ['cella/alignments/'],
 };
 
@@ -61,7 +54,8 @@ function isAllowed(file: string, allowlist: VocabularyAllowlist): boolean {
   return allowlist.files.includes(file) || allowlist.prefixes.some((prefix) => file.startsWith(prefix));
 }
 
-export function findAppVocabularyFindings(file: string, source: string, allowlist: VocabularyAllowlist = templateAllowlist): Finding[] {
+/** The CLI's source-control term in a file's path and text, outside the sync markers and the allowlisted files. */
+export function vocabularyFindings(file: string, source: string, allowlist: VocabularyAllowlist = templateAllowlist): Finding[] {
   if (isAllowed(file, allowlist)) return [];
 
   const finding = (term: string) => ({ file, rule: 'source-control-term', term, message: sourceControlAdvice });
@@ -74,7 +68,7 @@ export function findAppVocabularyFindings(file: string, source: string, allowlis
 }
 
 /** An identifier, claim or URL carrying the product name: an app derives such names from `appConfig` or picks a neutral one. */
-export function findProductNameFindings(file: string, source: string): Finding[] {
+export function productNameFindings(file: string, source: string): Finding[] {
   const inLogic = logicRoots.some((root) => file.startsWith(root)) && !/\.test\.tsx?$/.test(file);
   if (!inLogic || isAllowed(file, productNameAllowlist)) return [];
   return [...source.matchAll(productNameInLogic)].map((match) => ({

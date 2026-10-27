@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { docFindings } from './check-doc-style.ts';
+import { docFindings } from './doc-rules.ts';
 
 const singular = ['invar', 'iant'].join('');
 const dash = '\u2014';

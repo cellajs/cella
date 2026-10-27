@@ -1,22 +1,17 @@
-/**
- * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose, comment placement, frontend
- * conventions, Tailwind class names, text colors, button recipes, token contrast and alignments in one pass. Exits non-zero on any finding.
- * `--audit` also prints review markers, which never fail; path arguments limit the files checked.
- */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { alignmentFindings, type BranchChanges, owedAlignmentFindings } from './check-alignments.ts';
-import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
-import { buttonRecipeFindings } from './check-button-recipes.ts';
-import { commentFindings } from './check-comment-style.ts';
-import { docFindings } from './check-doc-style.ts';
-import { frontendFindings, frontendStores } from './check-frontend-style.ts';
-import { stampFindings } from './check-stamps.ts';
-import { tailwindContext, tailwindFindings } from './check-tailwind-classes.ts';
-import { textColorFindings } from './check-text-colors.ts';
-import { tokenContrastFindings } from './check-token-contrast.ts';
+import { alignmentFindings, type BranchChanges, owedAlignmentFindings } from './alignment-rules.ts';
+import { buttonRecipeFindings } from './button-recipe-rules.ts';
+import { loadAllowlist, productNameFindings, vocabularyFindings } from './check-app-vocabulary.ts';
+import { commentFindings } from './comment-rules.ts';
+import { docFindings } from './doc-rules.ts';
+import { frontendFindings, frontendStores } from './frontend-rules.ts';
 import { type Finding, formatFinding, isRequested, repoFiles, repoRoot } from './repo-files.ts';
+import { stampFindings } from './stamp-rules.ts';
+import { tailwindContext, tailwindFindings } from './tailwind-class-rules.ts';
+import { textColorFindings } from './text-color-rules.ts';
+import { tokenContrastFindings } from './token-contrast-rules.ts';
 
 const audit = process.argv.includes('--audit');
 const roots = process.argv.slice(2).filter((arg) => arg !== '--audit');
@@ -25,7 +20,7 @@ const files = repoFiles();
 const stores = frontendStores(files);
 const tailwind = await tailwindContext(files, allowlist.markerClasses);
 
-/** What this branch changes against `origin/main`, uncommitted work included; nothing on main itself or without that ref. */
+/** The branch's changes since its merge base with `origin/main`, uncommitted and untracked files included; empty without that ref. */
 function branchChanges(): BranchChanges {
   const git = (...args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   try {
@@ -60,8 +55,8 @@ for (const file of requested) {
     ? []
     : [...docFindings(file, source), ...commentFindings(file, source)];
   const inFile = [
-    ...findAppVocabularyFindings(file, source, allowlist),
-    ...findProductNameFindings(file, source),
+    ...vocabularyFindings(file, source, allowlist),
+    ...productNameFindings(file, source),
     ...prose,
     ...frontendFindings(file, source, stores),
     ...stampFindings(file, source),
@@ -79,7 +74,7 @@ function print(header: string, list: Finding[]): void {
 
 const required = findings.filter((finding) => !finding.review);
 if (required.length > 0) print(`[style] ${required.length} finding(s):`, required);
-else console.log('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
+else console.info('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
 if (audit) {
   const review = findings.filter((finding) => finding.review);
   print(`[style:audit] ${review.length} review marker(s):`, review);

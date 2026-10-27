@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tokenContrastFindings } from './check-token-contrast.ts';
+import { tokenContrastFindings } from './token-contrast-rules.ts';
 
 const file = 'frontend/src/styling/tailwind.css';
 const theme = (light: string[], dark: string[]) =>

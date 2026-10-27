@@ -1,15 +1,9 @@
-/**
- * Runs the core suites with a config shaped like an app's (`pnpm app-shape:check`), so a template test that passes
- * only on the template's own surfaces, feature flags or member policy fails here, before an app's sync finds it.
- * The swapped files are restored at the end; an app has its own config and passes without doing anything.
- */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repoRoot, withRestoredPaths } from './repo-files.ts';
 
 const configDir = join(repoRoot, 'shared/config');
-/** Restored from git afterwards, so it must be clean before the swap. */
 const swappedPath = 'shared/config';
 
 /** Edited alike, so the test that holds the scaffolder's template to the default config still compares like with like. */

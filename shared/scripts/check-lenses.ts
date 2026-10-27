@@ -1,4 +1,3 @@
-/** CI guards for schema-evolution lenses; `pnpm --filter shared lens:check`. @see README.md */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -9,11 +8,11 @@ import { repoRoot } from './repo-files.ts';
 
 const lensDir = join(repoRoot, 'shared/src/schema-evolution');
 
-const DATED_LENS = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;
+const datedLensFile = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;
 
-/** Frozen-envelope + reserved field names a lens delta must never rename to/from or add/drop. */
-const RESERVED_FIELDS = new Set<string>([
-  // Core / frozen envelope (SCHEMA_EVOLUTION.md D4)
+/** Fields no lens delta may touch: the frozen envelope, the fields the CDC counters read and the embedding host columns. */
+const reservedFields = new Set<string>([
+  // The frozen envelope
   'id',
   'stx',
   'seq',
@@ -28,11 +27,12 @@ const RESERVED_FIELDS = new Set<string>([
   'role',
   'rejectedAt',
   // Declared entity-embedding host columns
-  ...appConfig.productEmbeddings.map((e) => e.hostColumn),
+  ...appConfig.productEmbeddings.map((embedding) => embedding.hostColumn),
 ]);
 
 const failures: string[] = [];
 
+/** Whether the repo is a git work tree, whose history the append-only check reads. */
 function gitAvailable(): boolean {
   try {
     execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: repoRoot, stdio: 'ignore' });
@@ -42,11 +42,12 @@ function gitAvailable(): boolean {
   }
 }
 
+/** The dated lens modules (`YYYY-MM-DD-<name>.ts`) in the lens folder. */
 function datedLensFiles(): string[] {
-  return readdirSync(lensDir).filter((f) => DATED_LENS.test(f));
+  return readdirSync(lensDir).filter((file) => datedLensFile.test(file));
 }
 
-// ── 1. Append-only lint ──
+/** A dated lens module is byte-identical to the version its first commit added. */
 function checkAppendOnly(files: string[]) {
   if (!gitAvailable()) {
     console.warn('[lens:check] git unavailable, skipping append-only check');
@@ -63,9 +64,9 @@ function checkAppendOnly(files: string[]) {
         .filter(Boolean);
       firstCommit = log[log.length - 1];
     } catch {
-      continue; // not yet committed, nothing to compare against
+      continue;
     }
-    if (!firstCommit) continue;
+    if (!firstCommit) continue; // not yet committed, nothing to compare against
     const original = execFileSync('git', ['show', `${firstCommit}:${rel}`], { cwd: repoRoot, encoding: 'utf8' });
     const current = readFileSync(abs, 'utf8');
     if (original !== current) {
@@ -74,7 +75,7 @@ function checkAppendOnly(files: string[]) {
   }
 }
 
-// ── 2. Config-collision validator ──
+/** Every field a lens delta names: both sides of a rename, and the field it adds, drops or retypes. */
 function fieldsOf(delta: (typeof lenses)[number]['delta']): string[] {
   const fields: string[] = [];
   const rename = deltaRenameMap(delta);
@@ -85,17 +86,18 @@ function fieldsOf(delta: (typeof lenses)[number]['delta']): string[] {
   return fields;
 }
 
+/** No lens touches a reserved field. */
 function checkCollisions() {
   for (const lens of lenses) {
     for (const field of new Set(fieldsOf(lens.delta))) {
-      if (RESERVED_FIELDS.has(field)) {
+      if (reservedFields.has(field)) {
         failures.push(`Config collision: lens "${lens.id}" touches reserved/frozen field "${field}".`);
       }
     }
   }
 }
 
-// ── 2b. Expand-before-contract rule (1.3): contract requires a prior expand on the same field ──
+/** A contract lens follows an expand lens of the same entity type on one of its fields. */
 function checkExpandBeforeContract() {
   for (let i = 0; i < lenses.length; i++) {
     const lens = lenses[i];
@@ -103,7 +105,10 @@ function checkExpandBeforeContract() {
     const fields = fieldsOf(lens.delta);
     const hasExpand = lenses
       .slice(0, i)
-      .some((prev) => prev.entityType === lens.entityType && prev.phase === 'expand' && fieldsOf(prev.delta).some((f) => fields.includes(f)));
+      .some(
+        (earlier) =>
+          earlier.entityType === lens.entityType && earlier.phase === 'expand' && fieldsOf(earlier.delta).some((field) => fields.includes(field)),
+      );
     if (!hasExpand) {
       failures.push(
         `Expand-before-contract violation: lens "${lens.id}" contracts ${lens.entityType} without a preceding expand lens on the same field.`,
@@ -112,7 +117,7 @@ function checkExpandBeforeContract() {
   }
 }
 
-// ── 3. Lens purity lint ──
+/** A dated lens module neither awaits nor imports dynamically. */
 function checkPurity(files: string[]) {
   for (const file of files) {
     const source = readFileSync(join(lensDir, file), 'utf8');
@@ -121,11 +126,12 @@ function checkPurity(files: string[]) {
   }
 }
 
+/** Every configured product and channel entity type calls its `evolutionContract` factory in `backend/src/modules`. */
 function checkContractCompleteness() {
   const modulesDir = join(repoRoot, 'backend', 'src', 'modules');
   let combined = '';
   try {
-    for (const entry of readdirSync(modulesDir, { recursive: true }) as string[]) {
+    for (const entry of readdirSync(modulesDir, { recursive: true, encoding: 'utf8' })) {
       if (!entry.endsWith('.ts')) continue;
       combined += readFileSync(join(modulesDir, entry), 'utf8');
     }
@@ -136,14 +142,14 @@ function checkContractCompleteness() {
   for (const type of appConfig.productEntityTypes) {
     if (!combined.includes(`evolutionContract.product('${type}'`)) {
       failures.push(
-        `Contract completeness: product entity "${type}" never calls evolutionContract.product('${type}', …) in backend/src/modules: its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: product entity "${type}" never calls evolutionContract.product('${type}', …) in backend/src/modules: its create/update body schemas skip the lens contract.`,
       );
     }
   }
   for (const type of appConfig.channelEntityTypes) {
     if (!combined.includes(`evolutionContract.channel('${type}'`)) {
       failures.push(
-        `Contract completeness: channel entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules: its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: channel entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules: its create/update body schemas skip the lens contract.`,
       );
     }
   }
@@ -158,7 +164,7 @@ checkContractCompleteness();
 
 if (failures.length > 0) {
   console.error(`[lens:check] ${failures.length} violation(s):`);
-  for (const f of failures) console.error(`  - ${f}`);
+  for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log(`[lens:check] OK, ${lenses.length} lens(es), ${files.length} dated module(s) verified.`);
+console.info(`[lens:check] OK, ${lenses.length} lens(es), ${files.length} dated module(s) verified.`);

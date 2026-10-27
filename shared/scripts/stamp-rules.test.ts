@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stampFindings } from './check-stamps.ts';
+import { stampFindings } from './stamp-rules.ts';
 
 const file = 'backend/src/modules/example/operations/update-example.ts';
 const rules = (source: string, path = file) => stampFindings(path, source).map(({ rule, line, column }) => `${rule} ${line}:${column}`);

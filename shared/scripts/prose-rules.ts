@@ -1,15 +1,15 @@
-/**
- * Prose rules for source comments and authored Markdown. `required` rules fail `pnpm style`; `review` rules print
- * under `pnpm style:audit` only. Every rule reads source comments; `text` rules read the whole source file, strings
- * included; `docs` rules also read Markdown and MDX prose.
- */
 import type { Finding } from './repo-files.ts';
 
+/** A wording rule, read in every source comment. */
 export interface ProseRule {
+  /** The rule id each finding prints in brackets. */
   name: string;
   pattern: RegExp;
+  /** `required` fails `pnpm style`; `review` prints under `pnpm style:audit` only. */
   level: 'required' | 'review';
+  /** The advice printed after the matched term. */
   message: string;
+  /** Also read in Markdown and MDX prose. */
   docs?: boolean;
   /** Read in the whole text of a source file, strings and JSON values included, not only in its comments. */
   text?: boolean;
@@ -29,10 +29,11 @@ export function isProseExempt(file: string, kind: 'source' | 'doc'): boolean {
   return ['backend/drizzle/', 'cella/alignments/', 'sdk/gen/'].some((prefix) => file.startsWith(prefix)) || file.includes('.gen.');
 }
 
+/** The rules the comment and doc checks apply; a required one also gets its line in the README. */
 export const proseRules: ProseRule[] = [
   { name: 'em-dash', pattern: /\u2014/, level: 'required', message: 'split the sentence, use a colon, or drop the clause', docs: true, text: true },
   {
-    name: 'contrast-history',
+    name: 'contrast-phrase',
     pattern: /\b(?:instead|rather than|as opposed to)\b/i,
     level: 'required',
     message: 'state the current behavior or local constraint directly',

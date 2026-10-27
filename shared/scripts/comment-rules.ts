@@ -1,7 +1,3 @@
-/**
- * Prose rules over source comments, and comment placement: a comment of more than three prose lines sits inside a
- * statement or directly above a declaration, so shared context goes to a README.
- */
 import { basename, extname } from 'node:path';
 import ts from 'typescript';
 import { isProseExempt, proseRules, ruleFindings } from './prose-rules.ts';
@@ -51,6 +47,7 @@ function isRequiredHeader(text: string): boolean {
   return /\b(?:copyright|licensed under|permission is hereby granted|the software is provided)\b/i.test(text);
 }
 
+/** Statements a comment of more than three prose lines may sit directly above. */
 const declarationKinds = new Set([
   ts.SyntaxKind.ClassDeclaration,
   ts.SyntaxKind.EnumDeclaration,

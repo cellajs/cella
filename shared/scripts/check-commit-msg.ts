@@ -1,8 +1,3 @@
-/**
- * The commit-msg hook (`lefthook.yaml`): a Conventional Commits header that release-please can read, checked with the
- * error rules of `@commitlint/config-conventional` and a 120-character header. Merge, revert, fixup and version
- * commits that git or a tool writes pass.
- */
 import { readFileSync } from 'node:fs';
 
 /** Types release-please knows (`.github/release-please-config.json` maps them to changelog sections). */

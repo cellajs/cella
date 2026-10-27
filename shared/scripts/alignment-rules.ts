@@ -1,8 +1,3 @@
-/**
- * Shape of the alignments in `cella/alignments/<id>/`: each folder holds a README.md that opens with frontmatter,
- * then the title and a one-paragraph summary. Apps read them with `pnpm cella align`, which expects this shape.
- * Also the rule that a branch changing an app-owned path synced code reads from brings an alignment.
- */
 import { type Finding, isUnder } from './repo-files.ts';
 
 /** An alignment folder name: `<YYYYMMDDThhmm>-<slug>`, UTC minute precision. */
@@ -13,8 +8,8 @@ const alignmentsDir = 'cella/alignments/';
 /** How an app finds the code an alignment leaves behind: typecheck, a test it inherits, or only by reading. */
 const caughtByValues = ['compiler', 'tests', 'nothing'];
 
-/** One alignment README, checked: the codemod's default scan roots (empty without a codemod) and every shape problem. */
-interface Alignment {
+/** What checking one alignment README finds: the codemod's default scan roots it names and every shape problem. */
+interface ReadmeCheck {
   roots: string[];
   errors: string[];
 }
@@ -34,8 +29,8 @@ function bodyLines(lines: string[]): string[] {
   });
 }
 
-/** Check an alignment README; every shape problem lands in `errors`. */
-export function parseAlignment(source: string): Alignment {
+/** Checks an alignment README: its frontmatter, title and summary paragraph, and the `roots` it names. */
+export function checkAlignmentReadme(source: string): ReadmeCheck {
   const errors: string[] = [];
   const lines = source.replace(/\r\n/g, '\n').split('\n');
 
@@ -76,7 +71,10 @@ export function parseAlignment(source: string): Alignment {
   return { roots, errors };
 }
 
-/** Findings for every alignment folder among `files`: folder name, README shape, and `roots` exactly beside a codemod. */
+/**
+ * Findings for every alignment folder among `files`: folder name, README shape and `roots` exactly beside a codemod,
+ * the shape `pnpm cella align` reads.
+ */
 export function alignmentFindings(files: string[], read: (file: string) => string): Finding[] {
   const folders = new Map<string, string[]>();
   for (const file of files) {
@@ -96,13 +94,12 @@ export function alignmentFindings(files: string[], read: (file: string) => strin
       finding(`${alignmentsDir}${folder}`, 'alignment folder has no README.md');
       continue;
     }
-    const alignment = parseAlignment(read(readme));
-    for (const error of alignment.errors) finding(readme, error, 1);
+    const { roots, errors } = checkAlignmentReadme(read(readme));
+    for (const error of errors) finding(readme, error, 1);
     const codemods = names.filter((name) => !name.includes('/') && name.endsWith('.ts') && !name.endsWith('.test.ts'));
     if (codemods.length > 1) finding(readme, `one codemod per alignment, found ${codemods.join(', ')}`, 1);
-    if (alignment.roots.length > 0 && codemods.length === 0) finding(readme, 'roots is only for an alignment with a codemod', 1);
-    if (alignment.roots.length === 0 && codemods.length > 0)
-      finding(readme, 'a codemod needs roots: the folders `pnpm cella align --run` scans by default', 1);
+    if (roots.length > 0 && codemods.length === 0) finding(readme, 'roots is only for an alignment with a codemod', 1);
+    if (roots.length === 0 && codemods.length > 0) finding(readme, 'a codemod needs roots: the folders `pnpm cella align --run` scans by default', 1);
   }
   return findings;
 }
@@ -140,7 +137,7 @@ export interface BranchChanges {
 }
 
 /**
- * The finding for a branch that changes an app-owned path synced code reads from (a pinned seam, `logo.tsx`,
+ * The finding for a branch that changes an app-owned path synced code reads from (a pinned file, `logo.tsx`,
  * `backend/drizzle`) without adding an alignment. Such a change never reaches an app's copy, so the app's synced code
  * breaks until someone tells it what to add. An `Alignment: none, <reason>` line in a commit message waives it.
  */

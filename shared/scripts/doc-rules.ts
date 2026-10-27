@@ -1,4 +1,3 @@
-/** Prose rules over authored Markdown and MDX; code, fenced blocks and link targets are masked. */
 import { extname } from 'node:path';
 import { isProseExempt, proseRules, ruleFindings } from './prose-rules.ts';
 import { blankOut, type Finding, lineColumn } from './repo-files.ts';
@@ -37,7 +36,7 @@ function codeLinkFindings(file: string, source: string): Finding[] {
   }));
 }
 
-/** Rule findings in one Markdown or MDX file. */
+/** Rule findings in the prose of one Markdown or MDX file, and inline code in its link labels. */
 export function docFindings(file: string, source: string): Finding[] {
   if (!docExtensions.has(extname(file).toLowerCase()) || isProseExempt(file, 'doc')) return [];
   const prose = maskMarkdownCode(source);

@@ -1,8 +1,3 @@
-/**
- * A button takes its color from its variant; a neutral hover is `hover:bg-muted` on a pressable, accent on a navigable
- * item, sidebar-accent in the sidebar. Under `--audit`, a button class that sets a fill, edge or text color and a neutral
- * hover off that model are review markers, a destructive or muted text a button keeps on purpose included.
- */
 import ts from 'typescript';
 import { splitToken, stringTokens, type Token } from './class-tokens.ts';
 import { type Finding, isFrontendSource, lineColumn } from './repo-files.ts';
@@ -35,10 +30,12 @@ export function offModelHover(token: string): boolean {
   return neutralHover.test(base) && base !== 'bg-muted/50' && variants.some((variant) => /(?:^|-)hover(?:\/|$)/.test(variant));
 }
 
-const isButton = (node: ts.Node) => (ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)) && tagName(node) === 'Button';
-const tagName = (node: ts.JsxSelfClosingElement | ts.JsxElement) => (ts.isJsxElement(node) ? node.openingElement : node).tagName.getText();
+function isButton(node: ts.Node): boolean {
+  if (!ts.isJsxSelfClosingElement(node) && !ts.isJsxElement(node)) return false;
+  return (ts.isJsxElement(node) ? node.openingElement : node).tagName.getText() === 'Button';
+}
 
-/** Button and hover recipe markers in one frontend file. */
+/** Button and hover recipe review markers in one frontend file. */
 export function buttonRecipeFindings(file: string, source: string): Finding[] {
   if (!isFrontendSource(file) || file.endsWith('/ui/button.tsx') || !/hover|Button|buttonVariants/.test(source)) return [];
   const sourceFile = parseSource(file, source);

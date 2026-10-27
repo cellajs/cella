@@ -1,18 +1,19 @@
-/** File listing, path filters, positions and the finding shape the style checks share. */
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** Absolute path of the repository holding this folder; every repo-relative path here resolves against it. */
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** One style finding. `review` findings print under `--audit` only and never fail the check. */
 export interface Finding {
   file: string;
-  /** 1-based; absent when the finding is about the path itself. */
+  /** 1-based, as is `column`; absent when the finding is about the path itself. */
   line?: number;
   column?: number;
   rule: string;
+  /** The matched text, printed in quotes before the message; absent when the finding names no single term. */
   term?: string;
   message: string;
   review?: boolean;

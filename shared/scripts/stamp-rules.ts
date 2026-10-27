@@ -1,8 +1,3 @@
-/**
- * Row stamps are written one way, `getIsoDate()` for a moment and `updateStamps()` / `deleteStamps()` for a row's last
- * write and tombstone (AGENTS.md, Coding patterns): this flags backend code that stamps by hand. A table without a
- * writer (`updatedAt` alone) still stamps with `getIsoDate()`.
- */
 import ts from 'typescript';
 import { type Finding, lineColumn } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
@@ -66,7 +61,7 @@ function stampPairFindings(file: string, source: string): Finding[] {
   return findings;
 }
 
-/** The stamp findings of one file. */
+/** Stamp findings in one backend file: the clock read by hand, and a writer pair written by hand. */
 export function stampFindings(file: string, source: string): Finding[] {
   if (!isStampedSource(file)) return [];
   const clock = [...source.matchAll(/new Date\(\)\.toISOString\(\)/g)].map((match) => ({
