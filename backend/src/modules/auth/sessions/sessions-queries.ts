@@ -166,7 +166,8 @@ interface GetStepUpFactsOpts {
 
 /**
  * What a session's step-up state is decided from, in one query: the proof it was stamped with inside the window, whether
- * it signed in inside the window, and which second factors its user holds. Undefined when the session row is gone.
+ * it signed in inside the window, which second factors its user holds and whether MFA is on. Undefined when the session
+ * row is gone.
  */
 export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since }: GetStepUpFactsOpts) => {
   // The factors are looked up by the session's user id as a parameter: a select field renders its columns without their
@@ -177,6 +178,7 @@ export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since 
       signedInRecently: sql<boolean>`${sessionsTable.createdAt} > ${since}`,
       hasPasskey: sql<boolean>`exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${userId})`,
       hasTotp: sql<boolean>`exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${userId})`,
+      mfaRequired: sql<boolean>`exists (select 1 from ${usersTable} where ${usersTable.id} = ${userId} and ${usersTable.mfaRequired})`,
     })
     .from(sessionsTable)
     .where(eq(sessionsTable.id, sessionId));

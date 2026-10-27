@@ -17,7 +17,7 @@ import {
   startTestOauthServer,
   type TestOauthServer,
 } from './oauth-helpers';
-import { clearSecurityTestData, createOrgUser } from './security/helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 describe('OAuth authorization server', async () => {
@@ -34,7 +34,7 @@ describe('OAuth authorization server', async () => {
 
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+    const user = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 

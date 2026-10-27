@@ -16,7 +16,7 @@ import { createTestOrganization, createTestSession, createTestUser, insertTestSe
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
@@ -89,7 +89,7 @@ describe('Secret columns in responses', async () => {
 
   beforeAll(async () => {
     organization = await createTestOrganization();
-    admin = await createOrgUser(call, organization.tenantId, organization.id, 'secrets-admin', adminRole);
+    admin = await createFactorOrgUser(call, organization.tenantId, organization.id, 'secrets-admin', adminRole);
 
     // The invitee holds the TOTP: on the admin it would make key creation ask for a step-up.
     const inviteeUser = await createTestUser('secrets-invitee@security-test.com');

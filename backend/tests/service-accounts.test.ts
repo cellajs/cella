@@ -23,7 +23,7 @@ import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
 import { bearerHeaders } from './oauth-helpers';
-import { clearSecurityTestData, createOrgUser } from './security/helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 afterEach(async () => await clearSecurityTestData());
@@ -36,7 +36,7 @@ describe('Service accounts and API keys', async () => {
   // Organization roles: the role registry can also span channel-only roles.
   async function orgWithAdmin(role: OrganizationRole = adminRole) {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
+    const user = await createFactorOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 

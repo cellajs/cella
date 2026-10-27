@@ -262,9 +262,9 @@ import type {
   SendSsoRecoveryLinkData,
   SendSsoRecoveryLinkErrors,
   SendSsoRecoveryLinkResponses,
-  SendStepUpLinkData,
-  SendStepUpLinkErrors,
-  SendStepUpLinkResponses,
+  SendStepUpCodeData,
+  SendStepUpCodeErrors,
+  SendStepUpCodeResponses,
   SignInWithPasskeyData,
   SignInWithPasskeyErrors,
   SignInWithPasskeyResponses,
@@ -410,7 +410,7 @@ import {
   zSendMagicLinkResponse,
   zSendNewsletterResponse,
   zSendSsoRecoveryLinkResponse,
-  zSendStepUpLinkResponse,
+  zSendStepUpCodeResponse,
   zSignInWithPasskeyResponse,
   zSignInWithTotpResponse,
   zSignOutResponse,
@@ -518,7 +518,7 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
 /**
  * Invoke token session
  *
- * Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.
+ * Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· _auth · cella_
  *
@@ -1187,11 +1187,12 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
 /**
  * Get step-up state
  *
- * Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.
+ * Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.
  *
  * **GET /auth/step-up** ·· [getStepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/step-up) ·· _auth · cella_
  *
  * @param {getStepUpData} options
+ * @param {enum=} options.query.tier - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getStepUp = <ThrowOnError extends boolean = true>(
@@ -1205,15 +1206,16 @@ export const getStepUp = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Step up with a second factor
+ * Step up
  *
- * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.
+ * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge), a TOTP code of a factor they hold, or the code a step-up mail carried. The proof counts for ten minutes.
  *
  * **POST /auth/step-up** ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up) ·· _auth · cella_
  *
  * @param {stepUpData} options
  * @param {object} options.body.passkeyData - `object`
  * @param {string=} options.body.totpCode - `string` (optional)
+ * @param {string=} options.body.emailCode - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const stepUp = <ThrowOnError extends boolean = true>(
@@ -1251,28 +1253,23 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Email a step-up link
+ * Email a step-up code
  *
- * For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.
+ * For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.
  *
- * **POST /auth/step-up/link** ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/link) ·· _auth · cella_
+ * **POST /auth/step-up/code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/code) ·· _auth · cella_
  *
- * @param {sendStepUpLinkData} options
- * @param {string=} options.body.redirect - `string` (optional)
+ * @param {sendStepUpCodeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
-export const sendStepUpLink = <ThrowOnError extends boolean = true>(
-  options: Options<SendStepUpLinkData, ThrowOnError>,
-): RequestResult<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zSendStepUpLinkResponse.parseAsync(data),
+export const sendStepUpCode = <ThrowOnError extends boolean = true>(
+  options?: Options<SendStepUpCodeData, ThrowOnError>,
+): RequestResult<SendStepUpCodeResponses, SendStepUpCodeErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<SendStepUpCodeResponses, SendStepUpCodeErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zSendStepUpCodeResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/step-up/link',
+    url: '/auth/step-up/code',
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 
 /**

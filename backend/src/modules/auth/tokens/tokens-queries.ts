@@ -1,7 +1,7 @@
 import { and, desc, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
@@ -225,6 +225,32 @@ interface DeleteBoundTokenOpts {
 /** Deletes the token a browser's cookie of `type` binds it to; returns the deleted row, undefined when there was none. */
 export const deleteBoundToken = async (ctx: DbContext, { type, cookie }: DeleteBoundTokenOpts) => {
   const [spent] = await ctx.var.db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);
+  return spent;
+};
+
+interface DeleteSessionCodeTokenOpts {
+  type: CodeTokenType;
+  sessionId: string;
+  /** The code as the user entered it. */
+  code: string;
+}
+
+/**
+ * Deletes the session's unexpired code token of `type` when `code` matches it; returns the deleted row, undefined
+ * otherwise. The session narrows the search first, so a guess can match only this session's code; a miss deletes nothing.
+ */
+export const deleteSessionCodeToken = async (ctx: DbContext, { type, sessionId, code }: DeleteSessionCodeTokenOpts) => {
+  const [spent] = await ctx.var.db
+    .delete(tokensTable)
+    .where(
+      and(
+        eq(tokensTable.type, type),
+        eq(tokensTable.sessionId, sessionId),
+        eq(tokensTable.secret, hashToken(code)),
+        gt(tokensTable.expiresAt, getIsoDate()),
+      ),
+    )
+    .returning(tokenColumns);
   return spent;
 };
 

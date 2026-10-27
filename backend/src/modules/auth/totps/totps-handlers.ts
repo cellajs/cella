@@ -7,6 +7,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
 import { completeMfaChallenge } from '#/modules/auth/mfa/operations/mfa-challenge';
+import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
 import { verifyTotp } from '#/modules/auth/totps/operations/verify-totp';
 import { deleteTotp, findTotp, insertTotp } from '#/modules/auth/totps/totps-queries';
@@ -54,6 +55,8 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');
 
+  // The confirming code proved the new authenticator on this session, which steps the session up with it.
+  await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: user.id, via: 'totp' });
   sendAccountSecurityEmail(user, 'totp-added');
 
   return ctx.body(null, 201);

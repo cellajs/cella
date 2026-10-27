@@ -14,9 +14,6 @@ export const authenticateRouteSearchParamsSchema = z.object({
   fromRoot: z.boolean().optional(),
 });
 
-/** The page that asked for the confirmation link, section included. */
-export const stepUpConfirmedRouteSearchParamsSchema = z.object({ redirect: redirectSearchSchema });
-
 /** The page the institution's sign-in returns to. */
 export const ssoEntryRouteSearchParamsSchema = z.object({ redirect: redirectSearchSchema });
 

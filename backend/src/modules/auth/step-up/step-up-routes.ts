@@ -2,7 +2,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, spamLimiter, stepUpLimiter } from '#/middlewares/rate-limiter/limiters';
 import { passkeyChallengeSchema } from '#/modules/auth/passkeys/passkeys-schema';
-import { stepUpBodySchema, stepUpLinkBodySchema, stepUpStateSchema } from '#/modules/auth/step-up/step-up-schema';
+import { stepUpBodySchema, stepUpQuerySchema, stepUpStateSchema } from '#/modules/auth/step-up/step-up-schema';
 
 const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   getStepUp: xRoute({
@@ -11,7 +11,8 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get step-up state',
     description:
-      'Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.',
+      'Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.',
+    request: { query: stepUpQuerySchema },
     responses: { 200: json('Step-up state', stepUpStateSchema) },
   }),
   getStepUpPasskeyChallenge: xRoute({
@@ -30,22 +31,21 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     path: '/step-up',
     xGuard: [userGuard],
     xRateLimiter: [stepUpLimiter],
-    summary: 'Step up with a second factor',
+    summary: 'Step up',
     description:
-      'Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.',
+      'Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge), a TOTP code of a factor they hold, or the code a step-up mail carried. The proof counts for ten minutes.',
     request: { body: jsonBody(stepUpBodySchema) },
     responses: { 204: { description: 'Session stepped up' } },
   }),
-  sendStepUpLink: xRoute({
+  sendStepUpCode: xRoute({
     method: 'post',
-    path: '/step-up/link',
+    path: '/step-up/code',
     xGuard: [userGuard],
     xRateLimiter: [spamLimiter],
-    summary: 'Email a step-up link',
+    summary: 'Email a step-up code',
     description:
-      'For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.',
-    request: { body: jsonBody(stepUpLinkBodySchema) },
-    responses: { 204: { description: 'Link sent' } },
+      'For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.',
+    responses: { 204: { description: 'Code sent' } },
   }),
 });
 

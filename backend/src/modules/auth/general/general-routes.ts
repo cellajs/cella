@@ -68,7 +68,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Invoke token session',
     description:
-      "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
+      'Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.',
     request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string() }) },
     responses: { 302: { description: 'Redirect with token session', headers: locationSchema } },
   }),

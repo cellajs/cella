@@ -53,6 +53,16 @@ export async function createOrgUser(_call: Call, tenantId: string, organizationI
   return { id: user.id, email, sessionCookie };
 }
 
+/**
+ * `createOrgUser` for a user who holds a passkey: the user's session is a passkey sign-in of a moment ago, so it proves
+ * the second factor that minting an API key or consenting to an OAuth client asks.
+ */
+export async function createFactorOrgUser(...args: Parameters<typeof createOrgUser>) {
+  const user = await createOrgUser(...args);
+  await insertPasskey(user);
+  return user;
+}
+
 /** Empties tenant-scoped and auth tables and everything that references them. */
 export async function clearSecurityTestData() {
   await emptyTables([

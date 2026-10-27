@@ -32,6 +32,11 @@ export interface FederationConfig {
   snapshotClaims: readonly string[];
   /** Whether the institution operates the mailbox it asserts, so a sign-in through it proves the address. */
   addressAuthority: boolean;
+  /**
+   * The `acr` values by which an institution asserts it used multi-factor authentication. A sign-in carrying one starts
+   * stepped up, as a second factor would. Absent or empty: no SSO sign-in of this federation counts as a factor.
+   */
+  mfaAcr?: readonly string[];
 }
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
 

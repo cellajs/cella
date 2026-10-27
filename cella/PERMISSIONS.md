@@ -221,6 +221,8 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 | `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./AUTHENTICATION.md#institutional-sign-in-sso) |
 | `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin |
 | `stepUpGuard` | A session that recently proved its user's presence again, never an impersonation ([Step-up](./AUTHENTICATION.md#step-up)) |
+| `stepUpEnrollGuard` | As `stepUpGuard`, for setting up a factor: a user who lost theirs, with MFA off, may also pass with an emailed code |
+| `stepUpFactorGuard` | A session that recently proved a second factor the user holds, or an SSO sign-in with asserted MFA, never an impersonation |
 | `sysAdminGuard` | The system admin role from an allowed IP address, never an impersonation |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin |
 
@@ -244,8 +246,8 @@ Unexpected server errors include internal details in client responses only in de
 | An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
 | A tenant quota that is full | 403: `restrict_by_app` with `meta.resource` and `meta.quota` from `assertTenantQuota` (service accounts, API keys); `restrict_by_org` for members, invitations and attachments | The tenant's policy, not a rate: waiting does not lift it, so it is never a 429, which tells the client to retry after `Retry-After` |
-| An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Authentication](./AUTHENTICATION.md#step-up) |
-| An action on the account itself while impersonating: stepping up, revoking the user's sessions, every `stepUpGuard` route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in `stepUpGuard` and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
+| An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | [Authentication](./AUTHENTICATION.md#step-up) |
+| An action on the account itself while impersonating: stepping up, revoking the user's sessions, every step-up guarded route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in the step-up guards and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
 
 ## What members see
 

@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -17,13 +18,16 @@ import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   const { user, session } = ctx.var;
 
-  // The guard refused a session that has not stepped up; the factor that proved this one is the step-up of the mfa
-  // session minted below. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
-  const { factor } = await readStepUp(session);
+  const { factor, methods } = await readStepUp(session, 'account');
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
   const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
-    if (mfaRequired) await mfaFactorRules.assertCanEnable(tx, user.id);
+    if (mfaRequired) {
+      await mfaFactorRules.assertCanEnable(tx, user.id);
+      // The factor that proved this session is the step-up of the mfa session minted below. A session proven by an SSO
+      // sign-in names none, so turning MFA on asks for one of the two factors it needs enrolled.
+      if (!factor) throw new AppError(403, 'step_up_required', 'info', { meta: { methods } });
+    }
     const txCtx = { var: { ...ctx.var, db: tx } };
     const updated = await updateUserMfa(txCtx, { mfaRequired });
     if (updated.mfaRequired) {

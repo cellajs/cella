@@ -14,6 +14,7 @@ type AccountSecurityType =
   | 'passkey-deleted'
   | 'totp-added'
   | 'totp-deleted'
+  | 'provider-connected'
   | 'tenant-created'
   | 'system-role-granted'
   | 'system-role-changed'

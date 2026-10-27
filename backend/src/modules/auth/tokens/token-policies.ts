@@ -9,7 +9,7 @@ type SameSite = 'lax' | 'strict';
  * - `identity`: those of its identity, or of the provider account signing up (a verification link).
  * - `invitation`: those of its membership invitation, or of its address for a system invitation.
  * - `account`: those of its account (a connect pin: one per account at a time).
- * - `session`: those bound to its session (a step-up link: one per session at a time).
+ * - `session`: those bound to its session (a step-up code: one per session at a time).
  * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
  */
 const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'session', 'none'] as const;
@@ -18,7 +18,8 @@ export type TokenReplacement = (typeof tokenReplacements)[number];
 /**
  * The lifecycle rules of one token type. A `link` token travels in an emailed URL: redeeming it (`invokeToken`) swaps
  * its lifetime for the single-use window and binds it to the browser with a single-use cookie. A `cookie` token lives
- * only in a cookie of its own name and is never redeemable as a link.
+ * only in a cookie of its own name and is never redeemable as a link. A `code` token is a short number in a mail,
+ * entered in the session it was issued for: it is found by that session, never by its value.
  */
 export type TokenPolicy =
   | {
@@ -43,7 +44,8 @@ export type TokenPolicy =
       ttl: TimeSpan;
       sameSite: SameSite;
       replaces: TokenReplacement;
-    };
+    }
+  | { carrier: 'code'; ttl: TimeSpan; replaces: TokenReplacement };
 
 /**
  * One policy per token type; an app that adds a token type to `appConfig.tokenTypes` must add its policy here, and a
@@ -53,7 +55,7 @@ export type TokenPolicy =
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
  *   site started, reads them. The others are Strict.
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
- * - `step-up` confirms, from the inbox, a step-up of the session that asked for it; see `openStepUpLink`.
+ * - `step-up` is the emailed code a session enters to step up; see `sendStepUpCodeOp`.
  */
 export const tokenPolicies = {
   invitation: {
@@ -82,14 +84,7 @@ export const tokenPolicies = {
   },
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict', replaces: 'none' },
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax', replaces: 'account' },
-  'step-up': {
-    carrier: 'link',
-    ttl: new TimeSpan(10, 'm'),
-    singleUseWindow: new TimeSpan(5, 'm'),
-    sameSite: 'strict',
-    replaces: 'session',
-    unboundOpener: 'address-holder',
-  },
+  'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm'), replaces: 'session' },
 } as const satisfies Record<TokenType, TokenPolicy>;
 
 type TokenTypeCarriedBy<C extends TokenPolicy['carrier']> = {
@@ -107,6 +102,9 @@ export const tokenLinkUrl = (type: LinkTokenType, rawToken: string) => `${appCon
 
 /** Token types carried only by a cookie. */
 export type CookieTokenType = TokenTypeCarriedBy<'cookie'>;
+
+/** Token types carried by an emailed code. */
+export type CodeTokenType = TokenTypeCarriedBy<'code'>;
 
 const isLinkTokenType = (type: TokenType): type is LinkTokenType => tokenPolicies[type].carrier === 'link';
 

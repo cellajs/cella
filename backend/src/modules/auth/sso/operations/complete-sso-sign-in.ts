@@ -73,6 +73,8 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
   const snapshot = snapshotOf(federation, claims);
   const identity = await findIdentityBySubject(dbCtx, { kind: 'sso', issuer: federation.key, subject: claims.sub });
   const facts = { federation, connection, claims, profile, snapshot, subject: claims.sub, identity };
+  // An institution that asserts MFA proves a second factor: the session starts stepped up by it.
+  const assertedMfa = typeof claims.acr === 'string' && !!federation.mfaAcr?.includes(claims.acr);
 
   const user =
     type === 'connect'
@@ -81,7 +83,10 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
         ? await signInSsoIdentity(identity, facts)
         : await provisionSsoUser(ctx, facts);
 
-  return finishSignIn(ctx, user, federation.key, redirectAfter, { connectionId: connection.id });
+  return finishSignIn(ctx, user, federation.key, redirectAfter, {
+    connectionId: connection.id,
+    ...(assertedMfa && { steppedUpVia: 'sso' as const }),
+  });
 };
 
 /** The account of a returning identity: the use recorded, and a changed address proven under address authority. */

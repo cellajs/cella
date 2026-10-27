@@ -9,7 +9,7 @@ import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hiera
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -53,8 +53,8 @@ describe('Product existence (getValidProduct)', async () => {
 
   beforeAll(async () => {
     organization = await createTestOrganization();
-    admin = await createOrgUser(call, organization.tenantId, organization.id, 'existence-admin', adminRole);
-    member = await createOrgUser(call, organization.tenantId, organization.id, 'existence-member', memberRole);
+    admin = await createFactorOrgUser(call, organization.tenantId, organization.id, 'existence-admin', adminRole);
+    member = await createFactorOrgUser(call, organization.tenantId, organization.id, 'existence-member', memberRole);
     unscopedKey = await issueKey(['organization:read']);
     readOnlyKey = await issueKey(['attachment:read']);
 
