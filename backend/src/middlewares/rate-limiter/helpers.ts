@@ -25,13 +25,13 @@ type RateLimiterOptions = {
   inMemoryBlock?: boolean;
 };
 
-// Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
+/** Limiter instances by key prefix, so limiters that share a prefix share one store and its in-memory state. */
 const limiterRegistry = new Map<string, LimiterStore>();
 
 /** Each database store's in-memory insurance, for the statements this module runs on the store's table itself. */
 const insurances = new WeakMap<RateLimiterDrizzle, RateLimiterMemory>();
 
-/** Prefix-memoized Drizzle limiter; an in-memory insurance limiter covers DB outages and blocks stay local. */
+/** The database store for a key prefix, created once; an in-memory insurance limiter covers database outages. */
 export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: RateLimiterOptions): LimiterStore => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
@@ -190,14 +190,14 @@ export const blockSpentBucket = async (store: LimiterStore, rateLimitKey: string
  * The refusal carries the wait alone: the key names a subject, which no client needs and no log line repeats.
  * @param type - The limiter's own refusal type, when a client says more than "too many requests" for it.
  */
-export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, type: ErrorKey = 'too_many_requests') => {
+export const refuseRateLimited = (ctx: Context<Env>, limitState: RateLimiterRes, type: ErrorKey = 'too_many_requests') => {
   const retryAfter = getRetryAfter(limitState.msBeforeNext);
-  ctx.header('Retry-After', retryAfter);
-  throw new AppError(429, type, 'warn', { meta: { retryAfter: Number(retryAfter) } });
+  ctx.header('Retry-After', String(retryAfter));
+  throw new AppError(429, type, 'warn', { meta: { retryAfter } });
 };
 
-/** Floored to 1s so sub-second waits never emit `Retry-After: 0`, which clients read as "retry immediately". */
-export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000)).toString();
+/** Seconds to wait, floored to 1 so a sub-second wait never sends `Retry-After: 0`, which clients read as "retry immediately". */
+export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000));
 
 /**
  * One identifier's segment of a rate-limit key. An id enters as it is; an IP (IPv6 by its /64) or an address enters
@@ -226,13 +226,15 @@ const identifierReaders = {
   tenantId: (ctx) => ctx.var.tenantId || null,
 } satisfies Record<RateLimitIdentifier, (ctx: Context<Env>) => string | null | Promise<string | null>>;
 
+/** The value of each identifier in `identifiersToExtract` from the request, null where it has none. */
 export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract: RateLimitIdentifier[]): Promise<Identifiers> => {
   const results: Identifiers = { email: null, ip: null, userId: null, actorId: null, tenantId: null };
   for (const identifier of identifiersToExtract) results[identifier] = await identifierReaders[identifier](ctx);
   return results;
 };
 
-export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
+/** {@link checkRateLimitStatus} for the request's IP. */
+export const checkIpRateLimitStatus = (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
   const ip = getIp(ctx);
   return checkRateLimitStatus(rateLimiterHandler, subjectSegment('ip', ip ?? ''));
 };
@@ -248,7 +250,7 @@ export const checkRateLimitStatus = async (
   for (const { store, limits } of buckets) {
     const state = await store.get(rateLimitKey);
     if (state && state.consumedPoints >= limits.points) {
-      return { isLimited: true, retryAfter: Number(getRetryAfter(state.msBeforeNext)) };
+      return { isLimited: true, retryAfter: getRetryAfter(state.msBeforeNext) };
     }
   }
   return { isLimited: false };

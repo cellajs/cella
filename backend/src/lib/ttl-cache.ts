@@ -7,8 +7,6 @@ interface TTLCacheOptions<T> {
   /** Maximum number of entries */
   maxSize: number;
   defaultTtl: number;
-  /** Optional callback when an entry is stored, after the entry it replaces was disposed */
-  onSet?: (key: string, value: T) => void;
   /** Optional callback when entries are removed */
   onDispose?: (key: string, value: T, reason: DisposeReason) => void;
 }
@@ -20,14 +18,12 @@ let cacheCount = 0;
 export class TTLCache<T> {
   private cache: BaseTTLCache<string, T>;
   private readonly defaultTtl: number;
-  private readonly onSet?: (key: string, value: T) => void;
   private readonly flightScope = `ttl-cache:${cacheCount++}`;
   /** Counts invalidations: a read that started under an earlier count stores nothing. */
   private generation = 0;
 
   constructor(options: TTLCacheOptions<T>) {
     this.defaultTtl = options.defaultTtl;
-    this.onSet = options.onSet;
 
     this.cache = new BaseTTLCache<string, T>({
       max: options.maxSize,
@@ -44,7 +40,6 @@ export class TTLCache<T> {
   /** Falls back to the cache's default TTL. */
   set(key: string, value: T, ttl?: number): void {
     this.cache.set(key, value, { ttl: ttl ?? this.defaultTtl });
-    this.onSet?.(key, value);
   }
 
   /**
@@ -68,14 +63,6 @@ export class TTLCache<T> {
       if (value !== undefined && generation === this.generation) this.set(key, value);
       return value;
     });
-  }
-
-  /**
-   * Keeps every read in flight from storing its value; `delete`, `invalidateWhere` and `clear` do so too, whether or
-   * not an entry matched. For a change whose entries an index outside the cache finds, where a read in flight has none.
-   */
-  discardPendingLoads(): void {
-    this.generation++;
   }
 
   delete(key: string): boolean {

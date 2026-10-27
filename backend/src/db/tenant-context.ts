@@ -74,6 +74,14 @@ export function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => 
   return requestTransaction(ctx, ctx.var.tenantId, false, true, fn);
 }
 
+/**
+ * `tenantRead` for a caller on the bare pool, which carries no RLS session context. A caller that already holds a
+ * tenant transaction (a write that reads the rows it changes, with `forUpdate`) reads in it.
+ */
+export function tenantReadUnlessInTransaction<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
+  return ctx.var.db === baseDb ? tenantRead(ctx, fn) : fn(ctx);
+}
+
 /** `tenantRead` that also reads soft-deleted rows (`app.include_deleted`). */
 export function tenantReadIncludingDeleted<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return requestTransaction(ctx, ctx.var.tenantId, true, true, fn);

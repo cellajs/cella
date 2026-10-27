@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearCache, restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+import { adoptDbCount, clearPointsCache, restoreDebt, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 
 const hourMs = 60 * 60 * 1000;
 const fiveMinutesMs = 5 * 60 * 1000;
 
 describe('points-cache', () => {
   beforeEach(() => {
-    clearCache();
+    clearPointsCache();
   });
 
   afterEach(() => {
@@ -106,14 +106,14 @@ describe('points-cache', () => {
     });
   });
 
-  describe('syncFromDb', () => {
+  describe('adoptDbCount', () => {
     it('should adopt the DB count and clear debt', () => {
       for (let i = 0; i < 10; i++) {
         tryFastConsume('tenant:user1', 1, 1000, hourMs);
       }
 
       // DB path settled everything: count now includes our debt (and other processes).
-      syncFromDb('tenant:user1', 900, hourMs, hourMs);
+      adoptDbCount('tenant:user1', 900, hourMs, hourMs);
 
       expect(takeDebt('tenant:user1')).toBe(0);
       // The local counter now reflects the DB, so the next request is over threshold
@@ -129,13 +129,13 @@ describe('points-cache', () => {
       expect(debt).toBe(799);
 
       // The DB trip consumes cost + debt, so the count it reports includes everything.
-      syncFromDb('tenant:user1', debt + 1, hourMs, hourMs);
+      adoptDbCount('tenant:user1', debt + 1, hourMs, hourMs);
 
       expect(tryFastConsume('tenant:user1', 1, 1000, hourMs)).toBe('check-db');
     });
 
     it('should create entry for unknown key', () => {
-      syncFromDb('tenant:new', 500, hourMs, hourMs);
+      adoptDbCount('tenant:new', 500, hourMs, hourMs);
       // 500 + 1 = 501 < 800 threshold → allow
       expect(tryFastConsume('tenant:new', 1, 1000, hourMs)).toBe('allow');
     });
@@ -174,7 +174,7 @@ describe('points-cache', () => {
       tryFastConsume('tenant:user1', 1, 1000, hourMs);
       vi.advanceTimersByTime(50 * 60 * 1000);
       // A row another process opened later has 40 minutes left, and its budget is spent.
-      syncFromDb('tenant:user1', 1000, 40 * 60 * 1000, hourMs);
+      adoptDbCount('tenant:user1', 1000, 40 * 60 * 1000, hourMs);
       expect(windowSecondsLeft('tenant:user1', hourMs)).toBe(40 * 60);
 
       // Past the hour that began with the first fast consume, the row is still live.
@@ -188,7 +188,7 @@ describe('points-cache', () => {
     it('should restart the count when the block on a row ends, before the hour does', () => {
       tryFastConsume('tenant:user1', 1, 1000, hourMs);
       // The budget is spent and the store blocks the key for five minutes.
-      syncFromDb('tenant:user1', 1001, 5 * 60 * 1000, hourMs);
+      adoptDbCount('tenant:user1', 1001, 5 * 60 * 1000, hourMs);
       expect(tryFastConsume('tenant:user1', 1, 1000, hourMs)).toBe('check-db');
 
       vi.advanceTimersByTime(5 * 60 * 1000);
@@ -198,7 +198,7 @@ describe('points-cache', () => {
     it('should leave the key its own hour when the store reports no time left', () => {
       tryFastConsume('tenant:user1', 1, 1000, hourMs);
       vi.advanceTimersByTime(50 * 60 * 1000);
-      syncFromDb('tenant:user1', 900, -1, hourMs);
+      adoptDbCount('tenant:user1', 900, -1, hourMs);
 
       expect(windowSecondsLeft('tenant:user1', hourMs)).toBe(10 * 60);
     });
@@ -228,7 +228,7 @@ describe('points-cache', () => {
     });
 
     it('should give a key synced with no time reported the window of its limiter', () => {
-      syncFromDb('reads:new', 900, -1, fiveMinutesMs);
+      adoptDbCount('reads:new', 900, -1, fiveMinutesMs);
       vi.advanceTimersByTime(60 * 1000);
 
       expect(windowSecondsLeft('reads:new', fiveMinutesMs)).toBe(4 * 60);

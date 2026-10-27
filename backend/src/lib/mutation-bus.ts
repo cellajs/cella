@@ -1,7 +1,7 @@
 import { isProduct, type TrackedEventType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
-import { productCache } from '#/middlewares/product-cache/app-product-cache';
+import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 
 /** The batched rows an event is about: `before`/`after` index-aligned for updates, `before` alone for deletes. */
 export interface MutationPayload {
@@ -38,7 +38,7 @@ export async function dispatchMutation(ctx: ActorContext, event: TrackedEventTyp
   const [subject, verb] = event.split('.');
   if (verb !== 'created' && isProduct(subject)) {
     const ids = (payload.before ?? []).flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
-    productCache.holdForWrite(subject, ids);
+    productCacheStore.holdForWrite(subject, ids);
   }
   for (const handler of handlers.get(event) ?? []) await handler(ctx, payload);
 }

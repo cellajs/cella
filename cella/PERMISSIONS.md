@@ -215,7 +215,7 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 | --- | --- |
 | `publicGuard` | Anyone, with no actor |
 | `userGuard` | A session cookie: the signed-in user, or an admin impersonating them. System admin only from an allowed IP address |
-| `serviceGuard` | A secret API key (its service account) or an access token (a service account, or the user who consented), masked by its scopes. Never system admin, never a browser `Origin` |
+| `serviceGuard` | A secret API key (its service account) or an access token (a service account, or the user who consented), masked by its scopes. Never system admin; an API key never with a browser `Origin` |
 | `tokenGuard` | An access token only, for the MCP face; without one, a 401 with the RFC 9728 challenge that tells an MCP client where to authorize |
 | `actorGuard` | Any of the three proofs: a key or token goes to `serviceGuard`, a cookie to `userGuard` |
 | `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./AUTHENTICATION.md#institutional-sign-in-sso) |

@@ -2,8 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
-import { baseDb } from '#/db/db';
-import { tenantRead } from '#/db/tenant-context';
+import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
@@ -132,7 +131,7 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
       const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
       return row.count;
     };
-    return ctx.var.db === baseDb ? tenantRead(ctx, countRows) : countRows(ctx);
+    return tenantReadUnlessInTransaction(ctx, countRows);
   }
 
   const { db } = ctx.var;

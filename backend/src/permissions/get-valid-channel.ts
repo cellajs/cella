@@ -14,8 +14,20 @@ export interface ValidChannelResult<T extends ChannelEntityType, G extends Actor
   membership: G | null;
 }
 
-/** A connection plus the request scope the guard chain set; cross-tenant routes set none. */
-type ScopeContext = DbContext & { var: Partial<Pick<Env['Variables'], 'tenantId' | 'organizationId'>> };
+/** The request scope the guard chain set; cross-tenant routes set none. */
+type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'organizationId'>> };
+
+/**
+ * Whether a row matches every id of the request scope: the single and the batch reads (`splitByPermission`) refuse the
+ * same rows. Cross-tenant routes set no scope and the organization row carries no organizationId, so only ids present
+ * on both sides are compared.
+ */
+export const inRequestScope = (ctx: ScopeContext, row: { tenantId: string; organizationId?: string | null }): boolean => {
+  const { tenantId, organizationId } = ctx.var;
+  if (tenantId && row.tenantId !== tenantId) return false;
+  if (organizationId && 'organizationId' in row && row.organizationId !== organizationId) return false;
+  return true;
+};
 
 /**
  * Looks a channel entity up by ID (or slug when `bySlug`) inside the request scope; throws 404 when
@@ -25,21 +37,15 @@ type ScopeContext = DbContext & { var: Partial<Pick<Env['Variables'], 'tenantId'
  * their tenant isolation.
  */
 export const resolveChannelInScope = async <T extends ChannelEntityType>(
-  ctx: ScopeContext,
+  ctx: DbContext & ScopeContext,
   entityId: string,
   entityType: T,
   bySlug = false,
 ): Promise<EntityModel<T>> => {
   const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug });
 
-  // Cross-tenant routes set no scope and the organization row carries no organizationId, so only ids
-  // present on both sides are compared. Missing and out-of-scope rows read as the same 404.
-  const { tenantId, organizationId } = ctx.var;
-  const inScope =
-    !!entity &&
-    (!tenantId || entity.tenantId === tenantId) &&
-    (!organizationId || !('organizationId' in entity) || entity.organizationId === organizationId);
-  if (!entity || !inScope) throw new AppError(404, 'not_found', 'warn', { entityType });
+  // Missing and out-of-scope rows read as the same 404.
+  if (!entity || !inRequestScope(ctx, entity)) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   return entity;
 };
@@ -51,7 +57,7 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
  * `membership` may be `null` while allowed: system admins and admins of a higher-level entity
  * (`permissions-config`) pass without one.
- * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
+ * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
   ctx: C,
@@ -62,7 +68,6 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
 ): Promise<ValidChannelResult<T, BindingOf<C>>> => {
   const entity = await resolveChannelInScope(ctx, entityId, entityType, bySlug);
 
-  // System admin bypass is handled inside checkAccess.
   const subject = buildSubjectFromEntity(entityType, entity);
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);

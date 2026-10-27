@@ -17,8 +17,6 @@ import type { CollectionReadWhere } from '#/permissions/row-predicates';
 /** What the scope reads of a grant: a membership row and a service account's binding both carry it. */
 export type ChannelScopeGrant = Pick<MembershipBaseModel, 'organizationId' | 'channelType' | 'channelId' | 'role'>;
 
-// CHANNEL-entity sibling of `collection-scope.ts`, for sub-org channel types. See "Enforcement paths" in cella/PERMISSIONS.md.
-
 /** Readable ids granted at one ancestor level, split by draft visibility. */
 export interface ChannelAncestorScope {
   channelType: ChannelEntityType;
@@ -52,21 +50,21 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
   channelType,
   organizationId,
   actor,
-  hierarchy = appHierarchy as unknown as EntityHierarchy,
+  hierarchy = appHierarchy,
 }: ChannelCollectionScopeInput): ChannelCollectionReadScope => {
   if (!('anonymous' in actor) && actor.isSystemAdmin) return { orgWide: 'all', ancestorScopes: [] };
 
   const policies = getEntityPolicies(allPolicies, channelType);
-  const ancestors = hierarchy.getOrderedAncestors(channelType) as ChannelEntityType[];
+  const ancestors = hierarchy.getOrderedAncestors(channelType);
 
   let orgWide: ChannelCollectionReadScope['orgWide'] = null;
   const byLevel = new Map<ChannelEntityType, { managedIds: Set<string>; publishedIds: Set<string> }>();
 
   for (const membership of memberships) {
     if (membership.organizationId !== organizationId) continue;
-    if (!ancestors.includes(membership.channelType as ChannelEntityType)) continue;
+    if (!ancestors.includes(membership.channelType)) continue;
 
-    const grantLevel = membership.channelType as ChannelEntityType;
+    const grantLevel = membership.channelType;
     const isOrganization = grantLevel === 'organization';
     if (isOrganization && membership.channelId !== organizationId) continue;
 
@@ -101,7 +99,8 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
 };
 
 /**
- * Which rows of `channelType` the caller can read via org-root or ancestor-level grants. Own-type
+ * The channel-entity sibling of `collection-scope.ts`, for channel types below the organization (PERMISSIONS.md,
+ * "Enforcement paths"): which rows of `channelType` the caller can read via org-root or ancestor-level grants. Own-type
  * memberships are NOT in the result; list queries carry those through their membership join. Row
  * conditions and `publicRead` grants are never compiled here: channel matrices use plain `read: 1`.
  * @public
@@ -199,8 +198,8 @@ export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, col
     }
   }
 
-  // Cast: `or` with a non-empty branch list always yields SQL
-  return { kind: 'where', where: or(...branches) as SQL };
+  const where = or(...branches);
+  return where ? { kind: 'where', where } : { kind: 'none' };
 };
 
 /** `excludeArchived` for the LEFT-join variant: a row the caller archived is hidden, not shown as a discovery row. */

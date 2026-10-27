@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WebSocket } from 'ws';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { type CdcWorkerHealth, cdcWebSocketServer } from '#/lib/cdc-websocket';
-import { productCache } from '#/middlewares/product-cache/app-product-cache';
+import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { mockActivity } from '#/modules/activities/activities-mocks';
 import { log } from '#/utils/logger';
 
@@ -116,11 +116,11 @@ describe('CDC socket: a connection that was replaced', () => {
 });
 
 describe('CDC socket: a change drops the detail cache entry of its row', () => {
-  const cached = (id: string) => productCache.get(`attachment:${id}`);
+  const cached = (id: string) => productCacheStore.get('attachment', id);
 
   beforeEach(() => {
-    productCache.clear();
-    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCache.set(`attachment:${id}`, { id }, performance.now());
+    productCacheStore.clear();
+    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCacheStore.set('attachment', { id }, performance.now());
   });
 
   it('drops the entry of a deleted row, with no listener on the bus', () => {

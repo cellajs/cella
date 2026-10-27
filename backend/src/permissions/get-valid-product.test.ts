@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb } from '#/db/db';
-import { tenantRead } from '#/db/tenant-context';
+import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
 import { getValidProduct } from '#/permissions/get-valid-product';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
-vi.mock('#/db/tenant-context', () => ({ tenantRead: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)) }));
+vi.mock('#/db/tenant-context', () => ({
+  tenantReadUnlessInTransaction: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
+}));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
 vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
 vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})) }));
@@ -37,7 +39,7 @@ describe('getValidProduct request scope', () => {
   });
 
   beforeEach(() => {
-    vi.mocked(tenantRead).mockClear();
+    vi.mocked(tenantReadUnlessInTransaction).mockClear();
     vi.mocked(resolveEntity).mockReset();
     vi.mocked(checkAccess)
       .mockReset()
@@ -78,10 +80,10 @@ describe('getValidProduct request scope', () => {
     }
   });
 
-  it('returns the row when it is in scope and allowed, reading through tenantRead on bare baseDb', async () => {
+  it('returns the row when it is in scope and allowed, reading through the tenant read helper', async () => {
     const entity = row();
     vi.mocked(resolveEntity).mockResolvedValue(entity as never);
     await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'read')).resolves.toEqual({ entity });
-    expect(tenantRead).toHaveBeenCalledTimes(1);
+    expect(tenantReadUnlessInTransaction).toHaveBeenCalledTimes(1);
   });
 });

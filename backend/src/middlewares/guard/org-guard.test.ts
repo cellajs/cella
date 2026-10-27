@@ -1,10 +1,11 @@
 import { eq, inArray } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { AppError } from '#/core/error';
 import { baseDb, getSeedDb } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { invalidateCache } from './invalidate-cache';
 import { clearOrgCache, setOrgCache } from './org-cache';
 import { orgGuard } from './org-guard';
 
@@ -152,6 +153,31 @@ describe('orgGuard — organization lookup within the tenant', () => {
 
     const asSystemAdmin = mockCtx({ memberships: [], isSystemAdmin: true, organizationId: organization.id, tenantId: otherTenantId, db: baseDb });
     expect((await runExpectingError(asSystemAdmin)).status).toBe(404);
+  });
+
+  it('must not serve the row from before an update via an organization id spelled in upper case', async () => {
+    const read = async () => {
+      const ctx = mockCtx({
+        memberships: [membership('organization', organization.id)],
+        organizationId: organization.id.toUpperCase(),
+        tenantId: organization.tenantId,
+        db: baseDb,
+      });
+      await run(ctx);
+      const [, resolved] = ctx.set.mock.calls.find(([key]) => key === 'organization') ?? [];
+      return resolved as { name: string };
+    };
+
+    expect((await read()).name).toBe(organization.name);
+    const rename = async (name: string) => {
+      await seedDb.update(organizationsTable).set({ name }).where(eq(organizationsTable.id, organization.id));
+    };
+    await rename('renamed');
+    onTestFinished(() => rename(organization.name));
+    // What an update operation does once its write commits.
+    invalidateCache.org(organization.tenantId, organization.id);
+
+    expect((await read()).name).toBe('renamed');
   });
 
   it('resolves the organization within its own tenant and exposes the stored row (positive control)', async () => {

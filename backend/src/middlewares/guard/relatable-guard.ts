@@ -19,40 +19,31 @@ export const relatableGuard = xMiddleware(
     const user = ctx.var.user;
     const isSystemAdmin = ctx.var.isSystemAdmin;
 
-    if (!targetUserId || targetUserId === user.id || targetUserId === user.slug) {
+    if (!targetUserId || targetUserId === user.id || targetUserId === user.slug || isSystemAdmin) {
       await next();
       return;
     }
 
-    if (isSystemAdmin) {
-      await next();
-      return;
-    }
+    // One answer for a missing user and an unshared one, so the guard never tells whether a user exists.
+    const unrelated = () => new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
 
     // Guards run before request validation: another user named by anything but a user id relates to nobody, and it
     // never reaches the uuid-typed query below.
-    if (!validUuidSchema.safeParse(targetUserId).success) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (!validUuidSchema.safeParse(targetUserId).success) throw unrelated();
 
-    const memberships = ctx.var.memberships;
-    const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+    const organizationIds = [...new Set(ctx.var.memberships.map((membership) => membership.organizationId))];
 
-    if (myOrgIds.length === 0) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (organizationIds.length === 0) throw unrelated();
 
-    // memberships_select_authenticated_policy lets any authenticated user read membership rows in cross-tenant RLS
+    // Memberships carry no RLS, so the runtime pool reads them across tenants.
     const db = ctx.var.db;
     const [shared] = await db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, myOrgIds)))
+      .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, organizationIds)))
       .limit(1);
 
-    if (!shared) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (!shared) throw unrelated();
 
     await next();
   },

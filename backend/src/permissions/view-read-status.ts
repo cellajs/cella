@@ -7,7 +7,7 @@ import {
   hasNoReadScope,
   resolveCollectionReadFilter,
   resolveCollectionReadFilterForPolicies,
-} from './collection-scope';
+} from '#/permissions/collection-scope';
 
 /** Catchup prefix disclosure: `ok` proves full read coverage, `opaque` allows rows but no totals, `forbidden` no route; ambiguity resolves opaque. */
 export type ViewReadStatus = 'ok' | 'opaque' | 'forbidden';

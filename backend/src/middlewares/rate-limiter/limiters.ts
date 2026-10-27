@@ -28,6 +28,7 @@ export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
   description: 'Address lookups per IP, hits included: 30 per hour',
 });
 
+/** Failed proofs per IP, one series per kind of proof (`tokenType`: a provider, a link type, `passkey`) under its own key prefix. */
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
   rateLimiter('failseries', `token_${tokenType}`, ['ip'], {
     limits: { successStatusCodes: proofSuccessStatusCodes },
@@ -95,15 +96,11 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
  */
 export const pointsLimiter = (cost = 1) =>
   rateLimiter('limit', 'apiPoints', ['tenantId', 'actorId'], {
-    limits: {
-      points: 5000, // Hard ceiling: no user can exceed this regardless of tenant config
-      duration: 60 * 60,
-      blockDuration: 0, // Budget resets after the hour.
-    },
+    limits: { points: 5000, duration: 60 * 60, blockDuration: 0 },
     functionName: 'pointsLimiter',
     name: 'points',
     description: 'API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget',
-    getConsumePoints: cost > 0 ? undefined : bulkBodyLength,
+    getConsumePoints: cost > 0 ? () => cost : bulkBodyLength,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
       const budget = tenant?.restrictions?.rateLimits?.apiPointsPerHour;
@@ -121,7 +118,7 @@ export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFe
   description: 'Client metadata fetches per IP: 60 per minute, then blocked for 1 minute',
 });
 
-/** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
+/** Per-second ceiling for API keys and access tokens: a runaway integration hits this long before the hourly points budget. */
 export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorId'], {
   limits: { points: 30, duration: 1, blockDuration: 0 },
   description: 'Requests per actor with an API key or access token: 30 per second',

@@ -1,7 +1,6 @@
 import { and, eq, getColumns, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import {
-  appConfig,
   hierarchy as appHierarchy,
   type ChannelEntityType,
   type EntityHierarchy,
@@ -10,7 +9,7 @@ import {
   type ProductEntityType,
   type RowConditionName,
 } from 'shared';
-import type { CollectionReadFilter } from './collection-scope';
+import type { CollectionReadFilter } from '#/permissions/collection-scope';
 
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
 const neverPredicate: SQL = sql`false`;
@@ -39,8 +38,10 @@ const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor
 
 /** WHERE clause for a collection read, discriminated so an empty scope cannot become a bare `undefined` that leaks the table. */
 export type CollectionReadWhere =
-  | { kind: 'all' } // org-wide unconditional read: no scope restriction needed
-  | { kind: 'none' } // no readable scope: op should return an empty list without querying
+  /** Org-wide unconditional read: no scope restriction needed. */
+  | { kind: 'all' }
+  /** No readable scope: the operation returns an empty list without querying. */
+  | { kind: 'none' }
   | { kind: 'where'; where: SQL };
 
 /**
@@ -64,15 +65,9 @@ export const buildCollectionReadWhere = (
   const homeChannelColumn = () =>
     resolveColumn(table, entityIdColumnKey(hierarchy.getParent(entityType) ?? 'organization'), `${entityType} home scope`);
 
-  /** The id column a scope entry filters by: `appConfig.entityIdColumnKeys`, falling back to the `${channelType}Id` convention. */
+  /** The id column a scope entry filters by: its level's, or the home column for an entry that names no level. */
   const scopeColumn = (channelType: ChannelEntityType | undefined): PgColumn =>
-    channelType
-      ? resolveColumn(
-          table,
-          (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[channelType] ?? `${channelType}Id`,
-          `${channelType} scope`,
-        )
-      : homeChannelColumn();
+    channelType ? resolveColumn(table, entityIdColumnKey(channelType), `${channelType} scope`) : homeChannelColumn();
 
   const clauses: SQL[] = [];
 
@@ -107,8 +102,6 @@ export const buildCollectionReadWhere = (
     if (scoped) clauses.push(scoped);
   }
 
-  if (clauses.length === 0) return { kind: 'none' };
-  const where = clauses.length === 1 ? clauses[0] : or(...clauses);
-  if (!where) return { kind: 'none' };
-  return { kind: 'where', where };
+  const where = or(...clauses);
+  return where ? { kind: 'where', where } : { kind: 'none' };
 };

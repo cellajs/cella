@@ -5,7 +5,7 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { invalidateTenantCache } from '#/middlewares/guard/tenant-cache';
+import { dropCachedTenant } from '#/middlewares/guard/tenant-cache';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -64,7 +64,7 @@ describe('Idempotent attachment creates', async () => {
     const [tenant] = await adminDb.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId));
     const setRestrictions = async (restrictions: typeof tenant.restrictions) => {
       await adminDb.update(tenantsTable).set({ restrictions }).where(eq(tenantsTable.id, tenantId));
-      invalidateTenantCache(tenantId);
+      dropCachedTenant(tenantId);
     };
     onTestFinished(() => setRestrictions(tenant.restrictions));
     await setRestrictions({ ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, attachment: quota } });

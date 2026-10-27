@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import type { ErrorKey } from '#/core/error';
-import { blockSpentBucket, getRateLimiterInstance, rateLimitError, refundAttempt, reserveAttempt } from '#/middlewares/rate-limiter/helpers';
+import { blockSpentBucket, getRateLimiterInstance, refundAttempt, refuseRateLimited, reserveAttempt } from '#/middlewares/rate-limiter/helpers';
 import type { BucketLimits, LimiterStore, Outcome, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
 
@@ -51,7 +51,7 @@ export const reserveTiers = async (ctx: Context<Env>, tiers: Tier[], key: string
     }
     if (!taken.granted) {
       await settleTiers(reservation, 'other');
-      return rateLimitError(ctx, taken.state, refusalType);
+      return refuseRateLimited(ctx, taken.state, refusalType);
     }
     reservation.held.push({ tier, store: taken.store, count: taken.state.consumedPoints });
   }

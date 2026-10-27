@@ -1,12 +1,13 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 
+/** Tenants with a create in flight in this process. */
+const inflightInserts = new Set<string>();
+
 /**
  * Rejects concurrent creates for one tenant so they cannot race past quota checks. The lock is request-scoped and
  * process-local, bounding multi-instance quota overshoot to one batch per instance.
  */
-const inflightInserts = new Map<string, Promise<void>>();
-
 export const insertEntityLock = xMiddleware(
   {
     functionName: 'insertEntityLock',
@@ -26,17 +27,11 @@ export const insertEntityLock = xMiddleware(
       throw new AppError(409, 'insert_in_progress', 'info');
     }
 
-    let releaseLock: () => void;
-    const lockPromise = new Promise<void>((resolve) => {
-      releaseLock = resolve;
-    });
-    inflightInserts.set(tenantId, lockPromise);
-
+    inflightInserts.add(tenantId);
     try {
       await next();
     } finally {
       inflightInserts.delete(tenantId);
-      releaseLock!();
     }
   },
 );

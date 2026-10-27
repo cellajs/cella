@@ -1,7 +1,7 @@
 import type { Access, PredicateActor } from 'shared';
 import type { Actor, ActorBinding } from '#/core/context';
 
-/** The guard-populated context fields the access helpers read; the engine's `userId` is any actor id. */
+/** The guard-populated context fields the access helpers read; the engine's `actorId` is a user's or a service account's id. */
 export interface AccessContext {
   var: { actor?: Pick<Actor, 'id' | 'bindings' | 'scopes'>; isSystemAdmin?: boolean };
 }

@@ -11,7 +11,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await i
 // Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 const { getRetryAfter } = await import('#/middlewares/rate-limiter/helpers');
-const { clearCache } = await import('#/middlewares/rate-limiter/points-cache');
+const { clearPointsCache } = await import('#/middlewares/rate-limiter/points-cache');
 
 /** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget. */
 function buildApp(key: string, tenantId: string, ceiling: number, budget: () => number) {
@@ -46,7 +46,7 @@ async function hammer(app: Hono<Env>, n: number) {
 
 describe('points budget enforcement (end to end)', () => {
   beforeEach(() => {
-    clearCache();
+    clearPointsCache();
     memoryStores.clear();
   });
 
@@ -177,9 +177,9 @@ describe('points budget enforcement (end to end)', () => {
   });
 
   it('floors Retry-After at one second, so a sub-second wait never reads as "retry now"', () => {
-    expect(getRetryAfter(0)).toBe('1');
-    expect(getRetryAfter(400)).toBe('1');
-    expect(getRetryAfter(1500)).toBe('2');
+    expect(getRetryAfter(0)).toBe(1);
+    expect(getRetryAfter(400)).toBe(1);
+    expect(getRetryAfter(1500)).toBe(2);
   });
 });
 

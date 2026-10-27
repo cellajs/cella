@@ -13,7 +13,8 @@ interface CachedVerdict {
   clientId: string;
 }
 
-type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
+/** A verified token of a person: it acts as the user who consented. */
+export type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
 
 /**
  * Keyed `<user id>:<grant id>:<tenant>:<bindings version>`, so every verdict about one user, or on one grant, drops by
@@ -34,7 +35,7 @@ const keyOf = (token: UserToken, bindingsVersion: string) => `${token.actorId}:$
  * @param read - Reaches the grant policy's verdict; a refusal is a verdict and is cached like any other.
  * @returns The verdict.
  */
-export const loadTokenGrantCache = async (
+export const loadCachedTokenGrant = async (
   token: UserToken,
   bindingsVersion: string,
   read: () => Promise<TokenGrantEntry>,
@@ -48,16 +49,16 @@ export const loadTokenGrantCache = async (
 };
 
 /** After a change to a user's row. */
-export const invalidateTokenGrantsByActor = (actorId: string): void => {
-  tokenGrantCache.invalidateByPrefix(`${actorId}:`);
+export const dropCachedTokenGrantsOfUser = (userId: string): void => {
+  tokenGrantCache.invalidateByPrefix(`${userId}:`);
 };
 
 /** After a grant is deleted: the verdicts on its tokens, in every tenant they name. */
-export const invalidateTokenGrant = (accountId: string, grantId: string): void => {
-  tokenGrantCache.invalidateByPrefix(`${accountId}:${grantId}:`);
+export const dropCachedTokenGrant = (userId: string, grantId: string): void => {
+  tokenGrantCache.invalidateByPrefix(`${userId}:${grantId}:`);
 };
 
 /** After a tenant's policy changes, or with `clientId` one installation in it: the verdicts on tokens naming it. */
-export const invalidateTokenGrantsByTenant = (tenantId: string, clientId?: string): void => {
+export const dropCachedTokenGrantsInTenant = (tenantId: string, clientId?: string): void => {
   tokenGrantCache.invalidateWhere((verdict) => verdict.tenantId === tenantId && (clientId === undefined || verdict.clientId === clientId));
 };

@@ -1,9 +1,9 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { loadMemberships } from '#/middlewares/guard/membership-cache';
+import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { isSystemAccessAllowed } from '#/utils/system-access';
-import { updateLastSeenAt } from '../update-last-seen';
-import { loadMemberships } from './membership-cache';
 
 /**
  * Authenticates the session (an impersonation only on top of its admin's session) and sets user, session facts, the
