@@ -1,3 +1,5 @@
+import { entityCountHomePrefix, entityCountPrefix, frontierHomePrefix, frontierPrefix } from '#/modules/entities/counter-keys';
+
 /**
  * Sorts the keys of a counter row by what they mean to the API. The `e` key domain holds entity metrics, `m`
  * membership metrics, and an `h` segment marks a home-only summary. Activity stamps and membership counts are parsed
@@ -16,10 +18,10 @@ export function parseCounterCounts(counts: Record<string, unknown> | null | unde
     for (const [key, value] of Object.entries(counts)) {
       if (typeof value !== 'number') continue;
       if (key === 'membership') membership = value;
-      else if (key.startsWith('e:f:h:')) selfFrontiers[key.slice(6)] = value;
-      else if (key.startsWith('e:f:')) frontiers[key.slice(4)] = value;
-      else if (key.startsWith('e:c:h:')) selfCounts[key.slice(6)] = value;
-      else if (key.startsWith('e:c:')) entityCounts[key.slice(4)] = value;
+      else if (key.startsWith(frontierHomePrefix)) selfFrontiers[key.slice(frontierHomePrefix.length)] = value;
+      else if (key.startsWith(frontierPrefix)) frontiers[key.slice(frontierPrefix.length)] = value;
+      else if (key.startsWith(entityCountHomePrefix)) selfCounts[key.slice(entityCountHomePrefix.length)] = value;
+      else if (key.startsWith(entityCountPrefix)) entityCounts[key.slice(entityCountPrefix.length)] = value;
     }
   }
 

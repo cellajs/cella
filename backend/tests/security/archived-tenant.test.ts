@@ -1,6 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { deleteOrganizations, getAttachments, getMyMemberships, getOrganization, getOrganizations, updateTenant } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
+import { baseDb } from '#/db/db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -50,5 +53,19 @@ describe('Archived organizations', async () => {
     });
     expect(restored.response.status).toBe(200);
     expect(await organizationIds()).toContain(tenant.organization.id);
+  });
+
+  it('archives the tenant also when the URL spells its id in capitals', async () => {
+    const tenant = await createTestTenant(call, 'archived-capitals');
+
+    const deleted = await call(deleteOrganizations, {
+      path: { tenantId: tenant.tenantId.toUpperCase() },
+      body: { ids: [tenant.organization.id] },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+    expect(deleted.response.status).toBe(200);
+
+    const [stored] = await baseDb.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, tenant.tenantId));
+    expect(stored.status).toBe('archived');
   });
 });

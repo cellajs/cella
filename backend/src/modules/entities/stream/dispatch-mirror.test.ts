@@ -19,7 +19,7 @@ const membership = (organizationId: string, role: EntityRole, userId: string): M
   mockMembershipBase(`mem-organization-${organizationId}-${role}-${userId}`, { channelId: organizationId, userId, role });
 
 /** Fake SSE subscriber capturing every notification written to its stream. */
-const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, organizationIds: string[], channelOrg: string) => {
+const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, organizationIds: string[], topicOrg: string) => {
   const received: StreamNotification[] = [];
   const stream = {
     writeSSE: async ({ data }: { data: string }) => {
@@ -29,7 +29,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, orga
 
   const subscriber: AppStreamSubscriber = {
     id: crypto.randomUUID(),
-    channel: `org:${channelOrg}`,
+    topic: `org:${topicOrg}`,
     stream,
     userId,
     sessionId: `session-${userId}`,
@@ -82,14 +82,14 @@ const attachmentEvent = (organizationId: string, rows: ActivityRow[], overrides:
 afterEach(() => {
   // Fake subscribers are registered per test; drop them so tests stay isolated.
   for (const org of [orgA, orgB]) {
-    for (const subscriber of streamSubscriberManager.getByChannel(`org:${org}`)) {
+    for (const subscriber of streamSubscriberManager.getByTopic(`org:${org}`)) {
       streamSubscriberManager.unregister(subscriber.id);
     }
   }
 });
 
 describe('dispatch mirror: org membership, live snapshots, events of several rows', () => {
-  it('pings org members; a subscriber whose membership is gone gets nothing despite channel registration', async () => {
+  it('pings org members; a subscriber whose membership is gone gets nothing despite its topic registration', async () => {
     const member = fakeSubscriber([membership(orgA, memberRole, 'member-user')], 'member-user', [orgA], orgA);
     const admin = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
     // Membership deleted after connect: registration happened at connect time, so the engine
@@ -108,11 +108,11 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     expect(member.received).toHaveLength(1); // org member: read granted
     expect(admin.received).toHaveLength(1); // org admin: read granted
     expect(stale.received).toHaveLength(0); // no live membership: engine denies
-    expect(otherOrg.received).toHaveLength(0); // different org channel entirely
+    expect(otherOrg.received).toHaveLength(0); // different org topic entirely
   });
 
   it('pings a subscriber who can read only a row that is not the first', async () => {
-    // A stale channel registration after membership removal: dispatch must still evaluate each row.
+    // A stale topic registration after membership removal: dispatch must still evaluate each row.
     const { subscriber, received } = fakeSubscriber([membership(orgA, memberRole, 'moved-user')], 'moved-user', [orgA, orgB], orgB);
     streamSubscriberManager.register(subscriber);
 
@@ -214,9 +214,9 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     expect(member.received).toHaveLength(1);
   });
 
-  it('delivers a self-membership in an unregistered org through the user channel', async () => {
+  it('delivers a self-membership in an unregistered org through the user topic', async () => {
     // Connected as a member of orgA only, so the new-org invite can arrive only via the user
-    // channel. The bystander shares the org channel but must not receive that event.
+    // topic. The bystander shares the org topic but must not receive that event.
     const joiner = fakeSubscriber([membership(orgA, memberRole, 'joiner-user')], 'joiner-user', [orgA], orgA);
     const bystander = fakeSubscriber([membership(orgA, memberRole, 'bystander-user')], 'bystander-user', [orgA], orgA);
     streamSubscriberManager.register(joiner.subscriber, ['user:joiner-user']);

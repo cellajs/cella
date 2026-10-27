@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, v
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { streamSubscriberManager } from '#/modules/entities/stream';
+import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
 import { overrideConfig } from '../fixtures';
@@ -191,7 +191,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
       close: async () => {},
     });
     // A stub stream records what the sweep does to it; it implements only the calls a close makes.
-    const publicSubscriber = { id: 'public-stream', channel: 'public:board', stream: publicStream } as never;
+    const publicSubscriber = { id: 'public-stream', topic: 'public:board', stream: publicStream } as never;
     streamSubscriberManager.register(publicSubscriber);
     onTestFinished(() => streamSubscriberManager.unregister('public-stream'));
 
@@ -200,7 +200,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
 
     await expectClosedWith(revokedStream, 'unauthorized');
     expectStillOpen(user.id, liveStream);
-    expect(streamSubscriberManager.getByChannel('public:board').map(({ id }) => id)).toEqual(['public-stream']);
+    expect(streamSubscriberManager.getByTopic('public:board').map(({ id }) => id)).toEqual(['public-stream']);
     expect(publicStream).toMatchObject({ aborted: false, written: [] });
   });
 

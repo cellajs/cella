@@ -12,8 +12,7 @@ import { defaultHook } from '#/utils/default-hook';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(organizationRoutes.createOrganizations, async (ctx) => {
-  const { tenantId } = ctx.req.valid('param');
-  const data = await createOrganizationsOp(ctx, ctx.req.valid('json'), tenantId);
+  const data = await createOrganizationsOp(ctx, ctx.req.valid('json'));
   return ctx.json(data, 201);
 });
 
@@ -43,8 +42,7 @@ app.openapi(organizationRoutes.publishOrganization, async (ctx) => {
 
 app.openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const { tenantId } = ctx.req.valid('param');
-  const data = await deleteOrganizationsOp(ctx, Array.isArray(ids) ? ids : [ids], tenantId);
+  const data = await deleteOrganizationsOp(ctx, ids);
   return ctx.json(data, 200);
 });
 

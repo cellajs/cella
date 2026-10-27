@@ -65,6 +65,7 @@ variables before product queries:
 | `tenantContext(ctx, fn)` | Read/write, live rows | Creates and ordinary updates |
 | `tenantContextIncludingDeleted(ctx, fn)` | Read/write, includes tombstones | Soft-delete and restore flows |
 | `tenantReadAs(ctx, tenantId, fn)` | Read only, explicit tenant | Cross-tenant routes |
+| `tenantReadAsIncludingDeleted(ctx, tenantId, fn)` | Read only, explicit tenant, includes tombstones | Delta reads on routes without `tenantGuard` |
 | `tenantReadById(tenantId, fn)` | Read only, no request context | Background work such as notification fan-out |
 
 Helpers that take a request context pass a clone whose `db` is the transaction. `tenantReadById`

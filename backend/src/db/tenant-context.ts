@@ -64,6 +64,11 @@ export function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCt
   return requestTransaction(ctx, tenantId, false, true, fn);
 }
 
+/** `tenantReadAs` that also reads soft-deleted rows (`app.include_deleted`), for a delta read on a route without `tenantGuard`. */
+export function tenantReadAsIncludingDeleted<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
+  return requestTransaction(ctx, tenantId, true, true, fn);
+}
+
 /** Read-only tenant RLS transaction for normal product queries. */
 export function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return requestTransaction(ctx, ctx.var.tenantId, false, true, fn);

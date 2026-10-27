@@ -1,50 +1,53 @@
-import type { BaseStreamSubscriber } from './types';
+import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 
-/** O(1) lookup by channel; a subscriber may register on several channels. */
+/** The topic of a user's own stream events: its membership changes and the end of its sessions. */
+export const userTopic = (userId: string) => `user:${userId}`;
+
+/** The topic of an organization's product events. */
+export const organizationTopic = (organizationId: string) => `org:${organizationId}`;
+
+/** O(1) lookup by topic; a subscriber may register on several topics. */
 class StreamSubscriberManager {
   private subscribers = new Map<string, BaseStreamSubscriber>();
-  private byChannel = new Map<string, Set<string>>();
+  private byTopic = new Map<string, Set<string>>();
+  /** Every topic each subscriber registered on, so unregister leaves its id in none. */
+  private topicsOf = new Map<string, Set<string>>();
 
   /**
-   * The primary channel is `subscriber.channel`; additional ones cover multi-org routing.
+   * Registers on `subscriber.topic` and on each of `additionalTopics`, such as one per organization.
    * @example
-   * const orgChannels = [...organizationIds].map(id => `org:${id}`);
-   * manager.register(subscriber, orgChannels);
+   * manager.register(subscriber, [...organizationIds].map(organizationTopic));
    */
-  register<T extends BaseStreamSubscriber>(subscriber: T, additionalChannels: string[] = []): void {
+  register<T extends BaseStreamSubscriber>(subscriber: T, additionalTopics: string[] = []): void {
     this.subscribers.set(subscriber.id, subscriber);
 
-    const allChannels = [subscriber.channel, ...additionalChannels].filter(Boolean) as string[];
-    for (const channel of allChannels) {
-      let set = this.byChannel.get(channel);
+    const topics = this.topicsOf.get(subscriber.id) ?? new Set<string>();
+    for (const topic of [subscriber.topic, ...additionalTopics]) {
+      if (!topic) continue;
+      topics.add(topic);
+      let set = this.byTopic.get(topic);
       if (!set) {
         set = new Set();
-        this.byChannel.set(channel, set);
+        this.byTopic.set(topic, set);
       }
       set.add(subscriber.id);
     }
-
-    // Stored for cleanup on unregister.
-    subscriber._channels = allChannels;
+    this.topicsOf.set(subscriber.id, topics);
   }
 
-  /** Removes the subscriber from every channel it registered on. */
+  /** Removes the subscriber from every topic it registered on. */
   unregister(id: string): void {
-    const subscriber = this.subscribers.get(id);
-    if (!subscriber) return;
-
-    const allChannels = subscriber._channels ?? [subscriber.channel].filter(Boolean);
-    for (const channel of allChannels) {
-      if (!channel) continue;
-      const set = this.byChannel.get(channel);
+    for (const topic of this.topicsOf.get(id) ?? []) {
+      const set = this.byTopic.get(topic);
       if (set) {
         set.delete(id);
         if (set.size === 0) {
-          this.byChannel.delete(channel);
+          this.byTopic.delete(topic);
         }
       }
     }
 
+    this.topicsOf.delete(id);
     this.subscribers.delete(id);
   }
 
@@ -58,13 +61,11 @@ class StreamSubscriberManager {
     return Array.from(this.subscribers.values());
   }
 
-  getByChannel<T extends BaseStreamSubscriber>(channel: string): T[] {
-    const ids = this.byChannel.get(channel);
-    if (!ids) return [];
-    return Array.from(ids)
-      .map((id) => this.subscribers.get(id) as T)
-      .filter(Boolean);
+  /** The subscribers registered on a topic; the caller names the subscriber type it registered there. */
+  getByTopic<T extends BaseStreamSubscriber>(topic: string): T[] {
+    return Array.from(this.byTopic.get(topic) ?? [], (id) => this.subscribers.get(id) as T);
   }
 }
 
+/** The open SSE streams of this process, by topic. */
 export const streamSubscriberManager = new StreamSubscriberManager();

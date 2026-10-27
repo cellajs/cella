@@ -9,7 +9,9 @@ export const organizationFlagsSelect = sql<OrganizationFlags>`${JSON.stringify(a
 export const setupConfigSelect = sql<OrganizationSetupConfig>`${JSON.stringify(appConfig.defaultSetupConfig)}::jsonb || ${organizationsTable.setupConfig}`;
 
 /** JS-side equivalent of `organizationFlagsSelect` for rows that skip our select shapes (org-guard fetch, generic channel reads, `.returning()`). */
-const withOrganizationFlagDefaults = <T extends { organizationFlags: OrganizationFlags }>(organization: T): T => ({
+const withOrganizationFlagDefaults = <T extends { organizationFlags: Partial<OrganizationFlags> }>(
+  organization: T,
+): T & { organizationFlags: OrganizationFlags } => ({
   ...organization,
   organizationFlags: { ...appConfig.defaultOrganizationFlags, ...organization.organizationFlags },
 });
@@ -26,6 +28,7 @@ export const withSetupConfigDefaults = <T extends { setupConfig: Partial<Organiz
 });
 
 /** Merges both organizationFlags and setupConfig config defaults under an organization row's stored bags. */
-export const withOrganizationDefaults = <T extends { organizationFlags: OrganizationFlags; setupConfig: Partial<OrganizationSetupConfig> }>(
+export const withOrganizationDefaults = <T extends { organizationFlags: Partial<OrganizationFlags>; setupConfig: Partial<OrganizationSetupConfig> }>(
   organization: T,
-): T & { setupConfig: OrganizationSetupConfig } => withSetupConfigDefaults(withOrganizationFlagDefaults(organization));
+): T & { organizationFlags: OrganizationFlags; setupConfig: OrganizationSetupConfig } =>
+  withSetupConfigDefaults(withOrganizationFlagDefaults(organization));
