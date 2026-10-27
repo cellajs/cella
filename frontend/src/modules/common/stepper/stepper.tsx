@@ -69,7 +69,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
       )}
       <div className="group-not-last/step:min-h-4 max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)">
         <Collapsible open={isCurrentStep}>
-          <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
+          <CollapsibleContent className="overflow-hidden motion-safe:data-closed:animate-collapsible-up motion-safe:data-open:animate-collapsible-down">
             {children}
           </CollapsibleContent>
         </Collapsible>
