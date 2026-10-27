@@ -1,4 +1,3 @@
-import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ResourceType } from 'shared';
 import { channelTables } from '#/db/channel-tables';
@@ -56,12 +55,6 @@ export type TrackedModel<T extends TrackedType> = AllTrackedTables[T]['$inferSel
 export function getEntityTable<T extends keyof typeof entityTables>(entityType: T): (typeof entityTables)[T] {
   return entityTables[entityType];
 }
-
-// Derived table name arrays for activity/CDC
-/** @public */
-export const entityTableNames = Object.values(entityTables).map((t) => getTableName(t));
-/** @public */
-export const resourceTableNames = Object.values(resourceTables).map((t) => getTableName(t));
 
 /** One table converted to native range partitions by the retention side-effect migration; `apply_retention()` drops what is past its retention. */
 export interface PartitionConfig {

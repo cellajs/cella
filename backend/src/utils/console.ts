@@ -29,15 +29,13 @@ export function startSpinner(message: string): Ora {
 }
 
 /** Ends the spinner with the message, or its running text, plus the time since it started. */
-function closeSpinner(method: 'succeed' | 'fail' | 'warn', message?: string): void {
+function closeSpinner(method: 'succeed' | 'warn', message?: string): void {
   if (!activeSpinner) return;
   activeSpinner[method](`${message ?? activeSpinner.text}${durationSuffix(spinnerStartedAt)}`);
   activeSpinner = null;
 }
 
 export const succeedSpinner = (message?: string) => closeSpinner('succeed', message);
-/** @public */
-export const failSpinner = (message?: string) => closeSpinner('fail', message);
 /** Ends the spinner. For a warning while the step continues, use {@link noteSpinnerWarning}. */
 export const warnSpinner = (message?: string) => closeSpinner('warn', message);
 

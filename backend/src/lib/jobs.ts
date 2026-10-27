@@ -1,5 +1,5 @@
 import type { PgBoss, Queue } from 'pg-boss';
-import { type BackendJob, type BackendQueue, getBackendJobs, getBackendQueues } from '#/lib/module';
+import { type BackendJob, type BackendQueue, type BackendQueueHandler, getBackendJobs, getBackendQueues } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
 
 /** Queue options a cron job's singleton queue is created with; `expireInSeconds` comes from the job. */
@@ -114,18 +114,17 @@ export async function workDeclared(boss: PgBoss): Promise<void> {
   }
   for (const queue of getBackendQueues()) {
     if (!queue.handler) continue;
-    await boss.work(queue.name, queue.work ?? {}, workHandler(queue));
+    await boss.work(queue.name, queue.work ?? {}, workHandler(queue.name, queue.handler));
   }
 }
 
-function workHandler(queue: BackendQueue): NonNullable<BackendQueue['handler']> {
-  const handler = queue.handler;
-  if (!handler) throw new Error(`jobs: queue ${queue.name} has no handler`);
+/** Wraps a queue's handler so a failure is logged with the ids of its jobs before it fails them. */
+function workHandler(name: string, handler: BackendQueueHandler): BackendQueueHandler {
   return async (jobs) => {
     try {
       return await handler(jobs);
     } catch (error) {
-      baseLog.error(`jobs: ${queue.name} handler failed`, { err: error, jobs: jobs.map((job) => job.id) });
+      baseLog.error(`jobs: ${name} handler failed`, { err: error, jobs: jobs.map((job) => job.id) });
       throw error;
     }
   };

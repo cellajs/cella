@@ -14,7 +14,7 @@ describe('sendMatrixMessage', () => {
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await sendMatrixMessage({ msgtype: 'm.notice', textMessage: 'hello' });
+    await sendMatrixMessage('hello');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -24,5 +24,16 @@ describe('sendMatrixMessage', () => {
     expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${botAccessToken}`);
     expect(url).toContain('/_matrix/client/v3/rooms/');
     expect(init?.method).toBe('PUT');
+  });
+
+  it('resolves false when Matrix is unreachable or answers with a page, so the team is mailed instead', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
+    expect(await sendMatrixMessage('hello')).toBe(false);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('<html>Bad Gateway</html>', { status: 502 })),
+    );
+    expect(await sendMatrixMessage('hello')).toBe(false);
   });
 });

@@ -18,19 +18,19 @@ const uploadOverheadBytes = 1024 * 1024;
 /**
  * Signed assembly params for one upload; where the files land follows the template's own visibility. The file count
  * and total size cap what one assembly may carry, whatever the client's own restrictions say.
+ * @returns The params and their signature, or null when Transloadit is not configured.
  */
-export const getParams = (templateId: UploadTemplateId, sub: string) => {
-  const expires = utcDateString(Date.now() + signedParamsLifetimeMs);
-
+export const signedUploadParams = (templateId: UploadTemplateId, sub: string) => {
   const authKey = env.TRANSLOADIT_KEY;
   const authSecret = env.TRANSLOADIT_SECRET;
-  if (!authKey || !authSecret) throw Error('auth_key_not_found');
+  if (!authKey || !authSecret) return null;
 
+  const expires = utcDateString(Date.now() + signedParamsLifetimeMs);
   const template = uploadTemplates[templateId];
   const { publicBucket, bucketName } = uploadStorage(templateId);
   const maxSize = maxFilesPerUpload * appConfig.uppy.defaultRestrictions.maxFileSize + uploadOverheadBytes;
 
-  return {
+  const params = {
     auth: { key: authKey, expires, max_size: maxSize, max_number_of_files: maxFilesPerUpload },
     // Keeps each signature distinct; it does not make the params single-use.
     nonce: nanoid(16),
@@ -51,17 +51,8 @@ export const getParams = (templateId: UploadTemplateId, sub: string) => {
       },
     },
   };
-};
-
-export const getSignature = (paramsString: string) => {
-  const hmacKey = env.TRANSLOADIT_SECRET;
-
-  if (!hmacKey) {
-    throw new Error('transloadit_secret_not_found');
-  }
 
   // Transloadit request signing requires HMAC-SHA384; this is message authentication, not password storage
-  const digest = crypto.createHmac('sha384', hmacKey).update(paramsString, 'utf8').digest('hex');
-
-  return `sha384:${digest}`;
+  const digest = crypto.createHmac('sha384', authSecret).update(JSON.stringify(params), 'utf8').digest('hex');
+  return { params, signature: `sha384:${digest}` };
 };

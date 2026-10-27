@@ -1,11 +1,12 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
-import { appConfig, isProduct, isValidEventType } from 'shared';
+import { appConfig, isValidEventType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { modeSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { productCache } from '#/middlewares/product-cache/app-product-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { log } from '#/utils/logger';
@@ -33,11 +34,9 @@ const messageTraceSchema = z
 const cdcMessageSchema = z.union([
   z.object({ activity: z.object(messageActivityShape), rows: z.array(messageRowSchema).min(1), _trace: messageTraceSchema }),
   z.object({
-    // `seq` and `batchRows` belong to an older worker's product messages and go together with the lines of `contentOf` that read them.
-    activity: z.object({ ...messageActivityShape, seq: z.number().optional() }),
+    activity: z.object(messageActivityShape),
     rowData: rowDataSchema,
     movedFrom: rowDataSchema.nullable().optional(),
-    batchRows: z.array(messageRowSchema).optional(),
     _trace: messageTraceSchema,
   }),
 ]);
@@ -49,11 +48,7 @@ export type CdcMessage = z.infer<typeof cdcMessageSchema>;
  * of any other.
  */
 function contentOf(message: CdcMessage): Pick<ActivityEvent, 'rows' | 'rowData'> {
-  if ('rows' in message) return { rows: message.rows, rowData: null };
-  if (!isProduct(message.activity.entityType)) return { rows: null, rowData: message.rowData };
-  // An older worker sends a product row as one whole row, and several as `batchRows`: this can go after one release.
-  const single = { rowData: message.rowData, seq: message.activity.seq, movedFrom: message.movedFrom };
-  return { rows: message.batchRows?.length ? message.batchRows : [single], rowData: null };
+  return 'rows' in message ? { rows: message.rows, rowData: null } : { rows: null, rowData: message.rowData };
 }
 
 /** The worker's health push arrives every 15 seconds, so a connection this long without a message is dead. */
@@ -78,7 +73,7 @@ export function cdcSecretRefusal(presented: string | string[] | undefined): stri
 /** What the CDC worker reports about itself, pushed every 15 seconds and at once after an incident. */
 export interface CdcWorkerHealth {
   /** The worker's own grade. */
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: HealthStatus;
   /** Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`, `worker_stuck`, `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`, `event_loop_lag`. */
   reasons: string[];
   /** Diagnosis for a person: replication status and positions, lag, the failure it reads again from, setup problems, the slot. */
@@ -94,7 +89,10 @@ export interface CdcWorkerHealth {
 const workerAwayAfterMs = 60_000;
 
 /** The grades a health report may carry; one with another grade is unreadable. */
-const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] satisfies CdcWorkerHealth['status'][];
+const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] satisfies HealthStatus[];
+
+/** The worker's latest health report and when it arrived; `health` is null when its shape could not be read. */
+type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
 
 /**
  * The CDC worker's channel: one live connection, closed after 90 seconds without a message. The internal listener
@@ -109,7 +107,7 @@ class CdcWebSocketServer {
   private _lastMessageAt: Date | null = null;
   private _messagesReceived = 0;
   private _parseErrors = 0;
-  private _workerHealth: { health: CdcWorkerHealth | null; receivedAt: Date } | null = null;
+  private _workerHealth: WorkerHealthReport | null = null;
   private _generation: number | null = null;
   private generationListeners: ((generation: number) => void)[] = [];
   /**
@@ -281,13 +279,13 @@ class CdcWebSocketServer {
     this.noteReading(false);
   }
 
-  /** The worker's latest health report on the live connection; `health` is null when its shape could not be read. */
-  getWorkerHealth(): { health: CdcWorkerHealth | null; receivedAt: Date } | null {
+  /** The worker's latest health report on the live connection. */
+  getWorkerHealth(): WorkerHealthReport | null {
     return this._workerHealth;
   }
 
   /** The socket as this process sees it: whether a worker is connected, and what arrived over it. */
-  getHealthStatus(): { cdcConnected: boolean; lastMessageAt: string | null; messagesReceived: number; parseErrors: number } {
+  getHealthStatus(): CdcSocketSnapshot {
     return {
       cdcConnected: this.currentConnection !== null,
       lastMessageAt: this._lastMessageAt?.toISOString() ?? null,

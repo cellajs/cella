@@ -3,8 +3,6 @@ import i18n, { type InitOptions } from 'i18next';
 import { appConfig } from 'shared';
 import { locales } from '#/lib/i18n-locales';
 
-export type { ParseKeys } from 'i18next';
-
 /** All backend translations load at once during server start. */
 const initOptions: InitOptions = {
   resources: locales,

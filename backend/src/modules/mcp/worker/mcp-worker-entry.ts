@@ -17,7 +17,7 @@ import { createBaseApp } from '#/server';
  * singleVM the API process calls this with the mcp port and `inProcess`: telemetry and the wait for the API are its own.
  */
 export async function startMcpWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
-  const port = options.port ?? Number(env.PORT);
+  const port = options.port ?? env.PORT;
   if (appConfig.services.mcp.enabled === false) {
     baseLog.info('MCP server disabled by appConfig');
     return;

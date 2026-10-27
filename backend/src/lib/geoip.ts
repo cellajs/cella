@@ -7,6 +7,7 @@ import { appConfig } from 'shared';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 import { isPublicIp } from '#/utils/ip-subnet';
+import { log } from '#/utils/logger';
 
 type GeoipKind = 'country' | 'asn';
 
@@ -87,7 +88,7 @@ export const lookupIp = async (ip: string | null | undefined): Promise<{ country
     const asnNumber = asnReader?.get(target)?.autonomous_system_number ?? null;
     return { country: countryCode, asn: asnNumber };
   } catch (err) {
-    baseLog.warn('GeoIP lookup failed', { err, ip: target });
+    log.warn('GeoIP lookup failed', { err, ip: target });
     return { country: null, asn: null };
   }
 };

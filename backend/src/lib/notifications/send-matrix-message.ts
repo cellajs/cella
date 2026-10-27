@@ -3,41 +3,38 @@ import { nanoid } from 'shared/utils/nanoid';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
 
-// TODO-032(IMPROVEMENT) [#06] handle all matrix/element message types
-// export type matrixMsgTypes = 'm.text', 'm.notice', 'm.emote', 'm.image', 'm.audio', 'm.video', 'm.file', 'm.location', 'm.sticker'
+const matrixTimeoutMs = 10_000;
 
-type MatrixMsgTypes = 'm.text' | 'm.notice';
-
-export const sendMatrixMessage = async ({ msgtype, textMessage, html }: { msgtype: MatrixMsgTypes; textMessage: string; html?: string }) => {
+/**
+ * Posts a plain-text notice to the team's Element room. Never throws: an unreachable server, a timeout and a refusal are
+ * logged, and the caller falls back to another channel.
+ * @param textMessage - The notice's text.
+ * @returns Whether Matrix accepted the message; false when Element is not configured.
+ */
+export const sendMatrixMessage = async (textMessage: string): Promise<boolean> => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
     log.info('Missing required Element env values (roomId and/or  botAccessToken).');
-    return;
+    return false;
   }
-  const bodyPayload: Record<string, unknown> = {
-    msgtype,
-    body: textMessage,
-    ...(html ? { format: 'org.matrix.custom.html', formatted_body: html } : {}),
-  };
 
   const txnId = nanoid(6);
-  const roomId = env.ELEMENT_ROOM_ID;
-  const botAccessToken = env.ELEMENT_BOT_ACCESS_TOKEN;
-  const eventType = 'm.room.message';
+  const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${env.ELEMENT_ROOM_ID}/send/m.room.message/${txnId}`;
 
-  const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${roomId}/send/${eventType}/${txnId}`;
-
-  // The access token goes in a header: fetch spans record the full request URL.
-  const matrixResponse = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${botAccessToken}` },
-    body: JSON.stringify(bodyPayload),
-  });
-
-  if (matrixResponse.ok) {
-    log.info('Matrix message sent successfully to specified room');
-  } else {
-    const errorBody = await matrixResponse.json();
-    log.error('Failed to send Matrix message', { err: errorBody });
+  try {
+    // The access token goes in a header: fetch spans record the full request URL.
+    const matrixResponse = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.ELEMENT_BOT_ACCESS_TOKEN}` },
+      body: JSON.stringify({ msgtype: 'm.notice', body: textMessage }),
+      signal: AbortSignal.timeout(matrixTimeoutMs),
+    });
+    if (matrixResponse.ok) {
+      log.info('Matrix message sent successfully to specified room');
+      return true;
+    }
+    log.error('Failed to send Matrix message', { status: matrixResponse.status, body: await matrixResponse.text().catch(() => '') });
+  } catch (err) {
+    log.error('Failed to send Matrix message', { err });
   }
-  return matrixResponse;
+  return false;
 };

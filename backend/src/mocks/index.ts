@@ -1,5 +1,5 @@
 export { withFakerSeed } from './faker-seed';
-export { type BatchResponse, mockBatchResponse } from './mock-batch-response';
+export { mockBatchResponse } from './mock-batch-response';
 export { generateMockChannelCounts } from './mock-channel-counts';
 export {
   generateMockActivityChannelIdColumns,

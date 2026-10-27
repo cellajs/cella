@@ -78,25 +78,37 @@ async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   }
 }
 
-type Mailer = {
-  prepareEmails<TStatic, TRecipient extends EmailRecipient>(
-    template: EmailTemplateDef<TStatic, TRecipient>,
-    staticProps: TStatic,
-    recipients: TRecipient[],
-    replyTo?: string,
-  ): Promise<void>;
+/**
+ * Sends one batch of message versions through Brevo. Sends nothing without a Brevo key, or in test mode unless
+ * `TEST_SEND_EMAILS` is set; a failed send is logged, never thrown.
+ * @param htmlParams - The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are.
+ */
+async function sendBatch(
+  subject: string,
+  html: string,
+  versions: { to: { email: string }[]; params: Record<string, unknown> }[],
+  replyTo: string | undefined,
+  htmlParams: Partial<Record<string, SafeHtmlPolicy>>,
+): Promise<void> {
+  if (!env.BREVO_API_KEY) return;
+  if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
-  sendBatch(
-    subject: string,
-    html: string,
-    versions: { to: { email: string }[]; params: Record<string, unknown> }[],
-    replyTo?: string,
-    /** The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are. */
-    htmlParams?: Partial<Record<string, SafeHtmlPolicy>>,
-  ): Promise<void>;
-};
+  const params = Object.keys(versions[0]?.params ?? {});
+  const placeholders = { params, htmlParams: Object.keys(htmlParams).filter((key) => htmlParams[key]) };
+  try {
+    await postToBrevo(env.BREVO_API_KEY, {
+      subject: neutralizeBrevoTags(sanitizeEmailSubject(subject || `${appConfig.name} message`), { params }, 'text'),
+      htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
+      sender: { email: appConfig.senderEmail },
+      replyTo: { email: replyTo || appConfig.supportEmail },
+      messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
+    });
+  } catch (err) {
+    log.warn('Failed to send email batch', { err });
+  }
+}
 
-export const mailer: Mailer = {
+export const mailer = {
   /**
    * Renders once per language group with Brevo placeholders (`brevoPlaceholder`) whose keys carry a nonce drawn for the
    * send, then sends in batches of 99.
@@ -106,24 +118,16 @@ export const mailer: Mailer = {
     staticProps: TStatic,
     recipients: TRecipient[],
     replyTo?: string,
-  ) {
+  ): Promise<void> {
     if (!recipients.length) return;
 
-    const byLng = new Map<string, TRecipient[]>();
-    for (const r of recipients) {
-      const group = byLng.get(r.lng) ?? [];
-      group.push(r);
-      byLng.set(r.lng, group);
-    }
-
-    for (const [lng, lngRecipients] of byLng) {
+    for (const [lng, lngRecipients] of Map.groupBy(recipients, (recipient) => recipient.lng)) {
       // Every param key carries a nonce drawn for this send, so text a user typed into the mail can never name one:
       // only the mailer's own placeholders survive `neutralizeBrevoTags`.
       const nonce = randomBytes(8).toString('hex');
       const paramKey = (key: string) => `${key}_${nonce}`;
-      const declaredHtmlParams: Partial<Record<string, SafeHtmlPolicy>> = { ...template.htmlParams };
       const htmlParams: Partial<Record<string, SafeHtmlPolicy>> = {};
-      for (const [key, policy] of Object.entries(declaredHtmlParams)) htmlParams[paramKey(key)] = policy;
+      for (const [key, policy] of Object.entries<SafeHtmlPolicy | undefined>(template.htmlParams ?? {})) htmlParams[paramKey(key)] = policy;
 
       // Translate once per language
       const translated = template.translate(lng, staticProps, (key) => brevoPlaceholder(paramKey(String(key)), htmlParams));
@@ -153,27 +157,8 @@ export const mailer: Mailer = {
           return { to: [{ email: env.SEND_ALL_TO_EMAIL || recipient.email }], params };
         });
 
-        await this.sendBatch(subject as string, html, versions, replyTo, htmlParams);
+        await sendBatch(subject, html, versions, replyTo, htmlParams);
       }
-    }
-  },
-
-  async sendBatch(subject, html, versions, replyTo, htmlParams = {}) {
-    if (!env.BREVO_API_KEY) return;
-    if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
-
-    const params = Object.keys(versions[0]?.params ?? {});
-    const placeholders = { params, htmlParams: Object.keys(htmlParams).filter((key) => htmlParams[key]) };
-    try {
-      await postToBrevo(env.BREVO_API_KEY, {
-        subject: neutralizeBrevoTags(sanitizeEmailSubject(subject || `${appConfig.name} message`), { params }, 'text'),
-        htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
-        sender: { email: appConfig.senderEmail },
-        replyTo: { email: replyTo || appConfig.supportEmail },
-        messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
-      });
-    } catch (err) {
-      log.warn('Failed to send email batch', { err });
     }
   },
 };

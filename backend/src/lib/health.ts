@@ -9,19 +9,16 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import {
   type HealthComponent,
   type HealthResponse,
-  type HealthStatus,
   mapApiComponent,
   mapCdcComponent,
   mapDatabaseComponent,
   mapProbeComponent,
   rollupStatus,
 } from '#/lib/health-helpers';
-import { extractMcpDetails, extractOauthDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
+import { probedWorkers, probeWorker } from '#/lib/health-probe';
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
 import { log } from '#/utils/logger';
-
-export type { HealthResponse, HealthStatus };
 
 /** Components that reflect the process's own ability to serve; only these can drive an `unhealthy` rollup (503). */
 const criticalComponents = new Set(['api', 'database']);
@@ -82,23 +79,11 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   } else {
     if (appConfig.services.cdc.enabled !== false) components.cdc = buildCdcComponent();
 
-    const workerChecks = await Promise.all([
-      appConfig.services.yjs.enabled !== false
-        ? probeWorker(workerUrls.yjs).then((result) => ['yjs', mapProbeComponent(result, extractYjsDetails)] as const)
-        : Promise.resolve(null),
-      appConfig.services.mcp.enabled !== false
-        ? probeWorker(workerUrls.mcp).then((result) => ['mcp', mapProbeComponent(result, extractMcpDetails)] as const)
-        : Promise.resolve(null),
-      appConfig.services.oauth.enabled !== false
-        ? probeWorker(workerUrls.oauth).then((result) => ['oauth', mapProbeComponent(result, extractOauthDetails)] as const)
-        : Promise.resolve(null),
-    ]);
-
-    for (const workerCheck of workerChecks) {
-      if (!workerCheck) continue;
-      const [name, component] = workerCheck;
-      components[name] = component;
-    }
+    const enabledWorkers = probedWorkers.filter(({ name }) => appConfig.services[name].enabled !== false);
+    const workerChecks = await Promise.all(
+      enabledWorkers.map(async ({ name, url, details }) => [name, mapProbeComponent(await probeWorker(url), details)] as const),
+    );
+    for (const [name, component] of workerChecks) components[name] = component;
 
     if (appConfig.services.jobs.enabled !== false) components.jobs = await buildJobsComponent();
   }

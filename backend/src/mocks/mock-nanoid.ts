@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 export type MockContext = 'example' | 'script' | 'loadtest';
 
 export const scriptIdPrefix = 'gen-';
-const loadtestIdPrefix = 'lt-';
+export const scriptUuidPrefix = '00000000';
 
 let currentMockContext: MockContext = 'example';
 
@@ -29,37 +29,17 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   }
 };
 
-const getIdPrefix = (): string => {
-  switch (currentMockContext) {
-    case 'script':
-      return scriptIdPrefix;
-    case 'loadtest':
-      return loadtestIdPrefix;
-    default:
-      return '';
-  }
-};
+const idPrefixes: Record<MockContext, string> = { example: '', script: scriptIdPrefix, loadtest: 'lt-' };
+const uuidPrefixes: Record<MockContext, string> = { example: '', script: scriptUuidPrefix, loadtest: '00000001' };
 
 export const mockNanoid = (length = 24) => {
-  const prefix = getIdPrefix();
-  const prefixLength = prefix.length;
-  const randomPart = faker.string.alphanumeric({ length: length - prefixLength, casing: 'lower' });
-  return `${prefix}${randomPart}`;
+  const prefix = idPrefixes[currentMockContext];
+  return `${prefix}${faker.string.alphanumeric({ length: length - prefix.length, casing: 'lower' })}`;
 };
 
-export const scriptUuidPrefix = '00000000';
-const loadtestUuidPrefix = '00000001';
-
 export const mockUuid = () => {
-  const uuid = faker.string.uuid();
-  switch (currentMockContext) {
-    case 'script':
-      return `${scriptUuidPrefix}${uuid.substring(scriptUuidPrefix.length)}`;
-    case 'loadtest':
-      return `${loadtestUuidPrefix}${uuid.substring(loadtestUuidPrefix.length)}`;
-    default:
-      return uuid;
-  }
+  const prefix = uuidPrefixes[currentMockContext];
+  return `${prefix}${faker.string.uuid().slice(prefix.length)}`;
 };
 
 /** 6 lowercase alphanumeric characters. */

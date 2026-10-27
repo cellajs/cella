@@ -18,12 +18,3 @@ export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promi
 export function isInFlight(key: string): boolean {
   return inFlight.has(key);
 }
-
-export function inFlightCount(): number {
-  return inFlight.size;
-}
-
-/** For testing. */
-export function clearInFlight(): void {
-  inFlight.clear();
-}

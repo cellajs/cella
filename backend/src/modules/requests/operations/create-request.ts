@@ -75,9 +75,9 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
 
   const staticProps = { type, message };
 
-  sendMatrixMessage({ msgtype: 'm.notice', textMessage })
-    .then((matrixResp) => {
-      if (matrixResp?.ok) return;
+  sendMatrixMessage(textMessage)
+    .then((sent) => {
+      if (sent) return;
       return mailer.prepareEmails(requestInfoEmail, { ...staticProps, email: normalizedEmail, subject: title }, [
         { email: appConfig.company.email, lng },
       ]);

@@ -11,8 +11,8 @@ const isTest = appConfig.mode === 'test';
 /** Censored in every backend log line: secret columns and transport keys, plus the auth headers of a logged request. */
 export const backendRedactPaths = [...redactedFields, 'req.headers.authorization', 'req.headers.cookie'];
 
-/** Request logger: pino-pretty via messageFormat in dev, JSON to stdout in production, the OTLP sink when one is set. */
-export const requestLogger = createLogger({
+/** What both loggers share: a level, sink or redaction list set here reaches each. */
+const loggerOptions = {
   level: env.PINO_LOG_LEVEL,
   isProduction,
   isTest,
@@ -20,6 +20,11 @@ export const requestLogger = createLogger({
   serviceName,
   serviceVersion: env.RELEASE_SHA,
   redactPaths: backendRedactPaths,
+};
+
+/** Request logger: pino-pretty via messageFormat in dev, JSON to stdout in production, the OTLP sink when one is set. */
+export const requestLogger = createLogger({
+  ...loggerOptions,
   transportOptions: {
     colorize: false,
     singleLine: false,
@@ -30,15 +35,7 @@ export const requestLogger = createLogger({
 });
 
 /** Not exported: all logging passes through `baseLog` or the request-aware `log`, keeping the err convention. */
-const eventLogger = createLogger({
-  level: env.PINO_LOG_LEVEL,
-  isProduction,
-  isTest,
-  sink: otlpSink,
-  serviceName,
-  serviceVersion: env.RELEASE_SHA,
-  redactPaths: backendRedactPaths,
-});
+const eventLogger = createLogger(loggerOptions);
 
 // Context-free log facade; most backend code should use `log` from #/utils/logger, which adds request context.
 export const baseLog = createLog(eventLogger);

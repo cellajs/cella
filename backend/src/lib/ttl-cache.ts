@@ -19,7 +19,6 @@ let cacheCount = 0;
 /** TTL cache with prefix invalidation: a timer expires entries and eviction takes the soonest-expiring one. */
 export class TTLCache<T> {
   private cache: BaseTTLCache<string, T>;
-  private readonly maxSize: number;
   private readonly defaultTtl: number;
   private readonly onSet?: (key: string, value: T) => void;
   private readonly flightScope = `ttl-cache:${cacheCount++}`;
@@ -27,7 +26,6 @@ export class TTLCache<T> {
   private generation = 0;
 
   constructor(options: TTLCacheOptions<T>) {
-    this.maxSize = options.maxSize;
     this.defaultTtl = options.defaultTtl;
     this.onSet = options.onSet;
 
@@ -80,11 +78,6 @@ export class TTLCache<T> {
     this.generation++;
   }
 
-  /** True only while the key is unexpired. */
-  has(key: string): boolean {
-    return this.cache.has(key);
-  }
-
   delete(key: string): boolean {
     this.generation++;
     return this.cache.delete(key);
@@ -111,28 +104,5 @@ export class TTLCache<T> {
   clear(): void {
     this.generation++;
     this.cache.clear();
-  }
-
-  /** Remaining TTL in milliseconds, 0 when the key is missing or expired. */
-  getRemainingTTL(key: string): number {
-    return this.cache.getRemainingTTL(key);
-  }
-
-  get size(): number {
-    return this.cache.size;
-  }
-
-  /** Maximum allowed entries */
-  get capacity(): number {
-    return this.maxSize;
-  }
-
-  get stats(): { size: number; capacity: number; utilization: number } {
-    return { size: this.cache.size, capacity: this.maxSize, utilization: this.cache.size / this.maxSize };
-  }
-
-  /** Cancel the internal timer for graceful shutdown; entries stop expiring automatically. */
-  cancelTimer(): void {
-    this.cache.cancelTimer();
   }
 }

@@ -38,10 +38,6 @@ export class TimeSpan {
   public seconds(): number {
     return this.milliseconds() / 1000;
   }
-
-  public transform(x: number): TimeSpan {
-    return new TimeSpan(Math.round(this.milliseconds() * x), 'ms');
-  }
 }
 
 /** ISO date string offset from now by the time span. */

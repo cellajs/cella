@@ -3,7 +3,7 @@ import type { MediaRefContext } from 'shared/utils/media-ref';
 import { validateBlockMediaUrls as validateUrls } from 'shared/utils/validate-block-media-urls';
 import { AppError } from '#/core/error';
 
-type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] };
+type ValidationResult = ReturnType<typeof validateUrls>;
 
 /**
  * Checks the media blocks of a stored document (blocks as a JSON string) against the media grammar.

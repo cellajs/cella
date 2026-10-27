@@ -51,7 +51,7 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
     baseLog.info('Jobs worker disabled by appConfig');
     return;
   }
-  const port = options.port ?? Number(env.PORT);
+  const port = options.port ?? env.PORT;
 
   if (!options.inProcess) {
     otel.start();

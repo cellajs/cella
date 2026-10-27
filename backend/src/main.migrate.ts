@@ -1,26 +1,13 @@
 import process from 'node:process';
-import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
-import { getAdminDb, migrateConfig } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { describeMigrateTimeout, describeOpenTransactions } from '#/db/migrate-timeouts';
 import { timestamp } from '#/utils/console';
-import { createDbRoles } from '../scripts/db/create-db-roles';
+import { migrateDatabase } from '../scripts/db/migrate-database';
 
 try {
-  const migrationDb = getAdminDb('migrations');
-
-  console.info(`${timestamp()} [migrate] Ensuring DB roles...`);
-  await createDbRoles();
-
-  console.info(`${timestamp()} [migrate] Running migrations...`);
-  await pgMigrate(migrationDb, migrateConfig);
-
+  await migrateDatabase('migrations', (step) => console.info(`${timestamp()} [migrate] ${step}`));
   console.info(pc.green(`${timestamp()} [migrate] ✓ Migrations complete`));
-
-  // The job store (pg-boss) is installed and upgraded here as the table owner; runtime processes never migrate it.
-  console.info(`${timestamp()} [migrate] Installing job store...`);
-  const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
-  await installJobsSchema();
 
   // Seed the system administrator only for an empty user table; the lazy import keeps mock helpers out of this path.
   console.info(`${timestamp()} [migrate] Seeding system admin (idempotent)...`);
