@@ -9,11 +9,8 @@ import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, 
 import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
-/**
- * The single place the storage-key variant set is enumerated. `original` is always present.
- * @public
- */
-export const attachmentKeysSchema = z.object({
+/** The single place the storage-key variant set is enumerated. `original` is always present. */
+const attachmentKeysSchema = z.object({
   original: z.string(),
   preview: z.string().optional(),
   thumbnail: z.string().optional(),
@@ -109,7 +106,7 @@ export const attachmentListQuerySchema = productListQuerySchema({
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
-export const attachmentVariantSchema = z.enum(['original', 'preview', 'thumbnail', 'converted']);
+export const attachmentVariantSchema = attachmentKeysSchema.keyof();
 
 /**
  * Callers reference private attachments by `attachmentId` plus `variant`; clients never submit

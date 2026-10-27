@@ -56,6 +56,8 @@ const main = async () => {
   internalListener = serveInternal({ port: env.INTERNAL_PORT });
 
   server = serveApi({ fetch: app.fetch, port }, async () => {
+    // Every API process serves the relay's materialize route, so each one warns.
+    (await import('#/modules/yjs/yjs-materializers')).warnWhenNoYjsMaterializer();
     // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
     if (appConfig.singleVM) {
       if (appConfig.services.cdc.enabled) {
@@ -66,7 +68,6 @@ const main = async () => {
         });
       }
       if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
-      (await import('#/modules/yjs/yjs-materializers')).warnWhenNoYjsMaterializer();
       // Folded workers listen on their own ports (the LB routes each path to the host VM on that port); the API
       // process keeps PORT for itself.
       if (appConfig.services.mcp.enabled)

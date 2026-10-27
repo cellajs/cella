@@ -1,18 +1,19 @@
 import { isProduct } from 'shared';
 import { uuidv7 } from 'uuidv7';
-import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
+import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
+import { loadTenant } from '#/modules/tenants/operations/load-tenant';
 import { findUserModelsByIds } from '#/modules/user/user-queries';
 import { yjsMaterializeScope } from '#/modules/yjs/helpers/materialize-window';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
-import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
+import { getYjsMaterializer, type YjsMaterializerContext } from '#/modules/yjs/yjs-materializers';
 import { log } from '#/utils/logger';
 
-/** The editors are read on the base pool: the relay calls without a request context. */
+/** The editors, the tenant and the organization are read on the base pool: the relay calls without a request context. */
 const dbCtx = { var: { db: baseDb } };
 
 export interface MaterializeDescriptionInput {
@@ -52,10 +53,9 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `No Yjs materializer registered for ${entityType}` } });
   }
 
+  const gone = () => new AppError(410, 'not_found', 'warn', { entityType, meta: { reason: 'The entity is gone' } });
   const row = await tenantReadById(input.tenantId, (tx) => resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }));
-  if (!row || row.tenantId !== input.tenantId) {
-    throw new AppError(410, 'not_found', 'warn', { entityType, meta: { reason: 'The entity is gone' } });
-  }
+  if (!row || row.tenantId !== input.tenantId) throw gone();
   if (row.organizationId !== input.organizationId) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { reason: 'Organization does not match the entity' } });
   }
@@ -65,29 +65,35 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     log.warn('Yjs materialization sanitized untrusted media URLs', { entityType, entityId: input.entityId, invalidUrls });
   }
 
-  const [users, memberships] = await Promise.all([
+  const [users, memberships, tenant, organization] = await Promise.all([
     findUserModelsByIds(dbCtx, { ids: input.editors }),
     findMembershipsByUserIds(dbCtx, { userIds: input.editors }),
+    loadTenant(row.tenantId),
+    resolveEntity(dbCtx, { entityType: 'organization', identifier: row.organizationId }),
   ]);
+  // The entity row's foreign keys hold both, so a miss is a tenant removed since that read.
+  if (!tenant || !organization) throw gone();
 
   for (const editorId of input.editors) {
     const user = users.find((candidate) => candidate.id === editorId);
     if (!user) continue;
     const bindings = memberships.filter((membership) => membership.userId === editorId);
+    const membership = bindings.find((binding) => binding.organizationId === organization.id && binding.channelType === 'organization') ?? null;
 
-    // Worker context only: persist as this editor with no system-administrator bypass, matching relay authorization.
-    const ctx = {
+    // This editor in the organization, as the guards set a request's context, with no system-administrator bypass,
+    // matching relay authorization.
+    const ctx: YjsMaterializerContext = {
       var: {
         user,
-        userId: user.id,
         actor: { kind: 'user', id: user.id, bindings, scopes: null },
         isSystemAdmin: false,
-        memberships: bindings,
         db: baseDb,
         tenantId: row.tenantId,
-        organizationId: row.organizationId,
+        tenant,
+        organizationId: organization.id,
+        organization: { ...withOrganizationDefaults(organization), membership },
       },
-    } as unknown as UserContext;
+    };
 
     try {
       // Empty fieldTimestamps lets the pipeline stamp a fresh server HLC. The window reaches the yjs module's

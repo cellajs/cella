@@ -9,9 +9,10 @@ import { withActorRefs } from '#/modules/actors/actor-refs';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
+import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
 import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
+import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { resolvePlacement } from '#/permissions/product-placement';
@@ -22,12 +23,7 @@ import { log } from '#/utils/logger';
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttachmentsInput) {
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
-  const { organization, tenant } = ctx.var;
-  const attachmentRestrictions = tenant.restrictions.quotas.attachment;
-
-  if (attachmentRestrictions !== 0 && input.length > attachmentRestrictions) {
-    throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
-  }
+  const { organization } = ctx.var;
 
   // Rows an earlier attempt of this create wrote come back as they are; only the other items are created.
   const replayed = await checkIdempotency(
@@ -37,21 +33,18 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   );
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
-  // `replayed` tells the handler this request created none.
-  if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [] as string[], replayed: true };
+  // `created` tells the handler whether this request inserted a row.
+  if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
-
-  if (attachmentRestrictions !== 0 && currentAttachments + fresh.length > attachmentRestrictions) {
-    throw new AppError(403, 'restrict_by_org', 'warn', { entityType: 'attachment' });
-  }
+  assertTenantQuota(ctx, 'attachment', currentAttachments, fresh.length);
 
   const now = getIsoDate();
   // The attachment upload template decides the bucket; the server stamps it on every row and ignores what a client
   // claims, so a row never names storage its upload did not use.
   const storage = uploadStorage('attachment');
   // The backend later signs these keys: they must name the caller's own uploads, before the bucket is asked about them.
-  if (fresh.some(({ keys }) => !namesOwnStorage(keys, organization.id, ctx.var.actor.id))) {
+  if (fresh.some(({ keys }) => !namesUploaderStorage(keys, organization.id, ctx.var.actor.id, { allowLocal: true }))) {
     throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
   }
   const storedSizes = await Promise.all(fresh.map(({ keys }) => storedFileSize(keys, storage.bucketName)));
@@ -94,12 +87,14 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   log.info('Attachments created', { count: createdAttachments.length });
 
-  // An attempt of this create running at the same time and committing first leaves this insert without those rows
+  // An attempt of this create running at the same time and committing first leaves this insert without those rows; any
+  // other id left out names a row that is not the caller's live one (another actor's, or a deleted one) and is rejected.
   const insertedIds = new Set(createdAttachments.map((row) => row.id));
   const missingIds = fresh.map((item) => item.id).filter((id) => !insertedIds.has(id));
   const committedMeanwhile = missingIds.length > 0 ? await checkIdempotency(ctx, attachmentsTable, missingIds) : [];
+  const committedIds = new Set(committedMeanwhile.map((row) => row.id));
 
   const attachmentResponses = await withActorRefs(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
 
-  return { data: attachmentResponses, rejectedIds: [] as string[], replayed: false };
+  return { data: attachmentResponses, rejectedIds: missingIds.filter((id) => !committedIds.has(id)), created: createdAttachments.length > 0 };
 }

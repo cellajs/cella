@@ -1,16 +1,9 @@
-import { bigint, customType, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, bytea, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-
-// Custom bytea type for raw Y.Doc binary storage
-const bytea = customType<{ data: Buffer }>({
-  dataType() {
-    return 'bytea';
-  },
-});
 
 /**
  * Compacted base state, one row per document: seeded from the entity's description on the first WS connect or HTTP

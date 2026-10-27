@@ -9,15 +9,14 @@ export const publicKeyOf = (url: string): string | null => {
   return url.startsWith(base) ? url.slice(base.length).replace(/^\/+/, '') : null;
 };
 
-/** A key under the uploader's own prefix, `<organizationId>/<userId>`: the storage path the upload token signs. */
-const isUploaderKey = (key: string, organizationId: string, userId: string) => isOrganizationKey(key, `${organizationId}/${userId}`);
-
 /**
- * Whether every variant key of a new attachment is local or under its uploader's own prefix. Keys arrive from the
- * client and the backend signs them, so a row that fails this would hand out another member's or tenant's object.
+ * Whether every variant key lies under the uploader's own prefix, `<organizationId>/<userId>`: the storage path the
+ * upload token signs. Keys arrive from the client and the backend signs them, so a row that fails this would hand out
+ * another member's or tenant's object. `allowLocal` also admits an offline upload's local keys, for a new attachment.
  */
-export function namesOwnStorage(keys: AttachmentKeys, organizationId: string, userId: string): boolean {
-  return Object.values(keys).every((key) => key === undefined || isLocalStorageKey(key) || isUploaderKey(key, organizationId, userId));
+export function namesUploaderStorage(keys: AttachmentKeys, organizationId: string, userId: string, { allowLocal = false } = {}): boolean {
+  const prefix = `${organizationId}/${userId}`;
+  return Object.values(keys).every((key) => key === undefined || (allowLocal && isLocalStorageKey(key)) || isOrganizationKey(key, prefix));
 }
 
 /**
@@ -28,9 +27,4 @@ export function namesOwnStorage(keys: AttachmentKeys, organizationId: string, us
 export function isSignableKey(key: string, bucketName: string, organizationId: string): boolean {
   const appBuckets = [appConfig.s3.privateBucket, appConfig.s3.publicBucket];
   return appBuckets.includes(bucketName) && isOrganizationKey(key, organizationId);
-}
-
-/** Whether every variant key names a stored object under the uploader's own prefix; no local key, for keys linked to an existing row. */
-export function namesUploaderStorage(keys: AttachmentKeys, organizationId: string, userId: string): boolean {
-  return Object.values(keys).every((key) => key === undefined || isUploaderKey(key, organizationId, userId));
 }

@@ -63,7 +63,7 @@ export async function getPresignedUrlsOp(ctx: UserContext, { items }: PresignedU
   const data = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {
       const key = selectVariantKey(row, variant);
-      const url = await getSignedUrlFromKey(key, { bucketName: row.bucketName, publicBucket: false });
+      const url = await getSignedUrlFromKey(key, { bucketName: row.bucketName });
       return { attachmentId, variant, url };
     }),
   );

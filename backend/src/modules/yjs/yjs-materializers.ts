@@ -1,7 +1,10 @@
 import { appConfig, type ProductEntityType } from 'shared';
-import type { UserContext } from '#/core/context';
+import type { Env, OrgContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 import type { StxBase } from '#/schemas';
+
+/** What a materializer runs with: an organization context, as the guards set one for a request, of the editor credited with the write. */
+export type YjsMaterializerContext = { var: OrgContext['var'] & Pick<Env['Variables'], 'user'> };
 
 /**
  * Reference to the entity's standard update op; the relay invokes it with the server clock (`serverOrigin`) and marks
@@ -9,7 +12,7 @@ import type { StxBase } from '#/schemas';
  * UPDATE, so the yjs module's handler records no outside write for it.
  */
 export type YjsMaterializer = (
-  ctx: UserContext,
+  ctx: YjsMaterializerContext,
   id: string,
   input: { ops: { description: string }; stx: StxBase },
   opts: { serverOrigin: true; materialized: true },

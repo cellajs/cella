@@ -9,7 +9,7 @@ import { dispatchMutation } from '#/lib/mutation-bus';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
-import { type AttachmentKeys, attachmentKeysSchema, type attachmentLinkKeysBodySchema } from '#/modules/attachment/attachment-schema';
+import { type AttachmentKeys, type attachmentLinkKeysBodySchema, attachmentVariantSchema } from '#/modules/attachment/attachment-schema';
 import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
 import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
 import { getValidProduct } from '#/permissions/get-valid-product';
@@ -18,7 +18,7 @@ import { log } from '#/utils/logger';
 type LinkAttachmentKeysInput = z.infer<typeof attachmentLinkKeysBodySchema>;
 
 const sameKeys = (a: AttachmentKeys, b: AttachmentKeys) =>
-  attachmentKeysSchema.keyof().options.every((variant) => (a[variant] ?? null) === (b[variant] ?? null));
+  attachmentVariantSchema.options.every((variant) => (a[variant] ?? null) === (b[variant] ?? null));
 
 /**
  * Stores the keys of a file uploaded after its row was created: offline, or before cloud storage was configured. Only

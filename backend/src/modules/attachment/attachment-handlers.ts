@@ -30,8 +30,8 @@ app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
-  const { replayed, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
-  return ctx.json(result, replayed ? 200 : 201);
+  const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
+  return ctx.json(result, created ? 201 : 200);
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
@@ -49,7 +49,7 @@ app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
 
 app.openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const result = await deleteAttachmentsOp(ctx, Array.isArray(ids) ? ids : [ids]);
+  const result = await deleteAttachmentsOp(ctx, ids);
   return ctx.json(result, 200);
 });
 
