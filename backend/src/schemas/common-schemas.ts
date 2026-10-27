@@ -255,7 +255,7 @@ export const validDomainSchema = z
 
 // Both cases are spelled out: an OpenAPI pattern carries no flags, so a case-insensitive regex would publish a pattern
 // that refuses the upper-case slug this schema takes and lowers.
-const slugPattern = /^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/;
+const slugPattern = /^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/;
 export const validSlugSchema = z
   .string()
   .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
