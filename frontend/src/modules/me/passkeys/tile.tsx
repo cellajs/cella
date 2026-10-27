@@ -13,11 +13,9 @@ interface PasskeyTileProps {
   /** This passkey's delete is running. */
   loading: boolean;
   onlyPasskeyLeft: boolean;
-  expanded: boolean;
-  onToggle: () => void;
 }
 
-export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft, expanded, onToggle }: PasskeyTileProps) {
+export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: PasskeyTileProps) {
   const { t } = useTranslation();
   const user = useCurrentUser();
   // The backend keeps the last passkey while MFA is on
@@ -25,9 +23,8 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft, expan
 
   return (
     <DeviceTile
+      value={passkey.id}
       device={passkey}
-      expanded={expanded}
-      onToggle={onToggle}
       meta={
         <>
           <KeyRoundIcon className="mr-1.5 inline size-3 align-[-0.0625em]" />

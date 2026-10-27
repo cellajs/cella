@@ -10,7 +10,6 @@ import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useOpenTile } from '~/modules/common/expandable-tile';
 import { NamedText } from '~/modules/common/named-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -23,6 +22,7 @@ import { PasskeysList } from '~/modules/me/passkeys/list';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
+import { Accordion } from '~/modules/ui/accordion';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -64,8 +64,6 @@ export function AccountAuthenticationCard() {
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const { oauthIdentities } = authData;
-  // One tile open at a time, across the card's sections
-  const { openId, toggle } = useOpenTile();
 
   // An SSO recovery link names a connection (`connect`), offered beside the user's own institutions even before they join its organization.
   const { connect } = useSearch({ from: '/_app/account' });
@@ -93,7 +91,7 @@ export function AccountAuthenticationCard() {
 
   return (
     <ToolCard label="c:authentication" description={t('c:authentication.text')}>
-      <div className="text-sm">
+      <Accordion className="text-sm">
         {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
           <>
             <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
@@ -107,12 +105,12 @@ export function AccountAuthenticationCard() {
           </>
         )}
 
-        {isStrategyEnabled('passkey') && <PasskeysList openId={openId} onToggle={toggle} />}
+        {isStrategyEnabled('passkey') && <PasskeysList />}
 
         {isStrategyEnabled('totp') && (
           <>
             <AuthSectionTitle title={t('c:totp')} help={t('c:totp.text')} />
-            <Totp expanded={openId === 'totp'} onToggle={() => toggle('totp')} />
+            <Totp />
           </>
         )}
 
@@ -123,14 +121,7 @@ export function AccountAuthenticationCard() {
               {enabledOAuthProviders.map(({ id, name }) => {
                 const identity = oauthIdentities.find(({ provider }) => provider === id);
                 return identity ? (
-                  <IdentityTile
-                    key={id}
-                    icon={<OAuthProviderIcon id={id} />}
-                    title={name}
-                    identity={identity}
-                    expanded={openId === id}
-                    onToggle={() => toggle(id)}
-                  />
+                  <IdentityTile key={id} value={id} icon={<OAuthProviderIcon id={id} />} title={name} identity={identity} />
                 ) : (
                   <Button
                     key={id}
@@ -163,12 +154,11 @@ export function AccountAuthenticationCard() {
                 return identity ? (
                   <IdentityTile
                     key={connectionId}
+                    value={connectionId}
                     icon={<BuildingIcon />}
                     title={displayName}
                     identity={identity}
                     via={'federation' in institution ? institution.federation.label : undefined}
-                    expanded={openId === connectionId}
-                    onToggle={() => toggle(connectionId)}
                   />
                 ) : (
                   <Button
@@ -186,7 +176,7 @@ export function AccountAuthenticationCard() {
             </div>
           </>
         )}
-      </div>
+      </Accordion>
     </ToolCard>
   );
 }

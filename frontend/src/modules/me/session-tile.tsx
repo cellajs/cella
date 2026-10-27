@@ -49,11 +49,9 @@ interface SessionTileProps {
   onRevoke?: (sessionIds: string[]) => void;
   /** This session's revoke is running. */
   loading?: boolean;
-  expanded: boolean;
-  onToggle: () => void;
 }
 
-export function SessionTile({ session, isCurrentDevice, onRevoke, loading, expanded, onToggle }: SessionTileProps) {
+export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: SessionTileProps) {
   const { t, i18n } = useTranslation();
   /** A federation names itself in config; every other method has a locale key. */
   const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
@@ -67,10 +65,9 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading, expan
 
   return (
     <DeviceTile
+      value={session.id}
       device={session}
       status={{ tone: statuses[status].tone, label: t(`c:${status}`) }}
-      expanded={expanded}
-      onToggle={onToggle}
       badges={
         <>
           {session.type === 'mfa' && (

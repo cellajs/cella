@@ -14,13 +14,8 @@ import { Skeleton } from '~/modules/ui/skeleton';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';
 
-interface TotpProps {
-  expanded: boolean;
-  onToggle: () => void;
-}
-
 /** TOTP as a tile once it is set up, else the button that sets it up. */
-export function Totp({ expanded, onToggle }: TotpProps) {
+export function Totp() {
   const { t } = useTranslation();
 
   const user = useCurrentUser();
@@ -72,6 +67,7 @@ export function Totp({ expanded, onToggle }: TotpProps) {
   return (
     <div className="mb-6">
       <ExpandableTile
+        value="totp"
         icon={<RotateCcwKeyIcon />}
         title={t('c:authenticator_app')}
         meta={
@@ -83,8 +79,6 @@ export function Totp({ expanded, onToggle }: TotpProps) {
             t('c:never_used')
           )
         }
-        expanded={expanded}
-        onToggle={onToggle}
         details={
           <>
             <ExpandableTileDetail label={t('c:created_at')}>{dateShort(totp.createdAt)}</ExpandableTileDetail>

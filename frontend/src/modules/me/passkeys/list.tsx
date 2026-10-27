@@ -8,14 +8,8 @@ import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 
-interface PasskeysListProps {
-  /** The open tile of the authentication card, which keeps one open across its sections. */
-  openId: string | null;
-  onToggle: (id: string) => void;
-}
-
 /** The passkeys section: a create button while there are none, else the list with an add button in its heading. */
-export function PasskeysList({ openId, onToggle }: PasskeysListProps) {
+export function PasskeysList() {
   const { t } = useTranslation();
 
   const { mutate: createPasskey } = useCreatePasskeyMutation();
@@ -57,8 +51,6 @@ export function PasskeysList({ openId, onToggle }: PasskeysListProps) {
                   onDelete={handleDeletePasskey}
                   loading={isPending && variables?.path.id === passkey.id}
                   onlyPasskeyLeft={passkeys.length === 1}
-                  expanded={openId === passkey.id}
-                  onToggle={() => onToggle(passkey.id)}
                 />
               )}
               initialDisplayCount={3}
