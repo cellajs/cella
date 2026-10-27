@@ -45,6 +45,7 @@ export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()(
     );
   },
   htmlParams: { sectionsHtml: 'richText' },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { daily: false },
     recipient: {

@@ -31,6 +31,7 @@ export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecip
   component(props) {
     return <SubjectEmail {...props} />;
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { actorName: 'John', channelName: 'Design 101', reply: false },
     recipient: {

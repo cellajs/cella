@@ -1,5 +1,6 @@
 import { httpInstrumentationMiddleware } from '@hono/otel';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import { compress } from 'hono/compress';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
@@ -53,9 +54,11 @@ app.use('*', loggerMiddleware);
 
 // No CORS middleware: the API is same-origin under /api, so other origins get no grant and the browser blocks them.
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
-// request that carries an API key skips it (the service guard rejects browser origins itself).
+// request that carries an API key skips it (the service guard rejects browser origins itself), and so does a mail
+// provider's one-click unsubscribe (RFC 8058): a form post with no Origin, authorized by the token in its URL alone.
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
-app.use('*', (ctx, next) => (hasApiKeyHeader(ctx) ? next() : csrfMiddleware(ctx, next)));
+const isOneClickUnsubscribe = (ctx: Context<Env>) => ctx.req.method === 'POST' && ctx.req.path.endsWith('/notifications/unsubscribe');
+app.use('*', (ctx, next) => (hasApiKeyHeader(ctx) || isOneClickUnsubscribe(ctx) ? next() : csrfMiddleware(ctx, next)));
 
 app.use('*', clientVersionMiddleware);
 

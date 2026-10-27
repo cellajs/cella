@@ -37,11 +37,24 @@ const emailSettings = async (userId: string) => {
   return { ...user, ...preferences };
 };
 
-/** Opens an unsubscribe link the way a mail client does; answers the redirect target. */
+/** Opens an unsubscribe link the way a reader, a mail scanner or a link preview does; answers the redirect target. */
 const openLink = async (link: string) => {
   const { baseApp } = await import('#/routes');
   const response = await baseApp.request(link.replace(appConfig.backendUrl, ''), { headers: defaultHeaders });
   return { status: response.status, location: new URL(response.headers.get('location') ?? '', appConfig.frontendUrl) };
+};
+
+/**
+ * Posts an unsubscribe link the way a mail client's one-click unsubscribe does (RFC 8058): a form post with no Origin and
+ * no session. `resubscribe` posts the same link's undo as the confirmation page does, from the app's origin.
+ */
+const postLink = async (link: string, action: 'unsubscribe' | 'resubscribe' = 'unsubscribe') => {
+  const { baseApp } = await import('#/routes');
+  const target = link.replace(appConfig.backendUrl, '').replace('/notifications/unsubscribe', `/notifications/${action}`);
+  const oneClick = { 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': defaultHeaders['x-forwarded-for'] };
+  const init = action === 'unsubscribe' ? { headers: oneClick, body: 'List-Unsubscribe=One-Click' } : { headers: defaultHeaders };
+  const response = await baseApp.request(target, { method: 'POST', ...init });
+  return { status: response.status, body: response.status === 204 ? null : await response.json() };
 };
 
 const tokenOf = (userId: string, category: UnsubscribeCategory) => new URL(buildUnsubscribeLink(userId, category)).searchParams.get('token') ?? '';
@@ -69,15 +82,14 @@ describe('Unsubscribe links', () => {
       linkFor(owner.id, 'digest', tokenOf(owner.id, 'newsletter')),
       linkFor(owner.id, 'digest', digestToken.slice(0, -1)),
     ]) {
-      const { status, location } = await openLink(target);
-      expect(status, target).toBe(302);
-      expect(location.pathname, target).toBe('/auth/error');
-      expect(location.searchParams.get('error'), target).toBe('unsubscribe_failed');
+      const { status, body } = await postLink(target);
+      expect(status, target).toBe(401);
+      expect(body, target).toMatchObject({ type: 'unsubscribe_failed' });
     }
     expect([await emailSettings(owner.id), await emailSettings(other.id)]).toEqual(before);
   });
 
-  it('turns off only the category its link names (positive control)', async () => {
+  it('changes nothing when a link is only opened, turns off only its category when posted, and turns it back on', async () => {
     const everythingOn = { newsletter: true, digest: 'weekly', mentionEmail: true };
     // The newsletter link leaves the digest on; the digest link leaves the newsletter on.
     for (const [category, expected] of [
@@ -86,12 +98,20 @@ describe('Unsubscribe links', () => {
     ] as const) {
       const owner = await signUp(`${category}-reader`);
       await findOrCreatePreferences({ var: { db: baseDb } }, { userId: owner.id });
+      const link = buildUnsubscribeLink(owner.id, category);
 
-      const { status, location } = await openLink(buildUnsubscribeLink(owner.id, category));
+      // Mail scanners and link previews open links on their own: opening leads to the confirmation page only.
+      const opened = await openLink(link);
+      expect(opened.status, category).toBe(302);
+      expect(opened.location.pathname, category).toBe('/auth/unsubscribe');
+      expect(opened.location.searchParams.get('category'), category).toBe(category);
+      expect(await emailSettings(owner.id), category).toEqual(everythingOn);
 
-      expect(status, category).toBe(302);
-      expect(location.pathname, category).toBe('/auth/unsubscribed');
+      expect((await postLink(link)).status, category).toBe(204);
       expect(await emailSettings(owner.id), category).toEqual(expected);
+
+      expect((await postLink(link, 'resubscribe')).status, category).toBe(204);
+      expect(await emailSettings(owner.id), category).toEqual(everythingOn);
     }
   });
 
@@ -118,9 +138,7 @@ describe('Unsubscribe links', () => {
     expect(sentMails().map(({ recipient }) => recipient.email)).toEqual([reader.email]);
 
     // Positive control: the link in the mail turns the reader's newsletter off.
-    const { status, location } = await openLink(mailedLink('unsubscribeLink').url);
-    expect(status).toBe(302);
-    expect(location.pathname).toBe('/auth/unsubscribed');
+    expect((await postLink(mailedLink('unsubscribeLink').url)).status).toBe(204);
     expect(await emailSettings(reader.id)).toEqual({ newsletter: false });
   });
 });

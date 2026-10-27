@@ -39,6 +39,7 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
       </EmailLayout>
     );
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { content: '<p>Test content</p>', subject: 'Monthly newsletter', testEmail: false },
     recipient: { unsubscribeLink: 'https://example.com/unsubscribe' },

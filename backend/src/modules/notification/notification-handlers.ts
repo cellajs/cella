@@ -1,11 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import '#/modules/notification/notification-listeners';
 import { notificationRoutes } from '#/modules/notification/notification-routes';
 import { getNotificationsOp } from '#/modules/notification/operations/get-notifications';
 import { markReadOp } from '#/modules/notification/operations/mark-read';
 import { getPreferencesOp, updatePreferencesOp } from '#/modules/notification/operations/preferences';
-import { unsubscribeNotificationsOp } from '#/modules/notification/operations/unsubscribe';
+import { setEmailCategoryOp } from '#/modules/notification/operations/unsubscribe';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -33,10 +34,23 @@ app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => {
   return ctx.json(data, 200);
 });
 
+app.openapi(notificationRoutes.openUnsubscribeLink, async (ctx) => {
+  const { user, category, token } = ctx.req.valid('query');
+  const page = new URL('/auth/unsubscribe', appConfig.frontendUrl);
+  page.search = new URLSearchParams({ user, category, token }).toString();
+  return ctx.redirect(page, 302);
+});
+
 app.openapi(notificationRoutes.unsubscribeNotifications, async (ctx) => {
   const { user, category, token } = ctx.req.valid('query');
-  const redirectUrl = await unsubscribeNotificationsOp(ctx, { userId: user, category, token });
-  return ctx.redirect(redirectUrl, 302);
+  await setEmailCategoryOp(ctx, { userId: user, category, token, enabled: false });
+  return ctx.body(null, 204);
+});
+
+app.openapi(notificationRoutes.resubscribeNotifications, async (ctx) => {
+  const { user, category, token } = ctx.req.valid('query');
+  await setEmailCategoryOp(ctx, { userId: user, category, token, enabled: true });
+  return ctx.body(null, 204);
 });
 
 export const notificationHandlers = app;

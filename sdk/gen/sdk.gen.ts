@@ -226,6 +226,8 @@ import type {
   MicrosoftCallbackErrors,
   MicrosoftData,
   MicrosoftErrors,
+  OpenUnsubscribeLinkData,
+  OpenUnsubscribeLinkErrors,
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
@@ -244,6 +246,9 @@ import type {
   ResendPendingInvitationData,
   ResendPendingInvitationErrors,
   ResendPendingInvitationResponses,
+  ResubscribeNotificationsData,
+  ResubscribeNotificationsErrors,
+  ResubscribeNotificationsResponses,
   RevokeApiKeyData,
   RevokeApiKeyErrors,
   RevokeApiKeyResponses,
@@ -303,6 +308,7 @@ import type {
   ToggleMfaResponses,
   UnsubscribeNotificationsData,
   UnsubscribeNotificationsErrors,
+  UnsubscribeNotificationsResponses,
   UpdateAttachmentData,
   UpdateAttachmentErrors,
   UpdateAttachmentResponses,
@@ -407,6 +413,7 @@ import {
   zPushYjsUpdateResponse,
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationResponse,
+  zResubscribeNotificationsResponse,
   zRevokeApiKeyResponse,
   zRevokeConnectedAppResponse,
   zRevokeMySessionsResponse,
@@ -424,6 +431,7 @@ import {
   zStopImpersonationResponse,
   zSystemInviteResponse,
   zToggleMfaResponse,
+  zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
   zUpdateConnectionResponse,
   zUpdateMembershipResponse,
@@ -1755,24 +1763,70 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
   });
 
 /**
- * Unsubscribe from a notification category
+ * Open an unsubscribe link
  *
- * Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.
+ * Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners and link previews open links on their own. No auth.
  *
- * **GET /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications · cella_
+ * **GET /notifications/unsubscribe** ·· [openUnsubscribeLink](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications · cella_
  *
- * @param {unsubscribeNotificationsData} options
+ * @param {openUnsubscribeLinkData} options
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
  */
-export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
-  options: Options<UnsubscribeNotificationsData, ThrowOnError>,
-): RequestResult<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'>({
+export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
+  options: Options<OpenUnsubscribeLinkData, ThrowOnError>,
+): RequestResult<unknown, OpenUnsubscribeLinkErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, OpenUnsubscribeLinkErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/notifications/unsubscribe',
+    ...options,
+  });
+
+/**
+ * Unsubscribe from a notification category
+ *
+ * Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.
+ *
+ * **POST /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/unsubscribe) ·· _notifications · cella_
+ *
+ * @param {unsubscribeNotificationsData} options
+ * @param {string} options.query.user - `string`
+ * @param {enum} options.query.category - `enum`
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
+  options: Options<UnsubscribeNotificationsData, ThrowOnError>,
+): RequestResult<UnsubscribeNotificationsResponses, UnsubscribeNotificationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<UnsubscribeNotificationsResponses, UnsubscribeNotificationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUnsubscribeNotificationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/notifications/unsubscribe',
+    ...options,
+  });
+
+/**
+ * Turn a notification category back on
+ *
+ * Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.
+ *
+ * **POST /notifications/resubscribe** ·· [resubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/resubscribe) ·· _notifications · cella_
+ *
+ * @param {resubscribeNotificationsData} options
+ * @param {string} options.query.user - `string`
+ * @param {enum} options.query.category - `enum`
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
+  options: Options<ResubscribeNotificationsData, ThrowOnError>,
+): RequestResult<ResubscribeNotificationsResponses, ResubscribeNotificationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ResubscribeNotificationsResponses, ResubscribeNotificationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zResubscribeNotificationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/notifications/resubscribe',
     ...options,
   });
 

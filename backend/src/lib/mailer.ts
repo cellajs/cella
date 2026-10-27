@@ -6,12 +6,16 @@ import { ambientRequest, log } from '#/utils/logger';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 import { type SafeHtmlPolicy, sanitizeEmailHtml } from '../../emails/components/safe-html';
 import { emailFrame } from '../../emails/frame';
+import { escapeString } from '../../emails/renderer/escape-string';
+import { htmlToText } from '../../emails/renderer/html-to-text';
 import { render } from '../../emails/renderer/render';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
 if (!env.BREVO_API_KEY && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
 
 const maxVersionsPerCall = 99;
+// One-recipient sends (a one-click unsubscribe header each) go out this many at a time.
+const parallelSends = 8;
 
 const brevoSendUrl = 'https://api.brevo.com/v3/smtp/email';
 const brevoTimeoutMs = 60_000;
@@ -81,6 +85,18 @@ async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   }
 }
 
+/**
+ * One recipient's plain-text part: the HTML with their values filled in as Brevo fills them (escaped, or as they are for
+ * a declared HTML param), then as text. Built here in full, it keeps no placeholder, and its tag openers read as text.
+ */
+const plainTextPart = (htmlContent: string, params: Record<string, unknown>) => {
+  const filled = htmlContent.replace(/\{\{params\.([A-Za-z0-9_]+)(\|safe)?\}\}/g, (_, key: string, safe?: string) => {
+    const value = String(params[key] ?? '');
+    return safe ? value : escapeString(value);
+  });
+  return neutralizeBrevoTags(htmlToText(filled), { params: [] }, 'text');
+};
+
 interface Batch {
   subject: string;
   html: string;
@@ -88,28 +104,35 @@ interface Batch {
   replyTo: string | undefined;
   /** The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are. */
   htmlParams: Partial<Record<string, SafeHtmlPolicy>>;
-  /** The request the send runs in, as an `X-Request-Id` header: "show original" leads support to its log lines. */
-  requestId: string | undefined;
+  /**
+   * Headers of every message in the batch: the request's `X-Request-Id`, which leads support from "show original" to its
+   * log lines, and a one-recipient batch's one-click unsubscribe.
+   */
+  headers: Record<string, string>;
 }
 
 /**
- * Sends one batch of message versions through Brevo. Sends nothing without a Brevo key, or in test mode unless
- * `TEST_SEND_EMAILS` is set; a failed send is logged, never thrown.
+ * Sends one batch of message versions through Brevo, each with its plain-text part. Sends nothing without a Brevo key,
+ * or in test mode unless `TEST_SEND_EMAILS` is set; a failed send is logged, never thrown.
  */
-async function sendBatch({ subject, html, versions, replyTo, htmlParams, requestId }: Batch): Promise<void> {
+async function sendBatch({ subject, html, versions, replyTo, htmlParams, headers }: Batch): Promise<void> {
   if (!env.BREVO_API_KEY) return;
   if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
   const params = Object.keys(versions[0]?.params ?? {});
   const placeholders = { params, htmlParams: Object.keys(htmlParams).filter((key) => htmlParams[key]) };
+  const htmlContent = neutralizeBrevoTags(html, placeholders, 'html');
   try {
     await postToBrevo(env.BREVO_API_KEY, {
       subject: neutralizeBrevoTags(sanitizeEmailSubject(subject || `${appConfig.name} message`), { params }, 'text'),
-      htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
+      htmlContent,
       sender: { name: appConfig.name, email: appConfig.senderEmail },
       replyTo: { email: replyTo || appConfig.supportEmail },
-      ...(requestId ? { headers: { 'X-Request-Id': requestId } } : {}),
-      messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
+      ...(Object.keys(headers).length ? { headers } : {}),
+      messageVersions: versions.map((version) => {
+        const versionParams = withSafeHtmlParams(version.params, htmlParams);
+        return { ...version, params: versionParams, textContent: plainTextPart(htmlContent, versionParams) };
+      }),
     });
   } catch (err) {
     log.warn('Failed to send email batch', { err });
@@ -151,8 +174,13 @@ export const mailer = {
       const frame = emailFrame(template, staticProps, lng, details, param);
       const html = await render(template.component({ ...componentProps, ...placeholderProps, frame }));
 
-      for (let i = 0; i < lngRecipients.length; i += maxVersionsPerCall) {
-        const batch = lngRecipients.slice(i, i + maxVersionsPerCall);
+      // Brevo takes headers per request only, so a per-recipient unsubscribe header means one recipient per request.
+      const unsubscribeKey = template.listUnsubscribe;
+      const batchSize = unsubscribeKey ? 1 : maxVersionsPerCall;
+      const sends: (() => Promise<void>)[] = [];
+
+      for (let i = 0; i < lngRecipients.length; i += batchSize) {
+        const batch = lngRecipients.slice(i, i + batchSize);
 
         const versions = batch.map((recipient) => {
           const params: Record<string, unknown> = {};
@@ -162,8 +190,15 @@ export const mailer = {
           return { to: [{ email: env.SEND_ALL_TO_EMAIL || recipient.email }], params };
         });
 
-        await sendBatch({ subject, html, versions, replyTo, htmlParams, requestId });
+        const unsubscribeUrl = unsubscribeKey ? String(batch[0][unsubscribeKey]) : undefined;
+        const headers = {
+          ...(requestId ? { 'X-Request-Id': requestId } : {}),
+          ...(unsubscribeUrl ? { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } : {}),
+        };
+        sends.push(() => sendBatch({ subject, html, versions, replyTo, htmlParams, headers }));
       }
+
+      for (let i = 0; i < sends.length; i += parallelSends) await Promise.all(sends.slice(i, i + parallelSends).map((send) => send()));
     }
   },
 };

@@ -10,7 +10,12 @@ import { oauthVerificationEmail } from '../../emails/templates/oauth-verificatio
 import { systemInviteEmail } from '../../emails/templates/system-invite';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
-type SentBody = { subject: string; htmlContent: string; messageVersions: { params: Record<string, string> }[] };
+type SentBody = {
+  subject: string;
+  htmlContent: string;
+  headers?: Record<string, string>;
+  messageVersions: { params: Record<string, string>; textContent: string }[];
+};
 
 const link = 'https://app.example.test/item';
 const unsubscribeLink = 'https://app.example.test/unsubscribe';
@@ -76,6 +81,21 @@ describe('Mails as Brevo fills them', () => {
     link,
     unsubscribeLink,
   };
+
+  it('gives each recipient a filled plain-text part and their own one-click unsubscribe header', async () => {
+    const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}';
+    const { body } = await send(mentionEmail, { actorName: hostileName, channelName: 'R&D <Lab>' }, mentionRecipient);
+    const text = body.messageVersions[0].textContent;
+
+    // Mail clients read these two headers for one-click unsubscribe (RFC 8058); the URL is the recipient's own.
+    expect(body.headers).toMatchObject({ 'List-Unsubscribe': `<${unsubscribeLink}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
+    // The text part is built here in full: the recipient's values filled in, names as typed, no tag a template engine opens.
+    expect(text).toContain(`Hi ${mentionRecipient.name},`);
+    expect(text).toContain(`(${link})`);
+    expect(text).toContain('R&D <Lab>');
+    expect(text).not.toMatch(tagOpener);
+    expect(text).not.toContain('<a ');
+  });
 
   it('must not open a Brevo template tag via a name rendered into the mail', async () => {
     const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';

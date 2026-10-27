@@ -198,6 +198,9 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
+      domhandler:
+        specifier: ^6.0.1
+        version: 6.0.1
       drizzle-kit:
         specifier: 1.0.0-rc.5
         version: 1.0.0-rc.5(drizzle-orm@1.0.0-rc.5(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.7))
@@ -207,6 +210,9 @@ importers:
       hono:
         specifier: ^4.13.14
         version: 4.13.14
+      htmlparser2:
+        specifier: ^12.0.0
+        version: 12.0.0
       i18next:
         specifier: ^26.5.11
         version: 26.5.11(typescript@6.0.3)

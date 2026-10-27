@@ -73,6 +73,11 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
   preview: EmailPreviewData<TStatic, TRecipient>;
   htmlParams?: HtmlParams<TRecipient>;
   requestDetails?: RequestDetailsDeclaration<TStatic>;
+  /**
+   * The recipient field holding their one-click unsubscribe URL, sent as `List-Unsubscribe` (RFC 8058). A template that
+   * names one goes out one recipient per request.
+   */
+  listUnsubscribe?: RecipientKey<TRecipient>;
   /** Phantom field carrying the recipient type; not set at runtime. */
   _recipientType?: TRecipient;
 }
@@ -85,6 +90,7 @@ export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient =
     preview: EmailPreviewData<TStatic, TRecipient>;
     htmlParams?: HtmlParams<TRecipient>;
     requestDetails?: RequestDetailsDeclaration<TStatic>;
+    listUnsubscribe?: RecipientKey<TRecipient>;
   }): EmailTemplateDef<TStatic, TRecipient> => {
     return def as EmailTemplateDef<TStatic, TRecipient>;
   };

@@ -28,6 +28,7 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecip
   component(props) {
     return <SubjectEmail {...props} />;
   },
+  listUnsubscribe: 'unsubscribeLink',
   preview: {
     statics: { actorName: 'John', channelName: 'Design 101' },
     recipient: {

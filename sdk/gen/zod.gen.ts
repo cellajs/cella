@@ -1302,11 +1302,33 @@ export const zUpdateNotificationPreferencesResponse = z.object({
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
+export const zOpenUnsubscribeLinkQuery = z.object({
+  user: z.string().max(50),
+  category: z.enum(['digest', 'mention', 'comment', 'newsletter']),
+  token: z.string(),
+});
+
 export const zUnsubscribeNotificationsQuery = z.object({
   user: z.string().max(50),
   category: z.enum(['digest', 'mention', 'comment', 'newsletter']),
   token: z.string(),
 });
+
+/**
+ * Category turned off
+ */
+export const zUnsubscribeNotificationsResponse = z.void();
+
+export const zResubscribeNotificationsQuery = z.object({
+  user: z.string().max(50),
+  category: z.enum(['digest', 'mention', 'comment', 'newsletter']),
+  token: z.string(),
+});
+
+/**
+ * Category turned on
+ */
+export const zResubscribeNotificationsResponse = z.void();
 
 /**
  * VAPID public key

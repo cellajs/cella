@@ -13,6 +13,9 @@ import {
 } from '#/modules/notification/notification-schema';
 import { locationSchema, validIdSchema } from '#/schemas';
 
+/** The link token of one email category: the user, the category and an HMAC over both. */
+const unsubscribeQuerySchema = z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string() });
+
 const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   getNotifications: xRoute({
     method: 'get',
@@ -54,17 +57,39 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     request: { body: jsonBody(updatePreferencesBodySchema) },
     responses: { 200: json('Updated notification preferences', preferencesSchema) },
   }),
-  unsubscribeNotifications: xRoute({
+  openUnsubscribeLink: xRoute({
     method: 'get',
+    path: '/unsubscribe',
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('unsubscribe')],
+    summary: 'Open an unsubscribe link',
+    description:
+      'Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners ' +
+      'and link previews open links on their own. No auth.',
+    request: { query: unsubscribeQuerySchema },
+    responses: { 302: { description: 'Redirect to the confirmation page', headers: locationSchema } },
+  }),
+  unsubscribeNotifications: xRoute({
+    method: 'post',
     path: '/unsubscribe',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Unsubscribe from a notification category',
     description:
-      'Turns off one email category from a link in an email. The token identifies the user and ' +
-      'the category, so unsubscribing from the digest leaves other email untouched. No auth.',
-    request: { query: z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string() }) },
-    responses: { 302: { description: 'Redirect to the frontend', headers: locationSchema } },
+      'Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest ' +
+      "leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.",
+    request: { query: unsubscribeQuerySchema },
+    responses: { 204: { description: 'Category turned off' } },
+  }),
+  resubscribeNotifications: xRoute({
+    method: 'post',
+    path: '/resubscribe',
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('unsubscribe')],
+    summary: 'Turn a notification category back on',
+    description: 'Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.',
+    request: { query: unsubscribeQuerySchema },
+    responses: { 204: { description: 'Category turned on' } },
   }),
 });
 
