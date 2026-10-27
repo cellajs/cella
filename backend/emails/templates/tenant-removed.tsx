@@ -23,9 +23,9 @@ export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
       ...statics,
     };
   },
-  component({ subject, headerHtml, supportText, tenantId, archivedAt, removedAt, counts }) {
+  component({ subject, headerHtml, supportText, tenantId, archivedAt, removedAt, counts, frame }) {
     return (
-      <EmailLayout previewText={subject} headerHtml={headerHtml} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={subject} headerHtml={headerHtml} supportText={supportText}>
         <EmailText>Tenant: {tenantId}</EmailText>
         <EmailText>Archived: {archivedAt}</EmailText>
         <EmailText>Removed: {removedAt}, with its organization and the stored files it held. Backups expire on their own schedule.</EmailText>

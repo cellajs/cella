@@ -26,9 +26,10 @@ export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAdd
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, entityLink }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, entityLink, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         avatarName={senderName}
         headerHtml={headerHtml}

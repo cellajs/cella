@@ -22,13 +22,14 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ subject, headerHtml, email, message, supportText }) {
+  component({ subject, headerHtml, email, message, supportText, frame }) {
     return (
-      <EmailLayout previewText={subject} headerHtml={headerHtml} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={subject} headerHtml={headerHtml} supportText={supportText}>
         <EmailText>Email: {email}</EmailText>
         {message && <EmailText>{message}</EmailText>}
       </EmailLayout>
     );
   },
+  requestDetails: true,
   preview: { statics: { type: 'contact', email: 'test@example.com', message: 'Hello', subject: 'New contact request' }, recipient: {} },
 });

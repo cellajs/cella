@@ -28,9 +28,10 @@ export const oauthVerificationEmail = defineEmailTemplate<OAuthVerificationStati
       verificationLink,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, verificationLink, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, verificationLink, supportText, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         headerHtml={headerHtml}
         greeting={hiText}
@@ -40,6 +41,7 @@ export const oauthVerificationEmail = defineEmailTemplate<OAuthVerificationStati
       />
     );
   },
+  requestDetails: true,
   preview: {
     statics: {
       verificationLink: 'https://example.com/verify',

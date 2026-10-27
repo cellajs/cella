@@ -25,9 +25,10 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
       magicLinkUrl,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, magicLinkUrl, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, magicLinkUrl, supportText, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         headerHtml={headerHtml}
         greeting={hiText}
@@ -37,5 +38,6 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
       />
     );
   },
+  requestDetails: true,
   preview: { statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false }, recipient: {} },
 });

@@ -1,10 +1,10 @@
 import { EmailButton, EmailLayout, EmailText } from '../../../../emails/components';
-import type { EmailRecipient } from '../../../../emails/types';
+import type { EmailRecipient, FrameProps } from '../../../../emails/types';
 
 /** Per-recipient props of an instant email about one subject: the mention mail and the comment mail. */
 export type SubjectEmailRecipient = EmailRecipient & { subjectTitle: string; excerpt: string; link: string; unsubscribeLink: string };
 
-interface SubjectEmailProps extends Omit<SubjectEmailRecipient, keyof EmailRecipient> {
+interface SubjectEmailProps extends Omit<SubjectEmailRecipient, keyof EmailRecipient>, FrameProps {
   previewText: string;
   headerHtml: string;
   inText: string;
@@ -21,12 +21,14 @@ export const SubjectEmail = ({
   buttonText,
   unsubscribeText,
   supportText,
+  frame,
   subjectTitle,
   excerpt,
   link,
   unsubscribeLink,
 }: SubjectEmailProps) => (
   <EmailLayout
+    frame={frame}
     previewText={previewText}
     headerHtml={headerHtml}
     unsubscribe={{ label: unsubscribeText, href: unsubscribeLink }}

@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
+import { emailFrame } from '../../emails/frame';
 import { i18n } from '../../emails/i18n';
-import { emailPreviewNames, emailPreviews } from '../../emails/preview-fixtures';
+import { emailPreviewNames, emailPreviews, previewRequestDetails } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 import { accountSecurityEmail } from '../../emails/templates/account-security';
 
@@ -38,14 +39,14 @@ describe('email template rendering', () => {
     for (const lng of appConfig.languages) {
       it(`${name} renders without error in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
-        const html = await render(def.component({ ...translated, ...recipient }));
+        const html = await render(def.component({ ...translated, ...recipient, frame: emailFrame(def, statics, lng, previewRequestDetails) }));
         expect(html).toBeTruthy();
         expect(html.length).toBeGreaterThan(100);
       });
 
       it(`${name} contains no raw translation keys in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
-        const html = await render(def.component({ ...translated, ...recipient }));
+        const html = await render(def.component({ ...translated, ...recipient, frame: emailFrame(def, statics, lng, previewRequestDetails) }));
         // i18next answers a key it cannot resolve with the key minus its namespace, like "email.foo.bar".
         const rawKeyPattern = /\bemail\.[a-z0-9_]+(?:\.[a-z0-9_]+)+\b/;
         expect(html).not.toMatch(rawKeyPattern);
@@ -72,7 +73,7 @@ describe('account security email escapes its details', () => {
     const details = { tenantName: hostile, userEmail: 'a@b.test', timestamp: 'now' };
     const statics = { name: 'Emily', type: 'tenant-created', details } as const;
     const translated = accountSecurityEmail.translate('en', statics);
-    const html = await render(accountSecurityEmail.component(translated));
+    const html = await render(accountSecurityEmail.component({ ...translated, frame: {} }));
 
     // The detail survives as visible text; no anchor element comes out of it.
     expect(html).not.toContain('<a href="https://evil.test"');
@@ -82,46 +83,11 @@ describe('account security email escapes its details', () => {
   });
 
   it('keeps the account link of a new sign-in notice working after escaping', async () => {
-    const details = {
-      timestamp: '2026-01-01 09:30:00 UTC',
-      browser: 'Firefox',
-      os: 'macOS',
-      country: 'Netherlands',
-      strategy: 'Passkey',
-      accountUrl: 'https://app.example.test/account',
-    };
+    const details = { strategy: 'Passkey', accountUrl: 'https://app.example.test/account' };
     const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
-    const html = await render(accountSecurityEmail.component(translated));
+    const html = await render(accountSecurityEmail.component({ ...translated, frame: {} }));
 
     expect(html).toContain('href="https://app.example.test/account"');
-    expect(html).toContain('<strong>When:</strong> 2026-01-01 09:30:00 UTC');
     expect(html).toContain('<br');
-  });
-});
-
-describe('new sign-in notice location line', () => {
-  const details = {
-    timestamp: '2026-01-01 09:30:00 UTC',
-    browser: 'Firefox',
-    os: 'macOS',
-    strategy: 'Passkey',
-    accountUrl: 'https://app.example.test/account',
-  };
-
-  it('names the country when GeoIP resolved one, escaped like every other detail', async () => {
-    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details: { ...details, country: 'Nether<lands' } });
-    const html = await render(accountSecurityEmail.component(translated));
-
-    expect(html).toContain('<strong>Location:</strong> Nether&lt;lands (approximate)');
-    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS');
-  });
-
-  it('leaves the line out entirely when no country is known', async () => {
-    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
-    const html = await render(accountSecurityEmail.component(translated));
-
-    expect(html).not.toContain('Location');
-    expect(html).not.toContain('unknown');
-    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS<br /><strong>Method:</strong> Passkey');
   });
 });

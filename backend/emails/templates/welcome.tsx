@@ -32,9 +32,9 @@ export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, W
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, hiText, intro, stepsHeading, steps, ps, signOff, founderName, founderRole, supportText }) {
+  component({ previewText, hiText, intro, stepsHeading, steps, ps, signOff, founderName, founderRole, supportText, frame }) {
     return (
-      <EmailLayout previewText={previewText} avatarName={founderName} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={previewText} avatarName={founderName} supportText={supportText}>
         <EmailText style={greetingStyle}>{hiText}</EmailText>
 
         {intro.map((paragraph) => (

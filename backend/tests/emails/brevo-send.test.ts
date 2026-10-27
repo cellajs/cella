@@ -171,7 +171,7 @@ describe('neutralizeBrevoTags', () => {
     const keys = Object.keys(def.preview.recipient);
     const { subject, ...props } = def.translate('en', def.preview.statics);
     const placeholders = Object.fromEntries(keys.map((key) => [key, brevoPlaceholder(key, htmlParams)]));
-    const html = await render(def.component({ ...props, ...placeholders }));
+    const html = await render(def.component({ ...props, ...placeholders, frame: {} }));
     const params = [...keys, 'email'];
     expect(neutralizeBrevoTags(html, { params, htmlParams: Object.keys(htmlParams) }, 'html')).toBe(html);
     expect(neutralizeBrevoTags(subject, { params }, 'text')).toBe(subject);

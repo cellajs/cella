@@ -26,9 +26,10 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, inviteExpires, buttonText, supportText, senderName, inviteLink }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, inviteExpires, buttonText, supportText, senderName, inviteLink, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         avatarName={senderName}
         headerHtml={headerHtml}

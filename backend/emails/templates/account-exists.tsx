@@ -26,9 +26,10 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, signInUrl, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, signInUrl, supportText, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         headerHtml={headerHtml}
         greeting={hiText}
@@ -38,5 +39,6 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
       />
     );
   },
+  requestDetails: true,
   preview: { statics: { name: 'Emily' }, recipient: {} },
 });

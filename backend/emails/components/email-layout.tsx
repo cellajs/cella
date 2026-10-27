@@ -1,3 +1,4 @@
+import type { EmailFrame } from '../frame';
 import { avatarRowStyle, smallTextStyle } from '../styles';
 import { EmailAvatar } from './email-avatar';
 import { EmailBody } from './email-body';
@@ -5,6 +6,7 @@ import { EmailContainer } from './email-container';
 import { EmailFooter } from './email-footer';
 import { EmailHeader } from './email-header';
 import { EmailLogo } from './email-logo';
+import { EmailRequestDetails } from './email-request-details';
 import { Column, Link, Row } from './primitives';
 import { SafeHtml } from './safe-html';
 
@@ -20,11 +22,22 @@ export interface EmailLayoutProps {
   /** Rendered as the last line of the body panel. */
   unsubscribe?: { label: string; href: string };
   supportText: string;
+  frame: EmailFrame;
   children: React.ReactNode;
 }
 
 /** The frame every email shares: optional avatar and header, the body panel, logo and footer. */
-export const EmailLayout = ({ previewText, headerHtml, avatarName, wide, headChildren, unsubscribe, supportText, children }: EmailLayoutProps) => (
+export const EmailLayout = ({
+  previewText,
+  headerHtml,
+  avatarName,
+  wide,
+  headChildren,
+  unsubscribe,
+  supportText,
+  frame,
+  children,
+}: EmailLayoutProps) => (
   <EmailContainer previewText={previewText} containerStyle={wide ? { maxWidth: '40rem' } : undefined} headChildren={headChildren}>
     {avatarName && (
       <Row style={avatarRowStyle}>
@@ -36,6 +49,11 @@ export const EmailLayout = ({ previewText, headerHtml, avatarName, wide, headChi
     {headerHtml && <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />}
     <EmailBody>
       {children}
+      {frame.requestDetails && (
+        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #eaeaea' }}>
+          <EmailRequestDetails rows={frame.requestDetails} />
+        </div>
+      )}
       {unsubscribe && (
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <Link style={smallTextStyle} href={unsubscribe.href}>

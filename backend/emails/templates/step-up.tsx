@@ -31,9 +31,9 @@ export const stepUpEmail = defineEmailTemplate<StepUpStatic, EmailRecipient & { 
       code,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, warning, code, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, warning, code, supportText, frame }) {
     return (
-      <EmailLayout previewText={previewText} headerHtml={headerHtml} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={previewText} headerHtml={headerHtml} supportText={supportText}>
         {hiText && <EmailText>{hiText}</EmailText>}
         <EmailText>
           <SafeHtml html={bodyHtml} policy="inline" />
@@ -43,5 +43,6 @@ export const stepUpEmail = defineEmailTemplate<StepUpStatic, EmailRecipient & { 
       </EmailLayout>
     );
   },
+  requestDetails: true,
   preview: { statics: { code: '482913', name: 'Emily', browser: 'Firefox', os: 'macOS' }, recipient: {} },
 });

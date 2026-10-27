@@ -93,6 +93,15 @@ export const lookupIp = async (ip: string | null | undefined): Promise<{ country
   }
 };
 
+/** The region's name in `language` for the ISO code GeoIP gives; the code itself when the runtime has no name. */
+export const countryName = (code: string, language: string) => {
+  try {
+    return new Intl.DisplayNames([language], { type: 'region' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+};
+
 const readEtag = async (path: string): Promise<string | null> => {
   try {
     return (await readFile(`${path}.etag`, 'utf8')).trim() || null;

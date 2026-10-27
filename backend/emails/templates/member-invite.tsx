@@ -27,9 +27,10 @@ export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberI
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, memberInviteLink }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, memberInviteLink, frame }) {
     return (
       <EmailMessage
+        frame={frame}
         previewText={previewText}
         avatarName={senderName}
         headerHtml={headerHtml}

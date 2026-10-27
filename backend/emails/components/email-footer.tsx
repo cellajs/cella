@@ -3,20 +3,21 @@ import { smallTextStyle } from '../styles';
 import { EmailText } from './email-text';
 import { Link } from './primitives';
 
+// #666 keeps 4.5:1 on the #f5f5f5 page background.
+const lineStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textAlign: 'center', margin: '0 0 0.75rem' };
+const linkStyle: React.CSSProperties = { ...smallTextStyle, color: '#666', textDecoration: 'underline' };
+
+/** The app's name with the support link, then the postal address, each on a line of its own. */
 export const EmailFooter = ({ supportText }: { supportText: string }) => (
-  <EmailText
-    style={{
-      ...smallTextStyle,
-      color: '#777',
-      textAlign: 'center' as const,
-      marginTop: '2rem',
-      maxWidth: '400px',
-      padding: '0 1.5rem',
-    }}
-  >
-    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}・
-    <Link style={{ ...smallTextStyle, color: '#0366d6' }} href={`mailto:${appConfig.supportEmail}`}>
-      {supportText}
-    </Link>
-  </EmailText>
+  <div style={{ marginTop: '2rem', maxWidth: '400px', padding: '0 1.5rem 2.5rem' }}>
+    <EmailText style={lineStyle}>
+      {appConfig.name}・
+      <Link style={linkStyle} href={`mailto:${appConfig.supportEmail}`}>
+        {supportText}
+      </Link>
+    </EmailText>
+    <EmailText style={{ ...lineStyle, margin: 0 }}>
+      {appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}
+    </EmailText>
+  </div>
 );

@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import { appConfig } from 'shared';
 import { env } from '#/env';
-import { log } from '#/utils/logger';
+import { currentRequestDetails } from '#/lib/request-details';
+import { ambientRequest, log } from '#/utils/logger';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 import { type SafeHtmlPolicy, sanitizeEmailHtml } from '../../emails/components/safe-html';
+import { emailFrame } from '../../emails/frame';
 import { render } from '../../emails/renderer/render';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
@@ -79,18 +81,22 @@ async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   }
 }
 
+interface Batch {
+  subject: string;
+  html: string;
+  versions: { to: { email: string }[]; params: Record<string, unknown> }[];
+  replyTo: string | undefined;
+  /** The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are. */
+  htmlParams: Partial<Record<string, SafeHtmlPolicy>>;
+  /** The request the send runs in, as an `X-Request-Id` header: "show original" leads support to its log lines. */
+  requestId: string | undefined;
+}
+
 /**
  * Sends one batch of message versions through Brevo. Sends nothing without a Brevo key, or in test mode unless
  * `TEST_SEND_EMAILS` is set; a failed send is logged, never thrown.
- * @param htmlParams - The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are.
  */
-async function sendBatch(
-  subject: string,
-  html: string,
-  versions: { to: { email: string }[]; params: Record<string, unknown> }[],
-  replyTo: string | undefined,
-  htmlParams: Partial<Record<string, SafeHtmlPolicy>>,
-): Promise<void> {
+async function sendBatch({ subject, html, versions, replyTo, htmlParams, requestId }: Batch): Promise<void> {
   if (!env.BREVO_API_KEY) return;
   if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
@@ -102,6 +108,7 @@ async function sendBatch(
       htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
       sender: { email: appConfig.senderEmail },
       replyTo: { email: replyTo || appConfig.supportEmail },
+      ...(requestId ? { headers: { 'X-Request-Id': requestId } } : {}),
       messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
     });
   } catch (err) {
@@ -123,6 +130,9 @@ export const mailer = {
   ): Promise<void> {
     if (!recipients.length) return;
 
+    const details = template.requestDetails ? await currentRequestDetails() : null;
+    const requestId = ambientRequest()?.var.requestId;
+
     for (const [lng, lngRecipients] of Map.groupBy(recipients, (recipient) => recipient.lng)) {
       // Every param key carries a nonce drawn for this send, so text a user typed into the mail can never name one:
       // only the mailer's own placeholders survive `neutralizeBrevoTags`.
@@ -137,7 +147,8 @@ export const mailer = {
       const placeholderProps: Record<string, string> = {};
       for (const key of recipientKeys) placeholderProps[key] = brevoPlaceholder(paramKey(key), htmlParams);
 
-      const html = await render(template.component({ ...componentProps, ...placeholderProps }));
+      const frame = emailFrame(template, staticProps, lng, details);
+      const html = await render(template.component({ ...componentProps, ...placeholderProps, frame }));
 
       for (let i = 0; i < lngRecipients.length; i += maxVersionsPerCall) {
         const batch = lngRecipients.slice(i, i + maxVersionsPerCall);
@@ -150,7 +161,7 @@ export const mailer = {
           return { to: [{ email: env.SEND_ALL_TO_EMAIL || recipient.email }], params };
         });
 
-        await sendBatch(subject, html, versions, replyTo, htmlParams);
+        await sendBatch({ subject, html, versions, replyTo, htmlParams, requestId });
       }
     }
   },

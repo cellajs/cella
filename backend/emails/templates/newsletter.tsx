@@ -23,9 +23,10 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
       testEmail: testEmail ?? false,
     };
   },
-  component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink }) {
+  component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink, frame }) {
     return (
       <EmailLayout
+        frame={frame}
         previewText={subject}
         headerHtml={headerHtml}
         wide

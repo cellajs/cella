@@ -21,8 +21,9 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ subject, headerHtml, bodyHtml, supportText }) {
-    return <EmailMessage previewText={subject} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
+  component({ subject, headerHtml, bodyHtml, supportText, frame }) {
+    return <EmailMessage frame={frame} previewText={subject} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
   },
+  requestDetails: true,
   preview: { statics: { type: 'contact', message: null }, recipient: {} },
 });

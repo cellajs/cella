@@ -26,9 +26,10 @@ export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()(
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, headerHtml, introText, unsubscribeText, supportText, sectionsHtml, unsubscribeLink }) {
+  component({ previewText, headerHtml, introText, unsubscribeText, supportText, sectionsHtml, unsubscribeLink, frame }) {
     return (
       <EmailLayout
+        frame={frame}
         previewText={previewText}
         headerHtml={headerHtml}
         wide
