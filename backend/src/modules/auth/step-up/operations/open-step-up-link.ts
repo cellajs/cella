@@ -9,10 +9,9 @@ import { findLinkToken } from '#/modules/auth/tokens/tokens-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 
-/** The link is read and the stamp written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
-/** The frontend page an opened link lands on. It carries the page that asked in `redirect`, for when that tab is gone. */
+/** The frontend page an opened link goes to. It carries the page that asked in `redirect`, for when that tab is gone. */
 const stepUpConfirmedPath = '/auth/step-up-confirmed';
 
 /**

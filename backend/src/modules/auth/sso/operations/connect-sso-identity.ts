@@ -3,20 +3,33 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
-import type { SsoSignInFacts } from '#/modules/auth/sso/operations/provision-sso-user';
-import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
-import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { spendConnectPin } from '#/modules/auth/oauth/operations/spend-connect-pin';
+import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
+import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
 import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
-import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
-import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
+
+/**
+ * A sign-in through an SSO identity: records the use and refreshes the asserted address (kept when the institution
+ * released none), the claims snapshot and the connection it came through.
+ */
+export const touchSsoIdentity = async (
+  identity: IdentityModel,
+  { profile, snapshot, connection }: Pick<SsoSignInFacts, 'profile' | 'snapshot' | 'connection'>,
+) => {
+  await updateIdentity(dbCtx, {
+    id: identity.id,
+    values: { lastUsedAt: getIsoDate(), email: profile.email ?? identity.email, data: snapshot, connectionId: connection.id },
+  });
+};
 
 /**
  * Connects an institution account to the user the `oauth-connect` pin names, issued signed in right before leaving
@@ -30,19 +43,11 @@ export const connectSsoIdentity = async (
   ctx: Context<Env>,
   { federation, connection, claims, profile, snapshot, subject, identity }: SsoSignInFacts,
 ): Promise<UserWithActivity> => {
-  // Spent only while the session that issued it lives: a connect abandoned before a sign-out cannot be finished.
-  const pin = await spendCookieToken(ctx, 'oauth-connect');
-  if (!pin?.userId || !pin.sessionId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
-
-  const user = await findUserById(dbCtx, { id: pin.userId });
-  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
+  const user = await spendConnectPin(ctx);
 
   if (identity) {
     if (identity.userId !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
-    await updateIdentity(dbCtx, {
-      id: identity.id,
-      values: { lastUsedAt: getIsoDate(), email: profile.email ?? identity.email, data: snapshot, connectionId: connection.id },
-    });
+    await touchSsoIdentity(identity, { profile, snapshot, connection });
     return user;
   }
 
@@ -69,12 +74,7 @@ export const connectSsoIdentity = async (
 
     if (organization) {
       const [existing] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [user.id], channelId: organization.id });
-      if (!existing) {
-        const role = roleFromClaims({ federation: federation.key, connection, claims });
-        await insertMemberships(txCtx, {
-          items: [{ userId: user.id, role, entity: { ...organization, tenantId: connection.tenantId }, createdBy: user.id }],
-        });
-      }
+      if (!existing) await insertSsoMembership(txCtx, { userId: user.id, organization, federation, connection, claims });
     }
   });
 

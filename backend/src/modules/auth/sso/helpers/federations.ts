@@ -1,7 +1,7 @@
 import { appConfig, type FederationKey } from 'shared';
 import type { FederationConfig } from 'shared/config-builder/types';
 import { AppError } from '#/core/error';
-import { env } from '../../../../env';
+import { env } from '#/env';
 
 /** A federation of `appConfig.federations` with the client this deployment registered at it. */
 export interface Federation extends FederationConfig {
@@ -12,13 +12,17 @@ export interface Federation extends FederationConfig {
   redirectUri: string;
 }
 
+/** Whether the key names a federation of `appConfig.federations`; `isFederationConfigured` says whether this deployment holds its client. */
 export const isFederationKey = (key: string): key is FederationKey => Object.hasOwn(appConfig.federations, key);
 
 /** The client id and secret of a federation, from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. */
 const clientOf = (key: FederationKey) => {
-  const prefix = `SSO_${key.toUpperCase()}`;
-  const values = env as unknown as Record<string, string | undefined>;
-  return { clientId: values[`${prefix}_CLIENT_ID`], clientSecret: values[`${prefix}_CLIENT_SECRET`] };
+  const values: Record<string, unknown> = env;
+  const read = (suffix: string) => {
+    const value = values[`SSO_${key.toUpperCase()}_${suffix}`];
+    return typeof value === 'string' ? value : undefined;
+  };
+  return { clientId: read('CLIENT_ID'), clientSecret: read('CLIENT_SECRET') };
 };
 
 /** Whether this deployment holds a client for the federation: without one, no connection can be created or used. */

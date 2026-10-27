@@ -38,7 +38,7 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
 
   const via = passkeyData ? 'passkey' : totpCode ? 'totp' : null;
   const { methods } = await readStepUp(session);
-  if (!via || !methods.some((method) => method === via)) {
+  if (!via || !methods.includes(via)) {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
   }
 

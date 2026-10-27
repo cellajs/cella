@@ -4,7 +4,8 @@ import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
-import { authHealthSchema, emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
+import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
+import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
 import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
@@ -68,7 +69,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Invoke token session',
     description:
       "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
-    request: { params: z.object({ type: z.enum(invokableTokenTypes), token: z.string() }) },
+    request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string() }) },
     responses: { 302: { description: 'Redirect with token session', headers: locationSchema } },
   }),
   getTokenData: xRoute({
@@ -79,7 +80,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Get token data',
     description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
-    request: { params: z.object({ type: z.enum(invokableTokenTypes), id: validIdSchema }) },
+    request: { params: z.object({ type: z.enum(linkTokenTypes), id: validIdSchema }) },
     responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()) },
   }),
   acceptInvitationToken: xRoute({
@@ -91,7 +92,6 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Accept invitation token as current user',
     description:
       'Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.',
-    request: {},
     responses: { 200: json('Invitation was accepted', channelBaseSchema) },
   }),
   resendInvitationWithToken: xRoute({

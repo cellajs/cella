@@ -2,13 +2,13 @@ import slugify from 'slugify';
 import type { GithubUserEmailProps, GithubUserProps, GoogleUserProps, MicrosoftUserProps } from '#/modules/auth/oauth/helpers/providers';
 import { slugFromEmail } from '#/utils/slug';
 
+/** A provider's profile in the shape a sign-up or connect reads; the address is lower-cased and trimmed. */
 export type TransformedUser = {
   id: string;
   slug: string;
   email: string;
   name: string;
   emailVerified: boolean;
-  thumbnailUrl: string;
   firstName: string;
   lastName: string;
 };
@@ -27,9 +27,8 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
     id: user.sub,
     slug: slugFromEmail(normalizedEmail),
     email: normalizedEmail,
-    name: name,
+    name,
     emailVerified: 'email_verified' in user ? user.email_verified : false,
-    thumbnailUrl: user.picture,
     firstName: givenName,
     lastName: familyName,
   };
@@ -50,7 +49,6 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
     email: normalizedEmail,
     name: user.name || user.login,
     emailVerified: primaryEmail.verified,
-    thumbnailUrl: user.avatar_url,
     firstName,
     lastName,
   };

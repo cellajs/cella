@@ -12,10 +12,11 @@ type TokenData = z.infer<typeof tokenWithDataSchema>;
 
 /** What a validated single-use token stands for. A membership invitation also says what it grants, for the confirm step. */
 export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): Promise<TokenData> {
+  // An absent id is left out of the answer: JSON drops an undefined field.
   const tokenData: TokenData = {
     email: tokenRecord.email,
-    userId: tokenRecord.userId || '',
-    inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
+    userId: tokenRecord.userId ?? undefined,
+    inactiveMembershipId: tokenRecord.inactiveMembershipId ?? undefined,
   };
 
   if (!tokenRecord.inactiveMembershipId) return tokenData;
@@ -46,9 +47,13 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
   // An account may have taken this address since the invite was sent; every account's address is a proven inbox.
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
   if (existingUser) {
-    await bindTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
-    // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
-    await bindInactiveMemberships(ctx, { ids: [tokenRecord.inactiveMembershipId], userId: existingUser.id });
+    const { inactiveMembershipId } = tokenRecord;
+    await ctx.var.db.transaction(async (tx) => {
+      const txCtx = { var: { db: tx } };
+      await bindTokenToUser(txCtx, { tokenId: tokenRecord.id, userId: existingUser.id });
+      // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
+      await bindInactiveMemberships(txCtx, { ids: [inactiveMembershipId], userId: existingUser.id });
+    });
     tokenData.userId = existingUser.id;
   }
 

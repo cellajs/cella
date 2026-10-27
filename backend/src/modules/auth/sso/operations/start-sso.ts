@@ -1,18 +1,13 @@
-import type { Context } from 'hono';
 import { generateRandomCodeVerifier, generateRandomNonce, generateRandomState } from 'oauth4webapi';
-import type z from 'zod';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import type { oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
-import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/initiation';
+import type { OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
+import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/handle-oauth-initiation';
 import { createFederationAuthorizationUrl } from '#/modules/auth/sso/helpers/federation-client';
 import { type Federation, getFederation, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findConnectionById } from '#/modules/connections/connections-queries';
 
 const dbCtx = { var: { db: baseDb } };
-
-type StartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
 
 /** Where an SSO round trip starts: an institution's connection (pinned to its IdPs), or a federation at large. */
 export type SsoTarget = { connectionId: string } | { federation: string };
@@ -23,10 +18,10 @@ export type SsoTarget = { connectionId: string } | { federation: string };
  * @throws AppError 404 `not_found` for an unknown connection or federation, 403 `sso_not_active` for a connection
  *   that is not active, 400 `invalid_request` for a flow type SSO does not run, and `getFederation`'s refusal.
  */
-export const startSso = async (ctx: StartContext, target: SsoTarget) => {
+export const startSso = async (ctx: OAuthStartContext, target: SsoTarget) => {
   const { type } = ctx.req.valid('query');
   // No verification mail (the assertion is the proof) and no invitation pinning (an invitation resumes after the sign-in).
-  if (type !== 'auth' && type !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `SSO has no ${type} flow` } });
+  if (type !== 'auth' && type !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unsupported_flow' } });
 
   let federation: Federation;
   let connectionId: string | undefined;
@@ -53,5 +48,5 @@ export const startSso = async (ctx: StartContext, target: SsoTarget) => {
   const nonce = generateRandomNonce();
   const url = await createFederationAuthorizationUrl(federation, { state, codeVerifier, nonce, loginHint });
 
-  return handleOAuthInitiation(ctx, federation.key, url, state, codeVerifier, nonce, { connectionId });
+  return handleOAuthInitiation(ctx, { provider: federation.key, url, state, codeVerifier, nonce, connectionId });
 };

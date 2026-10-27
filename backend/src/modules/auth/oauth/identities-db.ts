@@ -6,8 +6,6 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
-export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
-
 /** Trust class of an external identity: social OAuth, or an institution's SSO federation. */
 const identityKinds = ['oauth', 'sso'] as const;
 export type IdentityKind = (typeof identityKinds)[number];
@@ -27,7 +25,7 @@ export const identitiesTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     kind: varchar({ enum: identityKinds }).notNull().default('oauth'),
-    // Always a slug, namespaced by kind: an OAuth provider for 'oauth', a federation key for 'sso'; the issuer URL lives in config.
+    /** Always a slug, namespaced by kind: an OAuth provider for 'oauth', a federation key for 'sso'; the issuer URL lives in config. */
     issuer: varchar({ length: maxLength.field }).notNull(),
     subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),

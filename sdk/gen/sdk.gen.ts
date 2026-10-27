@@ -1262,16 +1262,16 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const sendStepUpLink = <ThrowOnError extends boolean = true>(
-  options?: Options<SendStepUpLinkData, ThrowOnError>,
+  options: Options<SendStepUpLinkData, ThrowOnError>,
 ): RequestResult<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).post<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSendStepUpLinkResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/step-up/link',
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...options.headers,
     },
   });
 

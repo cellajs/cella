@@ -1,7 +1,7 @@
 import { isStrategyEnabled } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
-import { getHeldFactors } from '#/modules/auth/mfa/mfa-queries';
+import { findHeldFactors } from '#/modules/auth/mfa/mfa-queries';
 import { findUserForUpdate } from '#/modules/user/user-queries';
 
 /**
@@ -15,7 +15,7 @@ export const mfaFactorRules = {
    * takes the lock, so they run one at a time and each check reads what the one before it committed; the checks below
    * run inside `change`.
    */
-  async locked<T>(userId: string, change: (tx: Tx) => Promise<T>): Promise<T> {
+  locked<T>(userId: string, change: (tx: Tx) => Promise<T>): Promise<T> {
     return baseDb.transaction(async (tx) => {
       await findUserForUpdate({ var: { db: tx } }, { id: userId });
       return change(tx);
@@ -27,17 +27,16 @@ export const mfaFactorRules = {
     const missing = (['passkey', 'totp'] as const).find((method) => !isStrategyEnabled(method));
     if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
 
-    const { passkey, totp } = await getHeldFactors({ var: { db: tx } }, { userId });
+    const { passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
     if (!passkey || !totp) throw new AppError(400, 'mfa_factors_required', 'warn');
   },
 
-  /** Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone. */
+  /**
+   * Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone.
+   * It reads the MFA switch without locking again: `locked` holds the user row, so no other transaction changes it.
+   */
   async assertKeepsFactors(tx: DbOrTx, userId: string) {
-    const txCtx = { var: { db: tx } };
-    const user = await findUserForUpdate(txCtx, { id: userId });
-    if (!user?.mfaRequired) return;
-
-    const { passkey, totp } = await getHeldFactors(txCtx, { userId });
-    if (!passkey || !totp) throw new AppError(400, 'mfa_factor_in_use', 'warn');
+    const { mfaRequired, passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
+    if (mfaRequired && (!passkey || !totp)) throw new AppError(400, 'mfa_factor_in_use', 'warn');
   },
 };

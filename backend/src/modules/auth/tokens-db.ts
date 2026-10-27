@@ -10,8 +10,6 @@ import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessi
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
-const tokenTypeEnum = appConfig.tokenTypes;
-
 /**
  * An OAuth sign-up waiting on its verification mail: the provider account, and the profile the account starts with. No
  * account exists until the mailed link is clicked and the same provider account signs in again.
@@ -24,18 +22,18 @@ export type PendingSignUp = {
   name: string;
   slug: string;
   firstName: string;
-  /** Absent on tokens issued before the family name was carried, and when the provider asserts none. */
+  /** Absent when the provider asserts none. */
   lastName?: string;
 };
 
-/** Tokens for email verification and invitation. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */
+/** One row per issued token, of any type in `appConfig.tokenTypes`. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */
 export const tokensTable = snakeCase.table(
   'tokens',
   {
     id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
-    type: varchar({ enum: tokenTypeEnum }).notNull(),
+    type: varchar({ enum: appConfig.tokenTypes }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
@@ -67,9 +65,6 @@ export const tokensTable = snakeCase.table(
   ],
 );
 
-/** Includes sensitive secret field - use only in auth internals */
+/** The full row, secret hashes included: only `tokens/` reads it. */
 export type UnsafeTokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;
-
-/** Safe token type with sensitive field omitted */
-export type TokenModel = Omit<UnsafeTokenModel, 'secret'>;

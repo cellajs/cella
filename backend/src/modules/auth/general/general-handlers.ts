@@ -30,7 +30,7 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   const { email } = ctx.req.valid('json');
 
   // True only for a browser that signed in to the address before; any other browser gets false, account or not.
-  const recognized = await isRecognizedBrowser(ctx, email.toLowerCase().trim());
+  const recognized = await isRecognizedBrowser(ctx, email);
 
   return ctx.json({ recognized }, 200);
 });
@@ -41,7 +41,7 @@ app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
   return ctx.json({ email }, 200);
 });
 
-app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
+app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
   return openLinkToken(ctx, tokenType, token);
 });

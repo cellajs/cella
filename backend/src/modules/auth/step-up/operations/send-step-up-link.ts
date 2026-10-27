@@ -46,7 +46,9 @@ export const sendStepUpLinkOp = async (ctx: Context<Env>, { redirect }: SendStep
   await rememberLinkRequest(ctx, 'step-up', token.id);
 
   const stepUpUrl = tokenLinkUrl('step-up', rawToken);
-  mailer.sendEmails(stepUpEmail, { stepUpUrl, name: user.name }, [{ email: user.email, lng: user.language ?? appConfig.defaultLanguage }]);
+  mailer
+    .sendEmails(stepUpEmail, { stepUpUrl, name: user.name }, [{ email: user.email, lng: user.language ?? appConfig.defaultLanguage }])
+    .catch((err) => log.error('Failed to send step-up email', { err }));
 
   if (appConfig.mode === 'development') console.info(`[step-up] ${user.email} ${stepUpUrl}`);
   log.info('Step-up link sent', { tokenId: token.id });

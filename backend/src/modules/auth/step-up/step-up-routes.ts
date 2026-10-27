@@ -44,7 +44,7 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Email a step-up link',
     description:
       'For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.',
-    request: { body: { content: { 'application/json': { schema: stepUpLinkBodySchema } } } },
+    request: { body: jsonBody(stepUpLinkBodySchema) },
     responses: { 204: { description: 'Link sent' } },
   }),
 });

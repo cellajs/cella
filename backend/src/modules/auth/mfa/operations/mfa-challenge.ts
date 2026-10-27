@@ -25,27 +25,22 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel, strategy: 
   return '/auth/mfa';
 };
 
-/** The MFA challenge this browser holds, which stays open, and its user. Throws if missing, not found, or expired. */
-export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<{ user: UserModel; token: TokenRecord }> => {
+/**
+ * The MFA challenge this browser holds, which stays open, its user and the method its sign-in started with.
+ * @throws AppError 401 `confirm-mfa_not_found` or `confirm-mfa_expired` without a live challenge, 400 `invalid_request`
+ *   for one no sign-in issued, 404 `not_found` when its user is gone.
+ */
+export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<{ user: UserModel; token: TokenRecord; authStrategy: AuthStrategy }> => {
   const token = await readBoundToken(ctx, 'confirm-mfa');
 
-  if (!token.userId) throw new AppError(400, 'invalid_request', 'error');
+  // `initiateMfa` records both: a challenge without them comes from no sign-in.
+  const { userId, authStrategy } = token;
+  if (!userId || !authStrategy) throw new AppError(400, 'invalid_request', 'error');
 
-  const user = await findUserById({ var: { db: baseDb } }, { id: token.userId });
+  const user = await findUserById({ var: { db: baseDb } }, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
-  return { user, token };
-};
-
-/**
- * Ends the MFA challenge this browser holds once its second factor has verified: the challenge is spent, row and cookie.
- * Of two concurrent completions exactly one passes.
- * @throws AppError 401 `confirm-mfa_not_found` when the challenge was spent or expired meanwhile.
- */
-const spendConfirmMfaToken = async (ctx: Context<Env>) => {
-  const spent = await spendCookieToken(ctx, 'confirm-mfa');
-  if (!spent) throw new AppError(401, 'confirm-mfa_not_found', 'warn');
-  return spent;
+  return { user, token, authStrategy };
 };
 
 /** A second factor offered for an MFA challenge: a code from the authenticator app, or a passkey response. */
@@ -60,12 +55,12 @@ export type MfaProof = { strategy: 'totp'; code: string } | { strategy: 'passkey
  *   verification throws (`verifyTotp`, `verifyPasskeyAssertion`).
  */
 export const completeMfaChallenge = async (ctx: Context<Env>, proof: MfaProof) => {
-  const { user, token } = await validateConfirmMfaToken(ctx);
+  const { user, token, authStrategy } = await validateConfirmMfaToken(ctx);
 
   if (proof.strategy === 'totp') await verifyTotp(ctx, { user, code: proof.code });
   else await verifyPasskeyAssertion(ctx, { assertion: proof.assertion, purpose: 'mfa', userId: user.id });
 
-  await spendConfirmMfaToken(ctx);
-  // A challenge issued before the method was recorded on it (a deploy within its ten minutes) falls back to the factor.
-  await setUserSession(ctx, user, token.authStrategy ?? proof.strategy, 'mfa', { steppedUpVia: proof.strategy, connectionId: token.connectionId });
+  // Spent, row and cookie, once the factor verified: of two concurrent completions exactly one passes.
+  if (!(await spendCookieToken(ctx, 'confirm-mfa'))) throw new AppError(401, 'confirm-mfa_not_found', 'warn');
+  await setUserSession(ctx, user, authStrategy, 'mfa', { steppedUpVia: proof.strategy, connectionId: token.connectionId });
 };

@@ -4,8 +4,8 @@ import { baseDb } from '#/db/db';
 import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { getStepUpFacts } from '#/modules/auth/sessions/sessions-queries';
 import { refuseImpersonation, type StepUpState, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
+import { isoDateAgo } from '#/utils/iso-date';
 
-/** Step-up state is read on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /**
@@ -19,8 +19,7 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
   const refused: StepUpState = { steppedUp: false, methods: [], factor: null };
   if (session.type === 'impersonation') return refused;
 
-  const since = new Date(Date.now() - stepUpWindow.milliseconds()).toISOString();
-  const row = await getStepUpFacts(dbCtx, { sessionId: session.id, userId: session.userId, since });
+  const row = await getStepUpFacts(dbCtx, { sessionId: session.id, userId: session.userId, since: isoDateAgo(stepUpWindow) });
   if (!row) return refused;
 
   const held = { passkey: row.hasPasskey, totp: row.hasTotp };

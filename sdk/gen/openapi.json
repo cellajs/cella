@@ -5511,6 +5511,7 @@
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {

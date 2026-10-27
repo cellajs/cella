@@ -1,7 +1,8 @@
 import * as oauth from 'oauth4webapi';
 import { AppError } from '#/core/error';
+import { authorizationUrl, isProviderRefusal, providerDeadline } from '#/modules/auth/oauth/helpers/code-flow';
+import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { log } from '#/utils/logger';
-import type { Federation } from './federations';
 
 /** The claims of one sign-in: the verified id_token claims with the userinfo claims over them. */
 export type SsoClaims = Record<string, unknown> & { sub: string; iss: string };
@@ -11,7 +12,11 @@ export interface FederationClientOptions {
   fetch?: typeof fetch;
 }
 
-const fetchOption = (options: FederationClientOptions) => (options.fetch ? { [oauth.customFetch]: options.fetch } : {});
+/** The options of one request to the federation: its deadline, and the test's fetch when one is handed in. */
+const requestOptions = (options: FederationClientOptions) => ({
+  signal: providerDeadline(),
+  ...(options.fetch ? { [oauth.customFetch]: options.fetch } : {}),
+});
 
 const discovered = new Map<string, Promise<oauth.AuthorizationServer>>();
 
@@ -19,12 +24,12 @@ const discovered = new Map<string, Promise<oauth.AuthorizationServer>>();
  * The federation's server metadata from its discovery document, fetched once per process at first use. One object per
  * federation, so oauth4webapi's JWKS cache (keyed on it) applies; forgotten on failure, so the next sign-in rediscovers.
  */
-const discoverFederation = async (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
+const discoverFederation = (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
   const pending = discovered.get(federation.key);
   if (pending) return pending;
 
   const issuer = new URL(federation.issuer);
-  const discovery = oauth.discoveryRequest(issuer, fetchOption(options)).then((response) => oauth.processDiscoveryResponse(issuer, response));
+  const discovery = oauth.discoveryRequest(issuer, requestOptions(options)).then((response) => oauth.processDiscoveryResponse(issuer, response));
   discovery.catch(() => discovered.delete(federation.key));
   discovered.set(federation.key, discovery);
   return discovery;
@@ -50,17 +55,8 @@ export const createFederationAuthorizationUrl = async (
   const as = await discoverFederation(federation, options);
   if (!as.authorization_endpoint) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy: federation.key } });
 
-  const url = new URL(as.authorization_endpoint);
-  url.searchParams.set('client_id', federation.clientId);
-  url.searchParams.set('redirect_uri', federation.redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', federation.scopes.join(' '));
-  url.searchParams.set('state', state);
-  url.searchParams.set('nonce', nonce);
-  url.searchParams.set('code_challenge', await oauth.calculatePKCECodeChallenge(codeVerifier));
-  url.searchParams.set('code_challenge_method', 'S256');
-  if (loginHint) url.searchParams.set('login_hint', loginHint);
-  return url;
+  const { clientId, redirectUri, scopes } = federation;
+  return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce, loginHint });
 };
 
 interface CodeExchangeInput {
@@ -97,28 +93,23 @@ export const exchangeFederationCode = async (
       params,
       federation.redirectUri,
       codeVerifier,
-      fetchOption(options),
+      requestOptions(options),
     );
     const tokens = await oauth.processAuthorizationCodeResponse(as, client, response, { requireIdToken: true, expectedNonce: nonce });
     // The signature check: TLS vouches for the token endpoint, the federation's keys for the token itself. Fetched by
     // key id, so a rotation past the cached set refetches.
-    await oauth.validateApplicationLevelSignature(as, response, fetchOption(options));
+    await oauth.validateApplicationLevelSignature(as, response, requestOptions(options));
 
     const idClaims = oauth.getValidatedIdTokenClaims(tokens);
     if (!idClaims) throw new AppError(401, 'invalid_credentials', 'error', { meta: { strategy: federation.key } });
 
-    const userinfoResponse = await oauth.userInfoRequest(as, client, tokens.access_token, fetchOption(options));
+    const userinfoResponse = await oauth.userInfoRequest(as, client, tokens.access_token, requestOptions(options));
     const userinfo = await oauth.processUserInfoResponse(as, client, idClaims.sub, userinfoResponse);
 
     return { ...idClaims, ...userinfo, sub: idClaims.sub, iss: idClaims.iss };
   } catch (error) {
     if (error instanceof AppError) throw error;
-    if (
-      error instanceof oauth.ResponseBodyError ||
-      error instanceof oauth.AuthorizationResponseError ||
-      error instanceof oauth.WWWAuthenticateChallengeError ||
-      error instanceof oauth.OperationProcessingError
-    ) {
+    if (isProviderRefusal(error)) {
       // Stale metadata or keys can fail a valid sign-in: the next one rediscovers.
       forgetFederation(federation.key);
       log.warn('Federation code exchange failed', { strategy: federation.key, error: error.message });

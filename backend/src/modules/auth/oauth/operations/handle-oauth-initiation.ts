@@ -1,32 +1,24 @@
-import type { Context } from 'hono';
-import type z from 'zod';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import type { OAuthCookiePayload, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import type { OAuthCookiePayload, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
-type OAuthQueryParams = z.infer<typeof oauthQuerySchema>;
+/** One round trip a start hands over: the provider URL, and what the callback must find in the state cookie. */
+type OAuthInitiation = Pick<OAuthCookiePayload, 'provider' | 'codeVerifier' | 'nonce' | 'connectionId'> & { url: URL; state: string };
 
 /**
- * Creates an OAuth session: stores the flow context (invite, connect, verify, or default) in cookies and redirects to the provider.
- * The context is tied to the OAuth `state` to prevent CSRF and can carry a PKCE `codeVerifier` and an OIDC `nonce`. It
- * never names a user: a connect goes to the account its `oauth-connect` pin names, spent at the callback.
+ * Starts a provider or federation round trip: stores the flow context (invite, connect, verify, or default) in the
+ * cookie of its `state` and redirects to the provider. The state is the CSRF check; the cookie can carry a PKCE
+ * `codeVerifier`, an OIDC `nonce` and an SSO start's connection. It never names a user: a connect goes to the account
+ * its `oauth-connect` pin names, spent at the callback.
+ * @throws AppError 401 for a connect or a verify whose pin or token this browser does not hold.
  */
-export const handleOAuthInitiation = async (
-  ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,
-  provider: OAuthCookiePayload['provider'],
-  url: URL,
-  state: string,
-  codeVerifier?: string,
-  nonce?: string,
-  extra: Pick<OAuthCookiePayload, 'connectionId'> = {},
-) => {
+export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
   const { type, redirectAfter } = ctx.req.valid('query');
-  const cookieContent: OAuthCookiePayload = { provider, codeVerifier, nonce, type, redirectAfter, ...extra };
+  const cookieContent: OAuthCookiePayload = { provider, codeVerifier, nonce, type, redirectAfter, connectionId };
 
   if (type === 'connect') {
     // A connect starts from the account page, which explains its refusals.

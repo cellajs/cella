@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
-import type { Env } from '#/core/context';
+import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -11,6 +11,7 @@ import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { findIdentityBySubject, insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/operations/send-oauth-verification-email';
+import { spendConnectPin } from '#/modules/auth/oauth/operations/spend-connect-pin';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -20,7 +21,6 @@ import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Reads and writes outside a flow's transaction run on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 type OAuthFlowResult =
@@ -74,7 +74,7 @@ export const handleOAuthCallback = async (
       break;
   }
 
-  return await processCallbackResult({ ctx, redirectAfter, provider, ...result });
+  return processCallbackResult({ ctx, redirectAfter, provider, ...result });
 };
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
@@ -95,7 +95,7 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
     return { type: 'unverified', identity };
   }
 
-  // Existing user (by email) found -> suggest sign in and connect
+  // An account holds the address: its holder signs in to it and connects the provider from there.
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
@@ -125,16 +125,10 @@ const connectCallbackFlow = async ({
   provider,
   identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  // Spent only while the session that issued it lives: a connect abandoned before a sign-out cannot be finished.
-  const pin = await spendCookieToken(ctx, 'oauth-connect');
-  if (!pin?.userId || !pin.sessionId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
-  const connectUserId = pin.userId;
-
-  const user = await findUserById(dbCtx, { id: connectUserId });
-  if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
+  const user = await spendConnectPin(ctx);
 
   if (identity) {
-    if (identity.userId !== connectUserId) {
+    if (identity.userId !== user.id) {
       throw new AppError(409, 'oauth_conflict', 'warn');
     }
 
@@ -147,12 +141,12 @@ const connectCallbackFlow = async ({
     return { type: 'unverified', identity };
   }
 
-  // New OAuth account connection → validate email isn't used by another user
+  // A new identity: the address must not belong to another account.
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
-  if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'warn');
+  if (holder && holder.id !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
 
   const newIdentity = await insertIdentity(dbCtx, {
-    values: { userId: connectUserId, issuer: provider, subject: providerUser.id, email: providerUser.email },
+    values: { userId: user.id, issuer: provider, subject: providerUser.id, email: providerUser.email },
   });
   return { type: 'unverified', identity: newIdentity };
 };
@@ -197,6 +191,11 @@ const inviteCallbackFlow = async ({
   return { type: 'verified', user, identity: created.identity };
 };
 
+/**
+ * Completes a verification link opened in this browser, once the same provider account signed in again: a pending
+ * sign-up creates its account, an identity on an account is verified with its address. Both spend the verification,
+ * so one link signs in once.
+ */
 const verifyCallbackFlow = async ({
   ctx,
   providerUser,
@@ -212,23 +211,19 @@ const verifyCallbackFlow = async ({
 
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
-  if (
-    verifyToken.type !== 'oauth-verification' ||
-    verifyToken.email !== providerUser.email ||
-    verifyToken.identityId !== identity.id ||
-    identity.issuer !== provider
-  ) {
+  if (verifyToken.email !== providerUser.email || verifyToken.identityId !== identity.id || identity.issuer !== provider) {
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
   const user = await findUserById(dbCtx, { id: identity.userId });
 
-  if (identity.verified) return { type: 'verified', user, identity };
-
-  // Verify the identity and the address atomically
+  // Verify the identity and the address atomically, with the spend of the verification.
   const now = getIsoDate();
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
+    await spendVerification(ctx, txCtx, verifyToken);
+    if (identity.verified) return;
+
     await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verified: true, verifiedAt: now, lastUsedAt: now } });
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
@@ -239,6 +234,7 @@ const verifyCallbackFlow = async ({
       await addProvenEmail(txCtx, { userId: user.id, email: verifyToken.email, via: provider });
     }
   });
+  deleteAuthCookie(ctx, 'oauth-verification');
 
   return { type: 'verified', user, identity };
 };
@@ -278,9 +274,7 @@ const completeSignUp = async ({
     // verification and this browser's cookie as they were.
     if (!(await maySignUp(txCtx, { email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
-    // Of two concurrent completions only the one that spends the verification creates the account.
-    const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx });
-    if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
+    await spendVerification(ctx, txCtx, verifyToken);
 
     const { name, slug, firstName, lastName } = signUp;
     const user = await handleCreateUser(txCtx, { newUser: { email, name, slug, firstName, lastName }, via: provider });
@@ -293,6 +287,16 @@ const completeSignUp = async ({
 
   const user = await findUserById(dbCtx, { id: created.userId });
   return { type: 'verified', user, identity: created.identity };
+};
+
+/**
+ * Spends the verification this browser holds in the caller's transaction: of two concurrent completions only the one
+ * that spends it creates or verifies anything. Its cookie is the caller's to delete once that transaction commits.
+ * @throws AppError 401 `oauth-verification_expired` when it was spent or expired meanwhile.
+ */
+const spendVerification = async (ctx: Context<Env>, txCtx: DbContext, verifyToken: TokenRecord) => {
+  const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx });
+  if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
 };
 
 /**
@@ -311,16 +315,17 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 
 /**
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
- * Unverified identities and pending sign-ups get a verification email and land on the email-verification page.
+ * Unverified identities and pending sign-ups get a verification email and are sent to the email-verification page.
  */
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
   const { ctx, provider, redirectAfter } = info;
-  // Stored on the verification token; null means "use the default path" at the final hop.
-  const redirectAfterPath = frontendRedirectPath(redirectAfter);
 
   if (info.type === 'verified') {
     return finishSignIn(ctx, info.user, provider, redirectAfter);
   }
+
+  // Stored on the verification token; null means "use the default path" at the final hop.
+  const redirectAfterPath = frontendRedirectPath(redirectAfter);
 
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   if (info.type === 'pending') {

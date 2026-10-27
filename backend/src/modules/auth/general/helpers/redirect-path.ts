@@ -2,9 +2,8 @@ import { appConfig } from 'shared';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 
 /** New users (never signed in) are sent to the welcome page. */
-const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
-  return user.lastSignInAt ? appConfig.defaultRedirectPath : appConfig.welcomeRedirectPath;
-};
+const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) =>
+  user.lastSignInAt ? appConfig.defaultRedirectPath : appConfig.welcomeRedirectPath;
 
 /**
  * Resolves the final post-auth path: MFA challenge (carrying the redirect along), then validated explicit redirect, then welcome or default.
@@ -12,7 +11,7 @@ const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
  */
 export const resolvePostAuthRedirectPath = (
   user: { lastSignInAt: string | null },
-  { redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null } = {},
+  { redirectPath, mfaPath }: { redirectPath?: string | null; mfaPath?: string | null },
 ) => {
   const explicitRedirect = frontendRedirectPath(redirectPath);
 
