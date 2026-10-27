@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm';
-import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
+import { createTotp, deleteTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
   authCookie,
@@ -14,6 +15,7 @@ import {
   createTotpUser,
   enableMFAForUser,
   expectRefusal,
+  mailsTo,
   sessionsOf,
   setCookiePair,
   totpCode,
@@ -81,6 +83,20 @@ describe('TOTP Authentication', async () => {
       await expectRefusal(await call(generateTotpKey, { headers }), 409, 'resource_already_exists');
       await expectRefusal(await call(createTotp, { body: { code: '123456' }, headers }), 409, 'resource_already_exists');
       expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
+    });
+  });
+
+  describe('TOTP Deletion Notice', () => {
+    it('should mail a deletion once, for the delete that removed the authenticator app', async () => {
+      const user = await createTotpUser(signUpUser.email);
+      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+      const headers = { ...defaultHeaders, Cookie: await createTestSession(user, { steppedUpVia: 'totp' }) };
+      const deletionMails = () => mailsTo(user.email).filter(({ statics }) => statics.type === 'totp-deleted');
+
+      // A second click on delete finds no authenticator app: still 204, and no second mail.
+      expect((await call(deleteTotp, { headers })).response.status).toBe(204);
+      expect((await call(deleteTotp, { headers })).response.status).toBe(204);
+      expect(deletionMails()).toHaveLength(1);
     });
   });
 

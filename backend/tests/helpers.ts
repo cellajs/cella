@@ -9,7 +9,6 @@ import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
 import { type AuthStrategy, type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
@@ -26,7 +25,7 @@ import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
 import type { apiErrorSchema } from '#/schemas';
 import { decodeBase32 } from '#/utils/base32';
-import { hashToken } from '#/utils/hash-token';
+import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
@@ -234,7 +233,7 @@ export async function insertTestSession(
     steppedUpVia,
   }: TestSessionOpts = {},
 ) {
-  const { token, secret } = newSessionToken();
+  const { raw: token, hash: secret } = newHashedToken();
   const id = generateId();
   const createdAt = new Date(Date.now() - ageMs).toISOString();
 

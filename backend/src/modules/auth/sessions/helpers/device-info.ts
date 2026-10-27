@@ -83,3 +83,11 @@ export const deviceInfo = (ctx: Context<Env>) =>
     mobile: ctx.req.header('Sec-CH-UA-Mobile'),
     platform: ctx.req.header('Sec-CH-UA-Platform'),
   });
+
+/** A device as the session and passkey rows snapshot it, in the four columns both tables share. */
+export const deviceColumns = (device: DeviceInfo) => ({
+  deviceName: device.name,
+  deviceType: device.type,
+  deviceOs: device.os,
+  browser: device.browser,
+});

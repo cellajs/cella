@@ -50,6 +50,8 @@ interface DeleteTotpOpts {
   userId: string;
 }
 
+/** Deletes the account's authenticator app; undefined when it holds none. */
 export const deleteTotp = async (ctx: DbContext, { userId }: DeleteTotpOpts) => {
-  await ctx.var.db.delete(totpsTable).where(eq(totpsTable.userId, userId));
+  const [deleted] = await ctx.var.db.delete(totpsTable).where(eq(totpsTable.userId, userId)).returning({ id: totpsTable.id });
+  return deleted;
 };

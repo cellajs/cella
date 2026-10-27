@@ -59,12 +59,14 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
   // The delete rolls back when MFA is on: it keeps the authenticator app until MFA is turned off.
-  await mfaFactorRules.locked(user.id, async (tx) => {
-    await deleteTotp({ var: { db: tx } }, { userId: user.id });
+  const deleted = await mfaFactorRules.locked(user.id, async (tx) => {
+    const totp = await deleteTotp({ var: { db: tx } }, { userId: user.id });
     await mfaFactorRules.assertKeepsFactors(tx, user.id);
+    return totp;
   });
 
-  sendAccountSecurityEmail(user, 'totp-deleted');
+  // Without an authenticator app the answer is 204 as well, but only a deletion mails the user.
+  if (deleted) sendAccountSecurityEmail(user, 'totp-deleted');
 
   return ctx.body(null, 204);
 });

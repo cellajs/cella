@@ -19,6 +19,7 @@ import {
   insertPasskeyChallenge,
   updatePasskeyCounter,
 } from '#/modules/auth/passkeys/passkeys-queries';
+import type { WebAuthnAttestation } from '#/modules/auth/passkeys/passkeys-schema';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
@@ -87,14 +88,15 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
  * @throws AppError 401 `passkey_verification_failed` without a live registration challenge, 400
  *   `passkey_registration_failed` for a response that does not verify.
  */
-export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: RegistrationResponseJSON) => {
+export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation) => {
   const challenge = await consumeChallenge(ctx, 'registration');
 
   const registrationFailed = (error?: unknown) =>
     new AppError(400, 'passkey_registration_failed', 'warn', error instanceof Error ? { originalError: error } : {});
 
   const { verified, registrationInfo } = await verifyRegistrationResponse({
-    response: attestation,
+    // The request schema types `clientExtensionResults` as unknown, the library as extension outputs it never reads.
+    response: attestation as RegistrationResponseJSON,
     expectedChallenge: challenge,
     expectedOrigin,
     expectedRPID: relyingPartyId,

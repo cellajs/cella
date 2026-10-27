@@ -90,13 +90,17 @@ interface BindTokenToUserOpts {
   userId: string;
 }
 
-/** Binds a token sent to an address without an account to the account that has proven the address since. */
+/**
+ * Binds a token issued without an account to the account settled for it: the one holding its address by now, or the
+ * one a sign-up link's redemption created. Undefined when the token is bound already.
+ */
 export const bindTokenToUser = async (ctx: DbContext, { tokenId, userId }: BindTokenToUserOpts) => {
-  const { db } = ctx.var;
-  return db
+  const [bound] = await ctx.var.db
     .update(tokensTable)
     .set({ userId })
-    .where(and(eq(tokensTable.id, tokenId), isNull(tokensTable.userId)));
+    .where(and(eq(tokensTable.id, tokenId), isNull(tokensTable.userId)))
+    .returning(tokenColumns);
+  return bound;
 };
 
 /** What decides which earlier tokens a new one replaces. */
@@ -149,6 +153,9 @@ export const insertTokens = async (ctx: DbContext, { values }: InsertTokensOpts)
   return ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
 };
 
+/** Names the token a link of `type` carries, by the hash of the raw value in its URL. */
+const namedBy = (type: LinkTokenType, rawToken: string) => and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type));
+
 interface FindLinkTokenOpts {
   type: LinkTokenType;
   /** The raw value from the link. */
@@ -157,11 +164,7 @@ interface FindLinkTokenOpts {
 
 /** The link token a raw value names, read without redeeming it; undefined when there is none. */
 export const findLinkToken = async (ctx: DbContext, { type, rawToken }: FindLinkTokenOpts): Promise<TokenRecord | undefined> => {
-  const [token] = await ctx.var.db
-    .select(tokenColumns)
-    .from(tokensTable)
-    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type)))
-    .limit(1);
+  const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(namedBy(type, rawToken)).limit(1);
   return token;
 };
 
@@ -173,8 +176,7 @@ interface DeleteUnopenedLinkTokenOpts {
 
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
 export const deleteUnopenedLinkToken = async (ctx: DbContext, { type, rawToken }: DeleteUnopenedLinkTokenOpts) => {
-  const secret = hashToken(rawToken);
-  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.secret, secret), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
+  await ctx.var.db.delete(tokensTable).where(and(namedBy(type, rawToken), isNull(tokensTable.invokedAt)));
 };
 
 interface UpdateTokenRedeemedOpts {
@@ -196,17 +198,6 @@ export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, 
     .where(and(eq(tokensTable.id, id), isNull(tokensTable.invokedAt)))
     .returning(tokenColumns);
   return redeemed;
-};
-
-interface UpdateTokenUserOpts {
-  id: string;
-  userId: string;
-}
-
-/** Binds a token to the account settled for it. */
-export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateTokenUserOpts) => {
-  const [owned] = await ctx.var.db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, id)).returning(tokenColumns);
-  return owned;
 };
 
 /**

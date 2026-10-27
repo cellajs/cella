@@ -25,6 +25,7 @@ const webAuthnAttestationSchema = z.object({
   clientExtensionResults: z.unknown().optional(),
   type: z.literal('public-key'),
 });
+export type WebAuthnAttestation = z.infer<typeof webAuthnAttestationSchema>;
 
 /** WebAuthn authentication response (`AuthenticationResponseJSON`); binary fields are base64url strings. */
 export const webAuthnAssertionSchema = z.object({

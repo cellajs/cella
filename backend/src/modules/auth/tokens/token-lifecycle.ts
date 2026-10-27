@@ -1,7 +1,6 @@
 import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb, type Tx } from '#/db/db';
@@ -10,6 +9,7 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
 import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import {
+  bindTokenToUser,
   deleteBoundToken,
   deleteReplacedTokens,
   findBoundToken,
@@ -18,11 +18,10 @@ import {
   insertTokens,
   type TokenRecord,
   updateTokenRedeemed,
-  updateTokenUser,
 } from '#/modules/auth/tokens/tokens-queries';
 import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
-import { hashToken } from '#/utils/hash-token';
+import { newHashedToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
 
@@ -58,9 +57,9 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
 
   await deleteReplacedTokens(ctx, { tokens });
 
-  const issued = tokens.map((token) => ({ token, id: generateId(), rawToken: nanoid(40) }));
+  const issued = tokens.map((token) => ({ token, id: generateId(), ...newHashedToken() }));
   const rows = await insertTokens(ctx, {
-    values: issued.map(({ token, id, rawToken }) => ({
+    values: issued.map(({ token, id, hash }) => ({
       id,
       type: token.type,
       email: token.email,
@@ -73,16 +72,16 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       sessionId: token.sessionId ?? null,
       authStrategy: token.authStrategy ?? null,
       connectionId: token.connectionId ?? null,
-      secret: hashToken(rawToken),
+      secret: hash,
       expiresAt: isoDateIn(tokenPolicies[token.type].ttl),
     })),
   });
 
   const rowsById = new Map(rows.map((row) => [row.id, row]));
-  return issued.map(({ id, rawToken }) => {
+  return issued.map(({ id, raw }) => {
     const token = rowsById.get(id);
     if (!token) throw new AppError(500, 'server_error', 'error', { meta: { reason: 'token_not_stored' } });
-    return { token, rawToken };
+    return { token, rawToken: raw };
   });
 };
 
@@ -174,10 +173,9 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
   }
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
-  const rawSingleUse = nanoid(40);
+  const singleUse = newHashedToken();
   const redeem = (redeemCtx: DbContext) =>
-    // Hash at rest: the raw value lives only in the browser's cookie.
-    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: hashToken(rawSingleUse), expiresAt: isoDateIn(singleUseWindow) });
+    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: singleUse.hash, expiresAt: isoDateIn(singleUseWindow) });
 
   const redeemed =
     token.userId || !claimOwner
@@ -187,11 +185,11 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
           const won = await redeem(txCtx);
           if (!won) return won;
           const userId = await claimOwner(tx, won);
-          return updateTokenUser(txCtx, { id: won.id, userId });
+          return bindTokenToUser(txCtx, { tokenId: won.id, userId });
         });
 
   if (redeemed) {
-    await setAuthCookie(ctx, type, rawSingleUse, singleUseWindow);
+    await setAuthCookie(ctx, type, singleUse.raw, singleUseWindow);
     return redeemed;
   }
 

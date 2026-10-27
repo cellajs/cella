@@ -7,7 +7,7 @@ import { baseDb } from '#/db/db';
 import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/devices/operations/notify-sign-in';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
+import { deviceColumns } from '#/modules/auth/sessions/helpers/device-info';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import type { AuthStrategy, SessionTypes, StepUpProof } from '#/modules/auth/sessions/sessions-db';
@@ -16,6 +16,7 @@ import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
+import { newHashedToken } from '#/utils/hash-token';
 import { toSubnet } from '#/utils/ip-subnet';
 import { getIsoDate, isoDateIn } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -83,7 +84,7 @@ export const createSession = async (
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
-  const { token: sessionToken, secret } = newSessionToken();
+  const { raw: sessionToken, hash: secret } = newHashedToken();
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
@@ -94,10 +95,7 @@ export const createSession = async (
     secret,
     userId: user.id,
     type,
-    deviceName: device.name,
-    deviceType: device.type,
-    deviceOs: device.os,
-    browser: device.browser,
+    ...deviceColumns(device),
     authStrategy: strategy,
     ipHash: rawIp ? hashIpForUser(rawIp, user.id) : null,
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
