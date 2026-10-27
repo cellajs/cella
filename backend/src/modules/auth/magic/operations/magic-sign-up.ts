@@ -2,7 +2,7 @@ import { AppError } from '#/core/error';
 import type { Tx } from '#/db/db';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug';
@@ -23,7 +23,7 @@ export const claimMagicLinkHolder = async (tx: Tx, token: TokenRecord): Promise<
   if (!(await maySignUp(txCtx, { email: token.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
   const slug = slugFromEmail(token.email);
-  const user = await handleCreateUser(txCtx, { newUser: { email: token.email, slug, name: slug, firstName: slug }, via: 'magic' });
+  const user = await createAccount(txCtx, { newUser: { email: token.email, slug, name: slug, firstName: slug }, via: 'magic' });
 
   log.info('User created via magic link sign-up', { userId: user.id });
   return user.id;

@@ -14,7 +14,7 @@ import { insertEmail, insertUsers } from '#/modules/user/user-queries';
  */
 const isAddressConstraint = (constraint = '') => /^(users|emails)_email_/.test(constraint);
 
-interface HandleCreateUserProps {
+interface CreateAccountOpts {
   /**
    * What a sign-up may set on the new account. A provider's avatar is left out on purpose: avatars are served from
    * the app's own CDN only, so a profile picture hosted elsewhere is never stored.
@@ -28,9 +28,9 @@ interface HandleCreateUserProps {
  * Creates an account for a proven inbox, in the caller's transaction: the user, its email row verified `via` the
  * proof, and the invitations waiting for the address bound to it. No path creates an account without a proof: an
  * unproven account would hold its address hostage, and nothing sweeps such accounts up.
- * Throws 409 `email_exists` when the address is taken.
+ * @throws AppError 409 `email_exists` when the address is taken.
  */
-export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleCreateUserProps): Promise<UserModel> => {
+export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAccountOpts): Promise<UserModel> => {
   const [slug] = await generateUniqueSlugs(ctx, [newUser.slug], 'user');
 
   try {
@@ -57,8 +57,8 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
 
     return user;
   } catch (error) {
-    // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input)
-    // surfaces as what it is.
+    // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input) is
+    // thrown as it is.
     const pgError = extractPgError(error);
     if (pgError?.code === '23505' && isAddressConstraint(pgError.constraint)) {
       throw new AppError(409, 'email_exists', 'warn');

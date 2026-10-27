@@ -1,4 +1,4 @@
-import { type ServerType, serve } from '@hono/node-server';
+import { serve } from '@hono/node-server';
 import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
@@ -14,8 +14,8 @@ import { createBaseApp } from '#/server';
 
 /**
  * The MCP face as its own process: the tool endpoint and its protected-resource metadata, behind tokens from the
- * authorization server. Needs no AI credential; `SCW_AI_API_KEY` only switches the app's own AI features on. Under
- * singleVM the API process calls this with the mcp port and `inProcess`: telemetry and the wait for the API are its own.
+ * authorization server. Under singleVM the API process calls this with the mcp port and `inProcess`: telemetry and the
+ * wait for the API are its own.
  */
 export async function startMcpWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
   const port = options.port ?? env.PORT;
@@ -24,7 +24,6 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
     return;
   }
 
-  const hasAiKey = !!env.SCW_AI_API_KEY;
   if (!options.inProcess) {
     otel.start();
     otel.verifyConnection();
@@ -36,8 +35,8 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
   const app = createBaseApp();
   app.route(mcpMountPath, mcpHandlers);
 
-  const server: ServerType = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
-    baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
+  const server = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
+    baseLog.info(`MCP service listening on port ${port}`);
   });
 
   setupGracefulShutdown({

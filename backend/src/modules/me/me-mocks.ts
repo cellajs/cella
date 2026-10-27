@@ -1,21 +1,22 @@
 import { faker } from '@faker-js/faker';
 import { mockNanoid, mockPaginated, mockRefDate, mockUuid, withFakerSeed } from '#/mocks';
-import type { MeAuthResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
+import { TimeSpan } from '#/utils/time-span';
 
-export const mockMeResponse = (key = 'me:default'): MeResponse => ({
+export const mockMeResponse = (key = 'me:default') => ({
   user: mockUserResponse(`${key}:user`),
   isSystemAdmin: false,
   impersonator: null,
 });
 
-export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
+export const mockMeAuthResponse = (key = 'me-auth:default') =>
   withFakerSeed(key, () => {
     const sessionCreatedAt = faker.date.past({ refDate: mockRefDate });
-    const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later
+    // One session lifetime later.
+    const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + new TimeSpan(1, 'w').milliseconds());
 
     return {
       oauthIdentities: [
@@ -60,7 +61,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
     };
   });
 
-export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTokenResponse =>
+export const mockUploadTokenResponse = (key = 'upload-token:default') =>
   withFakerSeed(key, () => {
     const expiresAt = faker.date.soon({ days: 1, refDate: mockRefDate });
 

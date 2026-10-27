@@ -1,7 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
-import { findUsersByIds } from '#/modules/user/user-queries';
+import { findExistingUserIds } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 /**
@@ -9,7 +9,7 @@ import { log } from '#/utils/logger';
  * @throws AppError 404 `not_found` when no id names a user.
  */
 export async function deleteUsersOp(ctx: UserContext, ids: string[]) {
-  const targets = await findUsersByIds(ctx, { ids });
+  const targets = await findExistingUserIds(ctx, { ids });
 
   const foundIds = targets.map(({ id }) => id);
   const rejectedIds = ids.filter((id) => !foundIds.includes(id));

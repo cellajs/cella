@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { serviceAccountHandlers } from './service-accounts-handlers';
+import { serviceAccountHandlers } from '#/modules/service-accounts/service-accounts-handlers';
 
 defineBackendModule({
   name: 'service-accounts',

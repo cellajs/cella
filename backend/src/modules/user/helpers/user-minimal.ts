@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { pick } from '#/utils/pick';
 

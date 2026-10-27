@@ -1,19 +1,16 @@
 import { z } from '@hono/zod-openapi';
-import { type AccessScope, accessScopes, appConfig, hierarchy, type OrganizationRole, roles } from 'shared';
+import { accessScopes, appConfig, hierarchy, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from '#/modules/service-accounts/service-accounts-mocks';
 import { idInTenantOrgParamSchema, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
 import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
-import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from './service-accounts-mocks';
 
-// `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
-const organizationRoles = hierarchy.getRoles('organization') as [OrganizationRole, ...OrganizationRole[]];
-/** Derived from the policy matrix (non-empty by construction): the only values a key may be narrowed to. */
-// The template configuration always carries a policy, so the vocabulary is never empty where keys are issued.
-const scopeEnum = z.enum(accessScopes.all as [AccessScope, ...AccessScope[]]);
+/** Derived from the policy matrix: the only values a key may be narrowed to. */
+const scopeEnum = z.enum(accessScopes.all);
 
 const roleBindingSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),
@@ -26,7 +23,6 @@ const roleBindingSchema = z.object({
 /** The route addresses one key of one account. */
 export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
 
-/** Its writers are `ActorRef`s like any row's: an admin's account created by another admin, or by a service. */
 export const serviceAccountSchema = z
   .object({
     ...createSelectSchema(serviceAccountsTable).shape,
@@ -44,7 +40,6 @@ export const serviceAccountSchema = z
   });
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
-  // Only people issue keys, so the creator is always a user the response can name.
   .extend({ scopes: z.array(scopeEnum).nullable(), createdBy: nullableActorRefSchema })
   .openapi('ApiKey', {
     description:
@@ -75,7 +70,7 @@ export const createApiKeyBodySchema = apiKeyInputSchema.extend({
 export const createServiceAccountBodySchema = z.object({
   name: validNameSchema,
   /** Organization role of the account; capped at the creator's own role. */
-  role: z.enum(organizationRoles),
+  role: z.enum(hierarchy.getRoles('organization')),
   /** One-step "create API key": the first key is issued together with the account. */
   key: apiKeyInputSchema.optional(),
 });

@@ -32,14 +32,14 @@ export async function findServiceAccountInTenant(ctx: DbContext, { id, tenantId 
   return account;
 }
 
-interface ListServiceAccountsOpts extends InTenantOpts {
+interface FindServiceAccountsPaginatedOpts extends InTenantOpts {
   q?: string;
   offset: number;
   limit: number;
 }
 
-/** A tenant holds one organization, so tenant scope is organization scope. */
-export async function listServiceAccounts(ctx: DbContext, { tenantId, q, offset, limit }: ListServiceAccountsOpts) {
+/** A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is organization scope. */
+export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q, offset, limit }: FindServiceAccountsPaginatedOpts) {
   const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId)];
   if (q) where.push(textSearchFilter(serviceAccountsTable.name, q));
 
@@ -96,19 +96,19 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
   return account;
 }
 
-/** Accounts are disabled, never deleted (D18); only active ones count against the quota. */
-export async function countServiceAccounts(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  const [{ value }] = await ctx.var.db
-    .select({ value: count() })
+/** Accounts are disabled, never deleted; only active ones count against the quota. */
+export async function countActiveServiceAccounts(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
+  const [{ total }] = await ctx.var.db
+    .select({ total: count() })
     .from(serviceAccountsTable)
     .where(and(eq(serviceAccountsTable.tenantId, tenantId), eq(serviceAccountsTable.status, 'active')));
-  return value;
+  return total;
 }
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */
 export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  const [{ value }] = await ctx.var.db
-    .select({ value: count() })
+  const [{ total }] = await ctx.var.db
+    .select({ total: count() })
     .from(apiKeysTable)
     .where(
       and(
@@ -117,7 +117,7 @@ export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpt
         or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, sql`now()`)),
       ),
     );
-  return value;
+  return total;
 }
 
 interface FindApiKeyWithAccountOpts {
@@ -151,6 +151,7 @@ interface FindApiKeysByActorOpts {
   actorId: string;
 }
 
+/** The actor's keys without the hash, newest first; revoked and expired ones included. */
 export async function findApiKeysByActor(ctx: DbContext, { actorId }: FindApiKeysByActorOpts) {
   return ctx.var.db.select(apiKeySafeColumns).from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId)).orderBy(desc(apiKeysTable.createdAt));
 }
@@ -160,6 +161,7 @@ interface InsertApiKeyOpts {
   values: InsertApiKeyModel;
 }
 
+/** Stores a generated key; returns its row without the hash. */
 export async function insertApiKey(ctx: DbContext, { values }: InsertApiKeyOpts): Promise<ApiKeyModel> {
   const [apiKey] = await ctx.var.db.insert(apiKeysTable).values(values).returning(apiKeySafeColumns);
   return apiKey;

@@ -9,7 +9,6 @@ import { getMeOp } from '#/modules/me/operations/get-me';
 import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
-import { getUserSessions } from '#/modules/me/operations/get-user-info';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
@@ -32,8 +31,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 });
 
 app.openapi(meRoutes.getMyAuth, async (ctx) => {
-  const sessions = await getUserSessions(ctx, ctx.var.user.id);
-  const data = await getMyAuthOp(ctx, { sessions });
+  const data = await getMyAuthOp(ctx);
   return ctx.json(data, 200);
 });
 

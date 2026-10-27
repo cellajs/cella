@@ -16,8 +16,6 @@ interface DeleteAccountsOpts {
  * holds for them, and their sessions in every process with the streams bound to them. The actor row stays as the credit
  * on what they wrote, resolving to no one, without its activity times. The writes commit together; an organization
  * left without an admin refuses the commit (`last_admin`), so nothing goes.
- * @param ctx - Any context with a database.
- * @param opts - The users to delete and who deletes them.
  */
 export async function deleteAccounts(ctx: DbContext, { userIds, by }: DeleteAccountsOpts): Promise<void> {
   await ctx.var.db.transaction(async (tx) => {

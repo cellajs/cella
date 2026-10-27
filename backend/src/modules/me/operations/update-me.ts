@@ -1,26 +1,18 @@
-import type { UserFlags } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
+import type { UpdateMeInput } from '#/modules/me/me-schema';
 import { nameAfterUpdate } from '#/modules/user/helpers/name-after-update';
-import type { UserModel } from '#/modules/user/user-db';
 import { findUserById, updateUser } from '#/modules/user/user-queries';
 
-interface UpdateMeInput {
-  slug?: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  description?: string | null;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-  language?: UserModel['language'];
-  newsletter?: boolean;
-  userFlags?: Partial<Record<keyof UserFlags, boolean>>;
-}
-
+/**
+ * The user's update of their own profile and preferences; `userFlags` merge into the stored flags. Returns the user
+ * with their activity times.
+ * @throws AppError 409 `slug_exists` for a slug another user holds.
+ */
 export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   const user = ctx.var.user;
 

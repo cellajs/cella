@@ -55,9 +55,9 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
     const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
 
-    const actor = await findLastSignInAt(dbCtx, { userId });
+    const previousSignInAt = await findLastSignInAt(dbCtx, { userId });
 
-    return { deviceIdHash, previousSignInAt: actor?.lastSignInAt ?? null };
+    return { deviceIdHash, previousSignInAt: previousSignInAt ?? null };
   } catch (err) {
     log.error('Failed to enroll device on sign-in', { userId, err });
     return null;

@@ -5,7 +5,7 @@ import { baseDb } from '#/db/db';
 import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
 import { findOrCreatePreferences } from '#/modules/notification/notification-queries';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUser } from '#/modules/user/user-mocks';
 import { defaultHeaders, memberRole } from '../fixtures';
@@ -22,7 +22,7 @@ import { clearSecurityTestData } from './helpers';
 
 /** A user created the way sign-up creates one, subscribed to the newsletter. */
 const signUp = async (label: string) => {
-  const user = await handleCreateUser({ var: { db: baseDb } }, { newUser: mockUser({ email: `${label}@example.test` }), via: 'magic' });
+  const user = await createAccount({ var: { db: baseDb } }, { newUser: mockUser({ email: `${label}@example.test` }), via: 'magic' });
   await adminDb.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
   return user;
 };

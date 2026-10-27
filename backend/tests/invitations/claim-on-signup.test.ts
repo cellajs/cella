@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
@@ -47,7 +47,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     await inviteToNewOrganization(2);
     await inviteToNewOrganization(3);
 
-    const user = await handleCreateUser({ var: { db } }, { newUser: newcomer, via: 'magic' });
+    const user = await createAccount({ var: { db } }, { newUser: newcomer, via: 'magic' });
 
     const pending = await pendingFor(invitedEmail);
     expect(pending).toHaveLength(3);
@@ -57,7 +57,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
 
   it('keeps the link of an invitation already bound to the user: the flow that bound it still holds its cookie', async () => {
     const organization = await createTestOrganization();
-    const user = await handleCreateUser({ var: { db } }, { newUser: newcomer, via: 'magic' });
+    const user = await createAccount({ var: { db } }, { newUser: newcomer, via: 'magic' });
     // Opening the emailed link binds the invitation and its token to the account that proved the address.
     await createInvitation({ organization, email: invitedEmail, createdBy: user.id, boundTo: user.id, token: 'invoked' });
 
@@ -70,7 +70,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     await inviteToNewOrganization(1);
     const someone = { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', firstName: 'Someone' };
 
-    await handleCreateUser({ var: { db } }, { newUser: someone, via: 'magic' });
+    await createAccount({ var: { db } }, { newUser: someone, via: 'magic' });
 
     const [untouched] = await pendingFor(invitedEmail);
     expect(untouched.userId).toBeNull();
@@ -79,9 +79,9 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
 
   it('names a taken address as email_exists', async () => {
     const newUser = { email: 'taken@example.com', slug: 'taken', name: 'Taken', firstName: 'Taken' };
-    await handleCreateUser({ var: { db } }, { newUser, via: 'magic' });
+    await createAccount({ var: { db } }, { newUser, via: 'magic' });
 
-    await expect(handleCreateUser({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' }, via: 'magic' })).rejects.toMatchObject({
+    await expect(createAccount({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' }, via: 'magic' })).rejects.toMatchObject({
       status: 409,
       type: 'email_exists',
     });
@@ -90,7 +90,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
   it('does not disguise another failure as a taken address', async () => {
     const newUser = { email: 'fresh@example.com', slug: 'fresh', name: 'x'.repeat(2000), firstName: 'Fresh' };
 
-    const failure = await handleCreateUser({ var: { db } }, { newUser, via: 'magic' }).catch((error: unknown) => error);
+    const failure = await createAccount({ var: { db } }, { newUser, via: 'magic' }).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(Error);
     expect((failure as { type?: string }).type).not.toBe('email_exists');

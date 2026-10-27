@@ -97,7 +97,8 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
       const tool = tools.find((candidate) => candidate.name === name);
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
-      // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
+      // The mask: a token names its scopes explicitly; a missing one is a step-up, never a refusal that leaves out the
+      // scope to ask for.
       if (!accessScopes.allows(ctx.var.actor.scopes, tool.entity, tool.action)) throw new InsufficientScopeError(tool.scope, id);
 
       try {
@@ -112,8 +113,12 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
         if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
         // The call itself failed before the route answered. The model belongs to a third-party client, so a server
         // error reaches it without its internals, in every mode.
-        const { type, message } = toClientError(error, { tool: name, organizationId: ctx.var.organizationId }, { exposeServerMessage: false });
-        return respond({ content: [{ type: 'text', text: `${type}: ${message}` }], isError: true });
+        const { type, message: errorMessage } = toClientError(
+          error,
+          { tool: name, organizationId: ctx.var.organizationId },
+          { exposeServerMessage: false },
+        );
+        return respond({ content: [{ type: 'text', text: `${type}: ${errorMessage}` }], isError: true });
       }
     }
 

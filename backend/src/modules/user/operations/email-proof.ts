@@ -6,7 +6,7 @@ import { type EmailProofOpts, updateEmailProof, upsertProvenEmail } from '#/modu
 /**
  * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user
  * has no row for the address: the caller proved ownership of an address the account does not hold, which is drift to
- * surface, never to ignore.
+ * report, never to ignore.
  */
 export const markEmailVerified = async (ctx: DbContext, { userId, email, via }: EmailProofOpts): Promise<boolean> => {
   const stamped = await updateEmailProof(ctx, { userId, email, via });

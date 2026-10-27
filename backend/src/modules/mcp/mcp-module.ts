@@ -1,6 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
+import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { mcpMountPath } from '#/modules/mcp/mcp-routes';
-import { mcpHandlers } from './mcp-handlers';
 
 defineBackendModule({
   name: 'mcp',

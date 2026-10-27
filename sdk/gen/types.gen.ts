@@ -2918,7 +2918,7 @@ export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
 
 export type GetMyAuthResponses = {
   /**
-   * User sign-up info
+   * Sign-in methods and sessions
    */
   200: MeAuthData;
 };

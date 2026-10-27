@@ -20,7 +20,7 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
   const account = await getManagedServiceAccount(ctx, serviceAccountId);
   assertTenantQuota(ctx, 'apiKey', await countLiveApiKeys(ctx, { tenantId }));
 
-  // The predecessor is checked before the new key exists, and both writes land or neither does: a bad `rollFrom`
+  // The predecessor is checked before the new key exists, and both writes commit or neither does: a bad `rollFrom`
   // never leaves an orphan live key whose plaintext nobody received.
   const { apiKey, secret } = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };

@@ -43,7 +43,7 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   invalidateCache.user(user.id);
 
   if (updatedUser.mfaRequired && factor) {
-    // Clear session cookie to enforce fresh login
+    // The mfa session set next takes this cookie's place.
     deleteAuthCookie(ctx, 'session');
 
     await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor, connectionId: session.connectionId });
@@ -51,6 +51,5 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
 
   if (changed) sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
-  // Re-select to include the activity times of the user's actors row
   return findUserById(ctx, { id: user.id });
 }

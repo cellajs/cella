@@ -39,14 +39,14 @@ const routeParams = ['tenantId', 'organizationId'];
 /** Request headers a tool call carries over from the MCP request: the caller's token and the client address. */
 const forwardedHeaders = ['authorization', 'x-forwarded-for'];
 
-const anyObject = (schema: unknown): schema is z.ZodObject<z.ZodRawShape> => schema instanceof z.ZodObject;
+const isZodObject = (schema: unknown): schema is z.ZodObject<z.ZodRawShape> => schema instanceof z.ZodObject;
 
 /**
  * The sync transaction (`stx`) is trusted server metadata, never model input: `modelSchema` leaves it out of what the
  * model sees, `withServerStx` puts a server-built one back before the route's own schema validates the body.
  */
 function splitStx(schema: z.ZodType): { modelSchema: z.ZodType; withServerStx: (value: unknown) => unknown } {
-  if (anyObject(schema) && 'stx' in schema.shape) {
+  if (isZodObject(schema) && 'stx' in schema.shape) {
     // Rebuilt from the shape (`.omit()` refuses refined objects); the route's own schema still validates the call.
     const { stx: _stx, ...shape } = schema.shape;
     return {
@@ -95,23 +95,23 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
   if (!name) throw new Error(`[MCP] The tool route ${route.method} ${route.path} has no operationId`);
 
   const paramsSchema = route.request?.params;
-  const params = anyObject(paramsSchema)
+  const params = isZodObject(paramsSchema)
     ? paramsSchema.omit(Object.fromEntries(routeParams.filter((key) => key in paramsSchema.shape).map((key) => [key, true])))
     : z.object({});
   const querySchema = route.request?.query;
-  const query = anyObject(querySchema) ? querySchema : z.object({});
+  const query = isZodObject(querySchema) ? querySchema : z.object({});
   const media = route.request?.body?.content?.['application/json'];
   const jsonBody = media && 'schema' in media ? media.schema : undefined;
   const body = jsonBody instanceof z.ZodType ? jsonBody : undefined;
   const modelBody = body ? splitStx(body) : undefined;
-  const bodyIsObject = anyObject(modelBody?.modelSchema);
+  const bodyIsObject = isZodObject(modelBody?.modelSchema);
   // A non-object body (a batch of items) nests under one key so it cannot collide with params or query.
   const bodyKey = modelBody && !bodyIsObject ? (modelBody.modelSchema instanceof z.ZodArray ? 'items' : 'body') : undefined;
 
   const inputSchema = z.object({
     ...params.shape,
     ...query.shape,
-    ...(bodyIsObject && anyObject(modelBody?.modelSchema) ? modelBody.modelSchema.shape : {}),
+    ...(bodyIsObject && isZodObject(modelBody?.modelSchema) ? modelBody.modelSchema.shape : {}),
     ...(bodyKey && modelBody ? { [bodyKey]: modelBody.modelSchema } : {}),
   });
   const paramKeys = Object.keys(params.shape);

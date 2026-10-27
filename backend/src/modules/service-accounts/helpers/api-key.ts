@@ -44,6 +44,7 @@ const randomBase62 = (length: number): string => {
   return out;
 };
 
+/** The CRC-32 of a key's body in six base62 characters, the key's last six. */
 export const checksumOf = (body: string): string => toBase62(crc32(body), checksumLength);
 
 const keyPattern = new RegExp(`^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${secretLength}})([0-9A-Za-z]{${checksumLength}})$`);
@@ -65,6 +66,7 @@ export function generateApiKey(type: ApiKeyType): { key: string; parsed: ParsedA
 export function parseApiKey(key: string): ParsedApiKey | null {
   const match = keyPattern.exec(key);
   if (!match) return null;
+  // A RegExp match types every group as a string; `keyPattern` admits only the wire tags and envs above.
   const [, tag, env, secret, checksum] = match as unknown as [string, WireTag, KeyEnv, string, string];
   const body = `${appConfig.slug}_${tag}_${env}_${secret}`;
   if (checksumOf(body) !== checksum) return null;
@@ -88,7 +90,7 @@ export function apiKeyFrom(ctx: Context<Env>): string | null {
 /** Cheap header check for dispatch (CSRF skip, `actorGuard`): no parsing, no lookup. */
 export const hasApiKeyHeader = (ctx: Context<Env>): boolean => apiKeyFrom(ctx) !== null;
 
-/** Why a key no longer authenticates its service account. */
+/** Why a key does not authenticate its service account. */
 export type ApiKeyRefusal = 'invalid_api_key' | 'service_account_disabled';
 
 /**
@@ -97,7 +99,7 @@ export type ApiKeyRefusal = 'invalid_api_key' | 'service_account_disabled';
  * verdict asks again at every use: an expiry passes unannounced.
  * @param apiKey - The key's revocation and expiry.
  * @param account - The key's service account.
- * @returns Why the key no longer authenticates, or null while it does.
+ * @returns Why the key does not authenticate, or null while it does.
  */
 export function apiKeyRefusal(
   apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'>,

@@ -7,8 +7,6 @@ import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
 
-const languagesEnum = appConfig.languages;
-
 /**
  * Users table. Closely related to `emailsTable` for email verification. The id is an `actors` row of kind `user`,
  * written first by `insertUsers`; provenance columns on content reference `actors`, not this table.
@@ -34,7 +32,7 @@ export const usersTable = snakeCase.table(
     mfaRequired: boolean().notNull().default(false),
     firstName: varchar({ length: maxLength.field }),
     lastName: varchar({ length: maxLength.field }),
-    language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
+    language: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     /** How much non-text contrast the UI draws. `system` follows the browser's `prefers-contrast`, `more` forces it on. */
     contrast: varchar({ enum: ['system', 'more'] })
@@ -45,7 +43,7 @@ export const usersTable = snakeCase.table(
       .notNull()
       .default({} as UserFlags),
     updatedAt: timestampColumns.updatedAt,
-    // The user, a system admin or a service acting for them; no `createdBy`: a user is created by a sign-up.
+    /** The user, a system admin or a service acting for them; no `createdBy`: a user is created by a sign-up. */
     updatedBy: writerColumn(),
   },
   (table) => [

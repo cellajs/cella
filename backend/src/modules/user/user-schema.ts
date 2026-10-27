@@ -1,15 +1,15 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
+import { appConfig, type UserFlags } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { memberCountsSchema } from '#/modules/memberships/helpers/member-counts';
 import { memberMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { usersTable } from '#/modules/user/user-db';
+import { mockUserResponse } from '#/modules/user/user-mocks';
 import { languageSchema, maxLength, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
-import { mockUserResponse } from './user-mocks';
 
-export const enabledOAuthProvidersSchema = z.enum([...appConfig.enabledOAuthProviders] as [EnabledOAuthProvider, ...EnabledOAuthProvider[]]);
+export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProviders);
 
 export const userFlagsSchema = z.object(
   Object.keys(appConfig.defaultUserFlags).reduce(
@@ -36,15 +36,17 @@ export const userSchema = createSelectSchema(usersTable, { email: z.email(), lan
     'x-tags': schemaTags('data', 'users', 'cella'),
   });
 
-/** Public user schema for cross-tenant and member-facing endpoints. Based on userBaseSchema + lastSeenAt. */
+/** A user as other users see them, for cross-tenant and member-facing endpoints. */
 export const memberUserSchema = userBaseSchema.extend({ lastSeenAt: z.string().nullable() });
 
 export const memberSchema = memberUserSchema.extend({
   membership: memberMembershipSchema,
-  // Per-member insight counts, present when the members list is fetched with include=counts
+  /** Per-member insight counts, present when the members list is fetched with include=counts. */
   counts: memberCountsSchema.optional(),
-  // With include=mfa, for the organization's admins. Absent for other callers: the field would list the accounts
-  // without a second factor.
+  /**
+   * With include=mfa, for the organization's admins. Absent for other callers: the field would list the accounts
+   * without a second factor.
+   */
   mfaRequired: z.boolean().optional(),
 });
 
@@ -55,6 +57,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   thumbnailUrl: validCDNUrlSchema.nullable(),
   bannerUrl: validCDNUrlSchema.nullable(),
   language: languageSchema,
+  contrast: z.enum(usersTable.contrast.enumValues),
   description: z.string().max(maxLength.html).nullable(),
 })
   .pick({

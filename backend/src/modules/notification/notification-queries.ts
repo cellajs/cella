@@ -20,7 +20,7 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
-import { findUsersByIds } from '#/modules/user/user-queries';
+import { findExistingUserIds } from '#/modules/user/user-queries';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -238,7 +238,7 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
   const unique = [...new Set(userIds)];
 
   const [users, memberships, systemAdmins] = await Promise.all([
-    findUsersByIds(ctx, { ids: unique }),
+    findExistingUserIds(ctx, { ids: unique }),
     findMembershipsByUserIds(ctx, { userIds: unique }),
     findSystemRoleHolders(ctx, { userIds: unique, role: 'admin' }),
   ]);

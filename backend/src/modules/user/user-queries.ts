@@ -1,4 +1,4 @@
-import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, or, type SQL, sql } from 'drizzle-orm';
 import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
@@ -7,24 +7,47 @@ import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { systemRolesTable } from '#/modules/system/system-roles-db';
+import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-roles-db';
 import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
+import { textSearchFilter } from '#/utils/sql';
+
+/** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
+const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
+  const { db } = ctx.var;
+  return exists(
+    db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, organizationIds))),
+  );
+};
 
 interface FindUsersPaginatedOpts {
-  filters: SQL[];
+  /** Searches name and email. */
+  q?: string;
+  role?: SystemRoleModel['role'];
+  /** Limits the list to members of one of these organizations; unset lists every user. */
+  memberOfAny?: string[];
   sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
 
+/** A page of users as members see them, each with its system role (null without one), and the total. */
 export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { filters, sort, order, limit, offset } = opts;
+  const { q, role, memberOfAny, sort, order, limit, offset } = opts;
+
+  const filters: SQL[] = [];
+  if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
+  if (role) filters.push(eq(systemRolesTable.role, role));
+  if (q) filters.push(or(textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q))!);
+
   const usersQuerySelect = { ...memberSelect, role: systemRolesTable.role };
   const baseQuery = db
     .select(usersQuerySelect)
@@ -73,7 +96,7 @@ export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmail
     .select(userSelect)
     .from(usersTable)
     .innerJoin(actorsTable, userActorJoin)
-    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .innerJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(eq(emailsTable.email, email))
     .limit(1);
   return user;
@@ -83,18 +106,26 @@ interface FindUserByIdOpts {
   id: string;
 }
 
+/** The user with the activity times of its `actors` row; undefined when no user has `id`. */
 export const findUserById = async (ctx: DbContext, { id }: FindUserByIdOpts) => {
   const { db } = ctx.var;
   const [user] = await db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
   return user;
 };
 
-interface FindUserByFiltersOpts {
-  filters: SQL[];
+interface FindMemberUserOpts {
+  /** An id, or a slug when `bySlug`. */
+  identifier: string;
+  bySlug?: boolean;
+  /** Limits the read to a member of one of these organizations. */
+  memberOfAny?: string[];
 }
 
-export const findUserByFilters = async (ctx: DbContext, { filters }: FindUserByFiltersOpts) => {
+/** A user as members see them; undefined when none matches, which includes a user outside `memberOfAny`. */
+export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = false, memberOfAny }: FindMemberUserOpts) => {
   const { db } = ctx.var;
+  const filters: SQL[] = [bySlug ? eq(usersTable.slug, identifier) : eq(usersTable.id, identifier)];
+  if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
   const [user] = await db
     .select(memberSelect)
     .from(usersTable)
@@ -125,7 +156,7 @@ interface FindLastSignInAtOpts {
 /** The time of the user's last sign-in, null for a user who never signed in; undefined when no actor row exists. */
 export const findLastSignInAt = async (ctx: DbContext, { userId }: FindLastSignInAtOpts) => {
   const [actor] = await ctx.var.db.select({ lastSignInAt: actorsTable.lastSignInAt }).from(actorsTable).where(eq(actorsTable.id, userId));
-  return actor;
+  return actor?.lastSignInAt;
 };
 
 interface UpdateLastSignInAtOpts {
@@ -229,17 +260,6 @@ export const upsertProvenEmail = async (ctx: DbContext, opts: EmailProofOpts) =>
   return row;
 };
 
-/** EXISTS filter limiting user rows to those sharing an organization with `myOrgIds`: defense in depth mirroring relatableGuard. */
-export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string[] }) => {
-  const { db } = ctx.var;
-  return exists(
-    db
-      .select({ id: membershipsTable.id })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds))),
-  );
-};
-
 interface FindMfaRequiredOpts {
   userId: string;
   /** Limits the read to a user who is a member of one of these organizations. */
@@ -249,7 +269,7 @@ interface FindMfaRequiredOpts {
 /** A user's MFA switch; undefined when no user matches, which includes a user outside `memberOfAny`. */
 export const findMfaRequired = async (ctx: DbContext, { userId, memberOfAny }: FindMfaRequiredOpts) => {
   const filters: SQL[] = [eq(usersTable.id, userId)];
-  if (memberOfAny) filters.push(sharesOrgFilter(ctx, { myOrgIds: memberOfAny }));
+  if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
   const [user] = await ctx.var.db
     .select({ mfaRequired: usersTable.mfaRequired })
     .from(usersTable)
@@ -258,26 +278,22 @@ export const findMfaRequired = async (ctx: DbContext, { userId, memberOfAny }: F
   return user?.mfaRequired;
 };
 
-interface FindUserModelsByIdsOpts {
+interface UserIdsOpts {
   ids: string[];
 }
 
 /** Full user rows by id. */
-export const findUserModelsByIds = async (ctx: DbContext, { ids }: FindUserModelsByIdsOpts) => {
+export const findUserModelsByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
   return ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
 };
 
-interface FindUsersByIdsOpts {
-  ids: string[];
-}
-
 /** The ids among `ids` that name a user. */
-export const findUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
+export const findExistingUserIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
   return ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
 };
 
 /** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
-export const deleteUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
+export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
   return ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
 };
 

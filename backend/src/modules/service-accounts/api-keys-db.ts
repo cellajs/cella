@@ -1,4 +1,4 @@
-import { getTableColumns } from 'drizzle-orm';
+import { getColumns } from 'drizzle-orm';
 import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -31,7 +31,7 @@ export const apiKeysTable = snakeCase.table(
     last4: varchar({ length: 4 }).notNull(),
     /** Mask over the actor's bindings; null = unmasked. Values come from `accessScopes.all`. */
     scopes: varchar({ length: maxLength.field }).$type<AccessScope>().array(),
-    /** Null: never expires. Keeps its zone like `timestampColumns.expiresAt`: the guard reads it in JavaScript. */
+    /** Null: never expires. */
     expiresAt: isoTimestamp(),
     revokedAt: isoTimestamp(),
     revokedBy: uuid()
@@ -49,7 +49,7 @@ export const apiKeysTable = snakeCase.table(
   ],
 );
 
-const { hash: _hash, ...safeColumns } = getTableColumns(apiKeysTable);
+const { hash: _hash, ...safeColumns } = getColumns(apiKeysTable);
 /** Every column but the hash: what any response may carry. */
 export const apiKeySafeColumns = safeColumns;
 

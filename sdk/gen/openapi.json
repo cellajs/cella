@@ -253,7 +253,7 @@
     },
     {
       "name": "me",
-      "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act\n    exclusively on the current user and follow a different authorization flow.",
+      "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. The users endpoints read other users; me endpoints act exclusively on the current user and follow a\n    different authorization flow.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -331,7 +331,7 @@
     },
     {
       "name": "users",
-      "description": "Endpoints for managing users at the system level. Unlike channel entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
+      "description": "Endpoints for reading other users: the users who share an organization with the requesting user,\n    or every user for a system admin. Unlike channel entities such as organizations, a user is a global entity that is\n    not scoped to an organization. Administrative operations on users are system endpoints.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1700,7 +1700,7 @@
               "userId": "b301e7af-e587-410c-8dd4-a5c678f6be37",
               "type": "regular",
               "createdAt": "2024-05-28T17:45:48.607Z",
-              "expiresAt": "2024-06-27T17:45:48.607Z",
+              "expiresAt": "2024-06-04T17:45:48.607Z",
               "deviceName": "Firefox on Windows",
               "deviceType": "desktop",
               "deviceOs": "macOS",
@@ -6173,7 +6173,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "User sign-up info",
+            "description": "Sign-in methods and sessions",
             "content": {
               "application/json": {
                 "schema": {
@@ -6351,7 +6351,7 @@
         "operationId": "revokeMySessions",
         "tags": ["me", "cella"],
         "summary": "Revoke sessions",
-        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -6554,8 +6554,8 @@
         ],
         "operationId": "deleteMyMembership",
         "tags": ["me", "cella"],
-        "summary": "Leave entity",
-        "description": "Removes the current user from an entity they are a member of.",
+        "summary": "Leave channel",
+        "description": "Removes the current user from a channel entity they are a member of.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -6880,7 +6880,7 @@
         "operationId": "getPublicCounts",
         "tags": ["metrics", "cella"],
         "summary": "Get public counts",
-        "description": "Returns basic count metrics for entity types such as users and organizations.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "description": "Returns basic count metrics for entity types such as users and organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],

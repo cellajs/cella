@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { metricHandlers } from './metrics-handlers';
+import { metricHandlers } from '#/modules/metrics/metrics-handlers';
 
 defineBackendModule({
   name: 'metrics',

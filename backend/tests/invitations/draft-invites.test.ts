@@ -10,7 +10,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser, mailedLink, mailsTo } from '../helpers';
@@ -283,7 +283,7 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, [newcomer], memberRole, sessionCookie);
 
     // The invitee signs up before the context is published: the proven inbox binds the held invitation and ends its link.
-    const account = await handleCreateUser(
+    const account = await createAccount(
       { var: { db } },
       { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', firstName: 'New', lastName: 'Comer' }, via: 'magic' },
     );

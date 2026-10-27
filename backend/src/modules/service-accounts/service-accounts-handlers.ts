@@ -1,13 +1,13 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { createApiKeyOp } from '#/modules/service-accounts/operations/create-api-key';
+import { createServiceAccountOp } from '#/modules/service-accounts/operations/create-service-account';
+import { getApiKeysOp } from '#/modules/service-accounts/operations/get-api-keys';
+import { getServiceAccountsOp } from '#/modules/service-accounts/operations/get-service-accounts';
+import { revokeApiKeyOp } from '#/modules/service-accounts/operations/revoke-api-key';
+import { updateServiceAccountOp } from '#/modules/service-accounts/operations/update-service-account';
+import { serviceAccountRoutes } from '#/modules/service-accounts/service-accounts-routes';
 import { defaultHook } from '#/utils/default-hook';
-import { createApiKeyOp } from './operations/create-api-key';
-import { createServiceAccountOp } from './operations/create-service-account';
-import { getApiKeysOp } from './operations/get-api-keys';
-import { getServiceAccountsOp } from './operations/get-service-accounts';
-import { revokeApiKeyOp } from './operations/revoke-api-key';
-import { updateServiceAccountOp } from './operations/update-service-account';
-import { serviceAccountRoutes } from './service-accounts-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
