@@ -76,6 +76,11 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rowHeight?: number;
 }
 
+/** The row key of a table whose rows carry an `id`. */
+export function rowKeyById(row: { id: string }): string {
+  return row.id;
+}
+
 /** Bridges query presentation state and infinite scrolling to the DataGrid engine. */
 export function DataTable<TData>({
   // DataTable-owned / transformed props, destructured so they don't leak into `...gridProps`.

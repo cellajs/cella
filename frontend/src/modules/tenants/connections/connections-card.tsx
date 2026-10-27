@@ -150,12 +150,12 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                   checked={connection.jitProvisioning}
                   onCheckedChange={(jitProvisioning) => update({ path: { tenantId: tenant.id, id: connection.id }, body: { jitProvisioning } })}
                 />
-                <HelpText content={t('c:jit_provisioning.text')} className="mb-0">
+                <HelpText content={t('c:jit_provisioning.text')}>
                   <Label htmlFor={`jit-provisioning-${connection.id}`}>{t('c:jit_provisioning')}</Label>
                 </HelpText>
               </div>
               <div className="flex flex-wrap items-start gap-2">
-                <HelpText content={t('c:sso_entry_link.text')} className="mb-0">
+                <HelpText content={t('c:sso_entry_link.text')}>
                   <Button variant="plain" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
                     <CopiedIcon copied={copied} icon={CopyIcon} />
                     {t('c:sso_entry_link')}

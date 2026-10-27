@@ -1,9 +1,8 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
-import { productTypeOf } from '~/query/cache-migration';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
 import { quarantineFailedSync } from '~/query/offline/failed-sync';
+import { mutationIdOf } from '~/query/offline/mutation-variables';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -14,12 +13,6 @@ const handleSuccess = () => import('~/query/on-success').then(({ onSuccess }) =>
 /** What an stx mutation's variables carry, alone or once per item of a batch. */
 interface StxVariables {
   stx?: { mutationId?: string; replayed?: boolean };
-}
-
-/** The stx mutation id of a mutation's variables; a batch's comes from its first item. */
-function mutationIdOf(variables: unknown): string | undefined {
-  const stxVariables = variables as StxVariables | StxVariables[] | undefined;
-  return Array.isArray(stxVariables) ? stxVariables[0]?.stx?.mutationId : stxVariables?.stx?.mutationId;
 }
 
 /** Mutation ids restored from the persisted cache and replaying now. Only these quarantine on a 4xx: a live edit's failure reaches the user through the toast and needs no salvage. */
@@ -42,8 +35,7 @@ function quarantineOnClientError(error: ApiError, variables: unknown, mutationKe
   const status = error?.status;
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
 
-  const entityType = productTypeOf(mutationKey);
-  quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables, error }).catch(() => {});
+  quarantineFailedSync({ mutationId, mutationKey, status, variables, error }).catch(() => {});
 }
 
 const defaultStaleTime = 30 * 1000;

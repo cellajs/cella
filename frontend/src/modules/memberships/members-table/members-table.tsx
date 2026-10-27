@@ -4,7 +4,7 @@ import { isUnconditionalCan } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
@@ -15,10 +15,6 @@ import { useColumns } from '~/modules/memberships/members-table/members-columns'
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
-
-function rowKeyGetter(row: Member) {
-  return row.id;
-}
 
 export interface MembersTableProps {
   channel: EnrichedChannel;
@@ -80,7 +76,7 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
         {...{
           ...list,
           onRowsChange,
-          rowKeyGetter,
+          rowKeyGetter: rowKeyById,
           columns,
           enableVirtualization: true,
           isFiltered: role !== undefined || !!q,

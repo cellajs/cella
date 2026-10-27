@@ -60,6 +60,8 @@ describe('failedSync quarantine is gated on replay', () => {
     for (const { mutation, variables } of [replayed, succeeded, live]) await failMutation(mutation, variables);
 
     expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
-    expect(quarantineFailedSync).toHaveBeenCalledWith(expect.objectContaining({ mutationId: 'm-replay', entityType: 'attachment', status: 400 }));
+    expect(quarantineFailedSync).toHaveBeenCalledWith(
+      expect.objectContaining({ mutationId: 'm-replay', mutationKey: ['attachment', 'update'], status: 400 }),
+    );
   });
 });

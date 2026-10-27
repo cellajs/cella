@@ -2,6 +2,7 @@ import { BirdIcon } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
+import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
@@ -133,10 +134,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             onClick={(event) => openOperationSheet(row, event.currentTarget)}
           >
             {/* The underline sits on the path alone: on the button it would reach the badge too */}
-            <span
-              dir="rtl"
-              className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong min-w-0 flex-1 truncate text-left group-hover/cell-button:underline"
-            >
+            <span dir="rtl" className={cn(cellLinkTextClass, 'min-w-0 flex-1 text-left')}>
               &lrm;{row.path}
             </span>
             <SwitchedOffBadge enabledBy={row.enabledBy} />

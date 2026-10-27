@@ -1,20 +1,47 @@
+import i18n from 'i18next';
 import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { type ComponentType, useEffect, useState } from 'react';
+import { type ComponentType, type ReactNode, type RefObject, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
-import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
-import type { InviteFormProps } from '~/modules/user/invite-submit';
+import { type InviteFormProps, inviteDialogId } from '~/modules/user/invite-submit';
+import { tw } from '~/utils/tw';
 
 type InviteMode = 'email' | 'search' | 'bulk';
+
+interface OpenInviteDialogOptions {
+  /** Without one, a system invite. */
+  channel?: EnrichedChannel;
+  mode: InviteMode | null;
+  description: ReactNode;
+  triggerRef: TriggerRef;
+  /** The element under the table bar the dialog renders into. */
+  containerRef: RefObject<HTMLDivElement | null>;
+}
+
+/** Opens the invite form in a dialog under a table bar, from the bar's invite button. */
+export function openInviteDialog({ channel, mode, description, triggerRef, containerRef }: OpenInviteDialogOptions) {
+  dialoger.getState().create(<InviteUsers channel={channel} mode={mode} dialog />, {
+    id: inviteDialogId,
+    triggerRef,
+    drawerOnMobile: false,
+    className: tw('w-auto max-w-4xl border shadow-none'),
+    container: { ref: containerRef, overlay: true },
+    title: i18n.t('c:invite'),
+    titleContent: <UnsavedBadge title={i18n.t('c:invite')} />,
+    description,
+  });
+}
 
 /** Per mode: the crumb in the dialog title, the explanation above the form, and the form. */
 const inviteModes: Record<InviteMode, { title: TKey; explain: TKey; Form: ComponentType<InviteFormProps> }> = {
@@ -42,12 +69,12 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
   const [inviteMode, setInviteMode] = useState(initialMode);
 
   // The dialog's caller owns the description copy, so read it once and keep it to compose against.
-  const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get('invite-users')?.description : undefined));
+  const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get(inviteDialogId)?.description : undefined));
 
   const updateMode = (mode: InviteMode | null) => {
     setInviteMode(mode);
 
-    dialoger.getState().update('invite-users', {
+    dialoger.getState().update(inviteDialogId, {
       titleContent: (
         <div className="flex items-center gap-2">
           {mode ? (
@@ -80,9 +107,9 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
 
   // The bulk link joins the dialog's description, where dismissing the alert below cannot hide it; onboarding has no dialog.
   useEffect(() => {
-    if (!isDialog || !dialoger.getState().get('invite-users')) return;
+    if (!isDialog || !dialoger.getState().get(inviteDialogId)) return;
 
-    dialoger.getState().update('invite-users', {
+    dialoger.getState().update(inviteDialogId, {
       description:
         inviteMode === 'email' ? (
           <>

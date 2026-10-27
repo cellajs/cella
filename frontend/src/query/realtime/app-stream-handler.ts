@@ -1,9 +1,10 @@
 import { type ChannelEntityType, isProduct } from 'shared';
-import { syncSpanNames, withSpanSync } from '~/lib/tracing';
+import { frontendSpanNames } from 'shared/tracing';
+import { withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
-import { sourceId } from '~/query/offline/stx-utils';
+import { sourceId } from '~/query/offline/hlc';
 import * as cacheOps from '~/query/realtime/cache-ops';
 import { enqueueRange } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
@@ -19,7 +20,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
   const spanAttributes = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
 
-  withSpanSync(syncSpanNames.messageProcess, spanAttributes, () => {
+  withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
     // Checked before trackOrg creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
     const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 

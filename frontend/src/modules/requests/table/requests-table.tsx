@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
@@ -11,10 +11,6 @@ import { requestsListQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
-
-function rowKeyGetter(row: Request) {
-  return row.id;
-}
 
 export function RequestsTable() {
   const { t } = useTranslation();
@@ -43,7 +39,7 @@ export function RequestsTable() {
       <DataTable<Request>
         {...{
           ...list,
-          rowKeyGetter,
+          rowKeyGetter: rowKeyById,
           columns,
           enableVirtualization: true,
           isFiltered: !!q,

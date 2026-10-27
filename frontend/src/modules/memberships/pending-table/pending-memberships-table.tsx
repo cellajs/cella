@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { GetPendingMembershipsData } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
@@ -12,10 +12,6 @@ import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/
 import { useColumns } from '~/modules/memberships/pending-table/pending-columns';
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
 import type { PendingMembership } from '~/modules/memberships/types';
-
-function rowKeyGetter(row: PendingMembership) {
-  return row.id;
-}
 
 type PendingMembershipsSearch = Pick<GetPendingMembershipsData['query'], 'sort' | 'order'>;
 
@@ -44,7 +40,7 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
       <DataTable<PendingMembership>
         {...{
           ...list,
-          rowKeyGetter,
+          rowKeyGetter: rowKeyById,
           columns,
           enableVirtualization: true,
           sortColumns,

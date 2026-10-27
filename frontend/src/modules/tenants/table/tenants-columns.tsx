@@ -102,7 +102,7 @@ export const useColumns = () => {
               />
             }
           >
-            <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
+            <EntityAvatar type="organization" className="size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
             <span className={cn(cellLinkTextClass, 'max-sm:sr-only')}>{org.name || '-'}</span>
           </Button>
         );

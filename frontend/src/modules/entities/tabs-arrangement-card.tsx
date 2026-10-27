@@ -6,7 +6,7 @@ import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { arrangePlacements } from '~/lib/placements';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -29,11 +29,6 @@ interface TabRow {
   order: number;
   locked?: boolean;
   visible: boolean;
-}
-
-// Module scope keeps DataGrid's prop identity stable across renders
-function rowKeyGetter(row: TabRow) {
-  return row.id;
 }
 
 // The label cell stacks a tab's name and description, centred in the row
@@ -112,7 +107,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
     ...(rows.length > 1
       ? [
           reorderColumn<TabRow>({
-            getId: rowKeyGetter,
+            getId: rowKeyById,
             getName: (row) => row.name,
             onMove: moveRow,
             rowCount: rows.length,
@@ -133,11 +128,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
 
         // A narrow column wraps a description over many lines, so there it unfolds from a help toggle
         if (isMobile) {
-          return (
-            <HelpText className="mb-0" content={<p className="text-xs">{row.description}</p>}>
-              {name}
-            </HelpText>
-          );
+          return <HelpText content={<p className="text-xs">{row.description}</p>}>{name}</HelpText>;
         }
 
         return (
@@ -167,7 +158,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
     <ToolCard label="c:tabs" description={t('c:tabs.text', { resource: t(`c:${entity.entityType}`).toLowerCase() })}>
       <DataTable
         rows={rows}
-        rowKeyGetter={rowKeyGetter}
+        rowKeyGetter={rowKeyById}
         rowHeight={56}
         columns={columns}
         hasNextPage={false}

@@ -73,10 +73,7 @@ export function withVariablesVersion(mutation: StoredMutation): StoredMutation {
   return mutation.meta?.variablesVersion === undefined ? stamped(mutation, variablesVersionOf(mutation.mutationKey)) : mutation;
 }
 
-/**
- * The stx mutation id of queued variables in any shape this app has used: a batch, the top level, or rows under `data`.
- * @public
- */
+/** The stx mutation id of queued variables in any shape this app has used: a batch, the top level, or rows under `data`. */
 export function mutationIdOf(variables: unknown): string | undefined {
   const holders = Array.isArray(variables) ? variables : isRecord(variables) ? [variables, ...rowsIn(variables.data)] : [];
   for (const holder of holders) {

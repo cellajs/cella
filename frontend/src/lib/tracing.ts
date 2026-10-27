@@ -1,11 +1,9 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
 import type { IncomingTraceContext, SpanData, TraceContext } from 'shared/tracing';
-import { frontendSpanNames } from 'shared/tracing';
 import { isDebugMode } from '~/env';
 import { spanStore, tracer } from '~/lib/otel';
 
 export type { SpanData };
-export { frontendSpanNames as syncSpanNames };
 
 export function getSpans(): SpanData[] {
   return spanStore.getSpans();
@@ -81,7 +79,7 @@ export function withSpanSync<T>(name: string, attributes: SpanAttributes, fn: (c
 }
 
 /**
- * Starts a sync engine span, named from `syncSpanNames`, that the caller ends.
+ * Starts a sync engine span, named from `frontendSpanNames`, that the caller ends.
  * @public
  */
 export function startSyncSpan(name: string, attributes: SpanAttributes = {}): Span {

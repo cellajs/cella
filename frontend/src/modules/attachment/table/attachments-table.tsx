@@ -11,7 +11,7 @@ import { useColumns } from '~/modules/attachment/table/attachments-columns';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
-import { DataTable } from '~/modules/common/data-table/data-table';
+import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
@@ -21,10 +21,6 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
 /** Defined outside the component so the getter identity stays stable. */
-function rowKeyGetter(row: Attachment) {
-  return row.id;
-}
-
 /** Default-view rows from the canonical query, ordered like the server's default list. */
 function selectDefaultViewRows({ items }: { items: Attachment[] }) {
   return [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
@@ -94,7 +90,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
         {...{
           rows,
           onRowsChange,
-          rowKeyGetter,
+          rowKeyGetter: rowKeyById,
           columns,
           enableVirtualization: true,
           error,

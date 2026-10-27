@@ -2,7 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { type ReactNode, useEffect } from 'react';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
-import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
+import { initChannelEnrichment } from '~/query/enrichment/init-channel-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';

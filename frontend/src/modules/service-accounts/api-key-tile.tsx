@@ -1,9 +1,7 @@
-import { CopyIcon, KeyRoundIcon, UnplugIcon } from 'lucide-react';
+import { KeyRoundIcon, UnplugIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiKey, ServiceAccount } from 'sdk';
-import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { CopiedIcon } from '~/modules/common/copied-icon';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -11,6 +9,7 @@ import { ExpandableTile, ExpandableTileDetail, type TileTone } from '~/modules/c
 import { NamedText } from '~/modules/common/named-text';
 import { RelativeDate } from '~/modules/common/relative-date';
 import { ScopeBadges } from '~/modules/common/scope-badges';
+import { SecretBox } from '~/modules/common/secret-box';
 import { useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
 import { Button } from '~/modules/ui/button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
@@ -175,24 +174,10 @@ export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
 
 function NewKeySecret({ secret }: { secret: string }) {
   const { t } = useTranslation();
-  const { copied, copyToClipboard } = useCopyToClipboard();
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 rounded-lg border border-dashed bg-background py-1 pr-1 pl-3 font-mono text-sm">
-        <div className="min-w-0 grow select-all break-all">{secret}</div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0"
-          aria-label={t('c:copy')}
-          data-tooltip="true"
-          data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
-          onClick={() => copyToClipboard(secret)}
-        >
-          <CopiedIcon copied={copied} icon={CopyIcon} />
-        </Button>
-      </div>
+      <SecretBox value={secret} />
       <p className="text-muted-foreground text-sm">{t('c:api_key.text')}</p>
     </div>
   );

@@ -53,7 +53,7 @@ export function AccountNotificationsCard() {
         )}
 
         <div className="mt-3">
-          <HelpText content={t('c:notifications.digest.text')}>
+          <HelpText content={t('c:notifications.digest.text')} className="mb-4">
             <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
           {/* RadioGroup's `grid` already stacks the tiles, so only the desktop row needs a class */}

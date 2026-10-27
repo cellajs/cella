@@ -11,7 +11,7 @@ import { persistAttachments } from '~/modules/attachment/helpers/persist-attachm
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
-import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
+import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { Spinner } from '~/modules/common/spinner';
@@ -19,8 +19,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Form } from '~/modules/ui/field';
+import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
-import { tw } from '~/utils/tw';
 
 const formSchema = zUpdateOrganizationBody;
 
@@ -92,10 +92,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
-              // The ring goes on the editor's root: the contenteditable inside it takes the focus.
-              className: tw(
-                'focus-within-effect max-h-[50vh] min-h-20 overflow-auto rounded-md border border-input bg-background p-3 pr-6 pl-8 text-sm',
-              ),
+              className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background pl-8'),
               baseFilePanelProps: canUploadAttachments(organization)
                 ? {
                     mediaMode: 'private-attachment',

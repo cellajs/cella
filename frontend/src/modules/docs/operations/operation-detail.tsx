@@ -15,7 +15,6 @@ import { tagDetailsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 interface OperationDocSheetOptions {
   id: string;
@@ -30,7 +29,7 @@ export function openOperationDocSheet({ id, title, trigger, content }: Operation
     <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
       <div className="container pt-3 pb-[50vh]">{content}</div>
     </Suspense>,
-    { id, title, triggerRef: { current: trigger }, side: 'right', className: tw('max-w-full lg:max-w-4xl') },
+    { id, title, triggerRef: { current: trigger }, side: 'right' },
   );
 }
 

@@ -21,7 +21,7 @@ vi.mock('./propagation', () => ({
 }));
 const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
-vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
+vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
 vi.mock('./view-declaration', () => ({ resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a) }));

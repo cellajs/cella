@@ -14,7 +14,7 @@ export function HelpText({ content, children, className, action }: HelpTextProps
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={cn('mb-4 flex flex-col', className)}>
+    <div className={cn('flex flex-col', className)}>
       <div className="flex items-center gap-2">
         {children}
         <HelpToggle open={open} onToggle={() => setOpen((prev) => !prev)} />

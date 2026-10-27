@@ -2,8 +2,6 @@ import type { StxBase } from 'sdk';
 import { uuidv7 } from 'uuidv7';
 import { createFieldTimestamps, sourceId } from '~/query/offline/hlc';
 
-export { sourceId };
-
 /** Creates carry no field timestamps: the server assigns the initial values. */
 export function createStxForCreate(): StxBase {
   return { mutationId: uuidv7(), sourceId, fieldTimestamps: {} };
