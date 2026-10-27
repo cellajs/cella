@@ -1,10 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, type UploadTemplateId } from 'shared';
+import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
-import type { CustomUppy, CustomUppyOptions, UploadResults } from '~/modules/common/uploader/types';
+import { type CustomUppy, type CustomUppyOptions, uploadResultsOf } from '~/modules/common/uploader/types';
 import { uploader, useUploader } from '~/modules/common/uploader/use-uploader';
 
 const defaultRestrictions = appConfig.uppy.defaultRestrictions;
@@ -45,7 +45,7 @@ export function useUppyUpload() {
             if (assembly.error) return;
             // Inside the chain, so a handler that throws at once also reaches the toast
             Promise.resolve()
-              .then(() => onComplete?.(assembly.results as UploadResults<UploadTemplateId>))
+              .then(() => onComplete?.(uploadResultsOf(assembly)))
               .catch((error) => {
                 console.error('onComplete handler failed:', error);
                 toaster.error(t('c:upload_failed'));
