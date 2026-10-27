@@ -75,6 +75,30 @@ describe('file operations', () => {
     expect(existsSync(path.join(contentDir, 'architecture'))).toBe(false);
   });
 
+  it('keeps every relative import of a moved page pointing at the same file', () => {
+    // `howto.mdx` imports a document outside the moved tree, `architecture/deep.mdx` one outside and one inside it.
+    mkdirSync(path.join(contentDir, 'assets'));
+    writeFileSync(path.join(contentDir, 'assets', 'DOC.md'), '# Doc\n');
+    writeFileSync(path.join(contentDir, 'architecture', 'part.md'), '# Part\n');
+    writeFileSync(path.join(contentDir, 'howto.mdx'), "---\ntitle: How to\n---\n\nimport Content from './assets/DOC.md';\n\n<Content />\n");
+    writeFileSync(
+      path.join(contentDir, 'architecture', 'deep.mdx'),
+      "---\ntitle: Deep\n---\n\nimport Doc from '../assets/DOC.md';\nimport Part from './part.md';\n",
+    );
+
+    editDocPage(contentDir, 'howto', { parentId: 'architecture' }, NOW);
+    editDocPage(contentDir, 'architecture', { parentId: 'guides' }, NOW);
+
+    const unresolved = ['guides/architecture/howto.mdx', 'guides/architecture/deep.mdx'].flatMap((file) => {
+      const filePath = path.join(contentDir, file);
+      const specifiers = [...readFileSync(filePath, 'utf8').matchAll(/from '(\.[^']+)'/g)].map((match) => match[1]);
+      return specifiers
+        .filter((specifier) => !existsSync(path.resolve(path.dirname(filePath), specifier)))
+        .map((specifier) => `${file}: ${specifier}`);
+    });
+    expect(unresolved).toEqual([]);
+  });
+
   it('reparents to the root when parentId is null', () => {
     editDocPage(contentDir, 'architecture/overview', { parentId: null }, NOW);
     expect(existsSync(path.join(contentDir, 'overview.md'))).toBe(true);

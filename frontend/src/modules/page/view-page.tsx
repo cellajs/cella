@@ -6,7 +6,7 @@ import { spyPrefix } from '~/hooks/scroll-spy-store';
 import { RegisterSpySections } from '~/hooks/use-scroll-spy';
 import { Spinner } from '~/modules/common/spinner';
 import { DocsTileCard } from '~/modules/docs/docs-landing-page';
-import { getChildDocPages, getDocPage, getDocPageComponent, pageSectionId } from '~/modules/page/content';
+import { getDocPageComponent, pageSectionId, useChildDocPages, useDocPage } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';
@@ -17,7 +17,7 @@ interface ViewPageProps {
 
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
 export function ViewPage({ slug }: ViewPageProps) {
-  const page = getDocPage(slug);
+  const page = useDocPage(slug);
   const Content = getDocPageComponent(slug);
 
   if (!page || !Content) throw notFound();
@@ -72,7 +72,7 @@ function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
 
 function ChildPagesList({ parentSlug }: { parentSlug: string }) {
   const { t } = useTranslation();
-  const childPages = getChildDocPages(parentSlug);
+  const childPages = useChildDocPages(parentSlug);
 
   if (childPages.length === 0) {
     return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;

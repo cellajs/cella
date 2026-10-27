@@ -12,6 +12,10 @@ const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 const SECTIONS_VIRTUAL_ID = 'virtual:docs-search-sections';
 const SECTIONS_RESOLVED_ID = `\0${SECTIONS_VIRTUAL_ID}`;
 
+/** Lazy virtual module of page sizes for the pages table. */
+const SIZES_VIRTUAL_ID = 'virtual:docs-sizes';
+const SIZES_RESOLVED_ID = `\0${SIZES_VIRTUAL_ID}`;
+
 /** Per-paragraph cap: keeps the search corpus bounded on prose-heavy pages. */
 const MAX_SECTION_LENGTH = 500;
 
@@ -27,6 +31,8 @@ export type DocHeading = { id: string; text: string; depth: number };
 export type DocPageEntry = { frontmatter: unknown; headings: DocHeading[] };
 /** A plaintext body paragraph anchored to its nearest heading (null = intro before the first). */
 export type DocSection = { headingId: string | null; text: string };
+/** Markdown characters and whitespace-separated words of a page body and the documents it imports. */
+export type DocSize = { chars: number; words: number };
 
 function collectPages(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -151,6 +157,20 @@ function importTargets(file: string, source: string): string[] {
   return [...source.matchAll(RELATIVE_MD_IMPORT)].map((m) => path.resolve(path.dirname(file), m[1]));
 }
 
+/** A page's size as it reads: frontmatter, MDX module lines and bare component tags (`<Content />`) left out. */
+function pageSize(sources: string[]): DocSize {
+  const text = sources
+    .map((source) =>
+      source
+        .replace(FRONTMATTER_BLOCK, '')
+        .replace(/^(import|export)\s.+$/gm, '')
+        .replace(/^<[A-Z]\w*\s*\/>$/gm, ''),
+    )
+    .join('\n')
+    .trim();
+  return { chars: text.length, words: text ? text.split(/\s+/).length : 0 };
+}
+
 /** Collect page and imported-document sections with per-module slugger scopes matching rehype. */
 export function pageStructure(file: string, source: string): { headings: DocHeading[]; sections: DocSection[] } {
   const own = extractStructure(source);
@@ -171,6 +191,8 @@ export function docsFrontmatter(): Plugin {
     const targets = new Set<string>();
     const entries: (readonly [string, DocPageEntry])[] = [];
     const sectionEntries: (readonly [string, DocSection[]])[] = [];
+    const sizeEntries: (readonly [string, DocSize])[] = [];
+    let config = '';
 
     for (const file of collectPages(contentDir)) {
       const source = readFileSync(file, 'utf8');
@@ -184,6 +206,9 @@ export function docsFrontmatter(): Plugin {
       const frontmatter = resolver ? withUpdatedAt(parsed, [file, ...imports], resolver) : parsed;
       const { headings, sections } = pageStructure(file, source);
       entries.push([key, { frontmatter, headings }] as const);
+      const imported = imports.filter((target) => existsSync(target)).map((target) => readFileSync(target, 'utf8'));
+      sizeEntries.push([key, pageSize([source, ...imported])] as const);
+      if (/^index\.mdx?$/.test(relative)) config = JSON.stringify(parsed);
 
       // Search corpus: skip the root index (docs config, landing body) and pages
       // excluded from navigation. Hidden and draft pages must not surface in search.
@@ -194,7 +219,13 @@ export function docsFrontmatter(): Plugin {
       sectionEntries.push([key, bareSections] as const);
     }
 
-    return { index: Object.fromEntries(entries), sections: Object.fromEntries(sectionEntries), targets };
+    return {
+      index: Object.fromEntries(entries),
+      sections: Object.fromEntries(sectionEntries),
+      sizes: Object.fromEntries(sizeEntries),
+      config,
+      targets,
+    };
   };
 
   return {
@@ -206,20 +237,25 @@ export function docsFrontmatter(): Plugin {
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
       if (id === SECTIONS_VIRTUAL_ID) return SECTIONS_RESOLVED_ID;
+      if (id === SIZES_VIRTUAL_ID) return SIZES_RESOLVED_ID;
     },
     load(id) {
       if (id === RESOLVED_ID) return `export const docsIndex = ${JSON.stringify(buildIndex().index)};`;
       if (id === SECTIONS_RESOLVED_ID) return `export const docsSectionsIndex = ${JSON.stringify(buildIndex().sections)};`;
+      if (id === SIZES_RESOLVED_ID) return `export const docsSizes = ${JSON.stringify(buildIndex().sizes)};`;
     },
-    // Dev: re-emit the index when a page or an imported repo doc changes the index
-    // (frontmatter or headings). Body-only edits are left to normal per-module HMR.
+    // Dev: a change to a page or an imported repo doc reaches the open app as a `docs:index` or `docs:sizes`
+    // event, which the app applies in place (modules/page/content.ts, table/doc-sizes.ts). Only an edit to the
+    // root index.mdx reloads: the docs config it holds is read once.
     configureServer(server) {
       const initial = buildIndex();
       let index = JSON.stringify(initial.index);
+      let sizes = JSON.stringify(initial.sizes);
+      let config = initial.config;
       // Imported repo docs live outside the frontend root, make sure they're watched.
       for (const target of initial.targets) server.watcher.add(target);
 
-      // Debounce multi-file reparent bursts so the index never exposes a half-moved tree or duplicate reloads.
+      // Debounce multi-file reparent bursts so the index never exposes a half-moved tree or sends duplicate updates.
       let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 
       const rebuild = () => {
@@ -237,11 +273,24 @@ export function docsFrontmatter(): Plugin {
         const sectionsMod = server.moduleGraph.getModuleById(SECTIONS_RESOLVED_ID);
         if (sectionsMod) server.moduleGraph.invalidateModule(sectionsMod);
 
+        const nextSizes = JSON.stringify(next.sizes);
+        if (nextSizes !== sizes) {
+          sizes = nextSizes;
+          const sizesMod = server.moduleGraph.getModuleById(SIZES_RESOLVED_ID);
+          if (sizesMod) server.moduleGraph.invalidateModule(sizesMod);
+          server.ws.send({ type: 'custom', event: 'docs:sizes', data: next.sizes });
+        }
+
         const serialized = JSON.stringify(next.index);
         if (serialized === index) return;
         index = serialized;
         const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
         if (mod) server.moduleGraph.invalidateModule(mod);
+        if (next.config === config) {
+          server.ws.send({ type: 'custom', event: 'docs:index', data: next.index });
+          return;
+        }
+        config = next.config;
         server.ws.send({ type: 'full-reload' });
       };
 

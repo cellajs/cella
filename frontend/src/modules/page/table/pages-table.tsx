@@ -10,7 +10,7 @@ import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
 import { siblingPosition, useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { type DocPage, docPages } from '~/modules/page/content';
+import { type DocPage, getDocPages, useDocPages } from '~/modules/page/content';
 import { maxPageDepth, type PageTreeRow, pagesRowHeight } from '~/modules/page/table/page-tree';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { useColumns } from '~/modules/page/table/pages-columns';
@@ -29,12 +29,19 @@ export function PagesTable() {
 
   const { q } = search;
 
-  const [pages, setPages] = useState<DocPage[]>(docPages);
+  const indexPages = useDocPages();
+  const [pages, setPages] = useState<DocPage[]>(indexPages);
+  // The dev server swaps the index after each write, so the table adopts it in place of its optimistic copy
+  const [prevIndexPages, setPrevIndexPages] = useState(indexPages);
+  if (prevIndexPages !== indexPages) {
+    setPrevIndexPages(indexPages);
+    setPages(indexPages);
+  }
 
-  // Optimistic update; a failed write reverts to the on-disk snapshot (`docPages`) and `editDocPage` raises the toast.
+  // Optimistic update; a failed write reverts to the current index and `editDocPage` raises the toast.
   const applyEdit = (id: string, patch: Partial<DocPage>, ops: DocEditOps) => {
     setPages((prev) => prev.map((page) => (page.id === id ? { ...page, ...patch } : page)));
-    editDocPage(id, ops).catch(() => setPages(docPages));
+    editDocPage(id, ops).catch(() => setPages(getDocPages()));
   };
 
   // A `parentId` change moves files on disk (vite/docs-editor.ts); `displayOrder` rewrites the `order` frontmatter field.

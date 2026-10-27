@@ -6,6 +6,7 @@ import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-togg
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { docRenderModes } from '~/modules/page/content';
+import { useDocSize } from '~/modules/page/table/doc-sizes';
 import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel } from '~/modules/page/utils/render-mode-label';
@@ -16,6 +17,30 @@ import { cn } from '~/utils/cn';
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */
 const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
+
+/** Past this many words a page is a candidate for splitting into child pages. */
+const splitWords = 3000;
+
+function PageSizeCell({ slug }: { slug: string }) {
+  const { t, i18n } = useTranslation();
+  const size = useDocSize(slug);
+  if (!size) return null;
+
+  const format = new Intl.NumberFormat(i18n.resolvedLanguage);
+  const tooltip = { 'data-tooltip': 'true', 'data-tooltip-content': t('c:word_count', { count: size.words, words: format.format(size.words) }) };
+  if (size.words > splitWords) {
+    return (
+      <Badge variant="warning" soft className="font-mono tabular-nums" {...tooltip}>
+        {format.format(size.chars)}
+      </Badge>
+    );
+  }
+  return (
+    <span className="font-mono text-muted-foreground text-xs tabular-nums" {...tooltip}>
+      {format.format(size.chars)}
+    </span>
+  );
+}
 
 /** `reorder` is the grip column, built by the table from its current rows; null where pages are read-only. */
 export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => {
@@ -101,6 +126,14 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
           <RenderEnumSelect {...props} field="renderMode" options={docRenderModes} renderOption={(mode) => <RenderModeLabel mode={mode} />} />
         ),
       }),
+    },
+    {
+      key: 'size',
+      name: t('c:size'),
+      minBreakpoint: 'lg',
+      resizable: true,
+      width: 110,
+      renderCell: ({ row }) => <PageSizeCell slug={row.id} />,
     },
     { ...dateColumn('updatedAt', { name: t('c:updated_at'), sortable: false, minBreakpoint: 'lg' }), resizable: true },
   ];

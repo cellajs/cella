@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Connect, Plugin } from 'vite';
@@ -60,6 +60,24 @@ function parentOf(slug: string): string | null {
   return idx === -1 ? null : slug.slice(0, idx);
 }
 
+/** A relative import of an .mdx page, such as `import Content from '../../cella/TESTING.md'`. */
+const RELATIVE_IMPORT = /^(import\s[^\n]*?from\s+['"])(\.[^'"]+)(['"])/gm;
+
+/**
+ * Point the relative imports of an .mdx page that moved from `oldPath` to `newPath` at the same files again.
+ * `relocate` maps a target that moved along with it (a file of the same moved directory) to its new path.
+ */
+function rebaseImports(newPath: string, oldPath: string, relocate: (target: string) => string = (target) => target) {
+  if (path.extname(newPath) !== '.mdx') return;
+  const source = readFileSync(newPath, 'utf8');
+  const rebased = source.replace(RELATIVE_IMPORT, (_match, head: string, specifier: string, tail: string) => {
+    const target = relocate(path.resolve(path.dirname(oldPath), specifier));
+    const relative = path.relative(path.dirname(newPath), target).replaceAll(path.sep, '/');
+    return `${head}${relative.startsWith('.') ? relative : `./${relative}`}${tail}`;
+  });
+  if (rebased !== source) writeFileSync(newPath, rebased, 'utf8');
+}
+
 /**
  * Move a page under a new parent (or to the root when `newParentId` is null),
  * returning the moved page's new file path. Promotes a leaf target parent to a
@@ -77,7 +95,9 @@ function reparent(contentDir: string, slug: string, newParentId: string | null):
     if (!isIndexFile(parentPath)) {
       const parentDir = path.join(contentDir, newParentId.split('/').join(path.sep));
       mkdirSync(parentDir, { recursive: true });
-      renameSync(parentPath, path.join(parentDir, `index${path.extname(parentPath)}`));
+      const promoted = path.join(parentDir, `index${path.extname(parentPath)}`);
+      renameSync(parentPath, promoted);
+      rebaseImports(promoted, parentPath);
     }
   }
 
@@ -91,6 +111,13 @@ function reparent(contentDir: string, slug: string, newParentId: string | null):
     const destDir = path.join(destParentDir, base);
     mkdirSync(path.dirname(destDir), { recursive: true });
     renameSync(srcDir, destDir);
+    const relocate = (target: string) => {
+      const inside = path.relative(srcDir, target);
+      return inside.startsWith('..') || path.isAbsolute(inside) ? target : path.join(destDir, inside);
+    };
+    for (const file of readdirSync(destDir, { recursive: true, encoding: 'utf8' })) {
+      rebaseImports(path.join(destDir, file), path.join(srcDir, file), relocate);
+    }
     return path.join(destDir, `index${ext}`);
   }
 
@@ -98,6 +125,7 @@ function reparent(contentDir: string, slug: string, newParentId: string | null):
   mkdirSync(destParentDir, { recursive: true });
   const destPath = path.join(destParentDir, `${base}${ext}`);
   renameSync(srcPath, destPath);
+  rebaseImports(destPath, srcPath);
   return destPath;
 }
 
