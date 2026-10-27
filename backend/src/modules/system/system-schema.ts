@@ -3,10 +3,12 @@ import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { maxLength, uniqueIdsSchema, validEmailSchema } from '#/schemas';
+import { batchResponseSchema, maxLength, uniqueIdsSchema, validEmailSchema } from '#/schemas';
 import { mockSystemRoleBase } from './system-mocks';
 
 export const inviteBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50) });
+
+export const systemInviteResponseSchema = batchResponseSchema().extend({ invitesSentCount: z.number() });
 
 export const sendNewsletterBodySchema = z.object({
   // An empty scope is allowed for the explicit toSelf preview mode.

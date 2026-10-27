@@ -25,6 +25,12 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
   }
 
+  // The name follows a changed first or last name, merged over the stored one; a body without either keeps it.
+  const namesChanged = firstName !== undefined || lastName !== undefined;
+  const fullName = [firstName === undefined ? targetUser.firstName : firstName, lastName === undefined ? targetUser.lastName : lastName]
+    .filter(Boolean)
+    .join(' ');
+
   const values = {
     bannerUrl,
     description,
@@ -34,7 +40,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     newsletter,
     thumbnailUrl,
     slug,
-    name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+    ...(namesChanged && { name: fullName || slug }),
     ...updateStamps(user.id),
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });

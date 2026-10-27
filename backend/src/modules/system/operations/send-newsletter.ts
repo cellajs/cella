@@ -1,26 +1,19 @@
-import type { EntityRole } from 'shared';
+import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import { findNewsletterRecipients } from '#/modules/system/system-queries';
+import type { sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import { log } from '#/utils/logger';
 import { newsletterEmail } from '../../../../emails';
 
-interface SendNewsletterInput {
-  organizationIds: string[];
-  subject: string;
-  content: string;
-  roles: EntityRole[];
-  toSelf?: boolean;
-}
+type SendNewsletterInput = z.infer<typeof sendNewsletterBodySchema> & { toSelf: boolean };
 
 export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterInput) {
   const user = ctx.var.user;
   const { organizationIds, subject, content, roles, toSelf } = input;
-
-  if (!toSelf && organizationIds.length === 0) throw new AppError(400, 'no_recipients', 'warn');
 
   // Preview sends are addressed only to the initiating admin and need no organization scope.
   const recipientsRecords = toSelf
@@ -36,7 +29,7 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
     unsubscribeLink: buildUnsubscribeLink(userId, 'newsletter'),
   }));
 
-  const newContent = await replaceSignedSrcs(content);
+  const newContent = replaceSignedSrcs(content);
 
   const staticProps = { content: newContent, subject, testEmail: toSelf };
   await mailer.prepareEmails(newsletterEmail, staticProps, recipients, user.email);

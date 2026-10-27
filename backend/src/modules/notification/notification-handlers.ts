@@ -35,7 +35,7 @@ app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => {
 
 app.openapi(notificationRoutes.unsubscribeNotifications, async (ctx) => {
   const { user, category, token } = ctx.req.valid('query');
-  const redirectUrl = await unsubscribeNotificationsOp(user, category, token);
+  const redirectUrl = await unsubscribeNotificationsOp(ctx, { userId: user, category, token });
   return ctx.redirect(redirectUrl.toString(), 302);
 });
 

@@ -15,7 +15,7 @@ for (const entityType of appConfig.productEntityTypes) {
         const mailable = await fanOutNotifications(event);
         if (mailable) await sendPendingInstantEmails(event.organizationId);
       } catch (error) {
-        log.error('Failed to fan out notifications', { error, activityId: event.id });
+        log.error('Notification fan-out or instant email pass failed', { error, activityId: event.id });
       }
     });
   }

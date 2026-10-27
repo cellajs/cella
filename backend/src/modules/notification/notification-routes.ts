@@ -13,7 +13,7 @@ import {
   updatePreferencesBodySchema,
 } from './notification-schema';
 
-const notificationRoutes = createXRoutes(['notifications'], {
+const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   getNotifications: xRoute({
     method: 'get',
     path: '/',

@@ -8,7 +8,7 @@ import {
   pushVapidResponseSchema,
 } from './push-schema';
 
-const pushRoutes = createXRoutes(['push'], {
+const pushRoutes = createXRoutes(['push', 'cella'], {
   getPushVapid: xRoute({
     method: 'get',
     path: '/vapid',

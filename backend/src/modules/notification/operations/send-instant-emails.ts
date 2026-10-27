@@ -11,7 +11,7 @@ import { htmlToExcerpt } from '../helpers/render-digest-html';
 import {
   findChannelNames,
   findPendingInstantEmails,
-  findUserNames,
+  findUsersMinimal,
   findVerifiedRecipients,
   getUserAccess,
   stampEmailed,
@@ -52,8 +52,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const readableByUser = await findReadableByUser(pending);
 
-  const actorIds = [...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))];
-  const actorNames = await findUserNames(dbCtx, { userIds: actorIds });
+  const actors = await findUsersMinimal(dbCtx, { userIds: pending.map((row) => row.actorId).filter((id): id is string => id !== null) });
   const channelNames = await findChannelNames(dbCtx, { channelIds: pending.map((row) => row.channelId) });
 
   let sent = 0;
@@ -70,7 +69,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     if (!preview) continue;
 
     const statics = {
-      actorName: notification.actorId ? (actorNames.get(notification.actorId) ?? '') : '',
+      actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
       channelName: channelNames.get(notification.channelId) ?? '',
     };
     const recipient = {
@@ -120,10 +119,10 @@ function oneRowPerSubject(pending: PendingEmail[]): PendingEmail[] {
 /** Per recipient, the subjects of their pending rows they may read now. */
 async function findReadableByUser(pending: PendingEmail[]) {
   const accessByUser = await getUserAccess(dbCtx, { userIds: pending.map((row) => row.userId) });
+  const pendingByUser = Map.groupBy(pending, (row) => row.userId);
   const readableByUser = new Map<string, Set<string>>();
   for (const [userId, access] of accessByUser) {
-    const refs = pending.filter((row) => row.userId === userId);
-    readableByUser.set(userId, await findReadableSubjectIds(access, refs));
+    readableByUser.set(userId, await findReadableSubjectIds(access, pendingByUser.get(userId) ?? []));
   }
   return readableByUser;
 }

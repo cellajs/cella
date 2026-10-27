@@ -1,18 +1,14 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { accessFrom } from '#/permissions/access';
-import { countUnreadByUser, findChannelNames, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
+import { countUnreadByUser, type FindNotificationsOpts, findChannelNames, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
 import type { notificationSchema } from '../notification-schema';
 import { findSubjectNames } from '../notification-sources';
 import { findReadableSubjectIds } from './readable-subjects';
 
 type NotificationResponse = z.infer<typeof notificationSchema>;
 
-export interface GetNotificationsInput {
-  unreadOnly: boolean;
-  limit: number;
-  before?: string;
-}
+export type GetNotificationsInput = Omit<FindNotificationsOpts, 'userId'>;
 
 /**
  * The inbox page plus the unread count, with the actor, channel and subject names the card's

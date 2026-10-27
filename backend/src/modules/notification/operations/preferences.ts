@@ -6,7 +6,7 @@ import type { preferencesSchema, updatePreferencesBodySchema } from '../notifica
 type Preferences = z.infer<typeof preferencesSchema>;
 type PreferencesUpdate = z.infer<typeof updatePreferencesBodySchema>;
 
-const toResponse = (row: { mentionEmail: boolean; commentEmail: boolean; digest: Preferences['digest'] }) => ({
+const toResponse = (row: Preferences): Preferences => ({
   mentionEmail: row.mentionEmail,
   commentEmail: row.commentEmail,
   digest: row.digest,
@@ -24,7 +24,5 @@ export async function getPreferencesOp(ctx: UserContext): Promise<Preferences> {
  * older tab.
  */
 export async function updatePreferencesOp(ctx: UserContext, input: PreferencesUpdate): Promise<Preferences> {
-  const userId = ctx.var.user.id;
-  await findOrCreatePreferences(ctx, { userId });
-  return toResponse(await updatePreferences(ctx, { userId, values: input }));
+  return toResponse(await updatePreferences(ctx, { userId: ctx.var.user.id, values: input }));
 }

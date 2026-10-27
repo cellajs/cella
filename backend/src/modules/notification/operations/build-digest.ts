@@ -1,4 +1,4 @@
-import { baseDb } from '#/db/db';
+import type { DbContext } from '#/core/context';
 import { type DigestSection, describeDigestRow } from '../helpers/render-digest-html';
 import { findChannelNames, findUndigestedNotifications, getUserAccess } from '../notification-queries';
 import { findSubjectNames } from '../notification-sources';
@@ -7,11 +7,8 @@ import { findReadableSubjectIds } from './readable-subjects';
 /** Rows quoted per channel before the section collapses into "and N more". */
 const rowsPerChannel = 5;
 
-/** Rows considered per digest; a larger backlog is summarised by the overflow counts. */
+/** Rows read per digest, oldest activity first; the overflow counts cover these, and rows past them are left out. */
 const maxRows = 500;
-
-/** Runs from the digest job, outside any request. */
-const dbCtx = { var: { db: baseDb } };
 
 export interface DigestContent {
   notificationIds: string[];
@@ -26,10 +23,10 @@ export interface DigestContent {
  * an organization the user left and rows whose subject the user may no longer read: the digest
  * names only what the recipient can open.
  */
-export async function buildDigestForUser(userId: string, since: Date, lng: string): Promise<DigestContent> {
+export async function buildDigestForUser(ctx: DbContext, userId: string, since: Date, lng: string): Promise<DigestContent> {
   const empty: DigestContent = { notificationIds: [], sections: [] };
-  const undigested = await findUndigestedNotifications(dbCtx, { userId, since: since.toISOString(), limit: maxRows });
-  const access = undigested.length ? (await getUserAccess(dbCtx, { userIds: [userId] })).get(userId) : undefined;
+  const undigested = await findUndigestedNotifications(ctx, { userId, since: since.toISOString(), limit: maxRows });
+  const access = undigested.length ? (await getUserAccess(ctx, { userIds: [userId] })).get(userId) : undefined;
   if (!access) return empty;
 
   const readable = await findReadableSubjectIds(access, undigested);
@@ -37,17 +34,10 @@ export async function buildDigestForUser(userId: string, since: Date, lng: strin
   if (rows.length === 0) return empty;
 
   const contextNames = await findSubjectNames(rows.map((row) => ({ ...row, id: row.contextId })));
-  const channelNames = await findChannelNames(dbCtx, { channelIds: rows.map((row) => row.channelId) });
-
-  const byChannel = new Map<string, typeof rows>();
-  for (const row of rows) {
-    const list = byChannel.get(row.channelId) ?? [];
-    list.push(row);
-    byChannel.set(row.channelId, list);
-  }
+  const channelNames = await findChannelNames(ctx, { channelIds: rows.map((row) => row.channelId) });
 
   const sections: DigestSection[] = [];
-  for (const [channelId, channelRows] of byChannel) {
+  for (const [channelId, channelRows] of Map.groupBy(rows, (row) => row.channelId)) {
     const visible = channelRows.slice(0, rowsPerChannel);
     sections.push({
       channelId,

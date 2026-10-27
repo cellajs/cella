@@ -246,6 +246,34 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(row?.subjectTitle).not.toBe('');
   });
 
+  it('lists the newest rows on the first page of an inbox longer than one page', async () => {
+    const reader = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'attachment-mentions-reader', adminRole);
+    // Activity ids sort in commit order, so the newest row also holds the highest one.
+    const activityPrefix = `act:${generateId()}`;
+    const rowAt = (index: number, createdAt: Date) => ({
+      createdAt: createdAt.toISOString(),
+      userId: reader.id,
+      actorId: tenant.user.id,
+      type: 'mention' as const,
+      entityType: 'attachment' as const,
+      subjectId: attachmentId,
+      contextId: attachmentId,
+      channelId: tenant.organization.id,
+      channelType: 'organization' as const,
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `${activityPrefix}:${String(index).padStart(2, '0')}`,
+    });
+    const anHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    await db.insert(notificationsTable).values(Array.from({ length: 30 }, (_, index) => rowAt(index, anHourAgo)));
+    const [newest] = await db.insert(notificationsTable).values(rowAt(30, new Date())).returning({ id: notificationsTable.id });
+
+    const result = await call(getNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: reader.sessionCookie } });
+    const items = (result.data as GetNotificationsResponse | undefined)?.items ?? [];
+    expect(items).toHaveLength(30);
+    expect(items[0]?.id).toBe(newest.id);
+  });
+
   it('mails a newer mention behind a backlog of unmailable rows larger than one pass', async () => {
     // A member without a verified address is never mailed; one pass handles 200 rows.
     const unverified = await createOrganizationAdminUser(

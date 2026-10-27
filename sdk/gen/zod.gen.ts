@@ -1222,7 +1222,7 @@ export const zGetPublicCountsResponse = z.object({
 export const zGetNotificationsQuery = z.object({
   unread: z.enum(['true', 'false']).optional(),
   limit: z.int().gte(1).lte(100).optional().default(30),
-  before: z.string().optional(),
+  before: z.iso.datetime().optional(),
 });
 
 /**

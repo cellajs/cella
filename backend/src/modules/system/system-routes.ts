@@ -2,12 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
-import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
+import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema } from '#/modules/system/system-schema';
 import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBodySchema } from '#/schemas';
 import { userSchema, userUpdateBodySchema } from '../user/user-schema';
 import { mockSystemInviteResponse } from './system-mocks';
-
-const systemInviteResponseSchema = batchResponseSchema().extend({ invitesSentCount: z.number() });
 
 const systemRoutes = createXRoutes(['system', 'cella'], {
   createInvite: xRoute({

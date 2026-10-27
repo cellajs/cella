@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
 import webpush, { type RequestOptions } from 'web-push';
+import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { log } from '#/utils/logger';
@@ -54,6 +55,9 @@ function getVapid(): VapidDetails | null {
 /** Sending needs the flag AND both keys, accepted by web-push; otherwise the module is receive-only. */
 export const isPushSendConfigured = (): boolean => getVapid() !== null;
 
+/** The VAPID public key while sending is on, else null: a browser subscribes only where a push can reach it. */
+export const getVapidPublicKey = (): string | null => getVapid()?.publicKey ?? null;
+
 interface SendableSubscription {
   endpoint: string;
   p256dh: string;
@@ -68,14 +72,17 @@ export interface PushSendDeps {
   isOnline: (userId: string) => boolean;
 }
 
+/** Runs off the fan-out, outside any request. */
+const dbCtx = { var: { db: baseDb } };
+
 const defaultDeps: PushSendDeps = {
   send: async ({ endpoint, p256dh, auth }, payload) => {
     const vapidDetails = getVapid();
     if (!vapidDetails) throw new Error('Push sending is off');
     await webpush.sendNotification({ endpoint, keys: { p256dh, auth } }, payload, { TTL: 60 * 60 * 24, timeout: sendTimeoutMs, vapidDetails });
   },
-  findSubscriptions: (userIds) => findSubscriptionsByUserIds(userIds),
-  pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(endpoints),
+  findSubscriptions: (userIds) => findSubscriptionsByUserIds(dbCtx, { userIds }),
+  pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(dbCtx, { endpoints }),
   // A live SSE connection means the client is provably current: its inbox refreshes off
   // onChangeEvent, so a push would only spend the browser's silent-push budget.
   isOnline: (userId) => streamSubscriberManager.getByChannel(`user:${userId}`).length > 0,

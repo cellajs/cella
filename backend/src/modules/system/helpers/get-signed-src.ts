@@ -1,25 +1,8 @@
 import { appConfig } from 'shared';
-import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 
-export const replaceSignedSrcs = async (content: string): Promise<string> => {
-  // Captures quote type in g1 and actual URL in g2
-  const srcRegex = /src\s*=\s*(['"])(.*?)\1/gi;
-
-  const srcs = [...content.matchAll(srcRegex)].map(([_, __, src]) => src);
-
-  const replacements = new Map<string, string>();
-
-  await Promise.all(
-    Array.from(new Set(srcs)).map(async (src) => {
-      try {
-        const signed = await getSignedUrlFromKey(src, { publicBucket: true, bucketName: appConfig.s3.publicBucket });
-        replacements.set(src, signed);
-      } catch {
-        // fallback to original if signing fails
-        replacements.set(src, src);
-      }
-    }),
+/** Image keys in newsletter HTML as public CDN URLs, the URLs the app builds for public files; a `blob:` key stays as it is. */
+export const replaceSignedSrcs = (content: string): string =>
+  content.replace(
+    /src\s*=\s*(['"])(.*?)\1/gi,
+    (_, quote: string, key: string) => `src=${quote}${key.startsWith('blob:') ? key : `${appConfig.s3.publicCDNUrl}/${key}`}${quote}`,
   );
-
-  return content.replace(srcRegex, (_, quote, src) => `src=${quote}${replacements.get(src) ?? src}${quote}`);
-};

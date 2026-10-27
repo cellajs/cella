@@ -30,7 +30,7 @@ export const notificationSchema = z.object({
 export const notificationListQuerySchema = z.object({
   unread: z.enum(['true', 'false']).optional().describe('Return only unread notifications'),
   limit: z.coerce.number().int().min(1).max(100).default(30),
-  before: z.string().optional().describe('createdAt of the last row of the previous page'),
+  before: z.iso.datetime().optional().describe('createdAt of the last row of the previous page'),
 });
 
 export const notificationListResponseSchema = z.object({ items: notificationSchema.array(), unreadCount: z.number().int().min(0) });

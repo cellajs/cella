@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { hierarchy, isChannel, type ProductEntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
+import { homeChannelOf } from '#/db/utils/home-channel';
 import type { NotificationSubjectRow } from '#/lib/module';
 import type { InsertNotificationModel } from '#/modules/notification/notification-db';
 import type { NotificationType } from '#/modules/notification/notification-types';
@@ -33,9 +34,7 @@ export function mockSeedNotification(
   userId: string,
   actorId: string | null,
 ): InsertNotificationModel {
-  const [deepest] = hierarchy.resolveNonNullAncestors(entityType, subject);
-  const home =
-    deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : { id: subject.organizationId, type: 'organization' as const };
+  const home = homeChannelOf(entityType, subject);
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,

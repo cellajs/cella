@@ -10,8 +10,8 @@ import { buildDigestForUser } from './build-digest';
 /** Recipients handled per run; a backlog simply continues on the next hourly tick. */
 const maxRecipientsPerRun = 500;
 
-/** Local hour at which digests go out. No per-user timezone yet. */
-const sendHour = 7;
+/** Hour (UTC) at which digests go out, the same for every user. */
+const sendHourUtc = 7;
 
 /** Weekday for weekly digests (1 = Monday … 5 = Friday), matching the legacy Friday cadence. */
 const weeklyIsoWeekday = 5;
@@ -45,10 +45,10 @@ export const windowStart = (recipient: { digest: string; lastDigestAt: string | 
  * next tick, and `lastDigestAt` guarantees a user is never mailed twice for the same window.
  */
 export async function runDigest(now: Date = new Date()): Promise<{ sent: number; skipped: number }> {
-  if (now.getHours() < sendHour) return { sent: 0, skipped: 0 };
+  if (now.getUTCHours() < sendHourUtc) return { sent: 0, skipped: 0 };
 
   const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
+  dayStart.setUTCHours(0, 0, 0, 0);
 
   const due = await findDueDigestRecipients(dbCtx, {
     dayStart: dayStart.toISOString(),
@@ -64,7 +64,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
 
   for (const recipient of due) {
     try {
-      const content = await buildDigestForUser(recipient.userId, windowStart(recipient, now), recipient.language);
+      const content = await buildDigestForUser(dbCtx, recipient.userId, windowStart(recipient, now), recipient.language);
 
       // Skip-if-empty: weekly is on by default, so silence must stay silent.
       if (content.sections.length === 0) {
@@ -98,8 +98,8 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
   return { sent, skipped };
 }
 
-/** ISO weekday, 1 = Monday … 7 = Sunday. */
+/** ISO weekday in UTC, 1 = Monday … 7 = Sunday. */
 function isoWeekday(date: Date): number {
-  const day = date.getDay();
+  const day = date.getUTCDay();
   return day === 0 ? 7 : day;
 }

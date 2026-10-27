@@ -5,14 +5,23 @@ import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
+import { findSystemRoleHolders, findUsersByIds } from '#/modules/system/system-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
-import { type DigestFrequency, defaultDigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
-import { instantEmailTypes, type NotificationType } from './notification-types';
+import {
+  type DigestFrequency,
+  defaultDigestFrequency,
+  type InsertNotificationModel,
+  type NotificationPreferencesModel,
+  notificationPreferencesTable,
+  notificationsTable,
+} from './notification-db';
+import { instantEmailTypes } from './notification-types';
 
 /**
  * The recipient still belongs to the notification's organization, or is a system admin. A member who left keeps no
@@ -44,7 +53,8 @@ export interface FindNotificationsOpts {
  * One page of a user's inbox, newest first.
  *
  * `DISTINCT ON` is defensive: the table is partitioned and therefore cannot carry a unique
- * constraint, so a redelivery that raced the insert guard would otherwise surface twice.
+ * constraint, so a redelivery that raced the insert guard would otherwise surface twice. It
+ * orders by activity, so the page is ordered and cut outside it.
  */
 export async function findNotificationsByUser(ctx: DbContext, opts: FindNotificationsOpts) {
   const { userId, unreadOnly, limit, before } = opts;
@@ -53,14 +63,14 @@ export async function findNotificationsByUser(ctx: DbContext, opts: FindNotifica
   if (unreadOnly) filters.push(isNull(notificationsTable.readAt));
   if (before) filters.push(lt(notificationsTable.createdAt, before));
 
-  const rows = await ctx.var.db
-    .selectDistinctOn([notificationsTable.userId, notificationsTable.activityId, notificationsTable.type])
+  const deduped = ctx.var.db
+    .selectDistinctOn([notificationsTable.activityId, notificationsTable.type])
     .from(notificationsTable)
     .where(and(...filters))
-    .orderBy(notificationsTable.userId, notificationsTable.activityId, notificationsTable.type, desc(notificationsTable.createdAt))
-    .limit(limit);
+    .orderBy(notificationsTable.activityId, notificationsTable.type, desc(notificationsTable.createdAt))
+    .as('deduped');
 
-  return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return ctx.var.db.select().from(deduped).orderBy(desc(deduped.createdAt)).limit(limit);
 }
 
 interface CountUnreadByUserOpts {
@@ -78,35 +88,22 @@ export async function countUnreadByUser(ctx: DbContext, { userId }: CountUnreadB
 
 interface MarkNotificationsReadOpts {
   userId: string;
-  /** Every unread row of the user when omitted. */
+  /** The rows to mark; every unread row of the user when omitted or empty. */
   ids?: string[];
+  /** Marks everything sharing one context, whatever `ids` holds: the "opening the thread clears its badge" path. */
+  contextId?: string;
 }
 
-/** Marks the given rows read, or every unread row when `ids` is omitted. Idempotent. */
-export async function markNotificationsRead(ctx: DbContext, { userId, ids }: MarkNotificationsReadOpts): Promise<number> {
+/** Marks the user's unread rows of one context, the given rows, or all of them read. Idempotent. */
+export async function markNotificationsRead(ctx: DbContext, { userId, ids, contextId }: MarkNotificationsReadOpts): Promise<number> {
   const filters = [eq(notificationsTable.userId, userId), isNull(notificationsTable.readAt)];
-  if (ids?.length) filters.push(inArray(notificationsTable.id, ids));
+  if (contextId) filters.push(eq(notificationsTable.contextId, contextId));
+  else if (ids?.length) filters.push(inArray(notificationsTable.id, ids));
 
   const updated = await ctx.var.db
     .update(notificationsTable)
     .set({ readAt: getIsoDate() })
     .where(and(...filters))
-    .returning({ id: notificationsTable.id });
-
-  return updated.length;
-}
-
-interface MarkContextNotificationsReadOpts {
-  userId: string;
-  contextId: string;
-}
-
-/** Marks everything sharing one context read: the "opening the thread clears its badge" path. */
-export async function markContextNotificationsRead(ctx: DbContext, { userId, contextId }: MarkContextNotificationsReadOpts): Promise<number> {
-  const updated = await ctx.var.db
-    .update(notificationsTable)
-    .set({ readAt: getIsoDate() })
-    .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.contextId, contextId), isNull(notificationsTable.readAt)))
     .returning({ id: notificationsTable.id });
 
   return updated.length;
@@ -134,14 +131,16 @@ export async function findOrCreatePreferences(ctx: DbContext, { userId }: FindOr
 
 interface UpdatePreferencesOpts {
   userId: string;
-  values: { mentionEmail?: boolean; commentEmail?: boolean; digest?: DigestFrequency };
+  values: Partial<Pick<NotificationPreferencesModel, 'mentionEmail' | 'commentEmail' | 'digest'>>;
 }
 
+/** Writes the given preferences; a user without a row gets one with the defaults for the rest. */
 export async function updatePreferences(ctx: DbContext, { userId, values }: UpdatePreferencesOpts) {
+  const updatedAt = getIsoDate();
   const [updated] = await ctx.var.db
-    .update(notificationPreferencesTable)
-    .set({ ...values, updatedAt: getIsoDate() })
-    .where(eq(notificationPreferencesTable.userId, userId))
+    .insert(notificationPreferencesTable)
+    .values({ userId, ...values, updatedAt })
+    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { ...values, updatedAt } })
     .returning();
 
   return updated;
@@ -166,19 +165,23 @@ export async function findNotifiedUserIds(ctx: DbContext, { subjectId, userIds }
   return new Set(existing.map((row) => row.userId));
 }
 
-export interface NotificationInsert {
-  userId: string;
-  type: NotificationType;
-  entityType: string;
-  subjectId: string;
-  contextId: string | null;
-  channelId: string;
-  channelType: string;
-  organizationId: string;
-  tenantId: string;
-  activityId: string;
-  actorId: string | null;
-}
+/** The columns the fan-out writes; the rest take their defaults. */
+export type NotificationInsert = Required<
+  Pick<
+    InsertNotificationModel,
+    | 'userId'
+    | 'type'
+    | 'entityType'
+    | 'subjectId'
+    | 'contextId'
+    | 'channelId'
+    | 'channelType'
+    | 'organizationId'
+    | 'tenantId'
+    | 'activityId'
+    | 'actorId'
+  >
+>;
 
 interface InsertNotificationsIgnoringDuplicatesOpts {
   rows: NotificationInsert[];
@@ -242,19 +245,16 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
   const unique = [...new Set(userIds)];
 
   const [users, memberships, systemAdmins] = await Promise.all([
-    ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, unique)),
-    ctx.var.db.select().from(membershipsTable).where(inArray(membershipsTable.userId, unique)),
-    ctx.var.db.select({ userId: systemRolesTable.userId }).from(systemRolesTable).where(eq(systemRolesTable.role, 'admin')),
+    findUsersByIds(ctx, { ids: unique }),
+    findMembershipsByUserIds(ctx, { userIds: unique }),
+    findSystemRoleHolders(ctx, { userIds: unique, role: 'admin' }),
   ]);
 
   const adminIds = new Set(systemAdmins.map((row) => row.userId));
-
-  const byUser = new Map<string, MembershipBaseModel[]>();
-  for (const membership of memberships) {
-    const list = byUser.get(membership.userId) ?? [];
-    list.push(toMembershipBase(membership as Record<string, unknown>));
-    byUser.set(membership.userId, list);
-  }
+  const byUser = Map.groupBy(
+    memberships.map((row) => toMembershipBase(row)),
+    (membership) => membership.userId,
+  );
 
   for (const { id: userId } of users) {
     result.set(userId, {
@@ -373,17 +373,9 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
   const rows = await ctx.var.db
     .select({ id: usersTable.id, name: usersTable.name, slug: usersTable.slug, thumbnailUrl: usersTable.thumbnailUrl })
     .from(usersTable)
-    .where(inArray(usersTable.id, userIds));
+    .where(inArray(usersTable.id, [...new Set(userIds)]));
 
   return new Map(rows.map((row) => [row.id, toUserMinimalBase(row)]));
-}
-
-export async function findUserNames(ctx: DbContext, { userIds }: UserIdsOpts): Promise<Map<string, string>> {
-  if (userIds.length === 0) return new Map();
-
-  const rows = await ctx.var.db.select({ id: usersTable.id, name: usersTable.name }).from(usersTable).where(inArray(usersTable.id, userIds));
-
-  return new Map(rows.map((row) => [row.id, row.name]));
 }
 
 interface NotificationIdsOpts {
