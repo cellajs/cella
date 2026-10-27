@@ -16,6 +16,7 @@ import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
+import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -29,16 +30,16 @@ const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const { email, resetAuthStore, restrictedMode, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
+  const { email, resetAuthStore, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       email: state.email,
       resetAuthStore: state.reset,
-      restrictedMode: state.restrictedMode,
       setStep: state.setStep,
       setMagicLinkSent: state.setMagicLinkSent,
       inviteOtherAccount: state.inviteOtherAccount,
     })),
   );
+  const restrictedMode = useRestrictedMode();
 
   const lastUser = useUserStore((state) => state.lastUser);
   const clearUserStore = useUserStore((state) => state.reset);
