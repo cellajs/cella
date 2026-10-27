@@ -30,8 +30,8 @@ export function OrganizationsTable() {
 
   const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts' });
 
-  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
-  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
+  const list = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(list.rows);
 
   const onRowsChange = (changedRows: EnrichedOrganization[], { column, indexes }: RowsChangeData<EnrichedOrganization>) => {
     if (column.key !== 'role') return;
@@ -56,18 +56,12 @@ export function OrganizationsTable() {
       />
       <DataTable<EnrichedOrganization>
         {...{
-          rows,
-          rowHeight: 52,
+          ...list,
           onRowsChange,
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
           isFiltered: !!q,
-          hasNextPage,
-          fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,

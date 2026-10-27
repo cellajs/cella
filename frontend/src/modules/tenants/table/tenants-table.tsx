@@ -27,7 +27,7 @@ export function TenantsTable() {
   const updateTenant = useTenantUpdateMutation();
 
   const queryOptions = tenantsListQueryOptions(search);
-  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
+  const list = useInfiniteRows(queryOptions);
 
   const onRowsChange = (changedRows: Tenant[], { indexes, column }: RowsChangeData<Tenant>) => {
     if (column.key !== 'status') return;
@@ -42,18 +42,12 @@ export function TenantsTable() {
       <TenantsTableBar queryKey={queryOptions.queryKey} columns={columns} setColumns={setColumns} searchVars={search} setSearch={setSearch} />
       <DataTable<Tenant>
         {...{
-          rows,
-          rowHeight: 52,
+          ...list,
           rowKeyGetter,
           onRowsChange,
           columns,
           enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
           isFiltered: !!q,
-          hasNextPage,
-          fetchMore,
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (

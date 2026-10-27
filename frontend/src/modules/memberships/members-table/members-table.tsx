@@ -45,8 +45,8 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   // `counts` and `mfa` feed the insight and MFA columns
   const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, include: 'counts,mfa' });
 
-  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
-  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
+  const list = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(list.rows);
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
@@ -78,18 +78,12 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
       />
       <DataTable<Member>
         {...{
-          rows,
-          rowHeight: 52,
+          ...list,
           onRowsChange,
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
           isFiltered: role !== undefined || !!q,
-          hasNextPage,
-          fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,

@@ -36,23 +36,17 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
 
   const queryOptions = pendingMembershipsQueryOptions({ entityId: channel.id, entityType: channel.entityType, tenantId, organizationId, ...search });
 
-  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
+  const list = useInfiniteRows(queryOptions);
 
   return (
     <div className="flex h-full flex-col gap-2">
       <PendingMembershipsTableBar queryKey={queryOptions.queryKey} />
       <DataTable<PendingMembership>
         {...{
-          rows,
-          rowHeight: 52,
+          ...list,
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
-          hasNextPage,
-          fetchMore,
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:invites').toLowerCase() }} />,
