@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
@@ -25,24 +25,22 @@ export function FloatingNav({ items, scrollContainer, bodyClass = 'floating-nav'
     if (resetTrigger !== undefined) reset();
   }, [resetTrigger, reset]);
 
-  // Hold buttons on screen while an expanded label collapses, so the text animates out before the buttons drop away
+  // Hold a labelled button on screen while its label collapses, so the text animates out before the button drops away.
+  // Decided in render from the values before: a scroll down from the top collapses the label and hides the buttons at
+  // once, and a label that expanded off-screen never flashes its button.
   const hasExpandedLabel = items.some((item) => item.label && item.labelVisible);
+  const [previous, setPrevious] = useState({ hasExpandedLabel, showButtons });
   const [isLabelCollapsing, setIsLabelCollapsing] = useState(false);
-  const wasExpandedRef = useRef(hasExpandedLabel);
-  const isShowingButtons = useEffectEvent(() => showButtons);
+  if (previous.hasExpandedLabel !== hasExpandedLabel || previous.showButtons !== showButtons) {
+    setPrevious({ hasExpandedLabel, showButtons });
+    if (hasExpandedLabel) setIsLabelCollapsing(false);
+    else if (previous.hasExpandedLabel && previous.showButtons) setIsLabelCollapsing(true);
+  }
   useEffect(() => {
-    const wasExpanded = wasExpandedRef.current;
-    wasExpandedRef.current = hasExpandedLabel;
-    if (hasExpandedLabel) {
-      setIsLabelCollapsing(false);
-      return;
-    }
-    // Only hold when the collapse starts from a visible state; a label that expanded off-screen never flashes the buttons
-    if (!wasExpanded || !isShowingButtons()) return;
-    setIsLabelCollapsing(true);
+    if (!isLabelCollapsing) return;
     const timeout = setTimeout(() => setIsLabelCollapsing(false), labelCollapseMs);
     return () => clearTimeout(timeout);
-  }, [hasExpandedLabel]);
+  }, [isLabelCollapsing]);
 
   const isActive = isMobile && items.some((item) => item.visible !== false);
 
@@ -58,7 +56,7 @@ export function FloatingNav({ items, scrollContainer, bodyClass = 'floating-nav'
   return (
     <nav id="floating-nav" className="print:hidden">
       {items.map((item) => {
-        const isItemVisible = (showButtons || isLabelCollapsing) && item.visible !== false;
+        const isItemVisible = (showButtons || (isLabelCollapsing && !!item.label)) && item.visible !== false;
         return (
           <FloatingNavButton
             key={item.id}
