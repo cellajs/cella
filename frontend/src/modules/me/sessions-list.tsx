@@ -58,7 +58,6 @@ export function SessionsList() {
           renderItem={(session) => (
             <SessionTile
               session={session}
-              key={session.id}
               isCurrentDevice={isCurrentDevice(session)}
               onRevoke={handleRevoke}
               loading={isPending && variables?.includes(session.id)}
@@ -71,7 +70,7 @@ export function SessionsList() {
         <>
           <TileListHeading className="mt-6 mb-3" title={t('c:ended')} count={history.length} />
           <div className="flex flex-col gap-2">
-            <ExpandableList items={history} renderItem={(session) => <SessionTile session={session} key={session.id} />} initialDisplayCount={2} />
+            <ExpandableList items={history} renderItem={(session) => <SessionTile session={session} />} initialDisplayCount={2} />
           </div>
         </>
       )}

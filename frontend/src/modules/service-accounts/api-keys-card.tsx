@@ -22,6 +22,8 @@ interface ApiKeysCardProps {
 
 /** A live key with its account, or an account without one. */
 interface ActiveItem {
+  /** The key's id, or the account's when it has no live key. */
+  id: string;
   account: ServiceAccount;
   apiKey?: ApiKey;
   /** The account's newest live key, which shows the account's last use. */
@@ -44,13 +46,13 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
 
   // Keys arrive newest first, per account
   const active: ActiveItem[] = [];
-  const ended: { account: ServiceAccount; apiKey: ApiKey }[] = [];
+  const ended: { id: string; account: ServiceAccount; apiKey: ApiKey }[] = [];
   accounts.forEach((account, index) => {
     const keys = keyLists[index].data.items;
     const liveKeys = keys.filter((apiKey) => !isEndedKey(apiKey));
-    if (!liveKeys.length) active.push({ account });
-    for (const [keyIndex, apiKey] of liveKeys.entries()) active.push({ account, apiKey, showActivity: keyIndex === 0 });
-    for (const apiKey of keys.filter(isEndedKey)) ended.push({ account, apiKey });
+    if (!liveKeys.length) active.push({ id: account.id, account });
+    for (const [keyIndex, apiKey] of liveKeys.entries()) active.push({ id: apiKey.id, account, apiKey, showActivity: keyIndex === 0 });
+    for (const apiKey of keys.filter(isEndedKey)) ended.push({ id: apiKey.id, account, apiKey });
   });
   const endedTime = (apiKey: ApiKey) => new Date(keyEndedAt(apiKey) ?? 0).getTime();
   ended.sort((a, b) => endedTime(b.apiKey) - endedTime(a.apiKey));
@@ -100,16 +102,9 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
                 items={active}
                 renderItem={({ account, apiKey, showActivity }) =>
                   apiKey ? (
-                    <ApiKeyTile
-                      key={apiKey.id}
-                      apiKey={apiKey}
-                      account={account}
-                      path={path}
-                      secret={secrets[apiKey.id]}
-                      showActivity={showActivity}
-                    />
+                    <ApiKeyTile apiKey={apiKey} account={account} path={path} secret={secrets[apiKey.id]} showActivity={showActivity} />
                   ) : (
-                    <KeylessAccountTile key={account.id} account={account} />
+                    <KeylessAccountTile account={account} />
                   )
                 }
                 initialDisplayCount={3}
@@ -124,7 +119,7 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
             <div className="flex flex-col gap-2">
               <ExpandableList
                 items={ended}
-                renderItem={({ account, apiKey }) => <ApiKeyTile key={apiKey.id} apiKey={apiKey} account={account} path={path} />}
+                renderItem={({ account, apiKey }) => <ApiKeyTile apiKey={apiKey} account={account} path={path} />}
                 initialDisplayCount={2}
               />
             </div>

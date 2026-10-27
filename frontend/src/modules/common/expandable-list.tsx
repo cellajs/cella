@@ -5,14 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Button } from '~/modules/ui/button';
 
-interface ExpandableListProps<T> {
+interface ExpandableListProps<T extends { id: string }> {
   items: T[];
-  renderItem: (item: T, index: number) => ReactNode;
+  renderItem: (item: T) => ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
 }
 
-export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false }: ExpandableListProps<T>) {
+export function ExpandableList<T extends { id: string }>({ items, renderItem, initialDisplayCount, alwaysShowAll = false }: ExpandableListProps<T>) {
   const { t } = useTranslation();
   // Show more's click; `alwaysShowAll` can change after mount (a breakpoint), so it is not stored
   const [expanded, setExpanded] = useState(false);
@@ -25,11 +25,10 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
         const shouldAnimate = expanded && !isInitiallyVisible;
 
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
-          <AnimatePresence key={index}>
+          <AnimatePresence key={item.id}>
             {isInitiallyVisible || showAll ? (
               <motion.div {...collapseMotion} initial={shouldAnimate ? collapseMotion.initial : false}>
-                {renderItem(item, index)}
+                {renderItem(item)}
               </motion.div>
             ) : null}
           </AnimatePresence>

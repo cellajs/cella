@@ -47,7 +47,6 @@ export function PasskeysList() {
               renderItem={(passkey) => (
                 <PasskeyTile
                   passkey={passkey}
-                  key={passkey.id}
                   onDelete={handleDeletePasskey}
                   loading={isPending && variables?.path.id === passkey.id}
                   onlyPasskeyLeft={passkeys.length === 1}
