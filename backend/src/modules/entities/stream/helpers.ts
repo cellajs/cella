@@ -1,8 +1,8 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import type { ActivityEvent } from '#/lib/activity-bus';
+import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { StreamNotification } from '#/schemas';
 import { log } from '#/utils/logger';
-import type { BaseStreamSubscriber } from './types';
 
 /**
  * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized`,
@@ -42,12 +42,12 @@ export async function sendToSubscribers(
   );
 }
 
-/** Catch-up complete marker. */
+/** The `offset` event, once after connect: the newest activity id the stream starts after, and the client's signal to post its catchup. */
 export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {
   await stream.writeSSE({ event: 'offset', data: cursor ?? '' });
 }
 
-/** The caller must return from the streamSSE callback after this, closing the stream. */
+/** The `error` event that tells the client why its stream ends; the caller ends the stream after it. */
 export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPayload): Promise<void> {
   await stream.writeSSE({ event: 'error', data: JSON.stringify(payload) });
 }

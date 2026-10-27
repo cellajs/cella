@@ -5,7 +5,7 @@ import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/** Append-only CDC log, weekly partitions, 90-day retention. LSN-derived IDs make WAL replay idempotent; no foreign keys. */
+/** Append-only CDC log in weekly partitions, kept for `appConfig.retention.activityDays`. LSN-derived IDs make WAL replay idempotent; no foreign keys. */
 export const activitiesTable = snakeCase.table(
   'activities',
   {

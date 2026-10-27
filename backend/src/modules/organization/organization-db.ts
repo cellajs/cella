@@ -3,9 +3,7 @@ import { appConfig, type Language, type OrganizationFlags, type OrganizationSetu
 import { channelColumns } from '#/db/utils/channel-columns';
 import { maxLength } from '#/db/utils/constraints';
 
-const languagesEnum = appConfig.languages;
-
-/** Primary channel entity table. Each organization belongs to exactly one tenant (RLS isolation boundary). */
+/** The channel entity every other channel nests under. Each organization belongs to exactly one tenant, which holds no other. */
 export const organizationsTable = snakeCase.table(
   'organizations',
   {
@@ -13,7 +11,7 @@ export const organizationsTable = snakeCase.table(
     shortName: varchar({ length: maxLength.field }),
     country: varchar({ length: maxLength.field }),
     timezone: varchar({ length: maxLength.field }),
-    defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
+    defaultLanguage: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     notificationEmail: varchar({ length: maxLength.field }),
     color: varchar({ length: maxLength.field }),
@@ -21,12 +19,12 @@ export const organizationsTable = snakeCase.table(
     websiteUrl: varchar({ length: maxLength.url }),
     welcomeText: varchar({ length: maxLength.html }),
     chatSupport: boolean().notNull().default(false),
-    // Per-org feature flags declared in `appConfig.defaultOrganizationFlags`, stored sparse: reads merge the defaults, so a new flag needs no backfill.
-    organizationFlags: jsonb()
-      .$type<OrganizationFlags>()
-      .notNull()
-      .default({} as OrganizationFlags),
-    // Per-org setup config declared in `appConfig.defaultSetupConfig`, stored sparse like organizationFlags.
+    /**
+     * Per-org feature flags declared in `appConfig.defaultOrganizationFlags`, stored sparse: reads merge the defaults,
+     * so a new flag needs no backfill.
+     */
+    organizationFlags: jsonb().$type<Partial<OrganizationFlags>>().notNull().default({}),
+    /** Per-org setup config declared in `appConfig.defaultSetupConfig`, stored sparse like organizationFlags. */
     setupConfig: jsonb().$type<Partial<OrganizationSetupConfig>>().notNull().default({}),
   },
   (table) => [

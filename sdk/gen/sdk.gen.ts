@@ -2296,7 +2296,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * Delete organizations
  *
- * Deletes one or more organizations by ID within a tenant.
+ * Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.
  *
  * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· _organizations · cella · channel_
  *

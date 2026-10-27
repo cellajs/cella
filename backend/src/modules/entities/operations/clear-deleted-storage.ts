@@ -106,7 +106,7 @@ export async function clearDeletedStorage(): Promise<number> {
       cleared += tenantRows.length;
     } catch (error) {
       failed.push(tenantId);
-      log.error('Clearing deleted storage failed for a tenant', { tenantId, err: error });
+      log.error('Clearing deleted storage failed for a tenant', { tenantId, error });
     }
   }
 

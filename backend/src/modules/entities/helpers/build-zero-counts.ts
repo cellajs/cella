@@ -7,7 +7,6 @@ export const zeroChannelCounts = (entityType: ChannelEntityType) => {
     membership: { ...recordFromKeys(roles.all, () => 0), pending: 0, total: 0 },
     entities: recordFromKeys(descendants, () => 0),
     entitiesSelf: recordFromKeys(descendants, () => 0),
-    // Activity stamps stay null until a first post and a first content update.
     activity: recordFromKeys(
       descendants.filter((descendant) => isProduct(descendant)),
       (): { created: number | null; updated: number | null } => ({ created: null, updated: null }),

@@ -5,6 +5,7 @@ import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { mockOrganizationResponse } from '#/modules/organization/organization-mocks';
 import {
   excludeArchivedQuerySchema,
   includeQuerySchema,
@@ -24,7 +25,6 @@ import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
 import { auditShape } from '#/schemas/entity-base';
 import { toolsConfigSchema } from '#/schemas/tools-config';
-import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
@@ -82,11 +82,8 @@ export const organizationContract = evolutionContract.channel('organization', {
     bannerUrl: validCDNUrlSchema.nullable(),
     logoUrl: validCDNUrlSchema.nullable(),
     welcomeText: z.string().max(maxLength.html).nullable(),
-    // Partial per key: a single flag can be toggled; the update query merges via jsonb ||
     organizationFlags: organizationFlagsSchema.partial(),
-    // setupConfig merges via jsonb || on update, mirroring organizationFlags
     setupConfig: setupConfigSchema.partial(),
-    // toolsConfig merges via jsonb || on update: each listed slot key is replaced wholesale
     toolsConfig: toolsConfigSchema,
   })
     .pick({

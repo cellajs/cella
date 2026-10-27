@@ -4,10 +4,10 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
 import { type AppStreamSubscriber, dispatchMoveOuts, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
-import { streamSubscriberManager, userStreamKey } from '#/modules/entities/stream/subscriber-manager';
+import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
+import type { AppStreamEvent, AppStreamProductEvent } from '#/modules/entities/stream/types';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
-import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 // Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
 for (const entityType of appConfig.productEntityTypes) {
@@ -29,7 +29,7 @@ for (const entityType of appConfig.productEntityTypes) {
 authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
   const payload = streamErrorForEnding(reason);
   const ended = streamSubscriberManager
-    .getByChannel<AppStreamSubscriber>(userStreamKey(userId))
+    .getByTopic<AppStreamSubscriber>(userTopic(userId))
     .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
     .map((subscriber) => ({ subscriber, payload }));
   await closeAppStreams(ended, 'Failed to close the stream of an ended session');
@@ -42,7 +42,7 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
     // Refresh subscriber memberships before dispatch so SSE mirrors live API access.
     const membership = getEventData(event, 'membership');
     if (membership?.userId) {
-      const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(userStreamKey(membership.userId));
+      const subscribers = streamSubscriberManager.getByTopic<AppStreamSubscriber>(userTopic(membership.userId));
       for (const subscriber of subscribers) {
         const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
         subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership)];
@@ -52,7 +52,7 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
     try {
       await dispatchToAppStream(event as AppStreamEvent);
     } catch (error) {
-      log.error('Failed to dispatch entity change event', { error, activityId: event.id });
+      log.error('Failed to dispatch membership change event', { error, activityId: event.id });
     }
   });
 }

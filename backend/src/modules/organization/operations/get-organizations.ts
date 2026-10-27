@@ -1,4 +1,5 @@
-import { type EntityRole, hierarchy } from 'shared';
+import type { z } from '@hono/zod-openapi';
+import { hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { withActorRefs } from '#/modules/actors/actor-refs';
@@ -6,21 +7,15 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
 import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
+import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 
-interface GetOrganizationsInput {
-  q?: string;
-  sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
-  order?: 'asc' | 'desc';
-  offset: number;
-  limit: number;
-  relatableUserId?: string;
-  role?: EntityRole;
-  excludeArchived?: boolean;
-  include: string[];
-}
-
-export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizationsInput) {
+/**
+ * A page of the caller's organizations, or with `relatableUserId` of that user's, limited to the ones the caller shares
+ * unless the caller is a system admin. Without `relatableUserId` a system admin lists every organization.
+ * @throws 403 `forbidden` when `role` or `excludeArchived` filters another user's list.
+ */
+export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
   const { q, sort, order, offset, limit, relatableUserId, role, excludeArchived, include } = input;
@@ -32,7 +27,8 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
   const targetUserId = relatableUserId ?? user.id;
   const ofAnotherUser = !!relatableUserId && relatableUserId !== user.id;
   // Another user's organizations are listed only where the caller is a member too; a system admin sees all of them.
-  const sharedWithCaller = ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((m) => m.organizationId))] : undefined;
+  const sharedWithCaller =
+    ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((membership) => membership.organizationId))] : undefined;
 
   // The listed user's archive and role are theirs alone: as a filter on another user's list they are refused, never
   // dropped. The menu-order default names the caller's own menu, so another user's list comes by name.
@@ -49,7 +45,7 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
     targetUserId,
     organizationIds: sharedWithCaller,
     q,
-    sort: ofAnotherUser && (!sort || sort === 'displayOrder') ? ('name' as const) : sort,
+    sort: ofAnotherUser && sort === 'displayOrder' ? ('name' as const) : sort,
     order,
     offset,
     limit,
@@ -59,7 +55,7 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
   };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
-  // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:{role} counters.
+  // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:c:{role} counters.
   const memberPreviews = includeMembers
     ? await findMemberPreviewsByChannels(ctx, {
         channelType: entityType,
@@ -75,7 +71,7 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
     const included: { membership?: MembershipBaseModel; counts?: typeof counts; members?: UserMinimalBase[] } = {};
 
     if (includeMembership) {
-      const membership = memberships.find((m) => m.channelType === entityType && m.organizationId === org.id);
+      const membership = memberships.find((candidate) => candidate.channelType === entityType && candidate.organizationId === org.id);
       if (membership) included.membership = toMembershipBase(membership);
     }
 

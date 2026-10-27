@@ -1,5 +1,5 @@
 import type { HttpBindings } from '@hono/node-server';
-import type { AccessScope } from 'shared';
+import type { AccessScope, OrganizationFlags } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { AuthStrategy, SessionFacts } from '#/modules/auth/sessions/sessions-db';
@@ -73,7 +73,8 @@ export type Env = {
     /** User-only sugar for `actor.id`, kept for the user-only modules. */
     userId: UserId;
     isSystemAdmin: boolean;
-    organization: OrganizationModel & { membership: MembershipBaseModel | null };
+    /** `orgGuard` merges the config defaults under the row's sparse flags. */
+    organization: OrganizationModel & { organizationFlags: OrganizationFlags; membership: MembershipBaseModel | null };
     organizationId: string;
     /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdBy: string | null })[];

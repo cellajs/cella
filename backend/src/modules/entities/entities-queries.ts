@@ -1,11 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
-import { type ChannelEntityType, type EntityType, hierarchy, isProduct, roles } from 'shared';
-import type z from 'zod';
+import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
-import { hasPublishedAt } from '#/db/utils/published-predicate';
+import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { zeroChannelCounts } from '#/modules/entities/helpers/build-zero-counts';
@@ -15,27 +15,23 @@ import type { membershipCountSchema } from '#/schemas';
 import type { EntityModel, ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { getEntityTable } from '#/tables';
 
-function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
-  return 'slug' in table;
-}
+const hasSlug = (table: ResolvableTable): table is TableWithIdAndSlug => 'slug' in table;
 
-function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { deletedAt: Parameters<typeof isNull>[0] } {
-  return 'deletedAt' in table;
-}
+const hasDeletedAt = (table: ResolvableTable): table is ResolvableTable & { deletedAt: Parameters<typeof isNull>[0] } => 'deletedAt' in table;
 
-// Context counter queries
+// Channel counter queries
 
 interface FindChannelCountersByKeysOpts {
   keys: string[];
 }
 
+/** The counter rows of the given channel keys; a key without a row is left out. */
 export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
   const { db } = ctx.var;
   return db
     .select({
       channelKey: channelCountersTable.channelKey,
       counts: channelCountersTable.counts,
-      // CDC-maintained canonical id-path: lets catchup verify a claimed view's ancestry.
       path: channelCountersTable.path,
     })
     .from(channelCountersTable)
@@ -54,7 +50,6 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   // { attachment: N, ... }
   const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:${entity}`)}`).join(', ');
 
-  // Home-only twin of `entities` from the `e:c:h:` keys: rows homed directly at the channel, no descendant rollup.
   const entitySelfJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:h:${entity}`)}`).join(', ');
 
   // Product descendants only: { attachment: { created: epochMs | null, updated: epochMs | null }, ... }
@@ -88,6 +83,7 @@ interface FindProductViewCountOpts {
   productId: string;
 }
 
+/** How many users viewed a product; 0 before the first view. */
 export const findProductViewCount = async (ctx: DbContext, { productId }: FindProductViewCountOpts) => {
   const { db } = ctx.var;
   const [counters] = await db
@@ -101,6 +97,7 @@ export const findProductViewCount = async (ctx: DbContext, { productId }: FindPr
 /** Pair with {@link productViewCountJoin}. */
 export const productViewCountSelect = () => sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count');
 
+/** The join condition of `product_counters` on a product id column, for {@link productViewCountSelect}. */
 export const productViewCountJoin = (productIdColumn: AnyColumn) => eq(productCountersTable.productId, productIdColumn);
 
 interface GetChannelCountsOpts {
@@ -108,7 +105,7 @@ interface GetChannelCountsOpts {
   entityId: string;
 }
 
-/** One LEFT JOIN on pre-computed JSONB, no COUNT(*) subqueries. */
+/** The counts of one channel from its counter row; zeros while CDC has written none. */
 export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: GetChannelCountsOpts) => {
   const { db } = ctx.var;
   const { countsSelect } = getChannelCountsSelect(entityType);
@@ -133,15 +130,14 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
     const countRows = async (readCtx: DbContext) => {
       const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
       const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
-      return row?.count ?? 0;
+      return row.count;
     };
     return ctx.var.db === baseDb ? tenantRead(ctx, countRows) : countRows(ctx);
   }
 
   const { db } = ctx.var;
-  const key = `e:c:${entityType}`;
   const [row] = await db
-    .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })
+    .select({ count: sql<number>`${sql.raw(jsonbIntRaw('"channel_counters"."counts"', `e:c:${entityType}`))}` })
     .from(channelCountersTable)
     .where(eq(channelCountersTable.channelKey, organizationId));
   return row?.count ?? 0;
@@ -149,12 +145,13 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
 
 // Activity queries
 
-interface FindLatestUserActivityIdOpts {
+interface FindLatestActivityIdOpts {
   organizationIds: string[];
   entityTypes: EntityType[];
 }
 
-export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestUserActivityIdOpts) => {
+/** The newest activity id of the organizations' membership changes and of the given entity types; null when there is none. */
+export const findLatestActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestActivityIdOpts) => {
   const { db } = ctx.var;
   const result = await db
     .select({ id: activitiesTable.id })
@@ -197,10 +194,10 @@ interface ResolveEntityOpts<T extends EntityType> {
  * `getValidChannel` / `getValidProduct` wrappers there, and this only in internal utilities
  * such as slug availability, or self-operations on the caller's own data.
  */
-export async function resolveEntity<T extends EntityType>(
+export const resolveEntity = async <T extends EntityType>(
   ctx: DbContext,
   { entityType, identifier, bySlug = false, forUpdate = false }: ResolveEntityOpts<T>,
-): Promise<EntityModel<T> | undefined> {
+): Promise<EntityModel<T> | undefined> => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
@@ -215,7 +212,7 @@ export async function resolveEntity<T extends EntityType>(
   // The lock an UPDATE of non-key columns takes: writers of the row wait, inserts that reference it do not.
   const [entity] = forUpdate ? await query.for('no key update') : await query;
   return entity as EntityModel<T> | undefined;
-}
+};
 
 interface ResolveEntitiesOpts<T extends EntityType> {
   entityType: T;
@@ -223,10 +220,10 @@ interface ResolveEntitiesOpts<T extends EntityType> {
 }
 
 /** @internal See {@link resolveEntity} for usage guidelines. */
-export async function resolveEntities<T extends EntityType>(
+export const resolveEntities = async <T extends EntityType>(
   ctx: DbContext,
   { entityType, ids }: ResolveEntitiesOpts<T>,
-): Promise<Array<EntityModel<T>>> {
+): Promise<Array<EntityModel<T>>> => {
   const { db } = ctx.var;
   if (!ids.length) return [];
 
@@ -239,13 +236,10 @@ export async function resolveEntities<T extends EntityType>(
     .from(table as any)
     .where(condition);
   return entities as Array<EntityModel<T>>;
-}
+};
 
-/** Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back. */
-const publishedSqlFilter = (table: ResolvableTable) => (hasPublishedAt(table) ? sql.raw(' AND published_at IS NOT NULL') : sql.raw(''));
-
-interface FindChangedEntityIdsOpts {
-  entityType: EntityType;
+interface FindChangedEntityDeltaIdsOpts {
+  entityType: ProductEntityType;
   organizationId: string;
   afterSeq: number;
   /** The rows the caller may read (`buildCollectionReadWhere`); unset reads every row of the organization. */
@@ -256,15 +250,20 @@ interface FindChangedEntityIdsOpts {
  * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones. A
  * tombstone is read only in a transaction that includes deleted rows.
  */
-export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, organizationId, afterSeq, readWhere }: FindChangedEntityIdsOpts) => {
+export const findChangedEntityDeltaIds = async (
+  ctx: DbContext,
+  { entityType, organizationId, afterSeq, readWhere }: FindChangedEntityDeltaIdsOpts,
+) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
+  // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
+  const published = publishedRowsPredicate(table);
 
   const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt"
     FROM ${table}
-    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${publishedSqlFilter(table)}${readWhere ? sql` AND ${readWhere}` : sql``}
+    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
   `);
 
   const updatedIds: string[] = [];

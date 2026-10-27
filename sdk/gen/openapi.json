@@ -233,7 +233,7 @@
     },
     {
       "name": "entities",
-      "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes provide shared logic across modules, including slug validation\n    and entity visibility.",
+      "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes check slug availability and serve the app stream and its catchup,\n    which tell a signed-in client about changes to the entities it may read.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -9962,7 +9962,7 @@
         "operationId": "deleteOrganizations",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Delete organizations",
-        "description": "Deletes one or more organizations by ID within a tenant.",
+        "description": "Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

@@ -20,7 +20,7 @@ const register = (sessionId: string) => {
 };
 
 const errorEvent = (code: string, message: string) => ({ event: 'error', data: JSON.stringify({ code, message }) });
-const registeredIds = () => streamSubscriberManager.getByChannel(`user:${user}`).map((s) => s.id);
+const registeredIds = () => streamSubscriberManager.getByTopic(`user:${user}`).map((s) => s.id);
 
 afterEach(() => {
   for (const id of registeredIds()) streamSubscriberManager.unregister(id);

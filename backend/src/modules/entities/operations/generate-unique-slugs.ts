@@ -11,7 +11,7 @@ const pickUniqueSlug = async (ctx: DbContext, baseSlug: string, entityType: Enti
 
   if (baseSlug.length >= minSlugLength && (await isFree(baseSlug))) return baseSlug;
 
-  // A name that leaves no slug characters takes the entity type as its base, e.g. `course-section-x7k2p9`.
+  // A name that leaves no slug characters takes the entity type, kebab-cased, as its base.
   const kebabType = entityType.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   const withSuffix = `${baseSlug || kebabType}-${nanoid(6)}`;
   if (await isFree(withSuffix)) return withSuffix;

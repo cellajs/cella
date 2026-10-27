@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
-import type { DbOrTx } from '#/db/create-connection';
+import type { DbOrTx } from '#/db/db';
 import { type SyncCorrection, syncIncidentsTable, syncStateId, syncStateTable } from '#/modules/entities/sync-state-db';
 
 /** What the CDC worker can be asked for: to verify its books against the tables, or to rebuild them from the tables. */

@@ -77,10 +77,6 @@ export async function withActorRef<T extends Partial<Record<ActorKey, string | n
 }
 
 /** The reference of a user row, for a writer the caller already holds. */
-export const userActorRef = (user: { id: string; name: string; slug: string; thumbnailUrl: string | null }): ActorRef => ({
-  id: user.id,
-  kind: 'user',
-  name: user.name,
-  slug: user.slug,
-  thumbnailUrl: user.thumbnailUrl,
-});
+export function userActorRef(user: { id: string; name: string; slug: string; thumbnailUrl: string | null }): ActorRef {
+  return { id: user.id, kind: 'user', name: user.name, slug: user.slug, thumbnailUrl: user.thumbnailUrl };
+}

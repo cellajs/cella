@@ -1,6 +1,5 @@
 import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
-import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
-import type { ToolsConfig } from 'shared/tools-config';
+import type { EntityRole } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
@@ -9,7 +8,7 @@ import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
-import { organizationsTable } from '#/modules/organization/organization-db';
+import { type InsertOrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
@@ -29,16 +28,18 @@ interface CountOrganizationsByTenantOpts {
   tenantId: string;
 }
 
+/** How many organizations a tenant holds: 0 or 1, as `organizations.tenant_id` is unique. */
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
   const { db } = ctx.var;
-  const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
+  const [result] = await db.select({ count: count() }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
   return result.count;
 };
 
 interface InsertOrganizationsOpts {
-  orgs: (typeof organizationsTable.$inferInsert)[];
+  orgs: InsertOrganizationModel[];
 }
 
+/** Inserts organization rows and returns them as stored. */
 export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrganizationsOpts) => {
   const { db } = ctx.var;
   return db.insert(organizationsTable).values(orgs).returning();
@@ -46,11 +47,7 @@ export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrgani
 
 interface UpdateOrganizationOpts {
   id: string;
-  values: Partial<typeof organizationsTable.$inferInsert> & {
-    organizationFlags?: Partial<OrganizationFlags>;
-    setupConfig?: Partial<OrganizationSetupConfig>;
-    toolsConfig?: ToolsConfig;
-  };
+  values: Partial<InsertOrganizationModel>;
 }
 
 /** Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. */
@@ -105,6 +102,10 @@ interface FindOrganizationsPaginatedOpts {
   includeCounts: boolean;
 }
 
+/**
+ * A page of organizations with its total: with `isSystemAdmin` every organization, archived tenants included; otherwise
+ * the ones `targetUserId` is a member of, without archived tenants.
+ */
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
   const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
@@ -149,17 +150,16 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     tieBreaker: organizationsTable.id,
   });
 
-  // System admins LEFT JOIN memberships (RLS grants access via createdBy or membership); regular users INNER JOIN and see only their orgs.
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
   // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const selectShape = {
     ...getColumns(organizationsTable),
-    // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
     organizationFlags: organizationFlagsSelect,
     setupConfig: setupConfigSelect,
     ...(countData && { counts: countData.countsSelect }),
   } as const;
 
+  // System admins LEFT JOIN memberships and see every organization; others INNER JOIN and see only their own.
   let query = isSystemAdmin
     ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn).$dynamic()
     : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn).$dynamic();

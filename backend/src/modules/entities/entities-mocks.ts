@@ -1,6 +1,6 @@
 import { mockNanoid, withFakerSeed } from '#/mocks';
 
-export const mockStreamResponse = (key = 'stream:default') =>
+export const mockCatchupResponse = (key = 'stream:default') =>
   withFakerSeed(key, () => ({
     changes: {
       'org-example-id': { signals: { membership: 1 } },

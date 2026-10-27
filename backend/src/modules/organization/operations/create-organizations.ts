@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { appConfig, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -14,10 +15,13 @@ import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
-type CreateOrganizationItem = { id: string; name: string; slug: string; draft?: boolean };
-
-export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOrganizationItem[]) {
-  // Normalize old-shape field names to their current names before any body access
+/**
+ * Creates organizations in the request's tenant, each with its creator as admin. A tenant holds one organization: the
+ * batch takes the free slot and rejects the rest as `slug_exists` or `org_limit_reached`.
+ * @throws 403 `restrict_by_app` when the tenant holds its organization already, or its quota is spent for a caller who
+ * is not a system admin.
+ */
+export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<typeof organizationContract.createItemSchema>[]) {
   const items = rawItems.map((item) => organizationContract.normalizeBody(item));
   const { user, isSystemAdmin, tenantId } = ctx.var;
 
@@ -30,7 +34,6 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
   const quotaSlots = orgQuota === 0 ? items.length : orgQuota - existingOrgsCount;
 
-  // The 1:1 constraint limits everyone (incl. system admins) to the single remaining slot.
   const availableSlots = Math.min(isSystemAdmin ? items.length : quotaSlots, tenantOrgSlots);
 
   if (availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
@@ -40,7 +43,6 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
 
   const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
-  // Clamp to the available slots: the hard 1:1 cap binds system admins too, so no bypass here.
   const restrictionFiltered = takeWithRestriction(slugFiltered.items, availableSlots, 'org_limit_reached', slugFiltered.rejectionState);
 
   const itemsToCreate = restrictionFiltered.items;
@@ -80,11 +82,10 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
 
   const counts = buildZeroCounts('organization', creatorRole);
 
-  const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
+  const membershipByOrgId = new Map(createdMemberships.map((membership) => [membership.organizationId, membership]));
 
   const orgsWithAudit = await withActorRefs(ctx, organizationRecords, [userActorRef(user)]);
 
-  // Flags are stored sparse, so merge the config defaults into the response
   const organizationResponses = orgsWithAudit.map((org) => {
     const membership = membershipByOrgId.get(org.id)!;
     const included = { membership: toMembershipBase(membership), counts };

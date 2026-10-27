@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import webpush, { type RequestOptions } from 'web-push';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
-import { streamSubscriberManager, userStreamKey } from '#/modules/entities/stream/subscriber-manager';
+import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpoint';
 import { deleteSubscriptionsByEndpoints, findSubscriptionsByUserIds } from '#/modules/push/push-queries';
 import { log } from '#/utils/logger';
@@ -89,7 +89,7 @@ const defaultDeps: PushSendDeps = {
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(dbCtx, { endpoints }),
   // A live SSE connection means the client is provably current: its inbox refreshes off
   // onChangeEvent, so a push would only spend the browser's silent-push budget.
-  isOnline: (userId) => streamSubscriberManager.getByChannel(userStreamKey(userId)).length > 0,
+  isOnline: (userId) => streamSubscriberManager.getByTopic(userTopic(userId)).length > 0,
 };
 
 /**

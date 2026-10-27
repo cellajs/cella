@@ -1,17 +1,15 @@
 import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
 import { getEventData } from '#/lib/activity-bus';
+import { buildMoveOutNotification, buildStreamNotification, isMembershipEvent } from '#/modules/entities/stream/build-message';
+import { sendToSubscribers } from '#/modules/entities/stream/helpers';
+import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
+import type { AppStreamEvent, AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import type { BaseStreamSubscriber } from '../stream';
-import { buildMoveOutNotification, isMembershipEvent } from '../stream/build-message';
-import { createStreamDispatcher } from '../stream/dispatcher';
-import { sendToSubscribers } from '../stream/helpers';
-import { organizationStreamKey, streamSubscriberManager, userStreamKey } from '../stream/subscriber-manager';
-import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
 
-/** An authenticated subscriber; receives membership, product and org events via org channels. */
+/** A signed-in user's stream: its own membership events on its user topic, product events on each of its organizations' topics. */
 export interface AppStreamSubscriber extends BaseStreamSubscriber {
   userId: string;
   /** The session this connection authenticated with; its ending closes the stream. */
@@ -23,11 +21,11 @@ export interface AppStreamSubscriber extends BaseStreamSubscriber {
   memberships: MembershipBaseModel[];
 }
 
-/** Structurally an `Access`, so subscribers feed `checkAccessFanout` directly. */
+/** The subscriber fields a read decision takes. */
 export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
 
 /** The event as it reads for one row: the subject id and every channel id column come from that row, so a reparented row is judged where it is. */
-const rowScopedEvent = (event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent => {
+function rowScopedEvent(event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent {
   const overrides: Record<string, unknown> = {};
   if (typeof rowData.id === 'string') overrides.subjectId = rowData.id;
   for (const channelType of appConfig.channelEntityTypes) {
@@ -35,10 +33,10 @@ const rowScopedEvent = (event: AppStreamProductEvent, rowData: Record<string, un
     if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
   }
   return { ...event, ...overrides } as AppStreamProductEvent;
-};
+}
 
 /** The subject a reader of one row needs access to. Returns `null`, fail-closed, on an unpublished draft or a malformed ancestor scope. */
-const rowReadSubject = (event: AppStreamProductEvent, row: Record<string, unknown>): SubjectForPermission | null => {
+function rowReadSubject(event: AppStreamProductEvent, row: Record<string, unknown>): SubjectForPermission | null {
   if (isUnpublishedDraft(row)) return null;
 
   const scoped = rowScopedEvent(event, row);
@@ -52,7 +50,7 @@ const rowReadSubject = (event: AppStreamProductEvent, row: Record<string, unknow
     log.error('Malformed stream event: missing ancestor scope', { entityType: scoped.entityType, subjectId: scoped.subjectId });
     return null;
   }
-};
+}
 
 /**
  * Whether each subscriber may read one row of a product event. Mirrors API row visibility in one fan-out check; an
@@ -92,38 +90,59 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
   return rowReadDecisions([subscriber], event, row)[0];
 }
 
-/** Membership events route through the user's channel, product events through org channels. */
-export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, AppStreamEvent>({
-  getChannel: (event) => {
-    if (isMembershipEvent(event)) {
-      const membership = getEventData(event, 'membership');
-      return membership?.userId ? userStreamKey(membership.userId) : null;
-    }
-    return organizationStreamKey(event.organizationId);
-  },
-  selectEligible: (subscribers, event) => {
-    // The user channel already targets the subject; this check is the safety net.
-    if (isMembershipEvent(event)) {
-      const membership = getEventData(event, 'membership');
-      return membership?.userId ? subscribers.filter((s) => s.userId === membership.userId) : [];
-    }
+/** The subscribers on an organization's topic that hold the organization. */
+function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
+  return streamSubscriberManager
+    .getByTopic<AppStreamSubscriber>(organizationTopic(organizationId))
+    .filter((subscriber) => subscriber.organizationIds.has(organizationId));
+}
 
-    const eligible: AppStreamSubscriber[] = [];
-    let undecided = subscribers.filter((s) => s.organizationIds.has(event.organizationId));
-
-    // A subscriber is told when it may read any of the rows: visibility may differ per row.
-    for (const { rowData } of event.rows) {
-      if (undecided.length === 0) break;
-      const decisions = rowReadDecisions(undecided, event, rowData);
-      const stillUndecided: AppStreamSubscriber[] = [];
-      for (const [index, subscriber] of undecided.entries()) {
-        (decisions[index] ? eligible : stillUndecided).push(subscriber);
-      }
-      undecided = stillUndecided;
+/** The subscribers that may read any row of a product event: visibility may differ per row. */
+function productEventReaders(subscribers: AppStreamSubscriber[], event: AppStreamProductEvent): AppStreamSubscriber[] {
+  const eligible: AppStreamSubscriber[] = [];
+  let undecided = subscribers;
+  for (const { rowData } of event.rows) {
+    if (undecided.length === 0) break;
+    const decisions = rowReadDecisions(undecided, event, rowData);
+    const stillUndecided: AppStreamSubscriber[] = [];
+    for (const [index, subscriber] of undecided.entries()) {
+      (decisions[index] ? eligible : stillUndecided).push(subscriber);
     }
-    return eligible;
-  },
-});
+    undecided = stillUndecided;
+  }
+  return eligible;
+}
+
+/**
+ * Tells the app streams that may see an event: a membership event goes to its user's streams, a product event to the
+ * streams of its organization that may read any of its rows.
+ * @param event - A product or membership change from the activity bus.
+ */
+export async function dispatchToAppStream(event: AppStreamEvent): Promise<void> {
+  let topic: string;
+  let eligible: AppStreamSubscriber[];
+  if (isMembershipEvent(event)) {
+    const userId = getEventData(event, 'membership')?.userId;
+    if (!userId) return;
+    topic = userTopic(userId);
+    // The user topic already targets the subject; this filter is the safety net.
+    eligible = streamSubscriberManager.getByTopic<AppStreamSubscriber>(topic).filter((subscriber) => subscriber.userId === userId);
+  } else {
+    topic = organizationTopic(event.organizationId);
+    eligible = productEventReaders(organizationSubscribers(event.organizationId), event);
+  }
+  if (eligible.length === 0) return;
+
+  log.trace('Dispatching stream event', {
+    activityId: event.id,
+    action: event.action,
+    subjectId: event.subjectId,
+    topic,
+    subscriberCount: eligible.length,
+  });
+
+  await sendToSubscribers(eligible, event, buildStreamNotification(event), 'Failed to dispatch stream event');
+}
 
 /**
  * Tells those who lost a row to a move: a subscriber who could read a row where it was and cannot read it where it is
@@ -134,9 +153,7 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
   const moves = event.rows.flatMap(({ rowData, movedFrom }) => (movedFrom ? [{ rowData, movedFrom }] : []));
   if (moves.length === 0) return;
 
-  const subscribers = streamSubscriberManager
-    .getByChannel<AppStreamSubscriber>(organizationStreamKey(event.organizationId))
-    .filter((subscriber) => subscriber.organizationIds.has(event.organizationId));
+  const subscribers = organizationSubscribers(event.organizationId);
   if (subscribers.length === 0) return;
 
   for (const { rowData, movedFrom } of moves) {

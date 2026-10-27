@@ -8,7 +8,7 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { streamSubscriberManager } from '#/modules/entities/stream';
+import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { cookiesAfter, expectRefusal, insertTestSession, mailedLink, setCookiePair } from '../helpers';
@@ -116,7 +116,7 @@ export interface OpenStream {
 
 const openStreams: OpenStream[] = [];
 
-const subscribersOf = (userId: string) => streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
+const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic<AppStreamSubscriber>(`user:${userId}`);
 
 /** Opens the app stream with a session, as the browser's EventSource does, and waits until the server registered it. */
 export async function openStream(userId: string, session: TestSession): Promise<OpenStream> {
