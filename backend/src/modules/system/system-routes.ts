@@ -3,8 +3,8 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockSystemInviteResponse } from '#/modules/system/system-mocks';
-import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema } from '#/modules/system/system-schema';
-import { userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
+import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema, systemUserUpdateBodySchema } from '#/modules/system/system-schema';
+import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBodySchema } from '#/schemas';
 
 const systemRoutes = createXRoutes(['system', 'cella'], {
@@ -37,7 +37,7 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update user',
     description: 'Updates a user identified by ID.',
-    request: { params: entityIdParamSchema, body: jsonBody(userUpdateBodySchema) },
+    request: { params: entityIdParamSchema, body: jsonBody(systemUserUpdateBodySchema) },
     responses: { 200: json('User', userSchema) },
   }),
   sendNewsletter: xRoute({

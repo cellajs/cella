@@ -1,7 +1,8 @@
+import { appConfig } from 'shared';
 import { EmailLayout, EmailText, SafeHtml } from '../components';
 import { i18n } from '../i18n';
 import { newsletterContentStyles } from '../styles';
-import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
+import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 interface NewsletterStatic {
   content: string;
@@ -9,13 +10,13 @@ interface NewsletterStatic {
   testEmail?: boolean;
 }
 
-type NewsletterRecipient = EmailRecipient & { unsubscribeLink: string; orgName: string };
+type NewsletterRecipient = EmailRecipient & { unsubscribeLink: string };
 
 export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterRecipient>()({
-  translate(lng, { content, subject, testEmail }, param = plainParam) {
+  translate(lng, { content, subject, testEmail }) {
     return {
       subject,
-      headerHtml: i18n.t('backend:email.newsletter.title', { orgName: param('orgName'), lng }),
+      headerHtml: i18n.t('backend:email.newsletter.title', { appName: appConfig.name, lng }),
       unsubscribeText: i18n.t('backend:email.unsubscribe', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       content,
@@ -39,6 +40,6 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
   },
   preview: {
     statics: { content: '<p>Test content</p>', subject: 'Monthly newsletter', testEmail: false },
-    recipient: { unsubscribeLink: 'https://example.com/unsubscribe', orgName: 'Acme' },
+    recipient: { unsubscribeLink: 'https://example.com/unsubscribe' },
   },
 });

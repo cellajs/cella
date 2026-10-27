@@ -71,6 +71,7 @@
   "invalid_credentials": "Invalid credentials",
   "invalid_credentials.text": "The credentials used for authentication are invalid.",
   "invalid_domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",
+  "invalid_duplicate_items": "Each {{name}} may appear only once.",
   "invalid_email": "Enter an email address like name@example.com",
   "invalid_handle": "Use only letters, numbers and hyphens. It cannot start or end with a hyphen.",
   "invalid_id": "ID may only contain lowercase letters and numbers (12-50 characters)",

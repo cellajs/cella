@@ -239,7 +239,8 @@ describe('Attachment mentions (template notification source)', async () => {
     const result = await call(getNotifications, { query: { limit: 10 }, headers: { ...defaultHeaders, Cookie: member.sessionCookie } });
     expect(result.response.status).toBe(200);
     // The test client types the body loosely; the SDK response type names the fields under test.
-    const [row] = (result.data as GetNotificationsResponse | undefined)?.items ?? [];
+    const items = (result.data as GetNotificationsResponse | undefined)?.items ?? [];
+    const row = items.find((item) => item.contextId === item.subjectId);
     expect(row).toMatchObject({ type: 'mention', subjectId: attachmentId, entityType: 'attachment' });
     expect(row?.actor?.id).toBe(tenant.user.id);
     expect(row?.channelName).not.toBe('');

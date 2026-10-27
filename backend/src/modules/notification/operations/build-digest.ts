@@ -1,7 +1,7 @@
 import type { DbContext } from '#/core/context';
 import { type DigestSection, describeDigestRow } from '#/modules/notification/helpers/render-digest-html';
 import { findChannelNames, findUndigestedNotifications, getUserAccess } from '#/modules/notification/notification-queries';
-import { findSubjectNames } from '#/modules/notification/notification-sources';
+import { findContextNames } from '#/modules/notification/notification-sources';
 import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
 
 /** Rows quoted per channel before the section collapses into "and N more". */
@@ -33,7 +33,7 @@ export async function buildDigestForUser(ctx: DbContext, userId: string, since: 
   const rows = undigested.filter((row) => readable.has(row.subjectId));
   if (rows.length === 0) return empty;
 
-  const contextNames = await findSubjectNames(rows.map((row) => ({ ...row, id: row.contextId })));
+  const contextNames = await findContextNames(rows.map((row) => ({ ...row, id: row.contextId })));
   const channelNames = await findChannelNames(ctx, { channelIds: rows.map((row) => row.channelId) });
 
   const sections: DigestSection[] = [];

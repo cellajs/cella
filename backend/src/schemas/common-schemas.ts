@@ -62,7 +62,7 @@ const limitMax = 1000;
  * An integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`, `-1` and `1.5`
  * fail; `z.coerce` would turn `''` and null into 0.
  */
-const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?: number; error?: ReturnType<typeof translatedError> } = {}) => {
+export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?: number; error?: ReturnType<typeof translatedError> } = {}) => {
   const integer = z.int(error).min(min, error);
   return z.preprocess(
     (value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value),

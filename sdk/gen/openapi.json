@@ -6923,8 +6923,16 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "enum": ["true", "false"],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false",
               "description": "Return only unread notifications"
             },
             "required": false,
@@ -8129,10 +8137,6 @@
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
-                  },
-                  "contrast": {
-                    "type": "string",
-                    "enum": ["system", "more"]
                   },
                   "description": {
                     "type": ["string", "null"],

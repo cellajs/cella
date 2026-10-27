@@ -3356,7 +3356,7 @@ export type GetNotificationsData = {
     /**
      * Return only unread notifications
      */
-    unread?: 'true' | 'false';
+    unread?: 'true' | 'false' | boolean;
     limit?: number;
     /**
      * createdAt of the last row of the previous page
@@ -4102,7 +4102,6 @@ export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponse
 export type UpdateUserData = {
   body: {
     bannerUrl?: string | null;
-    contrast?: 'system' | 'more';
     description?: string | null;
     firstName?: string | null;
     lastName?: string | null;

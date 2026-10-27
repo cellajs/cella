@@ -1646,7 +1646,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  * **GET /notifications** ·· [getNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications · cella_
  *
  * @param {getNotificationsData} options
- * @param {enum=} options.query.unread - `enum` (optional)
+ * @param {enum | boolean=} options.query.unread - `enum | boolean` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string=} options.query.before - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1981,7 +1981,6 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {enum=} options.body.contrast - `enum` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)

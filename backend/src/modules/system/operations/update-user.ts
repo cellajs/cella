@@ -6,11 +6,11 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { updateUser } from '#/modules/system/system-queries';
+import type { systemUserUpdateBodySchema } from '#/modules/system/system-schema';
 import { findUserById } from '#/modules/user/user-queries';
-import type { userUpdateBodySchema } from '#/modules/user/user-schema';
 import { log } from '#/utils/logger';
 
-type UpdateUserInput = z.infer<typeof userUpdateBodySchema>;
+type UpdateUserInput = z.infer<typeof systemUserUpdateBodySchema>;
 
 /**
  * A system admin's update of any user; returns the user with their activity times.

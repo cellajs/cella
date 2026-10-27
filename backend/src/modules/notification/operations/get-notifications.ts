@@ -8,7 +8,7 @@ import {
   findUsersMinimal,
 } from '#/modules/notification/notification-queries';
 import type { notificationSchema } from '#/modules/notification/notification-schema';
-import { findSubjectNames } from '#/modules/notification/notification-sources';
+import { findContextNames } from '#/modules/notification/notification-sources';
 import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
 import { accessFrom } from '#/permissions/access';
 
@@ -33,10 +33,10 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
   const readable = await findReadableSubjectIds(accessFrom(ctx), rows);
   const readableRows = rows.filter((row) => readable.has(row.subjectId));
 
-  const [actors, channelNames, subjectTitles] = await Promise.all([
+  const [actors, channelNames, contextNames] = await Promise.all([
     findUsersMinimal(ctx, { userIds: rows.map((row) => row.actorId).filter((id): id is string => id !== null) }),
     findChannelNames(ctx, { channelIds: readableRows.map((row) => row.channelId) }),
-    findSubjectNames(readableRows.map((row) => ({ ...row, id: row.subjectId }))),
+    findContextNames(readableRows.map((row) => ({ ...row, id: row.contextId ?? row.subjectId }))),
   ]);
 
   const items: NotificationResponse[] = rows.map((row) => ({
@@ -53,7 +53,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     actorId: row.actorId,
     actor: (row.actorId && actors.get(row.actorId)) || null,
     channelName: (readable.has(row.subjectId) && channelNames.get(row.channelId)) || '',
-    subjectTitle: subjectTitles.get(row.subjectId) ?? '',
+    subjectTitle: contextNames.get(row.contextId ?? row.subjectId) ?? '',
     readAt: row.readAt,
   }));
 

@@ -13,6 +13,7 @@ export {
   idsBodySchema,
   idsWithStxBodySchema,
   includeQuerySchema,
+  integerQuerySchema,
   languageSchema,
   locationSchema,
   maxLength,

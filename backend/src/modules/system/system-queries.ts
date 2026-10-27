@@ -2,7 +2,6 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { organizationsTable } from '#/modules/organization/organization-db';
 import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -46,13 +45,12 @@ interface FindNewsletterRecipientsOpts {
   roles: EntityRole[];
 }
 
-/** Members of the organizations who hold one of `roles` and take the newsletter: one row per user and organization. */
+/** Members of the organizations who hold one of `roles` and take the newsletter: one row per user, however many of the organizations they belong to. */
 export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: FindNewsletterRecipientsOpts) => {
   return ctx.var.db
-    .selectDistinct({ userId: usersTable.id, email: usersTable.email, name: usersTable.name, orgName: organizationsTable.name })
+    .selectDistinct({ userId: usersTable.id, email: usersTable.email, name: usersTable.name })
     .from(membershipsTable)
     .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
-    .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
     .where(
       and(
         eq(membershipsTable.channelType, 'organization'),

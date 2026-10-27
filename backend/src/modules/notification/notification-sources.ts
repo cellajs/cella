@@ -73,7 +73,7 @@ export async function loadSubjectPreview(source: NotificationSource, tx: DbOrTx,
 }
 
 /** Display names for ids of the source's rows: the declaration's `loadContextNames`, else the product rows' names. */
-async function loadSubjectNames(source: NotificationSource, tx: DbOrTx, ids: string[]) {
+async function loadContextNames(source: NotificationSource, tx: DbOrTx, ids: string[]) {
   if (source.declaration.loadContextNames) return source.declaration.loadContextNames(tx, ids);
   const table = productTable(source.entityType);
   const rows = await tx.select({ id: table.id, name: table.name }).from(table).where(liveRows(table, ids));
@@ -91,12 +91,12 @@ interface SubjectRef {
 }
 
 /** Display names for the refs' ids, keyed by id. */
-export async function findSubjectNames(refs: SubjectRef[]): Promise<Map<string, string>> {
+export async function findContextNames(refs: SubjectRef[]): Promise<Map<string, string>> {
   const names = new Map<string, string>();
   for (const { tenantId, entityType, ids } of groupByTenantAndType(refs)) {
     const source = getNotificationSource(entityType);
     if (!source) continue;
-    const found = await tenantReadById(tenantId, (tx) => loadSubjectNames(source, tx, ids));
+    const found = await tenantReadById(tenantId, (tx) => loadContextNames(source, tx, ids));
     for (const [id, name] of found) names.set(id, name);
   }
   return names;

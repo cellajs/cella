@@ -60,7 +60,7 @@
   "email.member_invite.title": "You have been invited to join <strong>{{entityName}}</strong>",
   "email.newsletter_request.text": "Thanks for subscribing to {{appName}} updates. We'll keep you in the loop with news, tips, and product updates.",
   "email.newsletter_request.title": "You're subscribed to our newsletter",
-  "email.newsletter.title": "You received a newsletter as a member of {{orgName}}",
+  "email.newsletter.title": "A newsletter from {{appName}}",
   "email.oauth_verification.preview": "Verify connecting your {{providerName}} account to {{appName}}",
   "email.oauth_verification.subject": "Verify email",
   "email.oauth_verification.text": "To confirm linking your {{providerName}} account to {{appName}} with email {{email}}, click the link below. The link expires in 2 hours.",

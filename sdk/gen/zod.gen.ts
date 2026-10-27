@@ -1220,7 +1220,10 @@ export const zGetPublicCountsResponse = z.object({
 });
 
 export const zGetNotificationsQuery = z.object({
-  unread: z.enum(['true', 'false']).optional(),
+  unread: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
   limit: z.int().gte(1).lte(100).optional().default(30),
   before: z.iso.datetime().optional(),
 });
@@ -1402,7 +1405,6 @@ export const zDeleteUsersResponse = z.object({
 
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
-  contrast: z.enum(['system', 'more']).optional(),
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()

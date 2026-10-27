@@ -22,7 +22,7 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
 
   // Preview sends are addressed only to the initiating admin and need no organization scope.
   const recipientsRecords = toSelf
-    ? [{ userId: user.id, email: user.email, name: user.name, orgName: 'TEST EMAIL ORGANIZATION' }]
+    ? [{ userId: user.id, email: user.email, name: user.name }]
     : await findNewsletterRecipients(ctx, { organizationIds, roles });
 
   if (!recipientsRecords.length) throw new AppError(400, 'no_recipients', 'warn');

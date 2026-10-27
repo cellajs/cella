@@ -12,7 +12,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(notificationRoutes.getNotifications, async (ctx) => {
   const { unread, limit, before } = ctx.req.valid('query');
-  const data = await getNotificationsOp(ctx, { unreadOnly: unread === 'true', limit, before });
+  const data = await getNotificationsOp(ctx, { unreadOnly: unread, limit, before });
   return ctx.json(data, 200);
 });
 
