@@ -133,11 +133,23 @@ export interface ThemeNavigationConfig {
   sheetPanelWidth: string;
 }
 
+/** Mail colors, each `#rrggbb`. */
+export interface ThemeEmailConfig {
+  button: string;
+  /** The button's 2px border: its shape where a client darkens the panel and leaves a dark fill alone. */
+  buttonEdge: string;
+  buttonLabel: string;
+  /** The button under the mail's own dark styles. */
+  darkButton: string;
+  darkButtonLabel: string;
+}
+
 export interface ThemeConfig {
   navigation: ThemeNavigationConfig;
   colors: Record<string, string>;
   strokeWidth: number;
   screenSizes: Record<string, string>;
+  email: ThemeEmailConfig;
 }
 
 export interface CompanyConfig {

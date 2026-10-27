@@ -57,10 +57,10 @@ export const EmailLayout = ({
     <EmailBody>
       {children}
       {(frame.requestDetails || endingHtml) && (
-        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #eaeaea' }}>
+        <div className="email-divider" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #eaeaea' }}>
           {frame.requestDetails && <EmailRequestDetails rows={frame.requestDetails} />}
           {endingHtml && (
-            <EmailText className="email-ending" style={{ ...smallTextStyle, color: '#666', margin: frame.requestDetails ? '0.5rem 0 0' : 0 }}>
+            <EmailText className="email-muted" style={{ ...smallTextStyle, color: '#666', margin: frame.requestDetails ? '0.5rem 0 0' : 0 }}>
               <SafeHtml html={endingHtml} policy="inline" />
             </EmailText>
           )}

@@ -12,10 +12,13 @@ interface EmailContainerProps {
 export const EmailContainer = ({ previewText, bodyStyle, containerStyle, headChildren, children }: EmailContainerProps) => (
   <Html>
     <Head>
+      <meta name="color-scheme" content="light dark" />
+      <meta name="supported-color-schemes" content="light dark" />
       <style>{headStyles}</style>
       {headChildren}
     </Head>
     <Body
+      className="email-page"
       style={{
         backgroundColor: '#f5f5f5',
         fontFamily: 'sans-serif',

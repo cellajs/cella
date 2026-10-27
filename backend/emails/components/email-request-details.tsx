@@ -10,8 +10,12 @@ export const EmailRequestDetails = ({ rows }: { rows: RequestDetailRow[] }) => (
     <tbody>
       {rows.map((row) => (
         <tr key={row.label}>
-          <td style={labelStyle}>{row.label}</td>
-          <td style={valueStyle}>{row.value}</td>
+          <td className="email-muted" style={labelStyle}>
+            {row.label}
+          </td>
+          <td className="email-muted" style={valueStyle}>
+            {row.value}
+          </td>
         </tr>
       ))}
     </tbody>

@@ -13,6 +13,7 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
     }}
   >
     <div
+      className="email-panel"
       style={{
         backgroundColor: '#ffffff',
         color: '#404040',
