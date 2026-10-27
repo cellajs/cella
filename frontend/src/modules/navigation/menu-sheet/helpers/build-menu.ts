@@ -31,7 +31,9 @@ export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['s
     for (const subitem of subitems) {
       const parentId = subitem?.membership?.[parentIdField];
       if (!parentId) continue;
-      (subitemsByParent.get(parentId) ?? subitemsByParent.set(parentId, []).get(parentId)!).push(subitem);
+      const siblings = subitemsByParent.get(parentId);
+      if (siblings) siblings.push(subitem);
+      else subitemsByParent.set(parentId, [subitem]);
     }
 
     menu[section.entityType] = items.map((item) => ({ ...item, submenu: subitemsByParent.get(item.id) ?? [] }));
