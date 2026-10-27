@@ -105,7 +105,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           baseBlockNoteProps={{
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
-            className: cn(blockNoteFieldClass, 'pl-10'),
+            className: cn(blockNoteFieldClass, '[--bn-field-inset:2.5rem]'),
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
             excludeMediaBlockTypes: ['video', 'audio', 'file'],

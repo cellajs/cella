@@ -3,22 +3,17 @@ import { cn } from '~/utils/cn';
 import '~/modules/common/success-checkmark.css';
 
 interface SuccessCheckmarkProps {
+  /** Sizes it with a size-* class (rem, so it scales with icons beside it); placement is the caller's. */
   className?: string;
-  size?: number;
 }
 
-export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps) {
+export function SuccessCheckmark({ className }: SuccessCheckmarkProps) {
   const { t } = useTranslation();
 
   return (
-    <div
-      className={cn('fade-in zoom-in-0 mx-auto animate-in duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]', className)}
-      style={{ width: size, height: size }}
-    >
+    <div className={cn('fade-in zoom-in-0 size-12.5 animate-in duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]', className)}>
       <svg
-        className="block animate-[checkmark-fill_.4s_ease-in-out_.7s_forwards,checkmark-scale_.3s_ease-in-out_1.2s_both] rounded-full shadow-[inset_0_0_0_var(--success)] [stroke-miterlimit:10]"
-        width={size}
-        height={size}
+        className="block size-full animate-[checkmark-fill_.4s_ease-in-out_.7s_forwards,checkmark-scale_.3s_ease-in-out_1.2s_both] rounded-full shadow-[inset_0_0_0_var(--success)] [stroke-miterlimit:10]"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 52 52"
         role="img"

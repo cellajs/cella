@@ -229,6 +229,12 @@ li:has(.is-focused) {
   width: 100%;
 }
 
+/* A form field (`blockNoteFieldClass`): the contenteditable fills the frame, so a press anywhere inside the border starts editing. */
+.bn-shadcn.bn-field .bn-editor {
+  min-height: 5rem;
+  padding: 0.75rem 1.5rem 0.75rem var(--bn-field-inset, 2rem);
+}
+
 /* Intrinsic aspect ratios reserve media space before loading; fit-content wrappers fill the available width. */
 .bn-visual-media[style*="aspect-ratio"] {
   background-color: var(--muted);
