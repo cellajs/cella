@@ -8,6 +8,8 @@ import type { ChannelListParams } from '~/query/types';
  * entry: `entityTypes` is a module constant and the registry is complete before first render, so the count holds.
  */
 export function useChannelListQueries(entityTypes: readonly ChannelEntityType[], params: ChannelListParams, enabled = true) {
+  // Hooks in a loop break a rule the React Compiler enforces; the count above is what keeps them safe
+  'use no memo';
   const listQueries = getChannelListQueries();
   return entityTypes.flatMap((entityType) => {
     const listQuery = listQueries[entityType];
