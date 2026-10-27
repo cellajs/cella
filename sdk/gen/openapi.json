@@ -865,6 +865,7 @@
           "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
           "tenantId": "14qv8uf107q9zmdjan1ygz1e",
           "channelType": null,
+          "path": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
           "channelId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
           "seq": 218,
           "stx": {
@@ -873,6 +874,7 @@
             "fieldTimestamps": {}
           },
           "batchUntilSeq": null,
+          "count": null,
           "spreadWindow": null,
           "propagation": null
         },
@@ -895,9 +897,9 @@
         ],
         "description": "The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -979,9 +981,9 @@
         "required": ["name", "message", "type", "status", "severity"],
         "description": "The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -1005,9 +1007,9 @@
         ],
         "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -1031,9 +1033,9 @@
         ],
         "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -1057,9 +1059,9 @@
         ],
         "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -1083,9 +1085,9 @@
         ],
         "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -1109,9 +1111,9 @@
         ],
         "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
         "example": {
-          "name": "BadRequestError",
-          "message": "error:bad_request_action",
-          "type": "validation_error",
+          "name": "Something's missing or wrong",
+          "message": "Check what you entered and try again.",
+          "type": "invalid_request",
           "status": 400,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"

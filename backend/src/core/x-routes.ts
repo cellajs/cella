@@ -134,6 +134,8 @@ type DraftOptions = Omit<RouteOptions, 'path' | 'operationId' | 'tags'> & { oper
 
 type Draft = DraftOptions & { path: string };
 
+type XRoutes<T extends Record<string, Draft>> = { [K in keyof T]: XRoute<T[K]> };
+
 /** One route of a `createXRoutes` module: keeps its literal types. */
 export const xRoute = <P extends string, R extends DraftOptions & { path: P }>(config: R) => config;
 
@@ -141,7 +143,7 @@ export const xRoute = <P extends string, R extends DraftOptions & { path: P }>(c
  * Finishes a module's routes with `createXRoute`: `operationId` defaults to the route's key and `tags` to the module's,
  * set before `summary` so the document keeps its key order.
  */
-export const createXRoutes = <T extends Record<string, Draft>>(tags: string[], drafts: T): { [K in keyof T]: XRoute<T[K]> } =>
+export const createXRoutes = <T extends Record<string, Draft>>(tags: string[], drafts: T): XRoutes<T> =>
   Object.fromEntries(
     Object.entries(drafts).map(([key, draft]) => {
       const entries: [string, unknown][] = Object.entries(draft);
@@ -152,4 +154,4 @@ export const createXRoutes = <T extends Record<string, Draft>>(tags: string[], d
       if (!draft.operationId) entries.unshift(['operationId', key]);
       return [key, createXRoute(Object.fromEntries(entries) as Parameters<typeof createXRoute>[0])];
     }),
-  ) as { [K in keyof T]: XRoute<T[K]> };
+  ) as XRoutes<T>;

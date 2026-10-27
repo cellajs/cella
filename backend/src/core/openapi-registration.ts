@@ -8,9 +8,9 @@ import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openap
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { productBaseSchema, registerAllErrorResponses } from '#/schemas';
 import { actorRefSchema } from '#/schemas/actor-ref';
-import { channelBaseSchema } from '#/schemas/entity-base';
+import { channelBaseSchema, productBaseSchema } from '#/schemas/entity-base';
+import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
@@ -41,7 +41,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       ...(t.kind && { 'x-kind': t.kind }),
       ...(t.externalDocs && { externalDocs: t.externalDocs }),
       ...(t.default && { 'x-default': true }),
-    })) as { name: string; description: string }[],
+    })),
   };
 
   registry.registerComponent('securitySchemes', 'cookieAuth', {
@@ -90,8 +90,8 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
 
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
 
-  validateOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
-  normalizeOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
+  validateOpenApiDocument(openApiDoc);
+  normalizeOpenApiDocument(openApiDoc);
 
   // The endpoint serves this normalized document: `app.doc31` would rebuild it per request and skip the normalization.
   app.get('/openapi.json', (ctx) => ctx.json(openApiDoc));

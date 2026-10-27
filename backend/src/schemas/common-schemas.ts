@@ -146,13 +146,7 @@ export const idsBodySchema = (maxItems = 50) =>
 
 /** The optional stx is what prevents echoing the change back to its source. */
 export const idsWithStxBodySchema = (maxItems = 50) =>
-  z.object({
-    ids: z
-      .array(z.string())
-      .min(1, translatedError('error:invalid_min_items', { min: 'one', name: 'ID' }))
-      .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
-    stx: z.object({ mutationId: z.string(), sourceId: z.string() }).optional(),
-  });
+  idsBodySchema(maxItems).extend({ stx: z.object({ mutationId: z.string(), sourceId: z.string() }).optional() });
 
 // Common headers schemas
 
@@ -214,7 +208,6 @@ export const validUrlSchema = z
   .string()
   .max(maxLength.url)
   .startsWith('https://', translatedError('error:invalid_url'))
-  .superRefine(refineWithType((url: string) => url.startsWith('https://'), 'invalid_url'))
   .transform((str) => lowercaseSchemeAndHost(str.trim()));
 
 /** A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of markup. */
@@ -224,8 +217,7 @@ export const validNameSchema = z
   .trim()
   .min(1, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
   .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
-  .regex(namePattern, translatedError('error:invalid_name'))
-  .superRefine(refineWithType((s) => namePattern.test(s), 'invalid_name'));
+  .regex(namePattern, translatedError('error:invalid_name'));
 
 export const validEmailSchema = z
   .string()
@@ -254,14 +246,14 @@ export const validDomainSchema = z
   .openapi({ type: 'string', format: 'hostname', minLength: 4, maxLength: maxLength.field, pattern: canonicalDomainPattern.source });
 
 // Both cases are spelled out: an OpenAPI pattern carries no flags, so a case-insensitive regex would publish a pattern
-// that refuses the upper-case slug this schema takes and lowers.
+// that refuses the upper-case slug this schema takes and lowers. Each group starts with a dash: a group that may start
+// without one splits a run of letters in every possible way, and a refused slug backtracks exponentially.
 const slugPattern = /^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/;
 export const validSlugSchema = z
   .string()
   .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
   .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
   .regex(slugPattern, translatedError('error:invalid_slug'))
-  .superRefine(refineWithType((s) => slugPattern.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 /**

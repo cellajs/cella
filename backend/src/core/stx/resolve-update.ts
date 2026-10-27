@@ -1,8 +1,7 @@
 import type { ProductEntityType } from 'shared';
 import { normalizeOps } from 'shared/schema-evolution';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import type { ArrayDelta } from './array-delta';
-import { applyArrayDelta, isArrayDelta } from './array-delta';
+import { type ArrayDelta, applyArrayDelta, isArrayDelta } from './array-delta';
 import { buildStx } from './build-stx';
 import { createServerStx } from './create-server-stx';
 import { filterNoOpFields, resolveFieldConflicts } from './field-versions';
@@ -27,12 +26,12 @@ type UpdateResult<T extends Record<string, unknown>> = ResolvedUpdate<T> | NoOpU
 
 interface PreparedOps {
   scalarOps: Record<string, unknown>;
-  deltaOps: Record<string, { add: string[]; remove: string[] }>;
+  deltaOps: Record<string, ArrayDelta>;
 }
 
 function prepareOps(entity: Record<string, unknown>, ops: Record<string, unknown>): PreparedOps {
   const scalarOps: Record<string, unknown> = {};
-  const deltaOps: Record<string, { add: string[]; remove: string[] }> = {};
+  const deltaOps: Record<string, ArrayDelta> = {};
 
   for (const [key, value] of Object.entries(ops)) {
     if (isArrayDelta(value)) deltaOps[key] = value;

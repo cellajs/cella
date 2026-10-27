@@ -40,8 +40,7 @@ export {
   validUuidSchema,
 } from './common-schemas';
 export { membershipCountSchema } from './count-schemas';
-export { productBaseSchema } from './entity-base';
-export { type ErrorCode, errorResponseRefs, registerAllErrorResponses } from './error-response-schemas';
+export { errorResponseRefs } from './error-response-schemas';
 export { mapEntitiesToSchema } from './map-entities-to-schema';
 export { minimalBaseSchema } from './minimal-base';
 export {

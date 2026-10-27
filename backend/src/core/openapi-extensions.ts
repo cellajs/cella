@@ -106,15 +106,12 @@ export function createSpecificationExtensions(getValue: (key: ExtensionType) => 
   return Object.fromEntries(keys.map((key) => [key, getValue(key)])) as SpecificationExtensions;
 }
 
-/** @param valueMetadata - keyed by `"extensionType:functionName"`. */
-export function buildExtensionEntries(valueMetadata: Map<string, { name?: string; description: string }>): ExtensionEntry[] {
+/** @param valueMetadata - per extension type, keyed by middleware function name. */
+export function buildExtensionEntries(valueMetadata: ReadonlyMap<string, ReadonlyMap<string, ExtensionValueMetadata>>): ExtensionEntry[] {
   return Object.entries(extensionMap).map(([key, metadata]) => {
     const values: Record<string, ExtensionValueMetadata> = {};
-    for (const [mapKey, meta] of valueMetadata) {
-      const [extType, functionName] = mapKey.split(':');
-      if (extType === key && functionName) {
-        values[functionName] = { ...(meta.name ? { name: meta.name } : {}), description: meta.description };
-      }
+    for (const [functionName, meta] of valueMetadata.get(key) ?? []) {
+      values[functionName] = { ...(meta.name ? { name: meta.name } : {}), description: meta.description };
     }
 
     return { key, ...metadata, ...(Object.keys(values).length > 0 ? { values } : {}) };

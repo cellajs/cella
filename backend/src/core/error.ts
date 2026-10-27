@@ -1,7 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import { i18n } from '#/lib/i18n';
 import type { locales } from '#/lib/i18n-locales';
-import type { apiErrorSchema, ErrorCode } from '#/schemas';
+import type { apiErrorSchema } from '#/schemas/api-error-schemas';
+import type { ErrorCode } from '#/schemas/error-response-schemas';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 /**
@@ -9,7 +10,7 @@ type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
  * 413 or a server error.
  */
 export type AppErrorStatus = ErrorCode | 410 | 413 | 500 | 503;
-type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & {
+type ErrorMeta = NonNullable<ErrorSchemaType['meta']> & {
   errorPagePath?: string;
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
   tokenId?: string;

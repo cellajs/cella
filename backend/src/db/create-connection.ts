@@ -83,8 +83,8 @@ export const createPgConnection = (
   return db;
 };
 
-/** Only a pg Pool counts its clients; the NODB stub yields undefined. */
-const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
+/** Only a pg Pool counts its clients and hands out a connection of its own; the NODB stub yields undefined. */
+export const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
 
 /**
  * Runs `fn` in a transaction on a connection of its own from the client's pool, started by `opening`: BEGIN and the

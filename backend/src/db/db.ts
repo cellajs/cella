@@ -1,7 +1,7 @@
-import type { Pool, PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
-import { createPgConnection, type DB, type PgDB, type SessionTimeouts } from './create-connection';
+import { createPgConnection, type DB, isPool, type PgDB, type SessionTimeouts } from './create-connection';
 import { migrateSessionTimeouts } from './migrate-timeouts';
 
 export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
@@ -27,9 +27,6 @@ const createNoDbStub = (): DB =>
 
 /** The runtime pool (RLS-subject `runtime_role`): every request handler and worker query goes through this. */
 export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX);
-
-/** Only a pg Pool counts its clients and hands out a connection of its own; the NODB probe yields undefined. */
-const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
 
 /** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). Feeds the sync spread window. */
 export const dbPoolPressure = (): number => {
@@ -78,6 +75,7 @@ export const getAdminDb = (purpose: string): PgDB => {
  * @param database - Database name replacing the one in `DATABASE_ADMIN_URL`.
  */
 export const getAdminDbFor = (database: string): PgDB => {
+  if (env.NODB) throw new Error(`Admin database access (database ${database}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required to reach database ${database}`);
   const url = new URL(env.DATABASE_ADMIN_URL);
   url.pathname = `/${database}`;
@@ -85,4 +83,4 @@ export const getAdminDbFor = (database: string): PgDB => {
 };
 
 /** Seeds write as admin so RLS never hides what they insert; the same lazy pool as {@link getAdminDb}. */
-export const getSeedDb = (): DB => getAdminDb('seeds') as DB;
+export const getSeedDb = (): DB => getAdminDb('seeds');

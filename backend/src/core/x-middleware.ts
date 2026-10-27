@@ -1,9 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
-import type { ExtensionType, GuardContext, SecurityRequirement, XMiddlewareHandler } from '#/core/openapi-extensions';
-
-export type { ExtensionType, GuardContext, XMiddlewareHandler };
+import type { ExtensionType, ExtensionValueMetadata, GuardContext, SecurityRequirement, XMiddlewareHandler } from '#/core/openapi-extensions';
 
 type MiddlewareFunction<E extends Env = Env> = Parameters<typeof createMiddleware<E>>[0];
 
@@ -23,8 +21,8 @@ export type XMiddlewareOptions = {
   requires?: GuardContext[];
 };
 
-/** Global store for extension value metadata, keyed by "extensionType:functionName" */
-const extensionValueMetadata = new Map<string, { name?: string; description: string }>();
+/** Global store for extension value metadata: per extension type, by middleware function name. */
+const extensionValueMetadata = new Map<ExtensionType, Map<string, ExtensionValueMetadata>>();
 
 export const getExtensionValueMetadata = () => extensionValueMetadata;
 
@@ -33,7 +31,9 @@ export const setMiddlewareExtension = <E extends Env = Env>(middleware: Middlewa
   const { functionName, type, name, description, security, provides, requires } = options;
 
   if (description) {
-    extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
+    const values = extensionValueMetadata.get(type) ?? new Map<string, ExtensionValueMetadata>();
+    values.set(functionName, { name, description });
+    extensionValueMetadata.set(type, values);
   }
   const extended = Object.assign(middleware, {
     __extensionType: type,

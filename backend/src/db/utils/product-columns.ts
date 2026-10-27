@@ -39,11 +39,3 @@ export const productIndexes = (
   index(`${tableName}_updated_by_index`).on(table.updatedBy),
   index(`${tableName}_deleted_at_index`).on(table.deletedAt).where(sql`${table.deletedAt} is not null`),
 ];
-
-/**
- * @deprecated The fan-out reads mentions from `description`, so no column stores them. Empty, so a
- * table that still spreads it drops its `mentions` column on the next `pnpm generate`; removed in a
- * later release.
- * @public
- */
-export const mentionableColumns = {};

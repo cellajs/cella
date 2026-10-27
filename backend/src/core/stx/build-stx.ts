@@ -9,10 +9,7 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
   const incomingTimestamps = stx.fieldTimestamps;
 
   // Advance the server clock from the incoming timestamps, for causal ordering.
-  const allIncoming = Object.values(incomingTimestamps);
-  if (allIncoming.length > 0) {
-    for (const ts of allIncoming) advanceClock(ts);
-  }
+  for (const ts of Object.values(incomingTimestamps)) advanceClock(ts);
 
   // Incoming timestamps for accepted scalar fields, existing ones for everything else.
   const mergedTimestamps: Record<string, string> = { ...existingTimestamps };

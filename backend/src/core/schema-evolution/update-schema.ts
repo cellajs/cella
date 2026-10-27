@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import type { ProductEntityType } from 'shared';
-import { stxBaseSchema } from '#/schemas';
+import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { isArrayDelta } from '../stx/array-delta';
 import { widenBodySchema } from './lens-seam';
 
