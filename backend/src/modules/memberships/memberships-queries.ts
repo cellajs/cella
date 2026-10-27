@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull, lte, max, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, countDistinct, eq, inArray, isNull, lte, max, notExists, notInArray, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
@@ -30,25 +30,41 @@ export const countMembershipsByChannel = async (ctx: DbContext, { channelType, c
   return currentOrgMemberships;
 };
 
-interface CountPendingInvitesByChannelOpts {
-  channelType: ChannelEntityType;
-  channelId: string;
+interface CountPendingInviteSeatsOpts {
+  organizationId: string;
+  /** Addresses the caller charges a seat for itself; their pending invitations are not counted again. */
+  exceptEmails?: string[];
 }
 
-/** Invitations still waiting for an answer; a rejected one is answered. */
-export const countPendingInvitesByChannel = async (ctx: DbContext, { channelType, channelId }: CountPendingInvitesByChannelOpts) => {
+/**
+ * The organization's seats its pending invitations hold: each address with an invitation still waiting for an answer,
+ * to the organization or to any channel below it, counted once, since accepting either makes an organization member.
+ * An invitation bound to an account that is a member already, or a rejected one, holds none.
+ */
+export const countPendingInviteSeats = async (ctx: DbContext, { organizationId, exceptEmails = [] }: CountPendingInviteSeatsOpts) => {
   const { db } = ctx.var;
-  const [{ pendingInvites }] = await db
-    .select({ pendingInvites: count() })
+  const orgMembership = db
+    .select({ id: membershipsTable.id })
+    .from(membershipsTable)
+    .where(
+      and(
+        eq(membershipsTable.userId, inactiveMembershipsTable.userId),
+        eq(membershipsTable.channelType, 'organization'),
+        eq(membershipsTable.channelId, organizationId),
+      ),
+    );
+  const [{ seats }] = await db
+    .select({ seats: countDistinct(inactiveMembershipsTable.email) })
     .from(inactiveMembershipsTable)
     .where(
       and(
-        eq(inactiveMembershipsTable.channelType, channelType),
-        eq(inactiveMembershipsTable.channelId, channelId),
+        eq(inactiveMembershipsTable.organizationId, organizationId),
         isNull(inactiveMembershipsTable.rejectedAt),
+        notExists(orgMembership),
+        exceptEmails.length ? notInArray(inactiveMembershipsTable.email, exceptEmails) : undefined,
       ),
     );
-  return pendingInvites;
+  return seats;
 };
 
 interface FindInvitationAccountsOpts {
@@ -261,7 +277,7 @@ export const insertInactiveMemberships = async (ctx: DbContext, { memberships }:
     .insert(inactiveMembershipsTable)
     .values(memberships)
     .onConflictDoNothing()
-    .returning({ id: inactiveMembershipsTable.id, email: inactiveMembershipsTable.email });
+    .returning({ id: inactiveMembershipsTable.id, email: inactiveMembershipsTable.email, userId: inactiveMembershipsTable.userId });
 };
 
 interface FindInactiveMembershipByIdOpts {
@@ -271,6 +287,16 @@ interface FindInactiveMembershipByIdOpts {
 export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
   const { db } = ctx.var;
   const [membership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
+  return membership;
+};
+
+/** An invitation of the request's organization by id, pending or rejected; one of another organization reads as missing. */
+export const findInactiveMembershipInOrg = async (ctx: OrgContext, { id }: FindInactiveMembershipByIdOpts) => {
+  const { db, organizationId } = ctx.var;
+  const [membership] = await db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.organizationId, organizationId)));
   return membership;
 };
 

@@ -50,8 +50,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   const assignedCounts = new Map<string, number>();
 
   const prepared = items.map((info) => {
-    const { userId, role, entity } = info;
-    const createdBy = info.createdBy ?? userId;
+    const { userId, role, entity, createdBy } = info;
 
     const targetEntitiesIdColumnKeys = getMembershipEntityIds(entity);
 

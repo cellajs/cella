@@ -16,22 +16,14 @@ export async function deleteMembershipsOp(ctx: UserContext, input: DeleteMembers
 
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'delete');
 
-  const membershipIds = Array.isArray(ids) ? ids : [ids];
+  const targets = await findMembershipsByUserIdsAndChannel(ctx, { userIds: ids, channelId: entity.id });
+  const rejectedIds = ids.filter((id) => !targets.some((target) => target.userId === id));
 
-  const targets = await findMembershipsByUserIdsAndChannel(ctx, { userIds: membershipIds, channelId: entity.id });
-
-  const rejectedIds: string[] = [];
-
-  for (const id of membershipIds) {
-    if (!targets.some((target) => target.userId === id)) rejectedIds.push(id);
+  if (targets.length) {
+    await deleteMembershipsByIds(ctx, { ids: targets.map((target) => target.id) });
+    for (const target of targets) invalidateCache.user(target.userId);
+    log.info('Memberships deleted', { count: targets.length, ids: targets.map((t) => t.userId) });
   }
 
-  if (targets.length === 0) return { data: [] as never[], rejectedIds };
-
-  await deleteMembershipsByIds(ctx, { ids: targets.map((target) => target.id) });
-  for (const target of targets) invalidateCache.user(target.userId);
-
-  log.info('Memberships deleted', { count: targets.length, ids: targets.map((t) => t.userId) });
-
-  return { data: [] as never[], rejectedIds };
+  return { data: [], rejectedIds };
 }

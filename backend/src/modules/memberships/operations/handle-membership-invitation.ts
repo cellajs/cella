@@ -12,7 +12,9 @@ import {
   updateInactiveMembershipRejected,
 } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { log } from '#/utils/logger';
+import { pick } from '#/utils/pick';
 
 interface HandleMembershipInvitationOpts {
   /**
@@ -72,11 +74,9 @@ export async function handleMembershipInvitationOp(
   });
   if (acceptOrReject === 'accept') invalidateCache.user(userId);
 
-  const organizationId = inactiveMembership.organizationId;
-  if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });
+  const organization = await resolveEntity(ctx, { entityType: 'organization', identifier: inactiveMembership.organizationId });
+  if (!organization) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
 
-  const entity = await resolveEntity({ var: { db: baseDb } }, { entityType: 'organization', identifier: organizationId });
-  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
-
-  return entity;
+  // The invitee may have declined and is no member: the answer names the organization, never its settings or writers.
+  return pick(organization, channelBaseSchema.keyof().options);
 }

@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
-import { deleteInactiveMembership, findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
+import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
@@ -11,10 +11,8 @@ import { log } from '#/utils/logger';
  * caller needs `update` on the invited channel. A missing or foreign row is 404.
  */
 export async function withdrawPendingInvitationOp(ctx: UserContext, id: string) {
-  const invitation = await findInactiveMembershipById(ctx, { id });
-  if (!invitation || invitation.organizationId !== ctx.var.organization.id) {
-    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
-  }
+  const invitation = await findInactiveMembershipInOrg(ctx, { id });
+  if (!invitation) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 
   await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
 

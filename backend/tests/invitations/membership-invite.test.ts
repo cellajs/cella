@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { requestsTable } from '#/modules/requests/requests-db';
+import { insertRequest } from '#/modules/requests/requests-queries';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -19,6 +21,17 @@ import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
+
+// Hides a channel's invitations from the invite's plan, as when another request inserts one between the plan and the insert.
+const planSees = vi.hoisted(() => ({ invitations: true }));
+vi.mock('#/modules/memberships/memberships-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/memberships/memberships-queries')>();
+  return {
+    ...actual,
+    findInvitationsToAddresses: async (...args: Parameters<typeof actual.findInvitationsToAddresses>) =>
+      planSees.invitations ? actual.findInvitationsToAddresses(...args) : [],
+  };
+});
 
 afterEach(async () => await clearDatabase());
 
@@ -153,6 +166,35 @@ describe('Membership Invitation', async () => {
     expect(secondRes.status).toBe(200);
 
     expect(outcomesOf(data)).toEqual(['remind']);
+  });
+
+  it('mints no link for an invitation another request inserted first', async () => {
+    const { organization, sessionCookie } = await createOrgAndAdmin();
+    const inviteData = { emails: ['raced@example.com'], role: memberRole };
+    const linksTo = (email: string) => db.select({ id: tokensTable.id }).from(tokensTable).where(eq(tokensTable.email, email));
+
+    await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
+    const firstLinks = await linksTo('raced@example.com');
+
+    planSees.invitations = false;
+    try {
+      await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
+    } finally {
+      planSees.invitations = true;
+    }
+
+    expect(await getInactiveMemberships(organization.id)).toHaveLength(1);
+    expect(await linksTo('raced@example.com')).toEqual(firstLinks);
+  });
+
+  it("answers an invited address's waitlist request at once", async () => {
+    const { organization, sessionCookie } = await createOrgAndAdmin();
+    await insertRequest({ var: { db } }, { email: 'waiting@example.com', type: 'waitlist' });
+
+    await makeInviteRequest(organization.tenantId, organization.id, { emails: ['waiting@example.com'], role: memberRole }, sessionCookie);
+
+    const [request] = await db.select().from(requestsTable).where(eq(requestsTable.email, 'waiting@example.com'));
+    expect(request.invitedAt).not.toBeNull();
   });
 
   it('returns the membership a system admin joins by inviting themself, archive, mute and order included', async () => {

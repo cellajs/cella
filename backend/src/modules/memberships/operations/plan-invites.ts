@@ -15,6 +15,7 @@ export type PlannedAddress =
   | { email: string; outcome: 'member'; role: string };
 
 interface PlanInvitesInput {
+  /** Trimmed and lowercased, as the body schema leaves them; a repeat is planned once. */
   emails: string[];
   entity: { id: string };
   entityType: ChannelEntityType;
@@ -29,15 +30,16 @@ interface PlanInvitesInput {
  */
 export async function planInvites(ctx: UserContext, { emails, entity, entityType, held }: PlanInvitesInput): Promise<PlannedAddress[]> {
   const { user, isSystemAdmin } = ctx.var;
+  const uniqueEmails = [...new Set(emails)];
 
   const [accounts, invitations] = await Promise.all([
-    findInvitationAccounts(ctx, { emails, entityType, entityId: entity.id }),
-    findInvitationsToAddresses(ctx, { emails, channelId: entity.id }),
+    findInvitationAccounts(ctx, { emails: uniqueEmails, entityType, entityId: entity.id }),
+    findInvitationsToAddresses(ctx, { emails: uniqueEmails, channelId: entity.id }),
   ]);
   const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
   const invitationByEmail = new Map(invitations.map((invitation) => [invitation.email, invitation]));
 
-  return emails.map((email): PlannedAddress => {
+  return uniqueEmails.map((email): PlannedAddress => {
     // A pending invitation goes out again; a declined one opens again.
     const invitation = invitationByEmail.get(email);
     if (invitation) return { email, outcome: 'remind', invitation };

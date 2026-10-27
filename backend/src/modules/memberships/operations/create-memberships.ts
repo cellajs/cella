@@ -4,11 +4,11 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
-import { getMembershipEntityIds } from '#/modules/memberships/helpers/membership-helpers';
+import { getMembershipEntityIds, isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countMembershipsByChannel,
-  countPendingInvitesByChannel,
+  countPendingInviteSeats,
   insertInactiveMemberships,
   stampInactiveMembershipsReminded,
   updateInactiveMemberships,
@@ -16,6 +16,7 @@ import {
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
+import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -36,8 +37,7 @@ type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { ou
  */
 export async function createMembershipsOp(ctx: UserContext, input: CreateMembershipsInput) {
   const { db, user, organization, tenantId } = ctx.var;
-  const { role, entityId, entityType } = input;
-  const emails = [...new Set(input.emails.map((email) => email.toLowerCase().trim()))];
+  const { emails, role, entityId, entityType } = input;
 
   // The invited role must exist in the target context's vocabulary (e.g. no org 'member' on a course)
   const channelRoles = hierarchy.getRoles(entityType);
@@ -45,9 +45,8 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
 
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
 
-  // Draft context (publishedAt null): invites are recorded but emails are held and existing users are not added, all released at publish.
-  // The channel's prepare roles (`drafts.prepareRoles` in the hierarchy) stay live so those people can set the draft up.
-  const held = entity.publishedAt === null && !hierarchy.getPrepareRoles(entityType).includes(role);
+  // Held: invites are recorded but emails are held and existing users are not added, all released at publish.
+  const held = isHeldInvitation(entityType, entity, role);
 
   const plan = await planInvites(ctx, { emails, entity, entityType, held });
   const planned = <O extends PlannedAddress['outcome']>(outcome: O) => plan.filter((item): item is Planned<O> => item.outcome === outcome);
@@ -58,21 +57,20 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
 
   // Seats: new invitations, declined ones that open again and, at the organization, members added at once. A reminder
   // and a member take none.
-  const newSeats = invites.length + reopened.length + (entityType === 'organization' ? adds.length : 0);
+  const seatTakers = [...invites, ...reopened, ...(entityType === 'organization' ? adds : [])];
+  const newSeats = seatTakers.length;
   const seatQuota = ctx.var.tenant.restrictions.quotas.user;
   if (seatQuota !== 0 && newSeats > 0) {
     const [members, pending] = await Promise.all([
       countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id }),
-      countPendingInvitesByChannel(ctx, { channelType: 'organization', channelId: organization.id }),
+      // An address this request charges is left out of the pending count, so a second invitation costs no second seat.
+      countPendingInviteSeats(ctx, { organizationId: organization.id, exceptEmails: seatTakers.map(({ email }) => email) }),
     ]);
     if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
   }
 
   const createdMemberships = adds.length
-    ? await insertMemberships(
-        { var: { db } },
-        { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) },
-      )
+    ? await insertMemberships(ctx, { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) })
     : [];
   for (const { userId } of adds) invalidateCache.user(userId);
 
@@ -88,17 +86,24 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     ...getMembershipEntityIds(entity),
     channelId: entity.id,
   }));
-  const inviteTokens = await issueTokens(
-    ctx,
-    inviteRows.flatMap(({ id, email, userId }) =>
-      userId ? [] : [{ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: id }],
-    ),
-  );
-  const insertedInvites = inviteRows.length ? await insertInactiveMemberships(ctx, { memberships: inviteRows }) : [];
+  // One transaction: a link only for a row this request inserted, and the address's waitlist request answered with it.
+  const { insertedInvites, inviteTokens } = inviteRows.length
+    ? await db.transaction(async (tx) => {
+        const txCtx = { var: { db: tx } };
+        const inserted = await insertInactiveMemberships(txCtx, { memberships: inviteRows });
+        const byLink = inserted.filter(({ userId }) => !userId);
+        const tokens = await issueTokens(
+          txCtx,
+          byLink.map(({ id, email }) => ({ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: id })),
+        );
+        for (const { email } of byLink) await stampWaitlistRequestInvited(txCtx, { email });
+        return { insertedInvites: inserted, inviteTokens: tokens };
+      })
+    : { insertedInvites: [], inviteTokens: [] };
 
   // Sent again: a declined invitation opens again, a higher role replaces a lower one, never the other way. A held
   // invitation goes out at publish, which sends only those without a last email.
-  const raised = reminders.filter(({ invitation }) => invitation.role && channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
+  const raised = reminders.filter(({ invitation }) => channelRoles.indexOf(role) < channelRoles.indexOf(invitation.role));
   await updateInactiveMemberships(ctx, {
     ids: reopened.map(({ invitation }) => invitation.id),
     values: { rejectedAt: null, ...(held && { remindedAt: null }) },
@@ -123,7 +128,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     for (const { email, userId } of invites) if (insertedEmails.has(email)) addTo(role, toAddress(email, userId));
     for (const { email, invitation } of reminders) {
       const raisedHere = raised.some((item) => item.email === email);
-      addTo(raisedHere || !invitation.role ? role : invitation.role, toAddress(email, invitation.userId));
+      addTo(raisedHere ? role : invitation.role, toAddress(email, invitation.userId));
     }
     if (!byRole.has(role) && adds.length) byRole.set(role, []);
 

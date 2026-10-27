@@ -72,7 +72,7 @@ export const memberMembershipSchema = membershipBaseSchema.omit(personalViewMask
 /** An updated membership with its audit fields; archive, mute and menu order as in `memberMembershipSchema`. */
 export const updatedMembershipSchema = membershipSchema.omit(personalViewMask).extend(optionalPersonalView);
 
-export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50), role: membershipSchema.shape.role });
+export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50), role: entityRoleSchema });
 
 export const membershipCheckBodySchema = membershipCreateBodySchema.pick({ emails: true });
 
@@ -94,7 +94,7 @@ export const inviteOutcomeSchema = z
     /** remind: when the invitee declined; the invitation opens again. */
     declinedAt: z.string().optional(),
     /** member: the role the member holds, which an invite never changes. */
-    role: membershipSchema.shape.role.optional(),
+    role: entityRoleSchema.optional(),
   })
   .openapi('InviteOutcome');
 
@@ -109,7 +109,7 @@ export const membershipInviteResponseSchema = z.object({
 });
 
 export const membershipUpdateBodySchema = z
-  .object({ role: membershipSchema.shape.role.optional(), ...optionalPersonalView })
+  .object({ role: entityRoleSchema.optional(), ...optionalPersonalView })
   // With no field to change, the write would only stamp the caller on the row.
   .superRefine(refineWithType((body) => Object.values(body).some((value) => value !== undefined), 'invalid_request'));
 
@@ -118,7 +118,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   entityType: channelEntityTypeSchema,
   // lastPostedAt sorts by the member's latest product row in the viewed channel; default is recent activity
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).default('lastSeenAt'),
-  role: z.enum(roles.all).optional(),
+  role: entityRoleSchema.optional(),
   // Opt-in per-member insight counts (member-counts.ts), mirroring the channel lists' include=counts, and `mfa`
   include: includeQuerySchema,
   userIds: z
@@ -139,7 +139,7 @@ export const pendingMembershipSchema = z.object({
   id: z.string(),
   /** The address the invitation went to. */
   email: userBaseSchema.shape.email,
-  role: membershipSchema.shape.role.nullable(),
+  role: entityRoleSchema.nullable(),
   createdAt: membershipSchema.shape.createdAt,
   /** The last email; null while it waits for its channel to be published. */
   remindedAt: z.string().nullable(),

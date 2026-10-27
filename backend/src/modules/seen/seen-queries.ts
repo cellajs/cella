@@ -1,19 +1,22 @@
-import { and, count, getColumns, gt, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, getColumns, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import type { SeenTrackedProductType } from 'shared';
+import { type SeenTrackedProductType, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { homeChannelIdSql } from '#/db/utils/home-channel';
+import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { getEntityTable } from '#/tables';
 
-type OrgScopedEntityTable = AnyPgTable & { id: PgColumn; organizationId: PgColumn; createdAt: PgColumn };
+/** The columns the seen queries read off a product table resolved at runtime. */
+export type OrgScopedEntityTable = AnyPgTable & { id: PgColumn; organizationId: PgColumn; createdAt: PgColumn };
+
+/** Where the seen window starts now: a row older than `seenWindowMs`, the client's window too, is never unseen. */
+export const seenWindowStart = () => new Date(Date.now() - seenWindowMs).toISOString();
 
 /** A row's recency for the seen window: publish time on draft-lifecycle tables, creation time elsewhere. */
-export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL<string> => {
-  const { publishedAt } = getColumns(table) as Record<string, PgColumn | undefined>;
-  return publishedAt ? sql<string>`COALESCE(${publishedAt}, ${table.createdAt})` : sql<string>`${table.createdAt}`;
-};
+export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL<string> =>
+  hasPublishedAt(table) ? sql<string>`COALESCE(${table.publishedAt}, ${table.createdAt})` : sql<string>`${table.createdAt}`;
 
 interface FindUnseenCountsByUserOpts {
   userId: string;
@@ -39,16 +42,15 @@ export const findUnseenCountsByUser = async (
 
     const channelIdColumn = homeChannelIdSql(productType, entityTable);
 
-    const filters: SQL[] = [
+    const filters = [
       inArray(channelIdColumn, channelIds),
       gt(seenRecencySql(orgTable), cutoff),
       sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.productId} = ${orgTable.id})`,
+      columns.deletedAt ? isNull(columns.deletedAt) : undefined,
+      // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.
+      publishedRowsPredicate(entityTable),
+      scopeWhereByType?.[productType],
     ];
-    if (columns.deletedAt) filters.push(isNull(columns.deletedAt));
-    // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.
-    if (columns.publishedAt) filters.push(isNotNull(columns.publishedAt));
-    const scopeWhere = scopeWhereByType?.[productType];
-    if (scopeWhere) filters.push(scopeWhere);
 
     const entityRows = await db
       .select({ channelId: channelIdColumn, productType: sql<SeenTrackedProductType>`${productType}`, unseenCount: count() })
@@ -56,7 +58,7 @@ export const findUnseenCountsByUser = async (
       .where(and(...filters))
       .groupBy(channelIdColumn);
 
-    rows.push(...entityRows.map((row) => ({ ...row, unseenCount: Number(row.unseenCount) })));
+    rows.push(...entityRows);
   }
 
   return rows;
@@ -90,10 +92,15 @@ interface InsertSeenByOpts {
 
 /**
  * Records the rows as seen by the user and bumps the view count of each one seen for the first time; returns how many
- * were new. Partitioning prevents a unique user/product arbiter, so concurrent duplicates are tolerated by EXISTS reads
- * and corrected by counter recalculation.
+ * were new. Partitioning rules out a unique user/product index, so the insert tests for an earlier row itself, and a
+ * transaction-scoped lock on the user makes two marks of one user (two tabs, a beacon beside the timer flush) wait for
+ * each other: the second one sees the first one's rows and counts nothing twice. Runs in the caller's transaction.
  */
 export const insertSeenBy = async (ctx: DbContext, { userId, productType, organizationId, tenantId, rows }: InsertSeenByOpts) => {
+  const { db } = ctx.var;
+  // Its own statement: the insert below must take its snapshot after the lock is granted.
+  await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`seen_by:${userId}`}, 0))`);
+
   const values = sql.join(
     rows.map(
       ({ productId, channelId }) =>
@@ -102,7 +109,7 @@ export const insertSeenBy = async (ctx: DbContext, { userId, productType, organi
     sql`, `,
   );
 
-  const result = await ctx.var.db.execute<{ new_count: number }>(sql`
+  const result = await db.execute<{ new_count: number }>(sql`
     WITH candidate (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at) AS (
       VALUES ${values}
     ),

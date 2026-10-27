@@ -31,7 +31,7 @@ const memberStatTable = (productType: MemberStatProductType): MemberStatTable =>
   entityTables[productType as keyof typeof entityTables] as MemberStatTable;
 
 /** Channel types a member row can carry a membership count for (all sub-organization channels). */
-const memberStatChannelTypes = hierarchy.getOrderedDescendants('organization').filter((type): type is ChannelEntityType => isChannel(type));
+const memberStatChannelTypes = hierarchy.getOrderedDescendants('organization').filter(isChannel);
 
 /** Rows a member gets credited for: live, published rows they created within the viewed scope. */
 const liveAuthoredWhere = (productType: MemberStatProductType, entityType: ChannelEntityType, entityId: string, organizationId: string) => {

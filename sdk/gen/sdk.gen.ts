@@ -2908,7 +2908,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships · cella_
  *

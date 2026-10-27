@@ -5,8 +5,9 @@ import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation, readMembersAs } from './helpers';
@@ -120,6 +121,23 @@ describe('Invitation response', async () => {
     const rejectedInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(rejectedInactive).toHaveLength(1);
     expect(rejectedInactive[0].rejectedAt).toBeDefined();
+  });
+
+  it('answers a declining invitee with the organization as a channel base, without its settings or writers', async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+    });
+
+    const path = `/${organization.tenantId}/${organization.id}/memberships/${inactiveMembership.id}/reject`;
+    const { status, body } = await rawJsonRequest(path, await createTestSession(invitedUser), { method: 'POST' });
+
+    expect(status).toBe(200);
+    expect(Object.keys(body).sort()).toEqual(channelBaseSchema.keyof().options.toSorted());
   });
 
   it("retires a rejected invitation's emailed link", async () => {

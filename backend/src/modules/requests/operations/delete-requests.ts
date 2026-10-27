@@ -2,9 +2,7 @@ import type { UserContext } from '#/core/context';
 import { deleteRequestsByIds } from '#/modules/requests/requests-queries';
 
 export async function deleteRequestsOp(ctx: UserContext, ids: string[]) {
-  const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-
-  await deleteRequestsByIds(ctx, { ids: toDeleteIds });
+  await deleteRequestsByIds(ctx, { ids });
 
   return { data: [], rejectedIds: [] };
 }

@@ -26,33 +26,14 @@ type MembershipChannelIdColumns = EntityIdColumns<ChannelEntityType, string | nu
 type ChannelIdOverrides = Partial<MembershipChannelIdColumns>;
 
 /**
- * Membership location columns for wire mocks: contexts start null, ancestors get invented UUIDs, and the target column
- * always equals the denormalized `channelId`. Never use for database rows: invented ancestor IDs violate FKs.
+ * Membership location columns: other channels' columns start null, each ancestor's takes `ancestorId(columnKey)`,
+ * `overrides` win, and the target column always equals the denormalized `channelId`. An invented ancestor id suits a
+ * wire mock only: in a database row it violates FKs.
  */
-const generateMockMembershipChannelIdColumns = (
+const membershipChannelIdColumns = (
   channelType: ChannelEntityType,
   channelId: string,
-  overrides: ChannelIdOverrides = {},
-): MembershipChannelIdColumns => {
-  const columns = Object.fromEntries(
-    appConfig.channelEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
-  ) as MembershipChannelIdColumns;
-
-  for (const ancestor of hierarchy.getOrderedAncestors(channelType)) {
-    columns[appConfig.entityIdColumnKeys[ancestor]] = mockUuid();
-  }
-  Object.assign(columns, overrides);
-  columns[appConfig.entityIdColumnKeys[channelType]] = channelId;
-  return columns;
-};
-
-/**
- * Membership location columns for a real channel entity row: ancestors are read off the row (nullable ones stay null),
- * `overrides` win, and the target column equals the denormalized `channelId`. Safe for inserts: no ancestor ID is invented.
- */
-const deriveMembershipChannelIdColumns = (
-  channelType: ChannelEntityType,
-  channel: ChannelRef,
+  ancestorId: (columnKey: keyof MembershipChannelIdColumns) => string | null,
   overrides: ChannelIdOverrides = {},
 ): MembershipChannelIdColumns => {
   const columns = Object.fromEntries(
@@ -61,10 +42,10 @@ const deriveMembershipChannelIdColumns = (
 
   for (const ancestor of hierarchy.getOrderedAncestors(channelType)) {
     const columnKey = appConfig.entityIdColumnKeys[ancestor];
-    columns[columnKey] = channel[columnKey] ?? null;
+    columns[columnKey] = ancestorId(columnKey);
   }
   Object.assign(columns, overrides);
-  columns[appConfig.entityIdColumnKeys[channelType]] = channel.id;
+  columns[appConfig.entityIdColumnKeys[channelType]] = channelId;
   return columns;
 };
 
@@ -87,7 +68,7 @@ const generateMembershipBase = (options: MockMembershipBaseOptions = {}): Member
     channelType,
     channelId,
     userId: options.userId ?? mockUuid(),
-    ...generateMockMembershipChannelIdColumns(channelType, channelId, options.channelIds),
+    ...membershipChannelIdColumns(channelType, channelId, () => mockUuid(), options.channelIds),
     role: options.role ?? faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
@@ -113,7 +94,7 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
     tenantId: channel.tenantId, // Use channel entity's tenant for RLS isolation
     channelType,
     channelId: channel.id, // Denormalized primary channel entity ID
-    ...deriveMembershipChannelIdColumns(channelType, channel, overrideIds),
+    ...membershipChannelIdColumns(channelType, channel.id, (columnKey) => channel[columnKey] ?? null, overrideIds),
     // Pick from the context's own role vocabulary (e.g. course → staff/student/guest)
     role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
     displayOrder: getMembershipOrderOffset(channel.id) * 10,
@@ -158,7 +139,7 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
       remindedAt: null,
       createdAt,
       createdBy: mockUuid(),
-      ...generateMockMembershipChannelIdColumns(base.channelType, base.channelId, options.channelIds),
+      ...membershipChannelIdColumns(base.channelType, base.channelId, () => mockUuid(), options.channelIds),
       tenantId: base.tenantId,
     } as InactiveMembershipModel;
   });

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq, getColumns, getTableName, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType, seenWindowMs } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,7 +10,7 @@ import { membershipImmutableColumns } from '#/db/immutability-triggers';
 import { tenantReadById } from '#/db/tenant-context';
 import { buildInsertableProduct } from '#/mocks';
 import { loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
-import { seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
+import { trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables, getEntityTable } from '#/tables';
 

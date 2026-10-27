@@ -22,7 +22,7 @@ export const seenByTable = snakeCase.table(
   (table) => [
     // Composite PK required for partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
-    // Partitioning prevents a unique user/entity index; duplicates are safe because readers test existence and recalculation counts distinct users.
+    // Partitioning prevents a unique user/product index: `insertSeenBy` keeps one row per user and product itself.
     index('seen_by_user_product_index').on(table.userId, table.productId),
     // Index for unseen count query: COUNT(*) WHERE userId AND channelId AND productType
     index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.productType),

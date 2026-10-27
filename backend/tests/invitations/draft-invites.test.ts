@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getMyInvitations, getPendingMemberships, membershipInvite, publishOrganization } from 'sdk';
+import { getMyInvitations, getPendingMemberships, membershipInvite, publishOrganization, resendPendingInvitation } from 'sdk';
 import type { EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
@@ -27,7 +27,7 @@ afterEach(async () => await clearDatabase());
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
-  // The publish flow's operation reads only `db` and `user` from its context, so a partial one stands in.
+  // The publish flow's operation reads only `db` from its context, and the organization when there is one, so a partial one stands in.
   const publisherContext = (user: { id: string }) => ({ var: { db, user } }) as unknown as UserContext;
 
   const createDraftOrgWorld = async () => {
@@ -130,6 +130,34 @@ describe('Draft context invite deferral', async () => {
 
     const after = await myInvitations();
     expect((after.data as { items: unknown[] }).items).toHaveLength(1);
+  });
+
+  it('keeps a held invitation held when it is resent, and sends it at the publish', async () => {
+    const { organization, sessionCookie } = await createDraftOrgWorld();
+    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    const [held] = await getInactiveRows(organization.id);
+
+    const { response } = await call(resendPendingInvitation, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id, id: held.id },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
+    expect(response.status).toBe(204);
+    expect(mailsTo('held@example.com')).toHaveLength(0);
+
+    const { data } = await publish(organization, sessionCookie);
+    expect(data).toMatchObject({ invitationsSent: 1 });
+    expect(mailsTo('held@example.com')).toHaveLength(1);
+  });
+
+  it("names the inviter in a held invitation's mail, whoever publishes", async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    const publisher = await createOrganizationAdminUser('publisher@example.com', organization.id, adminRole, organization.tenantId);
+
+    await publish(organization, await createTestSession(publisher));
+
+    const [mail] = mailsTo('held@example.com');
+    expect(mail.statics.senderName).toBe(admin.name);
   });
 
   it('dispatch rotates tokens, stamps remindedAt, and sends a held invitation once', async () => {

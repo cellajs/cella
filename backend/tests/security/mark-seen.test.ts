@@ -1,14 +1,16 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { markSeen } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Tx } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { isTrackedProductType } from '#/modules/seen/operations/mark-seen';
 import { seenByTable } from '#/modules/seen/seen-by-db';
+import { insertSeenBy } from '#/modules/seen/seen-queries';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
@@ -92,6 +94,47 @@ describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the call
     // Positive control: the live row next to it is recorded.
     expect(await markAs(member, [live])).toBe(1);
     expect(await seenRows(member.id, live)).toHaveLength(1);
+  });
+
+  it('counts a view once when two marks of one user overlap', async () => {
+    const productType = 'attachment';
+    // Only narrows the type: the suite is skipped where attachments are not tracked.
+    if (!isTrackedProductType(productType)) return;
+    const productId = await insertAttachment(admin.id);
+    const rows = [{ productId, channelId: organization.id }];
+    const mark = (tx: Tx) =>
+      insertSeenBy({ var: { db: tx } }, { userId: member.id, productType, organizationId: organization.id, tenantId: organization.tenantId, rows });
+
+    // The first mark stays uncommitted until the second one waits on it, as two tabs that flush at once do.
+    const firstMarked = Promise.withResolvers<void>();
+    const secondWaiting = Promise.withResolvers<void>();
+    const secondPid = Promise.withResolvers<number>();
+    const first = adminDb.transaction(async (tx) => {
+      const newCount = await mark(tx);
+      firstMarked.resolve();
+      await secondWaiting.promise;
+      return newCount;
+    });
+    await firstMarked.promise;
+    const second = adminDb.transaction(async (tx) => {
+      const { rows: backend } = await tx.execute<{ pid: number }>(sql`SELECT pg_backend_pid() AS pid`);
+      secondPid.resolve(backend[0].pid);
+      return mark(tx);
+    });
+
+    const pid = await secondPid.promise;
+    for (;;) {
+      const { rows: activity } = await adminDb.execute<{ waiting: boolean }>(
+        sql`SELECT wait_event_type = 'Lock' AS waiting FROM pg_stat_activity WHERE pid = ${pid}`,
+      );
+      if (activity[0]?.waiting) break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    secondWaiting.resolve();
+
+    expect(await Promise.all([first, second])).toEqual([1, 0]);
+    expect(await seenRows(member.id, productId)).toHaveLength(1);
+    expect(await viewCounters(productId)).toMatchObject([{ viewCount: 1 }]);
   });
 
   describe('with a member role that reads only its own attachments', () => {

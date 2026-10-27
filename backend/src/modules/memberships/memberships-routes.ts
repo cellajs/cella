@@ -114,7 +114,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, singlePointsLimiter],
     summary: 'Resend pending invitation',
     description:
-      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
+      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 204: { description: 'Invitation resent' } },
   }),
