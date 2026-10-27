@@ -1,7 +1,7 @@
 import { appConfig, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
-import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
+import { buildSubject, buildSubjectFromEntity, validateAncestorScope } from '#/permissions/build-subject';
 
 /** Backend delta only (the shared twin covers engine behavior): MissingAncestorError becomes AppError(400, 'missing_ancestor'). */
 describe('buildSubject (backend error translation)', () => {
@@ -34,5 +34,14 @@ describe('buildSubject (backend error translation)', () => {
     const subject = buildSubject(product, channelIds);
     expect(subject.entityType).toBe(product);
     for (const a of ancestors) expect(subject.channelIds[a]).toBe(`test-${a}-id`);
+  });
+
+  it('validateAncestorScope translates through the same path', () => {
+    expectMissingScope(() => validateAncestorScope({ entityType: product, channelIds: {} }));
+  });
+
+  it('validateAncestorScope passes a fully scoped subject through unchanged', () => {
+    const channelIds = Object.fromEntries(ancestors.map((a) => [a, `test-${a}-id`]));
+    expect(() => validateAncestorScope({ entityType: product, channelIds })).not.toThrow();
   });
 });

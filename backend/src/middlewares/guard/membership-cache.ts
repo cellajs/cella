@@ -1,13 +1,11 @@
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
+import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { coalesce } from '#/utils/request-coalescing';
-
-export type CachedMemberships = (MembershipBaseModel & { createdBy: string | null })[];
 
 /**
  * A user's memberships with the `actors.bindings_version` they were read at. An entry answers only to that version,
@@ -18,7 +16,7 @@ export type CachedMemberships = (MembershipBaseModel & { createdBy: string | nul
 const activeTenantOf = (tenantId: typeof membershipsTable.tenantId) =>
   sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
 
-const membershipCache = new TTLCache<{ version: string; memberships: CachedMemberships }>({ maxSize: 5000, defaultTtl: 30 * 60_000 });
+const membershipCache = new TTLCache<{ version: string; memberships: Env['Variables']['memberships'] }>({ maxSize: 5000, defaultTtl: 30 * 60_000 });
 
 /**
  * The user's memberships at the bindings version the request read with its session or token. A miss reads the
@@ -29,7 +27,7 @@ const membershipCache = new TTLCache<{ version: string; memberships: CachedMembe
  * @param bindingsVersion - `actors.bindings_version` as the request read it.
  * @returns The memberships, at least as current as the version.
  */
-export const loadMemberships = async (userId: string, bindingsVersion: string): Promise<CachedMemberships> => {
+export const loadMemberships = async (userId: string, bindingsVersion: string): Promise<Env['Variables']['memberships']> => {
   const cached = membershipCache.get(userId);
   if (cached?.version === bindingsVersion) return cached.memberships;
 

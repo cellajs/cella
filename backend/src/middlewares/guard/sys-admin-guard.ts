@@ -8,9 +8,7 @@ import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-acco
 import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getIp } from '#/utils/get-ip';
 import { getIsoDate } from '#/utils/iso-date';
-import { env } from '../../env';
-
-const allowList = env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(',');
+import { systemAdminAllowList } from '#/utils/system-access';
 
 /**
  * Only users holding the 'admin' system role proceed; anyone else triggers a security notification. An impersonation
@@ -39,7 +37,7 @@ const combinedMiddleware: MiddlewareHandler = every(
   // allowlist entry and denies by default without throwing.
   ipRestriction(
     (c) => getIp(c) ?? '',
-    { allowList },
+    { allowList: systemAdminAllowList() },
     async (remote) => {
       const ip = remote.addr ?? 'unknown';
       sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: getIsoDate() });

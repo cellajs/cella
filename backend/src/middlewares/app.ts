@@ -8,8 +8,8 @@ import type { Env } from '#/core/context';
 import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
-import { hasApiKeyHeader } from '#/middlewares/guard';
 import { loggerMiddleware } from '#/middlewares/logger';
+import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>();

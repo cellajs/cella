@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
+import { missingRouteParam } from '#/middlewares/guard/route-target';
 import { isMembershipRow } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -22,8 +23,9 @@ export const orgGuard = xMiddleware(
     description: 'Requires being in the organization: a member of it or of a channel below it, or a system admin',
   },
   async (ctx, next) => {
-    const organizationId = ctx.req.param('organizationId');
-    if (!organizationId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
+    // Lowercased as the stored id is: the row is cached under the id `invalidateCache.org` drops.
+    const organizationId = ctx.req.param('organizationId')?.toLowerCase();
+    if (!organizationId) throw missingRouteParam('organizationId');
 
     const db = ctx.var.db;
     // Role bindings of whoever is acting: a user's memberships, or a service account's stored bindings.
@@ -31,7 +33,7 @@ export const orgGuard = xMiddleware(
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 
-    if (!db) {
+    if (!tenantId) {
       throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires tenantGuard middleware' });
     }
 
@@ -58,7 +60,7 @@ export const orgGuard = xMiddleware(
     // in the org. This guard only rejects callers with no foothold at all; the permission engine
     // does the fine-grained work.
     const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
-    const isInOrganization = orgMembership !== null || memberships.some((m) => m.organizationId === organization.id);
+    const isInOrganization = memberships.some((m) => m.organizationId === organization.id);
     if (!isSystemAdmin && !isInOrganization) throw missing();
     // A service account's binding is not a membership row; the organization-level membership is a user's only.
     const orgWithMembership = { ...organization, membership: orgMembership && isMembershipRow(orgMembership) ? orgMembership : null };

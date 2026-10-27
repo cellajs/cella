@@ -3,6 +3,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { routeTarget } from '#/middlewares/guard/route-target';
 import { findConnectionBindingUser } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
@@ -38,11 +39,7 @@ export const tenantGuard = xMiddleware(
     description: 'Requires being in the tenant: a member, a system admin, or its creator while it has no organization',
   },
   async (ctx, next) => {
-    const rawTenantId = ctx.req.param('tenantId');
-    if (!rawTenantId) {
-      throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
-    }
-    const tenantId = rawTenantId.toLowerCase();
+    const { tenantId } = routeTarget(ctx);
 
     const actor = ctx.var.actor;
     if (!actor) throw new AppError(500, 'server_error', 'error', { message: 'tenantGuard requires userGuard or serviceGuard' });

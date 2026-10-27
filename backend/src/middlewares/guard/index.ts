@@ -1,4 +1,3 @@
-export { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 export * from './actor-guard';
 export * from './org-guard';
 export * from './public-guard';

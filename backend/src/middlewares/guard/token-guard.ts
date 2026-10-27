@@ -1,6 +1,7 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { routeTarget, setActorFromToken, unauthorized } from '#/middlewares/guard/service-guard';
+import { missingRouteParam, routeTarget } from '#/middlewares/guard/route-target';
+import { setActorFromToken, unauthorized } from '#/middlewares/guard/service-guard';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 
@@ -21,7 +22,7 @@ export const tokenGuard = xMiddleware(
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);
-    if (!target.organizationId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
+    if (!target.organizationId) throw missingRouteParam('organizationId');
     const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: target.tenantId, organizationId: target.organizationId });
 
     const jwt = bearerJwtFrom(ctx);

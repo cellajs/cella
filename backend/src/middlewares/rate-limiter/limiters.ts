@@ -103,7 +103,7 @@ export const pointsLimiter = (cost = 1) =>
     functionName: 'pointsLimiter',
     name: 'points',
     description: 'API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget',
-    getConsumePoints: cost > 0 ? undefined : bulkBodyLength,
+    getConsumePoints: cost > 0 ? () => cost : bulkBodyLength,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
       const budget = tenant?.restrictions?.rateLimits?.apiPointsPerHour;

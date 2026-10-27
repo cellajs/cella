@@ -1,23 +1,13 @@
 import { type ChannelEntityType, type ChannelIdColumns, draftVisibleTo, type EntityActionType, isChannel, type ProductEntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
-import { tenantRead } from '#/db/tenant-context';
+import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { checkAccessBatch } from '#/permissions';
 import { accessFrom, actorFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { type DraftChannelRow, draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
-
-type ScopedRow = { id: string; tenantId?: string; organizationId?: string | null };
-
-/** A row is in scope when it matches every id the guard chain set; the organization row itself carries no `organizationId`. */
-const inRequestScope = (ctx: ActorContext, row: ScopedRow): boolean => {
-  const { tenantId, organizationId } = ctx.var;
-  if (tenantId && 'tenantId' in row && row.tenantId !== tenantId) return false;
-  if (organizationId && 'organizationId' in row && row.organizationId !== organizationId) return false;
-  return true;
-};
+import { inRequestScope } from '#/permissions/get-valid-channel';
 
 /** The draft rule of the single reads: a product draft shows to its author, a channel draft to whom its list shows it. */
 const draftShowsTo = (ctx: ActorContext, entityType: ChannelEntityType | ProductEntityType, row: Record<string, unknown>): boolean =>
@@ -40,12 +30,9 @@ export const splitByPermission = async (
   entityType: ChannelEntityType | ProductEntityType,
   ids: string[],
 ) => {
-  // Resolve entities (createdBy included for the owner relation); auto-wrap in tenantRead outside an RLS context.
-  const resolved =
-    ctx.var.db === baseDb
-      ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }))
-      : await resolveEntities(ctx, { entityType, ids });
-  const entities = resolved.filter((entity) => inRequestScope(ctx, entity as ScopedRow) && draftShowsTo(ctx, entityType, entity));
+  // Resolve entities (createdBy included for the owner relation).
+  const resolved = await tenantReadUnlessInTransaction(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }));
+  const entities = resolved.filter((entity) => inRequestScope(ctx, entity) && draftShowsTo(ctx, entityType, entity));
 
   // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.
   const subjects = entities.map((entity) =>

@@ -2,7 +2,7 @@ import { draftVisibleTo, type EntityActionType, type ProductEntityType } from 's
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { tenantRead } from '#/db/tenant-context';
+import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { requestScope } from '#/db/utils/request-scope';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
@@ -38,19 +38,18 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // A lock lasts as long as its transaction, and the read below opens a read-only one of its own.
   if (forUpdate && ctx.var.db === baseDb) throw new Error('getValidProduct: forUpdate needs the transaction of the write it guards');
 
-  // Bare baseDb carries no RLS session context, so the read runs inside a tenant transaction.
-  const entity =
-    ctx.var.db === baseDb
-      ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id }))
-      : await resolveEntity(ctx, { entityType, identifier: id, forUpdate });
+  const entity = await tenantReadUnlessInTransaction(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id, forUpdate }));
 
   // Missing, soft-deleted, foreign-tenant, foreign-organization and invisible-draft rows all read
   // as the same 404, so a row's existence is never revealed outside its scope.
-  if (!entity || entity.tenantId !== tenantId || entity.organizationId !== organizationId) {
-    throw new AppError(404, 'not_found', 'warn', { entityType });
-  }
-  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.actor.id)) {
-    throw new AppError(404, 'not_found', 'warn', { entityType });
+  const notFound = () => new AppError(404, 'not_found', 'warn', { entityType });
+  if (
+    !entity ||
+    entity.tenantId !== tenantId ||
+    entity.organizationId !== organizationId ||
+    !draftVisibleTo(entity as Record<string, unknown>, ctx.var.actor.id)
+  ) {
+    throw notFound();
   }
 
   // The entity doubles as `row`, so 'own' row conditions and public read grants evaluate from real row data.
@@ -59,7 +58,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
 
   // A row the caller may not read reads as missing too: a 403 would confirm the id. 403 is for an action denied on a
   // row the caller reads.
-  if (!checkAccess(access, 'read', subject).allowed) throw new AppError(404, 'not_found', 'warn', { entityType });
+  if (!checkAccess(access, 'read', subject).allowed) throw notFound();
   if (action !== 'read' && !checkAccess(access, action, subject).allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }

@@ -116,11 +116,11 @@ describe('CDC socket: a connection that was replaced', () => {
 });
 
 describe('CDC socket: a change drops the detail cache entry of its row', () => {
-  const cached = (id: string) => productCache.get(`attachment:${id}`);
+  const cached = (id: string) => productCache.get('attachment', id);
 
   beforeEach(() => {
     productCache.clear();
-    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCache.set(`attachment:${id}`, { id }, performance.now());
+    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCache.set('attachment', { id }, performance.now());
   });
 
   it('drops the entry of a deleted row, with no listener on the bus', () => {

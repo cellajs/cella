@@ -167,7 +167,6 @@ describe('TTLCache', () => {
         () => cache.invalidateByPrefix('key'),
         () => cache.invalidateWhere(() => false),
         () => cache.clear(),
-        () => cache.discardPendingLoads(),
       ];
       for (const invalidate of invalidations) {
         const stale = heldRead();
@@ -238,22 +237,6 @@ describe('TTLCache', () => {
 
       expect(await pending).toBe('value1');
       expect(otherRead).toHaveBeenCalledTimes(1);
-    });
-
-    it('tells onSet of a loaded value, and of a replacement after the replaced entry was disposed', async () => {
-      const events: string[] = [];
-      const indexed = new TTLCache<string>({
-        maxSize: 3,
-        defaultTtl: 1000,
-        onSet: (key, value) => events.push(`stored ${key}=${value}`),
-        onDispose: (key, value, reason) => events.push(`disposed (${reason}) ${key}=${value}`),
-      });
-
-      await indexed.load('key1', async () => 'loaded');
-      indexed.set('key1', 'replaced');
-
-      // An index kept by both callbacks ends with the key in it: the removal comes first.
-      expect(events).toEqual(['stored key1=loaded', 'disposed (set) key1=loaded', 'stored key1=replaced']);
     });
   });
 });

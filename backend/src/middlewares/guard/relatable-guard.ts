@@ -29,18 +29,17 @@ export const relatableGuard = xMiddleware(
       return;
     }
 
+    // One answer for a missing user and an unshared one, so the guard never tells whether a user exists.
+    const unrelated = () => new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
+
     // Guards run before request validation: another user named by anything but a user id relates to nobody, and it
     // never reaches the uuid-typed query below.
-    if (!validUuidSchema.safeParse(targetUserId).success) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (!validUuidSchema.safeParse(targetUserId).success) throw unrelated();
 
     const memberships = ctx.var.memberships;
     const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
 
-    if (myOrgIds.length === 0) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (myOrgIds.length === 0) throw unrelated();
 
     // memberships_select_authenticated_policy lets any authenticated user read membership rows in cross-tenant RLS
     const db = ctx.var.db;
@@ -50,9 +49,7 @@ export const relatableGuard = xMiddleware(
       .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, myOrgIds)))
       .limit(1);
 
-    if (!shared) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
-    }
+    if (!shared) throw unrelated();
 
     await next();
   },

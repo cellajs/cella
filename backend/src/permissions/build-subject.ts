@@ -1,5 +1,10 @@
 import type { ChannelEntityType, ChannelIdColumns, ProductEntityType, SubjectForPermission } from 'shared';
-import { MissingAncestorError, buildSubject as sharedBuildSubject, buildSubjectFromEntity as sharedBuildSubjectFromEntity } from 'shared';
+import {
+  MissingAncestorError,
+  buildSubject as sharedBuildSubject,
+  buildSubjectFromEntity as sharedBuildSubjectFromEntity,
+  validateAncestorScope as sharedValidateAncestorScope,
+} from 'shared';
 import { AppError } from '#/core/error';
 
 /** Translate the shared engine's tier-neutral `MissingAncestorError` into `AppError(400, 'missing_ancestor')`. */
@@ -37,5 +42,17 @@ export const buildSubjectFromEntity = (
     return sharedBuildSubjectFromEntity(entityType, entity);
   } catch (e) {
     return translateMissingScope(e);
+  }
+};
+
+/**
+ * Backend wrapper over the shared `validateAncestorScope`: every ancestor channel ID must be present on the subject.
+ * @throws AppError 400 if any ancestor channel ID is undefined (missing)
+ */
+export const validateAncestorScope = (entity: SubjectForPermission): void => {
+  try {
+    sharedValidateAncestorScope(entity);
+  } catch (e) {
+    translateMissingScope(e);
   }
 };

@@ -27,8 +27,8 @@ export const invalidateOrgCache = (tenantId: string, orgId: string): void => {
 };
 
 /** Invalidate all cached orgs for a tenant (e.g. on tenant deletion) */
-export const invalidateOrgCacheByTenant = (tenantId: string): number => {
-  return cache.invalidateByPrefix(`${tenantId}:`);
+export const invalidateOrgCacheByTenant = (tenantId: string): void => {
+  cache.invalidateByPrefix(`${tenantId}:`);
 };
 
 export const clearOrgCache = (): void => {

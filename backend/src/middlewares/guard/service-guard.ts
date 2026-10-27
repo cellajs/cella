@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import type { Env } from '#/core/context';
+import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { loadApiKeyCache } from '#/middlewares/guard/api-key-cache';
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
-import { loadTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
+import { routeTarget } from '#/middlewares/guard/route-target';
+import { loadTokenGrantCache, type TokenGrantEntry, type UserToken } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
@@ -15,17 +16,18 @@ import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queri
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { apiKeyFrom, apiKeyRefusal, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
+import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
-/** The route's tenant and organization ids as the URL carries them; every machine guard binds the key or token to them. */
-export function routeTarget(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
-  const tenantId = ctx.req.param('tenantId')?.toLowerCase();
-  if (!tenantId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
-  return { tenantId, organizationId: ctx.req.param('organizationId') };
-}
+/** A service account acts with its stored bindings, masked by the scopes of the key or token; no machine proof is system admin. */
+const setServiceActor = (ctx: Context<Env>, account: ServiceAccountModel, scopes: Actor['scopes']) => {
+  ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes });
+  ctx.set('isSystemAdmin', false);
+  ctx.set('db', baseDb);
+};
 
 /**
  * A token from the app's own authorization server (D12): verified locally, bound to this route's tenant, it runs as
@@ -51,21 +53,12 @@ export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: {
       authStrategy: (token.authStrategy as AuthStrategy | null) ?? null,
       connectionId: token.connectionId,
     });
+    ctx.set('isSystemAdmin', false);
+    ctx.set('db', baseDb);
   } else {
-    const account = await resolveServiceToken(token);
-    ctx.set('actor', {
-      kind: 'service',
-      id: account.id,
-      tenantId: account.tenantId,
-      bindings: account.bindings,
-      scopes: token.scopes,
-    });
+    setServiceActor(ctx, await resolveServiceToken(token), token.scopes);
   }
-  ctx.set('isSystemAdmin', false);
-  ctx.set('db', baseDb);
 }
-
-type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
 
 /**
  * A person's token: the grant it names and the user's bindings version are read at every use, so a revoked grant
@@ -148,16 +141,7 @@ export const serviceGuard = xMiddleware(
     if (refusal) throw unauthorized(refusal);
     const { apiKey, account } = resolved;
     updateLastSeenAt(account.id);
-
-    ctx.set('actor', {
-      kind: 'service',
-      id: account.id,
-      tenantId: account.tenantId,
-      bindings: account.bindings,
-      scopes: apiKey.scopes,
-    });
-    ctx.set('isSystemAdmin', false);
-    ctx.set('db', baseDb);
+    setServiceActor(ctx, account, apiKey.scopes);
 
     return serviceBurstLimiter(ctx, next);
   },

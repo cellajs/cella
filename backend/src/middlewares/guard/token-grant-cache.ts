@@ -13,7 +13,8 @@ interface CachedVerdict {
   clientId: string;
 }
 
-type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
+/** A verified token of a person: it acts as the user who consented. */
+export type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
 
 /**
  * Keyed `<user id>:<grant id>:<tenant>:<bindings version>`, so every verdict about one user, or on one grant, drops by

@@ -3,7 +3,7 @@ import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
-import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
+import { validateAncestorScope } from '#/permissions/build-subject';
 
 /**
  * Create check for a product or channel entity, separate from read/update/delete because the row

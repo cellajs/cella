@@ -78,10 +78,9 @@ const resolveScopes = (
   organizationId: string,
   elevatedGrants: ReadonlySet<string> | undefined,
   ancestors: readonly ChannelEntityType[], // most-specific → organization, e.g. [project, course, organization]
+  homeChannelType: ChannelEntityType | null,
   publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
-  const homeChannelType = ancestors.find((channel) => channel !== 'organization') ?? null;
-
   // With elevatedGrants configured, a non-elevated grant speaks only for rows HOMED at its level; a
   // grant at the product's parent (the organization included) is home-exact already and carries no mark.
   const isHomeScopedGrant = (channelType: ChannelEntityType, role: EntityRole): boolean =>
@@ -291,25 +290,13 @@ export const resolveCollectionReadFilterForPolicies = ({
 
   const resolvedHierarchy = hierarchy ?? appHierarchy;
   const orderedChannels = resolvedHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
-  const acc = resolveScopes(policies, memberships, entityType, organizationId, elevatedGrants, orderedChannels, publicGrants);
+  const homeChannelType = orderedChannels.find((channel) => channel !== 'organization') ?? null;
+  const acc = resolveScopes(policies, memberships, entityType, organizationId, elevatedGrants, orderedChannels, homeChannelType, publicGrants);
   const conditionalScopes = toConditionalScopes(acc, orderedChannels);
-  const homeChannel = orderedChannels.find((channel) => channel !== 'organization') ?? null;
-  const intermediateScopes = toIntermediateScopes(acc);
-  const homeScopes = toHomeScopes(acc, orderedChannels);
-
-  const withScopes = (
-    filter: Omit<CollectionReadFilter, 'intermediateScopes' | 'homeScopes'>,
-    intermediates: IntermediateScope[] = intermediateScopes,
-    homes: HomeScope[] = homeScopes,
-  ): CollectionReadFilter => {
-    let base: CollectionReadFilter = intermediates.length > 0 ? { ...filter, intermediateScopes: intermediates } : filter;
-    if (homes.length > 0) base = { ...base, homeScopes: homes };
-    return base;
-  };
 
   const unconditionallyReadable = (id: string): boolean => acc.unconditionalOrgWide || acc.unconditionalIds.has(id);
   const isIntermediate = (channelType: ChannelEntityType | undefined): boolean =>
-    channelType !== undefined && channelType !== homeChannel && channelType !== 'organization';
+    channelType !== undefined && channelType !== homeChannelType && channelType !== 'organization';
 
   // Restrict requested ids only at home level; intermediate grants could otherwise widen the set.
   const conditionalScopesFor = (ids: string[]): ConditionalScope[] => {
@@ -332,7 +319,7 @@ export const resolveCollectionReadFilterForPolicies = ({
 
     const scopes = conditionalScopesFor([id]);
     if (scopes.length === 0) {
-      throw new AppError(404, 'not_found', 'warn', { entityType: homeChannel ?? entityType });
+      throw new AppError(404, 'not_found', 'warn', { entityType: homeChannelType ?? entityType });
     }
     return { homeChannelIds: [], conditionalScopes: scopes };
   }
@@ -344,5 +331,12 @@ export const resolveCollectionReadFilterForPolicies = ({
   }
 
   // Aggregate read: org-wide for root-level grants, else the readable home channels plus intermediate / home scopes.
-  return withScopes({ homeChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds], conditionalScopes });
+  const intermediateScopes = toIntermediateScopes(acc);
+  const homeScopes = toHomeScopes(acc, orderedChannels);
+  return {
+    homeChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds],
+    conditionalScopes,
+    ...(intermediateScopes.length > 0 && { intermediateScopes }),
+    ...(homeScopes.length > 0 && { homeScopes }),
+  };
 };
