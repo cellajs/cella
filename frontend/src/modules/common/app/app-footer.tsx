@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Logo } from '~/modules/common/logo';
 import { UserLanguage } from '~/modules/me/user-language';
@@ -11,7 +10,8 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 export interface FooterLinkProps {
-  id: string;
+  /** The link's `c:` locale key, which names it. */
+  id: 'about' | 'legal' | 'sign_in' | 'status';
   href: string;
 }
 
@@ -27,7 +27,7 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
   return (
     <li>
       <Button size="xs" variant="ghost" render={<Link to={href} />}>
-        {t(`c:${id}` as TKey)}
+        {t(`c:${id}`)}
       </Button>
     </li>
   );
@@ -42,7 +42,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
   const { t } = useTranslation();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
   const statusUrl = appConfig.statusUrl?.trim();
-  const footerLinks = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
+  const footerLinks: FooterLinkProps[] = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
 
   return (
     <ul className={cn('flex flex-wrap gap-4 text-center', className)}>

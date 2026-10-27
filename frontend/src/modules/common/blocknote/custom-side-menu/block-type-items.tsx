@@ -1,7 +1,8 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, useComponentsContext, useExtension } from '@blocknote/react';
+import { type BlockTypeSelectItem, useExtension } from '@blocknote/react';
 import { getBlockTypeItems, isCurrentBlockType } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
+import { useBlockNoteComponents } from '~/modules/common/blocknote/hooks/use-blocknote-components';
 import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {
@@ -9,7 +10,7 @@ interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {
 }
 
 export function BlockTypeItems({ editor, block, allowedTypes, headingLevels }: BlockTypeItemsProps) {
-  const Components = useComponentsContext()!;
+  const Components = useBlockNoteComponents();
   const sideMenu = useExtension(SideMenuExtension);
 
   const items = getBlockTypeItems(editor, allowedTypes, headingLevels);

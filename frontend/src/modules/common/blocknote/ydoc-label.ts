@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import type { ProductEntityType } from 'shared';
 import * as Y from 'yjs';
-import type { TKey } from '~/lib/i18n-locales';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
@@ -54,5 +53,5 @@ export function yDocLabel({ entityId, entityType, firstLine }: { entityId: strin
   const name = cachedEntityName(entityId, entityType);
   if (name) return name;
   if (firstLine) return `“${firstLine.length > maxLineLength ? `${firstLine.slice(0, maxLineLength).trimEnd()}…` : firstLine}”`;
-  return entityType ? i18n.t(`c:${entityType}` as TKey) : i18n.t('c:unknown');
+  return entityType ? i18n.t(`c:${entityType}`) : i18n.t('c:unknown');
 }

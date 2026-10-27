@@ -13,6 +13,7 @@ const rewriteNotProse = (value: unknown): unknown => {
   return value;
 };
 
+// Cast: the package types the plugin as `{ handler: () => void }`; at runtime its handler takes the plugin API and it carries a config.
 const typography = typographyPlugin() as unknown as { handler: (api: PluginApi) => void; config: { theme: Record<string, unknown> } };
 
 /**

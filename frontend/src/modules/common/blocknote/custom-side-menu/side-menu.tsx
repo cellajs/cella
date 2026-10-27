@@ -1,9 +1,10 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { SideMenu, SideMenuController, useComponentsContext, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
+import { SideMenu, SideMenuController, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
 import { type DragEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockTypeItems } from '~/modules/common/blocknote/custom-side-menu/block-type-items';
+import { useBlockNoteComponents } from '~/modules/common/blocknote/hooks/use-blocknote-components';
 import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
@@ -116,7 +117,7 @@ interface MoveBlockItemsProps {
 /** Moves the block one place, for a pointer that cannot drag; the keyboard has the editor's own shortcut. */
 function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsProps) {
   const { t } = useTranslation();
-  const Components = useComponentsContext()!;
+  const Components = useBlockNoteComponents();
   if (!editor.isEditable) return null;
 
   return (
