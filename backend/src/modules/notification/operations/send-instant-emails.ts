@@ -3,11 +3,10 @@ import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
-import { log } from '#/utils/logger';
-import { commentEmail } from '../emails/comment-email';
-import { mentionEmail } from '../emails/mention-email';
-import { buildUnsubscribeLink } from '../helpers/category-token';
-import { htmlToExcerpt } from '../helpers/render-digest-html';
+import { commentEmail } from '#/modules/notification/emails/comment-email';
+import { mentionEmail } from '#/modules/notification/emails/mention-email';
+import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
+import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import {
   findChannelNames,
   findPendingInstantEmails,
@@ -15,9 +14,10 @@ import {
   findVerifiedRecipients,
   getUserAccess,
   stampEmailed,
-} from '../notification-queries';
-import { getNotificationSource, loadSubjectPreview } from '../notification-sources';
-import { findReadableSubjectIds } from './readable-subjects';
+} from '#/modules/notification/notification-queries';
+import { getNotificationSource, loadSubjectPreview } from '#/modules/notification/notification-sources';
+import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
+import { log } from '#/utils/logger';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const excerptLength = 250;
@@ -74,7 +74,6 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     };
     const recipient = {
       email: user.email,
-      // Per recipient, unlike the newsletter path which mails everyone in the sender's language.
       lng: user.language,
       subjectTitle: preview.title,
       excerpt: htmlToExcerpt(preview.body, excerptLength),

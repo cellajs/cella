@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
 import { activityBus } from '#/lib/activity-bus';
+import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
+import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { log } from '#/utils/logger';
-import { fanOutNotifications } from './operations/fan-out';
-import { sendPendingInstantEmails } from './operations/send-instant-emails';
 
 // Activity bus listeners: product writes become per-recipient inbox rows. The fan-out skips types without a declared
 // source (notification-sources.ts) and the instant email pass runs only after it wrote a row the pass mails, so both

@@ -1,9 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { maxLength } from '#/db/utils/constraints';
+import { deletePushSubscription, upsertPushSubscription } from '#/modules/push/push-queries';
+import { pushRoutes } from '#/modules/push/push-routes';
+import { getVapidPublicKey } from '#/modules/push/push-sender';
 import { defaultHook } from '#/utils/default-hook';
-import { deletePushSubscription, upsertPushSubscription } from './push-queries';
-import { pushRoutes } from './push-routes';
-import { getVapidPublicKey } from './push-sender';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -20,7 +21,7 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
       p256dh: body.keys.p256dh,
       auth: body.keys.auth,
       expirationTime: body.expirationTime ? new Date(body.expirationTime).toISOString() : null,
-      userAgent: ctx.req.header('user-agent')?.slice(0, 250) ?? null,
+      userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },
   });
   return ctx.json(row, 200);

@@ -1,9 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { getIsoDate } from '#/utils/iso-date';
-import { pushSubscriptionsTable } from './push-subscription-db';
 
-export interface PushSubscriptionInput {
+interface PushSubscriptionInput {
   userId: string;
   endpoint: string;
   p256dh: string;
@@ -35,7 +35,7 @@ interface DeletePushSubscriptionOpts {
   endpoint: string;
 }
 
-/** Scoped to the caller: an endpoint owned by another user is a silent no-op. */
+/** Scoped to the caller: an endpoint another user registered deletes nothing. */
 export async function deletePushSubscription(ctx: DbContext, { userId, endpoint }: DeletePushSubscriptionOpts): Promise<number> {
   const deleted = await ctx.var.db
     .delete(pushSubscriptionsTable)
@@ -48,6 +48,7 @@ interface FindSubscriptionsByUserIdsOpts {
   userIds: string[];
 }
 
+/** Every subscription of these users, one per browser installation. */
 export async function findSubscriptionsByUserIds(ctx: DbContext, { userIds }: FindSubscriptionsByUserIdsOpts) {
   if (userIds.length === 0) return [];
   return ctx.var.db.select().from(pushSubscriptionsTable).where(inArray(pushSubscriptionsTable.userId, userIds));

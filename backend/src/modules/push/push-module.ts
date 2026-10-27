@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { pushHandlers } from './push-handlers';
+import { pushHandlers } from '#/modules/push/push-handlers';
 
 defineBackendModule({
   name: 'push',

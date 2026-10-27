@@ -1,8 +1,8 @@
 import type { DbContext } from '#/core/context';
-import { type DigestSection, describeDigestRow } from '../helpers/render-digest-html';
-import { findChannelNames, findUndigestedNotifications, getUserAccess } from '../notification-queries';
-import { findSubjectNames } from '../notification-sources';
-import { findReadableSubjectIds } from './readable-subjects';
+import { type DigestSection, describeDigestRow } from '#/modules/notification/helpers/render-digest-html';
+import { findChannelNames, findUndigestedNotifications, getUserAccess } from '#/modules/notification/notification-queries';
+import { findSubjectNames } from '#/modules/notification/notification-sources';
+import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
 
 /** Rows quoted per channel before the section collapses into "and N more". */
 const rowsPerChannel = 5;
@@ -10,7 +10,7 @@ const rowsPerChannel = 5;
 /** Rows read per digest, oldest activity first; the overflow counts cover these, and rows past them are left out. */
 const maxRows = 500;
 
-export interface DigestContent {
+interface DigestContent {
   notificationIds: string[];
   sections: DigestSection[];
 }

@@ -3,9 +3,9 @@ import webpush, { type RequestOptions } from 'web-push';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpoint';
+import { deleteSubscriptionsByEndpoints, findSubscriptionsByUserIds } from '#/modules/push/push-queries';
 import { log } from '#/utils/logger';
-import { isPushServiceEndpoint } from './helpers/push-service-endpoint';
-import { deleteSubscriptionsByEndpoints, findSubscriptionsByUserIds } from './push-queries';
 
 /**
  * Wire payload for one push, `{ t: 'notif', ... }`. Ids only, never content: the service worker
@@ -53,10 +53,14 @@ function getVapid(): VapidDetails | null {
 }
 
 /** Sending needs the flag AND both keys, accepted by web-push; otherwise the module is receive-only. */
-export const isPushSendConfigured = (): boolean => getVapid() !== null;
+export function isPushSendConfigured(): boolean {
+  return getVapid() !== null;
+}
 
 /** The VAPID public key while sending is on, else null: a browser subscribes only where a push can reach it. */
-export const getVapidPublicKey = (): string | null => getVapid()?.publicKey ?? null;
+export function getVapidPublicKey(): string | null {
+  return getVapid()?.publicKey ?? null;
+}
 
 interface SendableSubscription {
   endpoint: string;
@@ -64,7 +68,7 @@ interface SendableSubscription {
   auth: string;
 }
 
-/** Injectable seams so the batch logic (pruning, backoff, online subtraction) unit-tests without a push service. */
+/** Injected so the batch logic (pruning, backoff, online check) tests without a push service. */
 export interface PushSendDeps {
   send: (subscription: SendableSubscription, payload: string) => Promise<void>;
   findSubscriptions: (userIds: string[]) => Promise<SendableSubscription[]>;
@@ -89,14 +93,13 @@ const defaultDeps: PushSendDeps = {
 };
 
 /**
- * Push one notification payload to every offline subscriber among `userIds`. Never throws: the
- * caller is the post-commit fan-out, and delivery is best-effort on top of the durable inbox row.
+ * Push one notification payload to every offline subscriber among `userIds`. Never throws: the caller is the
+ * post-commit fan-out, and delivery is best-effort on top of the durable inbox row.
  *
- * 404/410 responses prune the subscription (the push service says the endpoint is gone); a 429
- * aborts the remaining batch (back off until the next event); 403s keep their rows and are
- * counted into one warning, because a VAPID key deployed by mistake answers 403 for every
- * subscription; other errors are logged per endpoint and skipped. A stored row whose host is not in `pushServiceHosts`
- * is never sent to, and the pass logs one warning with the count of such rows.
+ * 404/410 responses prune the subscription (the push service says the endpoint is gone); a 429 aborts the remaining
+ * batch (back off until the next event); 403s keep their rows and are counted into one warning, because a VAPID key
+ * deployed by mistake answers 403 for every subscription; other errors are logged per endpoint and skipped. A stored
+ * row whose host is not in `pushServiceHosts` is never sent to, and the pass logs one warning with the count of such rows.
  */
 export async function sendNotificationPush(userIds: string[], payload: NotificationPushPayload, deps: PushSendDeps = defaultDeps): Promise<void> {
   try {

@@ -1759,7 +1759,7 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
 /**
  * Get the Web Push application server key
  *
- * Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.
+ * Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.
  *
  * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push · cella_
  *

@@ -4,6 +4,10 @@ import { findUsersByIds } from '#/modules/system/system-queries';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { log } from '#/utils/logger';
 
+/**
+ * Deletes the accounts these ids name; an id that names no user comes back in `rejectedIds`.
+ * @throws AppError 404 `not_found` when no id names a user.
+ */
 export async function deleteUsersOp(ctx: UserContext, ids: string[]) {
   const targets = await findUsersByIds(ctx, { ids });
 

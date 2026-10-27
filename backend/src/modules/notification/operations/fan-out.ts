@@ -6,16 +6,18 @@ import { tenantReadById } from '#/db/tenant-context';
 import { homeChannelOf } from '#/db/utils/home-channel';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
+import {
+  findNotifiedUserIds,
+  getUserAccess,
+  insertNotificationsIgnoringDuplicates,
+  type NotificationInsert,
+} from '#/modules/notification/notification-queries';
+import { getNotificationSource, loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
+import { instantEmailTypes, type NotificationType } from '#/modules/notification/notification-types';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import { findNotifiedUserIds, getUserAccess, insertNotificationsIgnoringDuplicates, type NotificationInsert } from '../notification-queries';
-import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
-import { instantEmailTypes, type NotificationType, notificationTypes } from '../notification-types';
-
-/** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
-const mutedTypes = new Set<NotificationType>(notificationTypes.filter((type) => type !== 'mention'));
 
 type Candidate = { userId: string; type: NotificationType };
 
@@ -139,8 +141,8 @@ async function fanOutRow(
 
   log.debug('Notifications created', { activityId, subjectId: row.id, recipientCount: allowed.length });
 
-  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this
-  // costs one subscription lookup. Never awaited into the fan-out's failure path.
+  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this costs one subscription
+  // lookup. `sendNotificationPush` never throws; the instant email pass runs once it returns.
   if (isPushSendConfigured()) {
     const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
     const url = buildNotificationLink(appConfig.frontendUrl, {
@@ -162,7 +164,7 @@ async function fanOutRow(
 }
 
 /**
- * Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted.
+ * Keep only recipients who may read the row, then drop candidates other than mentions whose home membership is muted.
  * A candidate that names no user is left out alone: a public row reads for any id, and the inbox holds users only.
  */
 async function filterByReadAccess(
@@ -182,7 +184,8 @@ async function filterByReadAccess(
 
   return known.flatMap(({ candidate, access }, index) => {
     if (!decisions[index]?.allowed) return [];
-    if (!mutedTypes.has(candidate.type)) return [candidate];
+    // A mention is addressed to the user, so a muted membership never silences it.
+    if (candidate.type === 'mention') return [candidate];
 
     const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
     return muted ? [] : [candidate];

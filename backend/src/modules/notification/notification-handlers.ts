@@ -1,12 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { defaultHook } from '#/utils/default-hook';
 import '#/modules/notification/notification-listeners';
-import { notificationRoutes } from './notification-routes';
-import { getNotificationsOp } from './operations/get-notifications';
-import { markReadOp } from './operations/mark-read';
-import { getPreferencesOp, updatePreferencesOp } from './operations/preferences';
-import { unsubscribeNotificationsOp } from './operations/unsubscribe';
+import { notificationRoutes } from '#/modules/notification/notification-routes';
+import { getNotificationsOp } from '#/modules/notification/operations/get-notifications';
+import { markReadOp } from '#/modules/notification/operations/mark-read';
+import { getPreferencesOp, updatePreferencesOp } from '#/modules/notification/operations/preferences';
+import { unsubscribeNotificationsOp } from '#/modules/notification/operations/unsubscribe';
+import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -36,7 +36,7 @@ app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => {
 app.openapi(notificationRoutes.unsubscribeNotifications, async (ctx) => {
   const { user, category, token } = ctx.req.valid('query');
   const redirectUrl = await unsubscribeNotificationsOp(ctx, { userId: user, category, token });
-  return ctx.redirect(redirectUrl.toString(), 302);
+  return ctx.redirect(redirectUrl, 302);
 });
 
 export const notificationHandlers = app;

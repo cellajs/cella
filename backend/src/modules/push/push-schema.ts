@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
+import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpoint';
 import { refineWithType } from '#/schemas/common-schemas';
-import { isPushServiceEndpoint } from './helpers/push-service-endpoint';
 
 /** A subscription's push service URL. */
 const endpointSchema = z.url().max(2048);

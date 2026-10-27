@@ -1,6 +1,6 @@
+import { SubjectEmail, type SubjectEmailRecipient } from '#/modules/notification/emails/subject-email';
 import { i18n, plainText } from '../../../../emails/i18n';
 import { defineEmailTemplate } from '../../../../emails/types';
-import { SubjectEmail, type SubjectEmailRecipient } from './mention-email';
 
 interface CommentStatic {
   /** Empty string when the actor is gone. */

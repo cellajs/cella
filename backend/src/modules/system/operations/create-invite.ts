@@ -6,6 +6,10 @@ import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
+/**
+ * Invites addresses to the app by mail, outside any organization. An address a verified account holds, or one with an
+ * unexpired invitation, is refused and comes back in `rejectedIds`.
+ */
 export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
   // The body schema trims and lowercases each address; the set drops repeats.

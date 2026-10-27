@@ -12,6 +12,10 @@ import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof userUpdateBodySchema>;
 
+/**
+ * A system admin's update of any user; returns the user with their activity times.
+ * @throws AppError 404 `not_found` for an unknown id, 409 `slug_exists` for a slug another user holds.
+ */
 export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUserInput) {
   const user = ctx.var.user;
 

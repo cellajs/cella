@@ -1,6 +1,7 @@
 import { i18n } from '../../../../emails/i18n';
 import { escapeString } from '../../../../emails/renderer/escape-string';
 
+/** One channel's part of a digest: its quoted lines, and `overflow`, the rows past them it counts as "and N more". */
 export interface DigestSection {
   channelId: string;
   channelName: string;
@@ -8,9 +9,8 @@ export interface DigestSection {
   overflow: number;
 }
 
-// Bodies are stored as HTML, so they are reduced to plain text before being placed in an email:
-// arbitrary markup would fight the template's styling. The text is escaped once, where it lands:
-// Brevo escapes a param it fills, the renderer escapes JSX text.
+// A body reaches here as plain text or older HTML. Markup is reduced to plain text, since it would fight the template's
+// styling. The text is escaped once, where it is placed: Brevo escapes a param it fills, the renderer escapes JSX text.
 const tag = /<[^>]*>/g;
 const namedEntities: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 

@@ -2,9 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { mockSystemRoleBase } from '#/modules/system/system-mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { batchResponseSchema, maxLength, uniqueIdsSchema, validEmailSchema } from '#/schemas';
-import { mockSystemRoleBase } from './system-mocks';
 
 export const inviteBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50) });
 

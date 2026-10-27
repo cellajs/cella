@@ -37,7 +37,10 @@ onBackendModuleRegister((module) => {
   sources.set(module.productEntity, { entityType: module.productEntity, declaration });
 });
 
-export const getNotificationSource = (entityType: string): NotificationSource | undefined => sources.get(entityType);
+/** The source a module declared for this product type; undefined when none did. */
+export function getNotificationSource(entityType: string): NotificationSource | undefined {
+  return sources.get(entityType);
+}
 
 // Subject reads: the declaration's function when the app gave one, else the product table.
 
@@ -69,7 +72,7 @@ export async function loadSubjectPreview(source: NotificationSource, tx: DbOrTx,
   return row ? { title: String(row.name ?? ''), body: descriptionText(row.description) } : null;
 }
 
-/** Display names for context ids in digest lines. */
+/** Display names for ids of the source's rows: the declaration's `loadContextNames`, else the product rows' names. */
 async function loadSubjectNames(source: NotificationSource, tx: DbOrTx, ids: string[]) {
   if (source.declaration.loadContextNames) return source.declaration.loadContextNames(tx, ids);
   const table = productTable(source.entityType);
@@ -87,7 +90,7 @@ interface SubjectRef {
   id: string | null;
 }
 
-/** Display names for subject rows, keyed by id. */
+/** Display names for the refs' ids, keyed by id. */
 export async function findSubjectNames(refs: SubjectRef[]): Promise<Map<string, string>> {
   const names = new Map<string, string>();
   for (const { tenantId, entityType, ids } of groupByTenantAndType(refs)) {
@@ -112,8 +115,7 @@ export function groupByTenantAndType(refs: SubjectRef[]) {
   return [...groups.values()].map((group) => ({ ...group, ids: [...group.ids] }));
 }
 
-// Hoisted: the registration listener above runs at import time. Product tables all carry
-// productColumns; the registry types them as a union of concrete tables.
+// Product tables all carry productColumns; the registry types them as a union of concrete tables.
 function productTable(entityType: ProductEntityType): ProductTable {
   return getEntityTable(entityType) as ProductTable;
 }

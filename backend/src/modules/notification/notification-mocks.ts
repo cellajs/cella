@@ -11,15 +11,14 @@ const dayMs = 24 * 60 * 60 * 1000;
 const readProbability = 0.4;
 
 /**
- * A seed notification dated shortly after its subject but never older than 14 days: old-seeded
- * subjects still produce a recent-looking inbox, and rows land in live partitions
- * well inside the 90-day retention.
+ * A seed notification dated shortly after its subject but never older than 14 days: old-seeded subjects still produce
+ * a recent-looking inbox, and rows fall in live partitions, well inside `retention.activityDays` (90 by default).
  */
-const seedNotificationDate = (subjectAt: string) => {
+function seedNotificationDate(subjectAt: string): string {
   const base = Math.max(Date.parse(subjectAt), Date.now() - 14 * dayMs);
   const jitter = faker.number.int({ min: 60_000, max: 6 * 60 * 60_000 });
   return new Date(Math.min(base + jitter, Date.now())).toISOString();
-};
+}
 
 /**
  * An inbox row for a seeded subject, shaped as the fan-out would write it: home channel is the
