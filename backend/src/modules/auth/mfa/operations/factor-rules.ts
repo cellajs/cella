@@ -1,7 +1,7 @@
 import { isStrategyEnabled } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
-import { getHeldFactors } from '#/modules/auth/mfa/mfa-queries';
+import { findHeldFactors } from '#/modules/auth/mfa/mfa-queries';
 import { findUserForUpdate } from '#/modules/user/user-queries';
 
 /**
@@ -27,7 +27,7 @@ export const mfaFactorRules = {
     const missing = (['passkey', 'totp'] as const).find((method) => !isStrategyEnabled(method));
     if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
 
-    const { passkey, totp } = await getHeldFactors({ var: { db: tx } }, { userId });
+    const { passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
     if (!passkey || !totp) throw new AppError(400, 'mfa_factors_required', 'warn');
   },
 
@@ -36,7 +36,7 @@ export const mfaFactorRules = {
    * It reads the MFA switch without locking again: `locked` holds the user row, so no other transaction changes it.
    */
   async assertKeepsFactors(tx: DbOrTx, userId: string) {
-    const { mfaRequired, passkey, totp } = await getHeldFactors({ var: { db: tx } }, { userId });
+    const { mfaRequired, passkey, totp } = await findHeldFactors({ var: { db: tx } }, { userId });
     if (mfaRequired && (!passkey || !totp)) throw new AppError(400, 'mfa_factor_in_use', 'warn');
   },
 };

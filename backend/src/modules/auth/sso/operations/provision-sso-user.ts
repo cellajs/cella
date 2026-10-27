@@ -3,14 +3,11 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { hasPendingInvitation } from '#/modules/auth/invitations/operations/may-sign-up';
-import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { insertIdentity } from '#/modules/auth/oauth/identities-queries';
-import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
-import type { Federation } from '#/modules/auth/sso/helpers/federations';
-import { newUserFromProfile, type SsoProfile } from '#/modules/auth/sso/helpers/transform-sso-claims';
+import { newUserFromProfile } from '#/modules/auth/sso/helpers/transform-sso-claims';
+import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
 import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
 import { rememberSsoCollision } from '#/modules/auth/sso/operations/sso-recovery';
-import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { findPendingOrganizationInvitation } from '#/modules/memberships/memberships-queries';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -19,20 +16,6 @@ import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
-
-/** One verified SSO sign-in, resolved against its connection: what the completion flows act on. */
-export interface SsoSignInFacts {
-  federation: Federation;
-  connection: ConnectionModel;
-  /** Every verified claim of the sign-in: what the role seam reads. */
-  claims: SsoClaims;
-  profile: SsoProfile;
-  /** The claims kept on the identity row. */
-  snapshot: Record<string, unknown>;
-  subject: string;
-  /** The identity the subject already is, when the account signed in before. */
-  identity: IdentityModel | undefined;
-}
 
 /**
  * Creates the account of a first SSO sign-in: the user with its address proven by the institution, the verified
@@ -49,9 +32,9 @@ export const provisionSsoUser = async (
   const email = profile.email;
   if (!email) throw new AppError(400, 'sso_email_missing', 'warn', { meta: { strategy: federation.key } });
 
-  // The holder signs in with their own method and connects the institution account from the account page. This is
-  // also where an account lands whose identifier at the institution changed. The error page offers a sign-in link to
-  // the asserted address, which this browser may ask for once (`sendSsoRecoveryLinkOp`).
+  // The holder signs in with their own method and connects the institution account from the account page. An account
+  // whose identifier at the institution changed meets this refusal too. The error page offers a sign-in link to the
+  // asserted address, which this browser may ask for once (`sendSsoRecoveryLinkOp`).
   if (await findUserByEmail(dbCtx, { email })) {
     await rememberSsoCollision(ctx, { email, connectionId: connection.id });
     throw new AppError(409, 'sso_email_exists', 'warn', { meta: { strategy: federation.key } });

@@ -6,8 +6,8 @@ import { type OAuthCookiePayload, oauthCookiePayloadSchema } from '#/modules/aut
 
 /**
  * The state cookie a callback resumes, or null when it is missing or unreadable. A state serves one round trip, so the
- * cookie is deleted once read. A connect's refusals from this read on go back to the account page, the provider's own
- * and a failed code exchange included.
+ * cookie is deleted once read. A callback reads it before it judges the provider's answer: a connect's refusals from
+ * this read on go back to the account page, the provider's own and a failed code exchange included.
  */
 export const readOAuthCookie = async (ctx: Context<Env>, state: string): Promise<OAuthCookiePayload | null> => {
   if (!state) return null;

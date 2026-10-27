@@ -1,5 +1,5 @@
+import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { assertSwitchOn } from '#/middlewares/config-switch';
@@ -27,7 +27,7 @@ interface SsoCollision {
 export const rememberSsoCollision = (ctx: Context<Env>, collision: SsoCollision) =>
   setAuthCookie(ctx, 'sso-recovery', JSON.stringify(collision), recoveryWindow);
 
-/** The path the recovery link lands on: the account page, offering to connect the institution account. */
+/** The path the recovery link opens on: the account page, offering to connect the institution account. */
 const ssoConnectPath = (connectionId: string) => `/account?connect=${connectionId}#authentication`;
 
 /**

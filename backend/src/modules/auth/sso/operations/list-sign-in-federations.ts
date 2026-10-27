@@ -1,4 +1,4 @@
-import { appConfig, isStrategyEnabled } from 'shared';
+import { appConfig, type FederationKey, isStrategyEnabled } from 'shared';
 import { baseDb } from '#/db/db';
 import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findActiveSsoFederations } from '#/modules/connections/connections-queries';
@@ -10,6 +10,6 @@ export const listSignInFederations = async () => {
   if (!isStrategyEnabled('sso')) return [];
   const active = await findActiveSsoFederations(dbCtx);
   return active
-    .filter((key) => isFederationKey(key) && isFederationConfigured(key))
-    .map((key) => ({ key, label: appConfig.federations[key as keyof typeof appConfig.federations].label }));
+    .filter((key): key is FederationKey => isFederationKey(key) && isFederationConfigured(key))
+    .map((key) => ({ key, label: appConfig.federations[key].label }));
 };

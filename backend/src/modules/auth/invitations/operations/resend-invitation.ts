@@ -61,14 +61,14 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
   if (!reissued) return false;
 
   // Replies reach the inviter, as on the first invitation; without one it reads as a system invite.
-  const sender = oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined;
+  const sender = (oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined) ?? { name: 'System' };
   const { invitation, tokenId, rawToken } = reissued;
   const invited = [{ email, userId: oldToken.userId, rawToken }];
 
   if (invitation) {
     const { entity } = invitation;
     await sendInvitationMails(ctx, {
-      sender: sender ?? { name: 'System' },
+      sender,
       channel: { type: invitation.channelType, slug: entity.slug, name: entity.name, role: invitation.role },
       // A channel below the organization carries no default language here: the app's applies.
       organization: 'defaultLanguage' in entity ? entity : null,
@@ -77,7 +77,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
     await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: getIsoDate() });
     log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id, tokenId });
   } else {
-    await sendInvitationMails(ctx, { sender: sender ?? { name: 'System' }, invited });
+    await sendInvitationMails(ctx, { sender, invited });
     log.info('System invitation has been resent', { tokenId });
   }
 

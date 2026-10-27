@@ -14,12 +14,12 @@ import { completeSsoSignIn } from '#/modules/auth/sso/operations/complete-sso-si
 export const handleSsoCallback = async (ctx: OAuthCallbackContext) => {
   const { code, state, error } = ctx.req.valid('query');
 
-  // Read before the federation's answer is judged: a connect's refusals from here on go back to the account page.
   const payload = await readOAuthCookie(ctx, state);
+  const strategy = payload?.provider ?? 'sso';
 
-  if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy: 'sso', error: error ?? null } });
+  if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy, error: error ?? null } });
   if (!payload || !isFederationKey(payload.provider) || !payload.codeVerifier || !payload.nonce) {
-    throw new AppError(401, 'invalid_state', 'error', { meta: { strategy: 'sso' } });
+    throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
   }
 
   const federation = getFederation(payload.provider);

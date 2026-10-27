@@ -25,8 +25,7 @@ export interface StepUpState {
 
 /**
  * Refuses an impersonation: the admin acts as the user, never on the account itself, its sessions or how it is
- * protected. The one spelling of this answer: `requireStepUp`, `sysAdminGuard` and the handlers of stepping up and
- * revoking sessions.
+ * protected. The one spelling of this answer.
  * @throws AppError 403 `impersonation_forbidden`.
  */
 export const refuseImpersonation = (session: SessionFacts): void => {

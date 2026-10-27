@@ -6,7 +6,6 @@ import { baseDb } from '#/db/db';
 import { findIdentityById } from '#/modules/auth/oauth/identities-queries';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 
-/** The identity is read on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /** The provider the verification returns to: the signing-up provider account's, or the identity's. */

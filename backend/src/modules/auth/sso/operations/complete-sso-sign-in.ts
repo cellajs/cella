@@ -8,9 +8,10 @@ import { findIdentityBySubject } from '#/modules/auth/oauth/identities-queries';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
 import type { Federation } from '#/modules/auth/sso/helpers/federations';
-import { assertedInstitution, snapshotOf, transformSsoClaims } from '#/modules/auth/sso/helpers/transform-sso-claims';
+import { assertedInstitution, type SsoProfile, snapshotOf, transformSsoClaims } from '#/modules/auth/sso/helpers/transform-sso-claims';
 import { connectSsoIdentity, touchSsoIdentity } from '#/modules/auth/sso/operations/connect-sso-identity';
-import { provisionSsoUser, type SsoSignInFacts } from '#/modules/auth/sso/operations/provision-sso-user';
+import { provisionSsoUser } from '#/modules/auth/sso/operations/provision-sso-user';
+import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { findActiveSsoConnectionByClaim, findConnectionById } from '#/modules/connections/connections-queries';
 import type { EmailProof } from '#/modules/user/emails-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
@@ -19,10 +20,25 @@ import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
 
+/** A sign-in the federation verified: its claims and the state cookie of its round trip. */
 export interface SsoSignIn {
   federation: Federation;
   claims: SsoClaims;
   payload: OAuthCookiePayload;
+}
+
+/** One verified SSO sign-in, resolved against its connection: what the completion flows act on. */
+export interface SsoSignInFacts {
+  federation: Federation;
+  connection: ConnectionModel;
+  /** Every verified claim of the sign-in: what `roleFromClaims` reads. */
+  claims: SsoClaims;
+  profile: SsoProfile;
+  /** The claims kept on the identity row. */
+  snapshot: Record<string, unknown>;
+  subject: string;
+  /** The identity the subject already is, when the account signed in before. */
+  identity: IdentityModel | undefined;
 }
 
 /**

@@ -36,8 +36,7 @@ describe('request bodies', () => {
         return body && !('$ref' in body) && !body.required ? [String(operation.operationId)] : [];
       }),
     );
-    // Its body carries only the page to return to.
-    expect(optional).toEqual(['sendStepUpLink']);
+    expect(optional).toEqual([]);
   });
 
   // Zod adds an issue for every element or value that fails, so one body near the size limit costs hundreds of

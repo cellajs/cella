@@ -4,7 +4,7 @@ import { transformGithubUserData, transformSocialUserData } from '#/modules/auth
 
 const githubUser = { id: 123, login: 'octocat', name: 'Octo Cat', avatar_url: 'https://example.com/a.png' } as GithubUserProps;
 
-const ghEmail = (email: string, primary: boolean, verified: boolean): GithubUserEmailProps => ({ email, primary, verified, visibility: null });
+const ghEmail = (email: string, primary: boolean, verified: boolean): GithubUserEmailProps => ({ email, primary, verified });
 
 describe('transformGithubUserData', () => {
   it('selects the primary email and normalizes it', () => {

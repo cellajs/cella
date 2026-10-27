@@ -1,5 +1,5 @@
 import type { DbContext } from '#/core/context';
-import type { SsoSignInFacts } from '#/modules/auth/sso/operations/provision-sso-user';
+import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
 import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import type { OrganizationModel } from '#/modules/organization/organization-db';

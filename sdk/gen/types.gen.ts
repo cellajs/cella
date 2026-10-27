@@ -2403,7 +2403,7 @@ export type GetStepUpPasskeyChallengeResponses = {
 export type GetStepUpPasskeyChallengeResponse = GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
 
 export type SendStepUpLinkData = {
-  body?: {
+  body: {
     redirect?: string;
   };
   path?: never;

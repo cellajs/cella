@@ -2,7 +2,7 @@ import { generateRandomCodeVerifier, generateRandomNonce, generateRandomState } 
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import type { OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
-import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/initiation';
+import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/handle-oauth-initiation';
 import { createFederationAuthorizationUrl } from '#/modules/auth/sso/helpers/federation-client';
 import { type Federation, getFederation, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findConnectionById } from '#/modules/connections/connections-queries';
@@ -21,7 +21,7 @@ export type SsoTarget = { connectionId: string } | { federation: string };
 export const startSso = async (ctx: OAuthStartContext, target: SsoTarget) => {
   const { type } = ctx.req.valid('query');
   // No verification mail (the assertion is the proof) and no invitation pinning (an invitation resumes after the sign-in).
-  if (type !== 'auth' && type !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `SSO has no ${type} flow` } });
+  if (type !== 'auth' && type !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unsupported_flow' } });
 
   let federation: Federation;
   let connectionId: string | undefined;

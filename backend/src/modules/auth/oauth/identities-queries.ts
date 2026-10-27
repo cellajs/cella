@@ -24,6 +24,7 @@ interface FindIdentityByIdOpts {
   id: string;
 }
 
+/** The identity with this id, of any kind; undefined when it is gone. */
 export const findIdentityById = async (ctx: DbContext, { id }: FindIdentityByIdOpts) => {
   const [identity] = await ctx.var.db.select().from(identitiesTable).where(eq(identitiesTable.id, id)).limit(1);
   return identity;
@@ -82,11 +83,11 @@ export const insertIdentity = async (ctx: DbContext, { values, verified = false 
 
 interface UpdateIdentityOpts {
   id: string;
-  /** Only when the identity belongs to this user. */
   userId?: string;
   values: Partial<Pick<InsertIdentityModel, 'email' | 'verified' | 'verifiedAt' | 'lastUsedAt' | 'data' | 'connectionId'>>;
 }
 
+/** Writes `values` onto the identity; with `userId`, only when the identity belongs to that user. */
 export const updateIdentity = async (ctx: DbContext, { id, userId, values }: UpdateIdentityOpts) => {
   await ctx.var.db
     .update(identitiesTable)

@@ -6,7 +6,6 @@ import { getStepUpFacts } from '#/modules/auth/sessions/sessions-queries';
 import { refuseImpersonation, type StepUpState, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 import { isoDateAgo } from '#/utils/iso-date';
 
-/** Step-up state is read on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /**

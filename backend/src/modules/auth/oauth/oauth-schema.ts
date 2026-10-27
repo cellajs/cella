@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { appConfig, type FederationKey } from 'shared';
+import type { BaseOAuthProviders } from 'shared/config-builder/types';
 import type { Env } from '#/core/context';
-import { supportedOAuthProviders } from '#/modules/auth/oauth/identities-db';
 
+const oauthProviderIds = ['github', 'google', 'microsoft'] as const satisfies readonly BaseOAuthProviders[];
 const federationKeys = Object.keys(appConfig.federations) as FederationKey[];
 
 const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
-export type OAuthFlowType = (typeof oauthFlowTypes)[number];
 
 export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().optional() });
 
@@ -19,7 +19,7 @@ export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typ
  * state, `connectionId` the institution an SSO start was pinned to.
  */
 export const oauthCookiePayloadSchema = z.object({
-  provider: z.enum([...supportedOAuthProviders, ...federationKeys]),
+  provider: z.enum([...oauthProviderIds, ...federationKeys]),
   type: z.enum(oauthFlowTypes).default('auth'),
   redirectAfter: z.string().optional(),
   codeVerifier: z.string().optional(),

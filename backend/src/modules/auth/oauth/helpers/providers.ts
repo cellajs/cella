@@ -1,7 +1,7 @@
 import * as oauth from 'oauth4webapi';
-import { appConfig, type EnabledOAuthProvider } from 'shared';
-import { authorizationUrl, isProviderRefusal } from '#/modules/auth/oauth/helpers/code-flow';
-import { env } from '../../../../env';
+import { appConfig } from 'shared';
+import { env } from '#/env';
+import { authorizationUrl, isProviderRefusal, providerDeadline } from '#/modules/auth/oauth/helpers/code-flow';
 
 /** Thrown when the provider rejects the authorization response or code exchange (bad, expired, or replayed code). */
 export class OAuthCodeExchangeError extends Error {
@@ -15,7 +15,7 @@ export class OAuthCodeExchangeError extends Error {
 export type OAuthFlowContext = { codeVerifier?: string; nonce?: string };
 
 type ProviderSetup = {
-  as: oauth.AuthorizationServer;
+  as: oauth.AuthorizationServer & { authorization_endpoint: string };
   clientId: string;
   clientSecret: string;
   redirectUri: string;
@@ -52,7 +52,7 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
   return {
     /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
     createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
-      return authorizationUrl(as.authorization_endpoint as string, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
+      return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
     },
 
     /**
@@ -64,7 +64,15 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
         const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
-        const response = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier ?? oauth.nopkce);
+        const response = await oauth.authorizationCodeGrantRequest(
+          as,
+          client,
+          clientAuth,
+          callbackParams,
+          redirectUri,
+          codeVerifier ?? oauth.nopkce,
+          { signal: providerDeadline() },
+        );
 
         const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(response, as) : as;
         const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, response, {
@@ -73,7 +81,7 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
         });
 
         // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
-        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, response);
+        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, response, { signal: providerDeadline() });
 
         return { accessToken: tokens.access_token };
       } catch (error) {
@@ -127,47 +135,17 @@ export const microsoftAuth = createProviderClient({
   resolveIssuerFromIdToken: entraIsMultiTenant,
 });
 
-export type Provider = { id: EnabledOAuthProvider; userId: string };
-
+// The profile fields the app reads, per provider; each provider sends more.
 export interface GithubUserProps {
-  avatar_url: string;
-  bio: string | null;
-  blog: string | null;
-  company: string | null;
-  created_at: string;
-  email: string | null;
-  events_url: string;
-  followers: number;
-  followers_url: string;
-  following: number;
-  following_url: string;
-  gists_url: string;
-  gravatar_id: string | null;
-  hireable: boolean | null;
-  html_url: string;
   id: number;
-  location: string | null;
   login: string;
   name: string | null;
-  node_id: string;
-  organizations_url: string;
-  public_gists: number;
-  public_repos: number;
-  received_events_url: string;
-  repos_url: string;
-  site_admin: boolean;
-  starred_url: string;
-  subscriptions_url: string;
-  type: string;
-  updated_at: string;
-  url: string;
 }
 
 export interface GithubUserEmailProps {
   email: string;
   primary: boolean;
   verified: boolean;
-  visibility: string | null;
 }
 
 export interface GoogleUserProps {
@@ -175,10 +153,8 @@ export interface GoogleUserProps {
   name: string;
   given_name: string;
   family_name: string;
-  picture: string;
   email: string;
   email_verified: boolean;
-  locale: string;
 }
 
 export interface MicrosoftUserProps {
@@ -186,6 +162,5 @@ export interface MicrosoftUserProps {
   name: string;
   givenname: string;
   familyname: string;
-  picture: string;
   email?: string;
 }

@@ -21,7 +21,6 @@ import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Reads and writes outside a flow's transaction run on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 type OAuthFlowResult =
@@ -75,7 +74,7 @@ export const handleOAuthCallback = async (
       break;
   }
 
-  return await processCallbackResult({ ctx, redirectAfter, provider, ...result });
+  return processCallbackResult({ ctx, redirectAfter, provider, ...result });
 };
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
@@ -96,7 +95,7 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
     return { type: 'unverified', identity };
   }
 
-  // Existing user (by email) found -> suggest sign in and connect
+  // An account holds the address: its holder signs in to it and connects the provider from there.
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
@@ -142,7 +141,7 @@ const connectCallbackFlow = async ({
     return { type: 'unverified', identity };
   }
 
-  // New OAuth account connection → validate email isn't used by another user
+  // A new identity: the address must not belong to another account.
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder && holder.id !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
 
@@ -316,16 +315,17 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 
 /**
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
- * Unverified identities and pending sign-ups get a verification email and land on the email-verification page.
+ * Unverified identities and pending sign-ups get a verification email and are sent to the email-verification page.
  */
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
   const { ctx, provider, redirectAfter } = info;
-  // Stored on the verification token; null means "use the default path" at the final hop.
-  const redirectAfterPath = frontendRedirectPath(redirectAfter);
 
   if (info.type === 'verified') {
     return finishSignIn(ctx, info.user, provider, redirectAfter);
   }
+
+  // Stored on the verification token; null means "use the default path" at the final hop.
+  const redirectAfterPath = frontendRedirectPath(redirectAfter);
 
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   if (info.type === 'pending') {

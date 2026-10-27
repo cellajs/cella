@@ -10,9 +10,11 @@ import { TimeSpan } from '#/utils/time-span';
 type OAuthInitiation = Pick<OAuthCookiePayload, 'provider' | 'codeVerifier' | 'nonce' | 'connectionId'> & { url: URL; state: string };
 
 /**
- * Creates an OAuth session: stores the flow context (invite, connect, verify, or default) in cookies and redirects to the provider.
- * The context is tied to the OAuth `state` to prevent CSRF and can carry a PKCE `codeVerifier` and an OIDC `nonce`. It
- * never names a user: a connect goes to the account its `oauth-connect` pin names, spent at the callback.
+ * Starts a provider or federation round trip: stores the flow context (invite, connect, verify, or default) in the
+ * cookie of its `state` and redirects to the provider. The state is the CSRF check; the cookie can carry a PKCE
+ * `codeVerifier`, an OIDC `nonce` and an SSO start's connection. It never names a user: a connect goes to the account
+ * its `oauth-connect` pin names, spent at the callback.
+ * @throws AppError 401 for a connect or a verify whose pin or token this browser does not hold.
  */
 export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
   const { type, redirectAfter } = ctx.req.valid('query');

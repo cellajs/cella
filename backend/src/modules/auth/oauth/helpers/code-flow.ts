@@ -1,5 +1,11 @@
 import * as oauth from 'oauth4webapi';
 
+/** How long a provider or federation may take to answer one request: the browser waits on the redirect meanwhile. */
+const providerTimeoutMs = 10_000;
+
+/** The abort signal of one request to a provider or federation: past the deadline the request rejects with a `TimeoutError`. */
+export const providerDeadline = () => AbortSignal.timeout(providerTimeoutMs);
+
 interface AuthorizationUrlParams {
   clientId: string;
   redirectUri: string;

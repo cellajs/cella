@@ -1,6 +1,6 @@
+import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
+import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { slugFromEmail } from '#/utils/slug';
-import type { SsoClaims } from './federation-client';
-import type { Federation } from './federations';
 
 /** The first string of a claim that may be a string or an array of strings; undefined when absent or empty. */
 const firstString = (value: unknown): string | undefined => {
@@ -20,6 +20,7 @@ export interface SsoProfile {
   lastName: string;
 }
 
+/** The profile the claims assert; without a name, the address's slug stands in, and without an address the subject. */
 export const transformSsoClaims = (claims: SsoClaims): SsoProfile => {
   const email = firstString(claims.email)?.toLowerCase();
   const firstName = firstString(claims.given_name) ?? '';

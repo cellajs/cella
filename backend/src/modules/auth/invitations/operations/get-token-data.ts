@@ -12,10 +12,11 @@ type TokenData = z.infer<typeof tokenWithDataSchema>;
 
 /** What a validated single-use token stands for. A membership invitation also says what it grants, for the confirm step. */
 export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): Promise<TokenData> {
+  // An absent id is left out of the answer: JSON drops an undefined field.
   const tokenData: TokenData = {
     email: tokenRecord.email,
-    userId: tokenRecord.userId || '',
-    inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
+    userId: tokenRecord.userId ?? undefined,
+    inactiveMembershipId: tokenRecord.inactiveMembershipId ?? undefined,
   };
 
   if (!tokenRecord.inactiveMembershipId) return tokenData;

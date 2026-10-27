@@ -101,6 +101,7 @@ Every auth cookie is signed, in every mode. The signature covers the cookie's ve
 | `magic-requested`, `step-up-requested` | The id of the link this browser asked for | Lax |
 | `magic-pending` | A link opened here that waits for confirmation | Strict |
 | `oauth-state-<state>` | The provider round trip: flow type, PKCE verifier and nonce, five minutes | Lax |
+| `sso-recovery` | An institution's refused sign-in: the asserted address and the connection, ten minutes | Strict |
 | `passkey-challenge`, `totp-challenge` | The WebAuthn challenge; the TOTP secret being set up | Strict |
 | A token type's own cookie | The token, or a redeemed link's single-use value | Its policy |
 

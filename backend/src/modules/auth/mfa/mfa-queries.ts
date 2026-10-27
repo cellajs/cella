@@ -4,7 +4,7 @@ import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 
-interface GetHeldFactorsOpts {
+interface FindHeldFactorsOpts {
   userId: string;
 }
 
@@ -12,7 +12,7 @@ interface GetHeldFactorsOpts {
  * Which second factors the user holds and whether MFA is on (null for a user that is gone), in one query. Inside
  * `mfaFactorRules.locked`, pass its transaction so the read sees the change made there.
  */
-export const getHeldFactors = async (ctx: DbContext, { userId }: GetHeldFactorsOpts) => {
+export const findHeldFactors = async (ctx: DbContext, { userId }: FindHeldFactorsOpts) => {
   const { rows } = await ctx.var.db.execute<{ mfaRequired: boolean | null; passkey: boolean; totp: boolean }>(sql`
     select (select ${usersTable.mfaRequired} from ${usersTable} where ${usersTable.id} = ${userId}) as "mfaRequired",
       exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${userId}) as passkey,
