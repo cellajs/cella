@@ -48,7 +48,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "cross-env": "^10.1.0",
     "drizzle-orm": "1.0.0-rc.5",
-    "hono": "^4.13.13",
+    "hono": "^4.13.14",
     "pino-pretty": "^13.2.0",
     "rolldown": "~1.2.15",
     "sdk": "workspace:*",
