@@ -74,8 +74,6 @@ export function OperationsTable() {
           hasNextPage={false}
           rowKeyGetter={(row) => row.hash}
           rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
-          isLoading={false}
-          isFetching={false}
           isFiltered={!!q}
           rowHeight={42}
           enableVirtualization

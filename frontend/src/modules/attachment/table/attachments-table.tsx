@@ -93,7 +93,6 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
       <DataTable<Attachment>
         {...{
           rows,
-          rowHeight: 52,
           onRowsChange,
           rowKeyGetter,
           columns,
