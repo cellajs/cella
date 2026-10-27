@@ -143,13 +143,15 @@ describe('organizationIdOfKey', () => {
   });
 
   it('takes the organization from the environment first', async () => {
-    const saved = process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    const saved = { a: process.env.SCW_ORGANIZATION_ID, b: process.env.SCW_DEFAULT_ORGANIZATION_ID };
+    delete process.env.SCW_ORGANIZATION_ID;
     process.env.SCW_DEFAULT_ORGANIZATION_ID = 'org-env';
     try {
       expect(await organizationIdOfKey(pair, undefined, { fetchImpl: makeFetch([]) })).toBe('org-env');
     } finally {
-      if (saved === undefined) delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
-      else process.env.SCW_DEFAULT_ORGANIZATION_ID = saved;
+      if (saved.a !== undefined) process.env.SCW_ORGANIZATION_ID = saved.a;
+      if (saved.b === undefined) delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+      else process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
     }
   });
 });
