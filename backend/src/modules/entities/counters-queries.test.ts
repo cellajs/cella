@@ -1,9 +1,8 @@
-import { createEntityHierarchy, createRoleRegistry } from 'shared';
+import { createEntityHierarchy, createRoleRegistry, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { deepestAncestorExpr } from './counters-queries';
 
 // Counter recovery and CDC must use the same deepest non-null ancestor.
-describe('deepestAncestorExpr', () => {
+describe('deepestAncestorSql', () => {
   it('two-level hierarchy: product groups by parent context, then organization', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);
     const h = createEntityHierarchy(roles)
@@ -13,11 +12,11 @@ describe('deepestAncestorExpr', () => {
       .product('task', { parent: 'project' })
       .build();
 
-    expect(deepestAncestorExpr('task', 't', h)).toBe('COALESCE(t.project_id, t.organization_id)');
+    expect(h.deepestAncestorSql('task', 't')).toBe('COALESCE(t.project_id, t.organization_id)');
   });
 
   it('organization has no grouping expression (it is present in every hierarchy)', () => {
-    expect(deepestAncestorExpr('organization', 't')).toBeNull();
+    expect(hierarchy.deepestAncestorSql('organization', 't')).toBeNull();
   });
 
   it('deep hierarchy: ancestors coalesce most-specific first', () => {
@@ -31,6 +30,6 @@ describe('deepestAncestorExpr', () => {
       .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
       .build();
 
-    expect(deepestAncestorExpr('item', 't', h)).toBe('COALESCE(t.project_id, t.course_section_id, t.course_id, t.organization_id)');
+    expect(h.deepestAncestorSql('item', 't')).toBe('COALESCE(t.project_id, t.course_section_id, t.course_id, t.organization_id)');
   });
 });

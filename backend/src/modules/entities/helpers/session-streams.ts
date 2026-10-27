@@ -1,6 +1,8 @@
 import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { type BaseStreamSubscriber, type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
+import { type StreamErrorPayload, writeError } from '#/modules/entities/stream/helpers';
+import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 
@@ -8,8 +10,11 @@ import { withinTimeout } from '#/utils/within-timeout';
 const endingsWithSuccessor = new Set<SessionEndReason>(['replaced', 'impersonation_stopped']);
 
 /** What a stream bound to an ended session hears: reconnect with the newer session, or the session is gone for good. */
-export const streamErrorForEnding = (reason: SessionEndReason): StreamErrorPayload =>
-  endingsWithSuccessor.has(reason) ? { code: 'session_replaced', message: 'Session replaced' } : { code: 'unauthorized', message: 'Session revoked' };
+export function streamErrorForEnding(reason: SessionEndReason): StreamErrorPayload {
+  return endingsWithSuccessor.has(reason)
+    ? { code: 'session_replaced', message: 'Session replaced' }
+    : { code: 'unauthorized', message: 'Session revoked' };
+}
 
 /** How long a close waits for the client to take its error event. */
 const errorWriteTimeoutMs = 1000;
@@ -28,8 +33,9 @@ async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamEr
 }
 
 /** Whether a registered stream is an app stream, with a session and memberships behind it. */
-export const isAppStream = (subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber =>
-  'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
+export function isAppStream(subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber {
+  return 'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
+}
 
 /** Closes streams side by side, so a client that stopped reading holds up none of the others. */
 export async function closeAppStreams(closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[], failure: string): Promise<void> {

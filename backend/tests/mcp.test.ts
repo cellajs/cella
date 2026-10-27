@@ -21,7 +21,7 @@ import {
   startTestOauthServer,
   type TestOauthServer,
 } from './oauth-helpers';
-import { clearSecurityTestData, createOrgUser } from './security/helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 type Rpc = { jsonrpc: '2.0'; id: number | null; result?: Record<string, unknown>; error?: { code: number; message: string; data?: unknown } };
@@ -58,7 +58,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   /** An organization with its admin; `plan` is where attachments live, which a write token needs no read scope on. */
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+    const user = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     const plan = await seedAttachmentHome(org, user.id);
     return { org, user, plan, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }

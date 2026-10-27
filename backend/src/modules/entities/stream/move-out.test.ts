@@ -36,7 +36,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
 
   const subscriber: AppStreamSubscriber = {
     id: crypto.randomUUID(),
-    channel: `org:${org}`,
+    topic: `org:${org}`,
     stream,
     userId,
     sessionId: `session-${userId}`,
@@ -82,7 +82,7 @@ const updateEvent = (rows: ActivityRow[]): AppStreamProductEvent =>
   }) as unknown as AppStreamProductEvent;
 
 afterEach(() => {
-  for (const subscriber of streamSubscriberManager.getByChannel(`org:${org}`)) {
+  for (const subscriber of streamSubscriberManager.getByTopic(`org:${org}`)) {
     streamSubscriberManager.unregister(subscriber.id);
   }
 });

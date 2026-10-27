@@ -5,15 +5,15 @@ import { AppError } from '#/core/error';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import '#/modules/entities/entities-listeners';
 import { entityRoutes } from '#/modules/entities/entities-routes';
-import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
+import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import { appCatchupOp, getLatestActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
-import { actorFrom } from '#/permissions/access';
+import { keepAlive, workerAwayPing, writeOffset } from '#/modules/entities/stream/helpers';
+import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
-import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
-import { keepAlive, streamSubscriberManager, workerAwayPing, writeOffset } from './stream';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -31,21 +31,19 @@ const maxStreamSubscribers = 5000;
 app.openapi(entityRoutes.appStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
 
-  if (streamSubscriberManager.size >= maxStreamSubscribers || streamSubscriberManager.getByChannel(`user:${user.id}`).length >= maxStreamsPerUser) {
+  if (streamSubscriberManager.size >= maxStreamSubscribers || streamSubscriberManager.getByTopic(userTopic(user.id)).length >= maxStreamsPerUser) {
     throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
   }
 
-  const organizationIds = new Set(memberships.map((m) => m.organizationId));
-  const cursor = await getLatestUserActivityId(organizationIds);
+  const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
+  const cursor = await getLatestActivityId(ctx, organizationIds);
 
   return streamSSE(ctx, async (stream) => {
-    ctx.header('Content-Encoding', '');
     await writeOffset(stream, cursor);
 
-    const orgChannels = [...organizationIds].map((id) => `org:${id}`);
     const subscriber: AppStreamSubscriber = {
       id: crypto.randomUUID(),
-      channel: orgChannels[0] ?? '',
+      topic: userTopic(user.id),
       stream,
       userId: user.id,
       sessionId,
@@ -55,9 +53,9 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       memberships,
     };
 
-    // The user channel carries self-membership events regardless of org registration, so a
-    // membership in a new org reaches the user here and the frontend reconnects to re-register.
-    streamSubscriberManager.register(subscriber, [...orgChannels.slice(1), `user:${user.id}`]);
+    // The user topic carries self-membership events whatever organizations it registered on, so a membership in a new
+    // organization reaches the user here and the client reconnects to register on it.
+    streamSubscriberManager.register(subscriber, [...organizationIds].map(organizationTopic));
     ensureAppStreamSessionSweep();
     log.debug('App stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
@@ -73,9 +71,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 });
 
 app.openapi(entityRoutes.appCatchup, async (ctx) => {
-  const { cursor, views } = ctx.req.valid('json');
-  const actor = actorFrom(ctx);
-  const result = await appCatchupOp(ctx.var.memberships, cursor, actor, views);
+  const result = await appCatchupOp(ctx, ctx.req.valid('json'));
   return ctx.json(result);
 });
 

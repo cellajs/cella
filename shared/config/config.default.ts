@@ -211,7 +211,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v21-step-up-link-body',
+  clientCacheVersion: 'v22-step-up-code',
 
   // Authentication
 
@@ -234,6 +234,7 @@ export const config = {
       tenantClaim: 'schac_home_organization',
       snapshotClaims: ['eduperson_affiliation', 'eduperson_scoped_affiliation'],
       addressAuthority: true,
+      mfaAcr: ['https://refeds.org/profile/mfa'],
     },
   } satisfies Record<string, FederationConfig>,
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,

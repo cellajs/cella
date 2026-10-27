@@ -6,7 +6,7 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../tests/fixtures';
-import { streamSubscriberManager } from './stream';
+import { streamSubscriberManager } from './stream/subscriber-manager';
 import './entities-listeners';
 
 const org = 'org-listeners';
@@ -29,7 +29,7 @@ const fakeSubscriber = (userId: string) => {
   } as unknown as SSEStreamingApi;
   const subscriber: AppStreamSubscriber = {
     id: crypto.randomUUID(),
-    channel: `org:${org}`,
+    topic: `org:${org}`,
     stream,
     userId,
     sessionId: `session-${userId}`,
@@ -83,7 +83,7 @@ describe('entities listeners: a membership change on open streams', () => {
     // The stream's own copy of the memberships is what every later change is checked against.
     expect(removed.subscriber.memberships).toEqual([]);
     expect(staying.subscriber.memberships).toHaveLength(1);
-    // And the user hears of it on their own channel.
+    // And the user hears of it on their own topic.
     expect(removed.sent.map((message) => JSON.parse(message.data))).toEqual([expect.objectContaining({ kind: 'membership', action: 'delete' })]);
     expect(staying.sent).toEqual([]);
   });

@@ -10,6 +10,7 @@ import { deletePasskey, findCredentialIdsByUser, insertPasskey } from '#/modules
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { deviceColumns, deviceInfo } from '#/modules/auth/sessions/helpers/device-info';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
+import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -29,6 +30,8 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   });
   if (!newPasskey) throw new AppError(409, 'resource_already_exists', 'warn');
 
+  // The registration proved the new passkey on this session: it steps the session up, so the action that asked runs next.
+  await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: user.id, via: 'passkey' });
   sendAccountSecurityEmail(user, 'passkey-added');
 
   return ctx.json(newPasskey, 201);

@@ -53,7 +53,7 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_ki
 
 ### Guards
 
-Which proof each guard admits, and the tenant and organization guards that follow it: [Permissions, Guards](./PERMISSIONS.md#guards). `stepUpGuard` guards the account-security routes, minting an API key among them, so no API key or access token reaches them: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
+Which proof each guard admits, and the tenant and organization guards that follow it: [Permissions, Guards](./PERMISSIONS.md#guards). The step-up guards cover the account-security routes, and minting an API key needs a second factor proven on the session, so no API key or access token reaches them: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
 
 ### Quotas and limits
 

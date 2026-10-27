@@ -57,6 +57,8 @@ vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
       clientId: 'test.projectcampus.com',
       clientSecret: 'test-secret',
       redirectUri: `${appConfig.backendAuthUrl}/sso/callback`,
+      // A new app's config names no federation, so the MFA test's acr comes from here.
+      mfaAcr: ['https://refeds.org/profile/mfa'],
     }),
   };
 });
@@ -213,6 +215,17 @@ describe('SSO sign-in through an institution', async () => {
     expect(identity.lastUsedAt).not.toBeNull();
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['employee', 'member'] });
     expect(await membershipsOf(user.id)).toHaveLength(1);
+  });
+
+  it('must not start a session stepped up unless the institution asserts MFA', async () => {
+    const { connection } = await seedConnection();
+
+    await signInThrough(connection.id);
+    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id }]);
+
+    // Positive control: the federation lists this acr as multi-factor, so the session starts stepped up by it.
+    await signInThrough(connection.id, claimsOf({ acr: 'https://refeds.org/profile/mfa' }));
+    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id, steppedUpVia: 'sso' }]);
   });
 
   it('refuses an account from an institution the connection does not accept, eduID included', async () => {

@@ -4,6 +4,8 @@ import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
@@ -148,6 +150,7 @@ const connectCallbackFlow = async ({
   const newIdentity = await insertIdentity(dbCtx, {
     values: { userId: user.id, issuer: provider, subject: providerUser.id, email: providerUser.email },
   });
+  sendAccountSecurityEmail(user, 'provider-connected', { provider: strategyLabels[provider] });
   return { type: 'unverified', identity: newIdentity };
 };
 

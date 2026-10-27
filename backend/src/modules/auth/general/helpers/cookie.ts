@@ -6,7 +6,7 @@ import { appConfig, type TokenType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
-import { isTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { isTokenType, type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -32,19 +32,21 @@ export type CookieName =
   | 'passkey-challenge'
   | 'magic-requested'
   | 'magic-pending'
-  | 'step-up-requested'
   | 'sso-recovery'
   | `oauth-state-${string}`;
 
 /**
  * Cookies read on a navigation another site started stay SameSite Lax: the OAuth state, plus the device id and the
- * magic-link and step-up request markers, which the OAuth callback and emailed links must see to recognize the
- * browser. A token type's own cookie follows its policy. All others, sessions included, are same-origin only.
+ * magic-link request marker, which the OAuth callback and emailed links must see to recognize the browser. A token
+ * type's own cookie follows its policy. All others, sessions included, are same-origin only.
  * @see handle-oauth-initiation.ts
  */
-const laxCookies = new Set<CookieName>(['device-id', 'magic-requested', 'step-up-requested']);
-const isLaxCookie = (name: CookieName) =>
-  isTokenType(name) ? tokenPolicies[name].sameSite === 'lax' : laxCookies.has(name) || name.startsWith('oauth-state-');
+const laxCookies = new Set<CookieName>(['device-id', 'magic-requested']);
+const isLaxCookie = (name: CookieName) => {
+  if (!isTokenType(name)) return laxCookies.has(name) || name.startsWith('oauth-state-');
+  const policy: TokenPolicy = tokenPolicies[name];
+  return policy.carrier !== 'code' && policy.sameSite === 'lax';
+};
 
 const versionedCookieName = (name: CookieName) => `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 

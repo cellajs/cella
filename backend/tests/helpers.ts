@@ -68,7 +68,7 @@ export const sentMails = () =>
 export const mailsTo = (email: string) => sentMails().filter(({ recipient }) => recipient.email === email);
 
 /**
- * The link `key` names in the last mail, a static prop (`stepUpUrl`) or a recipient field (`inviteLink`), and the raw
+ * The link `key` names in the last mail, a static prop (`magicLinkUrl`) or a recipient field (`inviteLink`), and the raw
  * token at its end.
  */
 export function mailedLink(key: string) {

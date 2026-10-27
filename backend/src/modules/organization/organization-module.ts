@@ -1,5 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
-import { organizationHandlers } from './organization-handlers';
+import { organizationHandlers } from '#/modules/organization/organization-handlers';
 
 defineBackendModule({
   name: 'organizations',

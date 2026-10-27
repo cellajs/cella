@@ -1,11 +1,9 @@
 import type { UserContext } from '#/core/context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { withActorRef } from '#/modules/actors/actor-refs';
-import { getChannelCounts } from '#/modules/entities/entities-queries';
-import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
+import { toOrganizationResponse } from '#/modules/organization/operations/to-organization-response';
 import { publishOrganization } from '#/modules/organization/organization-queries';
 import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
@@ -34,9 +32,7 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
   const { dispatched } = raced ? { dispatched: 0 } : await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
 
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);
-  const counts = await getChannelCounts(ctx, { entityType: 'organization', entityId: current.id });
-  const included = { ...(membership && isMembershipRow(membership) && { membership: toMembershipBase(membership) }), counts };
-  const withAudit = await withActorRef(ctx, withOrganizationDefaults(current));
+  const response = await toOrganizationResponse(ctx, current, membership, { counts: true, membership: true });
 
-  return { organization: { ...withAudit, included }, invitationsSent: dispatched };
+  return { organization: response, invitationsSent: dispatched };
 }

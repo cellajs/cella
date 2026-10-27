@@ -1,17 +1,15 @@
 import { eq } from 'drizzle-orm';
-import { getMe, invokeToken, sendStepUpLink } from 'sdk';
-import { appConfig } from 'shared';
+import { getMe, sendStepUpCode, stepUp } from 'sdk';
 import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { streamSubscriberManager } from '#/modules/entities/stream';
+import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { cookiesAfter, expectRefusal, insertTestSession, mailedLink, setCookiePair } from '../helpers';
+import { expectRefusal, insertTestSession, sentMails, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 
 export interface TestSession {
@@ -41,28 +39,20 @@ export async function insertSteppedUpSession(user: { id: string }, via: StepUpPr
   return session;
 }
 
-/** Asks for the emailed step-up link from a session's browser; returns that browser's cookies after and the raw token. */
-export async function askStepUpLink(session: TestSession, redirect?: string) {
+/** Asks for the emailed step-up code from a session; returns the code the mail carries. */
+export async function askStepUpCode(session: TestSession) {
   const call = await createAppClient();
-  const asked = await call(sendStepUpLink, { body: redirect ? { redirect } : {}, headers: session.headers });
-  expect(asked.response.status).toBe(204);
-  const { url, token: rawToken } = mailedLink('stepUpUrl');
-  expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/step-up/${rawToken}`);
-  return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
+  expect((await call(sendStepUpCode, { headers: session.headers })).response.status).toBe(204);
+  const code = sentMails().at(-1)?.statics.code;
+  if (typeof code !== 'string') throw new Error('The last mail carries no step-up code');
+  return code;
 }
 
-/** A click on the mailed step-up link: the mail app starts the navigation, so the Strict session cookie stays home. */
-export async function openStepUpLink(rawToken: string, browser: string) {
-  const call = await createAppClient();
-  const marker = browser.split('; ').filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`));
-  return call(invokeToken, { path: { type: 'step-up', token: rawToken }, headers: { ...defaultHeaders, Cookie: marker.join('; ') } });
-}
-
-/** A step-up through the emailed link, opened in the browser that asked; returns that browser's session. */
+/** A step-up through the emailed code, entered on the session that asked for it. */
 export async function stepUpByEmail(session: TestSession) {
-  const { browser, rawToken } = await askStepUpLink(session);
-  expect((await openStepUpLink(rawToken, browser)).response.status).toBe(302);
-  return asSession(session.id, browser);
+  const code = await askStepUpCode(session);
+  const call = await createAppClient();
+  expect((await call(stepUp, { body: { emailCode: code }, headers: session.headers })).response.status).toBe(204);
 }
 
 /** GET /me from a browser holding `cookie`. */
@@ -116,7 +106,7 @@ export interface OpenStream {
 
 const openStreams: OpenStream[] = [];
 
-const subscribersOf = (userId: string) => streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
+const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic<AppStreamSubscriber>(`user:${userId}`);
 
 /** Opens the app stream with a session, as the browser's EventSource does, and waits until the server registered it. */
 export async function openStream(userId: string, session: TestSession): Promise<OpenStream> {

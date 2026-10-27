@@ -11,7 +11,7 @@ import { adminRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { bearerHeaders, clientCredentialsToken, serviceAccountWithKey, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser } from './helpers';
 
 /**
  * A secret key may narrow what its service account can do, never widen it. The key doubles as the account's client
@@ -31,7 +31,7 @@ describe('API key scopes at the token endpoint', async () => {
   /** An admin service account whose one key carries `scopes` (null: unscoped). */
   async function adminAccountWithKey(scopes: AccessScope[] | null) {
     const org = await createTestOrganization();
-    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+    const admin = await createFactorOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     return { org, client: await serviceAccountWithKey(org, admin.sessionCookie, { scopes }) };
   }
 

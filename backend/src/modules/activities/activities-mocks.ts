@@ -31,5 +31,3 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
       ...overrides,
     };
   });
-
-export const mockActivityResponse = mockActivity;

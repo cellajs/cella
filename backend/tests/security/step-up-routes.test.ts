@@ -11,6 +11,7 @@ import {
   startOAuthConnect,
   stepUp,
   toggleMfa,
+  updateServiceAccount,
 } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -28,15 +29,25 @@ import {
   createTestOrganization,
   createTestUser,
   createTotpUser,
+  type ErrorResponse,
   expectRefusal,
   insertTestSession,
+  sessionRow,
   totpCode,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
-import { asSession, insertImpersonation, insertSession, insertStaleSession, stepUpByEmail, type TestSession } from './session-helpers';
+import {
+  asSession,
+  insertImpersonation,
+  insertSession,
+  insertStaleSession,
+  insertSteppedUpSession,
+  stepUpByEmail,
+  type TestSession,
+} from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
@@ -108,14 +119,39 @@ describe('account-security routes need a step-up', async () => {
     await expectStepUpRequired(await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge }));
     expect(await totpsOf()).toHaveLength(0);
 
-    const steppedUp = await stepUpByEmail(session);
-    expect((await call(generateTotpKey, { headers: steppedUp.headers })).response.status).toBe(200);
-    const created = await call(createTotp, {
-      body: { code: totpCode(secret) },
-      headers: { ...defaultHeaders, Cookie: `${steppedUp.cookie}; ${authCookie('totp-challenge', secret)}` },
+    await stepUpByEmail(session);
+    expect((await call(generateTotpKey, { headers: session.headers })).response.status).toBe(200);
+    expect((await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge })).response.status).toBe(201);
+    expect(await totpsOf()).toHaveLength(1);
+  });
+
+  it('must not pass beyond setting up a factor via the emailed code of a user who lost theirs', async () => {
+    const user = await totpHolder('lost-factor');
+    const passkey = await insertPasskey(user);
+    const session = await insertStaleSession(user);
+    const authenticator = softwarePasskey();
+
+    await stepUpByEmail(session);
+    // The code replaces a lost factor: it sets up a new one, and the new one, proven here, opens everything else.
+    await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
+    const issued = await passkeyChallenge('registration');
+    const created = await call(createPasskey, {
+      body: { attestation: authenticator.attest(issued.challenge), nameOnDevice: 'New phone' },
+      headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
     });
     expect(created.response.status).toBe(201);
-    expect(await totpsOf()).toHaveLength(1);
+    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(204);
+  });
+
+  it('steps the session up with the authenticator it sets up, so a factor-tier action passes next', async () => {
+    const user = await createTestUser('setup-totp-stamp@security-test.com');
+    const session = await insertStaleSession(user);
+    const secret = encodeBase32(crypto.getRandomValues(new Uint8Array(20)));
+    const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
+
+    await stepUpByEmail(session);
+    expect((await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge })).response.status).toBe(201);
+    expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
   });
 
   it('must not delete the authenticator app via a stale session', async () => {
@@ -153,8 +189,8 @@ describe('account-security routes need a step-up', async () => {
     await expectStepUpRequired(await call(startOAuthConnect, { headers: session.headers }));
     expect(await pins()).toHaveLength(0);
 
-    const steppedUp = await stepUpByEmail(session);
-    expect((await call(startOAuthConnect, { headers: steppedUp.headers })).response.status).toBe(204);
+    await stepUpByEmail(session);
+    expect((await call(startOAuthConnect, { headers: session.headers })).response.status).toBe(204);
     expect(await pins()).toHaveLength(1);
   });
 
@@ -166,8 +202,8 @@ describe('account-security routes need a step-up', async () => {
     await expectStepUpRequired(await call(deleteMe, { headers: session.headers }));
     expect(await accounts()).toHaveLength(1);
 
-    const steppedUp = await stepUpByEmail(session);
-    expect((await call(deleteMe, { headers: steppedUp.headers })).response.status).toBe(204);
+    await stepUpByEmail(session);
+    expect((await call(deleteMe, { headers: session.headers })).response.status).toBe(204);
     expect(await accounts()).toHaveLength(0);
   });
 
@@ -205,6 +241,7 @@ describe('account-security routes need a step-up', async () => {
     const path = { tenantId: org.tenantId, organizationId: org.id };
     return {
       admin,
+      path,
       createAccount: (session: TestSession) =>
         call(createServiceAccount, {
           path,
@@ -218,28 +255,70 @@ describe('account-security routes need a step-up', async () => {
     };
   };
 
-  it('must not mint an API key via a stale session', async () => {
+  it('must not mint an API key without a second factor proven on the session', async () => {
     const minting = await keyMinting('key-minter');
-    const stale = await insertStaleSession(minting.admin);
+    const session = await insertSession(minting.admin);
 
-    await expectStepUpRequired(await minting.createAccount(stale));
+    // A fresh sign-in and an emailed code prove presence, not a factor: the user is asked to set one up.
+    const fresh = await minting.createAccount(session);
+    await expectStepUpRequired(fresh);
+    expect((fresh.error as ErrorResponse | undefined)?.meta).toEqual({ methods: ['enroll'] });
+    await stepUpByEmail(session);
+    await expectStepUpRequired(await minting.createAccount(session));
     expect(await minting.accounts()).toHaveLength(0);
 
-    const steppedUp = await stepUpByEmail(stale);
-    const created = await minting.createAccount(steppedUp);
+    // Setting up a passkey proves it on this session, which opens the way at once.
+    const issued = await passkeyChallenge('registration');
+    const registered = await call(createPasskey, {
+      body: { attestation: softwarePasskey().attest(issued.challenge), nameOnDevice: 'Laptop' },
+      headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
+    });
+    expect(registered.response.status).toBe(201);
+    const created = await minting.createAccount(session);
     expect(created.response.status).toBe(201);
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
 
     // A further key for the account needs the step-up as well.
     await expectStepUpRequired(await minting.createKey(await insertStaleSession(minting.admin), accountId));
     expect(await minting.keys()).toHaveLength(1);
-    expect((await minting.createKey(steppedUp, accountId)).response.status).toBe(201);
+    expect((await minting.createKey(session, accountId)).response.status).toBe(201);
     expect(await minting.keys()).toHaveLength(2);
+  });
+
+  it('must not mint an API key via an SSO sign-in whose institution asserted no MFA', async () => {
+    const minting = await keyMinting('sso-key-minter');
+    const signedIn = async (steppedUpVia?: 'sso') => {
+      const { id, cookie } = await insertTestSession(minting.admin, { authStrategy: 'surfconext', ageMs: 60 * 1000, steppedUpVia });
+      return asSession(id, cookie);
+    };
+
+    await expectStepUpRequired(await minting.createAccount(await signedIn()));
+    expect(await minting.accounts()).toHaveLength(0);
+    // Positive control: the institution asserted MFA at the sign-in a minute ago.
+    expect((await minting.createAccount(await signedIn('sso'))).response.status).toBe(201);
+  });
+
+  it('must not re-enable a disabled service account without a second factor proven on the session', async () => {
+    const minting = await keyMinting('re-enabler');
+    await insertPasskey(minting.admin);
+    const factor = await insertSteppedUpSession(minting.admin, 'passkey');
+    const created = await minting.createAccount(factor);
+    const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
+    const setStatus = (session: TestSession, status: 'active' | 'disabled') =>
+      call(updateServiceAccount, { path: { ...minting.path, id: accountId }, body: { status }, headers: session.headers });
+
+    // Disabling takes access away and needs no step-up; re-enabling gives the keys their access back.
+    const stale = await insertStaleSession(minting.admin);
+    expect((await setStatus(stale, 'disabled')).response.status).toBe(200);
+    await expectStepUpRequired(await setStatus(stale, 'active'));
+    expect((await minting.accounts())[0]?.status).toBe('disabled');
+    expect((await setStatus(factor, 'active')).response.status).toBe(200);
   });
 
   it('must not mint an API key via an impersonation session, however fresh', async () => {
     const minting = await keyMinting('impersonated-key-minter');
-    const own = await insertSession(minting.admin);
+    await insertPasskey(minting.admin);
+    const own = await insertSteppedUpSession(minting.admin, 'passkey');
     const created = await minting.createAccount(own);
     expect(created.response.status).toBe(201);
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;

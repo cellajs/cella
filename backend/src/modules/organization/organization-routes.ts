@@ -3,6 +3,12 @@ import { actorGuard, relatableGuard, tenantGuard, userGuard } from '#/middleware
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  mockBatchOrganizationsResponse,
+  mockOrganizationPublishResponse,
+  mockPaginatedOrganizationsResponse,
+  mockUpdateOrganizationBody,
+} from '#/modules/organization/organization-mocks';
+import {
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationPublishResponseSchema,
@@ -11,12 +17,6 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organization/organization-schema';
 import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
-import {
-  mockBatchOrganizationsResponse,
-  mockOrganizationPublishResponse,
-  mockPaginatedOrganizationsResponse,
-  mockUpdateOrganizationBody,
-} from './organization-mocks';
 
 const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
   createOrganizations: xRoute({
@@ -76,7 +76,8 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete organizations',
-    description: 'Deletes one or more organizations by ID within a tenant.',
+    description:
+      'Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),

@@ -90,8 +90,7 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
  */
 export async function clearDeletedStorage(): Promise<number> {
   const rows = await baseDb.select().from(deletedStorageTable).orderBy(asc(deletedStorageTable.id)).limit(batchSize);
-  const byTenant = new Map<string | null, DeletedStorageModel[]>();
-  for (const row of rows) byTenant.set(row.tenantId, [...(byTenant.get(row.tenantId) ?? []), row]);
+  const byTenant = Map.groupBy(rows, (row) => row.tenantId);
 
   let cleared = 0;
   const failed: (string | null)[] = [];
@@ -107,7 +106,7 @@ export async function clearDeletedStorage(): Promise<number> {
       cleared += tenantRows.length;
     } catch (error) {
       failed.push(tenantId);
-      log.error('Clearing deleted storage failed for a tenant', { tenantId, err: error });
+      log.error('Clearing deleted storage failed for a tenant', { tenantId, error });
     }
   }
 

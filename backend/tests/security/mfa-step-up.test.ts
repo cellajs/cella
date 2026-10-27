@@ -71,6 +71,13 @@ describe('MFA toggle step-up', async () => {
     expect(await mfaRequiredOf(user.id)).toBe(false);
   });
 
+  it('must not turn on MFA via a session an SSO sign-in stepped up, which names no factor for the mfa session', async () => {
+    const { user, headers } = await totpUserWithSession(false, { via: 'sso' });
+    const { error, response } = await call(toggleMfa, { body: { mfaRequired: true }, headers });
+    await expectRefusal({ response, error }, 403, 'step_up_required');
+    expect(await mfaRequiredOf(user.id)).toBe(false);
+  });
+
   it('turns on MFA with both factors, and deletes a factor while MFA is off (positive controls)', async () => {
     const on = await totpUserWithSession(false);
     const enabled = await call(toggleMfa, { body: { mfaRequired: true }, headers: on.headers });

@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { appConfig, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -14,14 +15,15 @@ import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
-type CreateOrganizationItem = { id: string; name: string; slug: string; draft?: boolean };
-
-export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOrganizationItem[], tenantId: string) {
-  // Normalize old-shape field names to their current names before any body access
+/**
+ * Creates organizations in the request's tenant, each with its creator as admin. A tenant holds one organization: the
+ * batch takes the free slot and rejects the rest as `slug_exists` or `org_limit_reached`.
+ * @throws 403 `restrict_by_app` when the tenant holds its organization already, or its quota is spent for a caller who
+ * is not a system admin.
+ */
+export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<typeof organizationContract.createItemSchema>[]) {
   const items = rawItems.map((item) => organizationContract.normalizeBody(item));
-  const user = ctx.var.user;
-  const isSystemAdmin = ctx.var.isSystemAdmin;
-  const db = ctx.var.db;
+  const { user, isSystemAdmin, tenantId } = ctx.var;
 
   const existingOrgsCount = await countOrganizationsByTenant(ctx, { tenantId });
 
@@ -32,58 +34,58 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const orgQuota = ctx.var.tenant.restrictions.quotas.organization;
   const quotaSlots = orgQuota === 0 ? items.length : orgQuota - existingOrgsCount;
 
-  // The 1:1 constraint limits everyone (incl. system admins) to the single remaining slot.
   const availableSlots = Math.min(isSystemAdmin ? items.length : quotaSlots, tenantOrgSlots);
 
   if (availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
   const slugs = items.map((item) => item.slug);
-  const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(ctx, slugs, 'organization') : new Map();
+  const slugAvailability = await checkSlugsAvailable(ctx, slugs, 'organization');
 
   const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
-  // Clamp to the available slots: the hard 1:1 cap binds system admins too, so no bypass here.
   const restrictionFiltered = takeWithRestriction(slugFiltered.items, availableSlots, 'org_limit_reached', slugFiltered.rejectionState);
 
   const itemsToCreate = restrictionFiltered.items;
   const rejectionState = restrictionFiltered.rejectionState;
 
   if (itemsToCreate.length === 0) {
-    return { data: [] as never[], ...rejectionState };
+    return { data: [], ...rejectionState };
   }
 
-  // All rows belong to the path's tenant, so the RLS context holds
-  const organizationRecords = await insertOrganizations(ctx, {
-    orgs: itemsToCreate.map((item) => ({
-      name: item.name,
-      shortName: item.name,
-      slug: item.slug,
-      tenantId,
-      languages: [appConfig.defaultLanguage],
-      welcomeText: defaultWelcomeText,
-      defaultLanguage: appConfig.defaultLanguage,
-      createdBy: user.id,
-      // A draft holds its invitations until it is published
-      ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),
-    })),
+  const creatorRole = 'admin' as const;
+
+  // An organization and its creator's membership commit together: an organization left without its admin would hold
+  // the tenant's one slot where only a system admin reaches it.
+  const { organizationRecords, createdMemberships } = await ctx.var.db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const organizationRecords = await insertOrganizations(txCtx, {
+      orgs: itemsToCreate.map((item) => ({
+        name: item.name,
+        shortName: item.name,
+        slug: item.slug,
+        tenantId,
+        languages: [appConfig.defaultLanguage],
+        welcomeText: defaultWelcomeText,
+        defaultLanguage: appConfig.defaultLanguage,
+        createdBy: user.id,
+        // A draft holds its invitations until it is published
+        ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),
+      })),
+    });
+    const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: creatorRole, entity: org }));
+    const createdMemberships = await insertMemberships(txCtx, { items: membershipInserts });
+    return { organizationRecords, createdMemberships };
   });
 
-  const ids = organizationRecords.map((org) => org.id);
-  log.info('Organizations created', { count: organizationRecords.length, ids });
-
-  const creatorRole = 'admin' as const;
-  const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: creatorRole, entity: org }));
-
-  const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
+  log.info('Organizations created', { count: organizationRecords.length, ids: organizationRecords.map((org) => org.id) });
   invalidateCache.user(user.id);
 
   const counts = buildZeroCounts('organization', creatorRole);
 
-  const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
+  const membershipByOrgId = new Map(createdMemberships.map((membership) => [membership.organizationId, membership]));
 
   const orgsWithAudit = await withActorRefs(ctx, organizationRecords, [userActorRef(user)]);
 
-  // Flags are stored sparse, so merge the config defaults into the response
   const organizationResponses = orgsWithAudit.map((org) => {
     const membership = membershipByOrgId.get(org.id)!;
     const included = { membership: toMembershipBase(membership), counts };

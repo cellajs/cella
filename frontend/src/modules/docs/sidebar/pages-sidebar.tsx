@@ -29,7 +29,7 @@ function expandAncestors(expandedIds: Set<string>, pageId: string | undefined) {
 /** Sidebar listing docs pages as a hierarchical tree, sorted by display order. */
 export function PagesSidebar() {
   const { t } = useTranslation();
-  // The docs page's slug, which may contain slashes (architecture/sync-engine); undefined off a docs page
+  // The docs page's slug, which may contain slashes (sync-engine/cdc); undefined off a docs page
   const activePageId = useMatch({ from: '/_public/_content/docs/page/$', shouldThrow: false, select: (match) => match.params._splat }) || undefined;
 
   // The active page's ancestors are open from the first render, so the sheet opens expanded and Base UI skips the mount keyframe

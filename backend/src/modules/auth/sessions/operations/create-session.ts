@@ -66,7 +66,7 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
 
 /** What a sign-in may record on the session besides its method. */
 export interface SessionExtras {
-  /** The second factor an MFA completion presented: the session starts stepped up by it. */
+  /** The second factor an MFA completion presented, or `sso` for an institution's asserted MFA: the session starts stepped up by it. */
   steppedUpVia?: StepUpProof | null;
   /** The connection (an institution's trust) an SSO sign-in came through. */
   connectionId?: string | null;

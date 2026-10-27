@@ -60,8 +60,8 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
   const openCreateDialog = async () => {
     if (!onlineManager.isOnline()) return toastOffline();
 
-    // Minting a key needs a stepped-up session: the user proves it before the form opens, so the form submits once.
-    const steppedUp = await ensureStepUp().then(
+    // Minting a key needs a second factor proven on this session, asked before the form opens so the form submits once.
+    const steppedUp = await ensureStepUp('factor').then(
       () => true,
       () => false,
     );

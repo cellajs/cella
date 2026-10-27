@@ -28,7 +28,7 @@ export function Totp() {
 
   const openTotpSetup = async () => {
     // The key request and the code check need a stepped-up session: the user proves it before the setup opens.
-    const steppedUp = await ensureStepUp().then(
+    const steppedUp = await ensureStepUp('enroll').then(
       () => true,
       () => false,
     );

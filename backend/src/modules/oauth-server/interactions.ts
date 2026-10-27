@@ -70,8 +70,8 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
       return c.json({ redirectTo });
     }
 
-    // Granting a client access to the account needs the user present on this session again, never an impersonation.
-    await requireStepUp(session);
+    // A grant hands a client lasting access: it needs a second factor proven on this session, never an impersonation.
+    await requireStepUp(session, 'factor');
 
     // The authorization server's session in this browser may name someone who consented here before: it ends, and
     // the resume signs this user in to a fresh one.

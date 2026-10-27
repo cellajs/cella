@@ -38,10 +38,10 @@ export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
 /**
- * How a session last proved its user's presence again: a second factor (a step-up, or the MFA completion that minted the
- * session), or an emailed link for a user without one.
+ * How a session last proved its user's presence again: a second factor (a step-up, the MFA completion that minted the
+ * session, or setting the factor up), an emailed code, or `sso` for an SSO sign-in whose institution asserted MFA.
  */
-const stepUpProofs = ['passkey', 'totp', 'email'] as const;
+const stepUpProofs = ['passkey', 'totp', 'email', 'sso'] as const;
 export type StepUpProof = (typeof stepUpProofs)[number];
 
 /**
