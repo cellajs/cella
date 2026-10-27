@@ -91,6 +91,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     // a clean mount must not clear the stored draft before the restore below reads it.
     if (isDirty) saveDraft();
     setFormDirty(formId, isDirty);
+    // The flag too: a reader of `dirtyForms` after a reload learns of the draft before its form mounts
+    flushKvWrites();
   }, [isDirty]);
 
   useEffect(() => {
