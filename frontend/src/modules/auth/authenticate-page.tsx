@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowLeftIcon, ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
+import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
@@ -61,15 +62,7 @@ export function AuthenticatePage() {
 
   const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
-  const [showSlowWarning, setShowSlowWarning] = useState(false);
-  useEffect(() => {
-    if (!isHealthLoading) {
-      setShowSlowWarning(false);
-      return;
-    }
-    const timer = setTimeout(() => setShowSlowWarning(true), healthSlowMs);
-    return () => clearTimeout(timer);
-  }, [isHealthLoading]);
+  const showSlowWarning = useDelayedFlag(isHealthLoading, healthSlowMs);
 
   // Only ever switches the neutral step on: an address this browser is not recognized for switches it on as well.
   useEffect(() => {

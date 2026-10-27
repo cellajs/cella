@@ -1,5 +1,6 @@
-import { type ComponentProps, type ReactNode, Suspense, useEffect, useState } from 'react';
+import { type ComponentProps, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import { UploadHostProvider } from '~/modules/common/blocknote/custom-file-panel/upload-host';
@@ -123,15 +124,7 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   const denied = tokenDenied || stopReason === 'denied';
   // Not ready yet, or ready from storage before either transport synced it.
   const connecting = isOnline && !denied && !deleted && !stopped && (!connection?.ready || connection.transport === 'none');
-  const [connectingNoticed, setConnectingNoticed] = useState(false);
-  useEffect(() => {
-    if (!connecting) return;
-    const timer = setTimeout(() => setConnectingNoticed(true), connectingNoticeMs);
-    return () => {
-      clearTimeout(timer);
-      setConnectingNoticed(false);
-    };
-  }, [connecting]);
+  const connectingNoticed = useDelayedFlag(connecting, connectingNoticeMs);
 
   const statusText = () => {
     if (deleted) return t('c:deleted');
