@@ -108,13 +108,8 @@ interface TabIndicatorProps {
  * line itself, with no inset of its own: a `scaleX` glide would scale an inset along and paint the wrong width.
  */
 export function TabIndicatorBar({ indicator }: TabIndicatorProps) {
-  return (
-    <span
-      ref={indicator.setBar}
-      aria-hidden
-      className="pointer-events-none absolute bottom-0 left-0 h-1 origin-left rounded-sm bg-primary opacity-0"
-    />
-  );
+  const { setBar } = indicator;
+  return <span ref={setBar} aria-hidden className="pointer-events-none absolute bottom-0 left-0 h-1 origin-left rounded-sm bg-primary opacity-0" />;
 }
 
 /** Rendered inside the active tab: the bar takes this marker's box, and the tab scrolls into view. */

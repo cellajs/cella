@@ -1,6 +1,5 @@
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useEffectEvent, useRef } from 'react';
 import { asRecord } from 'shared/utils/as-record';
-import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
@@ -44,12 +43,12 @@ export function removeAndNotify<T extends Closable>(commit: (remaining: T[]) => 
 }
 
 /**
- * The `initialFocus` of an overlay opened from code, which Base UI cannot see as a touch open: on touch the popup
+ * What `initialFocus` of an overlay opened from code, which Base UI cannot see as a touch open: on touch the popup
  * takes focus, as Base UI's own touch default does. Otherwise a `data-autofocus` element wins, so a confirmation
  * starts on its safe option.
  */
 export function touchInitialFocus(popupRef: RefObject<HTMLElement | null>) {
-  return () => (isTouchInteraction() ? popupRef.current : (popupRef.current?.querySelector<HTMLElement>('[data-autofocus]') ?? true));
+  return isTouchInteraction() ? popupRef.current : (popupRef.current?.querySelector<HTMLElement>('[data-autofocus]') ?? true);
 }
 
 /**
@@ -58,12 +57,10 @@ export function touchInitialFocus(popupRef: RefObject<HTMLElement | null>) {
  * page after a route change) stays where it went.
  */
 export function finalFocusFor(triggerRef: TriggerRef | undefined, popupId: string) {
-  if (!triggerRef) return undefined;
-  return () => {
-    const active = document.activeElement;
-    if (active && active !== document.body && !document.getElementById(popupId)?.contains(active)) return false;
-    return triggerRef.current ?? true;
-  };
+  if (!triggerRef) return true;
+  const active = document.activeElement;
+  if (active && active !== document.body && !document.getElementById(popupId)?.contains(active)) return false;
+  return triggerRef.current ?? true;
 }
 
 /**
@@ -73,12 +70,12 @@ export function finalFocusFor(triggerRef: TriggerRef | undefined, popupId: strin
  */
 export function useRemoveAfterExit(hide: () => void, remove: () => void) {
   const pendingRemovalRef = useRef(false);
-  const removeRef = useLatestRef(remove);
+  const removeOnUnmount = useEffectEvent(remove);
 
   // Unmounting mid-exit (e.g. a breakpoint switch remounts the overlay) must not strand the closed entry.
   useEffect(
     () => () => {
-      if (pendingRemovalRef.current) removeRef.current();
+      if (pendingRemovalRef.current) removeOnUnmount();
     },
     [],
   );
@@ -113,12 +110,12 @@ export function useOverlayLock(source: string, active: boolean) {
 
 /** Runs `callback` when a navigation to another path starts. */
 export function useOnPathChange(callback: () => void) {
-  const callbackRef = useLatestRef(callback);
+  const onPathChange = useEffectEvent(callback);
 
   useEffect(
     () =>
       getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
-        if (pathChanged) callbackRef.current();
+        if (pathChanged) onPathChange();
       }),
     [],
   );

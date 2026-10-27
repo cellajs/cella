@@ -66,12 +66,13 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
     );
   }
 
+  const { registerHandle } = panelDrag;
   const CollapseIcon = isCollapsed ? ChevronsLeftRightIcon : ChevronsRightLeftIcon;
 
   return (
     <>
       <ReorderHandle
-        ref={panelDrag.registerHandle}
+        ref={registerHandle}
         id={panelDrag.panelId}
         name={name}
         index={panelDrag.index}

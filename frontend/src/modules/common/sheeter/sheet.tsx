@@ -83,8 +83,8 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
         side={side}
         overlay={modal === true}
         className={cn('items-start', className)}
-        initialFocus={touchInitialFocus(popupRef)}
-        finalFocus={finalFocusFor(triggerRef, String(id))}
+        initialFocus={() => touchInitialFocus(popupRef)}
+        finalFocus={() => finalFocusFor(triggerRef, String(id))}
         autoScrollOnDrag={autoScrollOnDrag}
         keepMounted={keepMounted}
       >
