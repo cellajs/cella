@@ -1,8 +1,15 @@
+import type { FetchInfiniteQueryOptions, FetchQueryOptions, QueryKey } from '@tanstack/react-query';
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
+import type { ApiError } from '~/lib/api';
 import type { UserMenuItem } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
 import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
 import { waitFor } from '~/utils/wait-for';
+
+type SyncInfiniteCall = FetchInfiniteQueryOptions<unknown, ApiError, unknown, QueryKey, unknown>;
+type SyncSingleCall = FetchQueryOptions<unknown, ApiError, unknown, QueryKey>;
+
+const isInfiniteCall = (options: SyncInfiniteCall | SyncSingleCall): options is SyncInfiniteCall => 'getNextPageParam' in options;
 
 /** Seeds offline caches once the stream is live: the current organization first, then the rest when offline access is on. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
@@ -62,13 +69,9 @@ async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise
 
   await Promise.allSettled(
     queries.map(async (source) => {
-      const isInfinite = 'getNextPageParam' in source;
-      const cacheFirst = { ...source, staleTime: 'static' };
-      return isInfinite
-        ? // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-          await queryClient.infiniteQuery(cacheFirst as any)
-        : // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-          await queryClient.query(cacheFirst as any);
+      // The queries differ in key and data types, which no single options type holds: one cast to the call shapes, the `in` check picks the call.
+      const cacheFirst = { ...source, staleTime: 'static' } as SyncInfiniteCall | SyncSingleCall;
+      return isInfiniteCall(cacheFirst) ? await queryClient.infiniteQuery(cacheFirst) : await queryClient.query(cacheFirst);
     }),
   );
 }
