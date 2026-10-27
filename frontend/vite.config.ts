@@ -110,13 +110,13 @@ const repoDocRoutes = {
   'cella/INTEROPERABILITY.md': '/docs/page/interoperability',
   'oauth/README.md': '/docs/page/interoperability/oauth',
   'mcp/README.md': '/docs/page/interoperability/mcp',
-  'cella/RELEASES.md': '/docs/page/operations/releases',
-  'cella/DEPLOYMENT.md': '/docs/page/operations/deployment',
-  'cella/OTEL.md': '/docs/page/operations/observability',
-  'jobs/README.md': '/docs/page/operations/jobs',
+  'cella/OTEL.md': '/docs/page/observability',
+  'jobs/README.md': '/docs/page/jobs',
   'cella/ADD_ENTITY.md': '/docs/page/guides/new-entity',
   'cella/TESTING.md': '/docs/page/guides/testing',
   'bench/README.md': '/docs/page/guides/load-testing',
+  'cella/RELEASES.md': '/docs/page/guides/releases',
+  'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
 } as const;
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
