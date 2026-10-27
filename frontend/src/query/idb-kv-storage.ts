@@ -9,9 +9,9 @@ const writeDebounceMs = 250;
 const flushers = new Set<() => void>();
 
 /**
- * Issue every store's pending write immediately. For last-chance writes during unload (a reload
- * fires only pagehide, where this module's own listener has already run before later-registered
- * ones): write to the store, then call this so the put is issued in the same task.
+ * Issue every store's pending write now. A put issued while the page unloads (a reload's pagehide) does not commit,
+ * so a write that has to survive a reload calls this when it is made. A hide listener registered after this module's
+ * own calls it after its write.
  */
 export const flushKvWrites = () => {
   for (const flush of flushers) flush();

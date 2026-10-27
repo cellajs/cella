@@ -47,6 +47,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     } else {
       resetDraftForm(formId);
     }
+    // Past the storage debounce: this hook debounces edits already, and a write still waiting there is lost to a reload
+    flushKvWrites();
   });
 
   // Subscribe directly to form changes so debounced persistence does not rerender the form tree.
@@ -72,13 +74,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       saveDraft();
     };
 
-    // For a backgrounded tab: writes issued while a page unloads never commit, which the dirty effect below covers.
-    // flushKvWrites, because the storage layer's own hide flush has already run when this later listener adds its write.
-    const stopHideFlush = onPageHide(() => {
-      if (draftTimeoutRef.current === undefined) return;
-      flushPendingDraft();
-      flushKvWrites();
-    });
+    // A hidden tab still commits the pending edits. A write issued while the page unloads never commits, so a reload
+    // loses the edits made since the last 300 ms pause.
+    const stopHideFlush = onPageHide(flushPendingDraft);
 
     return () => {
       unsubscribe();
@@ -116,6 +114,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       clearTimeout(draftTimeoutRef.current);
       draftTimeoutRef.current = undefined;
       resetDraftForm(formId);
+      flushKvWrites();
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);
       // reset() has notified its watchers synchronously; re-arm so later edits persist again.
