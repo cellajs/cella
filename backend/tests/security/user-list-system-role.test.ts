@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { createTestOrganization, type ErrorResponse, expectRefusal, rawJsonRequest } from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse, expectRefusal, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -67,5 +67,12 @@ describe('System roles in the user list', async () => {
     const sorted = await listUsers(sysAdmin, { sort: 'role', order: 'asc' });
     expect(sorted.status).toBe(200);
     expect(sorted.body.items[0]?.id).toBe(sysAdmin.id);
+  });
+
+  it('lists every user for a system admin who belongs to no organization', async () => {
+    const admin = await createSystemAdminUser('role-list-sysadmin-no-org@security-test.com');
+    const { status, body } = await listUsers({ sessionCookie: await createTestSession(admin) });
+    expect(status).toBe(200);
+    expect(body.items.map((user) => user.id)).toContain(member.id);
   });
 });

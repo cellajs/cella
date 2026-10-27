@@ -1115,7 +1115,7 @@ export const zToggleMfaBody = z.object({
 export const zToggleMfaResponse = zUser;
 
 /**
- * User sign-up info
+ * Sign-in methods and sessions
  */
 export const zGetMyAuthResponse = zMeAuthData;
 

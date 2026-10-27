@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import type { StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
-import { createTotpUser, expectRefusal } from '../helpers';
+import { createTotpUser, expectRefusal, mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, insertPasskey, passkeysOf } from './helpers';
 import { insertStaleSession, insertSteppedUpSession } from './session-helpers';
@@ -45,6 +45,16 @@ describe('MFA toggle step-up', async () => {
     const { response } = await call(toggleMfa, { body: { mfaRequired: false }, headers });
     expect(response.status).toBe(200);
     expect(await mfaRequiredOf(user.id)).toBe(false);
+  });
+
+  it('mails an MFA change once, to the request that made it', async () => {
+    const { user, headers } = await totpUserWithSession(true);
+    const disabledMails = () => mailsTo(user.email).filter(({ statics }) => statics.type === 'mfa-disabled');
+
+    // A second request finds MFA off already: it answers as the first did, and the owner hears of one change.
+    expect((await call(toggleMfa, { body: { mfaRequired: false }, headers })).response.status).toBe(200);
+    expect((await call(toggleMfa, { body: { mfaRequired: false }, headers })).response.status).toBe(200);
+    expect(disabledMails()).toHaveLength(1);
   });
 
   // MFA keeps two factors so a lost one can be replaced: removing either while MFA is on would switch it off unasked.

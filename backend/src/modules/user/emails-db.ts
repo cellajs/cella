@@ -21,7 +21,8 @@ export const emailsTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    verifiedAt: isoTimestamp().notNull(), // First inbox proof
+    /** The first proof of the inbox. */
+    verifiedAt: isoTimestamp().notNull(),
     /** How the most recent proof came in: 'magic' or the provider whose verification link was clicked. Not an actor. */
     lastVerifiedVia: varchar({ length: maxLength.field }),
     lastVerifiedAt: isoTimestamp(),

@@ -1,5 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
-import { mcpHandlers } from './mcp-handlers';
+import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
+import { mcpMountPath } from '#/modules/mcp/mcp-routes';
 
 defineBackendModule({
   name: 'mcp',
@@ -8,5 +9,5 @@ defineBackendModule({
   description: `Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to
     external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its
     own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.`,
-  routes: [{ path: '/:tenantId/:organizationId/mcp', app: mcpHandlers, phase: 'tenant' }],
+  routes: [{ path: mcpMountPath, app: mcpHandlers, phase: 'tenant' }],
 });

@@ -1487,7 +1487,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Revoke sessions
  *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.
  *
  * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· _me · cella_
  *
@@ -1510,9 +1510,9 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Leave entity
+ * Leave channel
  *
- * Removes the current user from an entity they are a member of.
+ * Removes the current user from a channel entity they are a member of.
  *
  * **DELETE /me/leave** ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/leave) ·· _me · cella_
  *
@@ -1617,8 +1617,7 @@ export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
 /**
  * Get public counts
  *
- * Returns basic count metrics for entity types such as users and organizations.
- * This endpoint is public and uses a 1 minute in memory cache for performance.
+ * Returns basic count metrics for entity types such as users and organizations. This endpoint is public and uses a 1 minute in memory cache for performance.
  *
  * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· _metrics · cella_
  *
@@ -2677,7 +2676,7 @@ export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.
  *
  * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· _mcp · cella_
  *

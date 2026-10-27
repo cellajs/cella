@@ -1,8 +1,6 @@
-import { eq, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { usersTable } from '#/modules/user/user-db';
-import { findMfaRequired, findUserByFilters, sharesOrgFilter } from '#/modules/user/user-queries';
+import { findMemberUser, findMfaRequired } from '#/modules/user/user-queries';
 import { administeredOrganizationIds } from '#/permissions/administered-organizations';
 import type { IncludeOption } from '#/schemas';
 
@@ -11,29 +9,28 @@ interface GetUserOpts {
   include?: IncludeOption[];
 }
 
+/**
+ * A user the caller relates to, by id or slug: themselves, anyone for a system admin, else a member of an organization
+ * the caller shares. With include=mfa it adds `mfaRequired` for the user themselves, system admins and the admins of
+ * an organization the user is a member of.
+ * @throws AppError 403 `forbidden` for a caller in no organization asking for another user, 404 `not_found` for a
+ * missing user or one the caller does not relate to.
+ */
 export async function getUserOp(ctx: UserContext, relatableUserId: string, opts: GetUserOpts = {}) {
-  const requestingUser = ctx.var.user;
-  const db = ctx.var.db;
-  const isSystemAdmin = ctx.var.isSystemAdmin;
-  const memberships = ctx.var.memberships;
-
+  const { user: requestingUser, isSystemAdmin, memberships } = ctx.var;
   const { bySlug, include } = opts;
-
-  const userCondition = bySlug ? eq(usersTable.slug, relatableUserId) : eq(usersTable.id, relatableUserId);
 
   // Skip relatable filtering when the caller requests themself by id or slug.
   const isSelf = relatableUserId === requestingUser.id || (bySlug && relatableUserId === requestingUser.slug);
 
   // Defense in depth: verify shared org membership at query level (mirrors relatableGuard)
-  const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+  const myOrgIds = [...new Set(memberships.map((membership) => membership.organizationId))];
   if (!isSelf && !isSystemAdmin && myOrgIds.length === 0) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
   }
 
-  const filters: SQL[] = [userCondition];
-  if (!isSelf && !isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
-
-  const targetUser = await findUserByFilters(ctx, { filters });
+  const memberOfAny = isSelf || isSystemAdmin ? undefined : myOrgIds;
+  const targetUser = await findMemberUser(ctx, { identifier: relatableUserId, bySlug, memberOfAny });
 
   if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
 

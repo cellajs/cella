@@ -1,8 +1,8 @@
 import { eq, getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { userMinimalColumnKeys } from '#/modules/user/helpers/user-minimal';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 
@@ -15,44 +15,26 @@ export type UserWithActivity = UserModel & { lastSeenAt: string | null; lastSign
  */
 export const userActorJoin = eq(actorsTable.id, usersTable.id);
 
+const { userFlags: _userFlags, ...userColumns } = getColumns(usersTable);
+
 /** Merges userFlags with the defaults; the activity times come from `actors` ({@link userActorJoin}), outside CDC. */
-export const userSelect = (() => {
-  const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
-  return {
-    ...safeUserSelect,
-    userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
-    lastSeenAt: actorsTable.lastSeenAt,
-    lastSignInAt: actorsTable.lastSignInAt,
-  };
-})();
+export const userSelect = {
+  ...userColumns,
+  userFlags: sql<UserFlags>`${JSON.stringify(appConfig.defaultUserFlags)}::jsonb || ${usersTable.userFlags}`,
+  lastSeenAt: actorsTable.lastSeenAt,
+  lastSignInAt: actorsTable.lastSignInAt,
+};
 
 /** Sort key for "last seen": never-seen users sort as oldest, since a plain DESC puts nulls first in Postgres. */
 export const lastSeenOrder = sql`COALESCE(${actorsTable.lastSeenAt}, '-infinity')`;
 
-type TableColumns = (typeof usersTable)['_']['columns'];
-type UserBaseKeys = keyof typeof userBaseSchema.shape;
-type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
-
-const userBaseSelect: UserBaseSelect = (() => {
-  const cols = getColumns(usersTable);
-  const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
-  return pick(cols, keys);
-})();
+const userBaseSelect = pick(getColumns(usersTable), Object.keys(userBaseSchema.shape) as (keyof typeof userBaseSchema.shape)[]);
 
 /** Limited to userBaseSelect columns plus lastSeenAt, for cross-tenant user endpoints and member lists; needs {@link userActorJoin}. */
-export const memberSelect = (() => {
-  return { ...userBaseSelect, lastSeenAt: actorsTable.lastSeenAt };
-})();
-
-type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;
-type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'entityType'>>;
+export const memberSelect = { ...userBaseSelect, lastSeenAt: actorsTable.lastSeenAt };
 
 /**
- * id, name, slug and thumbnailUrl for createdBy/updatedBy; entityType is added as a SQL literal in joins.
+ * The minimal user columns, for createdBy/updatedBy; entityType is added as a SQL literal in joins.
  * @public
  */
-export const userMinimalBaseSelect: UserMinimalBaseSelect = (() => {
-  const cols = getColumns(usersTable);
-  const keys = (Object.keys(userMinimalBaseSchema.shape) as UserMinimalBaseKeys[]).filter((k) => k !== 'entityType');
-  return pick(cols, keys as Exclude<UserMinimalBaseKeys, 'entityType'>[]);
-})();
+export const userMinimalBaseSelect = pick(getColumns(usersTable), userMinimalColumnKeys);

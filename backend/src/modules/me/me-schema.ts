@@ -4,18 +4,18 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from '#/modules/me/me-mocks';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
-import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
+import { enabledOAuthProvidersSchema, userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import { validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
-import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 /** A session row as stored, secret omitted: what a revoke returns. */
 export const sessionBaseSchema = createSelectSchema(sessionsTable);
 
 /** A session as the account page lists it. */
-export const sessionSchema = sessionBaseSchema.extend({
+const sessionSchema = sessionBaseSchema.extend({
   isCurrent: z.boolean(),
   isNewDevice: z.boolean().openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
 });
@@ -61,7 +61,7 @@ export const meAuthDataSchema = z
     totp: z
       .union([z.object(methodDatesShape), z.null()])
       .describe('Null without TOTP. Its last use is the start of the time step of the newest code it accepted.'),
-    sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
+    sessions: z.array(sessionSchema),
     passkeys: z.array(passkeySchema),
   })
   .openapi('MeAuthData', {
@@ -89,9 +89,9 @@ export const uploadTokenSchema = z
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
-export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
-
 export const uploadTokenQuerySchema = z.object({ organizationId: validUuidSchema.optional(), templateId: z.enum(appConfig.uploadTemplateIds) });
+
+export const updateMeBodySchema = userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() });
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
@@ -116,3 +116,4 @@ export const connectedAppSchema = z
   });
 
 export type ConnectedApp = z.infer<typeof connectedAppSchema>;
+export type UpdateMeInput = z.infer<typeof updateMeBodySchema>;

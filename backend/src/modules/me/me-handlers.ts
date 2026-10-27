@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { meRoutes } from '#/modules/me/me-routes';
@@ -10,7 +9,6 @@ import { getMeOp } from '#/modules/me/operations/get-me';
 import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
-import { getUserSessions } from '#/modules/me/operations/get-user-info';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
@@ -33,8 +31,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 });
 
 app.openapi(meRoutes.getMyAuth, async (ctx) => {
-  const sessions = await getUserSessions(ctx, ctx.var.user.id);
-  const data = await getMyAuthOp(ctx, { sessions });
+  const data = await getMyAuthOp(ctx);
   return ctx.json(data, 200);
 });
 
@@ -59,9 +56,6 @@ app.openapi(meRoutes.updateMe, async (ctx) => {
 
 app.openapi(meRoutes.deleteMe, async (ctx) => {
   const user = ctx.var.user;
-
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
-
   await deleteAccounts(ctx, { userIds: [user.id], by: user.id });
   deleteAuthCookie(ctx, 'session');
   log.info('User deleted');

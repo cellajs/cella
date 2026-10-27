@@ -13,8 +13,8 @@ import { insertSteppedUpSession } from './session-helpers';
 /** A point inside the MFA toggle's transaction: after its factor check under the lock, before it writes the flag. */
 const hooks = vi.hoisted(() => ({ beforeWrite: undefined as (() => Promise<void>) | undefined }));
 
-vi.mock('#/modules/me/me-queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/me/me-queries')>();
+vi.mock('#/modules/user/user-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/user/user-queries')>();
   return {
     ...actual,
     updateUserMfa: async (...args: Parameters<typeof actual.updateUserMfa>) => {

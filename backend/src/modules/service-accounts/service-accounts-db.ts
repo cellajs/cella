@@ -10,11 +10,6 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 export const serviceAccountStatuses = ['active', 'disabled'] as const;
 
-/**
- * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`
- * and is disabled, never deleted, so provenance keeps pointing at it. An auth table outside RLS: the machine guard
- * resolves it before any tenant context exists.
- */
 /** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
 export interface RoleBinding {
   channelType: ChannelEntityType;
@@ -23,6 +18,11 @@ export interface RoleBinding {
   role: EntityRole;
 }
 
+/**
+ * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`
+ * and is disabled, never deleted, so provenance keeps pointing at it. An auth table outside RLS: the machine guard
+ * resolves it before any tenant context exists.
+ */
 export const serviceAccountsTable = snakeCase.table(
   'service_accounts',
   {
@@ -37,7 +37,7 @@ export const serviceAccountsTable = snakeCase.table(
     name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: serviceAccountStatuses }).notNull().default('active'),
     bindings: jsonb().$type<RoleBinding[]>().notNull().default([]),
-    /** Set when this account is the installation of a registered app in this tenant (D4); its consents hang off it. */
+    /** Set when this account is the installation of a registered app in this tenant; its consents hang off it. */
     oauthClientId: varchar({ length: maxLength.field }).references(() => oauthClientsTable.id, { onDelete: 'cascade' }),
     // `updatedBy` names who last changed name or status; disabling is the security-relevant act here.
     ...auditColumns(),

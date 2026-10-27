@@ -1,13 +1,14 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, hierarchy } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
+import type { WithActorRefs } from '#/modules/actors/actor-refs';
+import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
-import type { ApiKeyWithCreator } from '#/modules/service-accounts/operations/with-api-key-creators';
 import type { ServiceAccountWithActivity } from '#/modules/service-accounts/service-accounts-queries';
 import { mockActorRef } from '#/schemas/entity-base-mocks';
 
-export const mockServiceAccountResponse = (key = 'serviceAccount:default'): ServiceAccountWithActivity =>
-  withFakerSeed(key, () => {
+export const mockServiceAccountResponse = (key = 'serviceAccount:default'): WithActorRefs<ServiceAccountWithActivity> => {
+  const account = withFakerSeed<Omit<ServiceAccountWithActivity, 'createdBy' | 'updatedBy'>>(key, () => {
     const organizationId = mockUuid();
     const createdAt = mockPastIsoDate();
     return {
@@ -24,20 +25,20 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
         },
       ],
       oauthClientId: null,
-      createdBy: mockUuid(),
       createdAt,
       updatedAt: createdAt,
-      updatedBy: null,
       lastSeenAt: createdAt,
     };
   });
+  return { ...account, createdBy: mockActorRef(`${key}:created-by`), updatedBy: null };
+};
 
 /** A fixed key whose checksum is computed, so the example round-trips through `parseApiKey`; never issued. */
 const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
 const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
-export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator => {
-  const apiKey = withFakerSeed<Omit<ApiKeyWithCreator, 'createdBy'>>(key, () => ({
+export const mockApiKeyResponse = (key = 'apiKey:default'): WithActorRefs<ApiKeyModel> => {
+  const apiKey = withFakerSeed<Omit<ApiKeyModel, 'createdBy'>>(key, () => ({
     id: mockUuid(),
     actorId: mockUuid(),
     tenantId: mockTenantId(),

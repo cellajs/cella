@@ -5,9 +5,9 @@ import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
-import { updateUser } from '#/modules/system/system-queries';
 import type { systemUserUpdateBodySchema } from '#/modules/system/system-schema';
-import { findUserById } from '#/modules/user/user-queries';
+import { nameAfterUpdate } from '#/modules/user/helpers/name-after-update';
+import { findUserById, updateUser } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof systemUserUpdateBodySchema>;
@@ -29,12 +29,6 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
   }
 
-  // The name follows a changed first or last name, merged over the stored one; a body without either keeps it.
-  const namesChanged = firstName !== undefined || lastName !== undefined;
-  const fullName = [firstName === undefined ? targetUser.firstName : firstName, lastName === undefined ? targetUser.lastName : lastName]
-    .filter(Boolean)
-    .join(' ');
-
   const values = {
     bannerUrl,
     description,
@@ -44,7 +38,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     newsletter,
     thumbnailUrl,
     slug,
-    ...(namesChanged && { name: fullName || slug }),
+    name: nameAfterUpdate(targetUser, { firstName, lastName, slug }),
     ...updateStamps(user.id),
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });

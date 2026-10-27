@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, type SystemRole } from 'shared';
+import { appConfig } from 'shared';
 import slugify from 'slugify';
 import { mockPaginated, mockPastIsoDate, mockUniqueEnforcer, mockUuid, withFakerSeed } from '#/mocks';
-import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
+import { mockUserBase } from '#/schemas/entity-base-mocks';
 
 type MockUserOptions = { email?: string; enforceUnique?: boolean };
 
@@ -51,18 +51,13 @@ export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
     return { ...user, lastSignInAt: user.createdAt, lastSeenAt: user.createdAt };
   });
 
-export interface UserListItem extends UserWithActivity {
-  memberships: ReturnType<typeof mockMembershipBase>[];
-  role?: SystemRole;
-}
+/** A user as another user sees them: the `UserBase` fields and the last-seen time. */
+export const mockMemberUserResponse = (key = 'member-user:default') => {
+  const user = mockUserBase(`${key}:user`);
+  return { ...user, lastSeenAt: user.updatedAt };
+};
 
-const mockUserListItem = (key = 'userListItem:default'): UserListItem => ({
-  ...mockUserResponse(`${key}:user`),
-  memberships: [mockMembershipBase(`${key}:membership`)],
-  role: undefined,
-});
-
-export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockUserListItem, count);
+export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockMemberUserResponse, count);
 
 /** Fixed "Admin" user for default admin seeding. */
 export const mockAdmin = (id: string | undefined, email: string): InsertUserModel => {

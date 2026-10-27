@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockConnectedApp, mockPaginatedInvitationsResponse } from '#/modules/me/me-mocks';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -9,13 +10,13 @@ import {
   meSchema,
   sessionBaseSchema,
   toggleMfaBodySchema,
+  updateMeBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
+import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, entityIdParamSchema, entityWithTypeQuerySchema, idsBodySchema, paginationSchema } from '#/schemas';
-import { mockConnectedApp, mockPaginatedInvitationsResponse } from './me-mocks';
 
 const meRoutes = createXRoutes(['me', 'cella'], {
   getMe: xRoute({
@@ -41,7 +42,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update self',
     description: 'Updates the current user.',
-    request: { body: jsonBody(userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() })) },
+    request: { body: jsonBody(updateMeBodySchema) },
     responses: { 200: json('User', userSchema) },
   }),
   deleteMe: xRoute({
@@ -60,7 +61,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get auth data',
     description: 'Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.',
-    responses: { 200: json('User sign-up info', meAuthDataSchema) },
+    responses: { 200: json('Sign-in methods and sessions', meAuthDataSchema) },
   }),
   revokeMySessions: xRoute({
     method: 'delete',
@@ -69,9 +70,8 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Revoke sessions',
     description:
-      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
+      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.',
     request: { body: jsonBody(idsBodySchema()) },
-
     responses: { 200: json('Sessions were revoked', batchResponseSchema(sessionBaseSchema)) },
   }),
   deleteMyMembership: xRoute({
@@ -79,8 +79,8 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     path: '/leave',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: 'Leave entity',
-    description: 'Removes the current user from an entity they are a member of.',
+    summary: 'Leave channel',
+    description: 'Removes the current user from a channel entity they are a member of.',
     request: { query: entityWithTypeQuerySchema },
     responses: { 204: { description: 'Membership removed' } },
   }),

@@ -27,7 +27,7 @@ import { TimeSpan } from '#/utils/time-span';
 const dbCtx = { var: { db: baseDb } };
 
 /** How long a session lasts; the cookie that carries it expires with it. */
-const sessionLifetime = new TimeSpan(1, 'w');
+export const sessionLifetime = new TimeSpan(1, 'w');
 
 /** How long an impersonation lasts at most: it also ends with the admin session it is layered on. */
 const impersonationLifetime = new TimeSpan(1, 'h');
@@ -55,9 +55,9 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
     const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
 
-    const actor = await findLastSignInAt(dbCtx, { userId });
+    const previousSignInAt = await findLastSignInAt(dbCtx, { userId });
 
-    return { deviceIdHash, previousSignInAt: actor?.lastSignInAt ?? null };
+    return { deviceIdHash, previousSignInAt: previousSignInAt ?? null };
   } catch (err) {
     log.error('Failed to enroll device on sign-in', { userId, err });
     return null;

@@ -2,17 +2,16 @@ import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { withActorRef } from '#/modules/actors/actor-refs';
-import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
-import { countServiceAccounts, insertApiKey, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
+import { issueApiKey } from '#/modules/service-accounts/operations/issue-api-key';
+import { countActiveServiceAccounts, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
-import { withApiKeyCreator } from './with-api-key-creators';
 
 /**
- * The account's role is capped at the creator's own: an admin may bind `admin` or `member`, never more than they
- * hold. Only humans get here; memberships and provenance of memberships stay theirs.
+ * The account's role is capped at the creator's own: never more than they hold. Only humans get here; memberships and
+ * provenance of memberships stay theirs.
  */
 export async function createServiceAccountOp(ctx: UserContext, input: CreateServiceAccountInput) {
   const { db, tenantId, organizationId, isSystemAdmin } = ctx.var;
@@ -27,9 +26,9 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
     throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'role_exceeds_creator', role: input.role } });
   }
 
-  assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx, { tenantId }));
+  assertTenantQuota(ctx, 'serviceAccount', await countActiveServiceAccounts(ctx, { tenantId }));
 
-  // Account and first key land together: a failed key insert never leaves a keyless account behind.
+  // Account and first key commit together: a failed key insert never leaves a keyless account behind.
   const { serviceAccount, apiKey: issued } = await db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const serviceAccount = await insertServiceAccount(txCtx, {
@@ -41,25 +40,13 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
       },
     });
     if (!input.key) return { serviceAccount, apiKey: null };
-
-    const { key: secret, parsed } = generateApiKey('secret');
-    const apiKey = await insertApiKey(txCtx, {
-      values: {
-        actorId: serviceAccount.id,
-        tenantId,
-        name: input.key.name,
-        scopes: input.key.scopes ?? null,
-        expiresAt: input.key.expiresAt,
-        createdBy: creatorId,
-        ...parsed,
-      },
-    });
-    return { serviceAccount, apiKey: { apiKey, secret } };
+    const apiKey = await issueApiKey(txCtx, { actorId: serviceAccount.id, tenantId, createdBy: creatorId, key: input.key });
+    return { serviceAccount, apiKey };
   });
 
   log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
   // A new account has authenticated nothing yet.
   const created = { ...(await withActorRef(ctx, serviceAccount)), lastSeenAt: null };
   if (!issued) return { serviceAccount: created };
-  return { serviceAccount: created, apiKey: { ...(await withApiKeyCreator(ctx, issued.apiKey)), secret: issued.secret } };
+  return { serviceAccount: created, apiKey: { ...(await withActorRef(ctx, issued.apiKey)), secret: issued.secret } };
 }

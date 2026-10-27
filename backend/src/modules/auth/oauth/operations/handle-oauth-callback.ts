@@ -17,7 +17,7 @@ import { spendConnectPin } from '#/modules/auth/oauth/operations/spend-connect-p
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
@@ -184,7 +184,7 @@ const inviteCallbackFlow = async ({
   const { email } = invitationToken;
   const created = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const user = await handleCreateUser(txCtx, { newUser: providerUser, via: provider });
+    const user = await createAccount(txCtx, { newUser: providerUser, via: provider });
     const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
     const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };
@@ -280,7 +280,7 @@ const completeSignUp = async ({
     await spendVerification(ctx, txCtx, verifyToken);
 
     const { name, slug, firstName, lastName } = signUp;
-    const user = await handleCreateUser(txCtx, { newUser: { email, name, slug, firstName, lastName }, via: provider });
+    const user = await createAccount(txCtx, { newUser: { email, name, slug, firstName, lastName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
     const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };

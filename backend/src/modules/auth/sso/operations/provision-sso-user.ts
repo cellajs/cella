@@ -11,7 +11,7 @@ import { rememberSsoCollision } from '#/modules/auth/sso/operations/sso-recovery
 import { findPendingOrganizationInvitation } from '#/modules/memberships/memberships-queries';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
-import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { createAccount } from '#/modules/user/operations/create-account';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
@@ -48,7 +48,7 @@ export const provisionSsoUser = async (
 
   const created = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const user = await handleCreateUser(txCtx, { newUser: newUserFromProfile({ ...profile, email }), via: federation.key });
+    const user = await createAccount(txCtx, { newUser: newUserFromProfile({ ...profile, email }), via: federation.key });
 
     await insertIdentity(txCtx, {
       values: { userId: user.id, kind: 'sso', issuer: federation.key, subject, email, connectionId: connection.id, data: snapshot },
