@@ -1,8 +1,7 @@
 import { escapeLiteral } from 'pg';
 import type { ActorContext } from '#/core/context';
-import { transactionOpenedWith } from './create-connection';
-import type { DbOrTx, Tx } from './db';
-import { baseDb } from './db';
+import { transactionOpenedWith } from '#/db/create-connection';
+import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 
 /** The alphabet of tenant and actor ids: a value outside it never reaches the text that opens a tenant transaction. */
 const idAlphabet = /^[a-z0-9-]*$/i;
@@ -70,6 +69,7 @@ export function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => 
   return requestTransaction(ctx, ctx.var.tenantId, false, true, fn);
 }
 
+/** `tenantRead` that also reads soft-deleted rows (`app.include_deleted`). */
 export function tenantReadIncludingDeleted<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return requestTransaction(ctx, ctx.var.tenantId, true, true, fn);
 }
@@ -79,6 +79,7 @@ export function tenantContext<T>(ctx: ActorContext, fn: (txCtx: ActorContext) =>
   return requestTransaction(ctx, ctx.var.tenantId, false, false, fn);
 }
 
+/** `tenantContext` that also reads soft-deleted rows (`app.include_deleted`). */
 export function tenantContextIncludingDeleted<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
   return requestTransaction(ctx, ctx.var.tenantId, true, false, fn);
 }

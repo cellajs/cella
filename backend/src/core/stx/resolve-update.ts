@@ -1,11 +1,11 @@
 import type { ProductEntityType } from 'shared';
 import { normalizeOps } from 'shared/schema-evolution';
+import { type ArrayDelta, applyArrayDelta, isArrayDelta } from '#/core/stx/array-delta';
+import { buildStx } from '#/core/stx/build-stx';
+import { createServerStx } from '#/core/stx/create-server-stx';
+import { filterNoOpFields, resolveFieldConflicts } from '#/core/stx/field-versions';
+import { advanceClock, generateServerHLC } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
-import { type ArrayDelta, applyArrayDelta, isArrayDelta } from './array-delta';
-import { buildStx } from './build-stx';
-import { createServerStx } from './create-server-stx';
-import { filterNoOpFields, resolveFieldConflicts } from './field-versions';
-import { advanceClock, generateServerHLC } from './hlc';
 
 type ResolveDeltas<T> = {
   [K in keyof T]: T[K] extends ArrayDelta | undefined ? string[] | Exclude<T[K], ArrayDelta> : T[K];
@@ -69,9 +69,9 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
  * Lens normalization, no-op filtering, HLC conflicts and AWSet deltas. Keys and expand-window twins are
  * canonicalized before conflict logic; returns unchanged when no operation survives.
  *
- * An online write is ordered by server arrival: its client timestamps are replaced by one server HLC, so a
- * device clock behind the stored value can never have its edit silently dropped. Only a replayed offline
- * write (`stx.replayed`) keeps its client timestamps, the intent time that lets it lose to a later edit.
+ * An online write is ordered by server arrival: its client timestamps are replaced by one server HLC, so an edit
+ * from a device whose clock is behind the stored value is never discarded. Only a replayed offline write
+ * (`stx.replayed`) keeps its client timestamps, the intent time that lets it lose to a later edit.
  */
 export function resolveUpdateOps<T extends Record<string, unknown>>(
   entityType: ProductEntityType,

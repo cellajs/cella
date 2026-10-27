@@ -2,18 +2,19 @@ import { appConfig } from 'shared';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 
 /** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
-const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
+export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
 /** The parts of a generated OpenAPI document these checks read. */
 type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
 
-const validateOpenApiDocument = (doc: OpenApiDocument) => {
+/** The boot checks of the generated document: its schema tags, and its route examples where authoring rules are checked. */
+export const validateOpenApiDocument = (doc: OpenApiDocument) => {
   validateSchemaTags(doc);
   if (checksAuthoringRules) validateRouteExamples(doc);
 };
 
 /** Normalize generated OpenAPI fields that need source-library compatibility fixes. */
-const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
+export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
 };
 
@@ -77,5 +78,3 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   }
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };
-
-export { checksAuthoringRules, normalizeOpenApiDocument, validateOpenApiDocument };

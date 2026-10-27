@@ -5,8 +5,8 @@ import { type SecretColumnsOf, secretColumnsOf } from '#/db/secret-columns';
 
 const factory = createSchemaFactory({ zodInstance: z });
 
-/** @public */
-export const { createInsertSchema, createUpdateSchema } = factory;
+/** drizzle-zod's insert schema of a table, built on the backend's zod (`@hono/zod-openapi`). */
+export const { createInsertSchema } = factory;
 
 type Coerce = typeof factory extends { createSelectSchema: CreateSelectSchema<infer C> } ? C : never;
 type Refine<T extends Table> = BuildRefine<T['_']['columns'], Coerce>;
@@ -34,6 +34,7 @@ export function createSelectSchema(table: Table, refine?: unknown): z.ZodObject<
   return schema.omit(mask);
 }
 
+/** `schema` with a description on each named field, for the spec; its type stays `schema`'s. */
 export const describeFields = <T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
   descriptions: Partial<Record<keyof T['shape'] & string, string>>,

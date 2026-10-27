@@ -2,22 +2,17 @@ import { getTableName } from 'drizzle-orm';
 import { appConfig, toColumnName } from 'shared';
 import { entityTables } from '#/tables';
 
-// Immutable column sets
-
 const baseEntityColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
 const membershipChannelIdColumns = appConfig.channelEntityTypes.map((type) => toColumnName(appConfig.entityIdColumnKeys[type]));
-const baseMembershipColumns = ['tenant_id', 'channel_id', 'channel_type', ...membershipChannelIdColumns] as const;
 
-/** Product entities with a parent org (tasks, labels, attachments). */
+/** Every product table carries `organization_id`, which never changes either. */
 const productImmutableColumns = [...baseEntityColumns, 'organization_id'] as const;
 
-/** Active memberships include user_id. */
-export const membershipImmutableColumns = [...baseMembershipColumns, 'user_id'] as const;
-
 /** Inactive memberships allow mutable user_id for re-assignable invitations. */
-const inactiveMembershipImmutableColumns = baseMembershipColumns;
+const inactiveMembershipImmutableColumns = ['tenant_id', 'channel_id', 'channel_type', ...membershipChannelIdColumns] as const;
 
-// SQL builders
+/** Active memberships include user_id. */
+export const membershipImmutableColumns = [...inactiveMembershipImmutableColumns, 'user_id'] as const;
 
 interface TableImmutabilityConfig {
   tableName: string;
@@ -42,8 +37,6 @@ $$ LANGUAGE plpgsql;`;
 /** Trigger names. Exported so the side-effect migration emits the same names this file does. */
 export const immutableKeysTriggerName = (tableName: string) => `${tableName}_immutable_keys_trigger`;
 export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_admin_only_write_trigger`;
-
-// Pre-built trigger functions
 
 const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', baseEntityColumns);
 
@@ -71,14 +64,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
-// Table to function mapping
-
 const channelConfigs: TableImmutabilityConfig[] = appConfig.channelEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
   functionName: 'base_entity_immutable_keys',
 }));
 
-const productWithParentConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes.map((t) => ({
+const productConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes.map((t) => ({
   tableName: getTableName(entityTables[t]),
   functionName: 'product_entity_immutable_keys',
 }));
@@ -90,17 +81,11 @@ const membershipConfigs: TableImmutabilityConfig[] = [
 
 const appendOnlyConfigs: TableImmutabilityConfig[] = [{ tableName: 'activities', functionName: 'append_only_immutable_row' }];
 
+/** Each table with the trigger function that refuses a change of its immutable columns or, for `activities`, any update. */
+export const allImmutabilityTables: TableImmutabilityConfig[] = [...channelConfigs, ...productConfigs, ...membershipConfigs, ...appendOnlyConfigs];
+
 /** Read-only for the app: `system_roles` decides who is a system admin, so writes must use the admin connection. */
-const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [{ tableName: 'system_roles', functionName: 'admin_only_write_row' }];
-
-export const allImmutabilityTables: TableImmutabilityConfig[] = [
-  ...channelConfigs,
-  ...productWithParentConfigs,
-  ...membershipConfigs,
-  ...appendOnlyConfigs,
-];
-
-export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWriteConfigs;
+export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = [{ tableName: 'system_roles', functionName: 'admin_only_write_row' }];
 
 /** Creation order: both migration emitters build from this list, so every function exists before its `CREATE TRIGGER`. */
 export const allImmutabilityFunctionsSQL: string[] = [
@@ -111,5 +96,3 @@ export const allImmutabilityFunctionsSQL: string[] = [
   appendOnlyImmutabilityFunctionSQL,
   adminOnlyWriteFunctionSQL,
 ];
-
-// Combined SQL output

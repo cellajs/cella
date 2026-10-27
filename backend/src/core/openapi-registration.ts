@@ -23,7 +23,7 @@ const scopeDescription = (scope: string): string => {
 };
 
 /** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint. */
-const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
+export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
 
   const extensions = buildExtensionEntries(getExtensionValueMetadata());
@@ -59,7 +59,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`).',
   });
 
-  // The scope vocabulary is derived from the policy matrix (D19); the same ids feed discovery and the consent screen.
+  // The scope vocabulary is derived from the policy matrix; the same ids feed discovery and the consent screen.
   const scopeDescriptions = Object.fromEntries(accessScopes.all.map((scope) => [scope, scopeDescription(scope)]));
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
@@ -76,7 +76,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     },
   });
 
-  // Register base schemas (not auto-registered as they're only used for extending other schemas)
+  // Named bases and the stream payload: registered here, so the spec lists each one whether or not a route returns it.
   registry.register('ActorRef', actorRefSchema);
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
@@ -111,5 +111,3 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   await fs.writeFile(tmpPath, nextDoc);
   await fs.rename(tmpPath, cachePath);
 };
-
-export { registerOpenApiDocs };

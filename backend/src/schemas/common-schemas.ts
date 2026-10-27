@@ -6,7 +6,10 @@ import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };
 
-// Unnamed so it inlines into each query param and never surfaces as a component schema in the docs.
+/**
+ * A boolean query param: `'true'`, `'false'` or a boolean, false when absent. Unnamed, so it inlines into each query
+ * param and never shows as a component schema in the docs.
+ */
 export const booleanTransformSchema = z
   .union([z.enum(['true', 'false']), z.boolean()])
   .default('false')
@@ -26,8 +29,6 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  */
 export const translatedError = (key: string, options?: TOptions) => ({ error: () => t(key, options) });
 
-// Common param schemas
-
 export const validIdSchema = z.string().max(maxLength.id);
 
 export const validTempIdSchema = z
@@ -45,8 +46,7 @@ export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: valid
 
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
-// Tenant-scoped param schemas (for RLS-enabled routes)
-
+/** Tenant- and organization-scoped params, for RLS-enabled routes. */
 export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
 export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
@@ -70,6 +70,7 @@ export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?
   );
 };
 
+/** Search, sort and paging: newest first from offset 0, the configured default `limit` when absent, at most 1000. */
 export const paginationQuerySchema = z.object({
   q: z.string().max(maxLength.field).optional(),
   sort: z.enum(['createdAt']).default('createdAt'),
@@ -116,6 +117,7 @@ export const productListQuerySchema = <T extends z.ZodRawShape>(shape: T) =>
     // TypeScript cannot see the range and paging keys through a generic `extend`; `shape` holds the product's own params.
     .superRefine((query, ctx) => refineSeqRange(query as SeqRangeQuery, ctx));
 
+/** `'true'` or `'false'`; absent is false. */
 export const excludeArchivedQuerySchema = z
   .enum(['true', 'false'])
   .optional()
@@ -136,6 +138,7 @@ export const includeQuerySchema = z
 
 export const slugIncludeQuerySchema = z.object({ slug: booleanTransformSchema.optional(), include: includeQuerySchema });
 
+/** A body naming one to `maxItems` rows by id. */
 export const idsBodySchema = (maxItems = 50) =>
   z.object({
     ids: z
@@ -148,25 +151,22 @@ export const idsBodySchema = (maxItems = 50) =>
 export const idsWithStxBodySchema = (maxItems = 50) =>
   idsBodySchema(maxItems).extend({ stx: z.object({ mutationId: z.string(), sourceId: z.string() }).optional() });
 
-// Common headers schemas
-
+/** The `Location` header of a redirect. */
 export const locationSchema = z.object({ Location: z.string() });
-
-// Validation schemas (for create and update)
 
 /**
  * superRefine validator carrying a custom error type, which `defaultHook` reads from `params.type` for i18n.
  * @param errorType - Translation key, e.g. 'invalid_slug'.
  */
-export const refineWithType = <T>(check: (val: T) => boolean, errorType: string) => {
-  return (val: T, ctx: z.RefinementCtx) => {
+export const refineWithType =
+  <T>(check: (val: T) => boolean, errorType: string) =>
+  (val: T, ctx: z.RefinementCtx) => {
     if (!check(val)) {
       ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
     }
   };
-};
 
-export const validUuidSchema = z.string().uuid(translatedError('error:invalid_id'));
+export const validUuidSchema = z.uuid(translatedError('error:invalid_id'));
 
 /** A bounded list of ids that names each row once: the ids a body picks, or the rows a host row relates to. */
 export const uniqueIdsSchema = (maxItems = 50) =>
@@ -193,6 +193,7 @@ export const boundedRecord = <V extends z.ZodType>(value: V, maxKeys: number) =>
     )
     .openapi({ maxProperties: maxKeys });
 
+/** A refine predicate: no two items share a slug. */
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) => new Set(items.map((i) => i.slug)).size === items.length;
 
 /** Scheme and host are case-insensitive; userinfo, path, query and fragment are not, so they keep their case. */
@@ -204,6 +205,7 @@ const lowercaseSchemeAndHost = (url: string) => {
   return `${scheme.toLowerCase()}${authority.slice(0, hostStart)}${authority.slice(hostStart).toLowerCase()}${rest}`;
 };
 
+/** An https URL, trimmed, with its scheme and host lowercased. */
 export const validUrlSchema = z
   .string()
   .max(maxLength.url)
@@ -219,6 +221,7 @@ export const validNameSchema = z
   .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
   .regex(namePattern, translatedError('error:invalid_name'));
 
+/** An email address, trimmed and lowercased before it is checked. */
 export const validEmailSchema = z
   .string()
   .trim()
@@ -232,6 +235,7 @@ export const validEmailSchema = z
   .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
 
 const canonicalDomainPattern = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+/** A host name with at least one dot, trimmed and lowercased before it is checked. */
 export const validDomainSchema = z
   .string()
   .trim()
@@ -249,6 +253,7 @@ export const validDomainSchema = z
 // that refuses the upper-case slug this schema takes and lowers. Each group starts with a dash: a group that may start
 // without one splits a run of letters in every possible way, and a refused slug backtracks exponentially.
 const slugPattern = /^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/;
+/** A slug of 2 to 255 characters, lowercased once it is checked. */
 export const validSlugSchema = z
   .string()
   .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))

@@ -168,7 +168,7 @@
   "tags": [
     {
       "name": "cella",
-      "description": "Core modules provided by cella.",
+      "description": "Core modules provided by the template.",
       "x-kind": "owner"
     },
     {
@@ -769,7 +769,7 @@
           },
           "path": {
             "type": ["string", "null"],
-            "description": "Materialized id-path of the affected rows (root-first ancestor ids); moveOut carries the OLD path"
+            "description": "Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path"
           },
           "seq": {
             "type": ["integer", "null"],
@@ -1007,10 +1007,10 @@
         ],
         "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
+          "name": "Not signed in",
+          "message": "Sign in to continue.",
+          "type": "unauthorized",
+          "status": 401,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -1033,10 +1033,10 @@
         ],
         "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
+          "name": "No access",
+          "message": "You don't have permission to do this.",
+          "type": "forbidden",
+          "status": 403,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -1059,10 +1059,10 @@
         ],
         "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
+          "name": "Not found",
+          "message": "This resource does not exist or has been deleted.",
+          "type": "not_found",
+          "status": 404,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -1085,10 +1085,10 @@
         ],
         "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
+          "name": "Signed in as someone else",
+          "message": "This link is for another account. Sign out, then open it again.",
+          "type": "user_mismatch",
+          "status": 409,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -1111,10 +1111,10 @@
         ],
         "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
+          "name": "Too many attempts",
+          "message": "Wait a moment, then try again.",
+          "type": "too_many_requests",
+          "status": 429,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -5711,7 +5711,7 @@
                           },
                           "minItems": 1,
                           "maxItems": 64,
-                          "description": "Materialized id-path prefixes this view covers (root-first ids, slash-joined)"
+                          "description": "Id path prefixes this view covers (root-first ids, slash-joined)"
                         },
                         "entityTypes": {
                           "type": "array",

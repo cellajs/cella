@@ -4,9 +4,10 @@ import type { ProductEntityType } from 'shared';
 import { tombstoneColumns } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { publicColumn } from '#/db/utils/public-column';
+import { stxColumns } from '#/db/utils/stx-columns';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
-import { stxColumns } from './stx-columns';
 
+/** The columns of every product table: the tenant entity columns, `stx`, description, keywords, the tombstone, `public` and `seq`. */
 export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   name: varchar({ length: maxLength.field }).notNull().default(`New ${entityType}`),

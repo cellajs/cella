@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import type { ProductEntityType } from 'shared';
+import { widenBodySchema } from '#/core/schema-evolution/lens-seam';
+import { isArrayDelta } from '#/core/stx/array-delta';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
-import { isArrayDelta } from '../stx/array-delta';
-import { widenBodySchema } from './lens-seam';
 
 /**
  * Product update schema for `{ ops, stx }`: declared ops are optional but at least one is required.
@@ -12,8 +12,8 @@ export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductE
   const partialOps = widenBodySchema(entityType, z.object(opsShape).partial());
 
   return z.object({ ops: partialOps, stx: stxBaseSchema }).superRefine((val, ctx) => {
-    const opEntries = Object.entries(val.ops);
-    const opsByField = new Map(opEntries);
+    const ops: Record<string, unknown> = val.ops;
+    const opEntries = Object.entries(ops);
     if (opEntries.length === 0) {
       ctx.addIssue({ code: 'custom', message: 'At least one op must be provided', path: ['ops'] });
     }
@@ -25,7 +25,7 @@ export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductE
     }
 
     for (const field of Object.keys(val.stx.fieldTimestamps)) {
-      if (!opsByField.has(field) || isArrayDelta(opsByField.get(field))) {
+      if (!Object.hasOwn(ops, field) || isArrayDelta(ops[field])) {
         ctx.addIssue({ code: 'custom', message: `Timestamp "${field}" does not match a scalar op`, path: ['stx', 'fieldTimestamps', field] });
       }
     }

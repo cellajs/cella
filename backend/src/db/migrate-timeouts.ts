@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { PgDB, SessionTimeouts } from './create-connection';
+import type { DB, SessionTimeouts } from '#/db/create-connection';
 
 /**
  * Session timeouts of the migrate companion's admin pool. An app transaction holds a table lock for milliseconds, so a statement
@@ -45,12 +45,12 @@ export function describeMigrateTimeout(err: unknown, timeouts: SessionTimeouts =
 
 /**
  * Best-effort list of the other sessions with an open transaction, oldest first, for a lock-wait failure. Query text stays out:
- * it can carry literals, and this output lands in the boot diagnostics. A role without `pg_read_all_stats` sees other roles'
+ * it can carry literals, and this output is written to the boot diagnostics. A role without `pg_read_all_stats` sees other roles'
  * sessions with blank state and client address.
  * @param db - A connection of the migrating role.
  * @returns One line per session, at most ten.
  */
-export async function describeOpenTransactions(db: PgDB): Promise<string[]> {
+export async function describeOpenTransactions(db: DB): Promise<string[]> {
   const result = await db.execute<{
     pid: number;
     usename: string | null;

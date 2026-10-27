@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockActorRef } from './entity-base-mocks';
+import { mockActorRef } from '#/schemas/entity-base-mocks';
 
 const actorKinds = ['user', 'service'] as const;
 
@@ -21,7 +21,6 @@ export const actorRefSchema = z
     'x-tags': schemaTags('base', 'actors', 'cella'),
   });
 
-/** Unnamed, so each use site emits an inline `anyOf: [$ref, {type: 'null'}]`. */
 export const nullableActorRefSchema = z.union([actorRefSchema, z.null()]);
 
 export type ActorRef = z.infer<typeof actorRefSchema>;

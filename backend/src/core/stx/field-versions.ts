@@ -1,4 +1,4 @@
-import { compareHLC } from './hlc';
+import { compareHLC } from '#/core/stx/hlc';
 
 function isPrimitive(value: unknown): value is string | number | boolean | null {
   return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
@@ -6,7 +6,7 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
 
 /** Drops primitive fields equal to the stored value; arrays and objects pass through without deep comparison. */
 export function filterNoOpFields<T extends Record<string, unknown>>(entityData: Record<string, unknown>, incomingFields: T): T {
-  const result = {} as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(incomingFields)) {
     if (isPrimitive(value) && entityData[key] === value) continue;
     result[key] = value;
@@ -20,7 +20,7 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
   incomingTimestamps: Record<string, string>,
   storedTimestamps: Record<string, string>,
 ): Partial<T> {
-  const acceptedFields = {} as Partial<T>;
+  const acceptedFields: Record<string, unknown> = {};
 
   for (const field of Object.keys(incomingFields)) {
     const incomingHLC = incomingTimestamps[field];
@@ -28,9 +28,9 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
 
     if (!incomingHLC) throw new Error(`Missing HLC timestamp for scalar field "${field}"`);
     if (!storedHLC || compareHLC(incomingHLC, storedHLC) > 0) {
-      (acceptedFields as Record<string, unknown>)[field] = incomingFields[field];
+      acceptedFields[field] = incomingFields[field];
     }
   }
 
-  return acceptedFields;
+  return acceptedFields as Partial<T>;
 }

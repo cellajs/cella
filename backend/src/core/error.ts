@@ -19,7 +19,7 @@ type ErrorTexts = (typeof locales)['en'];
 /** An error type: a key of `error.json`, or of `appError.json` for a type the app adds. */
 export type ErrorKey = Exclude<keyof ErrorTexts['error'] | keyof ErrorTexts['appError'], `${string}.text`>;
 
-export type AppErrorOpts = {
+type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;

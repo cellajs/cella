@@ -4,7 +4,7 @@
  */
 export type ListTotalSource = { kind: 'pageLength' } | { kind: 'counter' | 'exact'; getTotal: () => Promise<number> };
 
-export interface PaginatedResult<TItem> {
+interface PaginatedResult<TItem> {
   items: TItem[];
   total: number;
 }

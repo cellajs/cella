@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
+import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas/common-schemas';
-import { nullableActorRefSchema } from './actor-ref';
-import { mockChannelBase, mockProductBase } from './entity-base-mocks';
+import { mockChannelBase, mockProductBase } from '#/schemas/entity-base-mocks';
 
 const entityCoreShape = { id: z.string(), name: z.string(), createdAt: z.string(), updatedAt: z.string().nullable() };
 
@@ -35,7 +35,6 @@ export const channelBaseSchema = z
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });
 
-/** Exported separately to avoid circular dependencies. */
 export const productBaseSchema = z
   .object({
     ...entityCoreShape,

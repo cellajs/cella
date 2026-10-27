@@ -5,7 +5,7 @@ import type { ExtensionType, ExtensionValueMetadata, GuardContext, SecurityRequi
 
 type MiddlewareFunction<E extends Env = Env> = Parameters<typeof createMiddleware<E>>[0];
 
-export type XMiddlewareOptions = {
+type XMiddlewareOptions = {
   /** The JS function name for the middleware (used as identifier in OpenAPI spec) */
   functionName: string;
   /** A configured OpenAPI extension type (e.g., 'x-guard', 'x-rate-limiter') */
@@ -24,6 +24,7 @@ export type XMiddlewareOptions = {
 /** Global store for extension value metadata: per extension type, by middleware function name. */
 const extensionValueMetadata = new Map<ExtensionType, Map<string, ExtensionValueMetadata>>();
 
+/** What every marked middleware documented, for the spec's `x-extensions`. */
 export const getExtensionValueMetadata = () => extensionValueMetadata;
 
 /** Sets `.name`, `.__extensionType`, `.__description` and the guard metadata for OpenAPI introspection; for composed middlewares such as `every()`. */

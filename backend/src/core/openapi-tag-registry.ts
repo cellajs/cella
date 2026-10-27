@@ -1,7 +1,7 @@
 import { onModuleRegister } from 'shared/module-registry';
 
 /** Tag definition for OpenAPI documentation (forward-compatible with OpenAPI 3.2.0). */
-export interface OpenApiTag {
+interface OpenApiTag {
   tag: string;
   description: string;
   /** Short display name (OpenAPI 3.2.0 `summary` field). */
@@ -23,10 +23,11 @@ const registerTag = (tag: OpenApiTag): void => {
   if (!tagRegistry.has(tag.tag)) tagRegistry.set(tag.tag, tag);
 };
 
+/** Every registered tag, in display order. */
 export const getRegisteredTags = (): OpenApiTag[] => [...tagRegistry.values()];
 
 /** Default owner tags, registered eagerly so module tags can reference them as parents. */
-registerTag({ tag: 'cella', kind: 'owner', description: 'Core modules provided by cella.' });
+registerTag({ tag: 'cella', kind: 'owner', description: 'Core modules provided by the template.' });
 
 registerTag({ tag: 'app', kind: 'owner', description: 'Application-specific modules.' });
 

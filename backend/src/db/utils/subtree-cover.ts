@@ -1,4 +1,4 @@
-import { eq, getTableColumns, or, type SQL } from 'drizzle-orm';
+import { eq, getColumns, or, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 
@@ -12,7 +12,7 @@ import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 export function buildSubtreeCoverWhere(table: AnyPgTable, entityType: ProductEntityType, channelId: string | undefined): SQL | undefined {
   if (!channelId) return undefined;
 
-  const columns = getTableColumns(table) as Record<string, PgColumn>;
+  const columns = getColumns(table) as Record<string, PgColumn>;
   const predicates = hierarchy
     .getOrderedAncestors(entityType)
     .map((ancestor) => columns[appConfig.entityIdColumnKeys[ancestor]])

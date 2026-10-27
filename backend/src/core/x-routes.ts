@@ -7,8 +7,8 @@ import {
   createMetadataExtensions,
   createSpecificationExtensions,
   type ExtensionPropId,
+  extensionPropIds,
   type GuardContext,
-  getExtensionPropIds,
   type SecurityRequirement,
   toolAction,
   type XMiddlewareHandler,
@@ -95,7 +95,6 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   }
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
-  const extensionPropIds = getExtensionPropIds();
   const cleanConfig = {
     ...Object.fromEntries(Object.entries(config).filter(([key]) => !extensionPropIds.includes(key))),
     ...createMetadataExtensions(config),
@@ -104,24 +103,26 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({ security, ...cleanConfig, responses: { ...errorResponseRefs, ...config.responses }, middleware, ...specificationExtensions });
 };
 
-/**
- * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs
- * from the schema's own example (development and tests refuse a copy of it) or where the schema is inline and has none.
- */
-export type JsonResponse<S extends z.ZodType> = {
+type JsonResponse<S extends z.ZodType> = {
   description: string;
   content: { 'application/json': { schema: S; example?: unknown } };
 };
 
+/**
+ * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs
+ * from the schema's own example (development and tests refuse a copy of it) or where the schema is inline and has none.
+ */
 export const json = <S extends z.ZodType>(description: string, schema: S, example?: unknown): JsonResponse<S> => ({
   description,
   content: { 'application/json': example === undefined ? { schema } : { schema, example } },
 });
 
-/** A required JSON request body: `ctx.req.valid('json')` is typed from `schema`. */
-export type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S; example?: unknown } } };
+type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S; example?: unknown } } };
 
-/** An `example` shows a caller a valid body; in development and tests it must parse with `schema` when the route module loads. */
+/**
+ * A required JSON request body: `ctx.req.valid('json')` is typed from `schema`. An `example` shows a caller a valid body;
+ * in development and tests it must parse with `schema` when the route module loads.
+ */
 export const jsonBody = <S extends z.ZodType>(schema: S, example?: z.input<S>): JsonBody<S> => {
   if (example === undefined) return { required: true, content: { 'application/json': { schema } } };
   const parsed = checksAuthoringRules ? schema.safeParse(example) : undefined;

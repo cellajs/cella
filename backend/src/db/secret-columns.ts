@@ -27,7 +27,6 @@ export const secretLookingColumns = {
   // One-way identifiers that group a user's own sessions; the sessions list shows them.
   devices: ['deviceIdHash'],
   sessions: ['ipHash', 'ipSubnetHash', 'deviceIdHash'],
-  // The DNS TXT value an admin must configure: shown on purpose.
   // The public half of the signing key, served on the JWKS endpoint.
   signing_keys: ['publicJwk'],
 } as const satisfies Record<string, readonly string[]>;
@@ -40,4 +39,5 @@ export type SecretColumnTable = keyof typeof secretColumns;
 /** The secret column names of a table, `never` for a table without any. */
 export type SecretColumnsOf<TName extends string> = TName extends SecretColumnTable ? (typeof secretColumns)[TName][number] : never;
 
+/** The runtime twin of `SecretColumnsOf`: empty for a table without secret columns. */
 export const secretColumnsOf = (tableName: string): readonly string[] => (secretColumns as Record<string, readonly string[]>)[tableName] ?? [];

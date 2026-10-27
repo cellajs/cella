@@ -1,7 +1,8 @@
 import type { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { apiErrorSchema } from './api-error-schemas';
+import { mockApiError } from '#/schemas/api-error-mocks';
+import { apiErrorSchema } from '#/schemas/api-error-schemas';
 
 type ZodBackedResponse = {
   description: string;
@@ -60,7 +61,9 @@ const errorResponseOptions = [
 ] as const;
 
 const errorBodySchema = ({ code, name, schemaDescription }: ErrorOption) =>
-  apiErrorSchema.extend({ status: z.literal(code) }).openapi(name, { description: schemaDescription, 'x-tags': schemaTags('errors', 'cella') });
+  apiErrorSchema
+    .extend({ status: z.literal(code) })
+    .openapi(name, { description: schemaDescription, example: mockApiError(code), 'x-tags': schemaTags('errors', 'cella') });
 
 /**
  * `$ref` responses for route definitions, so the OpenAPI output does not inline the full schema per route.

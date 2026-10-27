@@ -15,6 +15,7 @@ import { channelTables } from '#/db/channel-tables';
 
 type NotNullUuid = ReturnType<ReturnType<typeof uuid>['notNull']>;
 type NullableUuid = ReturnType<typeof uuid>;
+/** A channel table, as the sub-organization id columns reference it. */
 export type ChannelTable = AnyPgTable & { id: PgColumn };
 
 /**
@@ -26,15 +27,12 @@ export type ChannelTable = AnyPgTable & { id: PgColumn };
 const referencedChannelId = (channelType: string): PgColumn => channelTables[channelType as keyof typeof channelTables]().id;
 
 /** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
-export type ChannelRelationColumns<E extends string> = EntityIdColumns<
-  Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType,
-  NotNullUuid
-> &
+type ChannelRelationColumns<E extends string> = EntityIdColumns<Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NotNullUuid> &
   EntityIdColumns<Extract<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
   EntityIdColumns<RelatedChannelType<E> & EntityType, NullableUuid>;
 
 /** Ancestor-context id columns spanning all product entities, all nullable, for cross-entity tables like `activities`. */
-export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
+type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
  * From hierarchy config. Sub-organization ancestor columns cascade-delete with their channel row
@@ -43,7 +41,7 @@ export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<Product
  */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
-  const columns = {} as Record<string, NotNullUuid | NullableUuid>;
+  const columns: Record<string, NotNullUuid | NullableUuid> = {};
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     const column = ancestor === 'organization' ? uuid() : uuid().references(() => referencedChannelId(ancestor), { onDelete: 'cascade' });
@@ -69,7 +67,7 @@ export const channelRelationIndexes = (tableName: string, table: Record<string, 
     });
 
 /** One nullable id column per sub-organization channel type: the channels a membership can be held at below the organization. */
-export type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
+type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
 
 /**
  * Sub-organization channel columns shared by the membership tables, from hierarchy config: one
@@ -78,7 +76,7 @@ export type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType
  * organization-only hierarchy.
  */
 export const membershipChannelColumns = (): MembershipChannelColumns => {
-  const columns = {} as Record<string, NullableUuid>;
+  const columns: Record<string, NullableUuid> = {};
 
   for (const channelType of appConfig.channelEntityTypes) {
     if (channelType === 'organization') continue;
@@ -104,11 +102,11 @@ export const membershipChannelIndexes = (tableName: string, table: Record<string
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */
 export const activityChannelColumns = (): ActivityChannelColumns => {
-  const columns = {} as Record<string, NullableUuid>;
+  const columns: Record<string, NullableUuid> = {};
 
-  const contexts = new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)));
-  for (const ctx of contexts) {
-    columns[appConfig.entityIdColumnKeys[ctx]] = uuid();
+  const ancestorTypes = new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)));
+  for (const channelType of ancestorTypes) {
+    columns[appConfig.entityIdColumnKeys[channelType]] = uuid();
   }
 
   return columns as ActivityChannelColumns;

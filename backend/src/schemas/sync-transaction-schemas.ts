@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { isValidHLC } from '#/core/stx/hlc';
-import { boundedRecord } from './common-schemas';
-import { mockStxBase } from './sync-transaction-mocks';
+import { boundedRecord } from '#/schemas/common-schemas';
+import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 
 /** Used for both storage and request validation. */
 export const stxBaseSchema = z
@@ -22,7 +22,6 @@ export const stxBaseSchema = z
     'x-tags': schemaTags('base', 'cella'),
   });
 
-/** Unnamed, so each use site emits an inline `anyOf: [$ref, {type: 'null'}]`. */
 export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 
 export type StxBase = z.infer<typeof stxBaseSchema>;

@@ -1,17 +1,18 @@
 import type { PoolClient } from 'pg';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
-import { env } from '../env';
-import { createPgConnection, type DB, isPool, type PgDB, type SessionTimeouts } from './create-connection';
-import { migrateSessionTimeouts } from './migrate-timeouts';
+import { createPgConnection, type DB, isPool, type SessionTimeouts } from '#/db/create-connection';
+import { migrateSessionTimeouts } from '#/db/migrate-timeouts';
+import { env } from '#/env';
 
-export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
+export type { DB, DbOrTx, Tx } from '#/db/create-connection';
 
+/** The folder of the migration files, and the schema of the table where drizzle records the applied ones. */
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-// In production we require a verified TLS connection to the managed PostgreSQL.
+// Production requires a verified TLS connection to the managed PostgreSQL.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
-const connect = (connectionString: string, max: number, sessionTimeouts?: SessionTimeouts): PgDB =>
+const connect = (connectionString: string, max: number, sessionTimeouts?: SessionTimeouts): DB =>
   createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, sessionTimeouts });
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
@@ -52,7 +53,7 @@ export const openDedicatedConnection = async (onError: (error: Error) => void): 
   return client;
 };
 
-let adminConnection: PgDB | undefined;
+let adminConnection: DB | undefined;
 
 /**
  * The admin pool (table owner, BYPASSRLS), opened on first use and never at import. The API
@@ -61,7 +62,7 @@ let adminConnection: PgDB | undefined;
  * Call it where the connection is used: at module scope it throws or opens the pool at import.
  * @param purpose - Names the caller in the error thrown when the credential is absent.
  */
-export const getAdminDb = (purpose: string): PgDB => {
+export const getAdminDb = (purpose: string): DB => {
   if (env.NODB) throw new Error(`Admin database access (${purpose}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required for ${purpose}`);
   // The migrate companion bounds every admin statement, so a blocked lock fails the release with a named error.
@@ -74,7 +75,7 @@ export const getAdminDb = (purpose: string): PgDB => {
  * that holds the partition maintenance job. The caller ends it.
  * @param database - Database name replacing the one in `DATABASE_ADMIN_URL`.
  */
-export const getAdminDbFor = (database: string): PgDB => {
+export const getAdminDbFor = (database: string): DB => {
   if (env.NODB) throw new Error(`Admin database access (database ${database}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required to reach database ${database}`);
   const url = new URL(env.DATABASE_ADMIN_URL);

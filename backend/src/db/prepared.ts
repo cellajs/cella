@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
+import { baseDb } from '#/db/db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { baseDb } from './db';
 
 const hasDb = typeof baseDb.select === 'function';
 
@@ -14,8 +14,7 @@ const prepared = <T extends object>(name: string, build: () => T): T => {
   });
 };
 
-// Tenant guard
-
+/** The tenant row of an id (`execute({ id })`), at most one; read through `loadTenant`, which caches it. */
 export const findTenantById = prepared('find_tenant_by_id', () =>
   baseDb
     .select()
