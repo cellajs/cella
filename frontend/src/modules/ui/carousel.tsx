@@ -105,7 +105,7 @@ function Carousel({
         scrollNext();
       }
     },
-    { enabled: arrowKeysActive },
+    { enabled: arrowKeysActive, capture: true },
   );
 
   return (
