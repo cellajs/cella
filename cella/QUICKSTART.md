@@ -2,6 +2,10 @@
 
 This document explains how you can get started building a modern web app with cella.
 
+### TL;DR
+
+One command creates your app and five more run it with seeded data. Sign in as the seeded admin, shape the config to your product, and let `pnpm check` keep it consistent. The cella CLI brings in template updates, and the infra CLI deploys to Scaleway.
+
 ## Create
 
 The [create-cella](https://github.com/cellajs/create-cella) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs. Requirements: docker, node, [pnpm](https://pnpm.io/installation). Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
@@ -20,11 +24,13 @@ pnpm seed       # seed test data
 pnpm dev
 ```
 
-Seeded attachments point at files in the shared public development bucket, so they render without S3 or Transloadit keys. Those keys are only needed to upload files of your own. `pnpm dev` also starts the OAuth and MCP workers when `appConfig.services.oauth` and `.mcp` are enabled (the template default is off); the consent page is `/auth/consent` and discovery sits at `/oauth/.well-known/oauth-authorization-server`.
+The app opens at http://localhost:3000 (a git worktree gets ports of its own: [Dev ports](../shared/README.md#dev-ports)). Sign in as the seeded admin (`ADMIN_EMAIL` in `backend/.env`) with a magic link, which the backend prints in its console in development.
+
+Seeded attachments render from a shared public development bucket: S3 and Transloadit keys are only needed to upload your own files. `pnpm dev` also starts the OAuth and MCP workers when `appConfig.services` enables them (off in the template).
 
 ## Check
 
-Regenerates openapi & sdk, checks types, and fixes code style:
+Regenerates the OpenAPI spec and the SDK, checks types and schema evolution (`lens:check`), and fixes code style:
 
 ```bash
 pnpm check
@@ -32,7 +38,7 @@ pnpm check
 
 ## Run tests
 
-See [Testing](./TESTING.md) for writing and running tests.
+What to test and how: [Testing](./TESTING.md).
 
 ```bash
 pnpm test # Run tests (excluding ui stories)
@@ -41,7 +47,7 @@ pnpm story # Start storybook
 
 ## Test offline & PWA
 
-Builds the frontend + service worker and serves it with vite preview. Also starts servers in dev mode.
+Builds the frontend with its service worker and serves it with vite preview, beside the backend and CDC dev servers.
 
 ```bash
 pnpm offline
@@ -52,8 +58,9 @@ pnpm offline
 1. Set your app identity in `shared/config/config.default.ts`, and its colors and fonts in `frontend/src/styling/app.css`.
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
 3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
-4. Read the [architecture](./ARCHITECTURE.md) in your repo or on the cella docs site.
+4. Read the [architecture](./ARCHITECTURE.md).
 5. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
+6. Coding agents read their rules from `cella/AGENTS.md` and their skills from `cella/skills/`. Claude Code finds neither on its own: in the gitignored `.claude/`, run `ln -s ../cella/skills .claude/skills` and add a `CLAUDE.md` holding `@../cella/AGENTS.md`.
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
 
@@ -61,15 +68,13 @@ Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cell
 
 Pulls upstream fixes, features, and dependency updates into your app while preserving your customizations. Docs: [@cellajs/cli](https://github.com/cellajs/cella-cli#readme).
 
-Run `pnpm cella audit` to check for outdated packages, known CVEs, and unused dependency overrides.
-
 ```bash
 pnpm cella
 ```
 
 ## Infra CLI
 
-Sets up a full stack on Scaleway, which a runner in your Scaleway organization then deploys ([infra guide](../infra/README.md)).
+Sets up and deploys a full stack on Scaleway ([infra guide](../infra/README.md)).
 
 ```bash
 pnpm infra

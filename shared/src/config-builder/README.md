@@ -2,12 +2,12 @@
 
 ## Entity hierarchy
 
-Each product entity has exactly one home channel: its declared `parent`. The home is where a row lives, becomes a non-null `<channel>Id` column (see `channelRelationColumns`), and is the most-specific link in the ancestor chain used for permissions and public-read inheritance. `parent` is required: without a home there is no channel to derive access from.
+Each product entity declares one `parent` channel, which becomes a non-null `<channel>Id` column (see `channelRelationColumns`). `parent` is required: without it there is no channel to derive access from. A row's home is the channel it lives in ([below](#row-to-channel-attribution)); what a grant reaches from there: [Permissions](../../../cella/PERMISSIONS.md#the-policy-consulted).
 
 - `relatedChannels` declares non-ancestor channel references (nullable id columns): cross-links, not homes.
 - `nullableAncestors` declares ancestors whose id columns are nullable, so rows may attach above the declared parent (variable-depth rows, e.g. a course-stream item with `projectId = null`). The chain root stays non-null, so a row always belongs to the root channel.
 
-Public readability is a permission concern, declared per subject via `publicRead(mode)` in `shared/src/permissions/public-read.ts`, not in the hierarchy.
+Public readability is a permission concern, declared per subject with `publicRead()` in `shared/config/permissions-config.ts`, not in the hierarchy.
 
 **App contract**: every tenant-scoped table has `tenant_id`. Tables with an organization parent also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Covered by `backend/tests/integration/schema-verification.test.ts`.
 

@@ -1,7 +1,7 @@
 import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-interface Options {
+export interface RepoLinkOptions {
   /** Absolute path to the repo root; candidate paths are resolved against it. */
   repoRoot: string;
   /** Repo URL without trailing slash, e.g. https://github.com/cellajs/cella. */
@@ -12,6 +12,26 @@ interface Options {
   docRoutes?: Readonly<Record<string, string>>;
 }
 
+/**
+ * A repo doc's relative link: a target with a docs route maps to `routeUrl(route)`, any other repo file to its GitHub
+ * blob URL. Returns null for a target outside the repo or missing, so no dead link is introduced.
+ */
+export function relativeRepoLink(
+  { repoRoot, repoUrl, branch = 'main', docRoutes = {} }: RepoLinkOptions,
+  docDir: string,
+  url: string,
+  routeUrl = (route: string) => route,
+): string | null {
+  const [target, hash] = url.split('#');
+  const abs = path.resolve(docDir, target);
+  const rel = path.relative(repoRoot, abs).replaceAll(path.sep, '/');
+  if (rel.startsWith('..') || !existsSync(abs)) return null;
+  const suffix = hash ? `#${hash}` : '';
+  const docsRoute = docRoutes[rel];
+  if (docsRoute) return `${routeUrl(docsRoute)}${suffix}`;
+  return `${repoUrl.replace(/\/+$/, '')}/blob/${branch}/${rel}${suffix}`;
+}
+
 type MdNode = { type: string; value?: string; url?: string; children?: MdNode[] };
 
 // `dir/file.ext` with a known source extension, optionally `:12` or `:12-20`.
@@ -20,7 +40,8 @@ const PATH_RE = /^([\w.][\w./-]*\.(?:tsx?|jsx?|mjs|cjs|json|ya?ml|css|md|sh|toml
 const DIR_RE = /^([\w.][\w./-]*)\/$/;
 
 /** Links verified repository paths in inline code and imported repository-document links. */
-export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main', docRoutes = {} }: Options) {
+export function remarkLinkRepoPaths(options: RepoLinkOptions) {
+  const { repoRoot, repoUrl, branch = 'main' } = options;
   const root = repoUrl.replace(/\/+$/, '');
   const base = `${root}/blob/${branch}/`;
 
@@ -48,25 +69,13 @@ export function remarkLinkRepoPaths({ repoRoot, repoUrl, branch = 'main', docRou
     // (authors there use absolute /docs/... or external URLs).
     const docDir = file?.path && !file.path.includes('/src/content/docs/') ? path.dirname(file.path) : null;
 
-    const relativeLinkFor = (url: string): string | null => {
-      if (!docDir) return null;
-      const [target, hash] = url.split('#');
-      const abs = path.resolve(docDir, target);
-      const rel = path.relative(repoRoot, abs).replaceAll(path.sep, '/');
-      // Stay inside the repo and never introduce a dead link.
-      if (rel.startsWith('..') || !existsSync(abs)) return null;
-      const docsRoute = docRoutes[rel];
-      if (docsRoute) return `${docsRoute}${hash ? `#${hash}` : ''}`;
-      return `${base}${rel}${hash ? `#${hash}` : ''}`;
-    };
-
     const walk = (node: MdNode, insideLink: boolean) => {
       const children = node.children;
       if (!children) return;
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         if (docDir && child.type === 'link' && child.url?.startsWith('.')) {
-          const url = relativeLinkFor(child.url);
+          const url = relativeRepoLink(options, docDir, child.url);
           if (url) child.url = url;
         }
         // Don't re-link code that already sits inside a link.

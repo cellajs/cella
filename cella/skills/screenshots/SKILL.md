@@ -18,45 +18,22 @@ state and judging the result is this skill's job, and the driver cannot do it: r
   ships, and prints each one's pixel and file size.
 - A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
 - One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
-- `START= node ...` attaches to a stack that already answers. Use it whenever another checkout is already running a
-  stack on the database in `backend/.env`: a second CDC worker (and `pnpm dev:single`, which folds CDC into the API)
-  takes over the replication slot of the one that is running. Check first: `lsof -tiTCP:3000 -sTCP:LISTEN`.
+- `START= node ...` attaches to a stack that already answers. Use it whenever another checkout already runs a stack
+  on the database in `backend/.env` (check: `lsof -tiTCP:3000 -sTCP:LISTEN`): a second CDC worker there only waits for
+  the slot the running one holds.
 - The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
   table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.
-- `format` in `shots-config.mjs` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH
-  (`brew install webp`, `apt install webp`) and the driver stops before the stack boots without it. It is written
-  lossless, so the pixels are the screenshot's own. Chromium's own canvas encoder is no substitute: its lossless WebP
-  weighs about what the PNG does.
+- `format` in `shots-config.mjs` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and
+  the driver stops before the stack boots without it. It is written lossless, so the pixels are the screenshot's own;
+  Chromium's own lossless WebP weighs about what the PNG does.
 
-## A clean database beside a running stack
+## A clean database
 
 A development database that has been worked in fails the data check below: bench users, test rows, your own address,
-dozens of sessions. Reseeding it costs you that data. Shoot from a throwaway database, with the stack you already run
-left alone. Variables in the environment win over `backend/.env`, so nothing in the checkout changes:
-
-```sh
-# The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml
-docker run -d --name shots_db -e POSTGRES_PASSWORD=postgres -p 5470:5432 <image> -c wal_level=logical -c shared_preload_libraries=pg_cron -c cron.database_name=postgres
-
-export DEV_PORT_OFFSET=70 ADMIN_EMAIL=admin-test@cellajs.com
-export DATABASE_URL=postgres://runtime_role:dev_password@0.0.0.0:5470/postgres
-export DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5470/postgres
-export DATABASE_CDC_URL=postgres://admin_role:dev_password@0.0.0.0:5470/postgres
-
-pnpm seed                                                                  # migrates, then seeds
-(cd backend && NODE_ENV=development pnpm exec tsx src/main.ts) &            # the API, 70 ports up
-(cd frontend && NODE_ENV=development pnpm exec vite --mode development) &   # the app, 70 ports up
-START= node cella/skills/screenshots/shot-driver.mjs
-```
-
-- Every command runs with those exports. `pnpm seed` without them reaches the database in `backend/.env` and adds
-  its rows to the one you work in. An agent's shell keeps no exports between calls: put them in a wrapper script
-  that ends in `exec "$@"`, and run each command through it.
-- The driver's first line prints the origin it shoots. It must be the shifted one.
-- The API and the frontend are enough: no shot needs the CDC worker or the relay.
-- Both Vite servers share `frontend/node_modules/.vite`. The second one re-bundles the dependencies there, so the
-  first re-bundles once more at its next start. Its running session keeps working.
-- Afterwards stop the two listeners (`lsof -tiTCP:<port> -sTCP:LISTEN`) and `docker rm -fv shots_db`.
+dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
+[A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
+`START= node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
+origin it shoots: it must be the shifted one.
 
 ## Look at every image before you keep it
 
@@ -82,11 +59,11 @@ the product by: a half-loaded table or a stray tooltip is worth another run.
 
 ## After
 
-- `frontend/src/modules/marketing/marketing-config.tsx` only needs a change when a filename, the `format` or the set
-  of slides changes; it lists each slide as `screenshot(path, name)`, and that helper holds the content type. `README.md` references two of the same files by
-  path. A changed `format` leaves the files of the old one behind: delete them.
-- Replacing a file in place is enough for production: `infra/tasks/frontend-assets.ts` re-uploads a `static/` key when
-  its ETag no longer matches, so no renaming is needed.
+- `frontend/src/modules/marketing/marketing-config.tsx` needs a change only when a filename, the `format` or the set
+  of slides changes. `README.md` references two of the same files by path. A changed `format` leaves the files of the
+  old one behind: delete them.
+- Replacing a file in place is enough for production: the deploy re-uploads a `static/` file whose content changed
+  (`infra/tasks/frontend-assets.ts`).
 
 ## In an app built on cella
 
@@ -100,17 +77,15 @@ this skill inside the raak checkout, whose shot list writes the four files to it
 
 ## Gotchas
 
-- The color mode and the one-time UI go into the persisted ui store, whose key carries the app slug
-  (`frontend/src/modules/ui/ui-store.ts`), derived from the session cookie name. `themer.ts` turns `mode` into the
-  `.light` / `.dark` class.
+- The color mode and the one-time UI flags live in the persisted ui store (`frontend/src/modules/ui/ui-store.ts`),
+  whose key carries the app slug.
 - The menu sheet is the sheeter's `#nav-sheet`, opened with `Alt+M` (`ControlOrMeta+K` search, `Alt+A` account). The
   `#<id>-nav` buttons are the mobile bottom bar's only: the desktop sidebar's carry no id, so a desktop shot that
   reaches for one waits 30 seconds and fails. Account sections are anchored as `#spy-<tool id>-anchor-wrap`.
-- The sheet sits beside the content only from `2xl` up, with "Keep menu open" on (`isDesktop` in `app-nav.tsx`). Below
-  it the sheet covers the page, hiding a table's first column: a shot with the menu open takes the `pcWide` device.
-  `2xl` is the app's own, `appConfig.theme.screenSizes`, 1400px in cella and not Tailwind's 1536px: keep `pcWide` at
-  the first 16:9 size above it, since every pixel wider draws the UI smaller in the mockup. That preference lives in
-  the per-user IndexedDB store, so it is set through its own switch, not through localStorage.
+- The sheet sits beside the content only from `2xl` (`appConfig.theme.screenSizes`, 1400px in cella) with "Keep menu
+  open" on (`isDesktop` in `app-nav.tsx`); below it the sheet covers a table's first column. A shot with the menu open
+  takes the `pcWide` device, kept at the first 16:9 size above `2xl`: every pixel wider draws the UI smaller in the
+  mockup. "Keep menu open" lives in the per-user IndexedDB store, so it is set through its own switch.
 - The menu lists archived entities open by default (`activeSections` in the navigation store, same IndexedDB store).
   `openMenu` folds them through the section's own "Archived" row.
 - While the sheet is open the page behind it is out of the accessibility tree: `getByRole` finds nothing there and
@@ -119,8 +94,6 @@ this skill inside the raak checkout, whose shot list writes the four files to it
   button over an entity without a cover. `tidyHeader` in `shots-config.mjs` hides both.
 - A Base UI switch keeps a 1x1 off-screen checkbox, and that is what carries the `id`. Clicking `#keepNavOpen` fails
   with "element is outside of the viewport" after 30 seconds; reach for `getByRole('switch', { name })`.
-- Every run mints a session, which the account page then lists as another "Unnamed device". That is why `settings`
-  frames the authentication card and not the sessions card above it.
-- Playwright and the signed dev cookie come from `../two-tab-sync-test/driver-lib.mjs`; `settle` is a copy of the one
-  in `a11y/src/session.ts`, so keep the two in step.
-- To drive the app beyond a screenshot (sign-in, breakpoints, scroll behavior), the `verify` skill has the rest.
+- Every run mints a session ([verify](../verify/SKILL.md#drive-browser)), which the account page then lists as another
+  "Unnamed device". That is why `settings` frames the authentication card and not the sessions card above it.
+- To drive the app beyond a screenshot (breakpoints, scroll behavior), the `verify` skill has the rest.

@@ -10,7 +10,9 @@ export const frontierHomePrefix = 'e:f:h:';
 export const signalVersionPrefix = 's:';
 
 const plainCountPrefixes = [entityCountPrefix, 'm:c:'];
+/** Last insert and update timestamps of a type's rows homed at the channel: `e:li:h:{type}`, `e:lu:h:{type}`. */
 const stampPrefixes = ['e:li:', 'e:lu:'];
+/** The organization row's sequence reservation counter. */
 const sequenceKey = 'sequence';
 
 const startsWithAny = (key: string, prefixes: string[]) => prefixes.some((prefix) => key.startsWith(prefix));

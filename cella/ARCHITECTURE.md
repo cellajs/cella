@@ -9,7 +9,7 @@ PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes a
 
 ## Overview
 
-Below you see a typical full production stack. However, Yjs, OAuth and MCP are optional (only Yjs is shown below for readability), and every worker can be **cohosted on the backend VM** to reduce costs.
+Below is a typical production stack. Yjs, OAuth and MCP are optional, and every worker can be **cohosted on the backend VM** to reduce costs.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -23,7 +23,7 @@ Below you see a typical full production stack. However, Yjs, OAuth and MCP are o
    │  Yjs worker  │    SQL    │        Postgres        │    WAL     │    CDC worker    │
    │  (optional)  │ ◀────────▶│       (managed)        │╌╌╌╌╌╌╌╌╌╌╌▶│                  │
    │              │           │                        │◀───────────│                  │
-   └──────────────┘           └────────────────────────┘ SQL · seq  └──────────────────┘
+   └──────────────┘           └────────────────────────┘    SQL     └──────────────────┘
 
    ── request/response    ╌╌ stream (WAL · WS · SSE)
 ```
@@ -49,7 +49,7 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Adding one: the [add-entity skill](./skills/add-entity/SKILL.md).
+The hierarchy is declared once, in [hierarchy-config.ts](../shared/config/hierarchy-config.ts); the template starts with `organization -> attachment`. From it the template derives the id columns, permission checks up the ancestor chain, row-level security, the CDC publication, counters, which streams hear a change, and navigation. Frontend and backend features live in matching modules. To add an entity: the [add-entity skill](./skills/add-entity/SKILL.md).
 
 ## Selective sync engine
 
@@ -57,7 +57,7 @@ Channel entities stay conventional CRUD. Product entities get live updates and o
 
 ## Trust boundaries
 
-Authentication explains how people prove identity; [Interoperability](./INTEROPERABILITY.md) covers service accounts and machine access. Accounts are identified by verified proofs, not email addresses. See [Authentication](./AUTHENTICATION.md), [Permissions](./PERMISSIONS.md), and [Multi-tenancy](./MULTI_TENANCY.md).
+Accounts are identified by verified proofs, not email addresses. The [security pages](./AUTHENTICATION.md) explain each layer below, and [Interoperability](./INTEROPERABILITY.md) covers machine access.
 
 | Layer | Responsibility |
 | --- | --- |
@@ -65,9 +65,9 @@ Authentication explains how people prove identity; [Interoperability](./INTEROPE
 | **Permission engine** | Decide whether the actor may create, read, update, or delete the subject. |
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
-| **Secret columns** | A single registry keeps secrets out of API responses, backend and worker logs, and CDC row images. |
+| **Secret columns** | One registry ([secret-columns.ts](../backend/src/db/secret-columns.ts)) keeps secrets out of API responses, logs and CDC row images. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend decides. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it; the backend decides ([Frontend map](./PERMISSIONS.md#frontend-map)).
 
 ## Data lifecycle
 
@@ -78,21 +78,23 @@ What a delete does depends on what is deleted:
 - **Channel below the organization**: removed at once, with the channels and products in it.
 - **Resource** (session, token, device, invitation): swept nightly after its own period.
 
-Whichever way a row leaves, the files and collaborative document it stored go after it. Sync keeps activity for the activity window, and a device away longer starts over. A tombstone outlives that window, so a device that keeps up never misses a deletion.
+Whichever way a row leaves, the files and collaborative document it stored go after it. A device away longer than the activity window refetches what it holds; a tombstone outlives that window, so a device that keeps up never misses a deletion.
 
 Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Backups and bucket object versions expire on their own schedule.
 
 ## Contracts and operations
 
-Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. The `sdk` package uses that document to generate the fetch client, TypeScript types, and validation schemas consumed by the frontend. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
+Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. It feeds the [sdk](../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests, and load tests.
 
-The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth, MCP and jobs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway from a job inside the Scaleway organization, which a runner starts when a release or a followed branch moves; GitHub holds no Scaleway key ([infrastructure guide](../infra/README.md)).
+Every service shares one telemetry setup ([Observability](./OTEL.md)). A published release deploys itself to Scaleway ([Deployment](./DEPLOYMENT.md#deploys)).
 
-Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
+The test suite's main job is to prove that attacks fail ([Testing](./TESTING.md)).
 
 ## Scaling
 
-Cella runs one API process per deployment and scales up and apart, not out. Up: a bigger VM for the API and a bigger managed database. Apart: each worker (CDC, Yjs, OAuth, MCP, jobs) moves to a VM of its own when the API's VM gets busy, and each is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler. The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
+Cella runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process, and that process holds every stream. Up: a bigger VM for the API and a bigger managed database. Apart: each worker moves to a VM of its own when the API's VM gets busy. Every worker is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler.
+
+The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
 
 ## Repository map
 

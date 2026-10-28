@@ -6,7 +6,7 @@ The a11y package audits the running development app against WCAG 2.2 Level A and
 
 `pnpm a11y:run` starts a seeded database and the app, opens every page and state once, scans it with axe, runs browser
 checks that axe cannot do, and reviews the code for the rest. Each of the 55 criteria gets its evidence and, where the
-evidence is complete, a decision. What needs a person lands on a checklist, and a person's decision survives the next
+evidence is complete, a decision. What needs a person goes on a checklist, and a person's decision survives the next
 run. The audit itself takes three to four minutes; every run also builds the frontend, and the first seeds the database.
 
 ## Prerequisites
@@ -16,10 +16,12 @@ run. The audit itself takes three to four minutes; every run also builds the fro
 
 `pnpm a11y:run` does the rest: it starts the database (`db_a11y` in `backend/compose.yaml`, port 5470), seeds it on
 the first run, serves the backend, the Yjs relay (when the app runs one) and a built frontend 70 ports above the
-checkout's dev ports, runs the audit and stops what it started. It sets the database URLs and the system admin allowlist for that stack itself, so
-`backend/.env` stays as it is.
+checkout's dev ports, runs the audit and stops what it started. It sets the database URLs and the system admin
+allowlist for that stack itself, so `backend/.env` stays as it is. Every checkout's run uses the same `db_a11y`, so one
+audit stack runs per machine at a time.
 
-The audit signs in as the seeded admin through `pnpm --filter backend session:mint`, so it runs in development only. It signs that session out when it ends.
+The audit signs in as the seeded admin with a minted session ([verify](../cella/skills/verify/SKILL.md#drive-browser)),
+so it runs in development only, and signs it out when it ends.
 
 ### Against a stack you started yourself
 
@@ -35,7 +37,7 @@ against.
 | `pnpm a11y:run` | Start the audit stack, run the full audit, stop the stack |
 | `pnpm a11y:run --keep` | The same, and leave the stack up to rerun states while fixing; `--stop` ends it |
 | `pnpm a11y` | Full audit against a running stack: axe, browser probes and code checks |
-| `pnpm a11y --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger |
+| `pnpm a11y --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger. On a kept stack, prefix the `DEV_PORT_OFFSET` the run printed |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
 | `pnpm -C a11y report --publish` | Put the report where the app serves it and print what the statement needs; refuses a draft |
@@ -44,17 +46,13 @@ against.
 
 A visit that fails (a page that redirects, a check that cannot run) is reported, the command exits with an error, and
 the run writes `ledger-partial.json`: an incomplete run never replaces the ledger. The failed visit leaves
-`failure-<mode>.png` and `failure-<mode>.json` in the state's folder under `a11y/results/review/`: what the page showed
-when the step failed, its console errors, and the steps that ran on that page before. A step often fails on what an
-earlier one left behind, such as a page that fell into its error boundary.
+`failure-<mode>.png` and `failure-<mode>.json` in the state's folder under `a11y/results/review/`: what the page showed,
+its console errors and the steps that ran on it before.
 
 ## How a run works
 
-- Each state gets one visit in light mode. [visit.ts](src/visit.ts) runs every check on that one page, in an order
-  that keeps the page intact for the next check: read-only checks first, then the ones that restore what they change
-  (resizing, text spacing), and last the keyboard walk, whose Escape closes the state's overlay.
-- A second visit in dark mode measures contrast only: axe's contrast rule, the one rule whose result depends on the
-  color mode, and the two contrast probes.
+- Each state gets one visit in light mode, which runs every check on that one page ([visit.ts](src/visit.ts)), and a
+  second in dark mode, which measures contrast only.
 - A check is a function of an open page that returns findings ([findings.ts](src/findings.ts)). All findings turn
   into evidence in one place, after every visit is done.
 
@@ -73,9 +71,8 @@ Each criterion in [criteria.ts](src/criteria.ts) names its checks: `axe`, a brow
 checks ran and none of them is manual. Everything else stays open until a reviewer decides it.
 
 Contrast is measured, in both color modes. axe decides most text. Text it cannot decide (over a gradient, an image or a
-pseudo-element, or too short) is captured with and without its glyphs and compared pixel by pixel
-([probes/contrast.ts](src/probes/contrast.ts)); the same file measures the edge of form controls against what
-surrounds them. One more check needs no browser and runs in `pnpm style`: the color tokens of the theme stylesheet
+pseudo-element, or too short) is measured from the pixels ([probes/contrast.ts](src/probes/contrast.ts)), and so is
+the edge of form controls against what surrounds them. One more check needs no browser and runs in `pnpm style`: the color tokens of the theme stylesheet
 must carry their text and read as text on the page in both modes, so a changed brand color that breaks contrast fails
 before any page is opened.
 
@@ -113,7 +110,7 @@ administers).
 The audit code arrives with a sync; the results and the list of pages are the app's own.
 
 - **`a11y/scope-config.ts`** is pinned to the app (`pinned` in `cella/cella.config.ts`): list your routes and states
-  there, and add a resolver for each path placeholder your routes need. A sync never overwrites it.
+  there, and add a resolver for each path placeholder your routes need.
 - **`json/accessibility-conformance.json`** is never synced (`ignored` in `cella/cella.config.ts`). The first
   `pnpm a11y:run` writes the app's own ledger.
 - **`frontend/src/modules/auth/legal/legal-config.ts`** holds what the accessibility statement claims
