@@ -166,7 +166,7 @@ export function declaredMainJob(opts: {
       DEPLOY_FOLDER: deployFolderPath(opts.slug, opts.mode).replace(/\/$/, ''),
       SCW_DEFAULT_PROJECT_ID: opts.projectId,
       SCW_DEFAULT_ORGANIZATION_ID: opts.organizationId,
-      ...(defaultRule(opts.mode).kind === 'releases' ? { RELEASES_ONLY: '1' } : {}),
+      ...(defaultRule(opts.mode)?.kind === 'releases' ? { RELEASES_ONLY: '1' } : {}),
     },
     secretReferences: {
       DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME },

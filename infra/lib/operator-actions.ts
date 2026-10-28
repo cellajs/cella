@@ -69,7 +69,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Start a deploy',
     key: 'operator',
     description:
-      "Start one run of the environment's main job for its target (the environments file's line, or its branch or newest release) and follow it until it is deployed, blocked or failed.",
+      "Start one run of the environment's main job for its target (the environments file's line, or production's newest release) and follow it until it is deployed, blocked or failed.",
   },
   'runner-identity': {
     label: 'Set up the runner',

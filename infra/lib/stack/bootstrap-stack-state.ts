@@ -15,9 +15,9 @@ export function detectStackState(probe: StackProbe): StackState {
   return BOOTSTRAP_MARKERS.some((marker) => yamlText.includes(marker)) ? 'bootstrapped' : 'partial';
 }
 
-/** Pick the first stack short-name whose Pulumi file is present, falling back to staging for a fresh checkout. Pure: the caller supplies the existence check. */
+/** Pick the first stack short-name whose Pulumi file is present, falling back to production for a fresh checkout. Pure: the caller supplies the existence check. */
 export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly Environment[] = ['production', 'staging']): Environment {
-  return candidates.find(exists) ?? 'staging';
+  return candidates.find(exists) ?? 'production';
 }
 
 /** Extract the plaintext `bootstrap:computeDeferred: <iso-timestamp>` marker, set before a fresh provision's first `pulumi up` (no images exist yet, so compute is not declared) and cleared once base infra is up. */

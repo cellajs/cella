@@ -10,7 +10,7 @@ operator key it made. From then on a runner deploys every release, and the first
 
 ## How the CLI runs
 
-Without a local `Pulumi.<stack>.yaml`, `pnpm infra` runs the install wizard; on an existing stack it opens the [Infra CLI](../../infra/README.md) menu. A fresh install defaults to **staging**; production is the same wizard via `pnpm infra --mode production`. `--defaults` skips every optional question, and the admin email then comes from `INFRA_ADMIN_EMAIL`.
+Without a local `Pulumi.<stack>.yaml`, `pnpm infra` runs the install wizard; on an existing stack it opens the [Infra CLI](../../infra/README.md) menu. A fresh install defaults to **production**. Staging is optional and billed apart: the same wizard via `pnpm infra --mode staging`. `--defaults` skips every optional question, and the admin email then comes from `INFRA_ADMIN_EMAIL`.
 
 ## 1. Prerequisites
 
@@ -56,7 +56,7 @@ A second environment of the same app runs the same two parts: its Owner moment a
 
 ## 4. Let the runner deploy
 
-1. Commit `infra/Pulumi.<mode>.yaml`, so other checkouts see the stack set up.
+1. Commit `infra/Pulumi.<mode>.yaml`, so other checkouts see the stack set up. For staging, also commit the line `staging branch:main` in `infra/environments`: without it the runner deploys nothing there.
 2. **Set up the runner** for this environment (`pnpm infra runner-identity --mode <mode>`, your Owner API key) and commit the `infra/runner.json` it writes.
 3. **Replace the runner** (`pnpm infra runner-replace`, operator key). From then on the runner deploys the environment's target; `pnpm infra runs` shows each run, and `pnpm infra start-deploy` deploys at once.
 4. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application.

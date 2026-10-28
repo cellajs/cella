@@ -42,8 +42,8 @@ describe('pickStackShort', () => {
     expect(pickStackShort((n) => n === 'staging')).toBe('staging');
   });
 
-  it('falls back to staging when none exist (fresh installs are staging-first)', () => {
-    expect(pickStackShort(() => false)).toBe('staging');
+  it('falls back to production when none exist (staging is optional)', () => {
+    expect(pickStackShort(() => false)).toBe('production');
   });
 });
 

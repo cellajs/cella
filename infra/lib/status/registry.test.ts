@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComponentsFact } from './providers/components';
 import type { DbEndpointFacts } from './providers/database';
+import type { EnvironmentsFacts } from './providers/environments';
 import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { RunsFacts } from './providers/runs';
@@ -26,6 +27,7 @@ interface Facts {
   dns?: { host: string; resolvedIps?: string[]; loadBalancerIps?: string[] };
   stores?: StoreValidationFact[];
   db?: DbEndpointFacts;
+  environments?: EnvironmentsFacts;
 }
 
 /** A fully-healthy bootstrapped staging stack; override per test. */
@@ -52,6 +54,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
     stores: [{ id: 'primary', kind: 'postgres-managed' }],
     db: { instance: 'cella-postgres', found: true, endpoints: [] },
+    environments: { text: 'staging branch:main', stacks: ['staging'] },
     ...overrides,
   };
 }
@@ -83,6 +86,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     dns: facts.dns,
     stores: facts.stores,
     db: facts.db,
+    environments: facts.environments,
   };
   const checks = statusProviders.flatMap((provider) => provider.evaluate(factsByDomain[provider.domain] as never, s));
   return assembleReport(s, checks);

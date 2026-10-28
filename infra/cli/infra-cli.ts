@@ -61,7 +61,7 @@ function printHelp(): void {
 /**
  * The target mode. `--mode` or INFRA_MODE selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
  * otherwise the only existing stack file wins silently, two existing stack files ask once (under `--defaults` they need `--mode`), and with no stack
- * file an interactive install asks, defaulting to staging.
+ * file an interactive install asks, defaulting to production.
  * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
  */
 async function resolveMode(flag: string | undefined): Promise<Environment> {
@@ -74,17 +74,17 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
   if (!anyStackExists && !autoAcceptDefaults()) {
     return select<Environment>({
       message: 'Fresh install. Which mode do you want to set up?',
-      default: 'staging',
+      default: 'production',
       choices: [
-        {
-          name: 'staging (recommended)',
-          value: 'staging',
-          description: 'Cheapest setup, disposable. Validate the pipeline here first.',
-        },
         {
           name: 'production',
           value: 'production',
-          description: 'The real thing. Promote here later once staging is green.',
+          description: 'Deploys every release.',
+        },
+        {
+          name: 'staging (optional)',
+          value: 'staging',
+          description: "A second environment, billed apart. It deploys only while infra/environments has the line 'staging branch:main'.",
         },
       ],
     });

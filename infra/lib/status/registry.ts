@@ -1,6 +1,7 @@
 import { componentsProvider } from './providers/components';
 import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
+import { environmentsProvider } from './providers/environments';
 import { inventoryProvider } from './providers/inventory';
 import { liveProvider } from './providers/live';
 import { runsProvider } from './providers/runs';
@@ -19,6 +20,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   inventoryProvider,
   stateProvider,
   secretsProvider,
+  environmentsProvider,
   runsProvider,
   liveProvider,
   componentsProvider,

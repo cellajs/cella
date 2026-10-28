@@ -23,6 +23,12 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const environment = context.environment;
   const target = await environmentTarget(context);
+  if (!target) {
+    console.error(
+      `${crossMark} ${environment} has no line in ${ENVIRONMENTS_FILE}, so it deploys nothing: add \`${environment} branch:main\` there.`,
+    );
+    return endAction(1);
+  }
   console.info(
     pc.dim(
       `\n${actionLabel('start-deploy')}: one run of ${environment}'s main job, for ${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}).\n`,
@@ -62,8 +68,11 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   if (outcome !== 'deployed') endAction(1);
 }
 
-/** The environment's target, as the environments file of this checkout and the repository's refs say it. */
-async function environmentTarget(context: InfraContext): Promise<Target> {
+/**
+ * The environment's target, as the environments file of this checkout and the repository's refs say it; none for an environment other than
+ * production without a line.
+ */
+async function environmentTarget(context: InfraContext): Promise<Target | undefined> {
   const file = join(infraDir, '..', ENVIRONMENTS_FILE);
   const line = existsSync(file) ? parseEnvironmentsFile(readFileSync(file, 'utf8')).get(context.environment) : undefined;
   return resolveTarget({ environment: context.environment, line, listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY) });
@@ -84,6 +93,12 @@ export async function startTargetAfterRotation(context: InfraContext, key: { sec
     return;
   }
   const target = await environmentTarget(context);
+  if (!target) {
+    console.warn(
+      `${warningMark} ${context.environment} has no line in ${ENVIRONMENTS_FILE}, so no deploy replaces its machines: they hold what the rotation replaced.`,
+    );
+    return;
+  }
   const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
   console.info(
     `${checkMark} Run ${run.id} deploys ${target.sha.slice(0, 10)} with the rotated keys and values, replacing every machine (\`${actionCommand('runs')}\` shows how it ends).`,
