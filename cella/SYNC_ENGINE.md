@@ -48,7 +48,7 @@ A signal is versioned when a client that was away must still find out, and then 
 
 ## Selective sync
 
-Only product rows sync: channels are containers, products are synced content ([Entity hierarchy](./ARCHITECTURE.md#entity-hierarchy-model)). The template ships `organization -> attachment`. Apps add deeper hierarchies, drafts, embeddings and Yjs fields.
+Only product rows sync: channels are containers, products are synced content. The template ships `organization -> attachment`. Apps add deeper hierarchies, drafts, embeddings and Yjs fields.
 
 | Concept | Meaning |
 | --- | --- |
@@ -60,18 +60,18 @@ Only product rows sync: channels are containers, products are synced content ([E
 | **View** | The subtrees and entity types a client tracks. Catchup authorizes and answers per view. |
 | **Cursor** | Latest sequence position a view has ingested; the **stream cursor** is the last activity a connection received |
 | **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
-| **Tombstone** | Soft-deleted row, fetchable for the deleted-items period so absent clients learn the deletion ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)) |
+| **Tombstone** | Soft-deleted row, fetchable for the deleted-items period so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write: mutation ID, source ID and per-field HLC timestamps |
 
 ## Server
 
 ### Ordering
 
-Commit order is sequence order, across product types, and a change delivered twice moves nothing ([CDC worker](../cdc/README.md#normal-flow)). Changes go out per audience: the rows of one type under one path.
+Commit order is sequence order, across product types, and a change delivered twice moves nothing. Changes go out per audience: the rows of one type under one path.
 
 ### Drafts
 
-A product table that opts into drafts is published with a row filter, so sync sees a draft only once it is published: publishing arrives as a create, unpublishing as a delete. Channels do not sync; who sees a draft channel is the permission engine's decision ([Drafts](./PERMISSIONS.md#drafts)).
+A product table that opts into drafts is published with a row filter, so sync sees a draft only once it is published: publishing arrives as a create, unpublishing as a delete.
 
 ### Moves
 
@@ -83,7 +83,7 @@ The server caches enriched product detail responses briefly. Every write of the 
 
 ## Access
 
-**Row readability** decides whether a user may fetch a row. List reads, range fetches, change frames and detail-cache hits all ask the permission engine about full rows. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it ([Permissions](./PERMISSIONS.md)).
+**Row readability** decides whether a user may fetch a row. List reads, range fetches, change frames and detail-cache hits all ask the permission engine about full rows. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
 **Summary answerability** decides whether a user may see a view's frontiers and counts. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
 
@@ -107,7 +107,7 @@ Catchup runs on every connection before the stream goes live. The client posts i
 
 ### SSE wire
 
-Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute. After a session ended for good ([Sessions](./authentication/SESSIONS.md)) the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 
@@ -138,7 +138,7 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 ## Writes
 
-A product mutation patches the cache optimistically and reconciles with the stored row ([Mutations](./CLIENT.md#mutations)). Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once. Paused edits replay after the first catchup attempt, or once the stream stops reconnecting. Online writes never wait.
+A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once. Paused edits replay after the first catchup attempt, or once the stream stops reconnecting. Online writes never wait.
 
 ### Merge metadata
 
@@ -158,7 +158,7 @@ A replayed create is idempotent by its row ids. Update and delete have no such c
 
 ## Resilience
 
-The REST API and the database work whatever the CDC worker does: it records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../cdc/README.md#failure-and-recovery)). One API process holds every stream ([Scaling](./ARCHITECTURE.md#scaling)).
+The REST API and the database work whatever the CDC worker does: it records each change once, reads again whatever failed, and rebuilds its books when the WAL cannot help ([CDC worker](../cdc/README.md#failure-and-recovery)).
 
 ### REST fallback
 
@@ -176,9 +176,9 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot; then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile; with a restore, everything after the backup |
 | One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |
-| A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)) | Nothing |
+| A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
-A rebuild starts a new sync generation, and the API ends every open stream ([CDC worker](../cdc/README.md#verify-and-rebuild)). A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache, the lists on screen first.
+A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache, the lists on screen first.
 
 ### Multiple tabs
 
@@ -186,6 +186,6 @@ One tab leads: it holds the stream, runs catchup and forwards what it receives t
 
 ### Yjs
 
-The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`). With it on, a description saves through the relay, never as a REST write, so it never enters the replay queue ([Yjs worker](../yjs/README.md#save)).
+The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`). With it on, a description saves through the relay, never as a REST write, so it never enters the replay queue.
 
 The cache takes a description, and the columns derived from it, only from a server write of that field, so a read that lags the relay cannot undo a collaborative patch.

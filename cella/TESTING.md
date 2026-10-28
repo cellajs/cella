@@ -22,7 +22,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.
 - **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream.
 
-Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required and bounded. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
+Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required and bounded. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
 
 ## Running tests
 

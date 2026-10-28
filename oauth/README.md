@@ -24,7 +24,7 @@ access token (RS256 JWT, one tenant, one resource)
 REST API (serviceGuard / actorGuard)   MCP endpoint (tokenGuard)
 ```
 
-The worker is a `MODE` of the backend image ([Deployment](../cella/DEPLOYMENT.md#overview)). The reverse proxy routes `/oauth/*` to it, so the issuer (`appConfig.oauthUrl`) shares the app origin with the API and the consent page. The provider runs with its own Postgres adapter, no dynamic client registration, no developer interactions, no id tokens: the app is an authorization server, not an identity provider. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md).
+The worker is a `MODE` of the backend image. The reverse proxy routes `/oauth/*` to it, so the issuer (`appConfig.oauthUrl`) shares the app origin with the API and the consent page. The provider runs with its own Postgres adapter, no dynamic client registration, no developer interactions, no id tokens: the app is an authorization server, not an identity provider.
 
 The code is in `backend/src/modules/oauth-server/`, and `oauth/src/oauth-worker.ts` is the development entry. Claim names, limits and other details are documented there, at their declarations.
 
@@ -65,7 +65,7 @@ A change to the rest of what the grant policy reads (the user row, an installed 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store: grants, sessions, interactions, authorization codes and refresh tokens. A code or a refresh token is stored under the hash of its value, with no copy of the value, so reading the store yields nothing a client could present. Each is spent once: a second spend is a replay and revokes the grant with every token issued under it. Expired and spent rows go with the nightly retention ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
+`oidc_payloads` is the provider's store: grants, sessions, interactions, authorization codes and refresh tokens. A code or a refresh token is stored under the hash of its value, with no copy of the value, so reading the store yields nothing a client could present. Each is spent once: a second spend is a replay and revokes the grant with every token issued under it. Expired and spent rows go with the nightly retention.
 
 ## Operational constraints
 

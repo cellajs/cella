@@ -18,8 +18,8 @@ A breaking schema change (rename `attachment.name` to `attachment.title`, say) s
 
 Until the first lens ships, a breaking schema change resets client caches:
 
-1. **Bump `appConfig.clientCacheVersion`** ([config.default.ts](../shared/config/config.default.ts)) in the same PR as any breaking change to a cached entity's wire shape, and give the PR a `feat!` title so release-please cuts a major.
-2. **Clients wipe, mutations stay.** On boot the [persister](../frontend/src/query/persister.ts) compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses is quarantined, never dropped ([Paused writes](./SYNC_ENGINE.md#paused-writes)).
+1. **Bump `appConfig.clientCacheVersion`** ([config.default.ts](../shared/config/config.default.ts)) in the same PR as any breaking change to a cached entity's wire shape, and give the PR a `feat!` title, as for any breaking change.
+2. **Clients wipe, mutations stay.** On boot the persister compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses is quarantined, never dropped.
 3. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a PR with a breaking OpenAPI diff unless it bumps `clientCacheVersion`.
 
 **Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job. The `failedSync` quarantine stays: it also holds queued mutations no upgrade can read.
@@ -81,8 +81,6 @@ export const organizationContract = evolutionContract.channel('organization', { 
 
 ## How it works
 
-[engine.ts](../shared/src/schema-evolution/engine.ts) is the engine's whole API, and [config.ts](../shared/src/schema-evolution/config.ts) holds its policy values.
-
 ### Server write path
 
 No middleware and no body re-parsing. During a lens's expand window the derived schemas accept both field names, so old-shape requests pass validation unchanged. The contract's normalize step then maps `ops` and `stx.fieldTimestamps` to canonical keys and **mirror-writes** the twin column (a `title` write also writes `name`, and the other way round), so the merge sees canonical keys only. Reads need no transform: during expand the row carries both columns.
@@ -91,12 +89,12 @@ The old column goes in a later contract PR, once the clients' `X-Client-Version`
 
 ### Client cache migration
 
-The meta record's `schemaVersion` pointer is the global lens ordinal ([persister.ts](../frontend/src/query/persister.ts)).
+The meta record's `schemaVersion` pointer is the global lens ordinal.
 
 - Pointer behind the bundle: before hydration, one tab at a time runs a migration pass over the persisted queries and the queued mutation variables. The pointer advances in its final write, so a pass cut short runs again.
 - Pointer ahead of the bundle (another tab migrated forward, or a rollback deploy): the bundle marks itself stale, restores nothing, and never writes.
 
 ### CI guards
 
-1. **`lens:check`**, in `pnpm check` and the CI lint job, keeps shipped lens modules unchanged and pure, keeps lenses off the frozen envelope and other reserved fields, and requires an evolution contract for every configured entity type ([shared scripts](../shared/scripts/README.md)).
+1. **`lens:check`**, in `pnpm check` and the CI lint job, keeps shipped lens modules unchanged and pure, keeps lenses off the frozen envelope and other reserved fields, and requires an evolution contract for every configured entity type.
 2. **`schema-bust-gate`**: the [cache-bust](#cache-bust-interim) gate.

@@ -49,15 +49,15 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-The hierarchy is declared once, in [hierarchy-config.ts](../shared/config/hierarchy-config.ts); the template starts with `organization -> attachment`. From it the template derives the id columns, permission checks up the ancestor chain, row-level security, the CDC publication, counters, which streams hear a change, and navigation. Frontend and backend features live in matching modules. To add an entity: the [add-entity skill](./skills/add-entity/SKILL.md).
+The hierarchy is declared once, in [hierarchy-config.ts](../shared/config/hierarchy-config.ts); the template starts with `organization -> attachment`. From it the template derives the id columns, permission checks up the ancestor chain, row-level security, the CDC publication, counters, which streams hear a change, and navigation. Frontend and backend features live in matching modules.
 
 ## Selective sync engine
 
-Channel entities stay conventional CRUD. Product entities get live updates and offline use without a very different API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path. See [Sync engine](./SYNC_ENGINE.md), [Client (React)](./CLIENT.md) and [Schema evolution](./SCHEMA_EVOLUTION.md).
+Channel entities stay conventional CRUD. Product entities get live updates and offline use without a very different API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path.
 
 ## Trust boundaries
 
-Accounts are identified by verified proofs, not email addresses. The [security pages](./AUTHENTICATION.md) explain each layer below, and [Interoperability](./INTEROPERABILITY.md) covers machine access.
+Accounts are identified by verified proofs, not email addresses.
 
 | Layer | Responsibility |
 | --- | --- |
@@ -67,28 +67,24 @@ Accounts are identified by verified proofs, not email addresses. The [security p
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 | **Secret columns** | One registry ([secret-columns.ts](../backend/src/db/secret-columns.ts)) keeps secrets out of API responses, logs and CDC row images. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it; the backend decides ([Frontend map](./PERMISSIONS.md#frontend-map)).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it; the backend decides.
 
 ## Data lifecycle
 
 What a delete does depends on what is deleted:
 
 - **Product**: becomes a tombstone, hidden everywhere and dropped by every device through sync, and is removed after the deleted-items period. Until then a system admin can restore it; the app has no restore.
-- **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, and after the archived period it goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
+- **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, and after the archived period it goes with everything in it.
 - **Channel below the organization**: removed at once, with the channels and products in it.
 - **Resource** (session, token, device, invitation): swept nightly after its own period.
 
-Whichever way a row leaves, the files and collaborative document it stored go after it. A device away longer than the activity window refetches what it holds; a tombstone outlives that window, so a device that keeps up never misses a deletion.
+Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. A nightly pg_cron job in the database removes the rows past their period, archived tenants aside, and runs only where the admin role may use pg_cron ([Deployment](./DEPLOYMENT.md#overview)). Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. A nightly pg_cron job in the database removes the rows past their period, archived tenants aside. Backups and bucket object versions expire on their own schedule.
 
-## Contracts and operations
+## Contracts
 
 Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. It feeds the [sdk](../sdk/README.md) and the API docs. Shared mocks serve docs, seeds, tests, and load tests.
-
-Every service shares one telemetry setup ([Observability](./OTEL.md)). A published release deploys itself to Scaleway ([Deployment](./DEPLOYMENT.md#deploys)).
-
-The test suite's main job is to prove that attacks fail ([Testing](./TESTING.md)).
 
 ## Scaling
 

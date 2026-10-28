@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: tests
 grep: PG_CRON_DATABASE, cron.database_name

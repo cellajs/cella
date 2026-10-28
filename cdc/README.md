@@ -10,8 +10,6 @@ when the same clients should receive them. Each change gets an order number and 
 
 ## Vocabulary
 
-Make sure you already read the [Sync engine](../cella/SYNC_ENGINE.md#selective-sync) part.
-
 | Term | Meaning |
 | --- | --- |
 | **Change** | One insert, update or delete of a row, read from the WAL. In memory the worker holds it as a `PendingEvent`. |
@@ -55,7 +53,7 @@ The worker is `cdc/src/`, with the steps above in `pipeline/` and its limits in 
 
 ### Read
 
-The worker reads one publication through one replication slot. It tracks the tables in the backend's entity and resource table maps and ignores every other table. Drafts never reach it ([Sync engine, Drafts](../cella/SYNC_ENGINE.md#drafts)).
+The worker reads one publication through one replication slot. It tracks the tables in the backend's entity and resource table maps and ignores every other table. Drafts never reach it.
 
 ### Collect
 
@@ -65,19 +63,19 @@ A worker that falls behind stops reading until its pending changes are flushed, 
 
 ### Record
 
-A flush is recorded in one transaction: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete counts as a delete and a restore as a create. Removing a tombstone after the deleted-items period records nothing ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
+A flush is recorded in one transaction: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete counts as a delete and a restore as a create. Removing a tombstone after the deleted-items period records nothing.
 
 Recording happens once per change, however often the change arrives: an activity's id comes from its commit position, so a second delivery inserts nothing and counts nothing.
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows; the API turns those into change frames ([Sync engine](../cella/SYNC_ENGINE.md#changes-and-signals)). Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows; the API turns those into change frames. Then the worker acknowledges the flush.
 
-For an app with product embeddings, the worker also takes a deleted row's id out of the hosts that referenced it ([Embeddings](../cella/SYNC_ENGINE.md#embeddings)). That write is its own and records no activity.
+For an app with product embeddings, the worker also takes a deleted row's id out of the hosts that referenced it. That write is its own and records no activity.
 
 ## Internal API socket
 
-One WebSocket from the worker to the API carries every change, with entity row data. It must never be reachable from a browser or an external network: the API serves it only on its internal listener ([Deployment](../cella/DEPLOYMENT.md#overview)), checks a shared secret and accepts one worker at a time.
+One WebSocket from the worker to the API carries every change, with entity row data. It must never be reachable from a browser or an external network: the API serves it only on its internal listener, checks a shared secret and accepts one worker at a time.
 
 The API sends nothing back. A message the socket took counts as handed over, even when the API dies before it dispatched it. A client learns of that change at its next catchup.
 

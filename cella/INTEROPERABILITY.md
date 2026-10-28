@@ -15,23 +15,23 @@ Your app has three machine-facing faces: the REST API, an OAuth authorization se
 | An AI client (Claude Desktop, VS Code) | An access token issued to that person, obtained through consent | MCP |
 | A service acting on its own behalf | An access token from its API key (`client_credentials`) | REST API, MCP |
 
-The OpenAPI contract and the generated SDK are the same for every caller ([Client](./CLIENT.md)); what differs is how the caller proves who it is.
+The OpenAPI contract and the generated SDK are the same for every caller; what differs is how the caller proves who it is.
 
 ## Face: REST API
 
-A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard` ([Guards](./PERMISSIONS.md#guards)). Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them ([Step-up](./AUTHENTICATION.md#step-up)).
+A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
 
 An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own, checked before the tenant row loads, so a key learns nothing about other tenants.
 
-A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing.
 
 ## Face: OAuth
 
-The app is its own authorization server, on the same origin under `/oauth`. A person consents on a screen that names the client and the scopes it asks for, and the resulting token acts as that person, masked by those scopes, in one tenant. MCP clients, registered apps and service accounts each reach it in their own way, and people revoke their consents in their account settings ([Clients and consent](../oauth/README.md#clients-and-consent)).
+The app is its own authorization server, on the same origin under `/oauth`. A person consents on a screen that names the client and the scopes it asks for, and the resulting token acts as that person, masked by those scopes, in one tenant. MCP clients, registered apps and service accounts each reach it in their own way, and people revoke their consents in their account settings.
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents. Mechanics: [MCP worker](../mcp/README.md).
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
 
 ## The substrate
 
@@ -49,8 +49,8 @@ The scope vocabulary is derived from the policy matrix, never listed by hand: ev
 
 ### Tokens
 
-Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request. Lifetimes and refresh: [OAuth worker](../oauth/README.md#tokens).
+Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request.
 
 ### Quotas and limits
 
-Tenant restrictions cap the active service accounts and live API keys a tenant holds (`appConfig.defaultRestrictions`, `0` lifts a cap). Machine calls pass a per-second burst limit and, on routes that carry it, the tenant's hourly points budget, both per actor: an app acting on a person's consent spends that person's budget. Shared limiter behavior: [Authentication, Rate limits](./AUTHENTICATION.md#rate-limits).
+Tenant restrictions cap the active service accounts and live API keys a tenant holds (`appConfig.defaultRestrictions`, `0` lifts a cap). Machine calls pass a per-second burst limit and, on routes that carry it, the tenant's hourly points budget, both per actor: an app acting on a person's consent spends that person's budget.
