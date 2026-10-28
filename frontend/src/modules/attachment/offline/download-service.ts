@@ -20,7 +20,7 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
-import { onChangeEvent, onSyncedRows } from '~/query/realtime/sync-signals';
+import { onChangeEvent, onSyncedRows } from '~/query/realtime/sync-events';
 
 /** The variants a tier fetches, previews first: the file once, as the viewer shows it (converted, else original). */
 const wantedVariants = (attachment: Attachment, { previews, files }: OfflineFilesRules): CloudFileVariant[] => [

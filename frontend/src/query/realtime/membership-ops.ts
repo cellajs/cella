@@ -21,19 +21,18 @@ export function invalidateChannelList(channelType: ChannelEntityType | null): vo
   }
 }
 
+/** Member lists and pending invitation lists, of one organization or, without one, of all. */
 export function invalidateMemberQueries(organizationId: string | null): void {
-  if (organizationId) {
+  for (const queryKey of [memberQueryKeys.list.base, ['invites', ...memberQueryKeys.list.base]]) {
     queryClient.invalidateQueries({
-      queryKey: memberQueryKeys.list.base,
+      queryKey,
       predicate: (query) =>
+        !organizationId ||
         query.queryKey.some(
           (segment) => typeof segment === 'object' && segment !== null && 'organizationId' in segment && segment.organizationId === organizationId,
         ),
       refetchType: 'active',
     });
-  } else {
-    // Catchup fallback: every member query.
-    queryClient.invalidateQueries({ queryKey: memberQueryKeys.list.base, refetchType: 'active' });
   }
 }
 

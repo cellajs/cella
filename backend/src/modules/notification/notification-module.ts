@@ -14,4 +14,8 @@ defineBackendModule({
     automatic, and excluded from CDC because they are per-user state, not synced content.`,
   jobs: [{ name: 'notification-digest', cron: '0 * * * *', run: () => runDigest() }],
   routes: [{ path: '/notifications', app: notificationHandlers }],
+  signals: [
+    { type: 'notification.created', audiences: ['user'] },
+    { type: 'notification.read', audiences: ['user'] },
+  ],
 });

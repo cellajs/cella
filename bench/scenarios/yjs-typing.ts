@@ -14,7 +14,7 @@ export default defineScenario({
     'yjs.keystrokes',
     'yjs.notifications',
     'yjs.materializations',
-    'yjs.sse_notifications',
+    'yjs.sse_changes',
     'yjs.unsaved_frames',
     'yjs.docs_not_persisted',
     'yjs.docs_diverged',
@@ -37,7 +37,7 @@ export default defineScenario({
     });
     ctx.counter('yjs.notifications', report.notify.total);
     ctx.counter('yjs.materializations', report.materialize.total);
-    ctx.counter('yjs.sse_notifications', report.sse.total);
+    ctx.counter('yjs.sse_changes', report.sse.total);
     ctx.counter('yjs.unsaved_frames', report.end.unsavedFrames ?? 0);
     ctx.counter('yjs.docs_not_persisted', report.end.docsNotPersisted);
     ctx.counter('yjs.docs_diverged', report.end.docsDiverged);

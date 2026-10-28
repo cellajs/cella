@@ -1,5 +1,4 @@
-import type { StreamNotification } from 'sdk';
-import type { ProductEntityType } from 'shared';
+import type { StreamChange } from 'sdk';
 
 export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
 
@@ -11,11 +10,5 @@ export interface StreamTraceContext {
   lsn?: string;
 }
 
-/** Seq sync path notification: `productType` is non-null when `kind === 'product'`. */
-export type ProductNotification = StreamNotification & { kind: 'product'; productType: ProductEntityType };
-
-/** Membership notification for the query-invalidation path. */
-export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };
-
-/** Discriminated on `kind`, so the product and membership branches are exhaustive and the compiler proves which fields each carries. */
-export type AppStreamNotification = (ProductNotification | MembershipNotification) & { _trace?: StreamTraceContext };
+/** A change frame as the client handles it: product rows only, with the worker's trace in debug mode. */
+export type AppStreamChange = StreamChange & { _trace?: StreamTraceContext };

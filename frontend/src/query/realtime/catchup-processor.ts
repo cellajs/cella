@@ -9,6 +9,7 @@ import * as cacheOps from '~/query/realtime/cache-ops';
 import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
 import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
 
@@ -29,7 +30,7 @@ function refetchSyncedQueries(): void {
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
-  const { changes, views } = response;
+  const { organizations, views } = response;
   const syncState = syncStore.getState();
 
   const newGeneration = syncState.adoptGeneration(response.generation);
@@ -118,20 +119,19 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (!baselineOnly) verifyViewCounts(views);
   }
 
-  // Organization-level membership screening and propagation.
-  const organizationIds = Object.keys(changes);
+  // Organization-level signal versions and propagation.
+  const organizationIds = Object.keys(organizations);
   for (const organizationId of organizationIds) {
-    const { signals, propagation } = changes[organizationId];
+    const { signals, propagation } = organizations[organizationId];
 
     // Seed the org entry so the next catchup request declares views for it: an organization the membership cache did not hold yet is learned here.
     syncState.trackOrg(organizationId);
 
-    // Membership change via the bump-only membership signal; stored after comparison.
-    const serverMembershipSignal = signals?.membership;
-    if (serverMembershipSignal !== undefined) {
-      const membershipChanged = serverMembershipSignal !== syncState.getOrgSeq(organizationId, 'membership');
-      syncState.setOrgSeq(organizationId, 'membership', serverMembershipSignal);
-      if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
+    // A version this client has not stored means it missed a live signal: its handler runs once, without a frame.
+    for (const [type, version] of Object.entries(signals ?? {})) {
+      if (version === syncState.getSignalVersion(organizationId, type)) continue;
+      syncState.setSignalVersion(organizationId, type, version);
+      if (!baselineOnly) handleStreamSignal({ type, organizationId, subjectId: null, version }, true);
     }
 
     // Propagation runs after the range fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.

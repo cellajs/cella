@@ -1,15 +1,15 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ActivityEvent, ActivityRow } from '#/lib/activity-bus';
+import type { ActivityRow } from '#/lib/activity-bus';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
+import { dispatchChange } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import type { StreamNotification } from '#/schemas';
+import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
-import type { AppStreamEvent } from './types';
+import type { AppStreamProductEvent } from './types';
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
 const orgA = 'org-dispatch-a';
@@ -18,9 +18,9 @@ const orgB = 'org-dispatch-b';
 const membership = (organizationId: string, role: EntityRole, userId: string): MembershipBaseModel =>
   mockMembershipBase(`mem-organization-${organizationId}-${role}-${userId}`, { channelId: organizationId, userId, role });
 
-/** Fake SSE subscriber capturing every notification written to its stream. */
+/** Fake SSE subscriber capturing every change written to its stream. */
 const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, organizationIds: string[], topicOrg: string) => {
-  const received: StreamNotification[] = [];
+  const received: StreamChange[] = [];
   const stream = {
     writeSSE: async ({ data }: { data: string }) => {
       received.push(JSON.parse(data));
@@ -60,7 +60,7 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
 });
 
 /** A product event as the bus delivers it: the activity of its first row, and its rows with their permission fields. */
-const attachmentEvent = (organizationId: string, rows: ActivityRow[], overrides: Record<string, unknown> = {}): ActivityEvent =>
+const attachmentEvent = (organizationId: string, rows: ActivityRow[], overrides: Record<string, unknown> = {}): AppStreamProductEvent =>
   ({
     id: 'activity-1',
     type: 'attachment.created',
@@ -77,7 +77,7 @@ const attachmentEvent = (organizationId: string, rows: ActivityRow[], overrides:
     trace: null,
     stx: null,
     ...overrides,
-  }) as unknown as ActivityEvent;
+  }) as unknown as AppStreamProductEvent;
 
 afterEach(() => {
   // Fake subscribers are registered per test; drop them so tests stay isolated.
@@ -101,9 +101,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     }
 
     // Authored by the org member, so read stays granted under a row-conditional read:'own' grant.
-    await dispatchToAppStream(
-      attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-1', orgA, { createdBy: 'member-user' }) }]) as AppStreamEvent,
-    );
+    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-1', orgA, { createdBy: 'member-user' }) }]));
 
     expect(member.received).toHaveLength(1); // org member: read granted
     expect(admin.received).toHaveLength(1); // org admin: read granted
@@ -118,12 +116,12 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
 
     // The first row is in unreadable org B, the second in org A: a dispatch that judged the first row alone would
     // have skipped this subscriber.
-    await dispatchToAppStream(
+    await dispatchChange(
       attachmentEvent(orgB, [
         { seq: 20, rowData: attachmentRow('attachment-a', orgB) },
         // Authored by the subscriber, so readable under both read:1 and read:'own'.
         { seq: 21, rowData: attachmentRow('attachment-b', orgA, { createdBy: 'moved-user' }) },
-      ]) as AppStreamEvent,
+      ]),
     );
 
     expect(received).toHaveLength(1);
@@ -134,7 +132,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     streamSubscriberManager.register(member.subscriber);
     const stx = { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} };
 
-    await dispatchToAppStream(attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-1', orgA) }], { stx }) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-1', orgA) }], { stx }));
 
     // The tab that wrote the row recognises its own write by the stx and fetches nothing.
     expect(member.received).toEqual([
@@ -148,7 +146,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
 
     // Sequence values of one audience need not be contiguous or in order: 21 belongs to another audience.
     const rows = [22, 20, 23].map((seq) => ({ seq, rowData: attachmentRow(`attachment-${seq}`, orgA) }));
-    await dispatchToAppStream(attachmentEvent(orgA, rows) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, rows));
 
     expect(member.received).toEqual([expect.objectContaining({ subjectId: 'attachment-22', path: orgA, seq: 20, batchUntilSeq: 23, count: 3 })]);
   });
@@ -158,9 +156,9 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     streamSubscriberManager.register(member.subscriber);
     const deleted = { type: 'attachment.deleted', action: 'delete' };
 
-    await dispatchToAppStream(attachmentEvent(orgA, [{ rowData: attachmentRow('attachment-1', orgA) }], deleted) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, [{ rowData: attachmentRow('attachment-1', orgA) }], deleted));
     const rows = ['attachment-2', 'attachment-3'].map((id) => ({ rowData: attachmentRow(id, orgA) }));
-    await dispatchToAppStream(attachmentEvent(orgA, rows, deleted) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, rows, deleted));
 
     expect(member.received).toEqual([
       expect.objectContaining({ action: 'delete', subjectId: 'attachment-1', seq: null, batchUntilSeq: null, count: null }),
@@ -177,10 +175,8 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
       streamSubscriberManager.register(subscriber);
     }
 
-    await dispatchToAppStream(
-      attachmentEvent(orgA, [
-        { seq: 7, rowData: attachmentRow('attachment-draft', orgA, { createdBy: 'author-user', publishedAt: null }) },
-      ]) as AppStreamEvent,
+    await dispatchChange(
+      attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-draft', orgA, { createdBy: 'author-user', publishedAt: null }) }]),
     );
 
     expect(author.received).toHaveLength(0);
@@ -197,7 +193,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     }
 
     const unpublished = attachmentRow('attachment-unpublished', orgA, { createdBy: 'member-user', publishedAt: '2026-07-04T09:00:00.000Z' });
-    await dispatchToAppStream(attachmentEvent(orgA, [{ rowData: unpublished }], { type: 'attachment.deleted', action: 'delete' }) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, [{ rowData: unpublished }], { type: 'attachment.deleted', action: 'delete' }));
 
     expect(member.received).toHaveLength(1);
     expect(member.received[0]).toMatchObject({ action: 'delete', productType: 'attachment' });
@@ -209,51 +205,20 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     streamSubscriberManager.register(member.subscriber);
 
     const published = attachmentRow('attachment-published', orgA, { createdBy: 'member-user', publishedAt: '2026-07-04T09:00:00.000Z' });
-    await dispatchToAppStream(attachmentEvent(orgA, [{ seq: 7, rowData: published }]) as AppStreamEvent);
+    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, rowData: published }]));
 
     expect(member.received).toHaveLength(1);
-  });
-
-  it('delivers a self-membership in an unregistered org through the user topic', async () => {
-    // Connected as a member of orgA only, so the new-org invite can arrive only via the user
-    // topic. The bystander shares the org topic but must not receive that event.
-    const joiner = fakeSubscriber([membership(orgA, memberRole, 'joiner-user')], 'joiner-user', [orgA], orgA);
-    const bystander = fakeSubscriber([membership(orgA, memberRole, 'bystander-user')], 'bystander-user', [orgA], orgA);
-    streamSubscriberManager.register(joiner.subscriber, ['user:joiner-user']);
-    streamSubscriberManager.register(bystander.subscriber, ['user:bystander-user']);
-
-    const membershipEvent = {
-      id: 'activity-membership-1',
-      type: 'membership.created',
-      action: 'create',
-      entityType: null,
-      resourceType: 'membership',
-      tableName: 'memberships',
-      subjectId: 'mem-new-org',
-      tenantId: 'tenant-1',
-      organizationId: orgB,
-      rowData: { id: 'mem-new-org', userId: 'joiner-user', channelType: 'organization', channelId: orgB, organizationId: orgB, role: memberRole },
-      rows: null,
-      trace: null,
-      stx: null,
-    } as unknown as ActivityEvent;
-
-    await dispatchToAppStream(membershipEvent as AppStreamEvent);
-
-    expect(joiner.received).toHaveLength(1);
-    expect(joiner.received[0]).toMatchObject({ kind: 'membership', action: 'create', seq: null, batchUntilSeq: null, count: null });
-    expect(bystander.received).toHaveLength(0);
   });
 
   it('does not ping anyone for an event with no readable rows', async () => {
     const { subscriber, received } = fakeSubscriber([membership(orgA, memberRole, 'moved-user')], 'moved-user', [orgA, orgB], orgB);
     streamSubscriberManager.register(subscriber);
 
-    await dispatchToAppStream(
+    await dispatchChange(
       attachmentEvent(orgB, [
         { seq: 30, rowData: attachmentRow('attachment-a', orgB) },
         { seq: 31, rowData: attachmentRow('attachment-b', orgB) },
-      ]) as AppStreamEvent,
+      ]),
     );
 
     expect(received).toHaveLength(0);

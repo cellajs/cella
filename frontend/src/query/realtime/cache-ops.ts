@@ -235,7 +235,7 @@ export async function fetchEntityAndUpdateList(
     // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
     const listCopy = findInCache<ItemData>(entityType, (item) => item.id === entityId);
     applyServerEntity(entityType, entity, keys, organizationId, listCopy ?? cached);
-    // The notification says create: active filtered lists refetch to place the new row.
+    // The change says create: active filtered lists refetch to place the new row.
     if (action === 'create') invalidateFilteredLists(entityType, keys.list.org(organizationId), [entity]);
   } catch {
     // Any failure (no query defaults for the type, a network error, a 403 or 404): every list of the type refetches.

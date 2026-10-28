@@ -17,7 +17,7 @@ describe('catchup: the generation of the sync books', () => {
   it('answers 1 on a database whose books the worker never had to rebuild', async () => {
     await seedDb.execute(sql`DELETE FROM sync_state`);
 
-    expect(await appCatchupOp(ctx, {})).toMatchObject({ changes: {}, cursor: null, generation: 1 });
+    expect(await appCatchupOp(ctx, {})).toMatchObject({ organizations: {}, cursor: null, generation: 1 });
   });
 
   it('answers the generation the worker wrote, read with the API role', async () => {

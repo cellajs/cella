@@ -48,10 +48,10 @@ describe('evaluateChecks', () => {
   });
 
   it('asks for expected counters in full runs only, for forbidden ones always', () => {
-    const checks = { expect: ['sse.notifications', 'sync.range_fetches'], forbid: ['sse.errors'] };
+    const checks = { expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] };
     const counters = { 'sync.range_fetches': 16, 'sse.errors': 3 };
     expect(failed(evaluateChecks(checks, { counters, distributions: {}, short: false }))).toEqual([
-      'sse.notifications stayed at 0',
+      'sse.changes stayed at 0',
       'sse.errors counted 3',
     ]);
     expect(failed(evaluateChecks(checks, { counters, distributions: {}, short: true }))).toEqual(['sse.errors counted 3']);

@@ -1,6 +1,7 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { hierarchy } from 'shared';
-import { entityCountHomePrefix, entityCountPrefix } from '#/modules/entities/counter-keys';
+import { entityCountHomePrefix, entityCountPrefix, signalVersionPrefix } from '#/modules/entities/counter-keys';
+import { versionedSignals } from '#/modules/entities/stream/versioned-signals';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
@@ -16,7 +17,8 @@ export interface CountDelta {
 
 /**
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
- * apply only at the home channel. Only live, published rows participate.
+ * apply only at the home channel. Only live, published rows participate. Every change of a table
+ * with versioned signals also moves their versions on its organization's row.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -25,16 +27,27 @@ export function getCountDeltas(
   oldRow: CdcRowData | null,
   h: EntityHierarchy = hierarchy,
 ): CountDelta[] {
+  const deltas = getTableDeltas(tableMeta, activity, newRow, oldRow, h);
+  const signalTypes = versionedSignals[tableMeta.type] ?? [];
+  if (!activity.organizationId || signalTypes.length === 0) return deltas;
+  const versions = Object.fromEntries(signalTypes.map((type) => [`${signalVersionPrefix}${type}`, 1]));
+  return [...deltas, { channelKey: activity.organizationId, deltas: versions }];
+}
+
+/** The counts and stamps one change of a table moves. */
+function getTableDeltas(
+  tableMeta: TableMeta,
+  activity: ActivityWithoutId,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
+  h: EntityHierarchy,
+): CountDelta[] {
   const { action, organizationId } = activity;
 
-  // Memberships (active + inactive): counter deltas plus an org-level membership change signal.
+  // Memberships (active + inactive): the counts of their roles.
   if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
     const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInactiveMembershipDelta(action, newRow, oldRow);
-    const deltas = delta ? [delta] : [];
-    // Org-level signal on every membership activity (invitations included) so catchup screens
-    // membership changes in O(1) without scanning activities.
-    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { membership: 1 } });
-    return deltas;
+    return delta ? [delta] : [];
   }
 
   // Reparents inside the countable set re-credit channels; changes outside it do nothing, matching SQL repair.

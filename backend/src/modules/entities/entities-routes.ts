@@ -25,8 +25,9 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     path: '/app/stream',
     xGuard: [userGuard],
     xRateLimiter: [streamConnectLimiter],
-    summary: 'App event SSE stream',
-    description: 'SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.',
+    summary: 'App SSE stream',
+    description:
+      'SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.',
     responses: { 200: { description: 'SSE stream started', content: { 'text/event-stream': { schema: z.any() } } } },
   }),
 
@@ -36,9 +37,9 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     path: '/app/stream',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: 'App event catchup',
+    summary: 'App stream catchup',
     description:
-      'Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.',
+      'Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.',
     request: { body: jsonBody(streamCatchupBodySchema) },
     responses: { 200: json('Catchup summary', appCatchupResponseSchema, mockCatchupResponse()) },
   }),

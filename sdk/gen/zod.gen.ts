@@ -95,19 +95,14 @@ export const zStxBase = z.object({
 });
 
 /**
- * A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
-export const zStreamNotification = z.object({
-  kind: z.enum(['product', 'membership']),
+export const zStreamChange = z.object({
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
-  productType: z.enum(['attachment']).nullable(),
-  resourceType: z
-    .enum(['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'])
-    .nullable(),
-  subjectId: z.string().nullable(),
-  organizationId: z.string().nullable(),
+  productType: z.enum(['attachment']),
+  subjectId: z.string(),
+  organizationId: z.string(),
   tenantId: z.string().nullable(),
-  channelType: z.enum(['organization']).nullable(),
   path: z.string().nullable(),
   seq: z.int().nullable(),
   channelId: z.string().nullable(),
@@ -124,6 +119,16 @@ export const zStreamNotification = z.object({
       remove: z.array(z.string()),
     })
     .nullable(),
+});
+
+/**
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
+ */
+export const zStreamSignal = z.object({
+  type: z.string(),
+  organizationId: z.string().nullable(),
+  subjectId: z.string().nullable(),
+  version: z.int().nullable(),
 });
 
 /**
@@ -1028,14 +1033,10 @@ export const zPostAppCatchupBody = z.object({
  * Catchup summary
  */
 export const zPostAppCatchupResponse = z.object({
-  changes: z.record(
+  organizations: z.record(
     z.string(),
     z.object({
-      signals: z
-        .object({
-          membership: z.int().optional(),
-        })
-        .optional(),
+      signals: z.record(z.string(), z.int()).optional(),
       propagation: z
         .array(
           z.object({

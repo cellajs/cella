@@ -1,4 +1,4 @@
-import { type PostAppCatchupResponse, postAppCatchup } from 'sdk';
+import { type PostAppCatchupResponse, postAppCatchup, type StreamSignal } from 'sdk';
 import { appConfig, isProduct } from 'shared';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -6,22 +6,25 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
-import { handleAppStreamNotification } from '~/query/realtime/app-stream-handler';
+import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
+import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import {
   broadcastCatchup,
-  broadcastNotification,
+  broadcastStreamChange,
+  broadcastStreamSignal,
   broadcastSyncHealth,
   initTabCoordinator,
   isLeader,
   onCatchup,
-  onNotification,
+  onStreamChange,
+  onStreamSignal,
   onSyncHealth,
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
-import type { AppStreamNotification, StreamState } from '~/query/realtime/types';
+import type { AppStreamChange, StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const maxFailures = 3;
@@ -34,8 +37,8 @@ const reconnectJitterMs = 2_000;
 /** A connection that stayed up this long starts the backoff from the beginning when it fails: a flapping one keeps backing off. */
 const minUptimeMs = 10_000;
 const healthUrl = `${appConfig.backendUrl}/auth/health`;
-/** Live notifications buffered while catchup runs. */
-const notificationBufferCap = 500;
+/** Live changes buffered while catchup runs. */
+const changeBufferCap = 500;
 /** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
 const streamSilenceMs = 75_000;
 /** What a ping of the app stream carries while the server's CDC worker has not been reading for a minute. */
@@ -48,7 +51,8 @@ interface StreamConfig {
   fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** A follower's side of catchup: process the answer the leader passed on. */
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
-  processNotification: (notification: AppStreamNotification) => void;
+  processChange: (change: AppStreamChange) => void;
+  processSignal: (signal: StreamSignal) => void;
   /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
   onPing?: (data: string) => void;
 }
@@ -116,8 +120,8 @@ export class StreamManager {
   /** Time of the last event of any kind on the open EventSource. */
   private lastEventAt = 0;
 
-  /** Notifications arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
-  private pendingNotifications: Array<{ notification: AppStreamNotification; eventId: string | undefined }> = [];
+  /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
+  private pendingChanges: Array<{ change: AppStreamChange; eventId: string | undefined }> = [];
   private buffering = false;
   private bufferOverflowed = false;
 
@@ -160,14 +164,18 @@ export class StreamManager {
         if (signal.aborted) return;
 
         this.broadcastCleanup?.();
-        const stopNotifications = onNotification((notification) => {
-          if (!isLeader()) this.config.processNotification(notification);
+        const stopChanges = onStreamChange((change) => {
+          if (!isLeader()) this.config.processChange(change);
+        });
+        const stopSignals = onStreamSignal((signal) => {
+          if (!isLeader()) this.config.processSignal(signal);
         });
         const stopCatchup = onCatchup(({ response, baselineOnly }) => {
           if (!isLeader()) void this.followLeaderCatchup(response, baselineOnly, signal);
         });
         this.broadcastCleanup = () => {
-          stopNotifications();
+          stopChanges();
+          stopSignals();
           stopCatchup();
         };
 
@@ -210,21 +218,21 @@ export class StreamManager {
         console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
 
         if (!this.bufferOverflowed) break;
-        if (round >= 1) throw new Error('Notification buffer overflowed twice during catchup');
-        // Dropped buffered events are covered by re-reading catchup at the newer cursor.
+        if (round >= 1) throw new Error('Change buffer overflowed twice during catchup');
+        // Dropped buffered changes are covered by re-reading catchup at the newer cursor.
         this.bufferOverflowed = false;
-        this.pendingNotifications = [];
-        console.debug(`[${this.name}] Notification buffer overflowed, re-running catchup`);
+        this.pendingChanges = [];
+        console.debug(`[${this.name}] Change buffer overflowed, re-running catchup`);
       }
 
       // Release paused mutations before draining; drain is idempotent ingestion.
       resolveInitialCatchupGate();
 
-      // Drain is synchronous, so no notification interleaves; arrivals after this point process directly.
+      // Drain is synchronous, so no change interleaves; arrivals after this point process directly.
       this.buffering = false;
-      const buffered = this.pendingNotifications;
-      this.pendingNotifications = [];
-      for (const { notification, eventId } of buffered) this.applyNotification(notification, eventId);
+      const buffered = this.pendingChanges;
+      this.pendingChanges = [];
+      for (const { change, eventId } of buffered) this.applyChange(change, eventId);
 
       // Backoff itself resets only after minUptimeMs of uptime, checked in handleStreamFailure.
       this.consecutiveFailures = 0;
@@ -269,14 +277,14 @@ export class StreamManager {
     this.scheduleReconnect();
   }
 
-  private applyNotification(notification: AppStreamNotification, eventId: string | undefined) {
+  private applyChange(change: AppStreamChange, eventId: string | undefined) {
     if (eventId) {
       this.store.getState().setCursor(eventId);
       if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);
     }
-    // Followers get a notification when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
-    if (this.config.useTabCoordination && isLeader()) broadcastNotification(notification);
-    this.config.processNotification(notification);
+    // Followers get a change when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
+    if (this.config.useTabCoordination && isLeader()) broadcastStreamChange(change);
+    this.config.processChange(change);
   }
 
   private isPermanentError(error: unknown): boolean {
@@ -293,7 +301,7 @@ export class StreamManager {
     this.store.getState().setState('connecting');
     this.buffering = true;
     this.bufferOverflowed = false;
-    this.pendingNotifications = [];
+    this.pendingChanges = [];
     let catchupStarted = false;
     const eventSource = new EventSource(endpoint, { withCredentials });
     const noteActivity = () => {
@@ -307,24 +315,36 @@ export class StreamManager {
     eventSource.addEventListener('change', (event) => {
       noteActivity();
       try {
-        const notification = JSON.parse(event.data);
+        const change = JSON.parse(event.data);
         const eventId = event.lastEventId || undefined;
 
         if (this.buffering) {
           // Cursor advances at drain time so a crash before drain re-fetches from the old cursor.
           if (this.bufferOverflowed) return;
-          if (this.pendingNotifications.length >= notificationBufferCap) {
+          if (this.pendingChanges.length >= changeBufferCap) {
             this.bufferOverflowed = true;
-            this.pendingNotifications = [];
+            this.pendingChanges = [];
             return;
           }
-          this.pendingNotifications.push({ notification, eventId });
+          this.pendingChanges.push({ change, eventId });
           return;
         }
 
-        this.applyNotification(notification, eventId);
+        this.applyChange(change, eventId);
       } catch (error) {
-        console.debug(`[${this.name}] Failed to parse message:`, error);
+        console.debug(`[${this.name}] Failed to parse change:`, error);
+      }
+    });
+
+    // A signal is handled at once, also during catchup, and never moves the cursor: `lastEventId` still names the last change.
+    eventSource.addEventListener('signal', (event) => {
+      noteActivity();
+      try {
+        const signal: StreamSignal = JSON.parse(event.data);
+        if (this.config.useTabCoordination && isLeader()) broadcastStreamSignal(signal);
+        this.config.processSignal(signal);
+      } catch (error) {
+        console.debug(`[${this.name}] Failed to parse signal:`, error);
       }
     });
 
@@ -521,7 +541,7 @@ export class StreamManager {
 
     this.buffering = false;
     this.bufferOverflowed = false;
-    this.pendingNotifications = [];
+    this.pendingChanges = [];
 
     this.abortController?.abort();
     this.abortController = null;
@@ -585,7 +605,8 @@ export const appStreamManager = new StreamManager('AppStream', {
     return response.cursor ?? null;
   },
   processLeaderCatchup: processAppCatchup,
-  processNotification: handleAppStreamNotification,
+  processChange: handleStreamChange,
+  processSignal: (signal) => handleStreamSignal(signal),
   onPing: (data) => {
     workerAway = data === workerAwayPing;
     publishSyncHealth();
