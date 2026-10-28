@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMoreContrast } from '~/hooks/use-more-contrast';
-import { announce, prepareAnnouncement } from '~/modules/common/reorder-handle/announce';
+import { announce, prepareAnnouncement } from '~/modules/common/announce';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 type Step = -1 | 1;

@@ -4,17 +4,21 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
+import { useEventListener } from '~/hooks/use-event-listener';
+import { shouldFireEvent } from '~/hooks/use-hotkeys-helpers';
+import { announce } from '~/modules/common/announce';
 import { CountBadge } from '~/modules/common/count-badge';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { sheetLayerOf } from '~/modules/common/sheeter/sheet-layer';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 interface SelectionActionBarProps {
   /** Number of selected items; shown as a badge on the bar's edge, the bar is hidden while zero. */
   count: number;
-  /** Clears the selection; the bar's own clear button calls it. */
+  /** Clears the selection; the bar's own clear button and Escape call it. */
   onClear: () => void;
   /** Bulk action buttons acting on the selection. */
   children: ReactNode;
@@ -35,6 +39,21 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
   useLayoutEffect(() => setSheetLayer(sheetLayerOf(anchorRef.current)), []);
 
   useBodyClass({ 'selection-active': count > 0 && !sheetLayer });
+
+  const clearSelection = () => {
+    onClear();
+    if (anchorRef.current) announce(anchorRef.current, t('c:success.clear_selection'));
+  };
+
+  // Escape clears too, unless something layered above, the confirmation or a field being edited takes it
+  useEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || confirming || isHoverContentOpen()) return;
+      if (shouldFireEvent(event, ['INPUT', 'TEXTAREA', 'SELECT'])) clearSelection();
+    },
+    { enabled: count > 0 },
+  );
 
   return (
     <>
@@ -59,7 +78,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
               <div className="flex items-center gap-2">{children}</div>
 
               <TooltipButton toolTipContent={t('c:clear_selection')} side="top">
-                <Button variant="ghost" onClick={onClear}>
+                <Button variant="ghost" onClick={clearSelection}>
                   <SquareXIcon />
                   <span className="max-lg:hidden">{t('c:clear')}</span>
                 </Button>

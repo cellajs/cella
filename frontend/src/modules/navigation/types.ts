@@ -1,5 +1,6 @@
 import type { LinkComponentProps } from '@tanstack/react-router';
 import type { ComponentType, ReactNode, RefObject } from 'react';
+import type { ChannelEntityType } from 'shared';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { navItems } from '~/modules/navigation/nav-items';
@@ -8,6 +9,9 @@ import type { DraggableItemData } from '~/utils/get-draggable-item-data';
 export type MenuItemDragData = DraggableItemData<UserMenuItem, 'menuItem'>;
 
 export type NavItemId = (typeof navItems)[number]['id'];
+
+/** A result opened from AppSearch, by reference: the query cache holds the entity. */
+export type RecentSelection = { entityType: ChannelEntityType | 'user'; id: string };
 
 export type TriggerNavItemFn = (id: NavItemId, ref?: RefObject<HTMLButtonElement | null>) => void | Promise<void>;
 

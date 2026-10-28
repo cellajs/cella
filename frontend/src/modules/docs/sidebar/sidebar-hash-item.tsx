@@ -14,9 +14,9 @@ interface SidebarHashItemProps {
   children: ReactNode;
 }
 
-/** Class of a leaf row in the sidebar, under a tag or a parent page. */
+/** Class of a leaf row in the sidebar, under a tag or a parent page: it starts right of the parent's rail, so its fill never covers it. */
 export const sidebarLeafClass = tw(
-  'focus-inset h-8 w-full justify-start gap-2 pl-5 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-foreground',
+  'focus-inset ml-4 flex h-8 w-auto justify-start gap-2 pl-2 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-foreground',
 );
 
 /** Sidebar row for a section of an API reference page: scrolls to it and closes the mobile sidebar sheet. */

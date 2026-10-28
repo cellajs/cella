@@ -15,6 +15,7 @@ ignoredOptionalDependencies:
   - canvg
   - core-js
   - html2canvas
+# A version installs a day after its publish (supply-chain guard), so a release that needs a new create-cella waits for it
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@cellajs/cli'

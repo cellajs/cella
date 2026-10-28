@@ -4,6 +4,7 @@ import { memo, type ReactNode } from 'react';
 import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
+import { sidebarBulletClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
@@ -80,13 +81,13 @@ function CollapsibleTagItemBase<T>({
           />
         }
       >
-        <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
         <span className="truncate">{tag.name}</span>
         <span className="text-faint-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
           {tag.count}
         </span>
         <ChevronDownIcon className="invisible ml-auto shrink-0 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
       </CollapsibleTrigger>
+      <div className={sidebarBulletClass} />
       <CollapsibleContent className={collapsiblePanelClass}>
         <div className="relative flex flex-col py-1">
           <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />

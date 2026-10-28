@@ -40,7 +40,7 @@ export function OfflineFilesPreference() {
         onClick={openSetting}
         status={
           footprint && (
-            <Badge variant={almostFull ? 'destructive' : 'secondary'}>
+            <Badge variant={almostFull ? 'destructive' : 'secondary'} className={cn(!almostFull && 'group-hover/preference:bg-foreground/10')}>
               {budget ? t('c:offline_files.percent_full', { percent: percentFull(footprint.bytes, budget) }) : t('c:offline_files.off')}
             </Badge>
           )
@@ -48,7 +48,7 @@ export function OfflineFilesPreference() {
       >
         {footprint && budget > 0 && (
           <>
-            <span aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-muted">
+            <span aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-muted group-hover/preference:bg-foreground/10">
               <span
                 className={cn('block h-full rounded-full bg-primary transition-[width] duration-500', almostFull && 'bg-destructive')}
                 style={{ width: `${Math.min(100, (footprint.bytes / budget) * 100)}%` }}

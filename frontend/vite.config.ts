@@ -97,7 +97,7 @@ const frontendUrl = new URL(appConfig.frontendUrl);
 const repoDocRoutes = {
   'cella/QUICKSTART.md': '/docs/page/quickstart',
   'cella/CHANGELOG.md': '/docs/page/changelog',
-  'cella/AGENTS.md': '/docs/page/llms',
+  'cella/AGENTS.md': '/docs/page/guides/agents',
   'cella/ARCHITECTURE.md': '/docs/page/architecture',
   'cella/SYNC_ENGINE.md': '/docs/page/sync-engine',
   'cella/CLIENT.md': '/docs/page/sync-engine/client',

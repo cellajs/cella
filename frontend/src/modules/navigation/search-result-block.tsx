@@ -2,6 +2,7 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, isChannel } from 'shared';
+import { CloseButton } from '~/modules/common/close-button';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
@@ -13,13 +14,25 @@ type SearchResult = EnrichedChannel | UserBase;
 interface SearchResultBlockProps {
   results: SearchResult[];
   entityType: ChannelEntityType | 'user';
+  /** Header text; the entity type's name by default. */
+  label?: string;
   /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  /** Gives each row a remove button in place of the member badge. */
+  onRemove?: (item: SearchResult) => void;
 }
 
-export function SearchResultBlock({ results, entityType, hideSeparator = false, collapsed, onToggleCollapsed }: SearchResultBlockProps) {
+export function SearchResultBlock({
+  results,
+  entityType,
+  label,
+  hideSeparator = false,
+  collapsed,
+  onToggleCollapsed,
+  onRemove,
+}: SearchResultBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);
 
@@ -34,7 +47,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
           className="group-label sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-4 py-2 backdrop-blur-sm hover:text-foreground"
           onClick={onToggleCollapsed}
         >
-          {t(entityType)}
+          {label ?? t(entityType)}
           {collapsed && <span className="ml-3 font-normal text-faint-foreground">{results.length}</span>}
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
@@ -55,10 +68,21 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
             </div>
 
             <div className="flex items-center">
-              <Badge size="sm" soft className="hidden gap-1 group-data-[already-member=true]:flex">
-                <UserIcon />
-                <span className="max-sm:hidden">{t('c:member')}</span>
-              </Badge>
+              {onRemove ? (
+                <CloseButton
+                  size="sm"
+                  label="c:remove"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemove(item);
+                  }}
+                />
+              ) : (
+                <Badge size="sm" soft className="hidden gap-1 group-data-[already-member=true]:flex">
+                  <UserIcon />
+                  <span className="max-sm:hidden">{t('c:member')}</span>
+                </Badge>
+              )}
             </div>
           </ComboboxItem>
         ))}
