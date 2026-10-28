@@ -335,7 +335,7 @@ export function formatQuickFacts(
   if (facts.key) {
     const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);
-    const expiry = hours === undefined ? '' : hours < 0 ? ' — EXPIRED' : hours < 48 ? ` — expires in ${Math.max(1, Math.round(hours))}h` : '';
+    const expiry = hours === undefined ? '' : hours < 0 ? ' · EXPIRED' : hours < 48 ? ` · expires in ${Math.max(1, Math.round(hours))}h` : '';
     const healthy = slot === 'observer' && role === 'observer' && !(hours !== undefined && hours < 48);
     const label = slot === 'observer' ? 'Observer key:' : 'Ambient key: SCW_ACCESS_KEY';
     lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);

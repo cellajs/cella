@@ -1,18 +1,19 @@
-/** File listing, path filters, positions and the finding shape the style checks share. */
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** Absolute path of the repository holding this folder; every repo-relative path here resolves against it. */
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** One style finding. `review` findings print under `--audit` only and never fail the check. */
 export interface Finding {
   file: string;
-  /** 1-based; absent when the finding is about the path itself. */
+  /** 1-based, as is `column`; absent when the finding is about the path itself. */
   line?: number;
   column?: number;
   rule: string;
+  /** The matched text, printed in quotes before the message; absent when the finding names no single term. */
   term?: string;
   message: string;
   review?: boolean;
@@ -43,19 +44,36 @@ export function withRestoredPaths(paths: string[], run: () => void): void {
 }
 
 /** Repo-relative files git tracks, plus untracked ones it does not ignore, that exist on disk, in `git ls-files` order. */
-export function repoFiles(root = repoRoot): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: root, encoding: 'utf8' })
+export function repoFiles(): string[] {
+  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n')
-    .filter((file) => file && existsSync(join(root, file)));
+    .filter((file) => file && existsSync(join(repoRoot, file)));
+}
+
+/** Whether `file` is the path `entry` or inside it; `entry` may end in `/`. */
+export function isUnder(file: string, entry: string): boolean {
+  return file === entry || file.startsWith(entry.endsWith('/') ? entry : `${entry}/`);
 }
 
 /** Whether `file` is one of the requested roots or inside one; no roots requests every file. */
 export function isRequested(file: string, roots: string[]): boolean {
-  if (roots.length === 0) return true;
-  return roots.some((root) => {
-    const normalized = root.replace(/^\.\//, '').replace(/\/$/, '');
-    return file === normalized || file.startsWith(`${normalized}/`);
-  });
+  return roots.length === 0 || roots.some((root) => isUnder(file, root.replace(/^\.\//, '').replace(/\/$/, '')));
+}
+
+/** App sources under frontend/src, outside generated files, content, stories and tests: the files the frontend convention rules read. */
+export function isFrontendSource(file: string): boolean {
+  return (
+    /^frontend\/src\/.*\.tsx?$/.test(file) &&
+    !file.includes('.gen.') &&
+    !file.includes('/content/') &&
+    !file.includes('/stories/') &&
+    !/\.(?:stories|test)\.tsx?$/.test(file)
+  );
+}
+
+/** `text` with every character but a line break turned into a space, so offsets and line numbers into it still hold. */
+export function blankOut(text: string): string {
+  return text.replace(/[^\n]/g, ' ');
 }
 
 /** 1-based line and column of `offset`, counting `\n` line breaks only. */

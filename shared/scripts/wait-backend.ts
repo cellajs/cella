@@ -1,4 +1,3 @@
-/** Waits for the backend health endpoint before proceeding. @see README.md */
 import { waitForBackend } from '../src/utils/wait-for-backend.ts';
 
 const args = process.argv.slice(2);
@@ -12,8 +11,8 @@ for (let i = 0; i < args.length; i++) {
 
 try {
   await waitForBackend({ interval, timeout });
-} catch {
-  console.error(`Backend not ready after ${timeout}ms`);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 }
 process.exit(0);

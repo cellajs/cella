@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { frontendFindings } from './check-frontend-style.ts';
+import { frontendFindings } from './frontend-rules.ts';
 
 const file = 'frontend/src/modules/example/use-example.ts';
 const rules = (source: string) => frontendFindings(file, source, new Set()).map(({ rule, message }) => `${rule}: ${message}`);

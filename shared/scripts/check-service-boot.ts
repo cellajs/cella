@@ -1,8 +1,3 @@
-/**
- * Boots the built service bundles as their images do (`pnpm boot:check`, after `pnpm build`): each from a copy of its
- * `dist` beside only its `dependencies`, so an import left bare finds nothing to fall back on. Migrates, waits for each
- * `/health` to answer 204, stops them on SIGTERM and runs the seed bundle, on a scratch database of the test server.
- */
 import { type ChildProcess, spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';

@@ -55,7 +55,7 @@ const dirty = makeRepo({
     'run: |',
     `  echo x # ${maybe} shell text`,
   ].join('\n'),
-  'shared/config/x.jsonc': ['{', `  // ${term}`, `  "k": "// not a comment ${dash}"`, '}'].join('\n'),
+  'shared/config/x.jsonc': ['{', `  // ${term}`, `  "k": "// not a comment ${term} ${dash}"`, '}'].join('\n'),
   'docs/guide.md': [`# Guide ${term}`, '', `Prose ${dash} and \`${dash}\`.`, `The ${bearing} ${seam}.`].join('\n'),
   'CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
   'cella/CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
@@ -79,6 +79,7 @@ const OK = '[style] OK, terminology, documentation, comments and frontend code f
 const placement =
   '  backend/src/long.ts:1:1 [detached-long-comment] 4 prose lines; move shared context to a README or attach a concise local constraint to a declaration';
 const storeRead = '  frontend/src/comp.tsx:4:16 [store-selector] useCount() subscribes to every field; select the values this component reads';
+const tokenBoundary = `  frontend/src/comp.tsx:2:37 [concrete-language] "${term}": name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption`;
 const required = [
   placement,
   `  backend/src/rules.ts:1:8 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
@@ -91,16 +92,17 @@ const required = [
   `  docs/guide.md:3:7 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
   `  docs/guide.md:4:5 [${bearing}] "${bearing}": name the dependency, requirement, or failure consequence directly`,
   '  frontend/src/comp.tsx:2:14 [component-declaration] Arrow is an ordinary component; use a named function declaration',
+  tokenBoundary,
   storeRead,
   `  infra/c.yaml:2:3 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
   `  infra/c.yaml:3:14 [review-conversation] "${maybe}": resolve the question or track it outside the source comment`,
   `  shared/config/x.jsonc:2:6 [concrete-language] "${term}": name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption`,
+  `  shared/config/x.jsonc:3:36 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
 ];
 const review = [
   `  backend/src/rules.ts:3:28 [boundary-metaphor] "${seam}": consider boundary, interface, integration point, or the named call site`,
   `  backend/src/rules.ts:4:4 [compatibility-language] "${legacy}": confirm that this describes an active compatibility contract`,
   `  docs/guide.md:4:18 [boundary-metaphor] "${seam}": consider boundary, interface, integration point, or the named call site`,
-  `  frontend/src/comp.tsx:2:37 [concrete-language] "${term}": name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption`,
 ];
 
 describe('style check', () => {
@@ -108,7 +110,7 @@ describe('style check', () => {
     expect(run(dirty)).toEqual({ status: 1, stdout: '', stderr: lines(`[style] ${required.length} finding(s):`, ...required) });
   });
 
-  it('adds review markers in audit mode, comments only a token boundary reaches included', () => {
+  it('adds review markers in audit mode', () => {
     expect(run(dirty, '--audit')).toEqual({
       status: 1,
       stdout: '',
@@ -119,9 +121,10 @@ describe('style check', () => {
   it('limits the files checked to the requested paths and still knows every store', () => {
     expect(run(dirty, 'backend/src/long.ts', 'frontend/src/comp.tsx').stderr).toBe(
       lines(
-        '[style] 3 finding(s):',
+        '[style] 4 finding(s):',
         placement,
         '  frontend/src/comp.tsx:2:14 [component-declaration] Arrow is an ordinary component; use a named function declaration',
+        tokenBoundary,
         storeRead,
       ),
     );

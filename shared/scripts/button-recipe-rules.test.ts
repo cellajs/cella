@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { offModelHover, restylesVariant } from './check-button-recipes.ts';
+import { offModelHover, restylesVariant } from './button-recipe-rules.ts';
 
 describe('button recipe markers', () => {
   it('tells a color class from a size, width, layout or model state class under the same prefix', () => {

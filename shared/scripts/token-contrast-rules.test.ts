@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tokenContrastFindings } from './check-token-contrast.ts';
+import { tokenContrastFindings } from './token-contrast-rules.ts';
 
 const file = 'frontend/src/styling/tailwind.css';
 const theme = (light: string[], dark: string[]) =>
@@ -58,6 +58,12 @@ describe('tokenContrastFindings', () => {
     const messages = tokenContrastFindings(file, source).map(({ message }) => message);
     expect(messages).toContainEqual(expect.stringMatching(/in dark mode, below 4\.5:1 \(--secondary-foreground on --secondary\)$/));
     expect(messages).not.toContainEqual(expect.stringContaining('light mode, below 4.5:1 (--secondary-foreground'));
+  });
+
+  it('finds the light block when --background is not its first declaration', () => {
+    const source = theme(['--foreground: oklch(0.95 0 0);'], []).replace(':root {', ':root {\n    --radius: 0.5rem;');
+    const messages = tokenContrastFindings(file, source).map(({ message }) => message);
+    expect(messages).toContainEqual(expect.stringMatching(/in light mode, below 4\.5:1 \(--foreground on --background\)$/));
   });
 
   it('reports a raised control edge below 3:1', () => {

@@ -1,8 +1,3 @@
-/**
- * The commit-msg hook (`lefthook.yaml`): a Conventional Commits header that release-please can read, checked with the
- * error rules of `@commitlint/config-conventional` and a 120-character header. Merge, revert, fixup and version
- * commits that git or a tool writes pass.
- */
 import { readFileSync } from 'node:fs';
 
 /** Types release-please knows (`.github/release-please-config.json` maps them to changelog sections). */
@@ -13,10 +8,10 @@ const maxHeaderLength = 120;
 /** `type(scope)!: subject`, as release-please parses it. */
 const headerPattern = /^(\w*)(?:\((.*)\))?!?: (.*)$/;
 
-/** Messages git or a tool writes. */
+/** Headers of the messages git or a tool writes. */
 const generatedPatterns = [
-  /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))(?:\r?\n)*$)/m,
-  /^(Merge tag (.*?))(?:\r?\n)*$/m,
+  /^((Merge pull request)|(Merge (.*?) into (.*?)|(Merge branch (.*?)))$)/,
+  /^(Merge tag (.*?))$/,
   /^(R|r)evert (.*)/,
   /^(R|r)eapply (.*)/,
   /^(amend|fixup|squash)!/,
@@ -37,10 +32,9 @@ function storedMessage(raw: string): string {
 
 /** What is wrong with a commit message, one line per rule it breaks; empty when it passes. */
 export function commitMessageErrors(raw: string): string[] {
-  const message = storedMessage(raw);
-  if (generatedPatterns.some((pattern) => pattern.test(message))) return [];
+  const header = storedMessage(raw).split('\n')[0];
+  if (generatedPatterns.some((pattern) => pattern.test(header))) return [];
 
-  const header = message.split('\n')[0];
   const errors: string[] = [];
   if (header.length > maxHeaderLength) errors.push(`header is ${header.length} characters, at most ${maxHeaderLength}`);
   if (header !== header.trim()) errors.push('header must not start or end with whitespace');
