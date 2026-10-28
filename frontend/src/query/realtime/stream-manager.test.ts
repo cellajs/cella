@@ -321,35 +321,6 @@ describe('the gate that paused writes wait on', () => {
     expect(released).toBe(true);
     manager.disconnect();
   });
-
-  // A lost session opened the gate, so writes restored from the last session replayed into 401s and moved to failedSync.
-  it.each([
-    ['a catchup answered 401', (stream: FakeEventSource) => stream.emit('offset', '100')],
-    ['the server ended the stream as unauthorized', (stream: FakeEventSource) => stream.emitServerError('unauthorized')],
-    [
-      'the app disconnected after a 401',
-      (_stream: FakeEventSource, manager: InstanceType<typeof StreamManager>) => manager.disconnect({ sessionLost: true }),
-    ],
-  ])('stays closed when the session is lost: %s', async (_, loseSession) => {
-    vi.resetModules();
-    const fresh = await import('~/query/realtime/stream-manager');
-    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
-      endpoint: 'http://api.test/stream',
-      withCredentials: false,
-      useTabCoordination: false,
-      fetchAndProcessCatchup: () => Promise.reject(Object.assign(new Error('Unauthorized'), { status: 401 })),
-      processLeaderCatchup: () => Promise.resolve(),
-      processChange: () => {},
-      processSignal: () => {},
-    });
-
-    await manager.connect();
-    loseSession(FakeEventSource.instances.at(-1) as FakeEventSource, manager);
-    await tick();
-
-    expect(await Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)])).toBe(false);
-    manager.disconnect();
-  });
 });
 
 describe('StreamManager server-sent errors', () => {

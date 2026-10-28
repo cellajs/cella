@@ -266,13 +266,14 @@ export class StreamManager {
     reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutive_failures: this.consecutiveFailures });
     this.store.getState().setState('error');
 
+    // Open the gate on failure too, so paused mutations are not stuck forever.
+    resolveInitialCatchupGate();
+
     if (isPermanentError || this.consecutiveFailures >= maxFailures) {
-      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures', isPermanentError);
+      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
       return;
     }
 
-    // A failure that keeps the session opens the gate too, so paused mutations are not stuck forever.
-    resolveInitialCatchupGate();
     this.scheduleReconnect();
   }
 
@@ -373,7 +374,7 @@ export class StreamManager {
         this.closeEventSource();
         this.store.getState().setState('error');
         if (permanent) {
-          this.openCircuit(`server error: ${payload.code}`, true);
+          this.openCircuit(`server error: ${payload.code}`);
         } else {
           this.scheduleReconnect();
         }
@@ -403,7 +404,7 @@ export class StreamManager {
     this.closeEventSource();
 
     if (this.consecutiveFailures >= maxFailures) {
-      this.openCircuit('max consecutive SSE failures', false);
+      this.openCircuit('max consecutive SSE failures');
       return;
     }
 
@@ -433,14 +434,12 @@ export class StreamManager {
     this.eventSource = null;
   }
 
-  /** Stops reconnecting until the cooldown ends. A `permanent` circuit means the session or its access is gone. */
-  private openCircuit(reason: string, permanent: boolean) {
+  private openCircuit(reason: string) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
-    // Paused mutations replay through the API, which arbitrates them by their `replayed` stx. Without a session each
-    // replay would answer 401 and move to failedSync, so a permanent circuit keeps them queued.
-    if (!permanent) resolveInitialCatchupGate();
+    // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
+    resolveInitialCatchupGate();
 
     // Cancel the pending reconnect so it cannot fire while the circuit is open.
     if (this.reconnectTimeout) {
@@ -535,11 +534,10 @@ export class StreamManager {
     this.leaderUnsubscribe = null;
   }
 
-  /** Closes the stream for good. After `sessionLost` the gate stays closed, as on a permanent circuit. */
-  disconnect({ sessionLost = false }: { sessionLost?: boolean } = {}) {
+  disconnect() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
-    if (!sessionLost) resolveInitialCatchupGate();
+    resolveInitialCatchupGate();
 
     this.buffering = false;
     this.bufferOverflowed = false;
@@ -643,11 +641,7 @@ onSyncHealth((health) => {
   applySyncHealth(health);
 });
 
-/**
- * Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up.
- * A lost session (a 401 or 403 on catchup, a permanent server error, a disconnect after a 401) leaves it closed. Safe
- * to call before any stream connects.
- */
+/** Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up. Safe to call before any stream connects. */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }

@@ -145,7 +145,7 @@ The engine keeps no reference counts. A count such as the tasks with a label is 
 
 Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching caches, success merges the row the server stored, failure rolls back where configured.
 
-An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. An HTTP error response settles at once. Restored paused mutations replay after the first catchup attempt, or once the stream stops reconnecting ([REST fallback](#rest-fallback)). A lost session holds them until the user signs in again: without one, every replay would be refused. Online writes never wait.
+An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. An HTTP error response settles at once. Restored paused mutations replay after the first catchup attempt, or once the stream stops reconnecting ([REST fallback](#rest-fallback)). Online writes never wait.
 
 ### Merge metadata
 

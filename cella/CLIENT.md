@@ -83,7 +83,7 @@ The attachment row is an ordinary product entity in the query cache. The bytes l
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten. Every other query is bundled with the version stamps in one meta record. Paused mutations are stored per tab, and a tab that starts takes over the queue of a closed one. A sign-in in a tab that is already open restores that user's stored cache and queue as a start does. Opt out with `meta: { persist: false }`.
+The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten. Every other query is bundled with the version stamps in one meta record. Paused mutations are stored per tab, and a tab that starts takes over the queue of a closed one. Opt out with `meta: { persist: false }`.
 
 Every user works offline: all tabs share one cache that survives tab and browser restarts, and sign-out deletes it with the rest of the per-user database. Once the stream is live, a background fill loads the lists of the current organization, then those of every other organization the user belongs to, each list that is not cached yet. From then on catchup keeps them fresh.
 
@@ -112,5 +112,5 @@ Boot order, cached data first:
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
 2. The app route waits for `localUserStorageReady()`: the per-user database is bound and its stores hydrated, sync cursor included.
 3. The persister restores the cache scope.
-4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after that catchup, or once the stream stops reconnecting with the session still valid.
+4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after that catchup, or once the stream stops reconnecting.
 5. Route loaders fill the current view. Background fill loads the current organization's lists, then the other organizations'.

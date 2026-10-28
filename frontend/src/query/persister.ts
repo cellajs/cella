@@ -93,8 +93,6 @@ export function createIDBPersister(scope: string) {
   let lastBundledSnapshot = '';
   /** Snapshot of this tab's last persisted paused mutations, for diffing. */
   let lastMutationsSnapshot = '';
-  /** False from a bind until `restoreClient` reads the bound database: a queue written before would replace the one this tab stored. */
-  let queueRead = true;
   let pendingClient: PersistedClient | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -103,10 +101,7 @@ export function createIDBPersister(scope: string) {
     lastBundledSnapshot = '';
     lastMutationsSnapshot = '';
   }
-  trackerResets.push(() => {
-    resetTracker();
-    queueRead = false;
-  });
+  trackerResets.push(resetTracker);
 
   async function clearScope(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, () => deleteScope(db, scope));
@@ -220,7 +215,7 @@ export function createIDBPersister(scope: string) {
 
       // Paused mutations go to this tab's record; the shared meta record stays mutation-free so no tab clobbers another's queue.
       const mutationsSnapshot = JSON.stringify(mutations);
-      const mutationsChanged = queueRead && mutationsSnapshot !== lastMutationsSnapshot;
+      const mutationsChanged = mutationsSnapshot !== lastMutationsSnapshot;
 
       const hasProductChanges = upserts.length > 0 || removals.length > 0;
       if (hasProductChanges || bundledChanged || mutationsChanged) {
@@ -255,7 +250,7 @@ export function createIDBPersister(scope: string) {
           for (const { queryHash, dataUpdatedAt } of upserts) lastPersistedAt.set(queryHash, dataUpdatedAt);
           for (const hash of removedHashes) lastPersistedAt.delete(hash);
           lastBundledSnapshot = bundledSnapshot;
-          if (mutationsChanged) lastMutationsSnapshot = mutationsSnapshot;
+          lastMutationsSnapshot = mutationsSnapshot;
         }
 
         console.debug(
@@ -292,10 +287,7 @@ export function createIDBPersister(scope: string) {
       if (!db) return undefined;
       try {
         let meta = await db.meta.get(scope);
-        if (!meta) {
-          queueRead = true;
-          return undefined;
-        }
+        if (!meta) return undefined;
 
         // A clientCacheVersion mismatch wipes cached query data but keeps queued mutations; a missing version seeds without wiping.
         const versionChanged = (meta.clientCacheVersion ?? appConfig.clientCacheVersion) !== appConfig.clientCacheVersion;
@@ -352,7 +344,6 @@ export function createIDBPersister(scope: string) {
           await db.meta.put({ key: tabMutationKey, timestamp: Date.now(), buster, mutations: absorbed, bundledQueries: [] });
           return absorbed;
         });
-        queueRead = true;
 
         const mutations = inCurrentShape([...(meta.mutations ?? []), ...tabMutations]);
 
@@ -403,7 +394,7 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 // The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
 onPageHide(() => void persister.flush());
 
-/** Reset persister change trackers, and hold the queue until the next restore reads it (called on a local user rebind). */
+/** Reset persister change trackers (called on a local user rebind so they match the freshly bound DB). */
 export function resetPersisters(): void {
   for (const reset of trackerResets) reset();
 }
