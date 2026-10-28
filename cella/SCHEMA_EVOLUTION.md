@@ -19,7 +19,7 @@ A breaking schema change (rename `attachment.name` to `attachment.title`, say) s
 
 Three rules follow:
 
-- **Canonical inside, dual-emit at the edge.** Database logic, CDC, the activity log, the detail cache, and SSE see the newest shape only. The **frozen envelope** (`stx`/`ops` wire structure, `StreamNotification`, `CatchupChangeSummary`, counter key formats, auth and session contract, SSE and WebSocket protocol) changes only additively (a new optional field, a new error code an old client treats as transient) or through an `apiVersion` bump, never through a lens.
+- **Canonical inside, dual-emit at the edge.** Database logic, CDC, activities, the detail cache, and SSE see the newest shape only. The **frozen envelope** (`stx`/`ops` wire structure, `StreamChange`, `StreamSignal`, `CatchupOrganizationSummary`, counter key formats, auth and session contract, SSE and WebSocket protocol) changes only additively (a new optional field, a new error code an old client treats as transient) or through an `apiVersion` bump, never through a lens.
 - **No version negotiation in Phase 1.** Server normalization is presence-based (`'name' in ops` maps to `title`). The persisted `schemaVersion` pointer, not row inspection, tells the client cache which version it holds. `X-Client-Version` is telemetry only.
 - **One global version.** `currentSchemaVersion` is the lens count, baked into both bundles from `shared`.
 
@@ -78,7 +78,7 @@ Until the first lens ships, breaking schema changes use a throwaway escape hatch
 │                                            ▼                                 │
 │                                   hydrate React Query ──> UI                 │
 │                                                                              │
-│  UNTOUCHED: CDC worker · SSE notifications · catchup summaries · seq/counters│
+│  UNTOUCHED: CDC worker · SSE frames · catchup summaries · seq/counters       │
 │  TTL entity cache · activitiesTable (operate on IDs/seqs or canonical shape) │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -118,7 +118,7 @@ Supported `delta` kinds: `rename`, `add` (with a default for backward-compat fil
 | --- | --- | --- | --- |
 | **Product entities** (`attachment`) | stx ops + HLC/AWSet per-field merge via `resolveUpdateOps` | per-query Dexie records, seq/catchup, offline queue | **Tier 1, full** |
 | **Channel entities** (`organization`) | plain `PUT`, full-body partial. No ops, no stx, no HLC | bundled into the single Dexie meta record, no seq | **Tier 2, reduced**: body-schema widening, `normalizeBody`, cache and mutation migration, dual-emit reads. No key maps or `fieldTimestamps` rewriting, because no per-field merge exists on this path |
-| **Non-entity surface** (auth/session, stx/ops envelope, SSE notifications, catchup summaries, counter formats) | frozen envelope | n/a | **Tier 3, excluded**: changes only via `apiVersion` |
+| **Non-entity surface** (auth/session, stx/ops envelope, SSE frames, catchup summaries, counter formats) | frozen envelope | n/a | **Tier 3, excluded**: changes only via `apiVersion` |
 
 Membership fields, computed enrichment output (`membership`, `can`), and Yjs-edited description fields sit outside the lens system. Treat them as frozen-envelope-adjacent.
 

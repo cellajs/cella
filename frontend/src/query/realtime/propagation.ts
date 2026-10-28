@@ -1,4 +1,4 @@
-import type { StreamNotification } from 'sdk';
+import type { StreamChange } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -8,7 +8,7 @@ import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
 /** The part of a propagation hint the client reads: its host fields are advisory, and this app's productEmbeddings config says where embedded copies are cached. */
-type PropagationHint = Pick<NonNullable<StreamNotification['propagation']>, 'embeddedProduct' | 'update' | 'remove'>;
+type PropagationHint = Pick<NonNullable<StreamChange['propagation']>, 'embeddedProduct' | 'update' | 'remove'>;
 
 /** Patch stale embedded-product references across every host column productEmbeddings declares for the changed product. */
 export function propagateEmbeddings(hint: PropagationHint): void {

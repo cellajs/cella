@@ -12,8 +12,8 @@ import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// Verifies the view-driven catchup contract end-to-end (sequence sync): membership
-// screening via changes.signals, product sync via per-view f:/e: answers.
+// Verifies the view-driven catchup contract end-to-end (sequence sync): signal versions
+// via organizations.signals, product sync via per-view f:/e: answers.
 describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -29,7 +29,7 @@ describe('Catchup (view-driven, sequence)', async () => {
 
     const counts = {
       sequence: 50,
-      membership: 3,
+      's:membership.changed': 3,
       'e:f:attachment': 42,
       'e:c:attachment': 15,
       'e:f:h:attachment': 40,
@@ -47,17 +47,18 @@ describe('Catchup (view-driven, sequence)', async () => {
     await clearSecurityTestData();
   });
 
-  it('returns the membership change signal without cursor (baseline)', async () => {
+  it('returns the version of each versioned signal by its type without cursor (baseline)', async () => {
     const result = await call(postAppCatchup, { body: {}, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
 
     expect(result.response.status).toBe(200);
-    const { changes, cursor } = result.data as AppCatchupResponse;
+    const { organizations, cursor } = result.data as AppCatchupResponse;
 
-    const orgChanges = changes[tenant.organization.id];
-    expect(orgChanges).toBeDefined();
-    expect(orgChanges.signals!.membership).toBe(3);
+    const summary = organizations[tenant.organization.id];
+    expect(summary).toBeDefined();
+    // Keyed by signal type, so the client's catchup and an app's handler read the same key.
+    expect(summary.signals).toEqual({ 'membership.changed': 3 });
     // The org sequence value itself is not exposed on the wire (clients never read it).
-    expect(orgChanges).not.toHaveProperty('entitySeqs');
+    expect(summary).not.toHaveProperty('entitySeqs');
     expect(cursor).toBeDefined();
   });
 

@@ -6,7 +6,7 @@ import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-cou
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
-import type { AppCatchupResponse, CatchupChangeSummary, CatchupView } from '#/schemas';
+import type { AppCatchupResponse, CatchupOrganizationSummary, CatchupView } from '#/schemas';
 import { getEntityTable } from '#/tables';
 
 /** The embeddings of each embedded product type, from productEmbeddings config. */
@@ -16,11 +16,11 @@ const embeddingsByProduct = Map.groupBy(appConfig.productEmbeddings, (embedding)
  * An embedded product changed when the org's `e:f:{embeddedProduct}` rollup exceeds the client's org-view cursor. The
  * ids come from a delta read in the caller's tenant that keeps the rows the caller may read, as a list does, so a hint
  * names no row the caller cannot fetch; tombstones return as removal hints.
- * @param orgCounters - The counter row of each organization in `changes`.
+ * @param orgCounters - The counter row of each organization in `organizations`.
  */
 export async function buildPropagationHints(
   ctx: UserContext,
-  changes: AppCatchupResponse['changes'],
+  organizations: AppCatchupResponse['organizations'],
   views: CatchupView[] | undefined,
   orgCounters: Map<string, Record<string, number> | null>,
 ): Promise<void> {
@@ -38,12 +38,12 @@ export async function buildPropagationHints(
     }
   }
 
-  for (const [organizationId, scope] of Object.entries(changes)) {
+  for (const [organizationId, scope] of Object.entries(organizations)) {
     // Without a membership in the organization the caller has no tenant there and reads nothing.
     const tenantId = tenantByOrganization.get(organizationId);
     if (!tenantId) continue;
 
-    const hints: CatchupChangeSummary['propagation'] = [];
+    const hints: CatchupOrganizationSummary['propagation'] = [];
     const { frontiers } = parseCounterCounts(orgCounters.get(organizationId));
 
     for (const [embeddedProduct, embeddings] of embeddingsByProduct) {

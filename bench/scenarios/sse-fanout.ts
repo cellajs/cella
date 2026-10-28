@@ -7,10 +7,9 @@ const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (the spread itself is measured), ceiling like the background tier. */
 const TIER_MAX_MS = 30_000;
 
-/** An app-stream change: `product` for a product entity, with its `productType`. */
-interface Notification {
-  kind: string;
-  productType: string | null;
+/** An app-stream change: product rows of one `productType`. */
+interface StreamChange {
+  productType: string;
   seq: number | null;
   batchUntilSeq: number | null;
   spreadWindow: number | null;
@@ -30,18 +29,18 @@ function hashSpread(key: string): number {
 
 /**
  * Nine in ten VUs subscribe and react like the frontend's lazy-sync scheduler (merge per scope, then a slot in the
- * server's spread window); one in ten writes edits. `SYNC_MODE=immediate` fetches per notification for comparison.
+ * server's spread window); one in ten writes edits. `SYNC_MODE=immediate` fetches per change for comparison.
  */
 export default defineScenario({
-  description: 'SSE fan-out: notify-then-fetch under many live subscribers.',
+  description: 'SSE fan-out: announce-then-fetch under many live subscribers.',
   phases: [
     { name: 'ramp subscribers', duration: 10, arrivalRate: 8 },
     { name: 'hold with writes', duration: 20, arrivalRate: 12 },
   ],
-  counters: ['bench.rows_written', 'sse.notifications', 'sync.range_fetches', 'sse.errors'],
+  counters: ['bench.rows_written', 'sse.changes', 'sync.range_fetches', 'sse.errors'],
   histograms: ['sync.fetch_ms', 'sync.reaction_delay_ms'],
   primary: 'sync.fetch_ms.p95',
-  checks: { maxErrorRate: 5, expect: ['sse.notifications', 'sync.range_fetches'], forbid: ['sse.errors'] },
+  checks: { maxErrorRate: 5, expect: ['sse.changes', 'sync.range_fetches'], forbid: ['sse.errors'] },
   roles: [
     {
       name: 'subscriber',
@@ -67,9 +66,9 @@ export default defineScenario({
           }
         };
 
-        const onNotification = (n: Notification) => {
-          if (n.kind !== 'product' || n.seq == null) return;
-          vu.counter('sse.notifications');
+        const onChange = (n: StreamChange) => {
+          if (n.seq == null) return;
+          vu.counter('sse.changes');
           const until = n.batchUntilSeq ?? n.seq;
           const scope = `${n.productType}:${n.channelId ?? n.organizationId}`;
 
@@ -105,7 +104,7 @@ export default defineScenario({
             ({ event, data }) => {
               if (event !== 'change') return;
               try {
-                onNotification(JSON.parse(data) as Notification);
+                onChange(JSON.parse(data) as StreamChange);
               } catch {
                 vu.counter('sse.errors');
               }

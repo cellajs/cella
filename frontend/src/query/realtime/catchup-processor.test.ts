@@ -85,7 +85,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 const okViewResponse = (frontier: number): PostAppCatchupResponse =>
   ({
     cursor: 'cursor-1',
-    changes: {},
+    organizations: {},
     views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier }, counts: { attachment: 1 } }],
   }) as unknown as PostAppCatchupResponse;
 
@@ -148,7 +148,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processAppCatchup({
       cursor: 'cursor-1',
-      changes: {},
+      organizations: {},
       views: [{ key: 'org-1:attachment', status: 'opaque' }],
     } as unknown as PostAppCatchupResponse);
 
@@ -242,7 +242,7 @@ describe('registered grant-boundary views', () => {
   const answer = (over: Record<string, unknown>): PostAppCatchupResponse =>
     ({
       cursor: 'c',
-      changes: {},
+      organizations: {},
       views: [{ key: 'org-1:attachment:subtree', ...over }],
     }) as unknown as PostAppCatchupResponse;
 
@@ -287,7 +287,7 @@ describe('catchup → fetch prioritizer fold', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 
     // The hint waits for the range that carries the fresh embedded rows, and the cursor for their ingestion.
@@ -314,7 +314,7 @@ describe('catchup → fetch prioritizer fold', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
-    const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
+    const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 
     expect(rangeFetch).toHaveBeenCalledTimes(1);

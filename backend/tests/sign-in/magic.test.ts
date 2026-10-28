@@ -5,7 +5,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { usersTable } from '#/modules/user/user-db';

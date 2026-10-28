@@ -235,13 +235,13 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They\n    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,\n    Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover\n    sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "entities",
-      "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes check slug availability and serve the app stream and its catchup,\n    which tell a signed-in client about changes to the entities it may read.",
+      "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes check slug availability and serve the app stream and its catchup,\n    which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -740,40 +740,26 @@
         },
         "x-tags": ["base", "cella"]
       },
-      "StreamNotification": {
+      "StreamChange": {
         "type": "object",
         "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["product", "membership"],
-            "description": "Discriminant for the notification: product-entity sync vs membership change"
-          },
           "action": {
             "type": "string",
             "enum": ["create", "update", "delete", "moveOut"],
             "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there"
           },
           "productType": {
-            "type": ["string", "null"],
-            "enum": ["attachment", null]
-          },
-          "resourceType": {
-            "type": ["string", "null"],
-            "enum": ["request", "membership", "inactive_membership", "tenant", "system_role", "service_account", "api_key", "oauth_client", null]
+            "type": "string",
+            "enum": ["attachment"]
           },
           "subjectId": {
-            "type": ["string", "null"]
+            "type": "string"
           },
           "organizationId": {
-            "type": ["string", "null"]
+            "type": "string"
           },
           "tenantId": {
             "type": ["string", "null"]
-          },
-          "channelType": {
-            "type": ["string", "null"],
-            "enum": ["organization", null],
-            "description": "Channel entity type for membership events (e.g. organization, project)"
           },
           "path": {
             "type": ["string", "null"],
@@ -799,7 +785,7 @@
           },
           "batchUntilSeq": {
             "type": ["integer", "null"],
-            "description": "Last sequence position for a batched notification: client should fetch range"
+            "description": "Last sequence position for a batched change: client should fetch range"
           },
           "count": {
             "type": ["integer", "null"],
@@ -846,14 +832,11 @@
           }
         },
         "required": [
-          "kind",
           "action",
           "productType",
-          "resourceType",
           "subjectId",
           "organizationId",
           "tenantId",
-          "channelType",
           "path",
           "seq",
           "channelId",
@@ -863,28 +846,54 @@
           "spreadWindow",
           "propagation"
         ],
-        "description": "A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
+        "description": "A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
-          "kind": "product",
-          "action": "update",
+          "action": "delete",
           "productType": "attachment",
-          "resourceType": null,
-          "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
-          "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
-          "tenantId": "14qv8uf107q9zmdjan1ygz1e",
-          "channelType": null,
-          "path": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
-          "channelId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
-          "seq": 218,
+          "subjectId": "00f807bd-cd41-467a-873e-e3fdf380db7d",
+          "organizationId": "d0102854-b763-413e-8dfb-8e38e2cac8f5",
+          "tenantId": "ar3rydltry0gpl2zi6lz65m9",
+          "path": "d0102854-b763-413e-8dfb-8e38e2cac8f5",
+          "channelId": "5d704379-9680-4740-9cb0-43fded3f5508",
+          "seq": 265,
           "stx": {
-            "mutationId": "725782b0-16f4-4b4f-9577-8ebfa336f370",
-            "sourceId": "be2fe601-891c-4ade-b70e-12c6d41d18b9",
+            "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
+            "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
             "fieldTimestamps": {}
           },
           "batchUntilSeq": null,
           "count": null,
           "spreadWindow": null,
           "propagation": null
+        },
+        "x-tags": ["data", "entities", "cella"]
+      },
+      "StreamSignal": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)"
+          },
+          "organizationId": {
+            "type": ["string", "null"]
+          },
+          "subjectId": {
+            "type": ["string", "null"],
+            "description": "The one row the signal is about; null when it is about the organization as a whole"
+          },
+          "version": {
+            "type": ["integer", "null"],
+            "description": "Counter value of a versioned signal, when the sender knows it; catchup returns the stored one"
+          }
+        },
+        "required": ["type", "organizationId", "subjectId", "version"],
+        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.",
+        "example": {
+          "type": "membership.changed",
+          "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
+          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f",
+          "version": null
         },
         "x-tags": ["data", "entities", "cella"]
       },
@@ -3336,7 +3345,7 @@
         "operationId": "getTokenData",
         "tags": ["auth", "cella"],
         "summary": "Get token data",
-        "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
+        "description": "Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
@@ -5695,8 +5704,8 @@
         ],
         "operationId": "getAppStream",
         "tags": ["entities", "cella"],
-        "summary": "App event SSE stream",
-        "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
+        "summary": "App SSE stream",
+        "description": "SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["streamConnectLimiter"],
         "x-cache": [],
@@ -5737,8 +5746,8 @@
         ],
         "operationId": "postAppCatchup",
         "tags": ["entities", "cella"],
-        "summary": "App event catchup",
-        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
+        "summary": "App stream catchup",
+        "description": "Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5813,10 +5822,10 @@
             "content": {
               "application/json": {
                 "example": {
-                  "changes": {
+                  "organizations": {
                     "org-example-id": {
                       "signals": {
-                        "membership": 1
+                        "membership.changed": 1
                       }
                     }
                   },
@@ -5825,18 +5834,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "changes": {
+                    "organizations": {
                       "type": "object",
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
                           "signals": {
                             "type": "object",
-                            "properties": {
-                              "membership": {
-                                "type": "integer"
-                              }
-                            }
+                            "additionalProperties": {
+                              "type": "integer"
+                            },
+                            "description": "Versions by signal type: bump-only counters a client compares with the ones it stored"
                           },
                           "propagation": {
                             "type": "array",
@@ -5877,7 +5885,7 @@
                           }
                         }
                       },
-                      "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }"
+                      "description": "Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }"
                     },
                     "views": {
                       "type": "array",
@@ -5920,7 +5928,7 @@
                       "description": "Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines"
                     }
                   },
-                  "required": ["changes", "cursor"]
+                  "required": ["organizations", "cursor"]
                 }
               }
             }

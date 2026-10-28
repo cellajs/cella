@@ -36,6 +36,7 @@ export const webAuthnAssertionSchema = z.object({
   clientExtensionResults: z.unknown().optional(),
   type: z.literal('public-key'),
 });
+export type WebAuthnAssertion = z.infer<typeof webAuthnAssertionSchema>;
 
 export const passkeyCreateBodySchema = z.object({ attestation: webAuthnAttestationSchema, nameOnDevice: z.string().max(maxLength.field) });
 

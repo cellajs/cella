@@ -31,7 +31,7 @@ vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
 
 const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
-const { onSyncedRows } = await import('./sync-signals');
+const { onSyncedRows } = await import('./sync-events');
 
 const background = { min: 2_000, max: 30_000 };
 const viewing = { min: 0, max: 0 };

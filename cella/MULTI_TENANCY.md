@@ -85,7 +85,7 @@ the shared engine, and a contextless insert passes RLS.
 | Update or delete targets | Operation query uses guarded IDs and channel scope | RLS write policies add no predicates. SELECT-policy hiding of validation reads or `RETURNING` is not a write-security contract |
 | Tenant and organization agree | Composite `(tenant_id, organization_id)` foreign key (`organizationForeignKey`) on every organization-bound table; tenant and organization are 1:1 | Does not authorize the actor |
 | Product identity cannot move | Shared product trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor IDs are not covered. |
-| Membership identity, activity log | Immutability triggers on membership identity columns. Activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits. `admin_role` can delete activities. |
+| Membership identity, activities | Immutability triggers on membership identity columns. Activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits. `admin_role` can delete activities. |
 
 A deferred membership trigger also rejects a change that would leave an organization without an admin (`409 last_admin`).
 
@@ -96,7 +96,7 @@ A deferred membership trigger also rejects a change that would leave an organiza
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
 | `admin_role` | Bypassed as table owner | Migrations, seeds, the pg_cron partition job, and CDC replication or stamping |
 
-`admin_role` owns the RLS-protected tables and the activity log. Migrations grant `runtime_role` what
+`admin_role` owns the RLS-protected tables and the activities. Migrations grant `runtime_role` what
 the application needs, and refuse to run when either role is missing. The bypass never depends on the
 `BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, so ownership of never-forced
 tables is the one bypass that works everywhere, and the dev and test roles are created without the

@@ -551,7 +551,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
 /**
  * Get token data
  *
- * Get basic token data from single-use token session, It returns basic data if the session is still valid.
+ * Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.
  *
  * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· _auth · cella_
  *
@@ -1333,9 +1333,9 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * App event SSE stream
+ * App SSE stream
  *
- * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
+ * SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.
  *
  * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· _entities · cella_
  *
@@ -1352,9 +1352,9 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * App event catchup
+ * App stream catchup
  *
- * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.
+ * Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.
  *
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· _entities · cella_
  *

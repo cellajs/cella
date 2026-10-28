@@ -41,7 +41,7 @@ Five state owners. This document unpacks the query client. `localUserDb` is the 
 
 ## Inside the cache
 
-- **Channel entity lists and details** (`[organization, 'list', ...]`): plain queries, refetched on membership or channel notifications.
+- **Channel entity lists and details** (`[organization, 'list', ...]`): plain queries, refetched on membership signals.
 - **Canonical product lists** (`[attachment, 'list', org, home]`): one flat, complete list per home channel (the deepest channel a row belongs to), patched by live updates. Components narrow it with `select()`.
 - **Filtered product lists**: server-side search and sort results under their own keys. They are invalidated, not patched. A new row skips the lists it cannot belong to when its entity declares equality filter keys (`registerEqualityFilterKeys('comment', ['itemId'])`) and the row's own value differs.
 - **Session queries**: `me`, memberships, invites, unseen counts.
@@ -57,12 +57,13 @@ Each entity module registers its query keys and range fetch once in its `query.t
 - **Serve now, revalidate behind**: both, the static read awaited and the plain one fired as `void query(options).catch(() => {})`.
 - **Fire and forget**, the old `prefetchQuery`: `void query(options).catch(() => {})`.
 
-`staleTime: 'static'` is not `Infinity`. `Infinity` still refetches an invalidated entry; `'static'` ignores invalidation too. The sync engine leans on that difference, so `offlineStaleTime` and `syncTrustedStaleTime` stay `Infinity`: catchup reconciles those lists by invalidating them, and `'static'` would swallow the signal.
+`staleTime: 'static'` is not `Infinity`: `'static'` ignores invalidation too. So `offlineStaleTime` and `syncTrustedStaleTime` stay `Infinity`, because catchup reconciles those lists by invalidating them.
 
 ## Subscribers
 
 Cache subscribers, not extra stores:
 
+- **Signal handlers** invalidate the queries a signal names, such as memberships or the inbox ([Changes and signals](./SYNC_ENGINE.md#changes-and-signals)).
 - **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map with a permission per action, and `ancestorSlugs` for URLs. The map counts the user's memberships on the row and on the channels above it ([Frontend map](./PERMISSIONS.md#frontend-map)). It never replaces backend permission checks.
 - **Unseen counts**: sync-delivered rows bump badge counts. An exact server recount replaces the estimate on staleness and after catchup.
 

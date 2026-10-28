@@ -54,15 +54,15 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | Evidence | Meaning |
 |---|---|
 | `[TabCoordinator] Acquired leader lock` in one tab, `[AppStream] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
-| `[handleProductNotification] attachment:<action> viewing=<bool>` in tab B console | notification crossed SSE + BroadcastChannel |
+| `[handleProductChange] attachment:<action> viewing=<bool>` in tab B console | the change crossed SSE + BroadcastChannel |
 | `Echo: patched stx, skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
 | range response `items` (id, name, `deletedAt`, seq) | payload truth; soft-delete tombstones DO ride the range read (backend drops the `deletedAt` filter for `afterSeq`/`untilSeq`) |
 | `[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched` | the device's last catchup (`caughtUpAt` in `syncStore`) is older than `appConfig.retention.activityDays`: it starts over, as after a rebuild. To test it, move `caughtUpAt` in the persisted `sync` store back and reload |
 
-Decision rule: **no console notification line and the API's `cdc` component is not healthy** (its `reason` says why: `setup_problems`, `worker_stuck`, `reading_again`, `api_away`) → the worker (read its log), not the client; **no console notification line otherwise** → SSE/leader/broadcast layer; **notification but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
+Decision rule: **no console change line and the API's `cdc` component is not healthy** (its `reason` says why: `setup_problems`, `worker_stuck`, `reading_again`, `api_away`) → the worker (read its log), not the client; **no console change line otherwise** → SSE/leader/broadcast layer; **change but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
 
-Leader semantics: the first tab takes the Web Lock and owns the SSE connection, the others listen to its broadcasts; both process notifications independently. `Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed. A tab on the org route is in the viewing tier (`viewing=true`, fetches at once); hidden tabs get ~1s timer throttling from chromium, so use generous assert windows.
+Leader semantics: the first tab takes the Web Lock and owns the SSE connection, the others listen to its broadcasts; both process changes independently. `Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed. A tab on the org route is in the viewing tier (`viewing=true`, fetches at once); hidden tabs get ~1s timer throttling from chromium, so use generous assert windows.
 
 Creates not propagating: check the `applyServerEntity` applicator in `cache-ops.ts` first (inserts new rows into canonical scope lists, invalidates filtered lists once per flush).
 

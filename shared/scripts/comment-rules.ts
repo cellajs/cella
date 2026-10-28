@@ -1,21 +1,18 @@
-/**
- * Prose rules over source comments, and comment placement: a comment of more than three prose lines sits inside a
- * statement or directly above a declaration, so shared context goes to a README.
- */
 import { basename, extname } from 'node:path';
 import ts from 'typescript';
-import { proseRules, ruleFindings } from './prose-rules.ts';
+import { isProseExempt, proseRules, ruleFindings } from './prose-rules.ts';
 import { type Finding, lineColumn } from './repo-files.ts';
 import { type Comment, parseSource, scriptExtensions, sourceComments } from './source-comments.ts';
 
-const sourceExtensions = new Set([...scriptExtensions, '.css', '.jsonc', '.scss', '.sql', '.yaml', '.yml']);
-const excludedPrefixes = ['backend/drizzle/', 'cella/alignments/', 'locales/', 'sdk/gen/'];
+const sourceExtensions = new Set([...scriptExtensions, '.css', '.json', '.jsonc', '.scss', '.sql', '.yaml', '.yml']);
+const textRules = proseRules.filter((rule) => rule.text);
+const commentRules = proseRules.filter((rule) => !rule.text);
 const placementAdvice = 'move shared context to a README or attach a concise local constraint to a declaration';
 
 function isSource(file: string): boolean {
-  if (excludedPrefixes.some((prefix) => file.startsWith(prefix)) || file.includes('.gen.')) return false;
+  if (isProseExempt(file, 'source')) return false;
   const name = basename(file);
-  return sourceExtensions.has(extname(name)) || name.startsWith('Dockerfile') || name === 'Caddyfile';
+  return sourceExtensions.has(extname(name)) || name.startsWith('Dockerfile') || name === 'Caddyfile' || name.startsWith('.env');
 }
 
 function groupedComments(comments: Comment[], source: string): Comment[] {
@@ -50,9 +47,12 @@ function isRequiredHeader(text: string): boolean {
   return /\b(?:copyright|licensed under|permission is hereby granted|the software is provided)\b/i.test(text);
 }
 
+/** Statements a comment of more than three prose lines may sit directly above. */
 const declarationKinds = new Set([
   ts.SyntaxKind.ClassDeclaration,
   ts.SyntaxKind.EnumDeclaration,
+  ts.SyntaxKind.ExportAssignment,
+  ts.SyntaxKind.ExportDeclaration,
   ts.SyntaxKind.FunctionDeclaration,
   ts.SyntaxKind.InterfaceDeclaration,
   ts.SyntaxKind.ModuleDeclaration,
@@ -76,21 +76,18 @@ function hasDirectDeclarationOwner(file: string, source: string, comment: Commen
   return /^\s*$/.test(gap) && !/\r?\n[\t ]*\r?\n/.test(gap);
 }
 
-/** Rule and placement findings in one source file; `audit` adds the comments only a token boundary reaches. */
-export function commentFindings(file: string, source: string, audit: boolean): Finding[] {
+/** Rule findings in one source file, `text` rules over its whole text and the rest over its comments, and placement findings. */
+export function commentFindings(file: string, source: string): Finding[] {
   if (!isSource(file)) return [];
-  const comments = sourceComments(file, source, audit);
-  const findings: Finding[] = comments.flatMap((comment) =>
-    proseRules.flatMap((rule) =>
-      ruleFindings(rule, file, comment.text, (index) => lineColumn(source, comment.offset + index)).map((finding) => ({
-        ...finding,
-        review: finding.review || !!comment.reviewOnly,
-      })),
+  const comments = sourceComments(file, source);
+  const findings: Finding[] = [
+    ...textRules.flatMap((rule) => ruleFindings(rule, file, source, (index) => lineColumn(source, index))),
+    ...comments.flatMap((comment) =>
+      commentRules.flatMap((rule) => ruleFindings(rule, file, comment.text, (index) => lineColumn(source, comment.offset + index))),
     ),
-  );
+  ];
 
-  const established = comments.filter((comment) => !comment.reviewOnly);
-  for (const comment of groupedComments(established, source)) {
+  for (const comment of groupedComments(comments, source)) {
     const lineCount = proseLineCount(comment.text);
     if (lineCount <= 3 || isRequiredHeader(comment.text) || hasDirectDeclarationOwner(file, source, comment)) continue;
     findings.push({

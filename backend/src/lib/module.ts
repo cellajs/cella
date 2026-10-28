@@ -5,6 +5,7 @@ import { type ModuleConfig, registerModule } from 'shared/module-registry';
 import type { Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
+import type { StreamSignalDeclaration } from '#/modules/entities/stream/audiences';
 import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
@@ -118,6 +119,8 @@ export interface BackendModule extends ModuleConfig {
   queues?: BackendQueue[];
   /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
   notifications?: true | ModuleNotifications;
+  /** Signals this module sends on the app stream (indexed by the stream's signal registry). */
+  signals?: StreamSignalDeclaration[];
   /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
   routes?: BackendRoute[];
 }
@@ -138,6 +141,7 @@ export function defineBackendModule(module: BackendModule): void {
     queues = [],
     routes = [],
     notifications: _notifications,
+    signals: _signals,
     ...metadata
   } = module;
   registerModule(metadata);

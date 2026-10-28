@@ -2,15 +2,15 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
+import { loadAllowlist, productNameFindings, vocabularyFindings } from './check-app-vocabulary.ts';
 
 const legacyTerm = ['fo', 'rk'].join('');
 
-describe('findAppVocabularyFindings', () => {
+describe('vocabularyFindings', () => {
   it('finds the term in prose, casing, plurals, and identifiers', () => {
     const source = [`// ${legacyTerm}-owned`, `const ${legacyTerm}Breaking = true`, legacyTerm.toUpperCase(), `${legacyTerm}s`].join('\n');
 
-    expect(findAppVocabularyFindings('example.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
+    expect(vocabularyFindings('example.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
       { line: 1, term: legacyTerm },
       { line: 2, term: legacyTerm },
       { line: 3, term: legacyTerm.toUpperCase() },
@@ -30,7 +30,7 @@ describe('findAppVocabularyFindings', () => {
       ' */',
     ].join('\n');
 
-    expect(findAppVocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
+    expect(vocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
       { line: 3, column: 18, term: legacyTerm },
       { line: 7, column: 10, term: legacyTerm },
     ]);
@@ -41,14 +41,14 @@ describe('findAppVocabularyFindings', () => {
       '\n',
     );
 
-    expect(findAppVocabularyFindings('pnpm-workspace.yaml', source)).toEqual([]);
-    expect(findAppVocabularyFindings('example.ts', `class A { #${legacyTerm}: string }`)).toHaveLength(1);
+    expect(vocabularyFindings('pnpm-workspace.yaml', source)).toEqual([]);
+    expect(vocabularyFindings('example.ts', `class A { #${legacyTerm}: string }`)).toHaveLength(1);
     // Inside a value a `#` starts no comment
-    expect(findAppVocabularyFindings('pnpm-workspace.yaml', `key: abc#${legacyTerm}: value`)).toHaveLength(1);
+    expect(vocabularyFindings('pnpm-workspace.yaml', `key: abc#${legacyTerm}: value`)).toHaveLength(1);
   });
 
   it('finds the term in a file path', () => {
-    const findings = findAppVocabularyFindings(`src/${legacyTerm}-config.ts`, 'export {};');
+    const findings = vocabularyFindings(`src/${legacyTerm}-config.ts`, 'export {};');
 
     expect(findings).toEqual([
       { file: `src/${legacyTerm}-config.ts`, rule: 'source-control-term', term: legacyTerm, message: 'use template/app terminology' },
@@ -56,23 +56,23 @@ describe('findAppVocabularyFindings', () => {
   });
 
   it('allows the Cella CLI configuration', () => {
-    expect(findAppVocabularyFindings('cella/cella.config.ts', legacyTerm)).toEqual([]);
+    expect(vocabularyFindings('cella/cella.config.ts', legacyTerm)).toEqual([]);
   });
 
   it('allows the release-please changelogs, template and app root alike', () => {
-    expect(findAppVocabularyFindings('cella/CHANGELOG.md', legacyTerm)).toEqual([]);
-    expect(findAppVocabularyFindings('CHANGELOG.md', legacyTerm)).toEqual([]);
+    expect(vocabularyFindings('cella/CHANGELOG.md', legacyTerm)).toEqual([]);
+    expect(vocabularyFindings('CHANGELOG.md', legacyTerm)).toEqual([]);
   });
 
   it('honours an app allowlist by file and by prefix', () => {
     const allowlist = { files: ['json/lucide-icon-names.json'], prefixes: ['frontend/public/static/generated/'] };
-    expect(findAppVocabularyFindings('json/lucide-icon-names.json', `git-${legacyTerm}`, allowlist)).toEqual([]);
-    expect(findAppVocabularyFindings('frontend/public/static/generated/icons.svg', legacyTerm, allowlist)).toEqual([]);
-    expect(findAppVocabularyFindings('json/other.json', legacyTerm, allowlist)).toHaveLength(1);
+    expect(vocabularyFindings('json/lucide-icon-names.json', `git-${legacyTerm}`, allowlist)).toEqual([]);
+    expect(vocabularyFindings('frontend/public/static/generated/icons.svg', legacyTerm, allowlist)).toEqual([]);
+    expect(vocabularyFindings('json/other.json', legacyTerm, allowlist)).toHaveLength(1);
   });
 });
 
-describe('findProductNameFindings', () => {
+describe('productNameFindings', () => {
   const name = ['cel', 'la'].join('');
 
   it('finds the product name in identifiers, claims, DNS records and URLs of app logic', () => {
@@ -82,7 +82,7 @@ describe('findProductNameFindings', () => {
       `const host = \`_${name}-verification.\${domain}\`;`,
       `const url = 'https://www.${name}js.com/mcp';`,
     ].join('\n');
-    expect(findProductNameFindings('backend/src/modules/x/x.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
+    expect(productNameFindings('backend/src/modules/x/x.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
       { line: 1, term: `${name}_k` },
       { line: 2, term: 'CellaT' },
       { line: 3, term: `_${name}-` },
@@ -92,17 +92,17 @@ describe('findProductNameFindings', () => {
 
   it('leaves prose, tags and ownership markers alone', () => {
     const source = [`// none in ${name}; apps with other vocabularies add theirs`, `tags: ['me', '${name}'],`, `owner: '${name}',`].join('\n');
-    expect(findProductNameFindings('backend/src/modules/x/x.ts', source)).toEqual([]);
+    expect(productNameFindings('backend/src/modules/x/x.ts', source)).toEqual([]);
   });
 
   it('covers logic roots only, never tests, config, docs or the marketing site', () => {
     const source = `const url = 'https://www.${name}js.com';`;
-    expect(findProductNameFindings('backend/src/x.test.ts', source)).toEqual([]);
-    expect(findProductNameFindings('shared/config/config.default.ts', source)).toEqual([]);
-    expect(findProductNameFindings('frontend/src/modules/marketing/about.tsx', source)).toEqual([]);
-    expect(findProductNameFindings('frontend/src/content/docs/x.mdx', source)).toEqual([]);
-    expect(findProductNameFindings('infra/lib/x.ts', source)).toEqual([]);
-    expect(findProductNameFindings('frontend/src/modules/me/x.tsx', source)).toHaveLength(1);
+    expect(productNameFindings('backend/src/x.test.ts', source)).toEqual([]);
+    expect(productNameFindings('shared/config/config.default.ts', source)).toEqual([]);
+    expect(productNameFindings('frontend/src/modules/marketing/about.tsx', source)).toEqual([]);
+    expect(productNameFindings('frontend/src/content/docs/x.mdx', source)).toEqual([]);
+    expect(productNameFindings('infra/lib/x.ts', source)).toEqual([]);
+    expect(productNameFindings('frontend/src/modules/me/x.tsx', source)).toHaveLength(1);
   });
 });
 

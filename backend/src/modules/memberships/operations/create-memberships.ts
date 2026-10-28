@@ -7,15 +7,15 @@ import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { channelIdColumnsOf, isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
-  countMembershipsByChannel,
   countPendingInactiveMembershipSeats,
   insertInactiveMemberships,
   stampInactiveMembershipsReminded,
   updateInactiveMemberships,
-} from '#/modules/memberships/memberships-queries';
+} from '#/modules/memberships/inactive-memberships-queries';
+import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
-import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
+import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { getIsoDate } from '#/utils/iso-date';

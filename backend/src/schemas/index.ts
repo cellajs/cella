@@ -47,10 +47,11 @@ export { minimalBaseSchema } from '#/schemas/minimal-base';
 export {
   type AppCatchupResponse,
   appCatchupResponseSchema,
-  type CatchupChangeSummary,
+  type CatchupOrganizationSummary,
   type CatchupView,
   type CatchupViewAnswer,
-  type StreamNotification,
+  type StreamChange,
+  type StreamSignal,
   streamCatchupBodySchema,
 } from '#/schemas/stream-schemas';
 export {

@@ -12,7 +12,7 @@ import { actorRefSchema } from '#/schemas/actor-ref';
 import { channelBaseSchema, productBaseSchema } from '#/schemas/entity-base';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
-import { streamNotificationSchema } from '#/schemas/stream-schemas';
+import { streamChangeSchema, streamSignalSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
@@ -84,7 +84,8 @@ export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.register('ProductBase', productBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
-  registry.register('StreamNotification', streamNotificationSchema);
+  registry.register('StreamChange', streamChangeSchema);
+  registry.register('StreamSignal', streamSignalSchema);
 
   registerAllErrorResponses(registry);
 

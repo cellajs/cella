@@ -15,7 +15,7 @@ const dbCtx = { var: { db: baseDb } };
  * @param email - The normalized address.
  */
 export const isRecognizedBrowser = async (ctx: Context<Env>, email: string): Promise<boolean> => {
-  const deviceId = await getAuthCookie(ctx, 'device-id');
+  const deviceId = getAuthCookie(ctx, 'device-id');
   if (!deviceId) return false;
 
   // One query whether or not the address has an account; the hash is keyed by the user, so it is compared here.

@@ -38,7 +38,7 @@ export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, 
 
   const stringifiedContent = JSON.stringify(cookieContent);
 
-  await setAuthCookie(ctx, `oauth-state-${state}`, stringifiedContent, new TimeSpan(5, 'm'));
+  setAuthCookie(ctx, `oauth-state-${state}`, stringifiedContent, new TimeSpan(5, 'm'));
 
   log.info('User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 

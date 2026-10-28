@@ -128,14 +128,14 @@ export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts)
 };
 
 interface UpdateTenantOpts {
-  targetTenantId: string;
+  id: string;
   values: Partial<InsertTenantModel>;
 }
 
 /** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
-export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: UpdateTenantOpts) => {
+export const updateTenant = async (ctx: DbContext, { id, values }: UpdateTenantOpts) => {
   const { db } = ctx.var;
-  const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, targetTenantId)).returning(tenantColumns);
+  const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
   return updated;
 };
 

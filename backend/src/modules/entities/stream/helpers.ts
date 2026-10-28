@@ -1,7 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { ActivityEvent } from '#/lib/activity-bus';
 import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
-import type { StreamNotification } from '#/schemas';
+import type { StreamChange, StreamSignal } from '#/schemas';
 import { log } from '#/utils/logger';
 
 /**
@@ -18,31 +17,32 @@ export interface StreamErrorPayload {
 }
 
 /**
- * Writes one notification to each subscriber as a `change` event, serialized once and side by side: a client that
- * stopped reading holds up no other, and a write that fails is logged for its subscriber alone.
- * @param event - The activity the notification is about; its id is the stream cursor of the frame.
+ * One frame of the app stream. A change carries its activity id, which becomes the client's stream cursor; a signal
+ * carries none, so it never moves the cursor.
+ */
+export type StreamFrame = { event: 'change'; id: string; data: StreamChange } | { event: 'signal'; data: StreamSignal };
+
+/**
+ * Writes one frame to each subscriber, serialized once and side by side: a client that stopped reading holds up no
+ * other, and a write that fails is logged for its subscriber alone.
  * @param failure - The log message of a failed write.
  */
-export async function sendToSubscribers(
-  subscribers: readonly BaseStreamSubscriber[],
-  event: ActivityEvent,
-  notification: StreamNotification,
-  failure: string,
-): Promise<void> {
-  const data = JSON.stringify(notification);
+export async function sendToSubscribers(subscribers: readonly BaseStreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
+  const data = JSON.stringify(frame.data);
+  const id = frame.event === 'change' ? frame.id : undefined;
   await Promise.all(
     subscribers.map(async (subscriber) => {
       try {
-        await subscriber.stream.writeSSE({ event: 'change', id: event.id, data });
-        log.debug('SSE notification sent', { subscriberId: subscriber.id, activityId: event.id, entityType: event.entityType, action: event.action });
+        await subscriber.stream.writeSSE({ event: frame.event, id, data });
+        log.debug('SSE frame sent', { subscriberId: subscriber.id, event: frame.event, activityId: id });
       } catch (error) {
-        log.error(failure, { subscriberId: subscriber.id, activityId: event.id, error });
+        log.error(failure, { subscriberId: subscriber.id, event: frame.event, activityId: id, error });
       }
     }),
   );
 }
 
-/** The `offset` event, once after connect: the newest activity id the stream starts after, and the client's signal to post its catchup. */
+/** The `offset` event, once after connect: the newest activity id the stream starts after, and the client's cue to post its catchup. */
 export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {
   await stream.writeSSE({ event: 'offset', data: cursor ?? '' });
 }

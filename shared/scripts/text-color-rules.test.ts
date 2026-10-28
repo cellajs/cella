@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { textColorFindings } from './check-text-colors.ts';
+import { textColorFindings } from './text-color-rules.ts';
 
 const file = 'frontend/src/modules/example/example.tsx';
 const findings = (source: string, path = file) =>

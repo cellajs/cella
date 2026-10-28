@@ -6,6 +6,8 @@ export const entityCountHomePrefix = 'e:c:h:';
 export const frontierPrefix = 'e:f:';
 /** The newest sequence position of a type's rows homed at the channel itself: `e:f:h:{type}`. */
 export const frontierHomePrefix = 'e:f:h:';
+/** The version of a versioned signal on its organization's row, `s:{signal type}`: it only counts up, and a recount leaves it alone. */
+export const signalVersionPrefix = 's:';
 
 const plainCountPrefixes = [entityCountPrefix, 'm:c:'];
 const stampPrefixes = ['e:li:', 'e:lu:'];

@@ -9,11 +9,11 @@ import { type OAuthCookiePayload, oauthCookiePayloadSchema } from '#/modules/aut
  * cookie is deleted once read. A callback reads it before it judges the provider's answer: a connect's refusals from
  * this read on go back to the account page, the provider's own and a failed code exchange included.
  */
-export const readOAuthCookie = async (ctx: Context<Env>, state: string): Promise<OAuthCookiePayload | null> => {
+export const readOAuthCookie = (ctx: Context<Env>, state: string): OAuthCookiePayload | null => {
   if (!state) return null;
 
   const name: CookieName = `oauth-state-${state}`;
-  const payload = await readJsonCookie(ctx, name, oauthCookiePayloadSchema);
+  const payload = readJsonCookie(ctx, name, oauthCookiePayloadSchema);
   if (!payload) return null;
 
   deleteAuthCookie(ctx, name);

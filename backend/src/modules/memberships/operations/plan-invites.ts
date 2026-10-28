@@ -1,7 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { UserContext } from '#/core/context';
-import { findInactiveMembershipsByEmails, findInviteeAccounts } from '#/modules/memberships/memberships-queries';
+import { findInactiveMembershipsByEmails } from '#/modules/memberships/inactive-memberships-queries';
+import { findInviteeAccounts } from '#/modules/memberships/memberships-queries';
 import type { inviteOutcomeSchema } from '#/modules/memberships/memberships-schema';
 
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;

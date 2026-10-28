@@ -81,8 +81,8 @@ export async function answerCatchupViews(
 
 /**
  * Product entity sync is answered per client-declared view by `answerCatchupViews`; the per-org
- * `changes` block carries the membership signal and embedding propagation hints. A null cursor
- * returns baselines, which the client stores without fetching.
+ * `organizations` block carries the versions of the versioned signals and embedding propagation hints. A null
+ * cursor returns baselines, which the client stores without fetching.
  */
 export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
   const { memberships } = ctx.var;
@@ -93,26 +93,26 @@ export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<
 
   const generation = await findSyncGeneration(ctx);
 
-  if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null, generation };
+  if (organizationIds.size === 0) return { organizations: {}, views: viewAnswers, cursor: cursor ?? null, generation };
 
   const organizationIdArray = Array.from(organizationIds);
 
-  // One query for all org counter rows: membership signal plus frontier rollups for hints.
+  // One query for all org counter rows: signal versions plus frontier rollups for hints.
   const allCounterRows = await findChannelCountersByKeys(ctx, { keys: organizationIdArray });
   const allCounters = new Map(allCounterRows.map((row) => [row.channelKey, row.counts]));
 
-  const changes: AppCatchupResponse['changes'] = {};
+  const organizations: AppCatchupResponse['organizations'] = {};
   for (const organizationId of organizationIdArray) {
-    const { membership } = parseCounterCounts(allCounters.get(organizationId));
-    changes[organizationId] = { signals: membership !== undefined ? { membership } : undefined };
+    const { signals } = parseCounterCounts(allCounters.get(organizationId));
+    organizations[organizationId] = { signals: Object.keys(signals).length > 0 ? signals : undefined };
   }
 
   // Embedding propagation hints: frontiers vs the client's org-view cursors.
-  await buildPropagationHints(ctx, changes, views, allCounters);
+  await buildPropagationHints(ctx, organizations, views, allCounters);
 
   const newCursor = (await getLatestActivityId(ctx, organizationIds)) ?? cursor ?? null;
 
-  return { changes, views: viewAnswers, cursor: newCursor, generation };
+  return { organizations, views: viewAnswers, cursor: newCursor, generation };
 }
 
 /**

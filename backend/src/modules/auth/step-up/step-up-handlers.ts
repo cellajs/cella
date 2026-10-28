@@ -1,9 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/passkeys/operations/passkey-challenges';
-import { findCredentialIdsByUser } from '#/modules/auth/passkeys/passkeys-queries';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
@@ -27,10 +25,7 @@ app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
   refuseImpersonation(session);
 
   // Issued for this account and for a step-up only: a sign-in or MFA challenge never answers as a step-up proof.
-  const challenge = await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: user.id });
-  const credentials = await findCredentialIdsByUser(ctx, { userId: user.id });
-
-  return ctx.json({ challenge, credentialIds: credentials.map((c) => c.credentialId) }, 200);
+  return ctx.json(await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: user.id }), 200);
 });
 
 app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
@@ -45,10 +40,7 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'proof_not_offered' } });
   }
 
-  if (passkeyData) {
-    const assertion = passkeyData as AuthenticationResponseJSON;
-    await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
-  }
+  if (passkeyData) await verifyPasskeyAssertion(ctx, { assertion: passkeyData, purpose: 'step-up', userId: user.id });
   if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
   if (emailCode && !(await spendCodeToken({ type: 'step-up', sessionId: session.id, code: emailCode }))) {
     throw new AppError(401, 'invalid_credentials', 'warn');

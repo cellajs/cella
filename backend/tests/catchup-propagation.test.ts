@@ -55,7 +55,7 @@ describe('Catchup propagation hints', async () => {
     const view = { key: 'organization', organizationId: organization.id, prefixes: [organization.id], entityTypes: ['attachment' as const], cursor };
     const { data, response } = await call(postAppCatchup, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
-    return (data as AppCatchupResponse).changes[organization.id]?.propagation;
+    return (data as AppCatchupResponse).organizations[organization.id]?.propagation;
   };
 
   beforeAll(async () => {

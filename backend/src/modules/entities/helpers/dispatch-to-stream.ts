@@ -1,15 +1,14 @@
-import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
-import { getEventData } from '#/lib/activity-bus';
-import { buildMoveOutNotification, buildStreamNotification, isMembershipEvent } from '#/modules/entities/stream/build-message';
+import { appConfig, type EntityActionType, isUnpublishedDraft, type SubjectForPermission } from 'shared';
+import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
-import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamEvent, AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
+import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import type { AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
-/** A signed-in user's stream: its own membership events on its user topic, product events on each of its organizations' topics. */
+/** A signed-in user's stream: its own signals on its user topic, changes and reader signals on each of its organizations' topics. */
 export interface AppStreamSubscriber extends BaseStreamSubscriber {
   userId: string;
   /** The session this connection authenticated with; its ending closes the stream. */
@@ -53,16 +52,11 @@ function rowReadSubject(event: AppStreamProductEvent, row: Record<string, unknow
 }
 
 /**
- * Whether each subscriber may read one row of a product event. Mirrors API row visibility in one fan-out check; an
- * invalid membership denies only its own subscriber.
- * @param subscribers - Who to decide for.
- * @param event - The event the row belongs to: it names the product type and the tenant.
- * @param row - The row's permission fields, or those it had before a move.
+ * Whether each subscriber may take an action on a subject, in one fan-out check that mirrors the API; an invalid
+ * membership denies only its own subscriber, and a check that fails denies all.
  * @returns One decision per subscriber, in their order.
  */
-export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent, row: Record<string, unknown>): boolean[] {
-  const subject = rowReadSubject(event, row);
-  if (!subject) return subscribers.map(() => false);
+export function accessDecisions(subscribers: readonly SubscriberAccess[], action: EntityActionType, subject: SubjectForPermission): boolean[] {
   try {
     // Stream subscribers hold sessions: never a key or token mask.
     const accesses = subscribers.map((subscriber) => ({
@@ -71,12 +65,24 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
       memberships: subscriber.memberships,
       scopes: null,
     }));
-    const results = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
+    const results = checkAccessFanout(accesses, action, subject, { onInvalidMembership: 'deny' });
     return results.map((result) => result.allowed);
   } catch {
-    log.error('Stream read decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id });
+    log.error('Stream access decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id, action });
     return subscribers.map(() => false);
   }
+}
+
+/**
+ * Whether each subscriber may read one row of a product event, as the API's row visibility decides it.
+ * @param event - The event the row belongs to: it names the product type and the tenant.
+ * @param row - The row's permission fields, or those it had before a move.
+ * @returns One decision per subscriber, in their order.
+ */
+export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent, row: Record<string, unknown>): boolean[] {
+  const subject = rowReadSubject(event, row);
+  if (!subject) return subscribers.map(() => false);
+  return accessDecisions(subscribers, 'read', subject);
 }
 
 /**
@@ -91,7 +97,7 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
 }
 
 /** The subscribers on an organization's topic that hold the organization. */
-function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
+export function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
   return streamSubscriberManager
     .getByTopic<AppStreamSubscriber>(organizationTopic(organizationId))
     .filter((subscriber) => subscriber.organizationIds.has(organizationId));
@@ -114,34 +120,21 @@ function productEventReaders(subscribers: AppStreamSubscriber[], event: AppStrea
 }
 
 /**
- * Tells the app streams that may see an event: a membership event goes to its user's streams, a product event to the
- * streams of its organization that may read any of its rows.
- * @param event - A product or membership change from the activity bus.
+ * Tells the app streams of a product event's organization that may read any of its rows.
+ * @param event - A product change from the activity bus.
  */
-export async function dispatchToAppStream(event: AppStreamEvent): Promise<void> {
-  let topic: string;
-  let eligible: AppStreamSubscriber[];
-  if (isMembershipEvent(event)) {
-    const userId = getEventData(event, 'membership')?.userId;
-    if (!userId) return;
-    topic = userTopic(userId);
-    // The user topic already targets the subject; this filter is the safety net.
-    eligible = streamSubscriberManager.getByTopic<AppStreamSubscriber>(topic).filter((subscriber) => subscriber.userId === userId);
-  } else {
-    topic = organizationTopic(event.organizationId);
-    eligible = productEventReaders(organizationSubscribers(event.organizationId), event);
-  }
+export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
+  const eligible = productEventReaders(organizationSubscribers(event.organizationId), event);
   if (eligible.length === 0) return;
 
-  log.trace('Dispatching stream event', {
+  log.trace('Dispatching stream change', {
     activityId: event.id,
     action: event.action,
     subjectId: event.subjectId,
-    topic,
     subscriberCount: eligible.length,
   });
 
-  await sendToSubscribers(eligible, event, buildStreamNotification(event), 'Failed to dispatch stream event');
+  await sendToSubscribers(eligible, { event: 'change', id: event.id, data: buildStreamChange(event) }, 'Failed to dispatch stream change');
 }
 
 /**
@@ -163,6 +156,6 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
     if (eligible.length === 0) continue;
 
     const oldEvent = rowScopedEvent(event, movedFrom);
-    await sendToSubscribers(eligible, oldEvent, buildMoveOutNotification(oldEvent, movedFrom), 'Failed to dispatch move-out');
+    await sendToSubscribers(eligible, { event: 'change', id: oldEvent.id, data: buildMoveOut(oldEvent, movedFrom) }, 'Failed to dispatch move-out');
   }
 }

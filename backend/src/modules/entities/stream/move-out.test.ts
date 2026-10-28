@@ -5,7 +5,7 @@ import type { ActivityRow } from '#/lib/activity-bus';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import type { StreamNotification } from '#/schemas';
+import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
@@ -27,7 +27,7 @@ const membership = (organizationId: string, role: EntityRole, userId: string): M
   }) as unknown as MembershipBaseModel;
 
 const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
-  const received: StreamNotification[] = [];
+  const received: StreamChange[] = [];
   const stream = {
     writeSSE: async ({ data }: { data: string }) => {
       received.push(JSON.parse(data));
@@ -106,7 +106,6 @@ describe('dispatchMoveOuts', () => {
 
     expect(member.received).toHaveLength(1);
     expect(member.received[0]).toMatchObject({
-      kind: 'product',
       action: 'moveOut',
       productType: 'attachment',
       subjectId: 'att-1',

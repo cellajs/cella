@@ -5,10 +5,12 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface OrgSyncState {
-  /** Empty until a notification or a membership names it. */
+  /** Empty until a change or a membership names it. */
   tenantId: string;
-  /** Org-slot cursors by entity type, and the membership signal under `membership`. */
+  /** Org-slot cursors by entity type. */
   seqs: Record<string, number>;
+  /** Versions of the organization's versioned signals by type, as the last catchup returned them; absent in a store persisted before them. */
+  signals?: Record<string, number>;
   /** Cursors of the channels below the organization, by channel id and then entity type. */
   channels: Record<string, Record<string, number>>;
 }
@@ -63,6 +65,8 @@ interface SyncStoreState {
   removeOrg: (organizationId: string) => void;
   setOrgSeq: (organizationId: string, entityType: string, seq: number) => void;
   getOrgSeq: (organizationId: string, entityType: string) => number;
+  setSignalVersion: (organizationId: string, type: string, version: number) => void;
+  getSignalVersion: (organizationId: string, type: string) => number;
   setChannelSeq: (organizationId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (organizationId: string, channelId: string, entityType: string) => number;
   /**
@@ -94,11 +98,12 @@ function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
   return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
 }
 
-/** Puts every org, channel and view cursor back at 0, so the next catchup stores the frontiers as baselines. */
+/** Puts every org, channel and view cursor back at 0 and forgets signal versions, so the next catchup stores the server's as baselines. */
 function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'views'>): void {
   for (const org of Object.values(state.orgs)) {
     for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
     org.channels = {};
+    org.signals = {};
   }
   for (const view of Object.values(state.views)) view.cursor = 0;
 }
@@ -106,7 +111,7 @@ function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'views'>): void {
 function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string, tenantId?: string): OrgSyncState {
   const existing = orgs[organizationId];
   if (!existing) {
-    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, channels: {} };
+    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, channels: {}, signals: {} };
     orgs[organizationId] = created;
     return created;
   }
@@ -164,6 +169,14 @@ export const syncStore = createStore<SyncStoreState>()(
             ensureOrg(state.orgs, organizationId).seqs[entityType] = seq;
           }),
         getOrgSeq: (organizationId, entityType) => get().orgs[organizationId]?.seqs[entityType] ?? 0,
+
+        setSignalVersion: (organizationId, type, version) =>
+          set((state) => {
+            const org = ensureOrg(state.orgs, organizationId);
+            org.signals ??= {};
+            org.signals[type] = version;
+          }),
+        getSignalVersion: (organizationId, type) => get().orgs[organizationId]?.signals?.[type] ?? 0,
 
         // Org-homed channel views arrive with channelId === organizationId live but at org level in catchup; both normalize to the org slot so they share one caught-up cursor.
         setChannelSeq: (organizationId, channelId, entityType, seq) =>

@@ -45,6 +45,7 @@ describe('commitMessageErrors', () => {
     ['fix: ', 'header must read'],
     [' fix: add short links', 'header must not start or end with whitespace'],
     [`fix: ${'a'.repeat(116)}`, 'header is 121 characters, at most 120'],
+    ["Fixed stuff.\n\nMerge branch 'main' into feat/x", 'header must read'],
   ])('rejects %j', (message, error) => {
     expect(commitMessageErrors(message).join('\n')).toContain(error);
   });

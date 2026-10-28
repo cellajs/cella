@@ -2,7 +2,7 @@ import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { heldFactorsSql } from '#/modules/auth/mfa/mfa-queries';
 import {
   type InsertSessionModel,
   type SessionRevocationReason,
@@ -12,7 +12,6 @@ import {
   sessionSafeColumns,
   sessionsTable,
 } from '#/modules/auth/sessions/sessions-db';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
@@ -172,12 +171,13 @@ interface GetStepUpFactsOpts {
 export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since }: GetStepUpFactsOpts) => {
   // The factors are looked up by the session's user id as a parameter: a select field renders its columns without their
   // table, so a `sessions` column in these subqueries would name the subquery's own `user_id`.
+  const held = heldFactorsSql(userId);
   const [row] = await ctx.var.db
     .select({
       stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} then ${sessionsTable.steppedUpVia} end`,
       signedInRecently: sql<boolean>`${sessionsTable.createdAt} > ${since}`,
-      hasPasskey: sql<boolean>`exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${userId})`,
-      hasTotp: sql<boolean>`exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${userId})`,
+      hasPasskey: held.passkey,
+      hasTotp: held.totp,
       mfaRequired: sql<boolean>`exists (select 1 from ${usersTable} where ${usersTable.id} = ${userId} and ${usersTable.mfaRequired})`,
     })
     .from(sessionsTable)

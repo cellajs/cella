@@ -1,10 +1,6 @@
-/**
- * Text takes its color from four steps: `text-foreground`, `text-foreground-soft`, `text-muted-foreground` and
- * `text-faint-foreground`, which increased contrast can raise. A text token with an opacity modifier and a palette gray
- * fail. Under `--audit`, opacity at rest on an element that holds text is a review marker: on an icon it is fine.
- */
 import ts from 'typescript';
-import type { Finding } from './repo-files.ts';
+import { splitToken, stringTokens, type Token } from './class-tokens.ts';
+import { type Finding, isFrontendSource, lineColumn } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 /** Paths that keep palette grays, each with its reason. */
@@ -22,38 +18,9 @@ const textHint = /^(?:text-(?:2xs|xs|sm|md|base|lg|\d?xl|\[[^\]]+\])|font-(?:lig
 /** Elements that draw a picture, where opacity is not text dimming. */
 const pictureTag = /(?:Icon|Avatar|Spinner)$|^(?:svg|img)$/;
 
-/** Sources under frontend/src, outside generated files, content, stories and tests. */
-export const isFrontendSource = (file: string) =>
-  /^frontend\/src\/.*\.tsx?$/.test(file) &&
-  !file.includes('.gen.') &&
-  !file.includes('/content/') &&
-  !file.includes('/stories/') &&
-  !/\.(?:stories|test)\.tsx?$/.test(file);
-
-/** The variants and the utility of a class token: `md:hover:x!` gives `['md', 'hover']` and `x`. */
-export function splitToken(token: string): { variants: string[]; base: string } {
-  const parts = token.replace(/^!|!$/g, '').split(':');
-  return { variants: parts.slice(0, -1), base: parts.at(-1) ?? '' };
-}
-
-const isRestOpacity = (token: string) => {
+function isRestOpacity(token: string): boolean {
   const { variants, base } = splitToken(token);
   return restOpacity.test(base) && variants.every((variant) => restVariant.test(variant));
-};
-
-export type Token = { token: string; offset: number };
-
-/** Whitespace-separated tokens of every string and template piece in `node` and under it, with their source offsets. */
-export function stringTokens(sourceFile: ts.SourceFile, node: ts.Node): Token[] {
-  const found: Token[] = [];
-  (function visit(child: ts.Node) {
-    if (ts.isStringLiteralLike(child) || ts.isTemplateHead(child) || ts.isTemplateMiddle(child) || ts.isTemplateTail(child)) {
-      const start = child.getStart(sourceFile) + 1;
-      for (const match of child.text.matchAll(/\S+/g)) found.push({ token: match[0], offset: start + match.index });
-    }
-    child.forEachChild(visit);
-  })(node);
-  return found;
 }
 
 /** Whether visible text sits in this element: a text child or a value such as `{title}`, outside `sr-only` spans and `{icon}`. */
@@ -74,14 +41,13 @@ function holdsText(sourceFile: ts.SourceFile, node: ts.JsxElement | ts.JsxFragme
   });
 }
 
-/** Text color findings in one frontend file. */
+/** Text color findings in one frontend file; opacity on text at rest is a review marker. */
 export function textColorFindings(file: string, source: string): Finding[] {
   if (!isFrontendSource(file) || !/opacity-|text-/.test(source)) return [];
   const sourceFile = parseSource(file, source);
   const findings = new Map<number, Finding>();
   const report = (offset: number, term: string, message: string, review = false) => {
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(offset);
-    findings.set(offset, { file, line: line + 1, column: character + 1, rule: 'text-color', term, message, ...(review && { review }) });
+    findings.set(offset, { file, ...lineColumn(source, offset), rule: 'text-color', term, message, ...(review && { review }) });
   };
   const paletteAllowed = Object.keys(paletteExceptions).some((path) => file.startsWith(path));
 

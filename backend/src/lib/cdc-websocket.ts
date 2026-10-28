@@ -99,8 +99,8 @@ const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] sa
 type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
 
 /**
- * The CDC worker's channel: one live connection, closed after `idleTimeoutMs` without a message. The internal listener
- * (lib/listeners.ts) routes and authenticates the upgrade before handing it over.
+ * The API's end of the CDC worker's socket: one live connection, closed after `idleTimeoutMs` without a message. The
+ * internal listener (lib/listeners.ts) routes and authenticates the upgrade before handing it over.
  */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;

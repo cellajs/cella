@@ -31,7 +31,7 @@ app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
 
   const manualKey = encodeBase32(secretBytes);
 
-  await setAuthCookie(ctx, 'totp-challenge', manualKey, totpSetupLifetime);
+  setAuthCookie(ctx, 'totp-challenge', manualKey, totpSetupLifetime);
 
   const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
@@ -45,7 +45,7 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 
   if (await findTotp(ctx, { userId: user.id })) throw new AppError(409, 'resource_already_exists', 'warn');
 
-  const pendingSecret = await getAuthCookie(ctx, 'totp-challenge');
+  const pendingSecret = getAuthCookie(ctx, 'totp-challenge');
   if (!pendingSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
   // The confirming code's step is stored with the secret, so the same code cannot also answer a second factor.
@@ -66,11 +66,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
   // The delete rolls back when MFA is on: it keeps the authenticator app until MFA is turned off.
-  const deleted = await mfaFactorRules.locked(user.id, async (tx) => {
-    const totp = await deleteTotp({ var: { db: tx } }, { userId: user.id });
-    await mfaFactorRules.assertKeepsFactors(tx, user.id);
-    return totp;
-  });
+  const deleted = await mfaFactorRules.removeFactor(user.id, (txCtx) => deleteTotp(txCtx, { userId: user.id }));
 
   // Without an authenticator app the answer is 204 as well, but only a deletion mails the user.
   if (deleted) sendAccountSecurityEmail(user, 'totp-deleted');
@@ -86,4 +82,4 @@ app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-export const authTotpHandlers = app;
+export const authTotpsHandlers = app;

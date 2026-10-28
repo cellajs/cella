@@ -1,5 +1,6 @@
 import { getMcpProtectedResourceMetadata } from 'sdk';
 import { appConfig } from 'shared';
+import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { otel } from '#/lib/tracing';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -9,8 +10,8 @@ import { createTestClient, sdk } from './test-client';
 
 type Fetch = (request: Request) => Response | Promise<Response>;
 
-/** What the worker hands `serve` and its shutdown hook, so the test opens no port and stops what the worker starts. */
-const worker = vi.hoisted(() => ({ fetch: undefined as Fetch | undefined, cleanup: undefined as (() => Promise<void>) | undefined }));
+/** What the worker hands `serve`, so the test opens no port. */
+const worker = vi.hoisted(() => ({ fetch: undefined as Fetch | undefined }));
 
 vi.mock('@hono/node-server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@hono/node-server')>()),
@@ -19,11 +20,7 @@ vi.mock('@hono/node-server', async (importOriginal) => ({
     return { close: () => {} };
   }),
 }));
-vi.mock('shared/utils/worker-lifecycle', () => ({
-  setupGracefulShutdown: vi.fn(({ cleanup }: { cleanup: () => Promise<void> }) => {
-    worker.cleanup = cleanup;
-  }),
-}));
+vi.mock('shared/utils/worker-lifecycle', () => ({ setupGracefulShutdown: vi.fn() }));
 // The worker starts telemetry; a test exports none.
 vi.mock('#/lib/tracing', async (importOriginal) => {
   const { otel } = await importOriginal<typeof import('#/lib/tracing')>();
@@ -37,7 +34,7 @@ vi.mock('#/lib/tracing', async (importOriginal) => {
  * then. Hono takes no routes after its first request, so the worker serves an app of its own.
  */
 describe('MCP worker folded into the API process', () => {
-  afterAll(async () => await worker.cleanup?.());
+  afterAll(async () => (await import('#/modules/mcp/worker/mcp-worker-entry')).shutdownMcpWorker());
 
   it('serves the MCP routes after the API has answered a request', async () => {
     const { baseApp } = await import('#/routes');
@@ -45,8 +42,9 @@ describe('MCP worker folded into the API process', () => {
 
     const { startMcpWorker } = await import('#/modules/mcp/worker/mcp-worker-entry');
     await startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
-    // The API process owns telemetry
+    // The API process owns telemetry and the shutdown: a handler of the worker's own would exit the process mid-cleanup.
     expect(otel.start).not.toHaveBeenCalled();
+    expect(setupGracefulShutdown).not.toHaveBeenCalled();
 
     const org = await createTestOrganization();
     const call = sdk(createTestClient({ fetch: worker.fetch as Fetch }));

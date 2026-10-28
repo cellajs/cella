@@ -1,41 +1,27 @@
-/**
- * Enforces frontend conventions Biome cannot express reliably: named function components, `ComponentType<Props>` values,
- * stores and route context read through a selector, `press={false}` on a Button, `formResolver` and `noValidate` on a
- * form, a drag grip through the reorder handle. Each check below states its rule.
- */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
-import { type Finding, repoRoot } from './repo-files.ts';
+import { type Finding, isFrontendSource, lineColumn, repoRoot } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 type Report = (node: ts.Node, rule: string, message: string) => void;
 
-/** App sources under frontend/src, outside generated files, content, stories and tests. */
-function isFrontendSource(file: string): boolean {
-  return (
-    /^frontend\/src\/.*\.tsx?$/.test(file) &&
-    !file.includes('.gen.') &&
-    !file.includes('/content/') &&
-    !file.includes('/stories/') &&
-    !/\.(?:stories|test)\.tsx?$/.test(file)
-  );
-}
-
 function containsJsx(node: ts.Node): boolean {
-  let found = false;
-  function visit(child: ts.Node): void {
-    if (found) return;
-    if (ts.isJsxElement(child) || ts.isJsxFragment(child) || ts.isJsxSelfClosingElement(child)) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(child, visit);
-  }
-  visit(node);
-  return found;
+  return ts.isJsxElement(node) || ts.isJsxFragment(node) || ts.isJsxSelfClosingElement(node) || !!ts.forEachChild(node, containsJsx);
 }
 
+/** The import declarations of a file by module, each with the names it imports: `imported` as exported, `element` the binding. */
+function importsOf(sourceFile: ts.SourceFile) {
+  return sourceFile.statements.filter(ts.isImportDeclaration).flatMap((declaration) => {
+    if (!ts.isStringLiteral(declaration.moduleSpecifier)) return [];
+    const bindings = declaration.importClause?.namedBindings;
+    const elements = bindings && ts.isNamedImports(bindings) ? bindings.elements : [];
+    const names = elements.map((element) => ({ imported: (element.propertyName ?? element.name).text, element }));
+    return [{ module: declaration.moduleSpecifier.text, declaration, names }];
+  });
+}
+
+/** A component is a function; one kept as a value is typed `ComponentType<Props>`, never `FC`. */
 function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
   if (!ts.isTypeReferenceNode(node)) return;
   const name = node.typeName.getText(sourceFile);
@@ -43,6 +29,7 @@ function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, repor
   report(node, 'react-component-type', 'declare components with functions; use ComponentType<Props> when a component is stored as a value');
 }
 
+/** A component is a named function declaration, and a helper such as `memo` wraps a function expression of its name. */
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement, report: Report): void {
   if (extname(sourceFile.fileName) !== '.tsx') return;
   for (const declaration of node.declarationList.declarations) {
@@ -65,16 +52,13 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
   }
 }
 
+/** Adds the stores `sourceFile` declares with zustand's `create` to `stores`. */
 function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
-  const createNames = new Set<string>();
-  for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (statement.moduleSpecifier.text !== 'zustand' || !bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      if ((element.propertyName ?? element.name).text === 'create') createNames.add(element.name.text);
-    }
-  }
+  const createNames = new Set(
+    importsOf(sourceFile)
+      .filter(({ module }) => module === 'zustand')
+      .flatMap(({ names }) => names.filter(({ imported }) => imported === 'create').map(({ element }) => element.name.text)),
+  );
   if (createNames.size === 0) return;
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) continue;
@@ -87,6 +71,7 @@ function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
   }
 }
 
+/** A store is read through a selector: called with no argument, it renders the component again on every field change. */
 function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report): void {
   if (!ts.isCallExpression(node) || node.arguments.length > 0 || !ts.isIdentifier(node.expression)) return;
   const name = node.expression.text;
@@ -98,7 +83,7 @@ function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report):
  * Route context is rebuilt on every navigation, search-only ones included, so a component that reads it whole renders
  * again on each one. `select` narrows the read to a value that stays equal between navigations.
  */
-function checkRouteContextSelector(node: ts.Node, report: Report): void {
+function checkRouteContextSelector(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
   if (!ts.isCallExpression(node)) return;
   const callee = node.expression;
   const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : undefined;
@@ -106,7 +91,7 @@ function checkRouteContextSelector(node: ts.Node, report: Report): void {
   const [options] = node.arguments;
   // Options passed by name or spread have their `select` elsewhere
   if (options && (!ts.isObjectLiteralExpression(options) || options.properties.some(ts.isSpreadAssignment))) return;
-  if (options?.properties.some((property) => property.name?.getText() === 'select')) return;
+  if (options?.properties.some((property) => property.name?.getText(sourceFile) === 'select')) return;
   report(
     node,
     'route-context-selector',
@@ -123,7 +108,7 @@ function checkButtonPressCancel(sourceFile: ts.SourceFile, node: ts.Node, report
   if (node.tagName.getText(sourceFile) !== 'Button') return;
   for (const attribute of node.attributes.properties) {
     if (!ts.isJsxAttribute(attribute) || attribute.name.getText(sourceFile) !== 'className' || !attribute.initializer) continue;
-    if (!/(?<![\w:-])!?active:translate-y-0!?(?![\w-])/.test(attribute.initializer.getText(sourceFile))) continue;
+    if (!/(?<![\w-])!?active:translate-y-0!?(?![\w-])/.test(attribute.initializer.getText(sourceFile))) continue;
     report(
       attribute,
       'button-press-cancel',
@@ -146,10 +131,12 @@ function checkFormNoValidate(sourceFile: ts.SourceFile, node: ts.Node, report: R
 }
 
 /** A form resolves through `formResolver`, which leaves a cleared optional field unset; it is the one reader of `zodResolver`. */
-function checkFormResolver(file: string, node: ts.Node, report: Report): void {
-  if (file === 'frontend/src/utils/form-resolver.ts' || !ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) return;
-  if (node.moduleSpecifier.text !== '@hookform/resolvers/zod') return;
-  report(node, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
+function checkFormResolver(file: string, sourceFile: ts.SourceFile, report: Report): void {
+  if (file === 'frontend/src/utils/form-resolver.ts') return;
+  for (const { module, declaration } of importsOf(sourceFile)) {
+    if (module !== '@hookform/resolvers/zod') continue;
+    report(declaration, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
+  }
 }
 
 /**
@@ -160,13 +147,9 @@ function checkReorderGrip(file: string, sourceFile: ts.SourceFile, report: Repor
   if (file.endsWith('-preview.tsx') || file === 'frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx') return;
   let grip: ts.Node | undefined;
   let hasHandle = false;
-  for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !ts.isNamedImports(bindings)) continue;
-    for (const element of bindings.elements) {
-      const imported = (element.propertyName ?? element.name).text;
-      if (statement.moduleSpecifier.text === 'lucide-react' && /^Grip(Vertical|Horizontal)Icon$/.test(imported)) grip = element;
+  for (const { module, names } of importsOf(sourceFile)) {
+    for (const { imported, element } of names) {
+      if (module === 'lucide-react' && /^Grip(?:Vertical|Horizontal)?Icon$/.test(imported)) grip = element;
       if (imported === 'ReorderHandle' || imported === 'reorderColumn') hasHandle = true;
     }
   }
@@ -225,22 +208,19 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   if (!isFrontendSource(file)) return [];
   const sourceFile = parseSource(file, source);
   const findings: Finding[] = [];
-  const report: Report = (node, rule, message) => {
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-    findings.push({ file, line: line + 1, column: character + 1, rule, message });
-  };
+  const report: Report = (node, rule, message) => findings.push({ file, ...lineColumn(source, node.getStart(sourceFile)), rule, message });
 
   for (const statement of sourceFile.statements) {
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement, report);
   }
   checkReorderGrip(file, sourceFile, report);
+  checkFormResolver(file, sourceFile, report);
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
-    checkRouteContextSelector(node, report);
+    checkRouteContextSelector(sourceFile, node, report);
     checkButtonPressCancel(sourceFile, node, report);
     checkFormNoValidate(sourceFile, node, report);
-    checkFormResolver(file, node, report);
     checkMemoDependencies(node, report);
     node.forEachChild(visit);
   });

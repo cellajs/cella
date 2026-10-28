@@ -8,5 +8,5 @@ defineFrontendModule({
   description: 'UI for tracking entity view counts and marking entities as seen.',
 });
 
-// Registered with the module so badge deltas from synced rows start before the first stream notification.
+// Registered with the module so badge deltas from synced rows start before the first stream change.
 subscribeUnseenSync();

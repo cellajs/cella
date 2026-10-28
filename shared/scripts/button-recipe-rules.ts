@@ -1,18 +1,13 @@
-/**
- * A button takes its color from its variant; a neutral hover is `hover:bg-muted` on a pressable, accent on a navigable
- * item, sidebar-accent in the sidebar. Under `--audit`, a button class that sets a fill, edge or text color and a neutral
- * hover off that model are review markers, a destructive or muted text a button keeps on purpose included.
- */
 import ts from 'typescript';
-import { isFrontendSource, splitToken, stringTokens, type Token } from './check-text-colors.ts';
-import type { Finding } from './repo-files.ts';
+import { splitToken, stringTokens, type Token } from './class-tokens.ts';
+import { type Finding, isFrontendSource, lineColumn } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
 /** Color utilities by kind; a size, width, alignment or layout keyword under the same prefix is none of them. */
 const colorUtilities = {
   fill: /^bg-(?!(?:clip|origin|blend|size|position|repeat|linear|radial|conic)-|(?:none|cover|contain|auto|fixed|local|scroll|no-repeat|repeat|center|top|bottom|left|right)$)/,
   edge: /^border-(?:[trblxyse]-)?(?![trblxyse](?:-|$)|\d|px$|\[\d|spacing|(?:solid|dashed|dotted|double|hidden|none|collapse|separate)$)/,
-  text: /^text-(?!\[\d|(?:2xs|xs|sm|base|md|lg|\d?xl|left|center|right|start|end|justify|wrap|nowrap|balance|pretty|ellipsis|clip)$)/,
+  text: /^text-(?!\[\d|\[length:|(?:2xs|xs|sm|base|md|lg|\d?xl|left|center|right|start|end|justify|wrap|nowrap|balance|pretty|ellipsis|clip)$)/,
 };
 /** Variants that style a child or a pseudo-element, not the button. */
 const childVariant = /^(?:\[&|\*|before$|after$|placeholder$|selection$|marker$|file$)/;
@@ -35,17 +30,18 @@ export function offModelHover(token: string): boolean {
   return neutralHover.test(base) && base !== 'bg-muted/50' && variants.some((variant) => /(?:^|-)hover(?:\/|$)/.test(variant));
 }
 
-const isButton = (node: ts.Node) => (ts.isJsxSelfClosingElement(node) || ts.isJsxElement(node)) && tagName(node) === 'Button';
-const tagName = (node: ts.JsxSelfClosingElement | ts.JsxElement) => (ts.isJsxElement(node) ? node.openingElement : node).tagName.getText();
+function isButton(node: ts.Node): boolean {
+  if (!ts.isJsxSelfClosingElement(node) && !ts.isJsxElement(node)) return false;
+  return (ts.isJsxElement(node) ? node.openingElement : node).tagName.getText() === 'Button';
+}
 
-/** Button and hover recipe markers in one frontend file. */
+/** Button and hover recipe review markers in one frontend file. */
 export function buttonRecipeFindings(file: string, source: string): Finding[] {
   if (!isFrontendSource(file) || file.endsWith('/ui/button.tsx') || !/hover|Button|buttonVariants/.test(source)) return [];
   const sourceFile = parseSource(file, source);
   const findings = new Map<number, Finding>();
   const report = (offset: number, term: string, message: string) => {
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(offset);
-    findings.set(offset, { file, line: line + 1, column: character + 1, rule: 'button-recipe', term, message, review: true });
+    findings.set(offset, { file, ...lineColumn(source, offset), rule: 'button-recipe', term, message, review: true });
   };
   const judgeButton = (tokens: Token[]) => {
     const restyled = tokens.filter(({ token }) => restylesVariant(token));

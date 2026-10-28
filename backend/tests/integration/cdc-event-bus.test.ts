@@ -75,8 +75,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(event.rowData).toMatchObject({ channelType: 'organization', channelId: testOrg.id, organizationId: testOrg.id });
     // The activity names its organization: without it the stream listener has nowhere to route the event.
     expect(event.organizationId).toBe(testOrg.id);
-    // And the organization's bump-only signal moves, which is what a catchup screens membership changes with.
-    await waitFor(async () => ((await readCounts()).membership ?? 0) >= 1, 15_000, 'membership signal on channel_counters');
+    // And the version of the organization's `membership.changed` signal moves, which a catchup compares with the client's.
+    await waitFor(async () => ((await readCounts())['s:membership.changed'] ?? 0) >= 1, 15_000, 'membership.changed version on channel_counters');
   });
 
   it('must not hand two memberships removed in one transaction to the API as one event', async () => {
@@ -85,7 +85,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const memberships = members.map((member) => ({ ...mockChannelMembership('organization', testOrg, member), role: memberRole }));
     await db.insert(membershipsTable).values(memberships);
     const membershipIds = memberships.map((membership) => membership.id as string);
-    const signalBefore = async () => (await readCounts()).membership ?? 0;
+    const signalBefore = async () => (await readCounts())['s:membership.changed'] ?? 0;
     await waitFor(async () => (await readCounts())['m:c:total'] === 3, 15_000, 'both memberships counted');
     const before = await signalBefore();
 

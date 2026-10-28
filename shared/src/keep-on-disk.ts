@@ -1,3 +1,5 @@
+import { escapeRegExp } from './utils/escape-regexp.ts';
+
 /** What every service keeps on disk: the OpenTelemetry SDK with `pg`, and pino with its worker-thread packages. */
 const sharedPatterns = [
   String.raw`pg(?:\/|$)`,
@@ -24,9 +26,7 @@ const sharedPatterns = [
  * A package kept on disk that production never loads, such as pino-pretty, stays a devDependency.
  */
 export function keepOnDisk(packages: readonly string[], dependencies: Readonly<Record<string, string>>): { external: RegExp[] } {
-  const external = [...sharedPatterns, ...packages.map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`)].map(
-    (pattern) => new RegExp(`^${pattern}`),
-  );
+  const external = [...sharedPatterns, ...packages.map((name) => `${escapeRegExp(name)}(?:\\/|$)`)].map((pattern) => new RegExp(`^${pattern}`));
 
   const inlined = Object.keys(dependencies).filter((name) => !external.some((pattern) => pattern.test(name)));
   if (inlined.length) {

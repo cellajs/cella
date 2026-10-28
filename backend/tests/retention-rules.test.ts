@@ -8,7 +8,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';

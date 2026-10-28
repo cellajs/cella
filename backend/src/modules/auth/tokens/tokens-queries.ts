@@ -2,11 +2,11 @@ import { and, desc, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } fro
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type CodeTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
+import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
-export type { PendingSignUp } from '#/modules/auth/tokens-db';
+export type { PendingSignUp } from '#/modules/auth/tokens/tokens-db';
 
 /** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
@@ -79,8 +79,8 @@ export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershi
   await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
-interface BindTokenToUserOpts {
-  tokenId: string;
+interface UpdateTokenUserOpts {
+  id: string;
   userId: string;
 }
 
@@ -88,11 +88,11 @@ interface BindTokenToUserOpts {
  * Binds a token issued without an account to the account settled for it: the one holding its address by now, or the
  * one a sign-up link's redemption created. Undefined when the token is bound already.
  */
-export const bindTokenToUser = async (ctx: DbContext, { tokenId, userId }: BindTokenToUserOpts) => {
+export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateTokenUserOpts) => {
   const [bound] = await ctx.var.db
     .update(tokensTable)
     .set({ userId })
-    .where(and(eq(tokensTable.id, tokenId), isNull(tokensTable.userId)))
+    .where(and(eq(tokensTable.id, id), isNull(tokensTable.userId)))
     .returning(tokenColumns);
   return bound;
 };

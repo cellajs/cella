@@ -3,7 +3,7 @@ import { isSeenTracked, matchesUnseenFilters, seenKeys } from '~/modules/seen/he
 import { isSeenLocally } from '~/modules/seen/seen-store';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { queryClient } from '~/query/query-client';
-import { onSyncedRows } from '~/query/realtime/sync-signals';
+import { onSyncedRows } from '~/query/realtime/sync-events';
 
 // Each synced row counts once between exact recounts; older rows are already in the server count.
 const countedIds = new Set<string>();

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';

@@ -5,7 +5,7 @@
   "scripts": {
     "ts": "cd .. && tsgo -p shared/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
-    "lens:check": "tsx scripts/check-lenses.ts",
+    "lens:check": "node scripts/check-lenses.ts",
     "test": "vitest run"
   },
   "exports": {

@@ -39,7 +39,7 @@ describe('formatQuickFacts', () => {
     };
     const lines = strip(formatQuickFacts(facts, { now: T }));
     expect(lines[0]).toBe('● Lock: held by operator:flip (apply, since 2026-09-24 11:50:00 UTC)');
-    expect(lines[1]).toBe('⚠ Observer key: SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 14:00 UTC) — expires in 2h');
+    expect(lines[1]).toBe('⚠ Observer key: SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 14:00 UTC) · expires in 2h');
     expect(lines[2]).toContain('Update identities puts it on this machine');
     expect(lines[3]).toContain('key lookup: no answer');
   });

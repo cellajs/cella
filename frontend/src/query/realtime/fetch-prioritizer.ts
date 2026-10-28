@@ -6,10 +6,10 @@ import { sourceId } from '~/query/offline/hlc';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from '~/query/realtime/cache-ops';
 import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { publishSyncedRows } from '~/query/realtime/sync-events';
 import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
-import { publishSyncedRows } from '~/query/realtime/sync-signals';
 import { syncStore } from '~/query/realtime/sync-store';
-import type { AppStreamNotification } from '~/query/realtime/types';
+import type { AppStreamChange } from '~/query/realtime/types';
 import { resolveChannelPath } from '~/query/realtime/view-declaration';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
@@ -29,7 +29,7 @@ export interface EnqueueInput {
   untilSeq: number;
   isCreate: boolean;
   spreadWindowMs?: number;
-  propagation?: AppStreamNotification['propagation'];
+  propagation?: AppStreamChange['propagation'];
 }
 
 interface DirtyEntry {
@@ -42,7 +42,7 @@ interface DirtyEntry {
   dueAt: number;
   hasCreates: boolean;
   attempts: number;
-  propagations: NonNullable<AppStreamNotification['propagation']>[];
+  propagations: NonNullable<AppStreamChange['propagation']>[];
 }
 
 const dirty = new Map<string, DirtyEntry>();
@@ -67,7 +67,7 @@ function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: numbe
   return Math.min(Math.max(tier.min, spread), tier.max);
 }
 
-/** Enqueue a notified seq range for lazy fetching; a muted or archived scope waits until it is opened. */
+/** Enqueue an announced seq range for lazy fetching; a muted or archived scope waits until it is opened. */
 export function enqueueRange(input: EnqueueInput): void {
   enqueueWithTier(input, getSyncTier(input.entityType, input.organizationId, input.channelId));
 }
@@ -86,7 +86,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return;
 
-  // Anchoring after the caught-up position heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
+  // Anchoring after the caught-up position heals missed-change gaps and trims already-ingested overlap; with no baseline, trust the change's own range.
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
@@ -122,7 +122,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
 export function attachPendingPropagation(
   entityType: ProductEntityType,
   organizationId: string,
-  propagation: NonNullable<AppStreamNotification['propagation']>,
+  propagation: NonNullable<AppStreamChange['propagation']>,
 ): boolean {
   const entry = dirty.get(entryKey(entityType, organizationId, null));
   if (!entry) return false;
@@ -177,7 +177,7 @@ async function flushDue(): Promise<void> {
   const due: DirtyEntry[] = [];
   for (const [key, entry] of dirty) {
     if (entry.dueAt > now) continue;
-    // In-flight ranges leave the map; overlapping re-notifications re-enqueue.
+    // In-flight ranges leave the map; overlapping changes that arrive later re-enqueue.
     dirty.delete(key);
     due.push(entry);
   }
@@ -286,7 +286,7 @@ function advanceCaughtUp(entry: DirtyEntry): void {
 function requeue(entry: DirtyEntry, delayMs: number): void {
   const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
-  // A newer notification re-enqueued this channel view mid-flight: merge this range back into it.
+  // A newer change re-enqueued this channel view mid-flight: merge this range back into it.
   if (existing) mergeRange(existing, entry);
   else dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
   armTimer();
@@ -324,7 +324,7 @@ function installListeners(): void {
   // Back online: retry what accumulated while offline.
   window.addEventListener('online', armTimer);
 
-  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications that arrive just before mount.
+  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and changes that arrive just before mount.
   queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
