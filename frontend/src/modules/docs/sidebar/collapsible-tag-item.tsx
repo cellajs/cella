@@ -12,12 +12,10 @@ import { cn } from '~/utils/cn';
 const tagTypeConfig = {
   operations: {
     linkTo: '/docs/operations' as const,
-    getHash: (name: string) => `tag/${name}`,
     getSearch: (collapse: boolean, name: string) => ({ operationTag: collapse ? undefined : name }),
   },
   schemas: {
     linkTo: '/docs/schemas' as const,
-    getHash: (name: string) => name,
     getSearch: (collapse: boolean, name: string) => ({ schemaTag: collapse ? undefined : name }),
   },
 };
@@ -55,8 +53,8 @@ function CollapsibleTagItemBase<T>({
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
   const isMobile = useBreakpointBelow('md', false);
-  const { linkTo, getSearch, getHash } = tagTypeConfig[type];
-  const hash = getHash(tag.name);
+  const { linkTo, getSearch } = tagTypeConfig[type];
+  const hash = `tag/${tag.name}`;
   // Only a re-click at the tag itself collapses it; at one of its items or elsewhere, the click jumps here and leaves it open
   const collapseOnClick = isExpanded && isAtTag;
 

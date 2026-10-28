@@ -156,7 +156,7 @@ function InvitationChip({ invitation }: { invitation: NonNullable<TokenData['inv
   const { t } = useTranslation();
 
   return (
-    <EntityChip type={invitation.entityType} name={invitation.entityName} size="lg" className="mx-auto border-primary/20 bg-primary/5 pr-3">
+    <EntityChip type={invitation.entityType} name={invitation.entityName} size="lg" className="intent-primary soft-bg soft-border mx-auto pr-3">
       {t('c:invitation_to', { name: invitation.entityName })}
     </EntityChip>
   );

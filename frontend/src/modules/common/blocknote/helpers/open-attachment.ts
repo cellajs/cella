@@ -14,7 +14,7 @@ export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: str
     0,
     attachments.findIndex(({ id }) => id === blockId),
   );
-  openAttachmentDialog({ attachmentIndex, attachments, triggerRef: triggerRef as RefObject<null> | undefined });
+  openAttachmentDialog({ attachmentIndex, attachments, triggerRef });
 };
 
 /** Opens editor media in a carousel starting at the media of block `blockId`. */

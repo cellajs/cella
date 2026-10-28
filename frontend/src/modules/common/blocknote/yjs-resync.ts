@@ -1,8 +1,8 @@
 import * as encoding from 'lib0/encoding';
 import * as Y from 'yjs';
 
-/** Structs stay parked this long before the watch treats the document as stuck. */
-export const parkedGraceMs = 2_000;
+/** Structs stay pending this long before the watch treats the document as stuck. */
+export const pendingGraceMs = 2_000;
 /** Minimum spacing between two resyncs of the same connection. */
 export const resyncCooldownMs = 10_000;
 const pollMs = 1_000;
@@ -22,29 +22,29 @@ function encodeSyncStep1(doc: Y.Doc) {
 }
 
 /**
- * Resyncs a document stuck on a lost update. Yjs parks an inbound update whose dependency never arrived, and everything
+ * Resyncs a document stuck on a lost update. Yjs holds an inbound update whose dependency never arrived, and everything
  * after it, in `store.pendingStructs`: edits stop while the connection looks healthy. A fresh Step1 on the open socket
  * clears it, with no upgrade or authorization: the relay answers it as a handshake, with exactly the missing range, and
  * asks for what it lacks. The cooldown keeps a gap the relay cannot fill from turning into a resync storm.
  */
 export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, now: () => number = Date.now): () => void {
-  let parkedSince = 0;
+  let pendingSince = 0;
   let lastResyncAt = 0;
 
   const check = () => {
-    const parked = doc.store.pendingStructs !== null;
+    const pending = doc.store.pendingStructs !== null;
     const time = now();
-    if (!parked) {
-      parkedSince = 0;
+    if (!pending) {
+      pendingSince = 0;
       return;
     }
-    if (parkedSince === 0) parkedSince = time;
-    if (time - parkedSince < parkedGraceMs) return;
+    if (pendingSince === 0) pendingSince = time;
+    if (time - pendingSince < pendingGraceMs) return;
     if (time - lastResyncAt < resyncCooldownMs) return;
     if (!provider.wsconnected || !provider.ws) return;
 
     lastResyncAt = time;
-    parkedSince = time;
+    pendingSince = time;
     provider.ws.send(encodeSyncStep1(doc));
   };
 

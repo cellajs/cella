@@ -175,8 +175,8 @@ const keyPath = (entityId: string) => ['attachment', entityId] as ['attachment',
 /** Stores a document as an earlier page left it: `text`, of `generation`, with its edit unsynced when asked. */
 async function seedStored(entityId: string, text: string, opts: { generation?: string; unsynced?: boolean } = {}) {
   const doc = new Y.Doc();
-  const writer = createYDocWriter(keyOf(entityId));
-  writer?.start(doc, { ...scope, generation: opts.generation ?? 'gen-1' }, false);
+  const writer = createYDocWriter({ ...keyOf(entityId), ...scope });
+  writer?.start(doc, opts.generation ?? 'gen-1', false);
   await flushYjsStore();
   let update: Uint8Array = new Uint8Array();
   doc.once('update', (u: Uint8Array) => {

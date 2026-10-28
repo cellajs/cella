@@ -19,7 +19,7 @@ export function getScrollParent(node: HTMLElement): HTMLElement | Window {
 const scrollTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? scrollParent.scrollY : scrollParent.scrollTop);
 
 /** Viewport position of a scroll parent's top edge: 0 for the window. */
-const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
+export const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
 
 const passiveArg = { passive: true } as const;
 

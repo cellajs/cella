@@ -76,7 +76,6 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
       />
       <Sidebar
         id="sidebar-nav"
-        collapsible="none"
         data-started={hasStarted}
         className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden data-[started=false]:-translate-x-full"
       >

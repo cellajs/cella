@@ -67,13 +67,6 @@ export interface UnsavedYDoc extends YjsDocScope {
   parkedId?: number;
 }
 
-/** Where a stored document lives and which history it holds. */
-export interface StoreScope {
-  tenantId: string;
-  organizationId: string;
-  generation: string;
-}
-
 /** The proof that the server holds a document's local rows: a saved handshake, or a connection that turned clean. */
 export type StoreProof = { kind: 'handshake'; applied: AppliedRows; vector: Uint8Array } | { kind: 'clean' };
 
@@ -82,8 +75,8 @@ export type StoreProof = { kind: 'handshake'; applied: AppliedRows; vector: Uint
  * connects and stays editable offline. A `local` row holds an edit no server answer proved saved; only a proof clears it.
  */
 export interface YDocWriter {
-  /** Starts storing: a full snapshot, plus a local row when `unsynced`. Idempotent. */
-  start(doc: Y.Doc, scope: StoreScope, unsynced: boolean): void;
+  /** Starts storing the history `generation`: a full snapshot, plus a local row when `unsynced`. Idempotent. */
+  start(doc: Y.Doc, generation: string, unsynced: boolean): void;
   /** Queues an applied update; flushed per task. `local` rows are broadcast to other tabs after the commit. */
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }): void;
   /** Clears local rows: every row in `applied` (handshake), or this tab's own (clean). */
@@ -200,7 +193,8 @@ interface Commit {
 class StoreWriter implements YDocWriter {
   failed = false;
   private doc: Y.Doc | null = null;
-  private scope: StoreScope | null = null;
+  /** The history the stored rows belong to, known from `start`. */
+  private generation: string | null = null;
   private batch: Batch = emptyBatch();
   private timer: ReturnType<typeof setTimeout> | undefined;
   /** Batches being written, and those of them holding local edits. */
@@ -214,11 +208,15 @@ class StoreWriter implements YDocWriter {
   /** Its document was destroyed: the writer flushes what it holds, then goes. */
   released = false;
 
+  readonly key: YDocKey;
+
   constructor(
-    readonly key: YDocKey,
+    private readonly scope: YjsDocScope,
     private readonly db: LocalUserDatabase,
     private readonly options: YDocWriterOptions,
-  ) {}
+  ) {
+    this.key = { entityType: scope.entityType, entityId: scope.entityId };
+  }
 
   get pending() {
     return this.batch.local.length > 0 || this.batch.fullLocal || this.writingLocal > 0;
@@ -229,10 +227,10 @@ class StoreWriter implements YDocWriter {
     return this.timer !== undefined || this.writing > 0;
   }
 
-  start(doc: Y.Doc, scope: StoreScope, unsynced: boolean) {
+  start(doc: Y.Doc, generation: string, unsynced: boolean) {
     if (this.doc || this.closed) return;
     this.doc = doc;
-    this.scope = scope;
+    this.generation = generation;
     writers.add(this);
     doc.once('destroy', () => this.release());
     this.batch.start = true;
@@ -242,7 +240,7 @@ class StoreWriter implements YDocWriter {
   }
 
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }) {
-    if (this.closed || !this.scope) return;
+    if (this.closed || this.generation === null) return;
     // Another tab stored its edit under a row; only one whose write failed is stored here.
     if (fromTab && fromTab.rowId !== null) return;
     if (this.failed) {
@@ -285,13 +283,13 @@ class StoreWriter implements YDocWriter {
     if (own && own.length === 0) return Promise.resolve();
     const covers = (id: number) => (own ? own.includes(id) : proof.kind === 'handshake' && (id <= proof.applied.upTo || proof.applied.ids.has(id)));
     return this.enqueueTask(async () => {
-      const scope = this.scope;
-      if (this.closed || !scope) return;
+      const generation = this.generation;
+      if (this.closed || generation === null) return;
       await this.db
         .transaction('rw', this.db.yDocs, this.db.yDocUpdates, async () => {
           const record = await this.db.yDocs.get(keyPath(this.key));
           // Another generation's rows are another history, which this proof says nothing about.
-          if (!record || record.generation !== scope.generation) return;
+          if (!record || record.generation !== generation) return;
           await rowsOf(this.db, this.key)
             .filter((row) => row.local === 1 && row.id !== undefined && covers(row.id))
             .modify({ local: 0 });
@@ -311,31 +309,31 @@ class StoreWriter implements YDocWriter {
   }
 
   park(reason: UnsaveableReason, doc: Y.Doc): Promise<void> {
-    const scope = this.scope;
+    const generation = this.generation;
     this.close();
     // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone. After
     // it, `doc` is read now, since the caller destroys it next; the writer's first write loaded Yjs.
-    const state = scope && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
+    const state = generation !== null && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
     return this.enqueueTask(async () => {
       const Yjs = await loadYjs();
       await this.db.transaction('rw', [this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, this.db.unsaveableYDocs], async () => {
         const record = await this.db.yDocs.get(keyPath(this.key));
-        const own = record && (!scope || record.generation === scope.generation) ? record : undefined;
-        const extra = scope ? [state ?? Yjs.encodeStateAsUpdate(doc)] : [];
+        const own = record && (generation === null || record.generation === generation) ? record : undefined;
+        const extra = generation !== null ? [state ?? Yjs.encodeStateAsUpdate(doc)] : [];
         if (own) return parkStored(Yjs, this.db, own, reason, extra);
-        if (!scope) return;
-        await this.db.unsaveableYDocs.add({ ...this.key, ...scope, reason, state: extra[0], at: Date.now() });
+        if (generation === null) return;
+        await this.db.unsaveableYDocs.add({ ...this.scope, generation, reason, state: extra[0], at: Date.now() });
       });
     });
   }
 
   drop(): Promise<void> {
-    const scope = this.scope;
+    const generation = this.generation;
     this.close();
     return this.enqueueTask(async () => {
       await this.db.transaction('rw', this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, async () => {
         const record = await this.db.yDocs.get(keyPath(this.key));
-        if (record && (!scope || record.generation === scope.generation)) await deleteStored(this.db, this.key);
+        if (record && (generation === null || record.generation === generation)) await deleteStored(this.db, this.key);
       });
     });
   }
@@ -376,13 +374,13 @@ class StoreWriter implements YDocWriter {
   }
 
   private broadcast(update: Uint8Array, rowId: number | null) {
-    if (!this.scope) return;
-    postTabMessage({ kind: 'update', key: yDocKeyString(this.key), generation: this.scope.generation, update, rowId });
+    if (this.generation === null) return;
+    postTabMessage({ kind: 'update', key: yDocKeyString(this.key), generation: this.generation, update, rowId });
   }
 
   private async write(batch: Batch) {
-    const { doc, scope } = this;
-    if (this.closed || !doc || !scope) return;
+    const { doc, generation } = this;
+    if (this.closed || !doc || generation === null) return;
     const Yjs = await loadYjs();
     const local = batch.local.length ? Yjs.mergeUpdates(batch.local) : null;
     const remote = batch.remote.length ? Yjs.mergeUpdates(batch.remote) : null;
@@ -390,7 +388,7 @@ class StoreWriter implements YDocWriter {
     let commit: Commit | null = null;
     for (let attempt = 0; attempt < 2 && !commit; attempt++) {
       try {
-        commit = await this.commit(Yjs, doc, scope, { batch, local, remote, unproven: this.ownRows.size > 0 });
+        commit = await this.commit(Yjs, doc, generation, { batch, local, remote, unproven: this.ownRows.size > 0 });
       } catch (error) {
         // Signed out, or deleted in another tab: the database is gone, and the write with it.
         if (getLocalUserDb() !== this.db) {
@@ -423,16 +421,16 @@ class StoreWriter implements YDocWriter {
   private commit(
     Yjs: typeof Y,
     doc: Y.Doc,
-    scope: StoreScope,
+    generation: string,
     { batch, local, remote, unproven }: { batch: Batch; local: Uint8Array | null; remote: Uint8Array | null; unproven: boolean },
   ): Promise<Commit> {
-    const { db, key } = this;
+    const { db, key, scope } = this;
     return db.transaction('rw', [db.yDocs, db.yDocStates, db.yDocUpdates, db.unsaveableYDocs], async () => {
       const now = Date.now();
       const result: Commit = { ownRowId: null, broadcastRowId: null, created: false, trim: false, superseded: false };
       let record = await db.yDocs.get(keyPath(key));
 
-      if (record && record.generation !== scope.generation) {
+      if (record && record.generation !== generation) {
         // A later append meets a document another tab replaced: this one's document is the stale one.
         if (!batch.start) return { ...result, superseded: true };
         // Starting on a reseeded document: the stored one is another history. Its unsynced edits are kept as unsaveable.
@@ -452,8 +450,8 @@ class StoreWriter implements YDocWriter {
         if (unsynced) result.ownRowId = await addRow(state, true);
         const updateBytes = unsynced ? state.byteLength : 0;
         await db.yDocs.put({
-          ...key,
           ...scope,
+          generation,
           syncedVector: null,
           unsynced: unsynced ? 1 : 0,
           bytes: state.byteLength + updateBytes,
@@ -514,11 +512,12 @@ export async function loadYDoc(key: YDocKey): Promise<LoadedYDoc | null> {
 }
 
 /** A writer for one document's rows, on the bound user's database; null while none is bound. */
-export function createYDocWriter(key: YDocKey, options: YDocWriterOptions = {}): YDocWriter | null {
+export function createYDocWriter(scope: YjsDocScope, options: YDocWriterOptions = {}): YDocWriter | null {
   const db = getLocalUserDb();
   if (!db) return null;
   void loadYjs();
-  return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, options);
+  const { entityType, entityId, tenantId, organizationId } = scope;
+  return new StoreWriter({ entityType, entityId, tenantId, organizationId }, db, options);
 }
 
 /** Resolves once every queued update is committed. */

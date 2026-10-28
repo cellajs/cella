@@ -17,7 +17,7 @@ function SummaryWithBadge({ document, inline }: { document: string; inline: bool
   return (
     <div className="w-72 rounded-md border p-3" data-testid="row">
       <BlockNoteFullHtml id="summary" defaultValue={document} dense inline={inline} />
-      <Badge size="xs" variant="plain" className="ml-1 inline-flex" data-testid="badge">
+      <Badge size="xs" soft className="ml-1 inline-flex" data-testid="badge">
         3
       </Badge>
     </div>

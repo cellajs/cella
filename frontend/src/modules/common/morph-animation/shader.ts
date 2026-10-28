@@ -94,7 +94,7 @@ float cellFill(vec2 p, vec2 pos, float t, float R){
 }
 
 /* Mitosis: cell bodies join through a smooth minimum, so a split pinches a
-   shared membrane apart instead of swapping shapes. Each cell only enters the
+   shared membrane apart; the shapes never swap. Each cell only enters the
    field once its split starts (k ramps from 0, so there is no pop). */
 float bandField(vec2 p, float t, float R){
   float f = cellFill(p, uPosA.xy, t + uTOffs.x, R);
@@ -125,7 +125,7 @@ float scene(vec2 p, float time){
 
 /* Rotating palette: each hue carries a slow off-beat score and a sharpened
    blend keeps one or two dominant at a time, so every frame has a specific
-   duo-tone palette (current, plus the one ~9s behind it) instead of all four. */
+   duo-tone palette (current, plus the one ~9s behind it), never all four. */
 vec3 paletteAt(float t){
   vec4 w = exp(2.5 * vec4(
     sin(t * 0.051 + 0.0),
@@ -147,7 +147,7 @@ vec3 brandFlow(vec2 p, float time){
 /* Soft-edge pixel renderer: the field quantized to a fine grid. Outside the
    boundary each cell survives with a probability that decays with distance,
    surviving grains shrink, fade individually and lose their hard corners, so
-   the edge dissolves granularly instead of ending at a pixel cliff.
+   the edge dissolves granularly, with no pixel cliff.
    Entrance (condense): the survival falloff K starts wide open, so sparse grains dust
    the whole frame; as it tightens they wink out from the outside in and the mark
    precipitates. No grain travels, and at uEnter = 1 every factor is the identity. */

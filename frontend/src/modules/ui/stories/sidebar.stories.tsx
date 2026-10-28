@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CalendarIcon, ChevronUpIcon, HouseIcon, InboxIcon, SearchIcon, SettingsIcon, UserRoundIcon } from 'lucide-react';
-import { userEvent } from 'storybook/test';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import {
   Sidebar,
@@ -13,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   SidebarWrapper,
 } from '~/modules/ui/sidebar';
 
@@ -24,21 +22,11 @@ const meta = {
   title: 'ui/Sidebar',
   component: Sidebar,
   tags: ['autodocs'],
-  argTypes: {
-    side: { options: ['left', 'right'], control: { type: 'radio' } },
-    variant: { options: ['sidebar', 'floating', 'inset'], control: { type: 'radio' } },
-    collapsible: { options: ['offcanvas', 'icon', 'none'], control: { type: 'radio' } },
-  },
-  args: { side: 'left', variant: 'sidebar', collapsible: 'icon' },
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
       <SidebarWrapper>
         <Story />
-        <section className="m-4">
-          <SidebarTrigger />
-          <div className="size-full" />
-        </section>
       </SidebarWrapper>
     ),
   ],
@@ -119,20 +107,4 @@ export const Footer: Story = {
       </SidebarFooter>
     </Sidebar>
   ),
-};
-
-export const ShouldCloseOpen: Story = {
-  ...Simple,
-  name: 'when clicking the trigger, should close and open the sidebar',
-  tags: ['!dev', '!autodocs'],
-  play: async ({ canvas, step }) => {
-    const sidebarBtn = await canvas.findByRole('button', { name: /toggle/i });
-    await step('close the sidebar', async () => {
-      await userEvent.click(sidebarBtn);
-    });
-
-    await step('reopen the sidebar', async () => {
-      await userEvent.click(sidebarBtn);
-    });
-  },
 };

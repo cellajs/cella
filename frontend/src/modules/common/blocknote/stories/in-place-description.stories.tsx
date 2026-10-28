@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import { DescriptionLayers } from '~/modules/common/blocknote/description-layers';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/full-html';
-import { useDescriptionSlot } from '~/modules/common/blocknote/use-description-slot';
+import { useInPlaceDescription } from '~/modules/common/blocknote/use-in-place-description';
 import { withApp } from '~/stories/with-app';
 
 const text = (value: string) => [{ type: 'text', text: value, styles: {} }];
@@ -34,43 +34,45 @@ const sampleDocument = JSON.stringify([
 const hoverWarmMs = 200;
 
 /**
- * One description slot over a sample document, its editor standalone since Storybook has no relay. The app part is
+ * One description shown in place over a sample document, its editor standalone since Storybook has no relay. The app part is
  * what each app writes: it owns `editing`, warms on hover and leaves editing on Escape.
  */
-function DescriptionSlotDemo() {
+function InPlaceDescriptionDemo() {
   // The cache: the editor's commits write it, and the static renders it.
   const [description, setDescription] = useState(sampleDocument);
   const [editing, setEditing] = useState(false);
-  const slot = useDescriptionSlot({ editing, canEdit: true, description, cursorAtPoint: true });
+  const inPlace = useInPlaceDescription({ editing, canEdit: true, description, cursorAtPoint: true });
   const hoverTimer = useRef(0);
 
-  const state = editing ? 'editing' : slot.holding ? 'holding' : slot.editorMounted ? 'warm' : 'static';
+  const state = editing ? 'editing' : inPlace.holding ? 'holding' : inPlace.editorMounted ? 'warm' : 'static';
 
   return (
     <div className="w-xl">
       <p className="mb-2 text-muted-foreground text-xs">
-        State: <span data-testid="slot-state">{state}</span>
+        State: <span data-testid="description-state">{state}</span>
       </p>
       <DescriptionLayers
-        slot={slot}
-        data-testid="slot"
+        inPlace={inPlace}
+        data-testid="description"
         className="min-h-8 rounded-md border p-3"
         onMouseEnter={() => {
-          hoverTimer.current = window.setTimeout(() => slot.warm('hover'), hoverWarmMs);
+          hoverTimer.current = window.setTimeout(() => inPlace.warm('hover'), hoverWarmMs);
         }}
         onMouseLeave={() => {
           clearTimeout(hoverTimer.current);
-          slot.cool('hover');
+          inPlace.cool('hover');
         }}
         onClick={() => setEditing(true)}
-        staticView={<BlockNoteFullHtml id="description-slot-static" defaultValue={slot.staticOverride ?? description} onReady={slot.onStaticReady} />}
+        staticView={
+          <BlockNoteFullHtml id="description-static" defaultValue={inPlace.staticOverride ?? description} onReady={inPlace.onStaticReady} />
+        }
         editor={
           <BlockNote
-            id="description-slot-editor"
+            id="description-editor"
             defaultValue={description}
             updateData={setDescription}
-            contentApiRef={slot.apiRef}
-            onEditorReady={slot.onEditorReady}
+            contentApiRef={inPlace.apiRef}
+            onEditorReady={inPlace.onEditorReady}
             onEscape={() => setEditing(false)}
             sideMenu={false}
             dense
@@ -81,35 +83,35 @@ function DescriptionSlotDemo() {
   );
 }
 
-/** The lifecycle of a description shown in place: `useDescriptionSlot` with `<DescriptionLayers>`. */
+/** The lifecycle of a description shown in place: `useInPlaceDescription` with `<DescriptionLayers>`. */
 const meta = {
-  title: 'common/blocknote/DescriptionSlot',
-  component: DescriptionSlotDemo,
+  title: 'common/blocknote/InPlaceDescription',
+  component: InPlaceDescriptionDemo,
   decorators: [withApp],
   parameters: { layout: 'centered' },
-} satisfies Meta<typeof DescriptionSlotDemo>;
+} satisfies Meta<typeof InPlaceDescriptionDemo>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The static view; the warm editor behind it renders the same text. */
-const staticView = (canvasElement: HTMLElement) => within(canvasElement.querySelector('#description-slot-static') as HTMLElement);
+const staticView = (canvasElement: HTMLElement) => within(canvasElement.querySelector('#description-static') as HTMLElement);
 
 /** The checkbox the static renders for a checklist item. */
 const staticCheckbox = (canvasElement: HTMLElement, checkboxId: string) =>
-  canvasElement.querySelector<HTMLInputElement>(`#description-slot-static input[data-checkbox-id="${checkboxId}"]`);
+  canvasElement.querySelector<HTMLInputElement>(`#description-static input[data-checkbox-id="${checkboxId}"]`);
 
 /** Hover warms the editor, a checkbox on the static toggles through it, a text click edits, Escape leaves. */
 export const Lifecycle: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const state = () => canvas.getByTestId('slot-state').textContent;
+    const state = () => canvas.getByTestId('description-state').textContent;
 
     await waitFor(() => expect(staticView(canvasElement).getByText('Launch checklist')).toBeVisible());
     await expect(state()).toBe('static');
 
     await step('hover warms the editor behind the static', async () => {
-      await userEvent.hover(canvas.getByTestId('slot'));
+      await userEvent.hover(canvas.getByTestId('description'));
       await waitFor(() => expect(state()).toBe('warm'));
       await waitFor(() => expect(canvasElement.querySelector('.bn-editor')).not.toBeNull());
     });

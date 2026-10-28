@@ -16,7 +16,6 @@ export const baseBlockNoteTypeToKeys = {
   image: ['image'],
   video: ['video'],
   audio: ['audio'],
-  emoji: ['emoji'],
   toggleListItem: ['toggle_list'],
   divider: ['divider'],
 } satisfies Record<CustomBlockTypes, SlashItemKeys[]>;

@@ -9,8 +9,6 @@ import { parseSource } from './source-comments.ts';
 /** Class names no frontend stylesheet, script or class string selects, each with the reason it stays. */
 const markerClasses: Record<string, string> = {
   'is-selected': 'BoardPanel state for apps whose board selects items (hasSelection), a hook for their styles',
-  'docs-floating-nav': 'FloatingNav bodyClass on docs pages, a hook for app styles scoped to them',
-  'marketing-floating-nav': 'FloatingNav bodyClass on marketing pages, a hook for app styles scoped to them',
 };
 
 /** Third-party class prefixes: the library's own stylesheet or DOM code reads them. */

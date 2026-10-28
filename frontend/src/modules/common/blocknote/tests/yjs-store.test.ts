@@ -29,6 +29,7 @@ let db: Db;
 
 const key = { entityType: 'attachment', entityId: 'doc-1' } as const;
 const scope = { tenantId: 'tenant-1', organizationId: 'org-1', generation: 'gen-1' };
+const docScope = { ...key, tenantId: scope.tenantId, organizationId: scope.organizationId };
 const keyPath = ['attachment', 'doc-1'] as ['attachment', string];
 
 beforeEach(() => {
@@ -46,9 +47,9 @@ afterEach(async () => {
 
 /** A writer that started storing `doc`, as a connection starts it once its document is stored. */
 function startWriter(doc: Y.Doc, opts: Parameters<typeof createYDocWriter>[1] = {}, unsynced = false): Writer {
-  const writer = createYDocWriter(key, opts);
+  const writer = createYDocWriter(docScope, opts);
   if (!writer) throw new Error('no database bound');
-  writer.start(doc, scope, unsynced);
+  writer.start(doc, scope.generation, unsynced);
   return writer;
 }
 
@@ -179,7 +180,7 @@ describe('yjs store: writing and loading', () => {
     // Another tab starts the reseeded document.
     const fresh = new Y.Doc();
     fresh.getText('t').insert(0, 'reseeded');
-    createYDocWriter(key)?.start(fresh, { ...scope, generation: 'gen-2' }, false);
+    createYDocWriter(docScope)?.start(fresh, 'gen-2', false);
     await flushYjsStore();
 
     expect((await record())?.generation).toBe('gen-2');
@@ -396,7 +397,7 @@ describe('yjs store: parking', () => {
     const other = new Y.Doc();
     other.getText('t').insert(0, 'gen-2 text');
 
-    await createYDocWriter(key)?.park('replaced', other);
+    await createYDocWriter(docScope)?.park('replaced', other);
 
     const [, parkedBeforeStart] = await db.unsaveableYDocs.toArray();
     const storedCheck = new Y.Doc();

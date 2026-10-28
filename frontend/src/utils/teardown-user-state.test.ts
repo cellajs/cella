@@ -78,8 +78,8 @@ describe('teardownUserState', () => {
     userStore.setState({ user: user as never, lastUser: user });
     bindLocalUserDb('user-a');
     const doc = new Y.Doc();
-    const writer = createYDocWriter({ entityType: 'attachment', entityId: 'doc-1' });
-    writer?.start(doc, { tenantId: 'tenant-1', organizationId: 'org-1', generation: 'gen-1' }, false);
+    const writer = createYDocWriter({ entityType: 'attachment', entityId: 'doc-1', tenantId: 'tenant-1', organizationId: 'org-1' });
+    writer?.start(doc, 'gen-1', false);
     doc.on('update', (update: Uint8Array) => writer?.append(update, true));
     doc.getText('t').insert(0, 'typed just before the session ended');
 

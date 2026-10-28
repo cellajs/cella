@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { MorphRenderer, type MorphStamp, type MorphVariant } from '~/modules/common/morph-animation/renderer';
 import { fragmentSource } from '~/modules/common/morph-animation/shader';
@@ -22,8 +22,6 @@ interface MorphAnimationProps {
 export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, overscan = 1.2, stamp = 'square', className }: MorphAnimationProps) {
   const mode = useUIStore((state) => state.mode);
   const isPhone = useBreakpointBelow('sm');
-  // Reduced motion only: the component lazy-loads, so its fade-in keys on its own mount and always starts from transparent
-  const [isFadedIn, setIsFadedIn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MorphRenderer | null>(null);
 
@@ -50,10 +48,8 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
     observer.observe(canvas);
 
     renderer.start();
-    const fadeFrame = requestAnimationFrame(() => setIsFadedIn(true));
 
     return () => {
-      cancelAnimationFrame(fadeFrame);
       observer.disconnect();
       renderer.dispose();
       rendererRef.current = null;
@@ -88,11 +84,7 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
   const canvas = (
     <canvas
       ref={canvasRef}
-      className={cn(
-        'size-full motion-reduce:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-2000',
-        isFadedIn && 'motion-reduce:opacity-100',
-        className,
-      )}
+      className={cn('size-full motion-reduce:starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-2000', className)}
     />
   );
   if (variant !== 'colony') return canvas;

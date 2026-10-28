@@ -4,7 +4,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 import { cn } from '~/utils/cn';
 
 /** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
-function Combobox<Value, Multiple extends boolean | undefined = false>(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
+export function Combobox<Value, Multiple extends boolean | undefined = false>(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
   return <ComboboxPrimitive.Root autoHighlight {...props} />;
 }
 
@@ -12,7 +12,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
   return (
     <ComboboxPrimitive.Trigger data-slot="combobox-trigger" className={cn("[&_svg:not([class*='size-'])]:size-4", className)} {...props}>
       {children}
-      <ChevronDownIcon data-slot="combobox-trigger-icon" className="pointer-events-none size-4 text-muted-foreground" />
+      <ChevronDownIcon data-slot="combobox-trigger-icon" className="pointer-events-none size-4 text-faint-foreground" />
     </ComboboxPrimitive.Trigger>
   );
 }
@@ -25,7 +25,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   );
 }
 
-function ComboboxInput({
+export function ComboboxInput({
   className,
   children,
   disabled = false,
@@ -54,7 +54,7 @@ function ComboboxInput({
   );
 }
 
-function ComboboxContent({
+export function ComboboxContent({
   className,
   side = 'bottom',
   sideOffset = 4,
@@ -90,7 +90,7 @@ function ComboboxContent({
   );
 }
 
-function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
+export function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
@@ -103,7 +103,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
   );
 }
 
-function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.Props) {
+export function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.Props) {
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
@@ -119,7 +119,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
 }
 
 /** Selected-check for combobox rows: kept mounted so unselected rows reserve the space and trailing content stays column-aligned. */
-function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
+export function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
   return (
     <ComboboxPrimitive.ItemIndicator
       keepMounted
@@ -132,7 +132,7 @@ function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIn
   );
 }
 
-function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
+export function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
@@ -142,11 +142,11 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
   );
 }
 
-function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
+export function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
   return <ComboboxPrimitive.Group data-slot="combobox-group" className={className} {...props} />;
 }
 
-function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Props) {
+export function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Props) {
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-group-label"
@@ -156,20 +156,8 @@ function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabe
   );
 }
 
-function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.Props) {
+export function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.Props) {
   return <ComboboxPrimitive.Separator data-slot="combobox-separator" className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />;
 }
 
-export {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxGroup,
-  ComboboxGroupLabel,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxItemIndicator,
-  ComboboxList,
-  ComboboxPrimitive,
-  ComboboxSeparator,
-};
+export { ComboboxPrimitive };

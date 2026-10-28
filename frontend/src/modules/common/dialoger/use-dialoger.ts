@@ -45,6 +45,8 @@ interface DialogStoreState {
 
   create: (content: ReactNode, data: DialogData) => string | number;
   update: (id: number | string, updates: Partial<InternalDialog>) => void;
+  /** Sets `open: false` and runs onClose; the entry stays for its exit animation until `remove`. */
+  hide: (id: number | string) => void;
   remove: (id?: number | string, opts?: { isCleanup?: boolean }) => void;
   get: (id: number | string) => InternalDialog | undefined;
   scrollToTop: (id: number | string) => void;
@@ -69,6 +71,12 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   },
 
   update: (id, updates) => set((state) => ({ dialogs: updateById(state.dialogs, id, updates) })),
+
+  hide: (id) => {
+    const onClose = get().get(id)?.onClose;
+    set((state) => ({ dialogs: updateById(state.dialogs, id, { open: false, onClose: undefined }) }));
+    onClose?.();
+  },
 
   remove: (id, opts) => {
     const { dialogs } = get();
