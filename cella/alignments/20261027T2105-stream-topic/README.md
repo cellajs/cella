@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: getByChannel, createStreamDispatcher, modules/entities/stream'
@@ -19,8 +19,8 @@ unchanged. The dispatcher factory bound no shared state, so it became a function
 
 ## Blast radius
 
-Sync-breaking for app-owned code that builds a subscriber or reads the manager (projectcampus
-`entities/stream/dispatch-mirror-app.test.ts`) or imports the barrel; synced files arrive with the sync. No
+Breaking for app-owned code that builds a subscriber or reads the manager (projectcampus
+`entities/stream/dispatch-mirror-app.test.ts`) or imports the barrel; template files arrive with the upgrade. No
 database, lens or `clientCacheVersion` change.
 
 ## Run

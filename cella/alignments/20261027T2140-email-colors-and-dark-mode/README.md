@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: theme.email, logo-email.png, logo-email-dark.png
@@ -20,7 +20,7 @@ button and swap in the light logo.
 
 ## Blast radius
 
-Sync-breaking for every app: typecheck flags the missing `theme.email`. An app whose brand is a mid-tone color can use
+Breaking for every app: typecheck flags the missing `theme.email`. An app whose brand is a mid-tone color can use
 it as `button` and `buttonEdge` alike. No database, lens or `clientCacheVersion` change.
 
 ## Run

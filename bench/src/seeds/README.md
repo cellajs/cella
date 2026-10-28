@@ -13,7 +13,7 @@ Each `*.bench.ts` file here calls `registerBenchSeed()` as an import side effect
 
 ## Identity bands
 
-Every id-based seed claims a UUID variant byte (`idVariant`, the fourth UUID group, e.g. `a005`). cella core owns the `a*` band; apps claim `b*`, so core and app entities never collide across upstream syncs. The id helpers in `ids.ts` and each seed's `idVariant` share one `CORE_ID_VARIANTS` source, so an id and the cleanup predicate that deletes it cannot drift. `registerBenchSeed` rejects malformed or duplicate variants at load time.
+Every id-based seed claims a UUID variant byte (`idVariant`, the fourth UUID group, e.g. `a005`). cella core owns the `a*` band; apps claim `b*`, so core and app entities never collide across upgrades. The id helpers in `ids.ts` and each seed's `idVariant` share one `CORE_ID_VARIANTS` source, so an id and the cleanup predicate that deletes it cannot drift. `registerBenchSeed` rejects malformed or duplicate variants at load time.
 
 ## Adding an app seed
 

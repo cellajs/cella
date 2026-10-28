@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: tests
 grep: XMiddlewareOptions, errorResponses, registerAllErrorResponses

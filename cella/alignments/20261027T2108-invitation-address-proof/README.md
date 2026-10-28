@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: tests
 grep: acceptInvitationToken, invitation-accepted-elsewhere, impersonation-started, invitation_address_unproven
@@ -21,8 +21,8 @@ impersonation, so its notice goes to the operator.
 
 ## Blast radius
 
-Sync-breaking for an app with its own invitation accept page, or tests that accept from another address. An app using
-the template's accept step gets the new flow with the sync. No database, lens or `clientCacheVersion` change.
+Breaking for an app with its own invitation accept page, or tests that accept from another address. An app using
+the template's accept step gets the new flow with the upgrade. No database, lens or `clientCacheVersion` change.
 
 ## Run
 

@@ -1,6 +1,6 @@
 export type ModuleScope = 'backend' | 'frontend';
 
-/** A module's manifest: its name, who maintains it and where it runs. The cella CLI never syncs an `app` module. */
+/** A module's manifest: its name, who maintains it and where it runs. The cella CLI never merges an `app` module. */
 export interface ModuleConfig {
   name: string;
   owner: 'cella' | 'app';

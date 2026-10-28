@@ -74,7 +74,7 @@ jobs:
         run: pnpm biome check . --error-on-warnings
 
       # `pnpm check` ends with these fixes. One that is still open here gets applied in every app after
-      # its next sync, as a change in a file the app never touched.
+      # its next upgrade, as a change in a file the app never touched.
       - name: Check Biome has no fix left to apply
         run: pnpm biome check --write --unsafe && git diff --exit-code
 
@@ -168,15 +168,15 @@ jobs:
         run: pnpm template:check --tests
 
   # The test suites against PostgreSQL, one job per suite, so the release PR waits for the longest one. Heavy: runs on
-  # the release PR, and in an app on the sync PR (`cella/sync/<stamp>`, the branch `pnpm cella sync` opens), where
+  # the release PR, and in an app on the upgrade PR (`cella/upgrade/<stamp>`, the branch `pnpm cella upgrade` opens), where
   # upstream changes first meet the app's code. Each job starts the `db_test` compose container (DB_TEST_PORT) and
   # applies migrations in the Vitest global setup, so it needs no service container.
   test:
-    # Same-repo branch only: release-please and the sync push their branches into this
+    # Same-repo branch only: release-please and the upgrade push their branches into this
     # repo, so a PR from another repository (whose branch name its author fully controls)
     # cannot spoof a prefix to trigger the heavy suites. head_ref is set only for
     # pull_request events.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -229,7 +229,7 @@ jobs:
   # The production images are otherwise built for the first time by the release deploy: 0.11.0 failed there on a
   # Node 26 base image without corepack, 0.12.1 on a worker env leak and an undeclared dependency that crashed every
   # image. A PR that changes the shared base stage's inputs (the Dockerfile, the package manager pin) builds that stage;
-  # the release PR and an app's sync PR build every target, without pushing. The targets start from the same stages,
+  # the release PR and an app's upgrade PR build every target, without pushing. The targets start from the same stages,
   # so one job builds them on one layer cache.
   docker-images:
     runs-on: ubuntu-latest
@@ -247,7 +247,7 @@ jobs:
         id: scope
         env:
           BASE_REF: ${{ github.base_ref || 'main' }}
-          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/')) }}
+          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/')) }}
         run: |
           set -euo pipefail
           if [ "$ALL_TARGETS" = true ]; then
@@ -316,10 +316,10 @@ jobs:
       - name: Say what the change owes
         run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
 
-  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's sync PR,
+  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's upgrade PR,
   # so a story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
   storybook-test:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

@@ -29,4 +29,4 @@ Shoot the group's states before the first pass and after each Tailwind pass on t
 - The scout's leads are hypotheses. A pass verifies each one and declines a wrong one in its report; one wrong "improvement" costs more than a missed one.
 - Dependencies move under a long branch. After a rebase that crosses a dependency change, `CI=true pnpm install --frozen-lockfile` in the worktree, or every `pnpm` run dies in pnpm's dependency check without a TTY.
 - A convention the sweep introduces (a store alias, a shared helper) can be breached by code merged after the branch's base: grep for the old form after every rebase.
-- A file both the template and the app customize (`logo.tsx`, a board layout) takes bug fixes only; everything else there becomes a conflict on the next sync.
+- A file both the template and the app customize (`logo.tsx`, a board layout) takes bug fixes only; everything else there becomes a conflict on the next upgrade.

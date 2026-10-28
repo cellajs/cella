@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: navSidebarMode, NavSidebarMode
@@ -21,7 +21,7 @@ the app icon going home, elsewhere the menu header links home. Home gains a `cha
 
 ## Blast radius
 
-Sync-breaking for every app: its config lacks `navigation`, so the compiler stops it. An app with its own home
+Breaking for every app: its config lacks `navigation`, so the compiler stops it. An app with its own home
 section shows the new `channels` section beside it until it lists `home.sections` in `appConfig.surfaces`. No
 cache bump, lens or database change.
 

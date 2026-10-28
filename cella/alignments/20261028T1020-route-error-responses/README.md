@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: true
 caughtBy: tests
 grep: errorResponseRefs, xMiddleware, setMiddlewareExtension, createXRoutes

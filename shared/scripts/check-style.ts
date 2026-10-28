@@ -42,8 +42,8 @@ const findings: Finding[] = roots
   .filter((root) => !files.some((file) => isRequested(file, [root])))
   .map((root) => ({ file: root, rule: 'path-argument', message: 'no file matches this path' }));
 findings.push(...alignmentFindings(requested, (file) => readFileSync(join(repoRoot, file), 'utf8')));
-// Alignments are written where they live: an app's own changes to its own paths owe none. Every synced app has a sync
-// manifest, and a sync by a CLI before 0.5 also copied the alignments folder in, so the folder alone does not mark the template.
+// Alignments are written where they live: an app's own changes to its own paths owe none. Every upgraded app has an upgrade
+// manifest, and an upgrade by a CLI before 0.5 also copied the alignments folder in, so the folder alone does not mark the template.
 if (roots.length === 0 && files.includes('cella/alignments/_TEMPLATE.md') && !files.includes('cella/cella.manifest.json')) {
   findings.push(...owedAlignmentFindings(branchChanges(), readFileSync(join(repoRoot, 'cella/cella.config.ts'), 'utf8')));
 }

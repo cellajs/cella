@@ -14,7 +14,7 @@ interface ReadmeCheck {
   errors: string[];
 }
 
-const requiredBooleanKeys = ['syncBreaking', 'clientCacheBump'];
+const requiredBooleanKeys = ['breaking', 'clientCacheBump'];
 const booleanKeys = [...requiredBooleanKeys, 'generate'];
 /** Comma-separated values: the terms `pnpm cella align` greps for, and the codemod's roots. */
 const listKeys = ['grep', 'roots'];
@@ -52,8 +52,8 @@ export function checkAlignmentReadme(source: string): ReadmeCheck {
     } else if (!listKeys.includes(key)) errors.push(`unknown frontmatter key: ${key}`);
   }
   for (const key of requiredBooleanKeys) if (close !== -1 && !frontmatter.has(key)) errors.push(`frontmatter is missing ${key}`);
-  if (frontmatter.get('syncBreaking') === 'true' && !frontmatter.has('caughtBy'))
-    errors.push('a sync-breaking alignment says how an app finds its leftovers: caughtBy');
+  if (frontmatter.get('breaking') === 'true' && !frontmatter.has('caughtBy'))
+    errors.push('a breaking alignment says how an app finds its leftovers: caughtBy');
 
   // Body: the title, then the summary paragraph. Blank lines and HTML comments in between are skipped.
   const body = bodyLines(lines.slice(close + 1)).join('\n');
@@ -105,7 +105,7 @@ export function alignmentFindings(files: string[], read: (file: string) => strin
 }
 
 /**
- * App-owned paths with nothing synced code depends on: content, brand files and generated output. `shared/config` is
+ * App-owned paths with nothing template code depends on: content, brand files and generated output. `shared/config` is
  * here too, because the config type already reports a key an app's config lacks.
  */
 const alignmentExempt = [
@@ -123,7 +123,7 @@ const alignmentExempt = [
   'shared/config',
 ];
 
-/** The `ignored` and `pinned` entries of the sync config, read from its source text. */
+/** The `ignored` and `pinned` entries of the CLI config, read from its source text. */
 export function ownedPaths(configSource: string): string[] {
   const lists = [...configSource.matchAll(/\b(?:ignored|pinned): \[([\s\S]*?)\n {4}\]/g)].map((match) => match[1]);
   return lists.flatMap((list) => [...list.matchAll(/^\s*'([^']+)',?\s*$/gm)].map((match) => match[1]));
@@ -137,13 +137,13 @@ export interface BranchChanges {
 }
 
 /**
- * The finding for a branch that changes an app-owned path synced code reads from (a pinned file, `logo.tsx`,
- * `backend/drizzle`) without adding an alignment. Such a change never reaches an app's copy, so the app's synced code
+ * The finding for a branch that changes an app-owned path template code reads from (a pinned file, `logo.tsx`,
+ * `backend/drizzle`) without adding an alignment. Such a change never reaches an app's copy, so the app's template code
  * breaks until someone tells it what to add. An `Alignment: none, <reason>` line in a commit message waives it.
  */
 export function owedAlignmentFindings({ changed, added, messages }: BranchChanges, configSource: string): Finding[] {
   const owned = ownedPaths(configSource).filter((entry) => !alignmentExempt.some((exempt) => isUnder(entry, exempt)));
-  // A Markdown file inside an owned folder is read by people, never by synced code
+  // A Markdown file inside an owned folder is read by people, never by template code
   const touched = changed.filter((file) => !file.endsWith('.md') && owned.some((entry) => isUnder(file, entry)));
   if (touched.length === 0) return [];
   const addsAlignment = added.some((file) => {
@@ -155,6 +155,6 @@ export function owedAlignmentFindings({ changed, added, messages }: BranchChange
     file,
     rule: 'alignment',
     message:
-      'apps own this path and their synced code reads from it: add an alignment under cella/alignments/ in this branch, or put `Alignment: none, <reason>` in a commit message',
+      'apps own this path and their template code reads from it: add an alignment under cella/alignments/ in this branch, or put `Alignment: none, <reason>` in a commit message',
   }));
 }

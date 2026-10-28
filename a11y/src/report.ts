@@ -282,7 +282,7 @@ if (process.argv.includes('--publish')) {
     );
     process.exit(1);
   }
-  // Under static/common: that folder is the app's own, so one product's report never syncs into another
+  // Under static/common: that folder is the app's own, so one product's report never merges into another
   const publicPath = 'frontend/public/static/common/accessibility-conformance-report.pdf';
   mkdirSync(path.dirname(path.join(repoRoot, publicPath)), { recursive: true });
   copyFileSync(pdfPath, path.join(repoRoot, publicPath));

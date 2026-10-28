@@ -26,20 +26,20 @@ Ask the user what the request leaves open. These are costly to change once rows 
 Then ask which opt-ins it needs (step 6): a collaborative description, drafts, public read,
 notifications, unseen badges, member stats, view counts, embedding in another product.
 
-## 2. Keep it sync-safe
+## 2. Keep it upgrade-safe
 
-The app pulls template updates with `pnpm cella sync` (the `cella-sync` skill). Where an edit lives
-decides whether a sync touches it; the app's `cella/cella.config.ts` lists `ignored` and `pinned`.
+The app pulls template updates with `pnpm cella upgrade` (the `cella-upgrade` skill). Where an edit lives
+decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `ignored` and `pinned`.
 
 - **The new module folders** (`backend/src/modules/<name>/`, `frontend/src/modules/<name>/`): both
-  module files declare `owner: 'app'`, and the CLI never syncs an app module. Where attachment
+  module files declare `owner: 'app'`, and the CLI never merges an app module. Where attachment
   writes `'cella'` in a route tag or a schema's `x-tags`, write `'app'`.
-- **App-owned, never synced**: `shared/config/` (hierarchy, config, permissions), `locales/*/app.json`,
+- **App-owned, never merged**: `shared/config/` (hierarchy, config, permissions), `locales/*/app.json`,
   `backend/drizzle/`.
 - **Pinned registries**, where the app's copy always wins: `backend/src/db/channel-tables.ts`,
   `backend/src/db/product-tables.ts`, `backend/src/modules.ts`, `backend/src/mocks/app-product-mocks.ts`,
   `backend/src/schemas/app-schemas.ts`, `frontend/src/entity-sync-queries.ts`, `frontend/src/routes-config.tsx`.
-- **Any other template file**: every change carries a `// fork: <why>` marker, or the next sync can
+- **Any other template file**: every change carries a `// fork: <why>` marker, or the next upgrade can
   merge it away. Look for a registration point first, and tell the user about each such edit.
 
 ## 3. Declare it

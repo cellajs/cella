@@ -1,4 +1,4 @@
-/** Regenerates `src/routes/routeTree.gen.ts` without a Vite build or dev server, e.g. after a sync adds a route file. */
+/** Regenerates `src/routes/routeTree.gen.ts` without a Vite build or dev server, e.g. after an upgrade adds a route file. */
 import { fileURLToPath } from 'node:url';
 import { Generator, getConfig } from '@tanstack/router-generator';
 import { routerOptions } from './router-options.ts';

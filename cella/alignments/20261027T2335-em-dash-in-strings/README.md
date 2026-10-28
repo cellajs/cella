@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: tests
 ---
@@ -8,11 +8,11 @@ caughtBy: tests
 
 `pnpm style` now refuses an em dash in string literals of source files, in JSON values and in `.env*` comments, as
 AGENTS.md has always asked ("anywhere in text"), and a comment reached through a token boundary fails like any other.
-App-owned text that holds one fails `pnpm check` after the sync: rewrite it.
+App-owned text that holds one fails `pnpm check` after the upgrade: rewrite it.
 
 ## What & why
 
-The rule read comments and Markdown only, so em dashes in strings, JSON and `.env.example` passed. Synced files arrive
+The rule read comments and Markdown only, so em dashes in strings, JSON and `.env.example` passed. Template files arrive
 fixed; app-owned JSON and source with an em dash fail until rewritten. Known: projectcampus `locales/en/about.json` and
 the pinned `json/text-blocks.json`.
 

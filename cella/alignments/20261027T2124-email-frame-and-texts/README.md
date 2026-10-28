@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: EmailLayout, EmailMessage, defineEmailTemplate, utcStamp, invite_expires, requestDetails
@@ -19,7 +19,7 @@ from the token policy (`linkExpiresText`), closing lines from `endingFor`, and e
 
 ## Blast radius
 
-Sync-breaking for an app with email templates of its own: typecheck flags each `EmailLayout` or `EmailMessage` without
+Breaking for an app with email templates of its own: typecheck flags each `EmailLayout` or `EmailMessage` without
 `frame`, and each `utcStamp` call. An app without own templates has nothing to do. No database, lens or
 `clientCacheVersion` change.
 

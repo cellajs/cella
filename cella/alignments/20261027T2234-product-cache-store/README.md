@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: app-product-cache, loadTenantCache, invalidateTenantCache, PermissionResult, BatchPermissionResult
@@ -20,7 +20,7 @@ cache is a `loadCachedX` and `dropCachedX` pair, as the session cache is.
 ## Blast radius
 
 App-owned code that imports the store by its old path or name (projectcampus `tests/product-write-dispatch.test.ts`),
-one of the old cache names, or a type through `#/permissions`. Synced files arrive with the sync. No database, lens or
+one of the old cache names, or a type through `#/permissions`. Template files arrive with the upgrade. No database, lens or
 `clientCacheVersion` change.
 
 ## Run

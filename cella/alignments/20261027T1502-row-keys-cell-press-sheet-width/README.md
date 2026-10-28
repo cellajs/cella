@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: false
 grep: return row.id, group-active/cell-button:press, max-w-full lg:max-w-4xl
 ---
@@ -18,7 +18,7 @@ longer carries it. A right-side sheet already caps at `lg:max-w-4xl`, and `max-w
 
 ## Blast radius
 
-Not sync-breaking: app code keeps compiling and rendering. An app-owned cell child that keeps the class still presses
+Not breaking: app code keeps compiling and rendering. An app-owned cell child that keeps the class still presses
 twice; an app-owned sheet that keeps the classes renders the same. No database, lens or cache change.
 
 ## Run

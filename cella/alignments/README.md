@@ -3,8 +3,8 @@
 When an upstream cella change rewrites a pattern across the codebase (a codemod sweep, a schema
 shift, a renamed contract, a change in behavior), upstream code arrives already changed but
 app-specific code still follows the old pattern. Each folder here is an alignment: it tells an app
-how to bring its own code in line with one such change after a sync. Alignments stay in this repo:
-the sync never copies this folder into an app, and apps read them with `pnpm cella align`.
+how to bring its own code in line with one such change after an upgrade. Alignments stay in this repo:
+the upgrade never copies this folder into an app, and apps read them with `pnpm cella align`.
 
 ## How it is structured
 
@@ -21,9 +21,9 @@ the sync never copies this folder into an app, and apps read them with `pnpm cel
 
 | Key | Value | Required |
 |---|---|---|
-| `syncBreaking` | `true` when app-specific code has to follow, `false` when an app that copied nothing gets the change for free | always |
+| `breaking` | `true` when app-specific code has to follow, `false` when an app that copied nothing gets the change for free | always |
 | `clientCacheBump` | `true` when upstream bumped `clientCacheVersion` or shipped a lens, so an app that sets its own bumps it too | always |
-| `caughtBy` | `compiler` (typecheck flags every app site), `tests` (a test the app inherits fails), `nothing` (a behavior change only reading the app's code finds) | when `syncBreaking: true` |
+| `caughtBy` | `compiler` (typecheck flags every app site), `tests` (a test the app inherits fails), `nothing` (a behavior change only reading the app's code finds) | when `breaking: true` |
 | `grep` | comma-separated identifiers, wire fields or config keys that app code may still use | no |
 | `generate` | `true` when the change needs `pnpm generate` | no |
 | `roots` | the codemod's default scan roots | beside a codemod |
@@ -33,12 +33,12 @@ alignment, which other alignments that PR carried, and which of its files the ap
 changed. It searches the app's own and changed files for the `grep` terms; files identical to
 upstream never count.
 
-## For apps: aligning after a sync
+## For apps: after an upgrade
 
-The sync records the alignments that arrive with it in the app-owned `cella/cella.alignments.json`, and every sync run
+The upgrade records the alignments that arrive with it in the app-owned `cella/cella.alignments.json`, and every upgrade run
 ends with a line such as `alignments: 94 of 97 handled · 3 open: pnpm cella align`. They are information, not a gate:
 they stay listed until recorded. The [align skill](../skills/align/SKILL.md) works through them and reports each
-outcome in the sync PR, which is how upstream learns which alignments were precise.
+outcome in the upgrade PR, which is how upstream learns which alignments were precise.
 
 ## For maintainers: authoring an alignment
 
@@ -57,12 +57,12 @@ Ship the alignment in the same PR as the breaking change:
    the `--hints` array that answers drizzle's rename-or-create questions (a `create` hint for every
    new table or column in a diff that also drops one), and `data.sql`, the hand-written
    statements, each under a comment that says where it goes in the generated migration.
-5. A change to an app-owned path that synced code reads from (a pinned file, `logo.tsx`,
+5. A change to an app-owned path that template code reads from (a pinned file, `logo.tsx`,
    `backend/drizzle`) is a breaking change for apps even when nothing else moves: the app's copy
    never updates. `pnpm style` asks for the alignment; `Alignment: none, <reason>` in a commit
    message answers it when apps have nothing to do.
 6. A reference module (attachment, organization) that starts to call a shared helper another way
-   gets a `syncBreaking: false` alignment too: apps copied the old call into their own modules.
+   gets a `breaking: false` alignment too: apps copied the old call into their own modules.
 
-A `syncBreaking: true` change without an alignment is what this system exists to prevent; treat it
+A `breaking: true` change without an alignment is what this system exists to prevent; treat it
 like a missing `clientCacheVersion` bump.

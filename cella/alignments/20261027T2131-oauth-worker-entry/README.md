@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: startOauthServer, createTenantForUser, tenant-service, tenants/operations/load-tenant
@@ -18,7 +18,7 @@ The process entries follow one name, `start<Name>Worker`, and the tenants module
 
 ## Blast radius
 
-Synced files arrive with the sync. App-owned code that imports one of the old names or paths fails typecheck; in
+Template files arrive with the upgrade. App-owned code that imports one of the old names or paths fails typecheck; in
 the known apps only the leftover `main.oauth.ts` does. No database, lens or `clientCacheVersion` change.
 
 ## Run

@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: oldName, old_column
@@ -10,7 +10,7 @@ roots: backend/src, frontend/src
 Copy this file to `<YYYYMMDDThhmm>-<slug>/README.md`, fill every section and delete this comment.
 The timestamp is UTC, minute precision, from when the breaking change merges (`date -u +%Y%m%dT%H%M`).
 Frontmatter keys and their values: the table in README.md. `caughtBy` is required when
-`syncBreaking: true`; drop `grep` when the compiler finds every app site, `generate` unless the
+`breaking: true`; drop `grep` when the compiler finds every app site, `generate` unless the
 change needs `pnpm generate`, and `roots` unless the folder ships a codemod (the one non-test `.ts`
 file in it).
 Keep the title, the summary paragraph and the five headings below in this order: `pnpm cella
@@ -32,7 +32,7 @@ still use in `grep`.>
 
 ## Blast radius
 
-<At most 50 words: who is affected, whether it is sync-breaking, bumps `clientCacheVersion`, ships a
+<At most 50 words: who is affected, whether it is breaking, bumps `clientCacheVersion`, ships a
 lens, or touches the database. Say when an app that never customized this area is unaffected.>
 
 ## Run
@@ -48,7 +48,7 @@ pnpm cella align --run <id> -- rewrite <roots>   # apply
 ## Manual steps
 
 <Numbered, per-file steps the codemod cannot do: file renames (`git mv`), ambiguous identifiers
-it deliberately skips, DB migrations, config keys. `backend/drizzle` is app-owned (the default sync
+it deliberately skips, DB migrations, config keys. `backend/drizzle` is app-owned (the default CLI
 config ignores it), so a template migration never arrives: say what `pnpm generate` produces and
 name the hand-written SQL to port (backfills, data moves), or state that `pnpm generate` alone is
 enough. Ship the hints as `hints.json` and the hand-written statements as `data.sql` in the folder, so
