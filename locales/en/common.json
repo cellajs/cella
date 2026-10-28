@@ -570,6 +570,7 @@
   "offline_files.recent.text": "Keeps the newest files with their previews, so what you worked on lately opens without a connection.",
   "offline_files.status": "{{percent}} full: {{used}} of {{budget}} in use on this device.",
   "offline_files.text": "How many of your organizations' files this device keeps, so you can open them without a connection.",
+  "offline_files.tier_usage": "{{tier}}: {{used}} of {{budget}}",
   "offline_files.usage": "{{used}} of {{budget}} in use on this device",
   "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",

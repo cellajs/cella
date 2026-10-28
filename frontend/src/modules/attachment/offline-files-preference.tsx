@@ -1,16 +1,17 @@
-import { HardDriveDownloadIcon, SettingsIcon } from 'lucide-react';
+import { HardDriveDownloadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { defaultOfflineFilesTier, offlineFilesRules, useOfflineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { isAlmostFull, percentFull, useOfflineFootprint } from '~/modules/attachment/offline/use-offline-footprint';
-import { OfflineFilesSetting } from '~/modules/attachment/offline-files-setting';
+import { OfflineFilesSetting, offlineFilesTierText } from '~/modules/attachment/offline-files-setting';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { StatusDot } from '~/modules/common/status-dot';
-import { PreferenceRow, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
+import { PreferenceButton, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
+import { formatBytes } from '~/utils/format-bytes';
 
-/** The offline group of the preferences panel: how full this device's offline files are, and a button that opens the setting. */
+/** The offline group of the preferences panel: a button that opens the setting, with a meter of how full this device's offline files are. */
 export function OfflineFilesPreference() {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -18,6 +19,7 @@ export function OfflineFilesPreference() {
   const footprint = useOfflineFootprint();
   const { budget } = offlineFilesRules(tier);
   const label = t('c:offline_files');
+  const almostFull = !!footprint && isAlmostFull(footprint.bytes, budget);
 
   const openSetting = () =>
     dialoger.getState().create(<OfflineFilesSetting />, {
@@ -30,24 +32,38 @@ export function OfflineFilesPreference() {
 
   return (
     <PreferencesGroup title={t('c:offline')} help className="pb-8">
-      <PreferenceRow icon={HardDriveDownloadIcon} label={label} description={t('c:offline_files.text')}>
-        {footprint && (
-          <Badge variant={isAlmostFull(footprint.bytes, budget) ? 'destructive' : 'secondary'}>
-            {budget ? t('c:offline_files.percent_full', { percent: percentFull(footprint.bytes, budget) }) : t('c:offline_files.off')}
-          </Badge>
+      <PreferenceButton
+        ref={triggerRef}
+        icon={HardDriveDownloadIcon}
+        label={label}
+        description={t('c:offline_files.text')}
+        onClick={openSetting}
+        status={
+          footprint && (
+            <Badge variant={almostFull ? 'destructive' : 'secondary'}>
+              {budget ? t('c:offline_files.percent_full', { percent: percentFull(footprint.bytes, budget) }) : t('c:offline_files.off')}
+            </Badge>
+          )
+        }
+      >
+        {footprint && budget > 0 && (
+          <>
+            <span aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-muted">
+              <span
+                className={cn('block h-full rounded-full bg-primary transition-[width] duration-500', almostFull && 'bg-destructive')}
+                style={{ width: `${Math.min(100, (footprint.bytes / budget) * 100)}%` }}
+              />
+            </span>
+            <span className="text-muted-foreground text-xs">
+              {t('c:offline_files.tier_usage', {
+                tier: t(offlineFilesTierText[tier].label),
+                used: formatBytes(footprint.bytes),
+                budget: formatBytes(budget),
+              })}
+            </span>
+          </>
         )}
-        <Button
-          ref={triggerRef}
-          variant="ghost"
-          size="xs"
-          className="size-8 px-0"
-          aria-haspopup="dialog"
-          aria-label={t('c:edit_resource', { resource: label.toLowerCase() })}
-          onClick={openSetting}
-        >
-          <SettingsIcon />
-        </Button>
-      </PreferenceRow>
+      </PreferenceButton>
     </PreferencesGroup>
   );
 }

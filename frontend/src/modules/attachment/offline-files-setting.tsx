@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { formatBytes } from '~/utils/format-bytes';
 
-const tierText = {
+export const offlineFilesTierText = {
   off: { label: 'c:offline_files.off', text: 'c:offline_files.off.text' },
   previews: { label: 'c:offline_files.previews', text: 'c:offline_files.previews.text' },
   recent: { label: 'c:offline_files.recent', text: 'c:offline_files.recent.text' },
@@ -107,21 +107,21 @@ export function OfflineFilesSetting() {
   };
 
   const valueText = (index: number) => {
-    const label = t(tierText[offlineFilesTiers[index]].label);
+    const label = t(offlineFilesTierText[offlineFilesTiers[index]].label);
     if (!budgets[index]) return label;
     return `${label}. ${t('c:offline_files.usage', { used: formatBytes(stored), budget: formatBytes(budgets[index]) })}`;
   };
 
-  // A panel per tier stays mounted, so the one leaving fades out while the next slides in from the side of travel
-  const panelClass = (index: number, active: boolean) =>
+  // Every state stays mounted in one cell; the leaving one fades out fast and the next fades in just after, so two texts never cross
+  const fadeClass = (active: boolean) =>
     cn(
-      'col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none',
-      active ? 'opacity-100' : 'pointer-events-none opacity-0',
-      !active && (index < explored ? '-translate-x-3' : 'translate-x-3'),
+      'col-start-1 row-start-1 transition-opacity motion-reduce:transition-none',
+      active ? 'opacity-100 delay-60 duration-200 ease-out' : 'pointer-events-none opacity-0 duration-120 ease-in',
     );
 
   return (
-    <div>
+    // The bar keeps its stops close on a wide dialog, while the balloon takes the full width so its text stays short
+    <div className="[--bar-width:min(100%,28.75rem)]">
       <SliderPrimitive.Root
         value={dragged ?? pending ?? current}
         min={0}
@@ -139,12 +139,12 @@ export function OfflineFilesSetting() {
         }}
         onFocus={(event) => setKeyboardFocus(event.target.matches(':focus-visible'))}
         onBlur={() => setKeyboardFocus(false)}
-        className="group/slider touch-none select-none [--tick-cut:var(--background)]"
+        className="group/slider mx-auto w-(--bar-width) touch-none select-none"
       >
         <SliderPrimitive.Control
           onPointerMove={hover}
           onPointerLeave={() => setHovered(null)}
-          className="relative flex w-full cursor-pointer flex-col gap-2 pb-1"
+          className="relative flex w-full cursor-pointer flex-col gap-3 pb-1"
         >
           {/* Each label sits over its stop, the outer two at the track's ends; text-xs fits all four in one row at phone width */}
           <div className="relative h-9 text-sm max-sm:text-xs" aria-hidden="true">
@@ -158,7 +158,7 @@ export function OfflineFilesSetting() {
                 )}
                 style={{ left: `${stopPercent(index)}%` }}
               >
-                {t(tierText[value].label)}
+                {t(offlineFilesTierText[value].label)}
                 {budgets[index] > 0 && <span className="font-normal text-muted-foreground text-xs">{formatBytes(budgets[index])}</span>}
               </span>
             ))}
@@ -185,12 +185,16 @@ export function OfflineFilesSetting() {
                 style={{ left: `${keptPercent}%`, width: `${trackPercent(stored) - keptPercent}%`, minWidth: droppedBy(explored) > 0 ? 3 : 0 }}
               />
             </div>
-            {/* A notch per stop: a cut through the bar in the surface color, with a short mark above and below */}
+            {/* A mark per stop 2px above the bar, the outer two flush with its ends; the thumb covers the one at its own stop */}
             {offlineFilesTiers.map((value, index) => (
               <span
                 key={value}
                 aria-hidden="true"
-                className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 [background:linear-gradient(var(--border)_0_4px,var(--tick-cut)_4px_12px,var(--border)_12px)]"
+                className={cn(
+                  'absolute bottom-[calc(100%+2px)] h-1 w-0.5 -translate-x-1/2 rounded-full bg-input',
+                  index === 0 && 'translate-x-0',
+                  index === lastIndex && '-translate-x-full',
+                )}
                 style={{ left: `${stopPercent(index)}%` }}
               />
             ))}
@@ -200,7 +204,7 @@ export function OfflineFilesSetting() {
               aria-describedby={confirming ? confirmId : descriptionId}
               getAriaValueText={(_, value) => valueText(value)}
               className={cn(
-                'focus-within-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 has-focus-visible:ring-offset-(--tick-cut) data-dragging:duration-150 motion-reduce:transition-none',
+                'focus-within-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 has-focus-visible:ring-offset-background data-dragging:duration-150 motion-reduce:transition-none',
                 snapEase,
                 pending !== null && 'border-destructive bg-card',
               )}
@@ -217,18 +221,11 @@ export function OfflineFilesSetting() {
             snapEase,
             pending !== null && 'border-destructive/50',
           )}
-          style={{ left: `clamp(1rem, ${stopPercent(explored)}%, calc(100% - 1rem))` }}
+          style={{ left: `clamp(1rem, calc(50% + var(--bar-width) * ${(stopPercent(explored) - 50) / 100}), calc(100% - 1rem))` }}
         />
         {/* Every state stacks in one cell, so the balloon keeps the height of the tallest and the dialog never resizes */}
         <div className="grid text-sm">
-          <p
-            id={showStatus ? descriptionId : undefined}
-            aria-hidden={!showStatus}
-            className={cn(
-              'col-start-1 row-start-1 transition-opacity duration-300 ease-out motion-reduce:transition-none',
-              !showStatus && 'pointer-events-none opacity-0',
-            )}
-          >
+          <p id={showStatus ? descriptionId : undefined} aria-hidden={!showStatus} className={fadeClass(showStatus)}>
             {t('c:offline_files.status', {
               percent: percentFull(stored, budgets[current]),
               used: formatBytes(stored),
@@ -237,13 +234,8 @@ export function OfflineFilesSetting() {
             {footprint?.lastStoredAt && ` ${t('c:offline_files.last_saved', { time: dayjs(footprint.lastStoredAt).fromNow() })}`}
           </p>
           {offlineFilesTiers.map((value, index) => (
-            <p
-              key={value}
-              id={showsTier(index) ? descriptionId : undefined}
-              aria-hidden={!showsTier(index)}
-              className={panelClass(index, showsTier(index))}
-            >
-              {t(tierText[value].text, { budget: formatBytes(budgets[index]) })}
+            <p key={value} id={showsTier(index) ? descriptionId : undefined} aria-hidden={!showsTier(index)} className={fadeClass(showsTier(index))}>
+              {t(offlineFilesTierText[value].text, { budget: formatBytes(budgets[index]) })}
             </p>
           ))}
           <div
@@ -251,10 +243,7 @@ export function OfflineFilesSetting() {
             onKeyDown={(event) => {
               if (event.key === 'Escape') cancel();
             }}
-            className={cn(
-              'col-start-1 row-start-1 flex flex-wrap items-center gap-x-3 gap-y-2 transition-opacity duration-300 ease-out motion-reduce:transition-none',
-              !confirming && 'pointer-events-none opacity-0',
-            )}
+            className={cn(fadeClass(confirming), 'flex flex-wrap items-center gap-x-3 gap-y-2')}
           >
             <p className="flex min-w-48 flex-1 gap-2" aria-hidden="true">
               <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />

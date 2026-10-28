@@ -1,6 +1,8 @@
-import { type ReactNode, useId, useState } from 'react';
+import { ChevronRightIcon } from 'lucide-react';
+import { type ReactNode, type Ref, useId, useState } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
+import { Button } from '~/modules/ui/button';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
@@ -61,42 +63,48 @@ export function PreferenceSwitch({ id, label, description, checked, onCheckedCha
   );
 }
 
-interface PreferenceRowProps {
+interface PreferenceButtonProps {
   icon: IconComponent;
   label: string;
+  /** The value at the end of the label line, such as a badge. */
+  status?: ReactNode;
   description?: string;
-  /** Controls at the row's end, such as a value and a button that opens a dialog. */
-  children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
+  onClick: () => void;
+  /** Detail under the label, such as a meter. */
+  children?: ReactNode;
 }
 
 /**
- * A labelled row whose icon takes the switch column, so its label lines up with the switches. Its controls sit at the
- * end of the label line, and its description runs below both.
+ * A button that opens a preference's dialog. Its icon takes the switch column, so its label lines up with the switches,
+ * and its description below opens with the group's help toggle.
  */
-export function PreferenceRow({ icon: Icon, label, description, children }: PreferenceRowProps) {
-  const labelId = useId();
+export function PreferenceButton({ icon: Icon, label, status, description, ref, onClick, children }: PreferenceButtonProps) {
   const descriptionId = useId();
 
   return (
-    <fieldset
-      aria-labelledby={labelId}
-      aria-describedby={description ? descriptionId : undefined}
-      className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3"
-    >
-      <span className="flex justify-center text-muted-foreground">
-        <Icon className="size-4" />
-      </span>
-      <span id={labelId} className="text-sm leading-4">
-        {label}
-      </span>
-      {/* -my-2 centers controls up to h-8 on the label line, so the row keeps the height of a switch row */}
-      <div className="-my-2 flex items-center gap-2">{children}</div>
+    <div className="flex flex-col">
+      <Button
+        ref={ref}
+        variant="outline"
+        size="auto"
+        aria-haspopup="dialog"
+        aria-describedby={description ? descriptionId : undefined}
+        onClick={onClick}
+        className="grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_1rem] gap-x-3 gap-y-1.5 whitespace-normal px-3 py-2.5 text-left"
+      >
+        <Icon className="size-4 justify-self-center text-muted-foreground" />
+        <span>{label}</span>
+        {status}
+        <ChevronRightIcon className="col-start-4 size-4 text-muted-foreground" />
+        {children && <span className="col-span-3 col-start-2 flex flex-col gap-1.5 font-normal">{children}</span>}
+      </Button>
       {description && (
-        <PreferenceDescription id={descriptionId} className="col-span-2 col-start-2">
+        <PreferenceDescription id={descriptionId} className="pr-3 pl-13">
           {description}
         </PreferenceDescription>
       )}
-    </fieldset>
+    </div>
   );
 }
 
