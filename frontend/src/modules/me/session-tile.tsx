@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { ShieldCheckIcon, UnplugIcon } from 'lucide-react';
+import { LogOutIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type FederationKey } from 'shared';
 import { ExpandableTileDetail, type TileTone } from '~/modules/common/expandable-tile';
@@ -22,12 +22,12 @@ export const sessionEndedAt = (session: Session) => session.revokedAt ?? session
 const statuses = {
   current: { tone: 'success', endLabel: 'c:expires_at' },
   active: { tone: 'info', endLabel: 'c:expires_at' },
-  expired: { tone: 'warning', endLabel: 'c:expired' },
-  revoked: { tone: 'destructive', endLabel: 'c:revoked' },
+  expired: { tone: 'muted', endLabel: 'c:expired' },
+  signed_out: { tone: 'muted', endLabel: 'c:signed_out' },
 } as const satisfies Record<string, { tone: TileTone; endLabel: string }>;
 
 const sessionStatus = (session: Session): keyof typeof statuses => {
-  if (session.revokedAt !== null) return 'revoked';
+  if (session.revokedAt !== null) return 'signed_out';
   if (!isLiveSession(session)) return 'expired';
   return session.isCurrent ? 'current' : 'active';
 };
@@ -62,6 +62,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
   const status = sessionStatus(session);
   const isLive = status === 'current' || status === 'active';
   const countryName = session.ipCountry ? regionName(session.ipCountry, i18n.language) : null;
+  const when = isLive ? t('c:signed_in_relative', { time: dayjs(session.createdAt).fromNow() }).toLowerCase() : dateShort(sessionEndedAt(session));
 
   return (
     <DeviceTile
@@ -80,21 +81,22 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
           {session.isNewDevice && !session.isCurrent && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
         </>
       }
-      meta={isLive ? t('c:expires_relative', { time: dayjs(session.expiresAt).fromNow() }).toLowerCase() : dateShort(sessionEndedAt(session))}
+      meta={
+        <>
+          {when}
+          {/* The country is among the details too; on a phone the line has no room for it */}
+          {countryName && <span className="max-sm:hidden"> · {countryName}</span>}
+        </>
+      }
       details={
         <>
           <ExpandableTileDetail label={t('c:signed_in')}>{dateShort(session.createdAt)}</ExpandableTileDetail>
           <ExpandableTileDetail label={t(statuses[status].endLabel)}>{dateShort(sessionEndedAt(session))}</ExpandableTileDetail>
-          {session.revocationReason && (
+          {/* A plain sign-out is the status itself */}
+          {session.revocationReason && session.revocationReason !== 'sign_out' && (
             <ExpandableTileDetail label={t('c:reason')}>{t(`c:revocation_reason.${session.revocationReason}`)}</ExpandableTileDetail>
           )}
-          {session.authStrategy && (
-            <ExpandableTileDetail label={t('c:strategy')}>
-              <span className="capitalize">{strategyLabel(session.authStrategy)}</span>
-            </ExpandableTileDetail>
-          )}
-          {session.browser && <ExpandableTileDetail label={t('c:browser')}>{session.browser}</ExpandableTileDetail>}
-          {session.deviceOs && <ExpandableTileDetail label={t('c:os')}>{session.deviceOs}</ExpandableTileDetail>}
+          {session.authStrategy && <ExpandableTileDetail label={t('c:strategy')}>{strategyLabel(session.authStrategy)}</ExpandableTileDetail>}
           {countryName && <ExpandableTileDetail label={t('c:country')}>{countryName}</ExpandableTileDetail>}
         </>
       }
@@ -102,8 +104,8 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
         status === 'active' &&
         onRevoke && (
           <Button variant="secondary" size="sm" className="max-sm:w-full" loading={loading} onClick={() => onRevoke([session.id])}>
-            <UnplugIcon />
-            {t('c:revoke')}
+            <LogOutIcon />
+            {t('c:sign_out')}
           </Button>
         )
       }

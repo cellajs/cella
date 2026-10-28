@@ -296,6 +296,6 @@ export const useRevokeSessionsMutation = () =>
         if (!oldData) return oldData;
         return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
       });
-      toaster.success(t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }));
+      toaster.success(t('c:success.sessions_signed_out', { count: revoked.length }));
     },
   });

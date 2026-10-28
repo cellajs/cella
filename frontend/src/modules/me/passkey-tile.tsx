@@ -31,13 +31,7 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
           {passkey.nameOnDevice}
         </>
       }
-      details={
-        <>
-          <ExpandableTileDetail label={t('c:created_at')}>{dateShort(passkey.createdAt)}</ExpandableTileDetail>
-          {passkey.browser && <ExpandableTileDetail label={t('c:browser')}>{passkey.browser}</ExpandableTileDetail>}
-          {passkey.deviceOs && <ExpandableTileDetail label={t('c:os')}>{passkey.deviceOs}</ExpandableTileDetail>}
-        </>
-      }
+      details={<ExpandableTileDetail label={t('c:created_at')}>{dateShort(passkey.createdAt)}</ExpandableTileDetail>}
       actions={
         <>
           <Button variant="secondary" size="sm" className="max-sm:w-full" loading={loading} disabled={locked} onClick={() => onDelete(passkey.id)}>

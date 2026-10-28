@@ -22,7 +22,7 @@ A sign-in sets a long-lived `device-id` cookie and records its per-user hash in 
 
 ## Impersonation
 
-A system admin's impersonation is a short session of its own, in a cookie on top of the admin's session cookie. It holds only while the admin's session does and the admin keeps the system role.
+A system admin's impersonation is a short session of its own, in a cookie on top of the admin's session cookie. It holds only while the admin's session does and the admin keeps the system role. The admin holds it, so the user's sessions list leaves it out.
 
 The admin acts as the user, never on the account: stepping up, every step-up guarded route, revoking the user's sessions and every system route (impersonating again included) answer 403 `impersonation_forbidden`. The server says who acts: `GET /me` names the admin as `impersonator` and the request log adds `impersonatorId`. The client keeps no impersonation state of its own.
 
