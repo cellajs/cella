@@ -6,7 +6,7 @@ import { type BuildEffects, type BuildReleaseOptions, buildRelease } from './bui
 
 const epoch = '0123456789ab';
 
-function fake(opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string } = {}) {
+function fake(opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string; outOfStock?: string } = {}) {
   const ops: string[] = [];
   let built = false;
   const fx: BuildEffects = {
@@ -23,8 +23,13 @@ function fake(opts: { present?: boolean; result?: string; never?: boolean; step?
       ops.push('remove');
       return [];
     },
-    startBuilder: async (name) => {
-      ops.push(`start:${name}`);
+    startBuilder: async (zone, name) => {
+      ops.push(`start:${name}@${zone}`);
+      if (zone === opts.outOfStock) {
+        throw new Error(
+          `Scaleway POST https://api.scaleway.com/instance/v1/zones/${zone}/servers/0b1d/action → 412: {"type": "out_of_stock", "message": "resource is out of stock", "resource": "POP2-HC-8C-16G"}`,
+        );
+      }
     },
     report: async (name) => {
       if (opts.never) return undefined;
@@ -42,6 +47,7 @@ const options = (overrides: Partial<BuildReleaseOptions> = {}): BuildReleaseOpti
   sha: 'c'.repeat(40),
   epoch,
   builderName: 'app-builder-cccccccccc',
+  zones: ['nl-ams-1', 'nl-ams-2', 'nl-ams-3'],
   images: ['backend', 'infra-boot'],
   withFrontend: true,
   distDir: mkdtempSync(join(tmpdir(), 'release-')),
@@ -62,13 +68,21 @@ describe('buildRelease', () => {
   it('must not trust frontend files pushed before the last rotation: their epoch differs, so the release is built again', async () => {
     const { fx, ops } = fake({ present: true, epochOnFiles: 'before-rotation' });
     expect(await buildRelease(options(), fx)).toBe('built');
-    expect(ops).toContain('start:app-builder-cccccccccc');
+    expect(ops).toContain('start:app-builder-cccccccccc@nl-ams-1');
   });
 
   it('builds a missing release on a builder it deletes afterwards, a leftover one deleted first', async () => {
     const { fx, ops } = fake();
     expect(await buildRelease(options(), fx)).toBe('built');
-    expect(ops).toEqual(['remove', 'keys', 'start:app-builder-cccccccccc', 'remove']);
+    expect(ops).toEqual(['remove', 'keys', 'start:app-builder-cccccccccc@nl-ams-1', 'remove']);
+  });
+
+  it('builds in the next zone of the region when Scaleway has the type out of stock, the machine it made in the first deleted', async () => {
+    const { fx, ops } = fake({ outOfStock: 'nl-ams-1' });
+    const lines: string[] = [];
+    expect(await buildRelease(options({ log: (line) => lines.push(line) }), fx)).toBe('built');
+    expect(ops).toEqual(['remove', 'keys', 'start:app-builder-cccccccccc@nl-ams-1', 'remove', 'start:app-builder-cccccccccc@nl-ams-2', 'remove']);
+    expect(lines).toContain('  ~ nl-ams-1 has no POP2-HC-8C-16G in stock: trying nl-ams-2');
   });
 
   it('fails with the end of the log when the build fails, and deletes the builder all the same', async () => {

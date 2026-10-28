@@ -14,7 +14,7 @@ import {
 const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
 
 describe('isPrivilegedUrn', () => {
-  it('flags database, IAM, VPC and private-network resources, secret containers, DNS records, buckets with their policies, and the load balancer', () => {
+  it('flags database, IAM, VPC and private-network resources, security groups, secret containers, DNS records, buckets with their policies, and the load balancer', () => {
     expect(isPrivilegedUrn(urn('scaleway:loadbalancers/certificate:Certificate', 'api-cert'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:loadbalancers/acl:Acl', 'backend-internal-deny-all'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:loadbalancers/backend:Backend', 'backend-lb-backend'))).toBe(true);
@@ -26,6 +26,7 @@ describe('isPrivilegedUrn', () => {
     expect(isPrivilegedUrn(urn('scaleway:iam/policy:Policy', 'vm-backend-policy'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:network/vpc:Vpc', 'main-vpc'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:network/privateNetwork:PrivateNetwork', 'main-pn'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:instance/securityGroup:SecurityGroup', 'compute-sg-nl-ams-2'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:object/bucketPolicy:BucketPolicy', 'state-bucket-policy'))).toBe(true);
   });
   it("leaves the machines to the deploy, and no app secret: a secret version is the apply's", () => {

@@ -52,9 +52,11 @@ const bootPlanOf = (server: CapturedResource) => bootPlanIn(cloudInitOf(server),
 const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as 'backend' | 'frontend';
 
 describe('compute module', () => {
-  it('attaches the closed security group to every generation VM', () => {
-    const securityGroup = h.oneOfType('scaleway:instance/securityGroup:SecurityGroup');
-    expect(securityGroup.inputs).toMatchObject({ inboundDefaultPolicy: 'drop', inboundRules: [] });
+  it("closes the security group of every zone, and attaches the environment zone's to every generation VM", () => {
+    const groups = h.byType('scaleway:instance/securityGroup:SecurityGroup');
+    for (const group of groups) expect(group.inputs, group.name).toMatchObject({ inboundDefaultPolicy: 'drop', inboundRules: [] });
+    const securityGroup = groups.find((group) => group.name === 'compute-sg');
+    if (!securityGroup) throw new Error('no compute-sg');
     expect(servers.map((server) => server.name).sort()).toEqual([
       expect.stringMatching(/^vm-backend-[0-9a-f]{10}$/),
       expect.stringMatching(/^vm-frontend-[0-9a-f]{10}$/),

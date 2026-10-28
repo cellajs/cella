@@ -27,7 +27,7 @@ if (appConfig.mode !== stackName) {
 
 const derived = deriveInfra(appConfig);
 
-export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived;
+export const { naming, dnsZone, region, zone, zones, tags, tagsAsMap, isProduction } = derived;
 
 // Deploys require a real domain; validate it once before defining resources.
 if (!derived.hasDomain) {
