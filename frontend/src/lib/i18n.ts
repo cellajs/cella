@@ -3,6 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 import { appConfig } from 'shared';
+import { addI18nFormatters, i18nDefaultVariables } from 'shared/utils/i18n-text';
 import { z } from 'zod';
 import { env } from '~/env';
 import { locales } from '~/lib/i18n-locales';
@@ -19,6 +20,7 @@ const initOptions: InitOptions = {
   fallbackLng: appConfig.defaultLanguage,
   interpolation: {
     escapeValue: false, // React escapes by default
+    defaultVariables: i18nDefaultVariables,
   },
   react: { useSuspense: false },
   defaultNS: 'c',
@@ -38,6 +40,7 @@ i18n.on('languageChanged', (language) => {
 });
 
 i18n.init(initOptions);
+addI18nFormatters(i18n.services.formatter);
 
 // Every validation message in the user's language and in plain words; a message set on a schema still wins.
 z.config({ customError: formErrorMessage });

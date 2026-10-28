@@ -38,7 +38,7 @@ export function SchemasPage() {
       <DocsPageHeader title={t('c:schema', { count: 2 })} />
 
       <p className="py-5 text-muted-foreground text-sm">
-        {schemaCount} {t('c:schema', { count: schemaCount }).toLowerCase()}
+        {t('c:resource_count', { count: schemaCount, resource: t('c:schema', { count: schemaCount }) })}
       </p>
 
       <div className="flex flex-col gap-12 lg:gap-20">

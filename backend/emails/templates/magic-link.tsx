@@ -1,10 +1,7 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
-
-const appName = appConfig.name;
 
 interface MagicLinkStatic {
   magicLinkUrl: string;
@@ -16,11 +13,11 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
   translate(lng, { magicLinkUrl, name, isNewUser }) {
     const keyBase = isNewUser ? 'backend:email.magic_link.signup' : 'backend:email.magic_link';
     return {
-      subject: i18n.t(`${keyBase}.subject`, { lng, appName, ...plainText }),
-      previewText: i18n.t(`${keyBase}.preview`, { appName, lng, ...plainText }),
-      headerHtml: i18n.t(`${keyBase}.title`, { appName, lng }),
+      subject: i18n.t(`${keyBase}.subject`, { lng, ...plainText }),
+      previewText: i18n.t(`${keyBase}.preview`, { lng, ...plainText }),
+      headerHtml: i18n.t(`${keyBase}.title`, { lng }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName }),
+      bodyHtml: i18n.t(`${keyBase}.text`, { lng }),
       buttonText: i18n.t(isNewUser ? 'c:sign_up' : 'c:sign_in', { lng }),
       expiresText: linkExpiresText(lng, 'magic'),
       endingHtml: `${endingFor(lng, 'ignore')} ${i18n.t('backend:email.ending.no_forward', { lng })}`,

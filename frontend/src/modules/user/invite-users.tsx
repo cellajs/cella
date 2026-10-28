@@ -45,9 +45,9 @@ export function openInviteDialog({ channel, mode, description, triggerRef, conta
 
 /** Per mode: the crumb in the dialog title, the explanation above the form, and the form. */
 const inviteModes: Record<InviteMode, { title: TKey; explain: TKey; Form: ComponentType<InviteFormProps> }> = {
-  email: { title: 'c:email', explain: 'c:explain.invite_email.text', Form: InviteEmailForm },
-  search: { title: 'c:search', explain: 'c:explain.invite_search.text', Form: InviteSearchForm },
-  bulk: { title: 'c:email_bulk', explain: 'c:explain.invite_bulk.text', Form: InviteBulkEmailForm },
+  email: { title: 'c:email', explain: 'c:invite_email.text', Form: InviteEmailForm },
+  search: { title: 'c:search', explain: 'c:invite_search.text', Form: InviteSearchForm },
+  bulk: { title: 'c:email_bulk', explain: 'c:invite_bulk.text', Form: InviteBulkEmailForm },
 };
 
 /** The modes to start from; bulk opens from the email mode's link. */

@@ -70,7 +70,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const textKey = type && findKey(`${type}.text`);
 
   const resource = error instanceof ApiError && error.entityType ? i18n.t(error.entityType) : undefined;
-  const options = resource ? { resource, resourceLowerCase: resource.toLowerCase() } : {};
+  const options = resource ? { resource } : {};
 
   const title = key ? i18n.t(key as TKey, options) : getFallbackTitle(error);
 

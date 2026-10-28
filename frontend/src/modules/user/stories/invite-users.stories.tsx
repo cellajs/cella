@@ -47,10 +47,9 @@ const meta = {
     draftStore.getState().reset();
     // Story tests run without the app's translations; these are the texts the plays read.
     i18n.addResourceBundle('en', 'c', {
-      invite_count_one: 'Invite {{count}}',
-      invite_count_other: 'Invite {{count}}',
+      invite_count: 'Invite {{count}}',
       invite_group_member_one: '{{count}} already a member, left out',
-      invite_result_invited_one: '{{count}} invited',
+      invite_result_invited: '{{count}} invited',
       invite_result_member: '{{email}} is already a member.',
     });
     const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

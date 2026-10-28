@@ -27,7 +27,7 @@ export function JsonActions({ url, data, filename, resourceName, className }: Js
 
   const handleCopy = () => {
     copyToClipboard(JSON.stringify(data, null, 2));
-    toaster.success(t('c:success.resource_copied', { resource: resourceName }));
+    toaster.success(t('c:success.copy_resource', { resource: resourceName }));
   };
 
   const handleOpen = () => {

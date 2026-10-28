@@ -79,7 +79,7 @@ export function MarketingFooter() {
           <FooterLinks />
           <div>
             <div className={headingClass}>{t('c:request_info')}</div>
-            <div className={textClass}>{t('c:request_info.text', { appName: appConfig.name })}</div>
+            <div className={textClass}>{t('c:request_info.text')}</div>
             <SubscribeNewsletterForm />
           </div>
         </div>
@@ -104,9 +104,7 @@ export function MarketingFooter() {
           ))}
         </ul>
 
-        <p className="pb-12 text-center text-white/60 text-xs">
-          {t('c:credits', { year: currentYear, appName: appConfig.name, companyName: appConfig.company.name })}
-        </p>
+        <p className="pb-12 text-center text-white/60 text-xs">{t('c:credits', { year: currentYear })}</p>
       </div>
     </section>
   );

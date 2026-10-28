@@ -49,8 +49,8 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
     dialoger.getState().create(<SecretBox value={data.manualKey} />, {
       id: 'totp-manual-key',
       triggerRef,
-      title: t('c:totp_manual.title'),
-      description: t('c:totp_manual.description'),
+      title: t('c:totp_manual'),
+      description: t('c:totp_manual.text'),
       className: 'sm:max-w-md',
     });
   };
@@ -64,7 +64,7 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
       <QRCodeSVG className="mx-auto mt-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
       {expiredUri === data.totpUri ? (
         <div className="flex flex-col items-center gap-3 py-2">
-          <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
+          <p className="text-muted-foreground text-sm">{t('c:totp_qr_expired.text')}</p>
           <Button variant="secondary" loading={isFetching} onClick={() => refetch()}>
             <RefreshCwIcon className="size-3.5" />
             {t('c:refresh')}

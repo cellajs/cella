@@ -84,9 +84,7 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
         title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
       >
         {invitation && (
-          <p className="font-light">
-            {t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`).toLowerCase() })}
-          </p>
+          <p className="font-light">{t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })}</p>
         )}
       </AuthHeader>
 

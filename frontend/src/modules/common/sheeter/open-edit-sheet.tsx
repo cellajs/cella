@@ -36,7 +36,7 @@ export function openEditSheet({
   after,
   className = tw('container w-full'),
 }: OpenEditSheetOptions) {
-  const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
+  const title = i18n.t('c:edit_resource', { resource: i18n.t(resource) });
   const cardClass = after ? 'mb-4' : 'mb-20';
 
   sheeter.getState().create(

@@ -25,7 +25,7 @@ export function MfaSwitch() {
       triggerRef,
       className: 'max-w-xl',
       title: t(`c:${action}_resource`, { resource: t('c:mfa_short') }),
-      description: t(`c:mfa_${action}_confirmation.text`),
+      description: t(`c:confirm.${action}_mfa`),
     });
   };
 

@@ -18,7 +18,7 @@ export function PasskeysList() {
   const {
     data: { passkeys },
   } = useSuspenseQuery(meAuthQueryOptions());
-  const resource = t('c:passkey').toLowerCase();
+  const resource = t('c:passkey');
 
   const handleDeletePasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();

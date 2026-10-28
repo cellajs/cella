@@ -54,7 +54,7 @@ interface DeleteQuestionProps {
 /** The question a delete confirmation asks: "Delete project **Roadmap**?". */
 export function DeleteQuestion({ resource, name }: DeleteQuestionProps) {
   const { t } = useTranslation();
-  return <NamedText i18nKey="c:delete_confirm.text" name={name} values={{ resource: t(resource).toLowerCase() }} />;
+  return <NamedText i18nKey="c:confirm.delete_resource" name={name} values={{ resource: t(resource) }} />;
 }
 
 /** Turns the open menu (e.g. a table row's "…") into a confirmation; its Cancel steps back to the menu. */

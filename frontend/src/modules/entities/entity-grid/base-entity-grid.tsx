@@ -76,7 +76,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   if (isLoading || !entities) return <EntityGridSkeleton tileHeight={skeletonHeight} />;
 
   if (!isFetching && !error && entities.length === 0) {
-    const resource = t(label, { count: 0 }).toLowerCase();
+    const resource = t(label, { count: 0 });
     return isFiltered ? (
       <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }} />
     ) : (

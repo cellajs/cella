@@ -15,7 +15,7 @@ interface TableCountProps {
 }
 
 export function TableCount({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <div className={cn('flex items-center gap-2 text-sm max-sm:hidden', className)}>
@@ -27,10 +27,8 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
       )}
       {typeof count === 'number' && (
         <>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span>{new Intl.NumberFormat(i18n.language).format(count)}</span>
-            <span>{t(label, { count }).toLowerCase()}</span>
-            {isFiltered && <span>{t('c:found')}</span>}
+          <div className="text-muted-foreground">
+            {t(isFiltered ? 'c:resource_count_found' : 'c:resource_count', { count, resource: t(label, { count }) })}
           </div>
           {children}
         </>

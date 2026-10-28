@@ -40,7 +40,6 @@ const formContainerId = 'create-organization';
 export function CreateOrganizationForm({ dialog: isDialog, children, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
-  const nameLabel = t('c:name').toLowerCase();
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '', draft: false } };
 
@@ -80,7 +79,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           control={form.control}
           name="name"
           label={t('c:name')}
-          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name') })}
           required
         />
         <SlugFormField
@@ -88,7 +87,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           entityType="organization"
           tenantId=""
           label={t('c:resource_handle', { resource: t('c:organization') })}
-          description={t('c:resource_handle.text', { resource: t('c:organization').toLowerCase() })}
+          description={t('c:resource_handle.text')}
           nameValue={name}
           prefix="/~/"
         />
@@ -122,7 +121,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
 
 /** Opens the create dialog; `onCreated` receives the saved organization. */
 export function openCreateOrganizationDialog(triggerRef: TriggerRef, onCreated?: (organization: Organization) => void) {
-  const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() });
+  const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization') });
   const callback = (args: CallbackArgs<Organization>) => {
     if (args.status === 'success') onCreated?.(args.data);
   };

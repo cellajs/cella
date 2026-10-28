@@ -21,7 +21,7 @@ interface ToolCardProps {
 /** A settings section. Below `sm` it drops the card chrome, so a phone shows a heading over full-width fields, as native settings do. */
 export function ToolCard({ label, resource, description, unsaved, id, className, children }: ToolCardProps) {
   const { t } = useTranslation();
-  const title = label && t(label, { resource: resource ? t(resource).toLowerCase() : '' });
+  const title = label && t(label, { resource: resource ? t(resource) : '' });
 
   return (
     <Card id={id} className={cn('max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:py-0', className)}>

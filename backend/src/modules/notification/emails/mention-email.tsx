@@ -17,7 +17,7 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, SubjectEmailRecip
     return {
       subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName, ...plainText }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      previewText: i18n.t('c:email.mention.preview', { lng, actorName, ...plainText }),
+      previewText: param('subjectTitle'),
       headerHtml: i18n.t('c:email.mention.title', { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
       buttonText: i18n.t('c:email.mention.button', { lng }),

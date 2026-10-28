@@ -24,9 +24,7 @@ export function ConnectedAppsList() {
   };
 
   if (!items.length)
-    return (
-      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:connected_apps').toLowerCase() }} />
-    );
+    return <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:connected_apps') }} />;
 
   return (
     <Accordion className="flex flex-col gap-2">

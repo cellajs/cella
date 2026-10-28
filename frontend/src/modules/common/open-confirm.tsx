@@ -76,7 +76,7 @@ interface DeleteDialogOptions {
 
 /** Opens a dialog that confirms deleting `count` items: "Delete 3 projects". From a selection bar it docks in the bar's place. */
 export function openDeleteDialog({ id, triggerRef, resource, count, content, title, description }: DeleteDialogOptions) {
-  const resourceName = i18n.t(resource, { count }).toLowerCase();
+  const resourceName = i18n.t(resource, { count });
   const dock = triggerRef.current?.closest('[data-selection-bar]') ? 'bottom' : undefined;
   dialoger.getState().create(content, {
     id,
@@ -84,6 +84,6 @@ export function openDeleteDialog({ id, triggerRef, resource, count, content, tit
     dock,
     className: dock ? 'max-w-md' : 'max-w-xl',
     title: title ?? i18n.t('c:delete_resource', { resource: resourceName }),
-    description: description ?? <NamedText i18nKey="c:confirm.delete_counted_resource" values={{ count, resource: resourceName }} />,
+    description: description ?? <NamedText i18nKey="c:confirm.delete_resource_counted" values={{ count, resource: resourceName }} />,
   });
 }

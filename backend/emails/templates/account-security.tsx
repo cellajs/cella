@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { formatMailTime } from '../frame';
 import { i18n, plainText } from '../i18n';
@@ -43,7 +42,7 @@ interface AccountSecurityStatic {
 
 export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
   translate(lng, { name, type, details = {} }) {
-    const baseProps = { lng, appName: appConfig.name };
+    const baseProps = { lng };
     const values = typeof details.timestamp === 'string' ? { ...details, timestamp: formatMailTime(details.timestamp, lng) } : details;
     const forAccountHolder = !inboxTypes.includes(type);
     const title = i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...values, ...plainText });

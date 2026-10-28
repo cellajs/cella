@@ -70,7 +70,7 @@ export function PagesSidebar() {
         ))
       ) : (
         <SidebarMenuItem>
-          <span className="px-3 py-2 text-faint-foreground text-sm">{t('c:docs.no_pages_yet')}</span>
+          <span className="px-3 py-2 text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:page_other') })}</span>
         </SidebarMenuItem>
       )}
     </SidebarMenu>

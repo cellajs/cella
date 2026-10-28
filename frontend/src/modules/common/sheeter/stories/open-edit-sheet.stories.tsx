@@ -27,7 +27,7 @@ const organization = {
 const tenant = { id: 'tenant-1', name: 'Babbage', status: 'active' } as Tenant;
 
 const translations = {
-  edit_resource: 'Edit {{resource}}',
+  edit_resource: 'Edit {{resource, lowercase}}',
   user: 'User',
   organization: 'Organization',
   tenant: 'Tenant',

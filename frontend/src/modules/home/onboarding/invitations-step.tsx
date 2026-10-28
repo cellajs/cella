@@ -42,7 +42,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
                 {t('c:invite_accept_as_account.text', {
                   inviterName: inactiveMembership.createdBy?.name ?? t('c:unknown'),
                   entityName: entity.name,
-                  role: t(`c:${inactiveMembership.role}`).toLowerCase(),
+                  role: t(`c:${inactiveMembership.role}`),
                 })}
               </p>
             </div>

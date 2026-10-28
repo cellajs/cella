@@ -69,7 +69,7 @@ export function MembersTableBar({
           callback={clearSelection}
         />
       ),
-      title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
+      title: t('c:remove_resource', { resource: t('c:member_other') }),
       description: <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email) }} />,
     });
 

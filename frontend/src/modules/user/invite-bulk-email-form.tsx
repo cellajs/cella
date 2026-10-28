@@ -43,7 +43,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
           <Textarea
             value={rawText ?? emails.join('\n')}
             onChange={(event) => handleTextChange(event.target.value)}
-            placeholder={t('c:paste_emails.placeholder')}
+            placeholder={t('c:placeholder.paste_emails')}
             autoResize
             className="min-h-24"
             autoComplete="off"

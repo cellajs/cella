@@ -21,7 +21,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: Pa
   const [upload, setUpload] = useState<{ url: string; replaces: PageCoverProps['url'] } | null>(null);
   const coverUrl = upload && upload.replaces === url ? upload.url : url;
 
-  const uploadLabel = t('c:upload_item', { item: t('c:cover').toLowerCase() });
+  const uploadLabel = t('c:upload_resource', { resource: t('c:cover') });
 
   const openUploadDialog = () => {
     openImageUpload({

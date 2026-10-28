@@ -23,7 +23,7 @@ export function PublishOrganizationForm({ organization, close }: PublishOrganiza
       {
         onSuccess: ({ invitationsSent }) => {
           const description = invitationsSent ? t('c:invitations_sent', { count: invitationsSent }) : undefined;
-          toaster.success(t('c:success.published_resource', { name: organization.name }), { description });
+          toaster.success(t('c:success.publish_resource', { name: organization.name }), { description });
           close();
         },
       },

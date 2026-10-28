@@ -1,6 +1,7 @@
 import { beforeAll, vi } from 'vitest';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { addI18nFormatters } from 'shared/utils/i18n-text';
 import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 import { setProjectAnnotations } from '@storybook/react-vite';
 import * as projectAnnotations from './preview';
@@ -11,6 +12,7 @@ i18n.use(initReactI18next).init({
   resources: { en: { translation: {} } },
   interpolation: { escapeValue: false },
 });
+addI18nFormatters(i18n.services.formatter);
 
 // This is an important step to apply the right configuration when testing your stories.
 // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations

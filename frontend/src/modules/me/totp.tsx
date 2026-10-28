@@ -40,8 +40,8 @@ export function Totp() {
       </Suspense>,
       {
         id: 'totp-setup',
-        title: t('c:totp_qr.title'),
-        description: t('c:totp_qr.description'),
+        title: t('c:totp_qr'),
+        description: t('c:totp_qr.text'),
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,

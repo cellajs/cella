@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { CloseButton } from '~/modules/common/close-button';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import { Onboarding, type OnboardingState } from '~/modules/home/onboarding/onboarding';
@@ -26,7 +25,7 @@ export function WelcomePage() {
     <>
       <Dialog open={onboardingState !== 'completed'} onOpenChange={handleOpenChange}>
         <DialogContent className="flex h-dvh max-h-none min-w-full flex-col rounded-none bg-background/75 p-0">
-          <DialogTitle className="sr-only">{t('c:onboarding_welcome', { appName: appConfig.name })}</DialogTitle>
+          <DialogTitle className="sr-only">{t('c:onboarding_welcome')}</DialogTitle>
           <CloseButton onClick={complete} className="absolute top-4 right-4 z-10" />
           <Onboarding state={onboardingState} onStart={() => setOnboardingState('stepper')} onComplete={complete} />
         </DialogContent>

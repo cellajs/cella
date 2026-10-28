@@ -27,7 +27,7 @@ function PageSizeCell({ slug }: { slug: string }) {
   if (!size) return null;
 
   const format = new Intl.NumberFormat(i18n.resolvedLanguage);
-  const tooltip = { 'data-tooltip': 'true', 'data-tooltip-content': t('c:word_count', { count: size.words, words: format.format(size.words) }) };
+  const tooltip = { 'data-tooltip': 'true', 'data-tooltip-content': t('c:word_count', { count: size.words }) };
   if (size.words > splitWords) {
     return (
       <Badge variant="warning" soft className="font-mono tabular-nums" {...tooltip}>
@@ -69,7 +69,7 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
             <span
               className="shrink-0 text-muted-foreground text-xs"
               data-tooltip="true"
-              data-tooltip-content={t('c:child_page', { count: row._childCount })}
+              data-tooltip-content={t('c:child_page_count', { count: row._childCount })}
             >
               {row._childCount}
             </span>

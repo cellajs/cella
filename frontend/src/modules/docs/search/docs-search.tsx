@@ -101,7 +101,7 @@ export function DocsSearch() {
   ];
   // Scoped placeholder mirrors the active chip ("Search API reference...").
   const activeChipLabel = scopeChips.find((chip) => chip.value === scope)?.label;
-  const placeholder = activeChipLabel ? t('c:placeholder.search_resource', { resource: activeChipLabel }) : t('c:docs.search.placeholder');
+  const placeholder = activeChipLabel ? t('c:placeholder.search_resource', { resource: activeChipLabel }) : t('c:placeholder.search_docs');
 
   return (
     <Combobox<SearchSelection>
@@ -141,12 +141,7 @@ export function DocsSearch() {
             <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
           )}
           {results !== null && results.length === 0 && (
-            <ContentPlaceholder
-              icon={SearchIcon}
-              title="c:no_resource_found"
-              titleOptions={{ resource: t('c:results').toLowerCase() }}
-              className="sm:h-[41vh]"
-            />
+            <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:results') }} className="sm:h-[41vh]" />
           )}
           <ComboboxList className="h-full max-h-none overflow-visible" hidden={results === null ? !recentSearches.length : !results.length}>
             {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}

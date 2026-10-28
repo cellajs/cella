@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon, ShieldAlertIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
@@ -22,7 +21,7 @@ export function HomePage() {
 
   return (
     <div className="container">
-      <SimpleHeader heading="c:home" text="c:home.text" textOptions={{ appName: appConfig.name }} className="pt-4 md:pt-6" />
+      <SimpleHeader heading="c:home" text="c:home.text" className="pt-4 md:pt-6" />
       {!user.mfaRequired && (
         <AlertBanner
           id="enable_mfa"

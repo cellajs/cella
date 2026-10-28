@@ -35,7 +35,7 @@ export function SsoEntryPage() {
         image={image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:sso_entry', { organization: organizationName })}
       >
-        <p className="text-muted-foreground text-sm">{t('c:sso_entry.text', { institution: institution.displayName, appName: appConfig.name })}</p>
+        <p className="text-muted-foreground text-sm">{t('c:sso_entry.text', { institution: institution.displayName })}</p>
       </AuthHeader>
 
       {status === 'active' ? (
@@ -48,7 +48,6 @@ export function SsoEntryPage() {
           <AlertDescription>
             {t(status === 'pending' ? 'c:sso_entry_pending.text' : 'c:sso_entry_disabled.text', {
               institution: institution.displayName,
-              appName: appConfig.name,
             })}
           </AlertDescription>
         </Alert>

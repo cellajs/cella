@@ -10,12 +10,10 @@ export function EmailVerificationPage() {
   const { reason } = useParams({ from: '/_public/auth/email-verification/$reason' });
   const { provider } = useSearch({ from: '/_public/auth/email-verification/$reason' });
 
-  const reasonText = t(`c:request_verification.${reason}` as TKey, { providerName: provider });
-
   return (
     <>
       <AuthHeader title={t('c:almost_there')}>
-        <p>{t('c:request_verification.text', { reason: reasonText })}</p>
+        <p>{t(`c:request_verification.${reason}.text` as TKey, { provider })}</p>
       </AuthHeader>
 
       {reason === 'signup' && <LegalNotice mode="verify" />}

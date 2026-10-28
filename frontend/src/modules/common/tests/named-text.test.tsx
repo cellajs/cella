@@ -12,7 +12,7 @@ beforeAll(async () => {
 
 describe('NamedText', () => {
   it('shows a name with markup in it as text', () => {
-    const markup = renderToStaticMarkup(<NamedText i18nKey="c:delete_confirm.text" name="<img src=x>" />);
+    const markup = renderToStaticMarkup(<NamedText i18nKey="c:confirm.delete_resource" name="<img src=x>" />);
     expect(markup).toContain('>&lt;img src=x&gt;</span>');
     expect(markup).not.toContain('<img');
   });

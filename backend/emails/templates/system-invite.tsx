@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
@@ -12,17 +11,15 @@ interface SystemInviteStatic {
 
 type SystemInviteRecipient = EmailRecipient & { name: string; inviteLink: string };
 
-const appName = appConfig.name;
-
 /** System-level invitation, for new users. */
 export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemInviteRecipient>()({
   translate(lng, { senderName, senderEmail }, param = plainParam) {
     return {
-      subject: i18n.t('backend:email.system_invite.subject', { lng, senderName, appName, ...plainText }),
-      previewText: i18n.t('backend:email.system_invite.preview', { appName, lng, ...plainText }),
-      headerHtml: i18n.t('backend:email.system_invite.title', { appName, lng }),
+      subject: i18n.t('backend:email.system_invite.subject', { lng, senderName, ...plainText }),
+      previewText: i18n.t('backend:email.system_invite.preview', { lng, ...plainText }),
+      headerHtml: i18n.t('backend:email.system_invite.title', { lng }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      bodyHtml: i18n.t('backend:email.system_invite.text', { lng, appName, sender: senderHtml(lng, senderName, senderEmail) }),
+      bodyHtml: i18n.t('backend:email.system_invite.text', { lng, sender: senderHtml(lng, senderName, senderEmail) }),
       expiresText: linkExpiresText(lng, 'invitation'),
       buttonText: i18n.t('c:join', { lng }),
       endingHtml: senderEndingFor(lng, { senderName, senderEmail, ignorable: true }),

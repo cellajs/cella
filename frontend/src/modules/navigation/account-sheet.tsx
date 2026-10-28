@@ -84,12 +84,7 @@ export function AccountSheet() {
         </div>
       </button>
       <div className="mt-3 flex flex-col gap-1 px-3 max-sm:mt-4">
-        <NavSheetRow
-          icon={UserRoundIcon}
-          id="btn-profile"
-          label={t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
-          onClick={openProfile}
-        />
+        <NavSheetRow icon={UserRoundIcon} id="btn-profile" label={t('c:view_resource', { resource: t('c:profile') })} onClick={openProfile} />
         <NavSheetRow isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:account_settings')} to="/account" />
         {isSystemAdmin && <NavSheetRow isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />}
         {isInstalledApp() && <NavSheetRow icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}

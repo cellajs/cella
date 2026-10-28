@@ -113,9 +113,7 @@ export function PagesTable() {
             canDropRow: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => tree.canDrop(rows, args),
             renderRowDragPreview,
           })}
-          NoRowsComponent={
-            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:page_other').toLowerCase() }} />
-          }
+          NoRowsComponent={<ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:page_other') }} />}
         />
       </TreeProvider>
     </FocusViewContainer>

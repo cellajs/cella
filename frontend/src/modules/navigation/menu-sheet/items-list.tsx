@@ -28,7 +28,7 @@ export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType
 
   return (
     <li>
-      <ContentPlaceholder size="sm" title="c:no_resource_yet" titleOptions={{ resource: t(entityType, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder size="sm" title="c:no_resource_yet" titleOptions={{ resource: t(entityType, { count: 0 }) }} />
     </li>
   );
 }

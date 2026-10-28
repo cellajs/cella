@@ -76,7 +76,7 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
             {t('c:invite_accept_as_account.text', {
               inviterName: invitation.inviterName,
               entityName: invitation.entityName,
-              role: t(`c:${invitation.role}`).toLowerCase(),
+              role: t(`c:${invitation.role}`),
             })}
           </p>
         )}

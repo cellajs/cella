@@ -19,7 +19,7 @@ interface PendingMembershipsCountProps {
 }
 
 export function PendingMembershipsCount({ channel }: PendingMembershipsCountProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const openSheet = () => {
@@ -46,7 +46,7 @@ export function PendingMembershipsCount({ channel }: PendingMembershipsCountProp
 
   return (
     <Button ref={buttonRef} disabled={pending < 1} variant="ghost" size="xs" onClick={openSheet}>
-      {new Intl.NumberFormat(i18n.language).format(pending)} {t('c:pending').toLowerCase()}
+      {t('c:resource_count', { count: pending, resource: t('c:pending') })}
     </Button>
   );
 }

@@ -35,7 +35,7 @@ const headings = (view: View, holdsFactor: boolean) => {
   if (view === 'add') {
     return { title: i18n.t('c:step_up_add_factor'), description: i18n.t(holdsFactor ? 'c:step_up_new_factor.text' : 'c:step_up_add_factor.text') };
   }
-  if (view === 'totp-setup') return { title: i18n.t('c:totp_qr.title'), description: i18n.t('c:totp_qr.description') };
+  if (view === 'totp-setup') return { title: i18n.t('c:totp_qr'), description: i18n.t('c:totp_qr.text') };
   return { title: i18n.t('c:step_up'), description: i18n.t('c:step_up.text') };
 };
 

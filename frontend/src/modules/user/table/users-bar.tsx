@@ -46,7 +46,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
           i18nKey="c:confirm.delete_resource"
           values={{
             name: selected.map((user) => user.email),
-            resource: t('c:user', { count: selected.length }).toLowerCase(),
+            resource: t('c:user', { count: selected.length }),
           }}
         />
       ),

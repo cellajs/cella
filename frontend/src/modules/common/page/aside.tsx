@@ -74,7 +74,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             }
           >
             {Icon && <Icon className="size-5" />}
-            {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
+            {t(label, { resource: resource ? t(resource) : '' })}
           </Button>
         );
       })}

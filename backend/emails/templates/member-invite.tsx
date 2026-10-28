@@ -1,4 +1,4 @@
-import { appConfig, type EntityRole, hierarchy } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { senderEndingFor, senderHtml } from '../shared-texts';
@@ -14,18 +14,21 @@ interface MemberInviteStatic {
 
 type MemberInviteRecipient = EmailRecipient & { name: string; memberInviteLink: string };
 
-const appName = appConfig.name;
-
 /** For existing users; new users get member-invite-with-token. */
 export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberInviteRecipient>()({
   translate(lng, { senderName, senderEmail, entityName, role }, param = plainParam) {
     return {
-      subject: i18n.t('backend:email.member_invite.subject', { lng, senderName, entityName, appName, ...plainText }),
-      previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, appName, ...plainText }),
+      subject: i18n.t('backend:email.member_invite.subject', { lng, senderName, entityName, ...plainText }),
+      previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_invite.title', { lng, entityName }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       // The sender is translated HTML whose name and address were escaped there; the text splices it in as it is.
-      bodyHtml: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, sender: senderHtml(lng, senderName, senderEmail), role }),
+      bodyHtml: i18n.t('backend:email.member_invite.text', {
+        lng,
+        entityName,
+        sender: senderHtml(lng, senderName, senderEmail),
+        role: i18n.t(`c:${role}`, { lng }),
+      }),
       buttonText: i18n.t('c:accept', { lng }),
       endingHtml: senderEndingFor(lng, { senderName, senderEmail, ignorable: true }),
       supportText: i18n.t('backend:email.support_email', { lng }),

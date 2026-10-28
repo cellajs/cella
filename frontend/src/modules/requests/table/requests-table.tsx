@@ -47,9 +47,7 @@ export function RequestsTable() {
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: (
-            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:request_other').toLowerCase() }} />
-          ),
+          NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:request_other') }} />,
         }}
       />
     </>
