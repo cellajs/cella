@@ -4,7 +4,6 @@ import { HomeIcon, PlusIcon, UndoIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-import { appConfig } from 'shared';
 import { getMenuSection } from '~/lib/entity-modules';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
@@ -49,9 +48,7 @@ export function OnboardingCompleted() {
         <UndoIcon strokeWidth={0.1} className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24" />
       )}
       <h1 className="font-bold text-3xl">{t('c:onboarding_completed')}</h1>
-      <p className="max-w-md pb-8 text-foreground text-xl md:text-2xl md:leading-9">
-        {t('c:onboarding_completed.text', { appName: appConfig.name })}
-      </p>
+      <p className="max-w-md pb-8 text-foreground text-xl md:text-2xl md:leading-9">{t('c:onboarding_completed.text')}</p>
 
       {/* Both actions appear together, once the organization list has settled and the flag is set: neither moves under the pointer. */}
       {user.userFlags.finishedOnboarding && (
@@ -59,7 +56,7 @@ export function OnboardingCompleted() {
           {!hasOrganization && createOrganization && (
             <Button ref={createButtonRef} variant="secondary" onClick={() => createOrganization(createButtonRef)}>
               <PlusIcon />
-              {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
+              {t('c:create_resource', { resource: t('c:organization') })}
             </Button>
           )}
           {/* Replaces the history entry: going back to welcome would only redirect forward again. */}

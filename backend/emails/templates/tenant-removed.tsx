@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { EmailLayout, EmailText } from '../components';
 import { formatMailTime } from '../frame';
 import { i18n } from '../i18n';
@@ -18,8 +17,8 @@ interface TenantRemovedStatic {
 export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
   translate(lng, statics) {
     return {
-      subject: i18n.t('backend:email.tenant_removed.title', { appName: appConfig.name, name: statics.tenantName, lng }),
-      headerHtml: i18n.t('backend:email.tenant_removed.title', { appName: appConfig.name, name: statics.tenantName, lng }),
+      subject: i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng }),
+      headerHtml: i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       ...statics,
       archivedAt: formatMailTime(statics.archivedAt, lng),

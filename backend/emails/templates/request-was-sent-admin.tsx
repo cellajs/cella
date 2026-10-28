@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { EmailLayout, EmailText } from '../components';
 import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
@@ -16,7 +15,7 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
   translate(lng, { type, email, message, subject }) {
     return {
       subject,
-      headerHtml: i18n.t('backend:email.received_request.title', { appName: appConfig.name, type, lng }),
+      headerHtml: i18n.t('backend:email.received_request.title', { type, lng }),
       email,
       message,
       supportText: i18n.t('backend:email.support_email', { lng }),

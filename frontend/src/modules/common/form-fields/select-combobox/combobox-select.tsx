@@ -50,7 +50,7 @@ export function ComboboxSelect({
   const { t } = useTranslation();
 
   const placeholders = { ...defaultPlaceholders, ...passedPlaceholders };
-  const resource = t(placeholders.resource).toLowerCase();
+  const resource = t(placeholders.resource);
   const triggerText = t(placeholders.trigger, { resource });
 
   const selectedOption = options.find((option) => option.value === value) ?? null;

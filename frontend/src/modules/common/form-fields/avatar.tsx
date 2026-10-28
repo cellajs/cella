@@ -23,7 +23,7 @@ export function AvatarFormField({ form, label, name, entity, type }: AvatarFormF
 
   const openUploadDialog = () => {
     const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
-    openImageUpload({ templateId: 'avatar', title: t('c:upload_item', { item: imageName.toLowerCase() }), onUploaded: setUrl });
+    openImageUpload({ templateId: 'avatar', title: t('c:upload_resource', { resource: imageName }), onUploaded: setUrl });
   };
 
   return (

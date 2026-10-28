@@ -165,7 +165,7 @@ export function UppyFilePanel({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()} onOpenChangeComplete={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader className="with-close-btn">
-          <DialogTitle className="h-6">{t('c:upload_item', { item: t(`c:${blockType}`).toLowerCase() })}</DialogTitle>
+          <DialogTitle className="h-6">{t('c:upload_resource', { resource: t(`c:${blockType}`) })}</DialogTitle>
           <DialogDescription className="hidden">{isOnline ? t('c:loading') : t('c:offline')}</DialogDescription>
         </DialogHeader>
 

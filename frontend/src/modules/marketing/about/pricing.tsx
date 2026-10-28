@@ -2,7 +2,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -64,7 +63,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',
         title: t('c:waitlist_request'),
-        description: t('c:waitlist_request.text', { appName: appConfig.name }),
+        description: t('c:waitlist_request.text'),
       });
     }
   };

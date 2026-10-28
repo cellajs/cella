@@ -65,7 +65,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);
 
   const rows = arrangePlacements(slot, getNavTabCandidates(parentRouteId), draftOrder ? { order: draftOrder } : slotConfig).map((tab) => {
-    const resource = tab.resource ? t(tab.resource).toLowerCase() : '';
+    const resource = tab.resource ? t(tab.resource) : '';
     return {
       ...tab,
       name: t(tab.label, { resource }),
@@ -155,7 +155,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   ];
 
   return (
-    <ToolCard label="c:tabs" description={t('c:tabs.text', { resource: t(`c:${entity.entityType}`).toLowerCase() })}>
+    <ToolCard label="c:tabs" description={t('c:tabs.text')}>
       <DataTable
         rows={rows}
         rowKeyGetter={rowKeyById}

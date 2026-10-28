@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { EmailLayout, EmailText, SafeHtml } from '../components';
 import { i18n } from '../i18n';
 import { newsletterContentStyles } from '../styles';
@@ -16,7 +15,7 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
   translate(lng, { content, subject, testEmail }) {
     return {
       subject,
-      headerHtml: i18n.t('backend:email.newsletter.title', { appName: appConfig.name, lng }),
+      headerHtml: i18n.t('backend:email.newsletter.title', { lng }),
       unsubscribeText: i18n.t('backend:email.unsubscribe', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       content,

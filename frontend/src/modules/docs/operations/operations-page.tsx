@@ -49,7 +49,7 @@ export function OperationsPage() {
           <ViewModeToggle />
 
           <span className="text-muted-foreground text-sm">
-            {operationCount} {t('c:operation', { count: operationCount }).toLowerCase()}
+            {t('c:resource_count', { count: operationCount, resource: t('c:operation', { count: operationCount }) })}
           </span>
         </div>
       </StickyBox>

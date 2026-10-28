@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
-import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
@@ -42,7 +41,6 @@ interface UserComboboxProps {
 export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
-  const nameLabel = t('c:name').toLowerCase();
 
   const [searchQuery, setSearchQuery] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -105,7 +103,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
           value={searchQuery}
           onClear={() => setSearchQuery('')}
           isSearching={isFetching}
-          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name') })}
         />
         <ComboboxList>
           <AnimatePresence mode="wait">
@@ -113,9 +111,9 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
               <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
                 <ComboboxEmpty>
                   {debouncedSearchQuery.length ? (
-                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:user_other').toLowerCase() }} />
+                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:user_other') }} />
                   ) : (
-                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleOptions={{ appName: appConfig.name }} />
+                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" />
                   )}
                 </ComboboxEmpty>
               </motion.div>

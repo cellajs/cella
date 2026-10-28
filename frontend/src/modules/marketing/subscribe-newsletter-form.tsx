@@ -1,7 +1,6 @@
 import { SendIcon } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
@@ -9,7 +8,6 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 
 export function SubscribeNewsletterForm() {
   const { t } = useTranslation();
-  const emailLabel = t('c:email').toLowerCase();
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
@@ -23,7 +21,7 @@ export function SubscribeNewsletterForm() {
       { email, type: 'newsletter', message: null },
       {
         onSuccess: () => {
-          toaster.success(t('c:success.newsletter_sign_up', { appName: appConfig.name }));
+          toaster.success(t('c:success.newsletter_sign_up'));
           form.reset();
         },
       },
@@ -36,7 +34,7 @@ export function SubscribeNewsletterForm() {
         <InputGroupInput
           type="email"
           name="email"
-          placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
+          placeholder={t('c:placeholder.your_input', { inputLabel: t('c:email') })}
           autoComplete="email"
           aria-label={t('c:newsletter_email')}
           required

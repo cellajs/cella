@@ -1,10 +1,7 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
-
-const appName = appConfig.name;
 
 interface InvitationAddressStatic {
   entityName: string;
@@ -20,10 +17,10 @@ interface InvitationAddressStatic {
 export const invitationAddressEmail = defineEmailTemplate<InvitationAddressStatic>()({
   translate(lng, { entityName, accountEmail, confirmUrl }) {
     return {
-      subject: i18n.t('backend:email.invitation_address.subject', { lng, entityName, appName, ...plainText }),
+      subject: i18n.t('backend:email.invitation_address.subject', { lng, entityName, ...plainText }),
       previewText: i18n.t('backend:email.invitation_address.preview', { lng, entityName, ...plainText }),
       headerHtml: i18n.t('backend:email.invitation_address.title', { lng, entityName }),
-      bodyHtml: i18n.t('backend:email.invitation_address.text', { lng, entityName, appName, accountEmail }),
+      bodyHtml: i18n.t('backend:email.invitation_address.text', { lng, entityName, accountEmail }),
       expiresText: linkExpiresText(lng, 'invitation'),
       endingHtml: endingFor(lng, 'ignore'),
       buttonText: i18n.t('c:confirm', { lng }),

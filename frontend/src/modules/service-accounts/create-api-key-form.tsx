@@ -60,7 +60,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
           control={form.control}
           name="name"
           label={t('c:name')}
-          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name').toLowerCase() })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name') })}
           required
         />
 

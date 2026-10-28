@@ -51,7 +51,9 @@ export function Export<TData extends object>({ filename, columns, selectedRows, 
   const downloadAll = async (format: ExportFormat) => download(format, await fetchAllRows(fetchRows));
 
   const allRowsNote = t('c:all_rows').toLowerCase();
-  const selectedNote = selectedRows?.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase();
+  const selectedNote = selectedRows?.length
+    ? t('c:resource_count', { count: selectedRows.length, resource: t('c:selected') })
+    : t('c:no_selection').toLowerCase();
 
   return (
     <DropdownMenu>

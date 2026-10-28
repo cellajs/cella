@@ -12,16 +12,16 @@ const getDelay = (date: string) => {
 };
 
 /** Relative date string that refreshes at 10s, 30s or 1h intervals, stops after a day, and follows the active language. */
-export const useRelativeDate = (date: string, addStr?: string) => {
+export const useRelativeDate = (date: string, ago?: boolean) => {
   const { i18n } = useTranslation();
   const language = i18n.language;
-  const [text, setText] = useState(() => dateMini(date, addStr));
+  const [text, setText] = useState(() => dateMini(date, ago));
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
     const tick = () => {
-      setText(dateMini(date, addStr));
+      setText(dateMini(date, ago));
       const delay = getDelay(date);
       if (delay) timer = setTimeout(tick, delay);
     };
@@ -29,7 +29,7 @@ export const useRelativeDate = (date: string, addStr?: string) => {
     tick();
 
     return () => clearTimeout(timer);
-  }, [date, addStr, language]);
+  }, [date, ago, language]);
 
   return text;
 };

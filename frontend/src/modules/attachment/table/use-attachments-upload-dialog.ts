@@ -25,7 +25,7 @@ export const useAttachmentsUploadDialog = (
       uploader.getState().remove();
 
       if (attachments.length === 0) {
-        toaster.error(i18n.t('error:create_resource', { resource: i18n.t('c:attachment').toLowerCase() }));
+        toaster.error(i18n.t('error:create_resource', { resource: i18n.t('c:attachment') }));
         return;
       }
 
@@ -33,7 +33,7 @@ export const useAttachmentsUploadDialog = (
       createAttachments.mutate(attachments);
     };
 
-    const item = i18n.t('c:attachment_other').toLowerCase();
+    const resource = i18n.t('c:attachment_other');
     uploader.getState().create({
       personalUpload: false,
       organizationId,
@@ -41,8 +41,8 @@ export const useAttachmentsUploadDialog = (
       restrictions: { maxNumberOfFiles, maxTotalFileSize, allowedFileTypes: ['*/*'] },
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio', 'url'],
       onComplete,
-      title: i18n.t('c:upload_item', { item }),
-      description: i18n.t('c:upload_multiple.text', { item, count: maxNumberOfFiles }),
+      title: i18n.t('c:upload_resource', { resource }),
+      description: i18n.t('c:upload_multiple.text', { resource, count: maxNumberOfFiles }),
     });
   };
 

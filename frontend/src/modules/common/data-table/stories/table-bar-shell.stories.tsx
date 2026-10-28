@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -63,6 +64,17 @@ const meta = {
   title: 'common/data-table/TableBarShell',
   component: Bar,
   decorators: [withApp],
+  beforeEach: () => {
+    // Story tests run without the app's translations; the counts read through these two
+    i18n.addResourceBundle(
+      'en',
+      'c',
+      { resource_count: '{{count}} {{resource, lowercase}}', resource_count_found: '{{count}} {{resource, lowercase}} found' },
+      true,
+      true,
+    );
+    return () => i18n.removeResourceBundle('en', 'c');
+  },
   parameters: { app: { queryData: [[listKey, { items: rows, total: 2 }]] } },
   args: { setSearch: fn(), clearSelection: fn(), bar: 'users' },
 } satisfies Meta<typeof Bar>;
@@ -225,7 +237,7 @@ export const Pages: Story = {
   args: { bar: 'pages', q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(searchInput(canvasElement, 'pageSearch')).not.toBeNull();
-    await expect(within(canvasElement).getByText('2')).toBeVisible();
+    await expect(within(canvasElement).getByText('2 page found')).toBeVisible();
     await expectReset(canvasElement, args, { q: '' });
   },
 };

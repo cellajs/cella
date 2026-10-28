@@ -16,7 +16,7 @@ export function ScopeBadges({ scopes, withLabels = false }: ScopeBadgesProps) {
     const [entity, verb] = scope.split(':');
     // The plural key is built at runtime, which the typed key union cannot express
     const resource = t(`c:${entity}_other` as TKey, { defaultValue: entity });
-    return t(verb === 'read' ? 'c:scope_read' : 'c:scope_write', { resource: resource.toLowerCase() });
+    return t(verb === 'read' ? 'c:scope_read' : 'c:scope_write', { resource });
   };
 
   return (

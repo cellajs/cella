@@ -91,7 +91,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           control={form.control}
           inputClassName="font-bold"
           name="subject"
-          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:subject').toLowerCase() })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:subject') })}
           label={t('c:subject')}
           required
         />

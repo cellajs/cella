@@ -236,7 +236,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                 />
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <SubmitButton disabled={!form.isDirty} loading={creating}>
-                    {t('c:create_resource', { resource: t('c:connection').toLowerCase() })}
+                    {t('c:create_resource', { resource: t('c:connection') })}
                   </SubmitButton>
                   <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
                 </div>

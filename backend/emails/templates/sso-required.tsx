@@ -1,10 +1,7 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { endingFor } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
-
-const appName = appConfig.name;
 
 interface SsoRequiredStatic {
   name: string;
@@ -21,11 +18,11 @@ interface SsoRequiredStatic {
 export const ssoRequiredEmail = defineEmailTemplate<SsoRequiredStatic>()({
   translate(lng, { name, institution, entryUrl }) {
     return {
-      subject: i18n.t('backend:email.sso_required.subject', { lng, appName, institution, ...plainText }),
-      previewText: i18n.t('backend:email.sso_required.preview', { lng, appName, institution, ...plainText }),
-      headerHtml: i18n.t('backend:email.sso_required.title', { lng, appName }),
+      subject: i18n.t('backend:email.sso_required.subject', { lng, institution, ...plainText }),
+      previewText: i18n.t('backend:email.sso_required.preview', { lng, institution, ...plainText }),
+      headerHtml: i18n.t('backend:email.sso_required.title', { lng }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t('backend:email.sso_required.text', { lng, appName, institution }),
+      bodyHtml: i18n.t('backend:email.sso_required.text', { lng, institution }),
       buttonText: i18n.t('c:sign_in_with_institution', { lng, institution, ...plainText }),
       entryUrl,
       endingHtml: endingFor(lng, 'no_change'),

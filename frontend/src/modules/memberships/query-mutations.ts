@@ -148,15 +148,15 @@ export const useMemberUpdateMutation = () =>
         membershipInfo.displayOrder = getArchiveMoveOrder(myMemberships, channelType, archived);
       }
 
-      const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
+      const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_resource', { resource: t('c:membership') }) };
 
       if (body?.archived !== undefined) {
-        context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
+        context.toastMessage = t(`c:success.${body.archived ? 'archive' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.muted !== undefined) {
         context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.role) {
-        context.toastMessage = t('c:success.update_item', { item: t('c:role') });
-      } else if (body?.displayOrder !== undefined) context.toastMessage = t('c:success.update_item', { item: t('c:order') });
+        context.toastMessage = t('c:success.update_resource', { resource: t('c:role') });
+      } else if (body?.displayOrder !== undefined) context.toastMessage = t('c:success.update_resource', { resource: t('c:order') });
 
       updateMyMembershipCache(membershipInfo);
 

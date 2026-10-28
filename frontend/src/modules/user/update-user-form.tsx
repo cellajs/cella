@@ -56,7 +56,7 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
   const onSubmit = (values: FormValues) => {
     updateUser(values, {
       onSuccess: (updatedUser) => {
-        const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_item', { item: t('c:user') });
+        const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_resource', { resource: t('c:user') });
         toaster.success(message);
 
         form.reset(updatedUser);

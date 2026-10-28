@@ -66,7 +66,7 @@ export function DeleteToolCard({
   const { t } = useTranslation();
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
-  const resourceName = t(resource).toLowerCase();
+  const resourceName = t(resource);
 
   const openDeleteDialog = () => {
     // Suspense: dialog content is typically a lazy-loaded per-entity component

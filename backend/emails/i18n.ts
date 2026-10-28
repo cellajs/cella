@@ -1,5 +1,6 @@
 import i18next from 'i18next';
 import { appConfig } from 'shared';
+import { addI18nFormatters, i18nDefaultVariables } from 'shared/utils/i18n-text';
 import { locales } from '#/lib/i18n-locales';
 
 /**
@@ -15,10 +16,11 @@ i18n.init({
   supportedLngs: appConfig.languages,
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
-  interpolation: { escapeValue: true },
+  interpolation: { escapeValue: true, defaultVariables: i18nDefaultVariables },
   defaultNS: 'backend',
   keySeparator: false,
 });
+addI18nFormatters(i18n.services.formatter);
 
 /**
  * Spread into the options of a plain-text output that interpolates values (a subject, a preview, JSX text): the mail

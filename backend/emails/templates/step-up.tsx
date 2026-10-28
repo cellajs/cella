@@ -1,10 +1,7 @@
-import { appConfig } from 'shared';
 import { EmailLayout, EmailText, SafeHtml } from '../components';
 import { i18n, plainText } from '../i18n';
 import { greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
-
-const appName = appConfig.name;
 
 interface StepUpStatic {
   code: string;
@@ -18,11 +15,11 @@ const codeStyle = { fontSize: '1.75rem', fontWeight: 700, letterSpacing: '0.3em'
 export const stepUpEmail = defineEmailTemplate<StepUpStatic, EmailRecipient & { email: string }>()({
   translate(lng, { code, name }) {
     return {
-      subject: i18n.t('backend:email.step_up.subject', { lng, appName, ...plainText }),
-      previewText: i18n.t('backend:email.step_up.preview', { lng, appName, ...plainText }),
-      headerHtml: i18n.t('backend:email.step_up.title', { lng, appName }),
+      subject: i18n.t('backend:email.step_up.subject', { lng, ...plainText }),
+      previewText: i18n.t('backend:email.step_up.preview', { lng, ...plainText }),
+      headerHtml: i18n.t('backend:email.step_up.title', { lng }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t('backend:email.step_up.text', { lng, appName }),
+      bodyHtml: i18n.t('backend:email.step_up.text', { lng }),
       endingHtml: i18n.t('backend:email.step_up.not_you', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       code,

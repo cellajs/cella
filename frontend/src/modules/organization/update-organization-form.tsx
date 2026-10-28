@@ -41,9 +41,6 @@ interface UpdateOrganizationFormProps {
 export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: UpdateOrganizationFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
-  const nameLabel = t('c:name').toLowerCase();
-  const shortNameLabel = t('c:short_name').toLowerCase();
-  const notificationEmailLabel = t('c:notification_email').toLowerCase();
   const languagesId = useId();
 
   const formOptions: UseFormProps<FormValues> = {
@@ -84,28 +81,28 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           control={form.control}
           name="name"
           label={t('c:name')}
-          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:name') })}
           required
         />
         <InputFormField
           control={form.control}
           name="shortName"
           label={t('c:short_name')}
-          placeholder={t('c:placeholder.type_input', { inputLabel: shortNameLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:short_name') })}
         />
         <SlugFormField
           control={form.control}
           entityType="organization"
           tenantId={organization.tenantId}
           label={t('c:resource_handle', { resource: t('c:organization') })}
-          description={t('c:resource_handle.text', { resource: t('c:organization').toLowerCase() })}
+          description={t('c:resource_handle.text')}
           previousSlug={organization.slug}
           prefix={`/${organization.tenantId}/`}
         />
         <InputFormField
           control={form.control}
           type="email"
-          placeholder={t('c:placeholder.your_input', { inputLabel: notificationEmailLabel })}
+          placeholder={t('c:placeholder.your_input', { inputLabel: t('c:notification_email') })}
           name="notificationEmail"
           label={t('c:notification_email')}
           description={t('c:notification_email.text')}

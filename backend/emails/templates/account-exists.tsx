@@ -4,8 +4,6 @@ import { i18n, plainText } from '../i18n';
 import { endingFor } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
 
-const appName = appConfig.name;
-
 interface AccountExistsStatic {
   name: string;
 }
@@ -17,11 +15,11 @@ interface AccountExistsStatic {
 export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
   translate(lng, { name }) {
     return {
-      subject: i18n.t('backend:email.account_exists.subject', { lng, appName, ...plainText }),
-      previewText: i18n.t('backend:email.account_exists.preview', { lng, appName, ...plainText }),
-      headerHtml: i18n.t('backend:email.account_exists.title', { lng, appName }),
+      subject: i18n.t('backend:email.account_exists.subject', { lng, ...plainText }),
+      previewText: i18n.t('backend:email.account_exists.preview', { lng, ...plainText }),
+      headerHtml: i18n.t('backend:email.account_exists.title', { lng }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t('backend:email.account_exists.text', { lng, appName }),
+      bodyHtml: i18n.t('backend:email.account_exists.text', { lng }),
       buttonText: i18n.t('c:sign_in', { lng }),
       signInUrl: `${appConfig.frontendUrl}/auth/authenticate`,
       endingHtml: endingFor(lng, 'ignore'),

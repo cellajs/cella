@@ -20,7 +20,7 @@ export const commentEmail = defineEmailTemplate<CommentStatic, SubjectEmailRecip
     return {
       subject: i18n.t(`c:email.${key}.subject`, { lng, actorName, channelName, ...plainText }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      previewText: i18n.t(`c:email.${key}.preview`, { lng, actorName, ...plainText }),
+      previewText: param('subjectTitle'),
       headerHtml: i18n.t(`c:email.${key}.title`, { lng, actorName }),
       inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
       buttonText: i18n.t('c:email.mention.button', { lng }),

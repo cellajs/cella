@@ -9,9 +9,9 @@ const yearMs = 31536e6;
 
 /**
  * Distance from now as a minimal relative string: "now" (<1s), seconds (<1m), minutes (<1h), hours (<1d),
- * "MMM D" (<1y), else "MMM D, YYYY". Unit strings come from the `c:time_mini.*` keys. `addStr` is appended.
+ * "MMM D" (<1y), else "MMM D, YYYY". Unit strings come from the `c:time_mini.*` keys; `ago` reads a relative one as `c:time_ago`.
  */
-export const dateMini = (startDate: string, addStr?: string) => {
+export const dateMini = (startDate: string, ago?: boolean) => {
   const start = dayjs.utc(startDate).local();
   const diff = Math.abs(dayjs().diff(start));
 
@@ -24,5 +24,5 @@ export const dateMini = (startDate: string, addStr?: string) => {
   else if (diff < yearMs) return start.format('MMM D');
   else return start.format('MMM D, YYYY');
 
-  return addStr ? `${result} ${addStr}` : result;
+  return ago ? t('c:time_ago', { time: result }) : result;
 };

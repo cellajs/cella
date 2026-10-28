@@ -44,7 +44,7 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
         toaster.success(
           count === 1
             ? t('c:success.delete_resource', { resource: t(resource) })
-            : t('c:success.delete_counted_resources', { count, resources: t(resource, { count }).toLowerCase() }),
+            : t('c:success.delete_resource_counted', { count, resource: t(resource, { count }) }),
         );
       }
       finish({ data: items, status: 'success' });

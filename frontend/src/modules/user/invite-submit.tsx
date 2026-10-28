@@ -79,14 +79,14 @@ function useInviteResultMessage() {
     const [adder] = added;
     const lines = [
       held && t('c:invite_result_held', { name: channel.name }),
-      members.length > 1 && t('c:invite_result_members', { count: members.length }),
+      members.length > 1 && t('c:invite_result_member_counted', { count: members.length }),
       member && members.length === 1 && member.role && roles.indexOf(role) < roles.indexOf(member.role)
         ? t('c:invite_result_member_kept', { email: member.email, role: t(`c:${member.role}`) })
         : members.length === 1 && t('c:invite_result_member', { email: member.email }),
-      declined.length > 1 && t('c:invite_result_declined_many', { count: declined.length }),
+      declined.length > 1 && t('c:invite_result_declined_counted', { count: declined.length }),
       decliner?.declinedAt && declined.length === 1 && t('c:invite_result_declined', { email: decliner.email, date: day(decliner.declinedAt) }),
-      added.length > 1 && t('c:invite_result_added_many', { count: added.length }),
-      adder && added.length === 1 && t('c:invite_result_added_member', { email: adder.email }),
+      added.length > 1 && t('c:invite_result_added_directly_counted', { count: added.length }),
+      adder && added.length === 1 && t('c:invite_result_added_directly', { email: adder.email }),
     ].filter(Boolean);
 
     toaster.success(title, lines.length ? { description: lines.join(' ') } : undefined);
@@ -109,8 +109,8 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
     onSuccess: ({ invitesSentCount, rejectedIds }, { emails }) => {
       close();
       if (invitesSentCount > 0) {
-        const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
-        toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
+        const resource = t('c:user', { count: invitesSentCount });
+        toaster.success(t('c:success.invite_resource_counted', { count: invitesSentCount, resource }));
       }
       if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
     },

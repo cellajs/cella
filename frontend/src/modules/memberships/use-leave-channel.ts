@@ -32,7 +32,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   const { mutate, isPending } = useMutation({
     mutationFn: () => deleteMyMembership({ query: { entityId: channel.id, entityType: channel.entityType } }),
     onSuccess: () => {
-      toaster.success(t('c:success.you_left_entity', { entity: channel.entityType }));
+      toaster.success(t('c:success.leave_channel', { name: channel.name }));
       if (redirectPath !== null) navigate({ to: redirectPath, replace: true });
 
       // Directly remove entity from list cache so menu updates immediately

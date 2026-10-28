@@ -1,6 +1,5 @@
 import { type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
@@ -62,7 +61,7 @@ const noticeKeys = {
   signup: 'c:legal_notice.text',
   continue: 'c:legal_notice_continue.text',
   waitlist: 'c:legal_notice_waitlist.text',
-  verify: 'c:request_verification.legal_notice',
+  verify: 'c:legal_notice_verify.text',
 } as const;
 
 interface LegalNoticeProps {
@@ -81,7 +80,7 @@ export function LegalNotice({ email, mode, className }: LegalNoticeProps) {
       <Trans
         t={t}
         i18nKey={mode === 'signup' && email ? 'c:legal_notice_email.text' : noticeKeys[mode]}
-        values={{ email, company: appConfig.company.name }}
+        values={{ email }}
         components={{ terms: <LegalNoticeLink subject="terms" />, privacy: <LegalNoticeLink subject="privacy" /> }}
       />
     </p>

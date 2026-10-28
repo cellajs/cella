@@ -1,10 +1,7 @@
-import { appConfig } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { endingFor, linkExpiresText } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
-
-const appName = appConfig.name;
 
 interface OAuthVerificationStatic {
   name: string;
@@ -19,12 +16,12 @@ export const oauthVerificationEmail = defineEmailTemplate<OAuthVerificationStati
   translate(lng, { name, verificationLink, providerEmail, providerName, isNewUser }, param = plainParam) {
     const keyBase = isNewUser ? 'backend:email.oauth_verification.signup' : 'backend:email.oauth_verification';
     return {
-      subject: i18n.t(`${keyBase}.subject`, { lng, appName, providerName, ...plainText }),
-      previewText: i18n.t(`${keyBase}.preview`, { appName, lng, providerName, ...plainText }),
-      headerHtml: i18n.t(`${keyBase}.preview`, { appName, lng, providerName }),
+      subject: i18n.t(`${keyBase}.subject`, { lng, provider: providerName, ...plainText }),
+      previewText: i18n.t(`${keyBase}.preview`, { lng, provider: providerName, ...plainText }),
+      headerHtml: i18n.t(`${keyBase}.preview`, { lng, provider: providerName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName, email: param('email'), providerEmail, providerName, name }),
-      buttonText: i18n.t(`${keyBase}.verify`, { lng, providerName, ...plainText }),
+      bodyHtml: i18n.t(`${keyBase}.text`, { lng, email: param('email'), providerEmail, provider: providerName, name }),
+      buttonText: i18n.t(`${keyBase}.verify`, { lng, provider: providerName, ...plainText }),
       expiresText: linkExpiresText(lng, 'oauth-verification'),
       endingHtml: endingFor(lng, 'ignore'),
       supportText: i18n.t('backend:email.support_email', { lng }),

@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
 import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -56,7 +55,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
-        toaster.success(t('c:success.waitlist_request', { appName: appConfig.name }));
+        toaster.success(t('c:success.waitlist_request'));
 
         if (isDialog) dialoger.getState().remove(waitlistDialogId);
         callback?.({ status: 'success' });

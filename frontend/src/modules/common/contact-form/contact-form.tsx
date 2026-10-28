@@ -36,8 +36,6 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const isLargeScreen = useBreakpointAbove('lg');
-  const emailLabel = t('c:email').toLowerCase();
-  const messageLabel = t('c:message').toLowerCase();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -51,7 +49,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
       onSuccess: () => {
-        toaster.success(t('c:message_sent.text'));
+        toaster.success(t('c:success.send_message'));
 
         if (isDialog) dialoger.getState().remove(contactFormDialogId);
         form.reset();
@@ -70,7 +68,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
             labelClassName="max-sm:sr-only"
             type="email"
             autoComplete="email"
-            placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
+            placeholder={t('c:placeholder.your_input', { inputLabel: t('c:email') })}
             icon={<MailIcon />}
             required
           />
@@ -80,7 +78,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
             label={t('c:message')}
             labelClassName="max-sm:sr-only"
             type="textarea"
-            placeholder={t('c:placeholder.your_input', { inputLabel: messageLabel })}
+            placeholder={t('c:placeholder.your_input', { inputLabel: t('c:message') })}
             icon={<MessageSquareIcon />}
             required
           />

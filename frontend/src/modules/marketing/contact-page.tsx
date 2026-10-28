@@ -22,7 +22,7 @@ const methods: ContactMethod[] = [
 ];
 
 if (appConfig.company.scheduleCallUrl)
-  methods.push({ icon: CalendarCheckIcon, title: 'c:book', link: appConfig.company.scheduleCallUrl, textKey: 'c:schedule_call.text' });
+  methods.push({ icon: CalendarCheckIcon, title: 'c:book', link: appConfig.company.scheduleCallUrl, textKey: 'c:schedule_call' });
 if (appConfig.company.tel) methods.push({ icon: PhoneCallIcon, title: 'c:call', link: `tel:${appConfig.company.tel}`, text: appConfig.company.tel });
 
 export function ContactPage() {
@@ -31,7 +31,7 @@ export function ContactPage() {
   return (
     <MarketingLayout title="c:contact_us">
       <div className="container pt-20 pb-16">
-        <h2 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">{t('c:leave_message.text')}</h2>
+        <h2 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">{t('c:leave_message')}</h2>
         <p className="mb-8 text-center text-muted-foreground sm:text-left sm:text-lg">{t('c:contact_us.text')}</p>
         <ContactForm />
       </div>

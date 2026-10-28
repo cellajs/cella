@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { ConsentDetails } from '~/lib/oauth-interaction';
 import { AuthHeader } from '~/modules/auth/auth-header';
@@ -50,7 +49,7 @@ export function OAuthConsentPage() {
         image={client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:oauth_consent_header', { name: client.name })}
       >
-        <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name, appName: appConfig.name })}</p>
+        <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name })}</p>
         {target.tenant && (
           <p className="text-sm">
             {target.organization

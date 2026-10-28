@@ -143,7 +143,7 @@ export const useCreatePasskeyMutation = () =>
         if (!oldData) return oldData;
         return { ...oldData, passkeys: [newPasskey, ...oldData.passkeys] };
       });
-      toaster.success(t('c:success.passkey_added'));
+      toaster.success(t('c:success.add_resource', { resource: t('c:passkey') }));
     },
     onError(error) {
       // The global handler toasts the server's refusals; a failure in the browser, a cancelled prompt included, gets this toast.
@@ -179,7 +179,7 @@ export const useCreateTotpMutation = () =>
         const now = new Date().toISOString();
         return { ...oldData, totp: { createdAt: now, lastUsedAt: now } };
       });
-      toaster.success(t('c:success.totp_added'));
+      toaster.success(t('c:success.add_resource', { resource: t('c:totp') }));
     },
   });
 
@@ -233,7 +233,7 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
     queryClient.invalidateQueries({ queryKey: meKeys.invites });
   }
 
-  toaster.success(t('c:invitation_settled', { action: action === 'accept' ? 'accepted' : 'rejected' }));
+  toaster.success(t(action === 'accept' ? 'c:success.accept_invitation' : 'c:success.reject_invitation'));
 };
 
 /** Answers an invitation listed in-app, by its id. */
@@ -296,6 +296,11 @@ export const useRevokeSessionsMutation = () =>
         if (!oldData) return oldData;
         return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
       });
-      toaster.success(t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }));
+      const count = revoked.length;
+      toaster.success(
+        count === 1
+          ? t('c:success.revoke_resource', { resource: t('c:session') })
+          : t('c:success.revoke_resource_counted', { count, resource: t('c:session', { count }) }),
+      );
     },
   });

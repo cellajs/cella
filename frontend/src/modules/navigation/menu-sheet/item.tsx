@@ -83,7 +83,7 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 sm:group-hover/menu-sheet-item:opacity-100">
             {item.membership.role ? t(item.membership.role) : ''}
             {!detailedMenu && item.submenu?.length
-              ? `${item.membership.role ? ' · ' : ''}${item.submenu.length} ${t(item.submenu[0].entityType, { count: item.submenu.length }).toLowerCase()}`
+              ? `${item.membership.role ? ' · ' : ''}${t('c:resource_count', { count: item.submenu.length, resource: t(item.submenu[0].entityType, { count: item.submenu.length }) })}`
               : ''}
           </span>
         </div>

@@ -20,7 +20,7 @@ export function getOnboardingSteps(ctx: OnboardingContext): StepItem[] {
     { id: 'profile', label: i18n.t('c:tune_profile'), optional: true, when: () => true },
     {
       id: 'organization',
-      label: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }),
+      label: i18n.t('c:create_resource', { resource: i18n.t('c:organization') }),
       optional: true,
       when: isFounder,
     },
