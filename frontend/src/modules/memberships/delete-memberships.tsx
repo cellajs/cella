@@ -1,9 +1,9 @@
 import type { ChannelEntityType } from 'shared';
 import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
 import { useMembershipsDeleteMutation } from '~/modules/memberships/query-mutations';
-import type { DeleteMembership, Member } from '~/modules/memberships/types';
+import type { DeleteMembershipsVariables, Member } from '~/modules/memberships/types';
 
-interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembership>, 'callback'> {
+interface DeleteMembershipsProps extends Pick<DeleteItemsProps<Member, DeleteMembershipsVariables>, 'callback'> {
   entityId: string;
   tenantId: string;
   organizationId: string;

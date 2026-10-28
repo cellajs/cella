@@ -1,3 +1,4 @@
+import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -9,7 +10,6 @@ import { propagateEmbeddings } from '~/query/realtime/propagation';
 import { publishSyncedRows } from '~/query/realtime/sync-events';
 import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-import type { AppStreamChange } from '~/query/realtime/types';
 import { resolveChannelPath } from '~/query/realtime/view-declaration';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
@@ -29,7 +29,7 @@ export interface EnqueueInput {
   untilSeq: number;
   isCreate: boolean;
   spreadWindowMs?: number;
-  propagation?: AppStreamChange['propagation'];
+  propagation?: StreamChange['propagation'];
 }
 
 interface DirtyEntry {
@@ -42,7 +42,7 @@ interface DirtyEntry {
   dueAt: number;
   hasCreates: boolean;
   attempts: number;
-  propagations: NonNullable<AppStreamChange['propagation']>[];
+  propagations: NonNullable<StreamChange['propagation']>[];
 }
 
 const dirty = new Map<string, DirtyEntry>();
@@ -122,7 +122,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
 export function attachPendingPropagation(
   entityType: ProductEntityType,
   organizationId: string,
-  propagation: NonNullable<AppStreamChange['propagation']>,
+  propagation: NonNullable<StreamChange['propagation']>,
 ): boolean {
   const entry = dirty.get(entryKey(entityType, organizationId, null));
   if (!entry) return false;

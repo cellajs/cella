@@ -1,18 +1,9 @@
-import { queryOptions } from '@tanstack/react-query';
-// biome-ignore lint/style/noRestrictedImports: imperative cache prefetch helper for the router loader path; not eligible for a hook.
-import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
-import { meKeys } from '~/modules/me/query';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
 import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-
-const membershipsOptions = queryOptions({
-  queryKey: meKeys.memberships,
-  queryFn: async ({ signal }) => getMyMemberships({ signal }),
-  staleTime: 0,
-});
 
 /**
  * Builds the menu from cache, serving what is already cached and revalidating behind it.
@@ -25,6 +16,7 @@ export async function getMenuData() {
   const userId = getCurrentUser().id;
 
   // Memberships come first: the cache subscriber (initChannelEnrichment) reads from this cache.
+  const membershipsOptions = myMembershipsQueryOptions();
   await queryClient.query({ ...membershipsOptions, staleTime: 'static' });
   void queryClient.query(membershipsOptions).catch(() => {});
 

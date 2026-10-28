@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
 import { DescriptionLayers } from '~/modules/common/blocknote/description-layers';
-import { type DescriptionSlot, useDescriptionSlot } from '~/modules/common/blocknote/use-description-slot';
+import { type InPlaceDescription, useInPlaceDescription } from '~/modules/common/blocknote/use-in-place-description';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -62,21 +62,21 @@ interface CardProps {
   synced?: boolean;
 }
 
-const slots: Record<string, DescriptionSlot> = {};
+const descriptions: Record<string, InPlaceDescription> = {};
 const cardClicks = vi.fn();
 
-/** An app card around the slot: it owns `editing` and applies the override to its one static. */
+/** An app card around the description: it owns `editing` and applies the override to its one static. */
 function Card({ id = 'a', editing = false, description = 'stored', synced = true }: CardProps) {
-  const slot = useDescriptionSlot({ editing, canEdit: true, description });
-  slots[id] = slot;
+  const inPlace = useInPlaceDescription({ editing, canEdit: true, description });
+  descriptions[id] = inPlace;
 
   return (
     <DescriptionLayers
-      slot={slot}
+      inPlace={inPlace}
       data-card={id}
       onClick={() => cardClicks(id)}
-      staticView={<FakeStatic value={slot.staticOverride ?? description} onReady={slot.onStaticReady} />}
-      editor={<FakeEditor synced={synced} apiRef={slot.apiRef} onEditorReady={slot.onEditorReady} />}
+      staticView={<FakeStatic value={inPlace.staticOverride ?? description} onReady={inPlace.onStaticReady} />}
+      editor={<FakeEditor synced={synced} apiRef={inPlace.apiRef} onEditorReady={inPlace.onEditorReady} />}
     />
   );
 }
@@ -128,8 +128,8 @@ const isHolding = (id = 'a') => editorLayer(id) !== null && !invisible(editorLay
 /** The editor alone, in the layout. */
 const isEditing = (id = 'a') => staticLayer(id) === null && editorLayer(id) !== null && !invisible(editorLayer(id));
 
-const warm = (reason: string, id = 'a') => act(() => slots[id].warm(reason));
-const cool = (reason: string, id = 'a') => act(() => slots[id].cool(reason));
+const warm = (reason: string, id = 'a') => act(() => descriptions[id].warm(reason));
+const cool = (reason: string, id = 'a') => act(() => descriptions[id].cool(reason));
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 const nextFrame = () => act(() => vi.advanceTimersToNextFrame());
 const releaseStatic = () => act(() => staticReady());
@@ -236,7 +236,7 @@ describe('safety cooling', () => {
     await render({ id: 'a', editing: true }, { id: 'b' }, { id: 'c' });
     await warm('hover', 'b');
     await warm('hover', 'c');
-    // The editing slot is the most recently warmed, yet counts not toward the cap.
+    // The editing description is the most recently warmed, yet counts not toward the cap.
     await warm('hover', 'a');
     expect([isEditing('a'), isWarm('b'), isWarm('c')]).toEqual([true, true, true]);
 

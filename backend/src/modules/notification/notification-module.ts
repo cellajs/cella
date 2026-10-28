@@ -1,7 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
 import { notificationHandlers } from '#/modules/notification/notification-handlers';
 import { runDigest } from '#/modules/notification/operations/run-digest';
-import '#/modules/notification/notification-sources';
 
 defineBackendModule({
   name: 'notifications',

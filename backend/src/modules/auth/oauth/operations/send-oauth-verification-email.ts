@@ -43,7 +43,7 @@ const verificationFor = async (props: Props) => {
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   const identity = await findIdentityById(dbCtx, { id: props.identityId });
-  if (!identity) throw new AppError(404, 'not_found', 'error');
+  if (!identity) throw new AppError(404, 'not_found', 'error', { meta: { resource: 'identity' } });
 
   // The address under verification is the provider's, which may differ from the account's own.
   const email = identity.email ?? user.email;

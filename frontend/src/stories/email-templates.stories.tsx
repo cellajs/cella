@@ -71,6 +71,7 @@ export const AccountSecurity = makeEmailStory('account-security');
 export const AccountExists = makeEmailStory('account-exists');
 export const OauthVerification = makeEmailStory('oauth-verification');
 export const MagicLink = makeEmailStory('magic-link');
+export const SsoRequired = makeEmailStory('sso-required');
 export const StepUp = makeEmailStory('step-up');
 export const SystemInvite = makeEmailStory('system-invite');
 export const MemberInvite = makeEmailStory('member-invite');

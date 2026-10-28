@@ -396,16 +396,16 @@
   }
 }
 
-/* The ring draws under `focus-ring` only (tailwind-plugin.ts): a narrow touch screen shows nothing on focus, on purpose.
+/* The ring and its offset draw under `focus-ring` only (tailwind-plugin.ts): a narrow touch screen shows nothing on focus, on purpose.
    outline-hidden keeps the forced-colors outline. */
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-ring:focus-visible:ring-offset-2 focus-ring:focus-visible:ring-offset-background;
   }
 
   /* The same ring for an element whose focus lands on a descendant: a slider thumb's hidden input, an editor's contenteditable. */
   .focus-within-effect {
-    @apply has-focus-visible:outline-hidden focus-ring:has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:shadow-none has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background;
+    @apply has-focus-visible:outline-hidden focus-ring:has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:shadow-none focus-ring:has-focus-visible:ring-offset-2 focus-ring:has-focus-visible:ring-offset-background;
   }
 
   /* A mention, in the editor and in rendered bodies: the id marks it, so stored HTML sanitized of classes keeps the look. */

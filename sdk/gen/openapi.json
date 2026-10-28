@@ -7,7 +7,7 @@
   "info": {
     "title": "Cella DEVELOPMENT API",
     "version": "v1",
-    "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
+    "description": "⚠️ ATTENTION: PRERELEASE! This API is organized into modules based on logical domains.",
     "x-extensions": [
       {
         "key": "x-enabled-by",
@@ -202,12 +202,12 @@
     },
     {
       "name": "channel",
-      "description": "Operations on channel entities (entities that have memberships, e.g. organizations, projects).",
+      "description": "Operations on channel entities: the entities that have memberships.",
       "x-kind": "entity"
     },
     {
       "name": "product",
-      "description": "Operations on product entities (content entities without membership, e.g. tasks, pages, attachments).",
+      "description": "Operations on product entities: the content entities, which have no memberships.",
       "x-kind": "entity"
     },
     {
@@ -217,7 +217,7 @@
     },
     {
       "name": "activities",
-      "description": "Audit log entries tracking create, update, and delete operations across all resources, written\n    by the CDC worker. Activities provide an audit trail and can be extended for webhook delivery.",
+      "description": "Audit log entries tracking create, update, and delete operations across all resources, written by the CDC worker. Activities provide an audit trail and can be extended for webhook delivery.",
       "x-parent": "cella",
       "x-kind": "hidden"
     },
@@ -229,43 +229,43 @@
     },
     {
       "name": "attachments",
-      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) in an\n    organization or one of its channels. Files are uploaded directly by the client, while the API registers their\n    metadata, links the stored files and signs download URLs. The description is edited collaboratively and is a\n    notification source for mentions.",
+      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) in an organization or one of its channels. Files are uploaded directly by the client, while the API registers their metadata, links the stored files and signs download URLs. The description is edited collaboratively and is a notification source for mentions.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,\n    Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover\n    sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "entities",
-      "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes check slug availability and serve the app stream and its catchup,\n    which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
+      "description": "Endpoints that operate across multiple entity types, such as users and organizations. Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like. These routes check slug availability and serve the app stream and its catchup, which tell a signed-in client about changes to the entities it may read and send it signals about the rest.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "mcp",
-      "description": "Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.",
+      "description": "Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "me",
-      "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. The users endpoints read other users; me endpoints act exclusively on the current user and follow a\n    different authorization flow.",
+      "description": "Endpoints scoped to the current user, meaning the user associated with the active session making the request. The users endpoints read other users; me endpoints act exclusively on the current user and follow a different authorization flow.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "oauth-server",
-      "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept nightly by the database's retention procedure.",
+      "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under singleVM; the store it writes is swept nightly by the database's retention procedure.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "memberships",
-      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
+      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as archived or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -277,25 +277,25 @@
     },
     {
       "name": "notifications",
-      "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state, not synced content.",
+      "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly email digest. Product modules opt in by declaring a notifications source on their own defineBackendModule call (who counts as a recipient is the only app-specific part); with no source declared the whole module is dormant. Rows are partitioned by createdAt so retention is automatic, and excluded from CDC because they are per-user state, not synced content.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "organizations",
-      "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
+      "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for permissions and resource management.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "push",
-      "description": "Web Push delivery for the notification inbox: per-device subscriptions, VAPID key\n    exposure and the sender that turns fresh notification rows into pushes for offline\n    subscribers. Dormant unless has.push is on AND the deployment carries VAPID keys.",
+      "description": "Web Push delivery for the notification inbox: per-device subscriptions, VAPID key exposure and the sender that turns fresh notification rows into pushes for offline subscribers. Dormant unless has.push is on and the deployment carries VAPID keys and a subject that web-push accepts.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "requests",
-      "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
+      "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups, and waitlist entries.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -307,37 +307,37 @@
     },
     {
       "name": "service-accounts",
-      "description": "Machine actors and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
+      "description": "Machine actors and their API keys. A service account is the actor an API key runs as: bound to the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets shown once; a key may narrow what its account can do through scopes, never widen it.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "system",
-      "description": "System level endpoints for system admins: inviting users to the app by email, updating and deleting\n    any user, and sending a newsletter to the members of chosen organizations.",
+      "description": "System level endpoints for system admins: inviting users to the app by email, updating and deleting any user, and sending a newsletter to the members of chosen organizations.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "tenants",
-      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds\n    one organization and carries its quotas, rate limits and sign-in policy. System admins list and update tenants, a\n    signed-in user creates one of their own, and an archived tenant is removed after the archived period.",
+      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds one organization and carries its quotas, rate limits and sign-in policy. System admins list and update tenants, a signed-in user creates one of their own, and an archived tenant is removed after the archived period.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "connections",
-      "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO\n    federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of\n    the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
+      "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "users",
-      "description": "Endpoints for reading other users: the users who share an organization with the requesting user,\n    or every user for a system admin. Unlike channel entities such as organizations, a user is a global entity that is\n    not scoped to an organization. Administrative operations on users are system endpoints.",
+      "description": "Endpoints for reading other users: the users who share an organization with the requesting user, or every user for a system admin. Unlike channel entities such as organizations, a user is a global entity that is not scoped to an organization. Administrative operations on users are system endpoints.",
       "x-parent": "cella",
       "x-kind": "module"
     },
     {
       "name": "yjs",
-      "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's\n    materialize route, which writes a compacted collaborative document to its entity, is served on the internal\n    listener only.",
+      "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's materialize route, which writes a compacted collaborative document to its entity, is served on the internal listener only.",
       "x-parent": "cella",
       "x-kind": "module"
     }
@@ -771,7 +771,7 @@
           },
           "channelId": {
             "type": ["string", "null"],
-            "description": "Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)"
+            "description": "Deepest channel entity ID above the rows, which groups unseen counts"
           },
           "stx": {
             "anyOf": [
@@ -801,30 +801,30 @@
               "embeddedProduct": {
                 "type": "string",
                 "enum": ["attachment"],
-                "description": "Product type whose change triggered the propagation (e.g. label)"
+                "description": "Embedded product type whose change triggered the propagation"
               },
               "hostProduct": {
                 "type": "string",
                 "enum": ["attachment"],
-                "description": "Host product type whose cache should be patched (e.g. task)"
+                "description": "Host product type whose cache should be patched"
               },
               "hostColumn": {
                 "type": "string",
-                "description": "Column on the host product that embeds the changed product (e.g. labels)"
+                "description": "Column on the host product that embeds the changed product"
               },
               "update": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "Host product IDs that need cache refresh"
+                "description": "Embedded row IDs whose cached copies in host rows need a refresh"
               },
               "remove": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "Host product IDs that need the embedded reference removed"
+                "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
               }
             },
             "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"],
@@ -3723,7 +3723,7 @@
         "operationId": "sendMagicLink",
         "tags": ["auth", "cella"],
         "summary": "Send magic link",
-        "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
+        "description": "Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.",
         "x-enabled-by": {
           "strategy": "magic"
         },
@@ -3754,7 +3754,7 @@
         },
         "responses": {
           "204": {
-            "description": "Magic link email sent (or silently ignored if email not found)"
+            "description": "Accepted alike whether a link, a pointer to the institution or nothing was mailed"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -5632,7 +5632,7 @@
         "operationId": "checkSlug",
         "tags": ["entities", "cella"],
         "summary": "Check slug availability",
-        "description": "Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+        "description": "Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants. Primarily used to prevent slug collisions before creating or updating an entity.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5854,30 +5854,30 @@
                                 "embeddedProduct": {
                                   "type": "string",
                                   "enum": ["attachment"],
-                                  "description": "Product type whose change triggered the propagation (e.g. label)"
+                                  "description": "Embedded product type whose change triggered the propagation"
                                 },
                                 "hostProduct": {
                                   "type": "string",
                                   "enum": ["attachment"],
-                                  "description": "Host product type whose cache should be patched (e.g. task)"
+                                  "description": "Host product type whose cache should be patched"
                                 },
                                 "hostColumn": {
                                   "type": "string",
-                                  "description": "Column on the host product that embeds the changed product (e.g. labels)"
+                                  "description": "Column on the host product that embeds the changed product"
                                 },
                                 "update": {
                                   "type": "array",
                                   "items": {
                                     "type": "string"
                                   },
-                                  "description": "Host product IDs that need cache refresh"
+                                  "description": "Embedded row IDs whose cached copies in host rows need a refresh"
                                 },
                                 "remove": {
                                   "type": "array",
                                   "items": {
                                     "type": "string"
                                   },
-                                  "description": "Host product IDs that need the embedded reference removed"
+                                  "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
                                 }
                               },
                               "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"]
@@ -6927,7 +6927,7 @@
         "operationId": "getPublicCounts",
         "tags": ["metrics", "cella"],
         "summary": "Get public counts",
-        "description": "Returns basic count metrics for entity types such as users and organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "description": "Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6938,8 +6938,7 @@
               "application/json": {
                 "example": {
                   "user": 404,
-                  "organization": 303,
-                  "attachment": 387
+                  "organization": 303
                 },
                 "schema": {
                   "type": "object",
@@ -6949,12 +6948,9 @@
                     },
                     "organization": {
                       "type": "number"
-                    },
-                    "attachment": {
-                      "type": "number"
                     }
                   },
-                  "required": ["user", "organization", "attachment"]
+                  "required": ["user", "organization"]
                 }
               }
             }
@@ -8064,7 +8060,7 @@
         "operationId": "getUnseenCounts",
         "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
-        "description": "Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
+        "description": "Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
@@ -8718,7 +8714,7 @@
         "operationId": "selfCreateTenant",
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
-        "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.",
+        "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -10264,8 +10260,16 @@
           },
           {
             "schema": {
-              "type": "string",
-              "enum": ["true", "false"]
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
             },
             "required": false,
             "name": "excludeArchived",
@@ -11182,7 +11186,7 @@
         "operationId": "createAttachments",
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
-        "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
+        "description": "Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

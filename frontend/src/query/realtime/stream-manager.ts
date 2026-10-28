@@ -1,4 +1,4 @@
-import { type PostAppCatchupResponse, postAppCatchup, type StreamSignal } from 'sdk';
+import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig, isProduct } from 'shared';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -24,7 +24,7 @@ import {
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
-import type { AppStreamChange, StreamState } from '~/query/realtime/types';
+import type { StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const maxFailures = 3;
@@ -51,7 +51,7 @@ interface StreamConfig {
   fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** A follower's side of catchup: process the answer the leader passed on. */
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
-  processChange: (change: AppStreamChange) => void;
+  processChange: (change: StreamChange) => void;
   processSignal: (signal: StreamSignal) => void;
   /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
   onPing?: (data: string) => void;
@@ -121,7 +121,7 @@ export class StreamManager {
   private lastEventAt = 0;
 
   /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
-  private pendingChanges: Array<{ change: AppStreamChange; eventId: string | undefined }> = [];
+  private pendingChanges: Array<{ change: StreamChange; eventId: string | undefined }> = [];
   private buffering = false;
   private bufferOverflowed = false;
 
@@ -277,7 +277,7 @@ export class StreamManager {
     this.scheduleReconnect();
   }
 
-  private applyChange(change: AppStreamChange, eventId: string | undefined) {
+  private applyChange(change: StreamChange, eventId: string | undefined) {
     if (eventId) {
       this.store.getState().setCursor(eventId);
       if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);

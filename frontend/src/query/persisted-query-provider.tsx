@@ -8,7 +8,7 @@ import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { persistOptions } from '~/query/persister';
 import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
-import { waitForActiveCatchup } from '~/query/realtime/stream-store';
+import { waitForActiveCatchup } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
 const loadUploadService = () => import('~/modules/attachment/offline/upload-service');
@@ -28,12 +28,12 @@ if (import.meta.hot) {
   });
 }
 
-interface QueryClientProviderProps {
+interface PersistedQueryProviderProps {
   children: ReactNode;
 }
 
 /** Provides the query client with its persisted cache, and starts the services that work from it. */
-export function QueryClientProvider({ children }: QueryClientProviderProps) {
+export function PersistedQueryProvider({ children }: PersistedQueryProviderProps) {
   useEffect(() => startYjsStore(), []);
 
   useEffect(() => {

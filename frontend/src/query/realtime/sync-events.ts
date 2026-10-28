@@ -1,9 +1,9 @@
+import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
-import type { AppStreamChange } from '~/query/realtime/types';
 
 /** A change the stream announced, in the fields of its envelope; no row data yet. */
 export interface AnnouncedChange {
-  action: AppStreamChange['action'];
+  action: StreamChange['action'];
   entityType: ProductEntityType;
   organizationId: string;
   channelId: string | null;

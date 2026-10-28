@@ -1,4 +1,4 @@
-import { uuid } from 'drizzle-orm/pg-core';
+import { type AnyPgTable, type PgColumn, uuid } from 'drizzle-orm/pg-core';
 import type { ActorId } from '#/db/utils/ids';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -27,3 +27,8 @@ export const auditColumns = () => ({
  * the pair together with the update pair.
  */
 export const tombstoneColumns = () => ({ deletedAt: isoTimestamp(), deletedBy: writerColumn() });
+
+/** Type guard: the table carries `tombstoneColumns`, so its live rows are those whose `deletedAt` is null. */
+export function hasDeletedAt<T extends AnyPgTable>(table: T): table is T & { deletedAt: PgColumn } {
+  return 'deletedAt' in table;
+}

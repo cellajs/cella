@@ -17,7 +17,7 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getValidChannel } from '#/permissions';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 

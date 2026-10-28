@@ -1,8 +1,8 @@
-import { eq, getColumns, gt, inArray, isNull, type SQL } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import { eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { ProductEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
+import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
 import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { findSeenCandidates, insertSeenBy, type OrgScopedEntityTable, seenRecencySql, seenWindowStart } from '#/modules/seen/seen-queries';
@@ -42,20 +42,18 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
     eq(orgTable.organizationId, organization.id),
     gt(seenRecencySql(orgTable), seenWindowStart()),
   ];
-  const { deletedAt } = getColumns(entityTable) as Record<string, PgColumn | undefined>;
-  if (deletedAt) filters.push(isNull(deletedAt));
+  if (hasDeletedAt(entityTable)) filters.push(isNull(entityTable.deletedAt));
   const draftVisible = draftVisibleRowsPredicate(entityTable, user.id);
   if (draftVisible) filters.push(draftVisible);
   if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
 
   // Use tenantContext to set RLS session vars; entity tables have row-level security.
   const newCount = await tenantContext(ctx, async (txCtx) => {
-    const validEntities = await findSeenCandidates(txCtx, { productType, where: filters });
-    log.debug(`markSeen: ${validEntities.length}/${entityIds.length} valid entities`);
-    if (validEntities.length === 0) return 0;
+    const productIds = await findSeenCandidates(txCtx, { productType, where: filters });
+    log.debug(`markSeen: ${productIds.length}/${entityIds.length} valid entities`);
+    if (productIds.length === 0) return 0;
 
-    const rows = validEntities.map(({ id, channelId }) => ({ productId: id, channelId }));
-    return insertSeenBy(txCtx, { userId: user.id, productType, organizationId: organization.id, tenantId: organization.tenantId, rows });
+    return insertSeenBy(txCtx, { userId: user.id, productType, productIds });
   });
 
   log.debug(`markSeen: ${newCount} newly seen`);

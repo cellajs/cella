@@ -115,7 +115,7 @@ export function createIDBPersister(scope: string) {
       await db.queries.bulkDelete(ids);
       const existing = await db.meta.get(scope);
       if (existing) {
-        await db.meta.put({ ...existing, channelQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
+        await db.meta.put({ ...existing, bundledQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
       }
     });
     resetTracker();
@@ -148,13 +148,13 @@ export function createIDBPersister(scope: string) {
     const meta = await db.meta.get(scope);
     if (!meta) return;
     const bundledQueries: DehydratedQuery[] = [];
-    for (const query of meta.channelQueries ?? []) {
+    for (const query of meta.bundledQueries ?? []) {
       const entityType = entityTypeOf(query.queryKey);
       bundledQueries.push(entityType ? { ...query, state: await migrateQueryState(entityType, query.state, fromVersion) } : query);
     }
     const mutations = migrateMutations(inCurrentShape(meta.mutations ?? []), fromVersion);
     // Final write advances the pointer atomically with the last rewritten data.
-    await db.meta.put({ ...meta, channelQueries: bundledQueries, mutations, schemaVersion: currentSchemaVersion });
+    await db.meta.put({ ...meta, bundledQueries, mutations, schemaVersion: currentSchemaVersion });
     console.debug(`[QueryPersister] Lens migration v${fromVersion} → v${currentSchemaVersion} complete (${scope})`);
   }
 
@@ -229,7 +229,7 @@ export function createIDBPersister(scope: string) {
                 timestamp: client.timestamp,
                 buster: client.buster,
                 mutations,
-                channelQueries: [],
+                bundledQueries: [],
               });
             } else {
               await db.meta.delete(tabMutationKey);
@@ -242,7 +242,7 @@ export function createIDBPersister(scope: string) {
             clientCacheVersion: appConfig.clientCacheVersion,
             schemaVersion: currentSchemaVersion,
             mutations: [],
-            channelQueries: bundledQueries,
+            bundledQueries,
           });
         });
         // The trackers follow a committed write to the database still bound, so the next flush retries a failed one.
@@ -317,7 +317,7 @@ export function createIDBPersister(scope: string) {
         const productRecords = await db.queries.where('scope').equals(scope).toArray();
         for (const { queryHash, dataUpdatedAt } of productRecords) lastPersistedAt.set(queryHash, dataUpdatedAt);
 
-        const bundledQueries = meta.channelQueries ?? [];
+        const bundledQueries = meta.bundledQueries ?? [];
         // Seed the snapshot the next write diffs against.
         lastBundledSnapshot = snapshotOf(bundledQueries);
 
@@ -328,21 +328,24 @@ export function createIDBPersister(scope: string) {
 
         // Restores shared data, this tab's record, and orphaned tab records; live tabs keep theirs, and age substitutes when lock liveness is undetectable.
         const prefix = mutationRecordPrefix(scope);
-        const mutationRecords = await db.meta.where('key').startsWith(prefix).toArray();
+        const { buster } = meta;
         const live = await liveTabSessionIds();
-        const restoredMutations = [...(meta.mutations ?? [])];
-        const absorbedKeys: string[] = [];
-        for (const record of mutationRecords) {
-          const tabId = record.key.slice(prefix.length);
-          const fromThisTab = record.key === tabMutationKey;
-          const fromDeadTab = live ? !live.has(tabId) : record.timestamp < Date.now() - orphanMaxAgeMs;
-          if (!fromThisTab && !fromDeadTab) continue;
-          restoredMutations.push(...(record.mutations ?? []));
-          if (!fromThisTab) absorbedKeys.push(record.key);
-        }
-        if (absorbedKeys.length > 0) await db.meta.bulkDelete(absorbedKeys);
+        // An orphaned queue moves under this tab's key in the transaction that deletes it, so a tab closed before its first write loses none.
+        const tabMutations = await db.transaction('rw', db.meta, async () => {
+          const records = await db.meta.where('key').startsWith(prefix).toArray();
+          const own = records.find((record) => record.key === tabMutationKey)?.mutations ?? [];
+          const orphaned = records.filter(({ key, timestamp }) => {
+            if (key === tabMutationKey) return false;
+            return live ? !live.has(key.slice(prefix.length)) : timestamp < Date.now() - orphanMaxAgeMs;
+          });
+          if (orphaned.length === 0) return own;
+          const absorbed = [...own, ...orphaned.flatMap((record) => record.mutations ?? [])];
+          await db.meta.bulkDelete(orphaned.map((record) => record.key));
+          await db.meta.put({ key: tabMutationKey, timestamp: Date.now(), buster, mutations: absorbed, bundledQueries: [] });
+          return absorbed;
+        });
 
-        const mutations = inCurrentShape(restoredMutations);
+        const mutations = inCurrentShape([...(meta.mutations ?? []), ...tabMutations]);
 
         return {
           timestamp: meta.timestamp,
@@ -391,7 +394,7 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 // The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
 onPageHide(() => void persister.flush());
 
-/** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
+/** Reset persister change trackers (called on a local user rebind so they match the freshly bound DB). */
 export function resetPersisters(): void {
   for (const reset of trackerResets) reset();
 }

@@ -134,7 +134,7 @@ export type StreamChange = {
    */
   seq: number | null;
   /**
-   * Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)
+   * Deepest channel entity ID above the rows, which groups unseen counts
    */
   channelId: string | null;
   stx: StxBase | null;
@@ -155,23 +155,23 @@ export type StreamChange = {
    */
   propagation: {
     /**
-     * Product type whose change triggered the propagation (e.g. label)
+     * Embedded product type whose change triggered the propagation
      */
     embeddedProduct: 'attachment';
     /**
-     * Host product type whose cache should be patched (e.g. task)
+     * Host product type whose cache should be patched
      */
     hostProduct: 'attachment';
     /**
-     * Column on the host product that embeds the changed product (e.g. labels)
+     * Column on the host product that embeds the changed product
      */
     hostColumn: string;
     /**
-     * Host product IDs that need cache refresh
+     * Embedded row IDs whose cached copies in host rows need a refresh
      */
     update: Array<string>;
     /**
-     * Host product IDs that need the embedded reference removed
+     * Embedded row IDs (deleted or soft deleted) that host rows drop
      */
     remove: Array<string>;
   } | null;
@@ -1289,7 +1289,7 @@ export type SendMagicLinkError = SendMagicLinkErrors[keyof SendMagicLinkErrors];
 
 export type SendMagicLinkResponses = {
   /**
-   * Magic link email sent (or silently ignored if email not found)
+   * Accepted alike whether a link, a pointer to the institution or nothing was mailed
    */
   204: void;
 };
@@ -2686,23 +2686,23 @@ export type PostAppCatchupResponses = {
         };
         propagation?: Array<{
           /**
-           * Product type whose change triggered the propagation (e.g. label)
+           * Embedded product type whose change triggered the propagation
            */
           embeddedProduct: 'attachment';
           /**
-           * Host product type whose cache should be patched (e.g. task)
+           * Host product type whose cache should be patched
            */
           hostProduct: 'attachment';
           /**
-           * Column on the host product that embeds the changed product (e.g. labels)
+           * Column on the host product that embeds the changed product
            */
           hostColumn: string;
           /**
-           * Host product IDs that need cache refresh
+           * Embedded row IDs whose cached copies in host rows need a refresh
            */
           update: Array<string>;
           /**
-           * Host product IDs that need the embedded reference removed
+           * Embedded row IDs (deleted or soft deleted) that host rows drop
            */
           remove: Array<string>;
         }>;
@@ -3408,7 +3408,6 @@ export type GetPublicCountsResponses = {
   200: {
     user: number;
     organization: number;
-    attachment: number;
   };
 };
 
@@ -5106,7 +5105,7 @@ export type GetOrganizationsData = {
     limit?: number;
     relatableUserId?: string;
     role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false';
+    excludeArchived?: 'true' | 'false' | boolean;
     include?: string;
   };
   url: '/organizations';

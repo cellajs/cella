@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from 'zustand';
-import { appStreamManager } from '~/query/realtime/stream-store';
+import { appStreamManager } from '~/query/realtime/stream-manager';
 import { runSyncService } from '~/query/realtime/sync-service';
 
 const debugLabel = 'AppStream';

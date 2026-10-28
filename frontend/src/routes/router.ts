@@ -3,7 +3,7 @@ import type { ChannelEntityType } from 'shared';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { uiStore } from '~/modules/ui/ui-store';
-import { appStreamManager } from '~/query/realtime/stream-store';
+import { appStreamManager } from '~/query/realtime/stream-manager';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
 import { createNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';

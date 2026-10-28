@@ -8,9 +8,11 @@ const app = new Hono();
 const isPreviewName = (value: string): value is EmailPreviewName => Object.hasOwn(emailPreviews, value);
 
 app.get('/', (c) => {
+  // Served without a trailing slash, `./<name>` would resolve beside this page; the last segment keeps links inside it.
+  const base = c.req.path.endsWith('/') ? './' : `./${c.req.path.split('/').pop()}/`;
   const rows = emailPreviewNames
     .map((name) => {
-      const links = appConfig.languages.map((lng) => `<a href="./${name}?lng=${lng}">${lng}</a>`).join(' · ');
+      const links = appConfig.languages.map((lng) => `<a href="${base}${name}?lng=${lng}">${lng}</a>`).join(' · ');
       return `<li><strong>${name}</strong>: ${links}</li>`;
     })
     .join('\n');

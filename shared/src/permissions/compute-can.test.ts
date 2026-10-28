@@ -67,7 +67,7 @@ describe('computeCan with own permissions', () => {
 
   it('returns false for member organization create/update/delete', () => {
     const membership = wideMembership('organization', 'org1', 'member');
-    const can = computeCan('organization', membership, policies, wideOverrides);
+    const can = computeCan(policies, 'organization', membership, wideOverrides);
 
     expect(can.organization?.create).toBe(false);
     expect(can.organization?.update).toBe(false);
@@ -75,12 +75,12 @@ describe('computeCan with own permissions', () => {
   });
 
   it('returns empty map when membership is null', () => {
-    const can = computeCan('organization', null, policies, wideOverrides);
+    const can = computeCan(policies, 'organization', null, wideOverrides);
     expect(can).toEqual({});
   });
 
   it('returns empty map when membership is undefined', () => {
-    const can = computeCan('organization', undefined, policies, wideOverrides);
+    const can = computeCan(policies, 'organization', undefined, wideOverrides);
     expect(can).toEqual({});
   });
 
@@ -158,7 +158,7 @@ describe('computeCan parity with the engine under home scoping', () => {
     ({ channelType, channelId: `${channelType}1`, role }) as unknown as AccessMembership;
   const itemStates = (channelType: DeepChannelType, membership: AccessMembership) =>
     (
-      computeCan(channelType as unknown as ChannelEntityType, membership, policies, overrides) as Partial<
+      computeCan(policies, channelType as unknown as ChannelEntityType, membership, overrides) as Partial<
         Record<string, Record<EntityActionType, CanState>>
       >
     ).item;
@@ -279,7 +279,7 @@ describe('computeCan over the grants on a channel and above it', () => {
     getAllDecisions(policies, memberships, subject, { actorId: actor, elevatedGrants: hierarchy.elevatedGrants, ...overrides }).can;
 
   const mapFor = (channelType: DeepChannelType, memberships: AccessMembership[]) =>
-    computeCan(channelType as unknown as ChannelEntityType, memberships as unknown as CanGrant[], policies, overrides) as Partial<
+    computeCan(policies, channelType as unknown as ChannelEntityType, memberships as unknown as CanGrant[], overrides) as Partial<
       Record<string, Record<EntityActionType, CanState>>
     >;
 

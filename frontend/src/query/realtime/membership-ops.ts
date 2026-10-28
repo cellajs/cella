@@ -3,7 +3,7 @@ import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys, myMembershipsQueryOptions } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { queryClient } from '~/query/query-client';
+import { defaultStaleTime, queryClient } from '~/query/query-client';
 
 function invalidateAllChannelDetails(): void {
   for (const channelType of appConfig.channelEntityTypes) {
@@ -43,8 +43,8 @@ export function invalidateMemberships(): void {
 
 /** `query` deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
-  // The client's default stale time: a catchup within 30 seconds of the route loader's read fetches nothing.
-  return queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 30_000 });
+  // A catchup within the stale time of the route loader's read fetches nothing.
+  return queryClient.query({ ...myMembershipsQueryOptions(), staleTime: defaultStaleTime });
 }
 
 /** Called after membership updates, since a role change alters permissions. */

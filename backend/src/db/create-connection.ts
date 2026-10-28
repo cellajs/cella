@@ -10,7 +10,7 @@ import {
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { Pool } from 'pg';
 import { appConfig } from 'shared';
-import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
+import { verifiedPostgresConnection } from 'shared/utils/postgres-tls';
 
 // No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
 
@@ -66,10 +66,9 @@ export const createPgConnection = (
   const logger = debug && appConfig.mode === 'development' ? new DefaultLogger() : undefined;
   const db = pgDrizzle({
     connection: {
-      connectionString: stripPostgresSslParams(url),
+      ...verifiedPostgresConnection(url, sslCa),
       connectionTimeoutMillis,
       max,
-      ssl: verifiedPostgresSsl(url, sslCa),
       // Long-lived pooled connections (the job lock) sit idle for minutes.
       keepAlive: true,
       keepAliveInitialDelayMillis: keepAliveIdleMs,

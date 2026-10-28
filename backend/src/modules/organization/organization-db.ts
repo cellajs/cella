@@ -1,4 +1,4 @@
-import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type Language, type OrganizationFlags, type OrganizationSetupConfig } from 'shared';
 import { channelColumns } from '#/db/utils/channel-columns';
 import { maxLength } from '#/db/utils/constraints';
@@ -12,7 +12,7 @@ export const organizationsTable = snakeCase.table(
     country: varchar({ length: maxLength.field }),
     timezone: varchar({ length: maxLength.field }),
     defaultLanguage: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
-    languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
+    languages: jsonb().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     notificationEmail: varchar({ length: maxLength.field }),
     color: varchar({ length: maxLength.field }),
     logoUrl: varchar({ length: maxLength.url }),

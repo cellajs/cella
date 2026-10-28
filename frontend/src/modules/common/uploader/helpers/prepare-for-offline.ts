@@ -19,7 +19,7 @@ export const prepareFilesForOffline = async (
   { organizationId, templateId }: UploadTokenQuery,
   uploadStatus: UploadStatus,
 ): Promise<AssemblyResponse> => {
-  const [resultStep] = uploadTemplates.attachment.use;
+  const [resultStep] = uploadTemplates[templateId].use;
 
   if (!organizationId) {
     throw new Error('organizationId required for local storage');

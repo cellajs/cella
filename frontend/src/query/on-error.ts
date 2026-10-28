@@ -12,7 +12,8 @@ import type { QueryMeta } from '~/query/react-query';
 import { getErrorInfo, getErrorMessage } from '~/utils/get-error-info';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
-const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'error' | 'warning' | 'info'> = {
+/** The toast an API error's severity shows as. */
+export const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'error' | 'warning' | 'info'> = {
   fatal: 'error',
   error: 'error',
   warn: 'warning',

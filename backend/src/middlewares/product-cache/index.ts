@@ -1,4 +1,4 @@
-export { productCache } from './product-cache';
+export { productCache } from '#/middlewares/product-cache/product-cache';
 
 declare module 'hono' {
   interface ContextVariableMap {

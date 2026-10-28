@@ -23,7 +23,7 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     xRateLimiter: [syncReadLimiter],
     summary: 'Get unseen counts',
     description:
-      'Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.',
+      'Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.',
     responses: { 200: json('Unseen counts per parent channel entity per entity type', unseenCountsResponseSchema) },
   }),
 });

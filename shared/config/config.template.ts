@@ -241,8 +241,7 @@ export const config = {
 
   // API configuration
 
-  apiDescription: `⚠️ ATTENTION: PRERELEASE!
-                  This API is organized into modules based on logical domains.`,
+  apiDescription: '⚠️ ATTENTION: PRERELEASE! This API is organized into modules based on logical domains.',
 
   // Request limits
 

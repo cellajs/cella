@@ -16,7 +16,7 @@ vi.mock('i18next', () => ({ default: { language: 'en', changeLanguage: vi.fn() }
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { all: ['me'], memberships: ['me', 'memberships'] } }));
 vi.mock('~/query/query-client', () => ({ queryClient: { removeQueries: vi.fn() } }));
-vi.mock('~/query/realtime/stream-store', () => ({ appStreamManager: { reconnect: vi.fn() } }));
+vi.mock('~/query/realtime/stream-manager', () => ({ appStreamManager: { reconnect: vi.fn() } }));
 
 const { getMe } = await import('sdk');
 const { userStore } = await import('~/modules/user/user-store');

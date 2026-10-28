@@ -49,7 +49,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Create attachments',
     description:
-      "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
+      "Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema, mockCreateAttachmentsBody()) },
     responses: {
       200: json(

@@ -13,7 +13,7 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
   // Stored collaborative edits commit before the database closes: a lost session keeps them for the same user's next one.
   await flushYjsStore();
 
-  // Hard sign-out only: destroy all per-user persisted data while the owner is still known. Other tabs see the delete and sign out too.
+  // Hard sign-out only: destroy all per-user persisted data while the user is still known. Other tabs see the delete and sign out too.
   if (wipe) await deleteLocalUserDb();
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.

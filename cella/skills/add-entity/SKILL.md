@@ -82,7 +82,7 @@ and the renderers.
 - `operations/`, one file per operation:
   - **Create** (`create-attachments.ts`): normalize each item with `<name>Contract.normalizeCreateItem`.
     `checkIdempotency(ctx, <name>sTable, ids)` runs first, and only the items it did not return go on:
-    the quota (`getOrganizationEntityCount`, `assertTenantQuota`), then per item `assertBlockFields`,
+    the quota (`countTenantEntityRows`, `assertTenantQuota`), then per item `assertBlockFields`,
     `resolvePlacement` (its `columns` on the row, `public` copied from the home channel) and
     `canCreateEntity(ctx, buildSubjectFromEntity('<name>', row))`. The insert and
     `dispatchMutation(txCtx, '<name>.created', { after })` share one `tenantContext`. The answer holds

@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
 import { groupBy } from '~/modules/attachment/offline/group-by';
-import { subscribeOwnerChange } from '~/query/local-user-db';
+import { subscribeLocalUserChange } from '~/query/local-user-db';
 
 /** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
 export class PresignRejectedError extends Error {
@@ -32,15 +32,15 @@ const memo = new Map<string, { url: string; expiresAt: number }>();
 const inflight = new Map<string, Promise<string>>();
 let pending: PendingRequest[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
-let ownerSubscribed = false;
+let localUserSubscribed = false;
 
 const pairKey = (attachmentId: string, variant: CloudFileVariant) => `${attachmentId}:${variant}`;
 
 /** Signed URLs are per-user: drop them when the signed-in account changes. */
-function subscribeOwnerOnce() {
-  if (ownerSubscribed) return;
-  ownerSubscribed = true;
-  subscribeOwnerChange(() => memo.clear());
+function subscribeLocalUserOnce() {
+  if (localUserSubscribed) return;
+  localUserSubscribed = true;
+  subscribeLocalUserChange(() => memo.clear());
 }
 
 /** Resolves one chunk (one tenant and organization, at most `maxItemsPerCall` items) and settles its per-pair promises. */
@@ -90,7 +90,7 @@ function flush() {
  * transport failure with its own error; offline it fails at once.
  */
 export function getPresignedUrlBatched(attachmentId: string, variant: CloudFileVariant, tenantId: string, organizationId: string): Promise<string> {
-  subscribeOwnerOnce();
+  subscribeLocalUserOnce();
 
   const key = pairKey(attachmentId, variant);
   const cached = memo.get(key);

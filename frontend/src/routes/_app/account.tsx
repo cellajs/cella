@@ -2,8 +2,9 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { z } from 'zod';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
-import { type ToastSeverity, toaster } from '~/modules/common/toaster/toaster';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
+import { toastTypeBySeverity } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
 import { pageHead } from '~/utils/app-title';
@@ -23,11 +24,7 @@ export const Route = createFileRoute('/_app/account')({
   beforeLoad: ({ search }) => {
     if (search.error) {
       const { title, message } = getErrorInfo({ errorFromQuery: search.error });
-
-      const severityMap: Record<string, ToastSeverity> = { error: 'error', warn: 'warning', fatal: 'error' };
-
-      const toastSeverity = severityMap[search.severity ?? ''] ?? 'warning';
-      toaster[toastSeverity](title, { description: message || undefined });
+      toaster[toastTypeBySeverity[search.severity ?? 'warn']](title, { description: message || undefined });
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },

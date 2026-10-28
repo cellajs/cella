@@ -1,4 +1,4 @@
-import { type ModuleConfig, registerModule } from 'shared/module-registry';
+import type { ModuleConfig } from 'shared/module-registry';
 import type { ChannelModuleConfig, ProductModuleConfig } from '~/lib/entity-modules';
 import type { Tool } from '~/lib/placements';
 import type { StreamSignalHandler } from '~/query/realtime/signal-handlers';
@@ -18,10 +18,8 @@ export interface FrontendModule extends ModuleConfig {
 const frontendModules: FrontendModule[] = [];
 const listeners: ((module: FrontendModule) => void)[] = [];
 
-/** Registers a module: metadata to the shared registry, capabilities to {@link onFrontendModuleRegister} listeners. */
+/** Registers a module with the {@link onFrontendModuleRegister} listeners. */
 export function defineFrontendModule(module: FrontendModule): void {
-  const { tools: _tools, channel: _channel, product: _product, signals: _signals, ...metadata } = module;
-  registerModule(metadata);
   frontendModules.push(module);
   for (const listener of listeners) listener(module);
 }

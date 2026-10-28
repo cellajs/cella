@@ -101,9 +101,7 @@ describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the call
     // Only narrows the type: the suite is skipped where attachments are not tracked.
     if (!isTrackedProductType(productType)) return;
     const productId = await insertAttachment(admin.id);
-    const rows = [{ productId, channelId: organization.id }];
-    const mark = (tx: Tx) =>
-      insertSeenBy({ var: { db: tx } }, { userId: member.id, productType, organizationId: organization.id, tenantId: organization.tenantId, rows });
+    const mark = (tx: Tx) => insertSeenBy({ var: { db: tx } }, { userId: member.id, productType, productIds: [productId] });
 
     // The first mark stays uncommitted until the second one waits on it, as two tabs that flush at once do.
     const firstMarked = Promise.withResolvers<void>();

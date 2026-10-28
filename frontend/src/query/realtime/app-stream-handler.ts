@@ -1,3 +1,4 @@
+import type { StreamChange } from 'sdk';
 import { isProduct } from 'shared';
 import { frontendSpanNames } from 'shared/tracing';
 import { withSpanSync } from '~/lib/tracing';
@@ -11,13 +12,12 @@ import { propagateEmbeddings } from '~/query/realtime/propagation';
 import { publishChangeEvent } from '~/query/realtime/sync-events';
 import { getSyncTier } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-import type { AppStreamChange } from '~/query/realtime/types';
 
 /** Changes carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
-export function handleStreamChange(change: AppStreamChange): void {
-  const { productType: entityType, subjectId, action, organizationId, tenantId, seq, _trace } = change;
+export function handleStreamChange(change: StreamChange): void {
+  const { productType: entityType, subjectId, action, organizationId, tenantId, seq } = change;
 
-  const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
+  const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.entity_id': subjectId };
 
   withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
     if (tenantId) syncStore.getState().trackOrg(organizationId, tenantId);
@@ -39,7 +39,7 @@ export function handleStreamChange(change: AppStreamChange): void {
 }
 
 /** Hands an announced range to the fetch prioritizer, which fetches it on the tier of its scope. */
-function enqueueAnnouncedRange(change: AppStreamChange, range: SeqRange): void {
+function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
   enqueueRange({
     entityType: change.productType,
     organizationId: change.organizationId,
@@ -52,7 +52,7 @@ function enqueueAnnouncedRange(change: AppStreamChange, range: SeqRange): void {
   });
 }
 
-function handleProductChange(change: AppStreamChange, keys: EntityQueryKeys): void {
+function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void {
   const { productType: entityType, subjectId: entityId, action, stx, organizationId, tenantId, seq, propagation } = change;
   const channelId = change.channelId ?? null;
 

@@ -211,7 +211,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v23-stream-signals',
+  clientCacheVersion: 'v24-public-counts',
 
   // Authentication
 
@@ -251,8 +251,7 @@ export const config = {
 
   // API configuration
 
-  apiDescription: `⚠️ ATTENTION: PRERELEASE!
-                  This API is organized into modules based on logical domains.`,
+  apiDescription: '⚠️ ATTENTION: PRERELEASE! This API is organized into modules based on logical domains.',
 
   // Request limits
 

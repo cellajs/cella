@@ -9,7 +9,7 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
-const { declareViewsFromMemberships } = await import('./view-declaration');
+const { declareViewsFromMemberships } = await import('~/query/realtime/view-declaration');
 
 const orgMembership = (organizationId: string, role: 'admin' | 'member') => ({
   id: `mem-${organizationId}-${role}`,

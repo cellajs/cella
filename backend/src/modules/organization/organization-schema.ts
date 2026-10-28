@@ -7,7 +7,7 @@ import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganizationResponse } from '#/modules/organization/organization-mocks';
 import {
-  excludeArchivedQuerySchema,
+  booleanTransformSchema,
   includeQuerySchema,
   languageSchema,
   maxLength,
@@ -128,6 +128,6 @@ export const organizationListQuerySchema = paginationQuerySchema.extend({
   order: z.enum(['asc', 'desc']).default('asc'),
   relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
-  excludeArchived: excludeArchivedQuerySchema,
+  excludeArchived: booleanTransformSchema,
   include: includeQuerySchema,
 });

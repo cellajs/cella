@@ -141,7 +141,7 @@ export function DocsLayout() {
           />
         </aside>
       ) : (
-        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={isSidebarOpen} />
+        <FloatingNav items={floatingNavItems} resetTrigger={isSidebarOpen} />
       )}
       <main className={cn('focus-view-scope pb-[70vh]', isDesktop ? 'ml-(--docs-sidebar-width) focus-view:ml-0' : 'pt-4')}>
         <Outlet />

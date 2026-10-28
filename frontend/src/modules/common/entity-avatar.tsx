@@ -4,7 +4,7 @@ import { getInitials } from 'shared/utils/get-initials';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
-import { numberToColorClass } from '~/utils/number-to-color-class';
+import { placeholderColorClass } from '~/utils/placeholder-color-class';
 
 export interface EntityAvatarProps extends AvatarProps {
   id?: string;
@@ -27,7 +27,7 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
       </Avatar>
     );
 
-  const avatarBackground = numberToColorClass(id);
+  const avatarBackground = placeholderColorClass(id);
   const [initial, secondInitial] = getInitials(name);
   const isUser = type === 'user';
 

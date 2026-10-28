@@ -11,7 +11,7 @@ import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
 import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
-import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
+import { countTenantEntityRows } from '#/modules/entities/entities-queries';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
@@ -44,7 +44,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const fresh = input.filter((item) => !replayedIds.has(item.id));
   if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
 
-  const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
+  const currentAttachments = await countTenantEntityRows(ctx, { entityType: 'attachment' });
   assertTenantQuota(ctx, 'attachment', currentAttachments, fresh.length);
 
   const now = getIsoDate();

@@ -62,7 +62,7 @@ vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
     }),
   };
 });
-// The role seam is the app's to fill: a test stands in for an app's mapping, the default stays real.
+// `roleFromClaims` is the app's to fill: a test stands in for an app's mapping, the default stays real.
 vi.mock('#/modules/auth/sso/role-from-claims', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/modules/auth/sso/role-from-claims')>();
   return { ...actual, roleFromClaims: vi.fn(actual.roleFromClaims) };
@@ -435,7 +435,8 @@ describe('SSO sign-in through an institution', async () => {
       await requireSso(organization.tenantId);
 
       // The institution proved the address and its tenant excludes magic links: the address sends none on request.
-      await expectRefusal(await call(sendMagicLink, { body: { email: studentEmail }, headers: defaultHeaders }), 403, 'sso_required');
+      expect((await call(sendMagicLink, { body: { email: studentEmail }, headers: defaultHeaders })).response.status).toBe(204);
+      expect(await magicTokensOf(user.id)).toHaveLength(0);
 
       // The same person under a new subject collides with their own account; having signed in there, the link goes out.
       await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');

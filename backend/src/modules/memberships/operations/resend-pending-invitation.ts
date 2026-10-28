@@ -8,7 +8,7 @@ import type { InactiveMembershipModel } from '#/modules/memberships/inactive-mem
 import { findInactiveMembershipInOrg, stampInactiveMembershipsReminded } from '#/modules/memberships/inactive-memberships-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { findUserById } from '#/modules/user/user-queries';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getValidChannel } from '#/permissions';
 import type { EntityModel } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { AuthSectionTitle } from '~/modules/me/auth-section-title';
-import { PasskeyTile } from '~/modules/me/passkeys/tile';
+import { PasskeyTile } from '~/modules/me/passkey-tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 

@@ -2,7 +2,7 @@ import type { PolicyCellInput } from 'shared';
 import { type DeepChannelType as ChannelType, deepHierarchy, deepReadPolicies as policies } from 'shared/testing/deep-fixture';
 import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
-import { deriveGrantBoundaryViews, type ViewMembership } from './views';
+import { deriveGrantBoundaryViews, type ViewMembership } from '~/query/realtime/views';
 
 // Shared deep fixture, same hierarchy as the backend classifier tests: derived views
 // must be exactly the ones resolveViewReadStatus can prove `ok`.

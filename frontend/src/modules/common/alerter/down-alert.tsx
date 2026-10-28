@@ -1,4 +1,4 @@
-import { ClockAlertIcon, CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
+import { CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -9,7 +9,6 @@ import { forceOnline } from '~/query/offline/connectivity';
 
 const downAlertConfig = {
   offline: { icon: CloudOffIcon, titleKey: 'c:offline', textKey: 'c:offline.alert', variant: 'warning' },
-  backend_not_ready: { icon: ClockAlertIcon, titleKey: 'c:backend_not_ready', textKey: 'c:backend_not_ready.text', variant: 'warning' },
   maintenance: { icon: ConstructionIcon, titleKey: 'c:maintenance_mode', textKey: 'c:maintenance_mode.text', variant: 'destructive' },
   auth_unavailable: { icon: TriangleAlertIcon, titleKey: 'c:auth_unavailable', textKey: 'c:auth_unavailable.text', variant: 'plain' },
 } as const;

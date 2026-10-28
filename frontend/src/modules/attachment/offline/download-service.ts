@@ -17,7 +17,7 @@ import { attachmentStorage } from '~/modules/attachment/offline/storage-service'
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
-import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
+import { getLocalUserDb, subscribeLocalUserChange } from '~/query/local-user-db';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 import { onChangeEvent, onSyncedRows } from '~/query/realtime/sync-events';
@@ -39,7 +39,7 @@ class AttachmentDownloadService {
   private onlineUnsubscribe: (() => void) | null = null;
   private cacheUnsubscribe: (() => void) | null = null;
   private mutationUnsubscribe: (() => void) | null = null;
-  private ownerUnsubscribe: (() => void) | null = null;
+  private localUserUnsubscribe: (() => void) | null = null;
   private tierUnsubscribe: (() => void) | null = null;
   private syncUnsubscribes: (() => void)[] = [];
 
@@ -56,7 +56,7 @@ class AttachmentDownloadService {
     this.subscribeQueue();
 
     // liveQuery tracks only the DB it first resolved, so re-subscribe when the per-user localUserDb rebinds.
-    this.ownerUnsubscribe = subscribeOwnerChange(() => {
+    this.localUserUnsubscribe = subscribeLocalUserChange(() => {
       this.subscribeQueue();
       void this.applyTier(false);
     });
@@ -147,8 +147,8 @@ class AttachmentDownloadService {
     this.cacheUnsubscribe = null;
     this.mutationUnsubscribe?.();
     this.mutationUnsubscribe = null;
-    this.ownerUnsubscribe?.();
-    this.ownerUnsubscribe = null;
+    this.localUserUnsubscribe?.();
+    this.localUserUnsubscribe = null;
     console.debug('[DownloadService] Stopped');
   }
 

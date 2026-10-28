@@ -6,7 +6,7 @@ import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { userStore } from '~/modules/user/user-store';
 import { localUserStorageReady } from '~/query/local-user-storage';
 import { queryClient } from '~/query/query-client';
-import { appStreamManager } from '~/query/realtime/stream-store';
+import { appStreamManager } from '~/query/realtime/stream-manager';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
 import { lazyNamed } from '~/utils/lazy-named';
 

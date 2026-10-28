@@ -2,7 +2,7 @@ import { getMe, startImpersonation, stopImpersonation } from 'sdk';
 import { meKeys } from '~/modules/me/query';
 import { getCurrentUser, userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { appStreamManager } from '~/query/realtime/stream-store';
+import { appStreamManager } from '~/query/realtime/stream-manager';
 
 /** Fetches who is signed in and writes the answer to the user store. */
 export const getAndSetMe = async () => {

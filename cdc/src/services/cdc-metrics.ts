@@ -24,28 +24,16 @@ function percentile(sorted: number[], p: number): number {
 }
 
 class Metrics {
+  /** WAL bytes behind the slot's acknowledged position (null until first poll). */
+  lagBytes: number | null = null;
+  /** Whether PostgreSQL reports the replication slot as active (null until first poll). */
+  slotActive: boolean | null = null;
+  /** pg_replication_slots.wal_status: 'reserved', 'extended', 'unreserved' or 'lost'; null until the first poll. */
+  slotStatus: string | null = null;
   private buckets: Bucket[] = [];
-  private walLagBytes: number | null = null;
-  private walSlotActive: boolean | null = null;
-  private walSlotStatus: string | null = null;
   private lagInterval: ReturnType<typeof setInterval> | null = null;
   private hasWarned = false;
   private hasGoneUnhealthy = false;
-
-  /** WAL bytes behind the slot's acknowledged position (null until first poll). */
-  get lagBytes(): number | null {
-    return this.walLagBytes;
-  }
-
-  /** Whether PostgreSQL reports the replication slot as active (null until first poll). */
-  get slotActive(): boolean | null {
-    return this.walSlotActive;
-  }
-
-  /** pg_replication_slots.wal_status: 'reserved', 'extended', 'unreserved' or 'lost'; null until the first poll. */
-  get slotStatus(): string | null {
-    return this.walSlotStatus;
-  }
 
   private currentBucket(): Bucket {
     const now = Date.now();
@@ -148,14 +136,14 @@ class Metrics {
       );
       const row = result.rows[0];
       if (row) {
-        this.walLagBytes = Number(row.lag_bytes);
-        this.walSlotActive = row.active;
-        this.walSlotStatus = row.wal_status;
-        this.logLagThresholds(this.walLagBytes);
+        this.lagBytes = Number(row.lag_bytes);
+        this.slotActive = row.active;
+        this.slotStatus = row.wal_status;
+        this.logLagThresholds(this.lagBytes);
       } else {
-        this.walLagBytes = null;
-        this.walSlotActive = false;
-        this.walSlotStatus = null;
+        this.lagBytes = null;
+        this.slotActive = false;
+        this.slotStatus = null;
         this.hasWarned = false;
         this.hasGoneUnhealthy = false;
       }

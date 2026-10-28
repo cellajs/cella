@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { systemInvite as baseSystemInvite, type InviteOutcome } from 'sdk';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
-import type z from 'zod';
+import type { z } from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';

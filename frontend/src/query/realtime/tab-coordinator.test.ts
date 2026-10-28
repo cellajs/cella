@@ -95,7 +95,7 @@ const {
   onStreamSignal,
   onSyncHealth,
   releaseTabLeadership,
-} = await import('./tab-coordinator');
+} = await import('~/query/realtime/tab-coordinator');
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));

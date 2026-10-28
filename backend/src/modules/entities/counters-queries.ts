@@ -2,6 +2,7 @@ import { count, getTableName, sql } from 'drizzle-orm';
 import { appConfig, type EntityType, entityIdColumnName, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
+import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { hasPublishedAt } from '#/db/utils/published-predicate';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { forwardOnlyCounterKeySql, plainCountKeySql } from '#/modules/entities/counter-keys';
@@ -11,8 +12,7 @@ import { getEntityTable } from '#/tables';
 const tableNameOf = (entityType: EntityType) => getTableName(getEntityTable(entityType));
 
 /** CDC decrements e:c: counters on soft-delete, so recalculation must exclude tombstones to agree. */
-const livePredicate = (entityType: EntityType, alias: string) =>
-  'deletedAt' in getEntityTable(entityType) ? ` AND ${alias}.deleted_at IS NULL` : '';
+const livePredicate = (entityType: EntityType, alias: string) => (hasDeletedAt(getEntityTable(entityType)) ? ` AND ${alias}.deleted_at IS NULL` : '');
 
 /** CDC never counts drafts, so recalculation must exclude them from the table to agree. */
 const publishedPredicate = (entityType: EntityType, alias: string) =>

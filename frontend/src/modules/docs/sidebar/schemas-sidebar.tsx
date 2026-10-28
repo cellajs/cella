@@ -28,7 +28,7 @@ export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
     <SidebarMenu className="gap-1 p-0 pt-1">
       {schemaTags.map((tag) => {
         const tagSchemas = schemasByTag[tag.name] ?? [];
-        const isAtTag = hash === tag.name;
+        const isAtTag = hash === `tag/${tag.name}`;
         const activeSchemaIndex = tagSchemas.findIndex((schema) => schemaAnchor(schema) === hash);
         const isActive = isAtTag || activeSchemaIndex >= 0;
 

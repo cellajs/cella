@@ -63,7 +63,7 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 - A server-driven write (CDC fan-out, materialization, a scheduled job) or an update that changes no field stores its `stx` through `stripChangedFields`, else the CDC worker attributes the write to the wrong columns.
 - A fact that is no product row reaches clients as a stream signal of ids, declared in `defineBackendModule` and `defineFrontendModule` (`signals`), sent after the commit with `sendSignal`, and versioned when a client that was away must still hear it ([Changes and signals](./SYNC_ENGINE.md#changes-and-signals)).
 - Sync-derived per-user state extends only through sync events (`sync-events.ts`); never import module logic into the prioritizer.
-- Columns derived from a collaborative description register in `query.ts` ([add-entity](./skills/add-entity/SKILL.md#6-optional-capabilities)), a description shown in place builds on `useDescriptionSlot`, and a backend write that dispatches no `<type>.updated` calls `recordYjsOutsideWrite` ([Yjs](../yjs/README.md#outside-writes)).
+- Columns derived from a collaborative description register in `query.ts` ([add-entity](./skills/add-entity/SKILL.md#6-optional-capabilities)), a description shown in place builds on `useInPlaceDescription`, and a backend write that dispatches no `<type>.updated` calls `recordYjsOutsideWrite` ([Yjs](../yjs/README.md#outside-writes)).
 - A breaking wire-shape change ships as an append-only lens in `shared/src/schema-evolution/` (never edit a shipped one) and, until the first lens ships, bumps `appConfig.clientCacheVersion` ([Cache-bust](./SCHEMA_EVOLUTION.md#cache-bust-interim)). Every entity module routes bodies through its `evolutionContract`.
 
 ## Cross-product references

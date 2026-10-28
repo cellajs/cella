@@ -1,11 +1,12 @@
 import { getColumns, sql } from 'drizzle-orm';
 import { type AnyPgColumn, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, type FederationKey } from 'shared';
+import type { FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -20,10 +21,7 @@ const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 
 /** A sign-in method as a session records it: a built-in one, or a federation key from `appConfig.federations`. */
 export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;
 /** Every {@link AuthStrategy}: the enum of the columns and request fields that hold one. */
-export const authStrategiesEnum = [...baseAuthStrategies, ...(Object.keys(appConfig.federations) as FederationKey[])] as [
-  AuthStrategy,
-  ...AuthStrategy[],
-];
+export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as [AuthStrategy, ...AuthStrategy[]];
 
 /**
  * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`

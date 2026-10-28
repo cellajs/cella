@@ -19,14 +19,11 @@ export const Small: Story = { args: { size: 'sm' } };
 
 export const Medium: Story = { args: { size: 'md' } };
 
-export const Large: Story = { args: { size: 'lg' } };
-
 export const AllSizes: Story = {
   render: (args) => (
     <div className="flex items-center gap-4">
       <CloseButton {...args} size="sm" />
       <CloseButton {...args} size="md" />
-      <CloseButton {...args} size="lg" />
     </div>
   ),
 };

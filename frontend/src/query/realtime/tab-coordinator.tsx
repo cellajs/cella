@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import type { PostAppCatchupResponse, StreamSignal } from 'sdk';
+import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
 import { createEmitter } from '~/query/realtime/sync-events';
-import type { AppStreamChange } from '~/query/realtime/types';
 import { markBundleStale } from '~/query/schema-version-guard';
 
 const channelName = 'tab-sync';
@@ -18,7 +17,7 @@ export interface SyncHealth {
 }
 
 type BroadcastMessage =
-  | { type: 'stream-change'; change: AppStreamChange }
+  | { type: 'stream-change'; change: StreamChange }
   | { type: 'stream-signal'; signal: StreamSignal }
   | { type: 'catchup'; response: PostAppCatchupResponse; baselineOnly: boolean }
   | { type: 'sync-health'; health: SyncHealth }
@@ -40,7 +39,7 @@ export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
 
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
-const streamChangeEmitter = createEmitter<AppStreamChange>('TabStreamChange');
+const streamChangeEmitter = createEmitter<StreamChange>('TabStreamChange');
 const streamSignalEmitter = createEmitter<StreamSignal>('TabStreamSignal');
 const catchupEmitter = createEmitter<{ response: PostAppCatchupResponse; baselineOnly: boolean }>('TabCatchup');
 const syncHealthEmitter = createEmitter<SyncHealth>('TabSyncHealth');
@@ -202,7 +201,7 @@ export function broadcastSyncHealth(health: SyncHealth): void {
 export const onSyncHealth = syncHealthEmitter.subscribe;
 
 /** Called by the leader for each change frame it receives. */
-export function broadcastStreamChange(change: AppStreamChange): void {
+export function broadcastStreamChange(change: StreamChange): void {
   broadcastChannel?.postMessage({ type: 'stream-change', change } satisfies BroadcastMessage);
 }
 

@@ -136,12 +136,12 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                         </div>
 
                         <div className="flex min-w-0 items-center gap-2">
-                          <Badge size="sm" variant="plain" className="hidden group-data-disabled/user-item:flex">
+                          <Badge size="sm" soft className="hidden group-data-disabled/user-item:flex">
                             <UserIcon />
                             <span className="max-sm:hidden">{t('c:already_member')}</span>
                           </Badge>
                           {invitedNote && (
-                            <Badge size="sm" variant="plain">
+                            <Badge size="sm" soft>
                               <ClockIcon />
                               <span className="max-sm:hidden">{invitedNote}</span>
                             </Badge>

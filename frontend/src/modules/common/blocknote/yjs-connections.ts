@@ -490,8 +490,7 @@ function startStoring(conn: YjsConnection, unsynced: boolean) {
   const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => handleWriterChange(conn, writer) });
   if (!writer) return;
   conn.writer = writer;
-  const { tenantId, organizationId } = conn.scope;
-  writer.start(conn.yDoc, { tenantId, organizationId, generation: conn.generation }, unsynced);
+  writer.start(conn.yDoc, conn.generation, unsynced);
 }
 
 /**

@@ -67,8 +67,9 @@ li:has(.is-focused) {
   display: contents;
 }
 
-/* BlockNote renders its placeholder via `::after` on `.bn-block-content`; match the editor paragraph size. */
+/* BlockNote renders its placeholder via `::after` on `.bn-block-content`; match the editor paragraph size and the field placeholder color. */
 .bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  color: var(--faint-foreground);
   font-size: var(--text-md);
   line-height: 1.4;
   font-weight: var(--font-weight-normal);

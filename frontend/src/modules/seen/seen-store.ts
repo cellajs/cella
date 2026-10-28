@@ -26,6 +26,8 @@ const flushedIdsMax = 10_000;
 const batchKey = (organizationId: string, productType: ProductEntityType) => `${organizationId}:${productType}`;
 
 const pending = new Map<string, SeenBatch>();
+/** Ids of a flush whose request has not answered: in neither `pending` nor `flushedIds`, yet seen here. */
+const inFlight = new Set<string>();
 let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 
 interface SeenStoreState {
@@ -48,7 +50,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         markProductSeen: ({ tenantId, organizationId, channelId, productType, productId }) => {
           if (!isSeenTracked(productType)) return;
-          if (get().flushedIds.has(productId)) return;
+          if (get().flushedIds.has(productId) || inFlight.has(productId)) return;
 
           const key = batchKey(organizationId, productType);
           const batch = pending.get(key) ?? { tenantId, organizationId, productType, productIds: new Set() };
@@ -75,6 +77,7 @@ export const seenStore = createStore<SeenStoreState>()(
           // Snapshot and clear optimistically; failed batches merge back for the next attempt.
           const batches = [...pending.values()];
           pending.clear();
+          for (const batch of batches) for (const id of batch.productIds) inFlight.add(id);
           if (isDebugMode)
             console.debug(
               '[SeenStore] flushing',
@@ -99,6 +102,8 @@ export const seenStore = createStore<SeenStoreState>()(
               const requeued = pending.get(batchKey(organizationId, productType));
               if (requeued) for (const id of batch.productIds) requeued.productIds.add(id);
               else pending.set(batchKey(organizationId, productType), batch);
+            } finally {
+              for (const id of batch.productIds) inFlight.delete(id);
             }
           }
           // No refetch needed: markProductSeen already patched unseen counts, and SSE covers external changes.
@@ -106,6 +111,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         reset: () => {
           pending.clear();
+          inFlight.clear();
           get().stopFlushInterval();
           set({ flushedIds: new Set() });
         },
@@ -123,9 +129,9 @@ export const seenStore = createStore<SeenStoreState>()(
   ),
 );
 
-/** True when this client saw the entity (flushed or still queued); store internals stay private behind this accessor. */
+/** True when this client saw the entity (flushed, in flight or still queued); store internals stay private behind this accessor. */
 export function isSeenLocally(entityId: string): boolean {
-  if (seenStore.getState().flushedIds.has(entityId)) return true;
+  if (seenStore.getState().flushedIds.has(entityId) || inFlight.has(entityId)) return true;
   for (const batch of pending.values()) if (batch.productIds.has(entityId)) return true;
   return false;
 }

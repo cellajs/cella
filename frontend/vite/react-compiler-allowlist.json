@@ -1,6 +1,6 @@
 {
   "src/modules/attachment/hooks/use-attachment-url.ts:useAttachmentUrl": "Compiler gap: optional chains inside a try/catch (resolved?.url).",
-  "src/modules/common/blocknote/use-description-slot.ts:useDescriptionSlot": "Reads and writes refs during render, so the editor hands over to the static view within one render.",
+  "src/modules/common/blocknote/use-in-place-description.ts:useInPlaceDescription": "Reads and writes refs during render, so the editor hands over to the static view within one render.",
   "src/modules/common/board/board-layout.tsx:BoardLayout": "Compiler gap: an optional-chain comparison in the drop indicator's state updater.",
   "src/modules/notification/use-push-subscription.ts:usePushSubscription": "Compiler gap: try/finally in the enable and disable handlers.",
   "src/modules/ui/calendar.tsx:Calendar": "Compiler gap: String.raw class names whose cooked value differs from the raw one."

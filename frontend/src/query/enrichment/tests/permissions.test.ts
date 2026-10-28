@@ -33,7 +33,7 @@ vi.mock('shared', async (importOriginal) => {
     isChannel: mockHierarchy.isChannel,
     allActionsAllowed: actual.allActionsAllowed,
     policyMatrix,
-    computeCan: (channelType: never, grants: never) => actual.computeCan(channelType, grants, policyMatrix, wideOverrides),
+    computeCan: (_policies: never, channelType: never, grants: never) => actual.computeCan(policyMatrix, channelType, grants, wideOverrides),
   };
 });
 vi.mock('~/query/query-client', () => ({ queryClient }));

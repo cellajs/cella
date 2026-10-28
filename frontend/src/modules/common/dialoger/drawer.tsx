@@ -1,4 +1,4 @@
-import { dialoger, type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
@@ -11,16 +11,10 @@ interface DialogerDrawerProps {
 export function DialogerDrawer({ dialog }: DialogerDrawerProps) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName } = dialog;
 
-  const updateDialog = useDialoger((state) => state.update);
-
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
-  // The drawer slides out before its entry is removed; onClose still runs as the close starts.
   const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(
-    () => {
-      updateDialog(dialog.id, { open: false, onClose: undefined });
-      dialog.onClose?.();
-    },
+    () => dialoger.getState().hide(dialog.id),
     () => dialoger.getState().remove(dialog.id),
   );
 

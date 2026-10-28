@@ -2,11 +2,11 @@ import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-function Drawer({ ...props }: DrawerPrimitive.Root.Props) {
+export function Drawer({ ...props }: DrawerPrimitive.Root.Props) {
   return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
 }
 
-function DrawerTrigger({ ...props }: DrawerPrimitive.Trigger.Props) {
+export function DrawerTrigger({ ...props }: DrawerPrimitive.Trigger.Props) {
   return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
 }
 
@@ -14,12 +14,12 @@ function DrawerPortal({ ...props }: DrawerPrimitive.Portal.Props) {
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
-function DrawerClose({ ...props }: DrawerPrimitive.Close.Props) {
+export function DrawerClose({ ...props }: DrawerPrimitive.Close.Props) {
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
 /** Seats a bottom sheet with text fields on the on-screen keyboard. Wraps `DrawerContent`, which renders the portal. */
-function DrawerVirtualKeyboardProvider({ ...props }: DrawerPrimitive.VirtualKeyboardProvider.Props) {
+export function DrawerVirtualKeyboardProvider({ ...props }: DrawerPrimitive.VirtualKeyboardProvider.Props) {
   return <DrawerPrimitive.VirtualKeyboardProvider {...props} />;
 }
 
@@ -42,7 +42,7 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props) 
   );
 }
 
-function DrawerContent({
+export function DrawerContent({
   className,
   children,
   keepMounted,
@@ -113,7 +113,7 @@ function DrawerContent({
   );
 }
 
-function DrawerHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+export function DrawerHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="drawer-header"
@@ -127,38 +127,24 @@ function DrawerHeader({ className, sticky, ...props }: React.ComponentProps<'div
   );
 }
 
-function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="drawer-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
 /** A list of `Button variant="row"` rows on the sheet itself, without a fill of its own. */
-function DrawerRowGroup({ className, ...props }: React.ComponentProps<'div'>) {
+export function DrawerRowGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="drawer-row-group" className={cn('flex flex-col', className)} {...props} />;
 }
 
 /** The hairline between two groups of rows that do different kinds of things. */
-function DrawerRowSeparator({ className, ...props }: React.ComponentProps<'hr'>) {
+export function DrawerRowSeparator({ className, ...props }: React.ComponentProps<'hr'>) {
   return <hr data-slot="drawer-row-separator" className={cn('my-1.5 shrink-0 border-border', className)} {...props} />;
 }
 
-function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
+export function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
   return <DrawerPrimitive.Title data-slot="drawer-title" className={cn('font-semibold text-foreground', className)} {...props} />;
 }
 
-function DrawerDescription({ className, ...props }: DrawerPrimitive.Description.Props) {
+export function DrawerDescription({ className, ...props }: DrawerPrimitive.Description.Props) {
   return <DrawerPrimitive.Description data-slot="drawer-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
-
-export {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerRowGroup,
-  DrawerRowSeparator,
-  DrawerTitle,
-  DrawerTrigger,
-  DrawerVirtualKeyboardProvider,
-};

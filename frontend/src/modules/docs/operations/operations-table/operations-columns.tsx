@@ -1,9 +1,10 @@
 import { BirdIcon } from 'lucide-react';
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
 import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
@@ -51,143 +52,143 @@ function LabelList({ items }: { items: LabelItem[] }) {
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
   const { t } = useTranslation();
 
-  return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(() => {
-    const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
-      key: ext.id,
-      name: upperFirst(ext.key.replace('x-', '').replace(/-/g, ' ')),
-      minBreakpoint: 'md',
-      resizable: true,
-      width: 150,
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }: { row: GenOperationSummary }) => {
-        const values = row.extensions[ext.id];
-        if (!values?.length) return null;
-        const items = values.map((value) => {
-          const meta = ext.values?.[value];
-          const label = meta?.name ?? value;
-          return { key: value, label, tooltip: meta?.description ? `${value}: ${meta.description}` : label !== value ? value : undefined };
-        });
-        return <LabelList items={items} />;
-      },
-    }));
+  const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
+    key: ext.id,
+    name: upperFirst(ext.key.replace('x-', '').replace(/-/g, ' ')),
+    minBreakpoint: 'md',
+    resizable: true,
+    width: 150,
+    minWidth: 120,
+    placeholderValue: '-',
+    renderCell: ({ row }: { row: GenOperationSummary }) => {
+      const values = row.extensions[ext.id];
+      if (!values?.length) return null;
+      const items = values.map((value) => {
+        const meta = ext.values?.[value];
+        const label = meta?.name ?? value;
+        return { key: value, label, tooltip: meta?.description ? `${value}: ${meta.description}` : label !== value ? value : undefined };
+      });
+      return <LabelList items={items} />;
+    },
+  }));
 
-    // The tool's name is the operation id, so the cell names only that it is one and whether it asks first.
-    const mcpColumn: ColumnOrColumnGroup<GenOperationSummary> = {
-      key: 'mcp',
-      name: 'MCP',
-      minBreakpoint: 'md',
-      resizable: true,
-      width: 120,
-      minWidth: 80,
-      placeholderValue: '-',
-      renderCell: ({ row }) => {
-        if (!row.tool) return null;
-        const items: LabelItem[] = [{ key: 'tool', label: t('c:docs.tool'), tooltip: row.tool.description }];
-        if (row.tool.approvalRequired) items.push({ key: 'approval', label: t('c:docs.approval'), tooltip: t('c:docs.tool_approval.text') });
-        return <LabelList items={items} />;
-      },
-    };
+  // The tool's name is the operation id, so the cell names only that it is one and whether it asks first.
+  const mcpColumn: ColumnOrColumnGroup<GenOperationSummary> = {
+    key: 'mcp',
+    name: 'MCP',
+    minBreakpoint: 'md',
+    resizable: true,
+    width: 120,
+    minWidth: 80,
+    placeholderValue: '-',
+    renderCell: ({ row }) => {
+      if (!row.tool) return null;
+      const items: LabelItem[] = [{ key: 'tool', label: t('c:docs.tool'), tooltip: row.tool.description }];
+      if (row.tool.approvalRequired) items.push({ key: 'approval', label: t('c:docs.approval'), tooltip: t('c:docs.tool_approval.text') });
+      return <LabelList items={items} />;
+    },
+  };
 
-    // One column per tag kind, e.g. 'module', 'owner'
-    const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
-      key: `tag-${kind}`,
-      name: upperFirst(kind),
-      hidden: hiddenTagKinds.has(kind),
+  // One column per tag kind, e.g. 'module', 'owner'
+  const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
+    key: `tag-${kind}`,
+    name: upperFirst(kind),
+    hidden: hiddenTagKinds.has(kind),
+    sortable: true,
+    minBreakpoint: 'md',
+    resizable: true,
+    // A set width keeps the spare room for the path column
+    width: plainTagKinds.has(kind) ? 90 : 130,
+    minWidth: 80,
+    placeholderValue: '-',
+    renderCell: ({ row }: { row: GenOperationSummary }) => {
+      const values = row.tagsByKind[kind];
+      if (!values?.length) return null;
+      if (plainTagKinds.has(kind)) return <LabelList items={values.map((tag) => ({ key: tag, label: tag }))} />;
+      return <TagBadges values={values} />;
+    },
+  }));
+
+  const columns: ColumnOrColumnGroup<GenOperationSummary>[] = [
+    {
+      key: 'method',
+      name: t('c:method'),
       sortable: true,
-      minBreakpoint: 'md',
-      resizable: true,
-      // A set width keeps the spare room for the path column
-      width: plainTagKinds.has(kind) ? 90 : 130,
+      width: 80,
       minWidth: 80,
-      placeholderValue: '-',
-      renderCell: ({ row }: { row: GenOperationSummary }) => {
-        const values = row.tagsByKind[kind];
-        if (!values?.length) return null;
-        if (plainTagKinds.has(kind)) return <LabelList items={values.map((tag) => ({ key: tag, label: tag }))} />;
-        return <TagBadges values={values} />;
-      },
-    }));
-
-    return [
-      {
-        key: 'method',
-        name: t('c:method'),
-        sortable: true,
-        width: 80,
-        minWidth: 80,
-        renderCell: ({ row }) => <MethodLabel method={row.method} />,
-      },
-      {
-        key: 'path',
-        name: t('c:path'),
-        minWidth: 180,
-        resizable: true,
-        sortable: true,
-        renderCell: ({ row, tabIndex }) => (
+      renderCell: ({ row }) => <MethodLabel method={row.method} />,
+    },
+    {
+      key: 'path',
+      name: t('c:path'),
+      minWidth: 180,
+      resizable: true,
+      sortable: true,
+      renderCell: ({ row, tabIndex }) => (
+        <Button
+          variant="cell"
+          size="cell"
+          tabIndex={tabIndex}
+          title={row.path}
+          className="min-w-0 font-mono text-xs"
+          onClick={(event) => openOperationSheet(row, event.currentTarget)}
+        >
+          {/* The underline sits on the path alone: on the button it would reach the badge too */}
+          <span dir="rtl" className={cn(cellLinkTextClass, 'min-w-0 flex-1 text-left')}>
+            &lrm;{row.path}
+          </span>
+          <SwitchedOffBadge enabledBy={row.enabledBy} />
+        </Button>
+      ),
+    },
+    {
+      key: 'hasExample',
+      name: '',
+      minBreakpoint: 'sm',
+      width: 50,
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.hasResponseBody) return <span className="w-full text-center text-muted-foreground text-xs">{t('c:not_applicable')}</span>;
+        // Has response body but no example yet
+        if (!row.hasExample) return <span className="w-full text-center text-muted-foreground">-</span>;
+        return (
           <Button
             variant="cell"
             size="cell"
             tabIndex={tabIndex}
-            title={row.path}
-            className="min-w-0 font-mono text-xs"
-            onClick={(event) => openOperationSheet(row, event.currentTarget)}
+            className="justify-center opacity-60"
+            aria-label={t('c:docs.view_example')}
+            data-tooltip="true"
+            data-tooltip-content={t('c:docs.view_example')}
+            onClick={(event) => openExamplesSheet(row, event.currentTarget)}
           >
-            {/* The underline sits on the path alone: on the button it would reach the badge too */}
-            <span dir="rtl" className={cn(cellLinkTextClass, 'min-w-0 flex-1 text-left')}>
-              &lrm;{row.path}
-            </span>
-            <SwitchedOffBadge enabledBy={row.enabledBy} />
+            <BirdIcon />
           </Button>
-        ),
+        );
       },
-      {
-        key: 'hasExample',
-        name: '',
-        minBreakpoint: 'sm',
-        width: 50,
-        renderCell: ({ row, tabIndex }) => {
-          if (!row.hasResponseBody) return <span className="w-full text-center text-muted-foreground text-xs">{t('c:not_applicable')}</span>;
-          // Has response body but no example yet
-          if (!row.hasExample) return <span className="w-full text-center text-muted-foreground">-</span>;
-          return (
-            <Button
-              variant="cell"
-              size="cell"
-              tabIndex={tabIndex}
-              className="justify-center opacity-60"
-              aria-label={t('c:docs.view_example')}
-              data-tooltip="true"
-              data-tooltip-content={t('c:docs.view_example')}
-              onClick={(event) => openExamplesSheet(row, event.currentTarget)}
-            >
-              <BirdIcon />
-            </Button>
-          );
-        },
-      },
-      {
-        key: 'id',
-        name: t('c:docs.operation_id'),
-        sortable: true,
-        minBreakpoint: 'md',
-        resizable: true,
-        width: 200,
-        minWidth: 120,
-        renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
-      },
-      {
-        key: 'summary',
-        name: t('c:summary'),
-        hidden: true,
-        sortable: true,
-        resizable: true,
-        minWidth: 200,
-        renderCell: ({ row }) => <span className="truncate text-sm">{row.summary || row.id}</span>,
-      },
-      ...extensionColumns,
-      mcpColumn,
-      ...tagKindColumns,
-    ];
-  });
+    },
+    {
+      key: 'id',
+      name: t('c:docs.operation_id'),
+      sortable: true,
+      minBreakpoint: 'md',
+      resizable: true,
+      width: 200,
+      minWidth: 120,
+      renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
+    },
+    {
+      key: 'summary',
+      name: t('c:summary'),
+      hidden: true,
+      sortable: true,
+      resizable: true,
+      minWidth: 200,
+      renderCell: ({ row }) => <span className="truncate text-sm">{row.summary || row.id}</span>,
+    },
+    ...extensionColumns,
+    mcpColumn,
+    ...tagKindColumns,
+  ];
+
+  return useColumnVisibility(columns);
 };

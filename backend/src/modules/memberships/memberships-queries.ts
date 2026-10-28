@@ -7,6 +7,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpers/select';
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
@@ -303,9 +304,16 @@ interface FindMembershipsByUserIdsOpts {
   userIds: string[];
 }
 
-/** Every membership of these users, in any organization. */
+/** A membership counts while its tenant is not archived: an organization deleted by its admin leaves every member's list at once. */
+export const inUnarchivedTenant = (tenantId: typeof membershipsTable.tenantId) =>
+  sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
+
+/** Every membership of these users that counts, in any organization, as a session reads its own (`loadMemberships`). */
 export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) => {
-  return ctx.var.db.select().from(membershipsTable).where(inArray(membershipsTable.userId, userIds));
+  return ctx.var.db
+    .select()
+    .from(membershipsTable)
+    .where(and(inArray(membershipsTable.userId, userIds), inUnarchivedTenant(membershipsTable.tenantId)));
 };
 
 interface RotateTenantMemberBindingsOpts {

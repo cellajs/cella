@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
 import { type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
-import { getScrollParent } from '~/modules/common/sticky-box';
+import { getScrollParent, viewportTopOf } from '~/modules/common/sticky-box';
 
 export type LocalTab = { id: string; label: TKey };
 
@@ -24,9 +24,7 @@ export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, classN
   const scrollToReset = () => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-    const scrollParent = getScrollParent(sentinel);
-    const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-    if (sentinel.getBoundingClientRect().top < containerTop) {
+    if (sentinel.getBoundingClientRect().top < viewportTopOf(getScrollParent(sentinel))) {
       sentinel.scrollIntoView({ behavior: 'instant', block: 'start' });
     }
   };

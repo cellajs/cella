@@ -4,12 +4,12 @@ import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 
-function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
+export function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
   const { t } = useTranslation();
   return <nav aria-label={t('c:breadcrumb')} data-slot="breadcrumb" {...props} />;
 }
 
-function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
+export function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   return (
     <ol
       data-slot="breadcrumb-list"
@@ -19,11 +19,11 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   );
 }
 
-function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
+export function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return <li data-slot="breadcrumb-item" className={cn('inline-flex items-center gap-1.5', className)} {...props} />;
 }
 
-function BreadcrumbLink({ render, className, ...props }: useRender.ComponentProps<'a'>) {
+export function BreadcrumbLink({ render, className, ...props }: useRender.ComponentProps<'a'>) {
   return useRender({
     defaultTagName: 'a',
     render,
@@ -35,7 +35,7 @@ function BreadcrumbLink({ render, className, ...props }: useRender.ComponentProp
   });
 }
 
-function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
+export function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: aria-current="page" represents the current breadcrumb and must not be focusable.
     <span
@@ -49,12 +49,10 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
-function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<'li'>) {
+export function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li data-slot="breadcrumb-separator" role="presentation" aria-hidden="true" className={cn('[&>svg]:size-3.5', className)} {...props}>
       {children ?? <ChevronRightIcon />}
     </li>
   );
 }
-
-export { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator };

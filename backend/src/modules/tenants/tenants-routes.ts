@@ -23,7 +23,7 @@ const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create a tenant for yourself',
     description:
-      'Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.',
+      'Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.',
     request: { body: jsonBody(selfCreateTenantBodySchema) },
     responses: { 200: json('Created tenant', tenantSchema) },
   }),

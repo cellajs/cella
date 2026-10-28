@@ -7,14 +7,13 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
   items: FloatingNavItem[];
-  bodyClass?: string;
   /** Any change to this value resets visibility to visible: pass a page key, sidebar state, etc. */
   resetTrigger?: unknown;
 }
 
 const labelCollapseMs = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
 
-export function FloatingNav({ items, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
+export function FloatingNav({ items, resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile);
   const setFloatingNavActive = useNavigationStore((state) => state.setFloatingNavActive);
@@ -43,7 +42,7 @@ export function FloatingNav({ items, bodyClass = 'floating-nav', resetTrigger }:
   const isActive = isMobile && items.some((item) => item.visible !== false);
 
   // The active flag reaches CSS through the body class (app-layout, menu sheet header) and React through the store (bottom bar)
-  useBodyClass({ [bodyClass]: isActive });
+  useBodyClass({ 'floating-nav': isActive });
   useEffect(() => {
     setFloatingNavActive(isActive);
     return () => setFloatingNavActive(false);

@@ -10,7 +10,7 @@ vi.mock('shared/schema-evolution', async (importOriginal) => {
     ...actual,
     widenedOpsKeyMap: (entityType: LensEntityType) => (entityType === 'attachment' ? { name: 'title' } : {}),
     normalizeOps: (entityType: LensEntityType, ops: Record<string, unknown>, stx: { fieldTimestamps?: Record<string, unknown> }) => {
-      if (entityType !== 'attachment') return { ops, stx, unknownFields: [] };
+      if (entityType !== 'attachment') return { ops, stx };
       // Synthetic expand rename: canonicalize name → title, mirror-write the twin.
       const nextOps = { ...ops };
       if ('name' in nextOps) {
@@ -22,7 +22,7 @@ vi.mock('shared/schema-evolution', async (importOriginal) => {
         if ('name' in ft) ft.title = ft.name;
         if ('title' in ft) ft.name = ft.title;
       }
-      return { ops: nextOps, stx: ft ? { ...stx, fieldTimestamps: ft } : stx, unknownFields: [] };
+      return { ops: nextOps, stx: ft ? { ...stx, fieldTimestamps: ft } : stx };
     },
   };
 });

@@ -14,8 +14,8 @@ it("another tab's delete closes this tab's database for good and signs it out, w
 
   // A tab with a newer bundle upgrades the database to the next version: this tab stays signed in on it.
   class NextVersion extends LocalUserDatabase {
-    constructor(ownerId: string) {
-      super(ownerId);
+    constructor(userId: string) {
+      super(userId);
       this.version(3).stores({ extra: 'id' });
     }
   }
