@@ -1,11 +1,10 @@
 import { CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useOnlineManager } from '~/hooks/use-online-manager';
 import { type AlertKey, useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useUIOffline } from '~/modules/common/alerter/use-ui-offline';
+import { useOfflineAlert } from '~/modules/common/alerter/use-offline-alert';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { forceOnline } from '~/query/offline/connectivity';
+import { recheckNow } from '~/query/offline/connectivity';
 
 const downAlertConfig = {
   offline: { icon: CloudOffIcon, titleKey: 'c:offline', textKey: 'c:offline.alert', variant: 'warning' },
@@ -13,32 +12,24 @@ const downAlertConfig = {
   auth_unavailable: { icon: TriangleAlertIcon, titleKey: 'c:auth_unavailable', textKey: 'c:auth_unavailable.text', variant: 'plain' },
 } as const;
 
+/** The server's down alert, else the offline alert; a server alert the user dismissed stays hidden while the layout is mounted. */
 export function DownAlert() {
   const { t } = useTranslation();
-  const isOnline = useOnlineManager();
-  const downAlert = useAlertStore((state) => state.downAlert);
+  const serverAlert = useAlertStore((state) => state.downAlert);
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
+  const offlineAlert = useOfflineAlert();
 
-  useUIOffline();
+  const shownServerAlert = serverAlert && !dismissedAlerts[serverAlert] ? serverAlert : null;
+  const downAlert = shownServerAlert ?? (offlineAlert.isShown ? 'offline' : null);
 
   const dismissAlert = () => {
-    if (!downAlert) return;
-    setDismissedAlerts((prev) => ({ ...prev, [downAlert]: true }));
+    if (!shownServerAlert) return offlineAlert.dismiss();
+    setDismissedAlerts((prev) => ({ ...prev, [shownServerAlert]: true }));
     setDownAlert(null);
   };
 
-  const retry = () => {
-    forceOnline();
-    dismissAlert();
-  };
-
-  // Returning connectivity re-arms the offline alert
-  useEffect(() => {
-    if (isOnline) setDismissedAlerts((prev) => ({ ...prev, offline: false }));
-  }, [isOnline]);
-
-  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null;
+  if (!downAlert) return null;
   const { icon: Icon, titleKey, textKey, variant } = downAlertConfig[downAlert];
 
   return (
@@ -53,7 +44,7 @@ export function DownAlert() {
             i18nKey={textKey}
             components={{
               site_anchor: <button type="button" className="link-inline font-semibold" onClick={dismissAlert} />,
-              retry_anchor: <button type="button" className="link-inline font-semibold" onClick={retry} />,
+              retry_anchor: <button type="button" className="link-inline font-semibold" onClick={() => void recheckNow()} />,
             }}
           />
         </AlertDescription>

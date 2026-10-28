@@ -2,36 +2,22 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 import { waitFor } from '~/utils/wait-for';
 
-/** Shallow by default (204); `?depth=full` answers with JSON diagnostics. */
+/** Shallow (204): whether the network reaches the API, not whether its database is up. */
 const healthUrl = `${appConfig.backendUrl}/health`;
-const fullHealthUrl = `${healthUrl}?depth=full`;
-const cacheTtlMs = 10_000;
 const probeTimeoutMs = 5000;
-const recoveryPollMs = 5000;
 
 /** Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects. */
 const probeRetries = 2;
 const probeRetryDelayMs = 750;
 
-let lastCheckAt = 0;
-let lastResult: boolean | null = null;
-let inFlight: Promise<boolean> | null = null;
+/** Waits between re-checks while offline, the last one repeating: an outage met on resume mostly ends within seconds. */
+const recheckDelaysMs = [1000, 2000, 5000];
 
-/** Probes `/health` after network failures to catch a false-positive browser online state; probes are cached and deduplicated, and a failure pauses queries and mutations through `onlineManager`. */
-export async function checkConnectivity(): Promise<boolean> {
-  if (lastResult !== null && Date.now() - lastCheckAt < cacheTtlMs) return lastResult;
-  if (inFlight) return inFlight;
+let probing = false;
+let recheckTimer: ReturnType<typeof setTimeout> | null = null;
+let recheckCount = 0;
 
-  inFlight = probeHealth();
-  try {
-    return await inFlight;
-  } finally {
-    // Cleared even when probeHealth throws, so no call is stuck waiting on a dead promise.
-    inFlight = null;
-  }
-}
-
-async function fetchHealthOnce(): Promise<boolean> {
+async function isReachable(): Promise<boolean> {
   try {
     const response = await fetch(healthUrl, {
       method: 'HEAD',
@@ -45,52 +31,73 @@ async function fetchHealthOnce(): Promise<boolean> {
   }
 }
 
-async function probeHealth(): Promise<boolean> {
-  let isReachable = false;
-  for (let attempt = 0; attempt <= probeRetries; attempt++) {
-    isReachable = await fetchHealthOnce();
-    if (isReachable) break;
-    if (attempt < probeRetries) await waitFor(probeRetryDelayMs);
-  }
-
-  lastCheckAt = Date.now();
-  lastResult = isReachable;
-
-  if (!isReachable) onlineManager.setOnline(false);
-
-  return isReachable;
-}
-
-/** Reset the cache when the browser fires the 'online' event, so the next failure triggers a fresh probe. */
-export function resetConnectivityCache() {
-  lastCheckAt = 0;
-  lastResult = null;
-}
-
-/** Bypass cached connectivity on tab resume and restore online state after a successful probe. */
-export async function revalidateConnectivity(): Promise<boolean> {
-  resetConnectivityCache();
-  const online = await checkConnectivity();
-  if (online) onlineManager.setOnline(true);
-  return online;
-}
-
-/** User-initiated force online. If the network is still down, the next failed fetch re-triggers the probe and reverts. */
-export function forceOnline() {
-  resetConnectivityCache();
-  onlineManager.setOnline(true);
-}
-
-/** Polls /health?depth=full until it answers or `signal` aborts; full depth verifies DB connectivity, not only network reachability. */
-export async function awaitRecovery(signal: AbortSignal): Promise<boolean> {
-  while (!signal.aborted) {
-    try {
-      const response = await fetch(fullHealthUrl, { cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(probeTimeoutMs)]) });
-      if (response.ok) return true;
-    } catch {
-      // Backend still unreachable.
+/**
+ * A request got no response: probe `/health` and take the app offline once every attempt fails, which pauses queries
+ * and mutations through `onlineManager`. A failure while offline or while a probe runs adds nothing.
+ */
+export async function reportNetworkFailure(): Promise<void> {
+  if (probing || !onlineManager.isOnline()) return;
+  probing = true;
+  try {
+    for (let attempt = 0; attempt <= probeRetries; attempt++) {
+      if (await isReachable()) return;
+      if (attempt < probeRetries) await waitFor(probeRetryDelayMs);
     }
-    await waitFor(recoveryPollMs);
+    onlineManager.setOnline(false);
+  } finally {
+    probing = false;
   }
-  return false;
+}
+
+/** A response arrived, whatever its status: the network reaches the API. After the browser's `offline` event only its `online` event ends the outage. */
+export function reportReachable(): void {
+  if (navigator.onLine) onlineManager.setOnline(true);
+}
+
+function clearRecheck() {
+  if (recheckTimer) clearTimeout(recheckTimer);
+  recheckTimer = null;
+}
+
+/** Re-checks only while a visible tab is offline and the browser reports a network; its `online` event ends the other outages. */
+function scheduleRecheck() {
+  clearRecheck();
+  if (onlineManager.isOnline() || document.hidden || !navigator.onLine) return;
+  const delay = recheckDelaysMs[Math.min(recheckCount, recheckDelaysMs.length - 1)];
+  recheckCount++;
+  recheckTimer = setTimeout(recheckNow, delay);
+}
+
+/**
+ * Probe once now and bring the app online if the API answers, else keep re-checking.
+ * @returns Whether the API answered.
+ */
+export async function recheckNow(): Promise<boolean> {
+  clearRecheck();
+  const reachable = await isReachable();
+  if (reachable) onlineManager.setOnline(true);
+  else scheduleRecheck();
+  return reachable;
+}
+
+/** Re-checks while the app is offline, and at once when the tab becomes visible; returns the stop function. */
+export function startConnectivity(): () => void {
+  const unsubscribe = onlineManager.subscribe((online) => {
+    recheckCount = 0;
+    if (online) clearRecheck();
+    else scheduleRecheck();
+  });
+  const onVisibilityChange = () => {
+    if (document.hidden || onlineManager.isOnline()) return clearRecheck();
+    recheckCount = 0;
+    void recheckNow();
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  scheduleRecheck();
+
+  return () => {
+    unsubscribe();
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    clearRecheck();
+  };
 }

@@ -1,6 +1,5 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
-import { resetConnectivityCache } from '~/query/offline/connectivity';
 import { quarantineFailedSync } from '~/query/offline/failed-sync';
 import { mutationIdOf } from '~/query/offline/mutation-variables';
 import { mutationRetry } from '~/query/offline/network-retry';
@@ -43,17 +42,6 @@ export const defaultStaleTime = 30 * 1000;
 /** Offline, no query goes stale by age; `Infinity` and not `'static'`, so an invalidated query still refetches. */
 const offlineStaleTime = Number.POSITIVE_INFINITY;
 const defaultGcTime = 7 * 24 * 60 * 60 * 1000;
-
-function handleOnlineStatus() {
-  onlineManager.setOnline(navigator.onLine);
-  if (navigator.onLine) resetConnectivityCache();
-}
-
-if (!import.meta.hot?.data?.listenersAttached) {
-  window.addEventListener('online', handleOnlineStatus);
-  window.addEventListener('offline', handleOnlineStatus);
-  handleOnlineStatus();
-}
 
 /**
  * Flags every mutation that pauses offline, whether it pauses live or is restored paused from the persisted cache: the
@@ -108,8 +96,23 @@ export const queryClient: QueryClient =
     },
   });
 
+/** Offline, no query goes stale by age; back online, every query goes stale and the mounted ones refetch in the background. */
+function applyOnlineState(online: boolean): void {
+  console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
+  const staleTime = online ? defaultStaleTime : offlineStaleTime;
+  // setDefaultOptions replaces every default: the mutation defaults carry the offline retry and pause.
+  const defaults = queryClient.getDefaultOptions();
+  queryClient.setDefaultOptions({ ...defaults, queries: { ...defaults.queries, staleTime } });
+  if (online) queryClient.invalidateQueries({ refetchType: 'active' });
+}
+
 // Subscribed once per page load; the HMR-preserved client keeps its subscription.
-if (!import.meta.hot?.data?.listenersAttached) flagPausedMutations(queryClient);
+if (!import.meta.hot?.data?.listenersAttached) {
+  flagPausedMutations(queryClient);
+  onlineManager.subscribe(applyOnlineState);
+  // The onlineManager starts online, then follows the browser's online and offline events: seed it with what the browser reports now.
+  onlineManager.setOnline(navigator.onLine);
+}
 
 let resolveCacheRestored: () => void;
 /** Resolves once PersistQueryClientProvider has restored the persisted cache. */
@@ -122,17 +125,4 @@ if (import.meta.hot) {
   import.meta.hot.data.queryClient = queryClient;
   import.meta.hot.data.cacheRestored = cacheRestored;
   import.meta.hot.data.listenersAttached = true;
-}
-
-/** `true` while offline; `false` restores the default. */
-export function setOfflineStaleTime(offline: boolean): void {
-  const staleTime = offline ? offlineStaleTime : defaultStaleTime;
-  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime } });
-  console.debug(`[Query] StaleTime: ${offline ? 'infinite (offline)' : `${defaultStaleTime / 1000}s`}`);
-}
-
-/** Back online: every query goes stale, and the mounted ones refetch in the background. */
-export function silentRevalidateOnReconnect(): void {
-  queryClient.invalidateQueries({ refetchType: 'active' });
-  console.debug('[Query] Silent revalidation on reconnect');
 }

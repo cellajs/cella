@@ -2,7 +2,8 @@ import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { apiErrorFromResponse, clientConfig } from '~/lib/api';
-import { checkConnectivity } from '~/query/offline/connectivity';
+import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
+import { isNetworkError } from '~/query/offline/network-retry';
 
 /**
  * Runtime config for the generated API client (SDK output in /sdk/gen/).
@@ -33,9 +34,10 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
       response = await clientConfig.fetch(nextInput, nextInit);
     } catch (error) {
       // Network-level failure (no HTTP response), probe actual connectivity
-      if (error instanceof TypeError) checkConnectivity();
+      if (isNetworkError(error)) void reportNetworkFailure();
       throw error;
     }
+    reportReachable();
 
     if (response.ok) return response;
     throw await apiErrorFromResponse(response);

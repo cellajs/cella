@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('~/query/offline/connectivity', () => ({ checkConnectivity: vi.fn() }));
+vi.mock('~/query/offline/connectivity', () => ({ reportNetworkFailure: vi.fn(), reportReachable: vi.fn() }));
 
 const { ApiError } = await import('~/lib/api');
 const { createClientConfig } = await import('~/lib/api-client');

@@ -9,7 +9,8 @@ import { vi } from 'vitest';
 export const { queryClient } = await import('~/query/query-client');
 
 // The retry that leads to the pause waits for this delay first.
-queryClient.setDefaultOptions({ mutations: { ...queryClient.getDefaultOptions().mutations, retryDelay: 0 } });
+const defaults = queryClient.getDefaultOptions();
+queryClient.setDefaultOptions({ ...defaults, mutations: { ...defaults.mutations, retryDelay: 0 } });
 
 /** Runs a hook in one server render under the app's query client; the mutate functions it returns work after the render. */
 export function callHook<T>(useHook: () => T): T {
