@@ -92,7 +92,7 @@ A document is retired only together with its entity. Open sessions end at once, 
 
 ### Other writers
 
-The relay is not the only one that appends to a log: outside writes, updates posted over HTTP and, during a rollout, a second relay do too. Each relay listens for Postgres notifications of those appends and passes the new rows on to its editors. A notification can be missed, so every session also checks the log when a socket connects, before it compacts and once a minute. A missed notification costs at most a minute.
+The relay is not the only one that appends to a log: outside writes, updates posted over HTTP and, during a rollout, a second relay do too. Each relay listens for Postgres notices of those appends and passes the new rows on to its editors. A notice can be missed, so every session also checks the log when a socket connects, before it compacts and once a minute. A missed notice costs at most a minute.
 
 ### Over HTTP
 
@@ -117,7 +117,7 @@ A sweep, at boot and every five minutes, saves the logs no session holds: those 
 | Access revoked | The socket closes when its token expires and cannot reconnect. A pending save is credited to the newest editor who may still update the entity. When none may, the log stays until a write succeeds. |
 | Entity deleted | Its document is retired: sessions end at once and each client stops, offering the edits it never saved to copy. |
 | Description written outside the relay | Editors receive the write in place, with no reconnect. It overrides earlier edits where it differs. Concurrent edits in blocks it keeps survive, and text typed into a block it removes is lost with the block. |
-| The notification listener drops | It reconnects with backoff and every session catches up. Meanwhile outside writes reach editors within a minute, and health reports `degraded`. |
+| The notice listener drops | It reconnects with backoff and every session catches up. Meanwhile outside writes reach editors within a minute, and health reports `degraded`. |
 | A live update arrives during editing | A read that lags the relay cannot undo what the editor shows: [Sync engine](../cella/SYNC_ENGINE.md#yjs). |
 
 ## Operational constraints

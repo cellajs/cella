@@ -5,7 +5,7 @@ This document covers the CDC worker: the service that turns committed Postgres c
 ### TL;DR
 
 A **Change Data Capture** worker watches committed database changes and turns them into audit history, counts,
-totals, and live client notifications. It keeps changes in commit order and groups nearby changes
+totals, and the changes the live stream announces. It keeps changes in commit order and groups nearby changes
 when the same clients should receive them. Each change gets an order number and all counts are updated.
 
 ## Vocabulary
@@ -14,7 +14,7 @@ Make sure you already read the [Sync engine](../cella/SYNC_ENGINE.md#selective-s
 
 | Term | Meaning |
 | --- | --- |
-| **Change** | One insert, update or delete of a row, read from the WAL. The code calls it an event. |
+| **Change** | One insert, update or delete of a row, read from the WAL. In memory the worker holds it as a `PendingEvent`. |
 | **Source transaction** | The transaction that made the changes. The worker gets it whole, when it commits. |
 | **Position** | A place in the WAL (an LSN). |
 | **Slot** | Postgres's bookmark for the worker. Postgres keeps the WAL from the slot's acknowledged position on. |
@@ -22,7 +22,7 @@ Make sure you already read the [Sync engine](../cella/SYNC_ENGINE.md#selective-s
 | **Record** | Write what a change leaves in the database: its activity (the audit row), its sequence value, the counters and the stamp on its row. |
 | **Acknowledge** | Tell the slot that everything up to a position is recorded. Postgres never delivers it again. |
 | **Read again** | Stop reading without acknowledging and start anew. Postgres delivers the same changes again, and what is recorded already is not recorded twice. |
-| **Audience** | The rows of one type under one path, which the same clients may read. The API gets one message per audience. |
+| **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience. |
 | **Books** | The numbers the worker keeps in `channel_counters`: the counts, the sequence counter and the frontiers. |
 | **Stuck** | Five failures in a row at one position that the change itself caused. |
 | **Lost case** | A state the WAL cannot repair: no slot, empty counters, a stuck worker, a rebuild that was interrupted. It ends in a rebuild. |
@@ -69,7 +69,7 @@ Recording happens once per change, however often the change arrives. An activity
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a change frame that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
 
 ## Internal API socket
 
@@ -116,7 +116,7 @@ One verify or rebuild runs at a time. A rebuild starts by itself in these cases;
 
 Every rebuild leaves an incident and moves the generation on, and one the worker started by itself logs an error. A generation grows and is never below the clock in minutes, so a database restored from a backup cannot hand out a number a client already holds. The API learns of a new generation from the worker's health push and ends every app stream with `resync`. What a client does then: [Sync engine](../cella/SYNC_ENGINE.md#rebuilt-books).
 
-What a lost case costs: rows changed while the slot was gone, or in a given-up backlog, keep the `seq` they had and get no activity and no notification. Counts, sequence values and every client's data are right again afterwards.
+What a lost case costs: rows changed while the slot was gone, or in a given-up backlog, keep the `seq` they had and get no activity and no change frame. Counts, sequence values and every client's data are right again afterwards.
 
 ## Operational constraints
 
@@ -132,12 +132,12 @@ What a lost case costs: rows changed while the slot was gone, or in a given-up b
 
 ### Counter keys
 
-Keys in `channel_counters` are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
+Keys in `channel_counters` are `sequence`, `s:<signal type>`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
 
 | Key | Scope | Meaning |
 | --- | --- | --- |
 | `sequence` | Org-wide | Sequence reservation counter |
-| `membership` | Org-wide | Bump-only membership change signal |
+| `s:{signal type}` | Org-wide | Version of a versioned signal, such as `s:membership.changed` |
 | `e:f:{type}` | Subtree | Frontier of rows at or below the node |
 | `e:f:h:{type}` | Home-only | Frontier of rows homed at the node |
 | `e:c:{type}` | Subtree | Count of countable rows at or below the node |
