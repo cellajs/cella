@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: prepareEmails
@@ -17,7 +17,7 @@ Every template call site and the test setup's mailer mock in the template use th
 
 ## Blast radius
 
-Sync-breaking for app-owned code that calls or mocks `mailer.prepareEmails` (typecheck flags each site). An app with
+Breaking for app-owned code that calls or mocks `mailer.prepareEmails` (typecheck flags each site). An app with
 none has nothing to do. No database, lens or `clientCacheVersion` change.
 
 ## Run

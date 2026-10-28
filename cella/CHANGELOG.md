@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.28.0](https://github.com/cellajs/cella/compare/0.27.0...0.28.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* template changes reach an app as an upgrade: pnpm cella upgrade, the cella-upgrade skill, breaking alignments ([#1595](https://github.com/cellajs/cella/issues/1595))
+
+### 🐞 Bug fixes
+
+* **backend:** a deploy whose admin role may not use pg_cron migrates without the retention job and says so ([#1600](https://github.com/cellajs/cella/issues/1600)) ([63f37a1](https://github.com/cellajs/cella/commit/63f37a1f3b71d5f91985a0139f1f23a7842790d6))
+
+
+### 🔧 Small improvements
+
+* template changes reach an app as an upgrade: pnpm cella upgrade, the cella-upgrade skill, breaking alignments ([#1595](https://github.com/cellajs/cella/issues/1595)) ([6dad463](https://github.com/cellajs/cella/commit/6dad4631fd0d47a6b328cf4cefe9736f76b191a3))
+
+
+### 📖 Documentation
+
+* every sentence is about its page, and a link stays only where a reader needs it ([#1603](https://github.com/cellajs/cella/issues/1603)) ([4d255ca](https://github.com/cellajs/cella/commit/4d255cae0bd10633181fbaf7f75b70adb3f5d095))
+
+
+### 🧹 Chores
+
+* **infra:** stack files carry the salts of the rotated passphrases ([#1597](https://github.com/cellajs/cella/issues/1597)) ([8321350](https://github.com/cellajs/cella/commit/83213503cd154a50406bcb85f0947853c57cde26))
+
+## [0.27.0](https://github.com/cellajs/cella/compare/0.26.0...0.27.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** routes document the error statuses they answer with, and tests refuse an undocumented one ([#1591](https://github.com/cellajs/cella/issues/1591))
+
+### 🎉 New features
+
+* **backend:** routes document the error statuses they answer with, and tests refuse an undocumented one ([#1591](https://github.com/cellajs/cella/issues/1591)) ([7520e6a](https://github.com/cellajs/cella/commit/7520e6a27cc6588b21a16b775d5f74b5bfea232c))
+
+
+### 🐞 Bug fixes
+
+* **backend:** the deploy's migrate step reads pg_cron's database from its env on managed Postgres ([#1598](https://github.com/cellajs/cella/issues/1598)) ([7d7b6a3](https://github.com/cellajs/cella/commit/7d7b6a35913eac29525c9bc7d32d6067de283271))
+* sessions list reads as sign-ins, not alarms ([#1589](https://github.com/cellajs/cella/issues/1589)) ([8f5dfc6](https://github.com/cellajs/cella/commit/8f5dfc64f2a7b0658f8272cc460d071ca7aafcbd))
+
+
+### 🔧 Small improvements
+
+* **locales:** one key per sentence, key families made consistent, a lowercase formatter and default variables ([#1590](https://github.com/cellajs/cella/issues/1590)) ([c04fffe](https://github.com/cellajs/cella/commit/c04fffef6897a17f7296c9374b3e13d023967627))
+
+
+### 🧹 Chores
+
+* ui tuning: offline files button with a fill meter, shorter dialog bar, marks above it, fade-only text ([#1592](https://github.com/cellajs/cella/issues/1592)) ([ab7ae7e](https://github.com/cellajs/cella/commit/ab7ae7eb689c166abc7072b3ddc414807cf1c107))
+
 ## [0.26.0](https://github.com/cellajs/cella/compare/0.25.0...0.26.0) (2026-10-28)
 
 

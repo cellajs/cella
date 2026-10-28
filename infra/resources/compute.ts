@@ -13,7 +13,7 @@ import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-
 import { handoffBundleKey } from '../lib/scaleway/machine-keys';
 import { BOOT_IMAGE_NAME, imageRepositoryOf, type ResolvedImage, resolveReleaseImage } from '../lib/scaleway/release-image';
 import type { ServiceDefinition } from '../lib/services';
-import { naming, region, tags, zone } from '../pulumi-context';
+import { naming, region, tags, zone, zones } from '../pulumi-context';
 import { renderCloudInit } from './cloud-init';
 import { createComposeEnvBuilder } from './compose-env';
 import { activeGenerations, coHosted, collocated, enabled, type Generation, hostSlug, secretConsumersFor } from './generations';
@@ -46,15 +46,19 @@ const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey)
 const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : pulumi.secret('');
 
 // Fully closed inbound: the LB reaches VMs over the private network, and no machine takes a login; the serial console shows its output.
+const closedGroup = (logicalName: string, groupZone: string) =>
+  new scaleway.instance.SecurityGroup(logicalName, {
+    name: naming.resource('compute-sg'),
+    inboundDefaultPolicy: 'drop',
+    outboundDefaultPolicy: 'accept',
+    inboundRules: [],
+    zone: groupZone,
+    tags,
+  });
 
-const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
-  name: naming.resource('compute-sg'),
-  inboundDefaultPolicy: 'drop',
-  outboundDefaultPolicy: 'accept',
-  inboundRules: [],
-  zone,
-  tags,
-});
+const securityGroup = closedGroup('compute-sg', zone);
+// A group is zonal, and the builder is made in another zone of the region when its type is out of stock in this one (tasks/build-release.ts).
+for (const other of zones.filter((candidate) => candidate !== zone)) closedGroup(`compute-sg-${other}`, other);
 
 /** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. A secret is read from the copy of the first consumer the machine carries. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {

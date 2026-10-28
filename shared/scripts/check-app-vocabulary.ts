@@ -13,7 +13,7 @@ const productNameAllowlist: VocabularyAllowlist = {
   prefixes: ['frontend/src/modules/marketing/', 'frontend/src/content/'],
 };
 /**
- * The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>`, the css/md forms and a
+ * The app-side marker the cella-upgrade skill puts on intentional app edits: `// fork: <why>`, the css/md forms and a
  * ` * fork: <why>` line inside a JSDoc block. YAML has a `# fork: <why>` line, which elsewhere could be a private field.
  */
 const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
@@ -38,23 +38,23 @@ const templateAllowlist: VocabularyAllowlist = {
     'CHANGELOG.md',
     'cella/CHANGELOG.md',
     'cella/cella.config.ts',
-    // The cella-sync skill documents the CLI's sync workflow and the app-side marker, both in the CLI's term; it stays
-    // byte-identical with the apps' copies, so `pnpm cella sync` reports it as identical
-    'cella/skills/cella-sync/SKILL.md',
+    // The cella-upgrade skill documents the CLI's upgrade workflow and the app-side marker, both in the CLI's term; it
+    // stays byte-identical with the apps' copies, so `pnpm cella upgrade` reports it as identical
+    'cella/skills/cella-upgrade/SKILL.md',
     'shared/scripts/check-app-vocabulary.ts',
   ],
   // Alignment READMEs address app maintainers pulling template changes, whom the CLI's term describes precisely
   prefixes: ['cella/alignments/'],
 };
 
-/** Relative to the repo root; `shared/config` never syncs, so the file is the app's to fill. */
+/** Relative to the repo root; `shared/config` never merges, so the file is the app's to fill. */
 const appAllowlistPath = 'shared/config/vocabulary-allowlist.ts';
 
 function isAllowed(file: string, allowlist: VocabularyAllowlist): boolean {
   return allowlist.files.includes(file) || allowlist.prefixes.some((prefix) => file.startsWith(prefix));
 }
 
-/** The CLI's source-control term in a file's path and text, outside the sync markers and the allowlisted files. */
+/** The CLI's source-control term in a file's path and text, outside the fork markers and the allowlisted files. */
 export function vocabularyFindings(file: string, source: string, allowlist: VocabularyAllowlist = templateAllowlist): Finding[] {
   if (isAllowed(file, allowlist)) return [];
 

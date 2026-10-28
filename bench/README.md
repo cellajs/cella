@@ -87,7 +87,7 @@ A run fails, and is neither compared nor saved, when one of these fails:
 - **Counters.** `expect` names counters that must have counted, `forbid` counters that must stay at zero. `--short` checks only `forbid`: each role plays once.
 - **Activities.** The rows a scenario counts as `bench.rows_written` must match the activities the CDC worker recorded for the bench organization.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change of the organization's `<type>` count in `channel_counters`.
-- **Books.** A full run ends with the worker's own verify (`pnpm sync:verify`) of its counters against the tables. Differences, or no answer in time, fail the run; on a difference the worker also rebuilds its books ([Verify and rebuild](../cdc/README.md#verify-and-rebuild)).
+- **Books.** A full run ends with the worker's own verify (`pnpm sync:verify`) of its counters against the tables. Differences, or no answer in time, fail the run.
 
 A scenario of your own gets the response check for free and the CDC checks by counting those rows. `--all` pauses between scenarios so a saturating one does not slow the next.
 
@@ -108,26 +108,6 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 Baselines and logs live in `cella-bench/` inside the git directory (`git rev-parse --git-common-dir`), which every worktree of the clone shares and `git status` never shows. A passing full run appends to `baselines/<scenario>.json`, and the next run compares its `primary` latency with it: the p95 response time unless the scenario picks another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
 
-## Collaborative typing
-
-`yjs-typing` drives real y-websocket clients ([yjs-typing.ts](./src/yjs-typing.ts)) against the relay. Each document is a bench attachment with a few typing clients and an idle viewer, while other users watch the SSE stream.
-
-```sh
-pnpm bench yjs-typing                                  # with its checks
-YJS_DOCS=40 YJS_DURATION_S=60 pnpm bench yjs-typing    # another shape
-```
-
-| Variable | Meaning |
-| --- | --- |
-| `YJS_DOCS` | Documents edited at once |
-| `YJS_TYPERS` | Typing clients per document |
-| `YJS_DURATION_S` | Typing time |
-| `YJS_DOC_OFFSET` | First bench attachment: a second run on one database takes fresh documents |
-
-The others, with every default, are in [config.ts](./src/config.ts). The report covers the latency from a keystroke to a viewer and to the relay's `Saved` answer, how often each document is materialized to its row, the load on the relay, API, CDC worker and Postgres, and how long until every edit is saved and the same everywhere.
-
-The relay writes a document's last state a while after its last client leaves (`yjsCleanupDelayMs`): wait that long after a typing run before a run whose activity count must be exact.
-
 ## Interpreting results
 
 Bench measures the live dev stack. Before calling a result a regression:
@@ -137,4 +117,3 @@ Bench measures the live dev stack. Before calling a result a regression:
 - **Saturation.** At their configured arrival rates `attachment-edit` and `page-load` saturate a laptop that also runs the stack: latencies then show queueing, not the endpoint. Compare the trend between runs.
 - **One generator thread.** The runner sends all load from one Node thread. A high `gen lag`, which the run warns about, means that thread is the limit, not the stack.
 - **A worktree's own stack.** Bench follows the checkout's port offset, so a worktree measures its own stack, never the main checkout's.
-- **Telemetry is off without a key** ([Observability](../cella/OTEL.md#destination)).

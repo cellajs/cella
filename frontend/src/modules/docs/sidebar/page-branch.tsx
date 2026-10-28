@@ -5,7 +5,7 @@ import { getSection, scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
-import { sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
+import { sidebarBulletClass, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
@@ -84,9 +84,6 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             if (!hasChildren) closeSidebarSheetAndNavigate(event);
           }}
         >
-          {!isRoot && (
-            <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
-          )}
           <span className="truncate">{page.name}</span>
           {hasChildren && (
             <ChevronDownIcon
@@ -98,6 +95,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           )}
         </Link>
       </div>
+      {!isRoot && <div className={sidebarBulletClass} />}
 
       {hasChildren && (
         <CollapsibleContent className={collapsiblePanelClass}>

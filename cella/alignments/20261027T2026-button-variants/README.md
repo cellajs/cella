@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: hover:bg-accent/, hover:bg-foreground/, hover:bg-muted/, hover:bg-secondary, data-dropdowner-active:bg-, --secondary, --accent, --muted, --brand
@@ -23,7 +23,7 @@ dialog, sheet, alert, toast and chip close buttons are one ghost icon button. `t
 
 ## Blast radius
 
-Frontend only. After the sync, `plain` and `none` fail typecheck and the codemod fixes `plain`. The rest only shows by
+Frontend only. After the upgrade, `plain` and `none` fail typecheck and the codemod fixes `plain`. The rest only shows by
 reading: color overrides, own hovers, open-menu fills, a one-side border on a button. Neutral `plain` buttons look alike;
 tinted ones turn neutral. No database, lens or cache change.
 
@@ -59,8 +59,8 @@ mode.
 
 ## Known app sites
 
-Scanned on 2026-10-27 at each app's checkout (synced at `a874d1872`). Neither app forks a changed primitive. Template
-files an app left unchanged update with the sync, which carries 30 `plain` rewrites and the 3 `none` sites; these remain.
+Scanned on 2026-10-27 at each app's checkout (last upgraded to `a874d1872`). Neither app forks a changed primitive. Template
+files an app left unchanged update with the upgrade, which carries 30 `plain` rewrites and the 3 `none` sites; these remain.
 
 projectcampus:
 

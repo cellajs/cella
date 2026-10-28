@@ -34,7 +34,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline, from building a missing release to removing the old machines ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)).
+It owns the whole pipeline, from building a missing release to removing the old machines.
 
 **Manage** is the same `pnpm infra` on an existing stack: one menu to observe, change privileged resources, keys and secrets, reach the database, repair and tear down. Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help`. There is no unattended mode: a change needs a person at the prompt.
 
@@ -42,21 +42,21 @@ It owns the whole pipeline, from building a missing release to removing the old 
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
+1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one.
 2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
-3. **Least-privilege keys.** Each key does one kind of work and is found by its name ([principals.ts](lib/scaleway/principals.ts)), never by a stored id ([API keys](../cella/deployment/KEYS.md#api-keys)).
+3. **Least-privilege keys.** Each key does one kind of work and is found by its name, never by a stored id.
 
 ## Security boundaries
 
-- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's ([API keys](../cella/deployment/KEYS.md#api-keys)).
+- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's.
 - **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes the operator key.
-- **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the key reaches the machine in a bundle that can be read once ([secret folders](../cella/deployment/KEYS.md#secret-folders)).
+- **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the key reaches the machine in a bundle that can be read once.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
-- **Builds hold no key where the app's code runs** ([the builder](../cella/DEPLOYMENT.md#the-builder)).
+- **Builds hold no key where the app's code runs.**
 
 ## Observability
 
-Every deploy writes a [run record](../cella/DEPLOYMENT.md#run-records). With a telemetry sink, a deploy also exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Seeding the sink's ingest key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and machines alike; `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The boot runner replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+Every deploy writes a run record. With a telemetry sink, a deploy also exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Seeding the sink's ingest key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and machines alike; `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The boot runner replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
 
 ## Status command
 
@@ -96,8 +96,6 @@ Stable check `id`s:
 - `secrets.required`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`
 
-A stale lock or an interrupted Pulumi operation has [its own runbook](../cella/deployment/RUNBOOKS.md#a-stale-stack-lock).
-
 ## Key files
 
 `infra/.env.<mode>` holds the environment's Scaleway project (`SCW_PROJECT_ID`, written by setup) and the observer key (`SCW_OBSERVER_*`). It overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A value may be a pointer, `keychain:<service>/<account>` or `op:op://…`, resolved on load from the OS keychain or the 1Password CLI. A bare `infra/.env` is never read.
@@ -121,10 +119,10 @@ One name per concept across code and docs:
 | **mode** | `production` or `staging`; also the Pulumi stack name. |
 | **release** | One git SHA baked into images and generations. |
 | **deploy** | One run of the deploy command. |
-| **runner** | The app's small machine that starts a deploy when an environment's target moves ([the runner](../cella/DEPLOYMENT.md#the-runner)). |
-| **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy ([the main job](../cella/DEPLOYMENT.md#the-main-job)). |
-| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs` ([run records](../cella/DEPLOYMENT.md#run-records)). |
-| **builder** | A machine a deploy makes to build a release not built yet, deleted after ([the builder](../cella/DEPLOYMENT.md#the-builder)). |
+| **runner** | The app's small machine that starts a deploy when an environment's target moves. |
+| **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy. |
+| **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
+| **builder** | A machine a deploy makes to build a release not built yet, deleted after. |
 | **rollout** | The two-wave fleet-moving phase of a deploy. |
 | **generation** | One immutable service VM at one content-addressed `genId`. |
 | **wave** | One stack update's services, cut over concurrently; 1 = primary, 2 = the rest. |
@@ -133,11 +131,11 @@ One name per concept across code and docs:
 | **control object** | `control/<stack>.json` in the state bucket: which generation each service runs. |
 | **stack lock** | `control/<stack>.lock.json`: the lock that lets one deploy or operator action run at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not VM boot. |
-| **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion ([API keys](../cella/deployment/KEYS.md#api-keys)). |
-| **operator key** | The `<app>-operator` key for privileged work: no IAM write, accepted from your dedicated IP address only ([operator key](../cella/deployment/KEYS.md#operator-key)). |
+| **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
+| **operator key** | The `<app>-operator` key for privileged work: no IAM write, accepted from your dedicated IP address only. |
 | **observer key** | The read-only `<app>-observer` key, from the same address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
-| **privileged** | A resource only an apply on the operator key changes ([privileged changes](../cella/deployment/CHANGING_INFRASTRUCTURE.md#privileged-changes)). |
+| **privileged** | A resource only an apply on the operator key changes. |
 | **boot runner** | The `infra-boot` container run at every boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |

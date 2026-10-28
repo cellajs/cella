@@ -9,6 +9,7 @@ import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { Spotlighter } from '~/modules/common/spotlighter/provider';
 import { AppNav } from '~/modules/navigation/app-nav';
+import { SkipLink } from '~/modules/navigation/focus-bridge';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
@@ -23,6 +24,7 @@ const Uploader = lazyNamed(() => import('~/modules/common/uploader/uploader'), '
 export function AppLayout() {
   return (
     <div className="max-sm:not-in-[.floating-nav]:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+      <SkipLink />
       <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <SidebarWrapper>
           <AppNav />

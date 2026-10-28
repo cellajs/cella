@@ -237,11 +237,9 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     try {
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
-      const { naming, region } = deriveInfra(session.appConfig);
+      const { naming, region, zones } = deriveInfra(session.appConfig);
       const rollout = (await session.scalewayFacts()).rollout;
       if (!rollout) return undefined;
-      // Every zone of the region: a machine an intruder made in another zone of the project is still the project's.
-      const zones = [1, 2, 3].map((index) => `${region}-${index}`);
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
       // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
       const secretPlace = (secretId: string) =>
@@ -258,6 +256,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         listAll<InventoryFacts['groups'][number]>(auth, org('groups'), 'groups'),
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
+        // Every zone of the region: a machine an intruder made in another zone of the project is still the project's.
         Promise.all(
           zones.map((zone) =>
             listAll<{ name: string }>(

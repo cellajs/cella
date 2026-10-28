@@ -3,7 +3,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { usePageChannelKey } from '~/hooks/use-page-channel-key';
 import { Alerter } from '~/modules/common/alerter/alerter';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
-import { FocusTarget } from '~/modules/navigation/focus-bridge';
+import { focusTargets } from '~/modules/navigation/focus-bridge';
 import { getSkipPageEnter } from '~/utils/nav-transition';
 
 export function AppContent() {
@@ -17,8 +17,7 @@ export function AppContent() {
         id="app-content"
         className="relative flex min-h-svh min-w-0 flex-1 flex-col max-sm:not-in-[.floating-nav]:min-h-[calc(100svh-4rem-env(safe-area-inset-bottom,0px))]"
       >
-        <main id="app-content-inner" className="focus-view-scope flex flex-1 flex-col focus:outline-hidden">
-          <FocusTarget target="content" />
+        <main id={focusTargets.content} tabIndex={-1} className="focus-view-scope flex flex-1 flex-col focus:outline-hidden">
           <Alerter mode="app" />
           <Outlet />
         </main>

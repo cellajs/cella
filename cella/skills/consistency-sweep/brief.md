@@ -15,7 +15,7 @@ Every pass agent reads this first, then the group brief and the scout report. Re
 2. Consistency: one way of doing one thing, inside this group and with the rest of the frontend.
 3. Fewer lines, as a consequence of 1 and 2, never as a goal of its own.
 
-Behavior is preserved by default. The maintainer's rule: less code wins; a bug or a redundancy is fixed, not reported; a simplification that removes code or a second way of doing one thing may change rendering a little, and then the commit and the report name the visible change. What still goes to the report: a change that forces a consumer outside the group to edit its code (for the template, anything sync-breaking for the apps), a product decision (wording, a feature's presence), and anything you cannot explain in one line.
+Behavior is preserved by default. The maintainer's rule: less code wins; a bug or a redundancy is fixed, not reported; a simplification that removes code or a second way of doing one thing may change rendering a little, and then the commit and the report name the visible change. What still goes to the report: a change that forces a consumer outside the group to edit its code (for the template, anything breaking for the apps), a product decision (wording, a feature's presence), and anything you cannot explain in one line.
 
 ## Consumers you must not break
 

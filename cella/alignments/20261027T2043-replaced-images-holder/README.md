@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: releaseReplacedImages, findEntityDescriptionForShare, findYjsDocumentUnderKeyShare
@@ -19,7 +19,7 @@ queries are named for what they return.
 
 ## Blast radius
 
-Sync-breaking for app-owned callers of `releaseReplacedImages` (typecheck flags each). A forked copy of the relay's
+Breaking for app-owned callers of `releaseReplacedImages` (typecheck flags each). A forked copy of the relay's
 `concurrency.test.ts` that overrides the old query name stops overriding without a type error. No database, lens or
 `clientCacheVersion` change.
 

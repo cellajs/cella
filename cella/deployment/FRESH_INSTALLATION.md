@@ -22,14 +22,14 @@ Without a local `Pulumi.<stack>.yaml`, `pnpm infra` runs the install wizard; on 
    ```
 
 3. A Scaleway project per environment (optional): without `SCW_PROJECT_ID` in `infra/.env.<mode>`, the wizard picks or creates one and writes its id there. Each environment needs a project of its own.
-4. A fixed public IPv4 address to work from, such as an office line or a VPN exit, and a password manager. Scaleway accepts the operator key the wizard makes from that address only, and the key is shown once ([Operator key](./KEYS.md#operator-key)).
+4. A fixed public IPv4 address to work from, such as an office line or a VPN exit, and a password manager. Scaleway accepts the operator key the wizard makes from that address only, and the key is shown once.
 
 ## 2. Your Owner API key
 
 1. Easiest: as an organization Owner, generate an [API key for your user](https://console.scaleway.com/iam/users) (User menu → API keys → Generate), with an expiry of hours.
 2. Or an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) with **ProjectManager + IAMManager** on the organization, with a key that expires.
 
-The key serves the setup's Owner moment and **Set up the runner** (step 4). The CLI refuses a key without an expiry or with more than a day left. Later Owner moments, such as **Update identities** or **Rotate keys**, take a key made for the occasion ([API keys](./KEYS.md#api-keys)); everything else runs on the operator key.
+The key serves the setup's Owner moment and **Set up the runner** (step 4). The CLI refuses a key without an expiry or with more than a day left. Later Owner moments, such as **Update identities** or **Rotate keys**, take a key made for the occasion; everything else runs on the operator key.
 
 ## 3. Run the infra CLI
 
@@ -40,7 +40,7 @@ pnpm infra
 The first setup has two parts. The **Owner moment** writes IAM and nothing else, with the Owner API key you paste:
 
 1. Picks or creates the Scaleway project (prerequisite 3).
-2. Creates the machine and deploy identities with their policies and keys ([Machine policies](./CHANGING_INFRASTRUCTURE.md#machine-policies)).
+2. Creates the machine and deploy identities with their policies and keys.
 3. Lets the app's operator reach this environment. The app's first environment creates the operator for the dedicated address you give, and shows its key once: store it. A later one adds its project, and the key keeps working.
 4. Does the same for the app's observer, and writes its key to `infra/.env.<mode>` on this machine.
 5. Offers to **revoke the Owner API key you pasted**. Decline when you set up the runner next (step 4): it needs the key again.
@@ -57,13 +57,13 @@ A second environment of the same app runs the same two parts: its Owner moment a
 ## 4. Let the runner deploy
 
 1. Commit `infra/Pulumi.<mode>.yaml`, so other checkouts see the stack set up.
-2. **Set up the runner** for this environment (`pnpm infra runner-identity --mode <mode>`, your Owner API key) and commit the `infra/runner.json` it writes ([The runner](../DEPLOYMENT.md#the-runner)).
+2. **Set up the runner** for this environment (`pnpm infra runner-identity --mode <mode>`, your Owner API key) and commit the `infra/runner.json` it writes.
 3. **Replace the runner** (`pnpm infra runner-replace`, operator key). From then on the runner deploys the environment's target; `pnpm infra runs` shows each run, and `pnpm infra start-deploy` deploys at once.
 4. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application.
 
 ## 5. Sign in as first admin
 
-Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty ([main.migrate.ts](../../backend/src/main.migrate.ts)). Until that secret has a value, the first deploy ends blocked at "Verify runtime secrets are deliverable", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
+Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Verify runtime secrets are deliverable", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
 2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.

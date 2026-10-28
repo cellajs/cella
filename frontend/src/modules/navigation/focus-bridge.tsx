@@ -4,20 +4,36 @@ import { navigationStore, useNavigationStore } from '~/modules/navigation/naviga
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-/** Shared by FocusBridge (source) and FocusTarget (destination). */
-export const focusTargets = { sheet: 'focus-target-sheet', content: 'focus-target-content', sidebar: 'focus-target-sidebar' } as const;
+/** Shared by FocusBridge (source) and FocusTarget (destination); the content target is the app's `<main>` itself. */
+export const focusTargets = { sheet: 'focus-target-sheet', content: 'app-content-inner', sidebar: 'focus-target-sidebar' } as const;
 
 /** Invisible landing zone: place it inside the container a FocusBridge should jump to. */
-export function FocusTarget({ target }: { target: keyof typeof focusTargets }) {
+export function FocusTarget({ target }: { target: 'sheet' | 'sidebar' }) {
   return <div id={focusTargets[target]} tabIndex={-1} className="sr-only" />;
 }
 
-/** Adds `tabindex=-1` when needed, so portaled content can take focus. */
-function focusById(id: string) {
-  const element = document.getElementById(id);
+/** Adds `tabindex=-1` when needed, so portaled content and a plain `<main>` can take focus. */
+function focusElement(element: HTMLElement | null) {
   if (!element) return;
   if (!element.hasAttribute('tabindex')) element.setAttribute('tabindex', '-1');
   element.focus();
+}
+
+const focusById = (id: string) => focusElement(document.getElementById(id));
+
+/** First Tab stop of a layout, visible on focus: moves focus to the page's `<main>`, past the navigation (WCAG 2.4.1). */
+export function SkipLink() {
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => focusElement(document.querySelector('main'))}
+      className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-200 focus:h-10 focus:px-4 focus:shadow-floating"
+    >
+      {t('c:go_to_content')}
+    </Button>
+  );
 }
 
 /** Where each bridge sends focus, and its label while it has focus. */

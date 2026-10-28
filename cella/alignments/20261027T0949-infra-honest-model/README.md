@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: infra/environments, --defer-reap, pnpm --filter infra diag, pnpm infra geoip-refresh, repair-control-store, validate-state-bucket-policy, buildcache-r
@@ -15,7 +15,7 @@ The deploy path reads an environment's secrets by design, so the engine now says
 
 ## Blast radius
 
-Every app with a deployed stack. Sync-breaking for operations: each environment's next deploy ends blocked until the steps below ran. A production line in `infra/environments` naming a commit or a branch stops the file parsing, and the runner then starts nothing. No database, cache or wire change.
+Every app with a deployed stack. Breaking for operations: each environment's next deploy ends blocked until the steps below ran. A production line in `infra/environments` naming a commit or a branch stops the file parsing, and the runner then starts nothing. No database, cache or wire change.
 
 ## Run
 

@@ -10,9 +10,10 @@ request checks for privileged changes that are still owed.
 
 ## Privileged changes
 
-**Privileged** resources are the ones only an apply on your [operator key](./KEYS.md#operator-key) changes:
+**Privileged** resources are the ones only an apply on your operator key changes:
 
 - the database, the VPC and the private network
+- the machines' security groups
 - buckets and their policies
 - secret containers and their versions
 - DNS records
@@ -29,7 +30,7 @@ When an identity differs from the declared ones, the apply stops before changing
 
 ## Preflight
 
-Every deploy runs the same plan first. A pending privileged change ends the run blocked before it builds anything, naming the apply, and the apply that clears it starts the target again. For load balancers and private networks, which the deploy key writes, this preflight is the only stop; the rest the deploy key cannot write at all ([API keys](./KEYS.md#api-keys)).
+Every deploy runs the same plan first. A pending privileged change ends the run blocked before it builds anything, naming the apply, and the apply that clears it starts the target again. For load balancers and private networks, which the deploy key writes, this preflight is the only stop; the rest the deploy key cannot write at all.
 
 ## Pull request check
 

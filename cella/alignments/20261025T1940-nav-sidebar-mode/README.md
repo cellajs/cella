@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 ---
@@ -19,7 +19,7 @@ the mobile menu sheet gains an organization switcher.
 
 ## Blast radius
 
-Sync-breaking for every app: its own config lacks the key, so `satisfies RequiredConfig` and the
+Breaking for every app: its own config lacks the key, so `satisfies RequiredConfig` and the
 frontend reads fail to compile until it is added. No `clientCacheVersion` bump, no lens, no database
 change.
 

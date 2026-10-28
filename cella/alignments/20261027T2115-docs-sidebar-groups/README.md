@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: docs/page/architecture/, DEPLOYMENT.md#, AUTHENTICATION.md#
@@ -7,7 +7,7 @@ grep: docs/page/architecture/, DEPLOYMENT.md#, AUTHENTICATION.md#
 
 # Docs pages move into sidebar groups
 
-An app that keeps template docs wrappers in `frontend/src/content/docs` moves them where the synced
+An app that keeps template docs wrappers in `frontend/src/content/docs` moves them where the template
 `repoDocRoutes` map now points: from `architecture/` into `sync-engine/`, `security/` and `interoperability/` or up
 to the top level, and Authentication and Deployment into folders that hold their new child pages. App links to
 `/docs/page/architecture/<page>`, or to sections that left `cella/DEPLOYMENT.md` or `cella/AUTHENTICATION.md`, take
@@ -24,7 +24,7 @@ does not have.
 ## Blast radius
 
 Apps that keep template wrappers under `architecture/`, or `guides/deployment.mdx`. `frontend/src/content` is
-app-owned, so the moves never arrive by sync and nothing fails: links between docs pages 404. An app without these
+app-owned, so the moves never arrive by upgrade and nothing fails: links between docs pages 404. An app without these
 wrappers is unaffected. No database, lens or cache change.
 
 ## Run

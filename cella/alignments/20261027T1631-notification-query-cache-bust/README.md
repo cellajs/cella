@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: true
 grep: clientCacheVersion
 ---
@@ -16,7 +16,7 @@ query data on the next load and keeps its queued mutations. An app that sets its
 
 ## Blast radius
 
-Not sync-breaking: app code keeps compiling and working. Only an app that overrides `clientCacheVersion` has a step.
+Not breaking: app code keeps compiling and working. Only an app that overrides `clientCacheVersion` has a step.
 No database or lens change.
 
 ## Run

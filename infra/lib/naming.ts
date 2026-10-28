@@ -43,6 +43,8 @@ export function deriveInfra(appConfig: Cfg) {
     dnsZone: appConfig.domain,
     region,
     zone: `${region}-1`,
+    // Every zone of the region, `zone` first.
+    zones: [1, 2, 3].map((index) => `${region}-${index}`),
     tags: [`env=${appConfig.mode}`, `app=${appConfig.slug}`, 'managed-by=pulumi'],
     // The same tags as a key-value map, for resources whose API takes a record.
     tagsAsMap: { env: appConfig.mode, app: appConfig.slug, 'managed-by': 'pulumi' } as Record<string, string>,

@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: SimpleHeader, hasCompletedAllSteps
@@ -22,7 +22,7 @@ reads as a key came out changed (`10:30` renders `30`, its `10` taken for a name
 ## Blast radius
 
 Apps with their own `SimpleHeader` callers that pass translated text, or code that reads `hasCompletedAllSteps`.
-Typecheck flags each one. An app that only has the synced callers gets the change with the sync. No database, lens or
+Typecheck flags each one. An app that only has the template's callers gets the change with the upgrade. No database, lens or
 `clientCacheVersion` change.
 
 ## Run

@@ -1,6 +1,6 @@
 # Runbooks
 
-This document collects the procedures for a running deployment: a failed deploy, a stale stack lock, GeoIP data, database access, seeding the admin, resetting or restoring the database, and tearing a stack down.
+This document collects the procedures for a running deployment: a failed deploy, a stale stack lock, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
 
 ### TL;DR
 
@@ -10,7 +10,7 @@ slate only resets the stack's tracking.
 
 ## Debug a failed deploy
 
-Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error ([Run records](../DEPLOYMENT.md#run-records)). A cutover that times out waiting for the new version means the app never served it: almost always a crash at boot, not the load balancer.
+Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error. A cutover that times out waiting for the new version means the app never served it: almost always a crash at boot, not the load balancer.
 
 1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report: the boot phases, the migrate companion's output and a crashed container's output. "No account" means the boot runner never finished; then the machine's serial console (Scaleway console → Instances → the machine → Console) shows how far it got, up to `BOOT FAILED (exit N)`.
 2. **Reproduce locally.** Pull the exact image tag and `docker run` it with a minimal valid environment: a failing import (`ERR_MODULE_NOT_FOUND`) shows in seconds. On macOS, where the keychain refuses to save a `docker login`, use a throwaway `--config` folder with a base64 `auth`.
@@ -22,8 +22,6 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
    - a service key without `SecretManagerSecretAccess` on its folder: a 403 while hydrating
    - an instance-type quota too low for a new machine beside the old one
 
-A fix to `infra/` passes `pnpm --filter infra exec vitest run` and `pnpm check` before it ships.
-
 ## A stale stack lock
 
 A deploy or an operator action that dies holds its stack lock until the lock's lease lapses, within minutes, and the next run waits for it. `pnpm infra status` reports the lock and any operation the interrupted Pulumi run left in the state.
@@ -34,9 +32,9 @@ A deploy or an operator action that dies holds its stack lock until the lock's l
 
 ## GeoIP data
 
-Sign-ins resolve the client IP to a country and network (DB-IP Lite, CC BY 4.0) for the sessions list and the new sign-in notice. The image ships no data: each API process downloads it from the `geoip/` prefix of the public bucket at boot and checks daily for newer data, so a refresh needs no release. In development the prefix is the shared template bucket, so local sign-ins show a country out of the box.
+Sign-ins resolve the client IP to a country and network (DB-IP Lite, CC BY 4.0) for the sessions list and the new sign-in notice. The image ships no data: each API process downloads it from the `geoip/` prefix of the public bucket at boot and checks daily for newer data, so a refresh needs no release.
 
-Every deploy refreshes stale data ([geoip-refresh.ts](../../infra/tasks/geoip-refresh.ts)); `pnpm infra start-deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line; sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, another prefix or bucket overrides the source.
+Every deploy refreshes stale data; `pnpm infra start-deploy` of the live target runs that check again. A failed download or a bucket problem costs only the country line; sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, another prefix or bucket overrides the source.
 
 ## Open the database
 
@@ -55,9 +53,19 @@ Break-glass access from your laptop, for any operator task against the live data
    pnpm infra db-close
    ```
 
+## A stopped CDC worker
+
+A stopped CDC worker's replication slot keeps WAL until the database volume fills. When the worker cannot be brought back, [open the database](#open-the-database) and drop the slot:
+
+```sql
+SELECT pg_drop_replication_slot('cdc_slot');
+```
+
+The worker makes a new slot when it starts again, and every client refetches once.
+
 ## Seed the admin by hand
 
-A wrong admin email is fixed in **Manage runtime secrets**, then by rebooting the backend machine ([Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**): its boot seeds the admin while the users table is empty ([Sign in as first admin](./FRESH_INSTALLATION.md#5-sign-in-as-first-admin)).
+A wrong admin email is fixed in **Manage runtime secrets**, then by rebooting the backend machine ([Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**): its boot seeds the admin while the users table is empty.
 
 On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database) and seed with the printed connection string:
 
@@ -102,7 +110,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key ([API keys](./KEYS.md#api-keys)). The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values.
+`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 

@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: sync-signals, createSignal, ChangeEventSignal, SyncedRowsSignal
@@ -19,7 +19,7 @@ the codebase calls events, so it takes that word and its emitter helper says wha
 ## Blast radius
 
 App-owned code that imports from `~/query/realtime/sync-signals`, calls `createSignal`, or names one of the two
-types. Synced files arrive with the sync. No database, lens or `clientCacheVersion` change.
+types. Template files arrive with the upgrade. No database, lens or `clientCacheVersion` change.
 
 ## Run
 

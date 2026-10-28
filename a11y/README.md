@@ -107,11 +107,11 @@ administers).
 
 ## In an app built on this template
 
-The audit code arrives with a sync; the results and the list of pages are the app's own.
+The audit code arrives with an upgrade; the results and the list of pages are the app's own.
 
 - **`a11y/scope-config.ts`** is pinned to the app (`pinned` in `cella/cella.config.ts`): list your routes and states
   there, and add a resolver for each path placeholder your routes need.
-- **`json/accessibility-conformance.json`** is never synced (`ignored` in `cella/cella.config.ts`). The first
+- **`json/accessibility-conformance.json`** is never merged (`ignored` in `cella/cella.config.ts`). The first
   `pnpm a11y:run` writes the app's own ledger.
 - **`frontend/src/modules/auth/legal/legal-config.ts`** holds what the accessibility statement claims
   (`accessibilityReview`). `pnpm -C a11y report --publish` prints it from your own ledger and puts the PDF under

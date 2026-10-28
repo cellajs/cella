@@ -22,8 +22,6 @@ The backend suite proves it by running twice with identical expectations: once w
 | A permission bug exposes data within the active tenant | RLS cannot help because the row still matches the tenant |
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
-Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths). Listener and database boundaries: [Deployment](./DEPLOYMENT.md#overview).
-
 ## What RLS covers
 
 Cella enables row-level security on product tables and on resources that hold tenant data, and never forces it, so the owning `admin_role` bypasses it ([Database roles](#database-roles)). The template protects `attachments`, `yjs_documents` and `yjs_updates`.
@@ -72,7 +70,7 @@ the shared engine, and a contextless insert passes RLS.
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
 | `admin_role` | Bypassed as table owner | Migrations, seeds, the pg_cron partition job, and CDC replication or stamping |
 
-`admin_role` owns the RLS-protected tables and the activities, so it bypasses their policies as the owner. The bypass never depends on the `BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, and the dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs, and refuse to run when either role is missing. The CDC worker needs the same bypass ([CDC worker](../cdc/README.md#operational-constraints)).
+`admin_role` owns the RLS-protected tables and the activities, so it bypasses their policies as the owner. The bypass never depends on the `BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, and the dev and test roles are created without it to match. Migrations grant `runtime_role` what the application needs, and refuse to run when either role is missing. The CDC worker needs the same bypass.
 
 Only the admin connection can write `system_roles`. An application system administrator is not `admin_role`: their requests use the runtime connection and normal request scope. The admin credential serves migrations, seeds and job setup, and an API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
@@ -80,7 +78,7 @@ Only the admin connection can write `system_roles`. An application system admini
 
 A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists at once, and their open streams end, so their apps drop it.
 
-A system admin restores it by setting the tenant active again. After the archived period a nightly sweep removes the tenant with everything in it, and mails the operator what it removed ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+A system admin restores it by setting the tenant active again. After the archived period a nightly sweep removes the tenant with everything in it, and mails the operator what it removed.
 
 ## Verification
 

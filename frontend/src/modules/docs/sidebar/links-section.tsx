@@ -21,6 +21,14 @@ export function LinksSection({ label }: LinksSectionProps) {
 
   return (
     <DocsSidebarSection label={label}>
+      <Button
+        variant="ghost"
+        className={rowClass}
+        render={<Link to="/docs/page/$" params={{ _splat: 'changelog' }} onClick={closeSidebarSheetAndNavigate} />}
+      >
+        {t('c:changelog')}
+      </Button>
+
       {hasStatusPage && (
         <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
           {t('c:status')}

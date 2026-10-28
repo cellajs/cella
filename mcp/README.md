@@ -21,7 +21,7 @@ MCP endpoint  /<tenant>/<org>/mcp
 the route: its guards, limiters, cache and handler, as for a REST request
 ```
 
-The worker is a `MODE` of the backend image ([Deployment](../cella/DEPLOYMENT.md#overview)), and the reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls but serves only the MCP routes. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md); tokens: [OAuth worker](../oauth/README.md).
+The worker is a `MODE` of the backend image, and the reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls but serves only the MCP routes.
 
 The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the tools (`mcp-tools.ts`); `mcp/src/mcp-worker.ts` is the development entry. Error codes, limits and schema details are documented there, at their declarations.
 
@@ -71,5 +71,4 @@ JSON-RPC 2.0 over Streamable HTTP with JSON responses. Batches are accepted. Res
 
 - **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
 - **Limits.** A tool call spends the route's limits as a REST request with the same token does, plus the endpoint's own limit per account. A server error reaches the model without its message.
-- **The AI key is unrelated.** `SCW_AI_API_KEY` switches on the app's own AI features (job queues); the MCP endpoint never needs it.
 - **Tool descriptions are model-facing English.** They are not translated.

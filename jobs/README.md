@@ -19,7 +19,7 @@ PostgreSQL schema pgboss  ◀─────────────────
         └── a consumer process works its own queues (MODE of its own)
 ```
 
-The jobs worker runs from the backend image ([Deployment](../cella/DEPLOYMENT.md#overview)). Cron and supervision belong to exactly one process, so it cuts over stop-first, and nothing routes to it.
+The jobs worker runs from the backend image. Cron and supervision belong to exactly one process, so it cuts over stop-first, and nothing routes to it.
 
 ## Declaring jobs and queues
 
@@ -64,4 +64,4 @@ Payloads carry ids, never row bodies: the handler re-reads through the query the
 
 ### Connection budget
 
-Every pool of every process, the job store's included, draws on the database's one `max_connections`. Pool maxima are ceilings, not footprints: the managed database's metrics show the real count. Raising the limit restarts an instance that has no standby ([postgres-managed.ts](../infra/resources/stores/postgres-managed.ts)), so shrink pools first.
+Every pool of every process, the job store's included, draws on the database's one `max_connections`. Pool maxima are ceilings, not footprints: the managed database's metrics show the real count. Raising the limit restarts an instance that has no standby, so shrink pools first.

@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: toLowerCase, resourceLowerCase, upload_item, success.update_item, success.you_left_entity, invitation_settled, request_verification, c:found, c:ago
@@ -23,7 +23,7 @@ sentence rule.
 
 ## Blast radius
 
-Sync-breaking: a call of a renamed or removed key fails typecheck. Visible without errors: an app key that receives a
+Breaking: a call of a renamed or removed key fails typecheck. Visible without errors: an app key that receives a
 template-passed `resource` mid-sentence now gets the label form ("Organization"), until it writes
 `{{resource, lowercase}}`. No database, lens or `clientCacheVersion` change.
 

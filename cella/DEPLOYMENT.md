@@ -1,6 +1,6 @@
 # Deployment
 
-This document explains how a cella app deploys to European cloud provider [Scaleway](https://www.scaleway.com/) using the [Infra CLI](../infra/README.md). First setup: [Fresh installation](./deployment/FRESH_INSTALLATION.md).
+This document explains how a cella app deploys to European cloud provider [Scaleway](https://www.scaleway.com/) using the [Infra CLI](../infra/README.md).
 
 ### TL;DR
 
@@ -50,11 +50,11 @@ Resources and traffic flow:
 - **Load balancer:** the only public entrypoint. Every routed service shares the app origin under its own path prefix, so the API needs no CORS.
 - **Internal listener:** the backend's second port, for the CDC socket and the Yjs relay's materialize route. Only a private load balancer frontend that admits the private network reaches it.
 - **VMs:** all inbound traffic is dropped, SSH included. A machine pulls each image by the digest its tag had when the deploy planned it, so a later push under that tag changes nothing it runs.
-- **Placement:** every service gets its own VM, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend VM ([Scaling](./ARCHITECTURE.md#scaling)). The oauth, mcp and jobs workers and the migrate companion run the backend image in a `MODE` of their own.
+- **Placement:** every service gets its own VM, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend VM. The oauth, mcp and jobs workers and the migrate companion run the backend image in a `MODE` of their own.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only, with logical replication on for the CDC worker. A break-glass action exposes it for a while ([Runbooks](./deployment/RUNBOOKS.md)).
 - **Replication slot:** a stopped CDC worker's slot keeps WAL. Where the provider offers `max_slot_wal_keep_size`, set it; the worker warns while WAL is unbounded. Scaleway's managed database has no such setting: it removes a slot inactive for 24 hours, and until then a stopped worker's WAL fills the volume while its health degrades.
-- **Lost slot:** when a worker cannot be brought back, drop the slot by hand (`SELECT pg_drop_replication_slot('cdc_slot')`). A slot that is gone, whoever removed it, ends in a rebuild of the sync books ([CDC worker](../cdc/README.md#verify-and-rebuild)).
+- **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron's database, `rdb` on Scaleway. Scaleway's admin user may not use the `cron` schema there, so the companion warns and the job stays unscheduled: until the provider grants the admin user that schema and its functions, a deployed database keeps every row the procedure would remove.
 - **Buckets:** outside the VPC. Browsers read the public upload bucket directly and use presigned URLs for the private one.
 
 ## Deploys
@@ -148,22 +148,22 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 | Strategy | Services | Behavior | Downtime |
 | --- | --- | --- | --- |
-| **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new generation starts beside the old one; the load balancer serves both, checks the new one's health and release, then drops the old one ([tasks/cutover.ts](../infra/tasks/cutover.ts)). A failed check hands the pool back to the old generation. | None (load balancer overlap). |
+| **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new generation starts beside the old one; the load balancer serves both, checks the new one's health and release, then drops the old one. A failed check hands the pool back to the old generation. | None (load balancer overlap). |
 | **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The new generation replaces the old in the same stack update. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
 | **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first, with load balancer overlap. One session holds the replication slot and one process claims each cron period, so the new process's cdc and jobs wait until the old VM is removed, right after promotion. | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
 
 ## Runtime secret delivery
 
-At every boot the boot runner reads the machine's runtime secrets from Secret Manager, with each service's own key, into its compose env file ([Secret folders](./deployment/KEYS.md#secret-folders)).
+At every boot the boot runner reads the machine's runtime secrets from Secret Manager, with each service's own key, into its compose env file.
 
-- **The Pulumi state holds no secret value but two.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager ([ensure-secrets.ts](../infra/tasks/ensure-secrets.ts)). A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The two exceptions sit under the passphrase: the boot key, which each machine's user data carries, and the password of a Redis store an app enables.
+- **The Pulumi state holds no secret value but two.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The two exceptions sit under the passphrase: the boot key, which each machine's user data carries, and the password of a Redis store an app enables.
 - **A deploy writes no secret of the app's.** An apply makes and copies every value, so a secret added to the registry reaches the stack through **Review & apply changes**. Before it makes any machine, the deploy checks that every required copy holds a value. A missing one ends the run blocked, and storing it in **Manage runtime secrets** starts the target again.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 - **A missing required secret stops the boot**, so a machine never crash-loops behind a 502.
 
 ## Load balancer and DNS
 
-The load balancer, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply. A deploy moves the pools' servers and nothing else, so enabling a routed service takes an apply first. Every apply also replaces a certificate that failed for good ([repair-certs.ts](../infra/tasks/repair-certs.ts)).
+The load balancer, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply. A deploy moves the pools' servers and nothing else, so enabling a routed service takes an apply first. Every apply also replaces a certificate that failed for good.
 
 ## Configuration
 

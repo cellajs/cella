@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: true
 grep: clientCacheVersion
 ---
@@ -16,7 +16,7 @@ answered 400 where it got a 204 that sent nothing. The spec diff counts as break
 
 ## Blast radius
 
-Not sync-breaking: the template's frontend always sends a body. Only an app that overrides `clientCacheVersion` has a
+Not breaking: the template's frontend always sends a body. Only an app that overrides `clientCacheVersion` has a
 step. No database or lens change.
 
 ## Run

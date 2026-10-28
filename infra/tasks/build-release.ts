@@ -11,7 +11,8 @@ import { resolveImageDigest } from '../lib/scaleway/registry-digest';
 import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { scwErrorStatus, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -42,10 +43,10 @@ export interface BuildEffects {
   entryFile(name: string): Promise<Buffer | undefined>;
   /** Stage the builder key's read-once bundle; returns its id and the boot key the machine reads it with. */
   keys(): Promise<{ bundleId: string; boot: { accessKey: string; secretKey: string } }>;
-  /** Delete every builder machine of the environment with its volume; returns the names deleted. */
+  /** Delete every builder machine of the environment with its volume, in every zone of the region; returns the names deleted. */
   removeBuilders(): Promise<string[]>;
-  /** Make the builder machine and start it. */
-  startBuilder(name: string, cloudConfig: string): Promise<void>;
+  /** Make the builder machine in a zone and start it. */
+  startBuilder(zone: string, name: string, cloudConfig: string): Promise<void>;
   /** One of the builder's reports, or undefined while it has not written it. */
   report(name: 'step' | 'log' | 'result'): Promise<string | undefined>;
   sleep(ms: number): Promise<void>;
@@ -56,6 +57,8 @@ export interface BuildReleaseOptions {
   /** The build epoch (`buildEpoch`): a release counts as built only when its images and entry files carry it. */
   epoch: string;
   builderName: string;
+  /** The zones the builder may be made in, in the order tried. */
+  zones: readonly string[];
   /** Every image repository the release has, the boot runner's included. */
   images: readonly string[];
   /** Whether the release has frontend files. */
@@ -69,9 +72,9 @@ export interface BuildReleaseOptions {
 }
 
 /**
- * Make sure a release is built. When the registry lacks one of its images or the frontend bucket its entry files, a builder machine builds and
- * pushes all of them; a builder a dead deploy left is deleted first, and this one is deleted when it is done or the wait ends. The release's
- * entry files are then written to `distDir`. Returns whether the release was already there.
+ * Make sure a release is built. When the registry lacks one of its images or the frontend bucket its entry files, a builder machine, made in the
+ * first zone that has its type in stock, builds and pushes all of them; a builder a dead deploy left is deleted first, and this one is deleted
+ * when it is done or the wait ends. The release's entry files are then written to `distDir`. Returns whether the release was already there.
  */
 export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects): Promise<'present' | 'built'> {
   const log = opts.log ?? ((message: string) => console.info(message));
@@ -88,9 +91,20 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
   if (missing.length > 0) {
     outcome = 'built';
     log(`[build] missing for ${opts.sha.slice(0, 10)}: ${missing.join(', ')}; building on ${opts.builderName}`);
-    const keys = await fx.keys();
+    const cloudConfig = opts.cloudConfig(await fx.keys());
     try {
-      await fx.startBuilder(opts.builderName, opts.cloudConfig(keys));
+      for (const [index, zone] of opts.zones.entries()) {
+        try {
+          await fx.startBuilder(zone, opts.builderName, cloudConfig);
+          break;
+        } catch (error) {
+          const next = opts.zones[index + 1];
+          if (!next || !isOutOfStock(error)) throw error;
+          // Scaleway makes the machine, then refuses to power it on.
+          await fx.removeBuilders();
+          log(`  ~ ${zone} has no ${BUILDER_TYPE} in stock: trying ${next}`);
+        }
+      }
       await waitForBuilder(opts, fx, log);
     } finally {
       for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}`);
@@ -108,6 +122,11 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
     }
   }
   return outcome;
+}
+
+/** Scaleway's refusal of a machine type a zone has none of: 412 with `"type": "out_of_stock"`. */
+function isOutOfStock(error: unknown): boolean {
+  return scwErrorStatus(error) === 412 && errorMessage(error).includes('"out_of_stock"');
 }
 
 async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: (message: string) => void): Promise<void> {
@@ -143,13 +162,25 @@ export function builderPrefix(resource: (suffix: string) => string): string {
   return `${resource('builder')}-`;
 }
 
+/** Delete every builder machine with its volume in each zone given, as a build makes it in any zone of the region; returns the names deleted. */
+export async function removeBuilderMachines(opts: {
+  secretKey: string;
+  projectId: string;
+  zones: readonly string[];
+  prefix: string;
+}): Promise<string[]> {
+  const removed: string[] = [];
+  for (const zone of opts.zones) removed.push(...(await removeMachines({ ...opts, zone })));
+  return removed;
+}
+
 /** The builder's effects on Scaleway, with the deploy key. */
 function liveEffects(opts: {
   secretKey: string;
   accessKey: string;
   projectId: string;
   region: string;
-  zone: string;
+  zones: readonly string[];
   slug: string;
   mode: string;
   sha: string;
@@ -162,7 +193,7 @@ function liveEffects(opts: {
   securityGroupName: string;
 }): BuildEffects {
   const auth = { secretKey: opts.secretKey };
-  const instance = `https://api.scaleway.com/instance/v1/zones/${opts.zone}`;
+  const instance = (zone: string) => `https://api.scaleway.com/instance/v1/zones/${zone}`;
   const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
   const s3 = makeS3Client(opts.region, projectAccessKey(opts.accessKey, opts.projectId), opts.secretKey);
@@ -195,16 +226,17 @@ function liveEffects(opts: {
       });
       return { bundleId, boot };
     },
-    removeBuilders: () => removeMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zone: opts.zone, prefix: opts.builderPrefix }),
-    startBuilder: async (name, cloudConfig) => {
+    removeBuilders: () =>
+      removeBuilderMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zones: opts.zones, prefix: opts.builderPrefix }),
+    startBuilder: async (zone, name, cloudConfig) => {
       const { security_groups } = await scwFetch<{ security_groups: Array<{ id: string; name: string }> }>(
         auth,
         'GET',
-        `${instance}/security_groups?project=${opts.projectId}&name=${encodeURIComponent(opts.securityGroupName)}`,
+        `${instance(zone)}/security_groups?project=${opts.projectId}&name=${encodeURIComponent(opts.securityGroupName)}`,
       );
       const securityGroup = security_groups.find((group) => group.name === opts.securityGroupName);
-      if (!securityGroup) throw new Error(`no security group '${opts.securityGroupName}' to put the builder in: has the stack's first apply run?`);
-      const { server } = await scwFetch<{ server: ScwServer }>(auth, 'POST', `${instance}/servers`, {
+      if (!securityGroup) throw new Error(`no security group '${opts.securityGroupName}' in ${zone} to put the builder in: an apply makes one`);
+      const { server } = await scwFetch<{ server: ScwServer }>(auth, 'POST', `${instance(zone)}/servers`, {
         name,
         commercial_type: BUILDER_TYPE,
         image: BUILDER_IMAGE,
@@ -215,13 +247,13 @@ function liveEffects(opts: {
         tags: ['builder', `sha=${opts.sha}`],
         volumes: { 0: { size: BUILDER_DISK_BYTES, volume_type: 'sbs_volume' } },
       });
-      const set = await fetch(`${instance}/servers/${server.id}/user_data/cloud-init`, {
+      const set = await fetch(`${instance(zone)}/servers/${server.id}/user_data/cloud-init`, {
         method: 'PATCH',
         headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'text/plain' },
         body: cloudConfig,
       });
       if (!set.ok) throw new Error(`setting the builder's cloud-init → ${set.status}: ${await set.text()}`);
-      await scwSend(auth, 'POST', `${instance}/servers/${server.id}/action`, { action: 'poweron' });
+      await scwSend(auth, 'POST', `${instance(zone)}/servers/${server.id}/action`, { action: 'poweron' });
     },
     report: async (name) => {
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
@@ -252,7 +284,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   process.env.APP_MODE = mode;
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
-  const { naming, region, zone } = deriveInfra(appConfig);
+  const { naming, region, zones } = deriveInfra(appConfig);
   const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as {
     packageManager?: string;
     engines?: { node?: string };
@@ -277,6 +309,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       sha,
       epoch,
       builderName: `${prefix}${sha.slice(0, 10)}`,
+      zones,
       images: [...rows.map((row) => row.service), BOOT_IMAGE_NAME],
       withFrontend: Boolean(frontendBucket),
       distDir,
@@ -316,7 +349,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       accessKey,
       projectId,
       region,
-      zone,
+      zones,
       slug: appConfig.slug,
       mode,
       sha,
