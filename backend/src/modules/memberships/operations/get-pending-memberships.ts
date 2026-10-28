@@ -3,7 +3,7 @@ import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getValidChannel } from '#/permissions';
 
 type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchema>;
 

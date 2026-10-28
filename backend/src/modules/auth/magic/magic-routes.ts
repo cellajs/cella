@@ -15,9 +15,10 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [magicLinkLimiter, spamLimiter],
     middleware: isNoBot,
     summary: 'Send magic link',
-    description: 'Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.',
+    description:
+      "Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.",
     request: { body: jsonBody(magicLinkBodySchema) },
-    responses: { 204: { description: 'Magic link email sent (or silently ignored if email not found)' } },
+    responses: { 204: { description: 'Accepted alike whether a link, a pointer to the institution or nothing was mailed' } },
   }),
   getPendingMagicLink: xRoute({
     method: 'get',

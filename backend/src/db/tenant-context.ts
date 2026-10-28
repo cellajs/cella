@@ -41,7 +41,6 @@ export function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Promise<T
  * `tenantRead` with an explicit tenant id, for cross-tenant routes (bare `baseDb`, no
  * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
  * list whose per-row subqueries read RLS-guarded product tables.
- * @public
  */
 export function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return requestTransaction(ctx, tenantId, false, true, fn);

@@ -22,7 +22,7 @@ vi.mock('../lib/db', () => {
         return { rows: [] };
       },
     },
-    buildVerifiedSsl: () => undefined,
+    sslCa: undefined,
   };
 });
 

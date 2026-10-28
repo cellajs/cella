@@ -36,7 +36,10 @@ vi.mock('../services/cdc-metrics', () => ({
   },
 }));
 
-vi.mock('shared/utils/event-loop-monitor', () => ({ getEventLoopLagMs: () => world.eventLoopLagMs }));
+vi.mock('shared/utils/event-loop-monitor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared/utils/event-loop-monitor')>()),
+  getEventLoopLagMs: () => world.eventLoopLagMs,
+}));
 
 import { resourceLimits } from '../constants';
 import { getHealthResponse, gradeWorker } from '../network/health';

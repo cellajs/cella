@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decryptData, encryptData, isEncryptedData } from './data-encryption';
+import { decryptData, encryptData } from './data-encryption';
 
 const purpose = 'test:data-encryption:v1';
 
@@ -8,7 +8,6 @@ describe('data encryption', () => {
     const encrypted = encryptData('JBSWY3DPEHPK3PXP', purpose);
 
     expect(encrypted).toMatch(/^v1:/);
-    expect(isEncryptedData(encrypted)).toBe(true);
     expect(decryptData(encrypted, purpose)).toBe('JBSWY3DPEHPK3PXP');
   });
 

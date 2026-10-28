@@ -736,7 +736,7 @@ export const zSendMagicLinkBody = z.object({
 });
 
 /**
- * Magic link email sent (or silently ignored if email not found)
+ * Accepted alike whether a link, a pointer to the institution or nothing was mailed
  */
 export const zSendMagicLinkResponse = z.void();
 
@@ -1229,7 +1229,6 @@ export const zRevokeConnectedAppResponse = z.object({
 export const zGetPublicCountsResponse = z.object({
   user: z.number(),
   organization: z.number(),
-  attachment: z.number(),
 });
 
 export const zGetNotificationsQuery = z.object({
@@ -1804,7 +1803,10 @@ export const zGetOrganizationsQuery = z.object({
   limit: z.int().gte(1).lte(1000).optional().default(40),
   relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
-  excludeArchived: z.enum(['true', 'false']).optional(),
+  excludeArchived: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
   include: z.string().optional(),
 });
 

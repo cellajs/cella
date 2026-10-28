@@ -1,8 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
+import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
@@ -15,8 +17,6 @@ import type { EntityModel, ResolvableTable, TableWithIdAndSlug } from '#/tables'
 import { getEntityTable } from '#/tables';
 
 const hasSlug = (table: ResolvableTable): table is TableWithIdAndSlug => 'slug' in table;
-
-const hasDeletedAt = (table: ResolvableTable): table is ResolvableTable & { deletedAt: Parameters<typeof isNull>[0] } => 'deletedAt' in table;
 
 // Channel counter queries
 
@@ -140,6 +140,28 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
     .from(channelCountersTable)
     .where(eq(channelCountersTable.channelKey, organizationId));
   return row?.count ?? 0;
+};
+
+interface CountTenantEntityRowsOpts {
+  entityType: ChannelEntityType | ProductEntityType;
+}
+
+/**
+ * The rows of `entityType` the context's tenant holds, drafts included and tombstones left out, counted on the table:
+ * what a tenant quota compares with. A counter row would make the quota wait for the CDC worker. A product table sits
+ * under RLS, so on one the count opens a tenant transaction unless the caller holds one.
+ */
+export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: CountTenantEntityRowsOpts) => {
+  const table: AnyPgTable & { tenantId: PgColumn } = getEntityTable(entityType);
+  const countRows = async (readCtx: DbContext) => {
+    const live = hasDeletedAt(table) ? isNull(table.deletedAt) : undefined;
+    const [row] = await readCtx.var.db
+      .select({ total: count() })
+      .from(table)
+      .where(and(eq(table.tenantId, ctx.var.tenantId), live));
+    return row.total;
+  };
+  return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
 };
 
 // Activity queries

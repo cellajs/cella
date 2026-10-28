@@ -1,0 +1,234 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "f60bd4ed-55e1-41c7-b2e1-ebe8c6173873",
+  "prevIds": [
+    "dadfc578-ae86-48a8-a797-a11bbfa88ecf"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "seen_by",
+        "seen_by_user_channel_type_index"
+      ],
+      "writes": [
+        "s|idx|public.seen_by_user_channel_type_index",
+        "n|idx|public.seen_by_user_channel_type_index",
+        "e|idx|public.seen_by_user_channel_type_index",
+        "n|rel|public.seen_by_user_channel_type_index"
+      ],
+      "reads": [
+        "e|tbl|public.seen_by",
+        "n|sch|public",
+        "e|col|public.seen_by.user_id",
+        "e|col|public.seen_by.channel_id",
+        "e|col|public.seen_by.product_type"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "seen_by",
+        "seen_by_product_id_index"
+      ],
+      "writes": [
+        "s|idx|public.seen_by_product_id_index",
+        "n|idx|public.seen_by_product_id_index",
+        "e|idx|public.seen_by_product_id_index",
+        "n|rel|public.seen_by_product_id_index"
+      ],
+      "reads": [
+        "e|tbl|public.seen_by",
+        "n|sch|public",
+        "e|col|public.seen_by.product_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "seen_by",
+        "seen_by_tenant_id_index"
+      ],
+      "writes": [
+        "s|idx|public.seen_by_tenant_id_index",
+        "n|idx|public.seen_by_tenant_id_index",
+        "e|idx|public.seen_by_tenant_id_index",
+        "n|rel|public.seen_by_tenant_id_index"
+      ],
+      "reads": [
+        "e|tbl|public.seen_by",
+        "n|sch|public",
+        "e|col|public.seen_by.tenant_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "seen_by",
+        "channel_id"
+      ],
+      "writes": [
+        "s|col|public.seen_by.channel_id",
+        "n|col|public.seen_by.channel_id",
+        "e|col|public.seen_by.channel_id"
+      ],
+      "reads": [
+        "n|tbl|public.seen_by",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "seen_by",
+        "organization_id"
+      ],
+      "writes": [
+        "s|col|public.seen_by.organization_id",
+        "n|col|public.seen_by.organization_id",
+        "e|col|public.seen_by.organization_id"
+      ],
+      "reads": [
+        "n|tbl|public.seen_by",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "seen_by",
+        "tenant_id"
+      ],
+      "writes": [
+        "s|col|public.seen_by.tenant_id",
+        "n|col|public.seen_by.tenant_id",
+        "e|col|public.seen_by.tenant_id"
+      ],
+      "reads": [
+        "n|tbl|public.seen_by",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "languages"
+      ],
+      "writes": [
+        "s|colprop|public.organizations.languages.type",
+        "s|colprop|public.organizations.languages.default"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public",
+        "n|col|public.organizations.languages"
+      ],
+      "sqlHash": "d1623d60cd9074dd"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "restrictions"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.restrictions.type",
+        "s|colprop|public.tenants.restrictions.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.restrictions"
+      ],
+      "sqlHash": "2011670bceb5163d"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "auth_strategies"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.auth_strategies.type",
+        "s|colprop|public.tenants.auth_strategies.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.auth_strategies"
+      ],
+      "sqlHash": "6ce2cab9249833bc"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"seen_by\",\"channel_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"seen_by\",\"organization_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"seen_by\",\"tenant_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"seen_by_user_channel_type_index\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"seen_by_product_id_index\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"seen_by_tenant_id_index\"]"
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"organizations\",\"languages\"]",
+      "set": {
+        "type": "jsonb"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"restrictions\"]",
+      "set": {
+        "type": "jsonb"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"auth_strategies\"]",
+      "set": {
+        "type": "jsonb"
+      }
+    }
+  ]
+}

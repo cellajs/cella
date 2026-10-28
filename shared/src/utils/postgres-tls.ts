@@ -1,6 +1,6 @@
 import { type PeerCertificate, checkServerIdentity as tlsCheckServerIdentity } from 'node:tls';
 
-export interface VerifiedPostgresSslOptions {
+interface VerifiedPostgresSslOptions {
   ca: string;
   rejectUnauthorized: true;
   checkServerIdentity?: (host: string, cert: PeerCertificate) => Error | undefined;
@@ -10,7 +10,7 @@ export interface VerifiedPostgresSslOptions {
  * The connection string without its libpq ssl params: Scaleway's carry them, and node-postgres may let them override an
  * explicit verified `ssl` object. An unparseable string is returned as it is.
  */
-export const stripPostgresSslParams = (url: string): string => {
+const stripPostgresSslParams = (url: string): string => {
   try {
     const parsed = new URL(url);
     parsed.searchParams.delete('sslmode');
@@ -52,8 +52,17 @@ const postgresHost = (connectionString: string): string | undefined => {
  * identity checking, so Node would verify against `localhost`: this pins verification to the dialed host and keeps
  * CA-chain verification.
  */
-export const verifiedPostgresSsl = (connectionString: string, ca: string | undefined): VerifiedPostgresSslOptions | undefined => {
+const verifiedPostgresSsl = (connectionString: string, ca: string | undefined): VerifiedPostgresSslOptions | undefined => {
   if (!ca) return undefined;
   const host = postgresHost(connectionString);
   return { ca, rejectUnauthorized: true, checkServerIdentity: host ? (_passedHost, cert) => tlsCheckServerIdentity(host, cert) : undefined };
 };
+
+/**
+ * The `connectionString` and `ssl` options of a connection to `url`, taken together: the string without its ssl params,
+ * so they cannot downgrade the verified `ssl`. `ssl` is undefined without a CA.
+ */
+export const verifiedPostgresConnection = (url: string, ca: string | undefined) => ({
+  connectionString: stripPostgresSslParams(url),
+  ssl: verifiedPostgresSsl(url, ca),
+});

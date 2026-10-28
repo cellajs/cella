@@ -45,7 +45,7 @@ function membershipsAbove(item: EnrichableChannel, channelType: ChannelEntityTyp
  */
 export function enrichWithPermissions(item: EnrichableChannel, channelType: ChannelEntityType, memberships: MembershipBase[]): EnrichableChannel {
   const grants = [...(item.membership ? [item.membership] : []), ...membershipsAbove(item, channelType, memberships)];
-  const memberCan = computeCan(channelType, grants, policyMatrix);
+  const memberCan = computeCan(policyMatrix, channelType, grants);
   const can = userStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : memberCan;
 
   if (!hasCanChanged(item.can, can) && !hasCanChanged(item.memberCan, memberCan)) return item;

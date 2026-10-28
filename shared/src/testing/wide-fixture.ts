@@ -77,8 +77,8 @@ export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType,
 
 export const computeWideCan = (channelType: WideChannelType, membership: AccessMembership | undefined | null, policies: PolicyMatrix): WideCanMap =>
   computeCan(
-    channelType as unknown as Parameters<typeof computeCan>[0],
-    membership as unknown as Parameters<typeof computeCan>[1],
     policies,
+    channelType as unknown as Parameters<typeof computeCan>[1],
+    membership as unknown as Parameters<typeof computeCan>[2],
     wideOverrides,
   ) as unknown as WideCanMap;

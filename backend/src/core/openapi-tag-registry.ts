@@ -42,13 +42,13 @@ registerTag({ tag: 'errors', kind: 'schema', description: 'Error schemas' });
 registerTag({
   tag: 'channel',
   kind: 'entity',
-  description: 'Operations on channel entities (entities that have memberships, e.g. organizations, projects).',
+  description: 'Operations on channel entities: the entities that have memberships.',
 });
 
 registerTag({
   tag: 'product',
   kind: 'entity',
-  description: 'Operations on product entities (content entities without membership, e.g. tasks, pages, attachments).',
+  description: 'Operations on product entities: the content entities, which have no memberships.',
 });
 
 // Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
@@ -56,8 +56,9 @@ registerTag({ tag: 'internal', kind: 'hidden', description: 'Operations hidden f
 
 // Bridge module registry to tag registry; a `hidden` module becomes a hidden-kind tag. Last in the file: the bridge
 // replays modules registered before this file loaded, which reach `registerTag` and must find it initialized.
+// A module description wraps across source lines; the spec gets it as one line.
 onModuleRegister(({ name, owner, description, scope, hidden }) => {
   if (scope.includes('backend')) {
-    registerTag({ tag: name, kind: hidden ? 'hidden' : 'module', parent: owner, description });
+    registerTag({ tag: name, kind: hidden ? 'hidden' : 'module', parent: owner, description: description.replace(/\s+/g, ' ') });
   }
 });

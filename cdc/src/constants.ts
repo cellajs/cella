@@ -82,9 +82,5 @@ export const resourceLimits = {
     walLagWarnBytes: 1 * 1024 * 1024 * 1024,
     /** Slot lag from which the worker reports unhealthy, and logs an error. */
     walLagUnhealthyBytes: 2 * 1024 * 1024 * 1024,
-    /** Event-loop lag from which the worker reports degraded, the threshold the yjs relay uses too. */
-    eventLoopLagDegradedMs: 100,
-    /** Event-loop lag from which the worker reports unhealthy. */
-    eventLoopLagUnhealthyMs: 1000,
   },
 } as const;

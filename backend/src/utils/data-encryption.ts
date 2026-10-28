@@ -19,9 +19,6 @@ const deriveKey = (purpose: string): Buffer => {
   return Buffer.from(hkdfSync('sha256', secret, salt, info, keyBytes));
 };
 
-/** Whether a value carries this format's version prefix. */
-export const isEncryptedData = (value: string): boolean => value.startsWith(`${formatVersion}:`);
-
 /**
  * AES-256-GCM under a key derived from `DATA_ENCRYPTION_KEY` for `purpose`, so a value of one purpose never decrypts
  * as another.

@@ -205,7 +205,12 @@ interface FindAddressGovernanceOpts {
  */
 export const findAddressGovernance = async (ctx: DbContext, { email }: FindAddressGovernanceOpts) => {
   const [row] = await ctx.var.db
-    .select({ connectionId: connectionsTable.id, status: connectionsTable.status, authStrategies: tenantsTable.authStrategies })
+    .select({
+      connectionId: connectionsTable.id,
+      displayName: connectionsTable.displayName,
+      status: connectionsTable.status,
+      authStrategies: tenantsTable.authStrategies,
+    })
     .from(emailsTable)
     .innerJoin(
       identitiesTable,

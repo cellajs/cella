@@ -60,7 +60,7 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
     }
     released = await tenantContextById(tenantId, async (db) => {
       for (const [entityType, entityIds] of documents) await retireYjsDocuments({ var: { db } }, { entityType, entityIds });
-      const named = await findLiveAttachmentKeys({ var: { db } }, { keys: objects.map(({ key }) => key) });
+      const named = await findLiveAttachmentKeys({ var: { db } }, { tenantId, keys: objects.map(({ key }) => key) });
       // Per organization: an image of another organization's rows keeps nothing under this one's prefix.
       for (const [organizationId, held] of Map.groupBy(rows, (row) => row.organizationId)) {
         if (!organizationId) continue;

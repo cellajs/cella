@@ -9,6 +9,7 @@ export { newsletterEmail } from './templates/newsletter';
 export { oauthVerificationEmail } from './templates/oauth-verification';
 export { requestResponseEmail } from './templates/request-was-sent';
 export { requestInfoEmail } from './templates/request-was-sent-admin';
+export { ssoRequiredEmail } from './templates/sso-required';
 export { stepUpEmail } from './templates/step-up';
 export { systemInviteEmail } from './templates/system-invite';
 export { tenantRemovedEmail } from './templates/tenant-removed';

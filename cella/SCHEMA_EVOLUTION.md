@@ -163,7 +163,7 @@ export const organizationContract = evolutionContract.channel("organization", {
 
 ## Phase 1: how it works
 
-The engine's whole API is [engine.ts](../shared/src/schema-evolution/engine.ts). Policy knobs (`expandWindowMinDays: 14`, `staleBundleMaxDays: 30`, `unknownFieldHandling: 'strip'`) live in [config.ts](../shared/src/schema-evolution/config.ts).
+The engine's whole API is [engine.ts](../shared/src/schema-evolution/engine.ts). Policy knobs (`expandWindowMinDays: 14`, `staleBundleMaxDays: 30`) live in [config.ts](../shared/src/schema-evolution/config.ts).
 
 ### Server write path
 
@@ -178,5 +178,5 @@ Seam: `migrateScopeToCurrent` in [persister.ts](../frontend/src/query/persister.
 
 ### CI guards
 
-1. **`lens:check`** ([check-lenses.ts](../shared/scripts/check-lenses.ts)), in root `pnpm check` and the CI lint job (with `fetch-depth: 0` for the history compare): append-only (any committed lens module differing from its first-commit blob fails), config collision (every lens `delta` field name is checked against the frozen envelope and `appConfig.productEmbeddings[].hostColumn`), a purity lint (no `await`, no dynamic `import`), and contract completeness (every configured product or channel entity type must call its `evolutionContract` factory in `backend/src/modules`).
+1. **`lens:check`** ([check-lenses.ts](../shared/scripts/check-lenses.ts)), in root `pnpm check` and the CI lint job (with `fetch-depth: 0` for the history compare): append-only (any committed lens module differing from its first-commit blob fails), config collision (every lens `delta` field name is checked against the frozen envelope and `appConfig.productEmbeddings[].hostColumn`), expand-before-contract (a contract lens needs an earlier expand lens of its entity type on one of its fields), a purity lint (no `await`, no dynamic `import`), and contract completeness (every configured product or channel entity type must call its `evolutionContract` factory in `backend/src/modules`).
 2. **oasdiff gate** (`schema-bust-gate`): a breaking OpenAPI diff fails the PR unless `clientCacheVersion` was bumped. Add an "or a lens module was added" pass condition before lens #1, or shipping a lens forces a pointless cache bust.

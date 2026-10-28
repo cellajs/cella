@@ -1,6 +1,5 @@
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import { isRecord } from '../utils/as-record.ts';
-import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
 import { type AddDelta, deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType } from './define.ts';
 import { lenses } from './lens-list.ts';
 
@@ -189,31 +188,14 @@ interface StxLike {
   [key: string]: unknown;
 }
 
-/** Phase 1 machinery for lens #1: the server callers pass no options yet, so `normalizeOps` reports and strips nothing. */
-export interface NormalizeOpsOptions {
-  /**
-   * Canonical field names of the entity's current ops schema. When given, ops keys that are
-   * neither canonical nor a live expand-window alias after lens mapping are reported and
-   * handled per `unknownFieldHandling`.
-   */
-  canonicalKeys?: ReadonlySet<string>;
-  /** Per-call override of `schemaEvolutionPolicy.unknownFieldHandling`. */
-  unknownFieldHandling?: UnknownFieldHandling;
-}
-
 /**
  * Server entry point: maps old-shape `ops` and `stx.fieldTimestamps` to canonical keys, then
  * mirror-writes the twin field during expand windows so old readers stay fresh. Does nothing
  * when the entity has no lenses.
  */
-export function normalizeOps<O extends AnyRecord, S extends StxLike>(
-  entityType: LensEntityType,
-  ops: O,
-  stx: S,
-  options?: NormalizeOpsOptions,
-): { ops: O; stx: S; unknownFields: string[] } {
+export function normalizeOps<O extends AnyRecord, S extends StxLike>(entityType: LensEntityType, ops: O, stx: S): { ops: O; stx: S } {
   const entityLenses = lensesFor(entityType);
-  if (entityLenses.length === 0) return { ops, stx, unknownFields: [] };
+  if (entityLenses.length === 0) return { ops, stx };
 
   let nextOps: AnyRecord = { ...ops };
   const fieldTimestamps: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
@@ -251,32 +233,8 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
     }
   }
 
-  // Keys surviving lens mapping that are neither canonical nor an expand-window twin.
-  const unknownFields: string[] = [];
-  if (options?.canonicalKeys) {
-    const expandAliases = new Set(Object.keys(widenedOpsKeyMap(entityType)));
-    for (const key of Object.keys(nextOps)) {
-      if (!options.canonicalKeys.has(key) && !expandAliases.has(key)) unknownFields.push(key);
-    }
-    if (unknownFields.length > 0) {
-      const handling = options.unknownFieldHandling ?? schemaEvolutionPolicy.unknownFieldHandling;
-      if (handling === 'fail') {
-        throw new Error(`normalizeOps(${entityType}): unmappable fields after lens chain: ${unknownFields.join(', ')}`);
-      }
-      if (handling === 'strip') {
-        for (const key of unknownFields) {
-          delete nextOps[key];
-          if (fieldTimestamps && key in fieldTimestamps) {
-            delete fieldTimestamps[key];
-            fieldTimestampsChanged = true;
-          }
-        }
-      }
-    }
-  }
-
   const nextStx = fieldTimestampsChanged && fieldTimestamps ? ({ ...stx, fieldTimestamps } as S) : stx;
-  return { ops: nextOps as O, stx: nextStx, unknownFields };
+  return { ops: nextOps as O, stx: nextStx };
 }
 
 /**

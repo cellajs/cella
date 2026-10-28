@@ -1,15 +1,11 @@
-import { and, eq, getColumns, sql } from 'drizzle-orm';
+import { and, eq, getColumns } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { inUnarchivedTenant } from '#/modules/memberships/memberships-queries';
 import { coalesce } from '#/utils/request-coalescing';
-
-/** A membership counts while its tenant is not archived: an organization deleted by its admin leaves every member's list at once. */
-const activeTenantOf = (tenantId: typeof membershipsTable.tenantId) =>
-  sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
 
 /**
  * A user's memberships with the `actors.bindings_version` they were read at. An entry answers only to that version,
@@ -35,7 +31,7 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
     const rows = await baseDb
       .select({ version: actorsTable.bindingsVersion, membership: getColumns(membershipsTable) })
       .from(actorsTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), activeTenantOf(membershipsTable.tenantId)))
+      .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
       .where(eq(actorsTable.id, userId));
 
     const memberships = rows.flatMap(({ membership }) => (membership ? [membership] : []));

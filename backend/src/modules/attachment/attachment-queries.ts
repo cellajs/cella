@@ -18,8 +18,7 @@ import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
 import { textSearchFilter } from '#/utils/sql';
 
 // Every attachment read and write below carries the request's tenant + organization predicate, so the result is the
-// same with RLS bypassed; the RLS transaction wrappers stay the backstop. `findLiveAttachmentKeys` carries none and
-// reads under its caller's tenant transaction.
+// same with RLS bypassed; the RLS transaction wrappers stay the backstop.
 
 interface InsertAttachmentsOpts {
   attachments: InsertAttachmentModel[];
@@ -156,17 +155,18 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
 };
 
 interface FindLiveAttachmentKeysOpts {
+  tenantId: string;
   /** Storage keys to look for among the attachments' variants. */
   keys: string[];
 }
 
-/** The keys among `keys` that a live attachment of the context's tenant still names. */
-export const findLiveAttachmentKeys = async (ctx: DbContext, { keys }: FindLiveAttachmentKeysOpts): Promise<Set<string>> => {
+/** The keys among `keys` that a live attachment of the tenant still names. */
+export const findLiveAttachmentKeys = async (ctx: DbContext, { tenantId, keys }: FindLiveAttachmentKeysOpts): Promise<Set<string>> => {
   if (keys.length === 0) return new Set();
   const { rows } = await ctx.var.db.execute<{ key: string }>(sql`
     SELECT DISTINCT variant.value AS key
     FROM ${attachmentsTable}, jsonb_each_text(${attachmentsTable.keys}) AS variant
-    WHERE ${attachmentsTable.deletedAt} IS NULL AND variant.value IN ${keys}`);
+    WHERE ${attachmentsTable.tenantId} = ${tenantId} AND ${attachmentsTable.deletedAt} IS NULL AND variant.value IN ${keys}`);
   return new Set(rows.map((row) => row.key));
 };
 

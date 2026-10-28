@@ -1,3 +1,4 @@
+import { eventLoopLagLimitsMs } from 'shared/utils/event-loop-monitor';
 import type { CdcWorkerHealth } from '#/lib/cdc-websocket';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -39,13 +40,10 @@ export function rollupStatus(components: Record<string, HealthComponent>, critic
   return result;
 }
 
-const eventLoopLagDegradedMs = 100;
-const eventLoopLagUnhealthyMs = 1_000;
-
 /** Grade a Node service's own runtime from event-loop lag. */
 export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
-  if (eventLoopLagMs >= eventLoopLagUnhealthyMs) return 'unhealthy';
-  if (eventLoopLagMs >= eventLoopLagDegradedMs) return 'degraded';
+  if (eventLoopLagMs >= eventLoopLagLimitsMs.unhealthy) return 'unhealthy';
+  if (eventLoopLagMs >= eventLoopLagLimitsMs.degraded) return 'degraded';
   return 'healthy';
 }
 

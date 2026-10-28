@@ -1,8 +1,6 @@
 {
   "ambiguous_placement": "Ambiguous placement",
   "ambiguous_placement.text": "Name one place only, the deepest one: the places above it follow from it.",
-  "auth_key_not_found": "Missing authentication key",
-  "auth_key_not_found.text": "An authentication key is missing. Please contact support.",
   "bad_request_action": "Request not processed",
   "body_too_large": "Too large to save",
   "body_too_large.text": "Shorten it or split it up.",

@@ -9,7 +9,7 @@ import { withActorRef } from '#/modules/actors/actor-refs';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
 
 type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
@@ -37,8 +37,8 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   }
 
   // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
-  const isOwnMembership = membershipToUpdate.userId === actorId;
-  if (setsPersonalView && !isOwnMembership) {
+  const isActorsMembership = membershipToUpdate.userId === actorId;
+  if (setsPersonalView && !isActorsMembership) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   }
 
