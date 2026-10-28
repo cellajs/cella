@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { yjsHttpChunkBytes } from '#/modules/yjs/helpers/yjs-log';
+import { yjsHttpChunkBytes, yjsMaxServerRowIds } from '#/modules/yjs/helpers/yjs-log';
 import { productEntityTypeSchema, validIdSchema, validUuidSchema } from '#/schemas';
 
 /** The length of `bytes` bytes as unpadded base64url. */
@@ -48,5 +48,5 @@ export const yjsMaterializeBodySchema = z.object({
    * The window's server-origin rows, ids only, so the body stays small at the cap; absent reads as none, so a relay
    * that sends none gets 409 for a window that holds one.
    */
-  serverRowIds: z.array(z.number().int()).max(10_000).default([]),
+  serverRowIds: z.array(z.number().int()).max(yjsMaxServerRowIds).default([]),
 });

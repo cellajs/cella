@@ -1,37 +1,30 @@
-import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
+import { and, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
+import type { Tx } from '#/db/create-connection';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { LogRow, YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { collectGarbage } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import { findYjsDocument } from '#/modules/yjs/yjs-queries';
-import type { DocKey, DocScope } from '../constants';
-import { db, type Tx, withRlsTx } from './db';
+import { docWhere, findYjsDocument, findYjsDocumentGeneration, findYjsLog, logWhere } from '#/modules/yjs/yjs-queries';
+import { db, withRlsTx } from './db';
 import { logNotifier } from './log-notifier';
 
 /**
  * Every read and write runs as the system (no user context) under the document's own tenant, the one its entity row
  * states, and carries that tenant id as a predicate, so the result is the same with RLS bypassed. Both tables are
- * fail-closed under RLS: a contextless query on the runtime role returns zero rows, silently.
+ * fail-closed under RLS: a contextless query on the runtime role returns zero rows and no error.
  */
-const asSystem = <T>(doc: DocKey, fn: (tx: Tx) => Promise<T>) => withRlsTx(doc.tenantId, '', fn);
-
-/** `(entity_type, entity_id)` within the document's own tenant. */
-const docWhere = ({ entityType, entityId, tenantId }: DocKey) =>
-  and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId), eq(yjsDocumentsTable.tenantId, tenantId));
-
-const logWhere = ({ entityType, entityId, tenantId }: DocKey) =>
-  and(eq(yjsUpdatesTable.entityType, entityType), eq(yjsUpdatesTable.entityId, entityId), eq(yjsUpdatesTable.tenantId, tenantId));
-
-export type { AppendResult, LogRow, YjsDocumentRead };
+function asSystem<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return withRlsTx(tenantId, '', fn);
+}
 
 /**
  * The document in one consistent read (`findYjsDocument`): its row under FOR SHARE, so a compaction's base replace on
  * any relay commits before it or waits, then its log, oldest first. Null when no row exists: never seeded, or retired.
  */
-export async function loadDocument(doc: DocKey): Promise<YjsDocumentRead | null> {
-  return asSystem(doc, (tx) => findYjsDocument({ var: { db: tx } }, { doc }));
+export async function findDocument(doc: YjsDocKey): Promise<YjsDocumentRead | null> {
+  return asSystem(doc.tenantId, (tx) => findYjsDocument({ var: { db: tx } }, { doc }));
 }
 
 /**
@@ -40,8 +33,8 @@ export async function loadDocument(doc: DocKey): Promise<YjsDocumentRead | null>
  * exists, and the document read back. Concurrent seeds, on this relay, another or the API, converge on the first. Null,
  * with nothing inserted, when the entity has no live row: it was deleted, and its document must not come back.
  */
-export async function seedDocument(scope: DocScope, toSeed: (description: string | null) => Uint8Array): Promise<YjsDocumentRead | null> {
-  return asSystem(scope, (tx) => seedYjsDocument({ var: { db: tx } }, { doc: scope, toSeed }));
+export async function seedDocument(scope: YjsDocScope, toSeed: (description: string | null) => Uint8Array): Promise<YjsDocumentRead | null> {
+  return asSystem(scope.tenantId, (tx) => seedYjsDocument({ var: { db: tx } }, { doc: scope, toSeed }));
 }
 
 /**
@@ -53,14 +46,14 @@ export async function seedDocument(scope: DocScope, toSeed: (description: string
  * session counts the row as relayed before that notice arrives.
  */
 export async function appendUpdate(
-  scope: DocScope,
+  scope: YjsDocScope,
   userId: string | null,
   payload: Uint8Array,
   generation: string,
   onLogged?: (id: number) => void,
 ): Promise<AppendResult> {
-  const result = await asSystem(scope, async (tx) => {
-    const appended = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation, notify: false });
+  const result = await asSystem(scope.tenantId, async (tx) => {
+    const appended = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId, generation, notify: false });
     if (appended.status === 'appended') onLogged?.(appended.id);
     return appended;
   });
@@ -72,20 +65,10 @@ export async function appendUpdate(
  * The log of the document's `generation`, oldest first, with that document row held under a key-share lock so no
  * retirement deletes it meanwhile. Null when no row of that generation exists: retired, or reseeded since.
  */
-export async function readLogOf(doc: DocKey, generation: string): Promise<LogRow[] | null> {
-  return asSystem(doc, async (tx) => {
-    const [document] = await tx
-      .select({ generation: yjsDocumentsTable.generation })
-      .from(yjsDocumentsTable)
-      .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
-      .for('key share');
-    if (!document) return null;
-    const rows = await tx
-      .select({ id: yjsUpdatesTable.id, payload: yjsUpdatesTable.payload, userId: yjsUpdatesTable.userId })
-      .from(yjsUpdatesTable)
-      .where(logWhere(doc))
-      .orderBy(asc(yjsUpdatesTable.id));
-    return rows.map((row) => ({ ...row, payload: new Uint8Array(row.payload) }));
+export async function findLog(doc: YjsDocKey, generation: string): Promise<LogRow[] | null> {
+  return asSystem(doc.tenantId, async (tx) => {
+    const document = await findYjsDocumentGeneration({ var: { db: tx } }, { doc });
+    return document?.generation === generation ? findYjsLog({ var: { db: tx } }, { doc }) : null;
   });
 }
 
@@ -100,10 +83,10 @@ export type FoldResult = 'ok' | 'retired' | 'overlap';
  * its base holds rows this merge may lack. The document row is locked first, as a retirement locks it, so two folds of
  * one document wait for each other.
  */
-export async function compactState(doc: DocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
+export async function foldLog(doc: YjsDocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
   const state = collectGarbage(merged);
   try {
-    return await asSystem(doc, async (tx): Promise<FoldResult> => {
+    return await asSystem(doc.tenantId, async (tx): Promise<FoldResult> => {
       const updated = await tx
         .update(yjsDocumentsTable)
         .set({ state: Buffer.from(state), updatedAt: sql`now()` })
@@ -126,9 +109,9 @@ export async function compactState(doc: DocKey, merged: Uint8Array, logIds: numb
 }
 
 /** Deletes log rows no merge accepts, so they never block the document again. */
-export async function discardLogRows(doc: DocKey, logIds: number[]): Promise<void> {
+export async function discardLogRows(doc: YjsDocKey, logIds: number[]): Promise<void> {
   if (logIds.length === 0) return;
-  await asSystem(doc, async (tx) => {
+  await asSystem(doc.tenantId, async (tx) => {
     await tx.delete(yjsUpdatesTable).where(and(logWhere(doc), inArray(yjsUpdatesTable.id, logIds)));
   });
 }
@@ -137,8 +120,8 @@ export async function discardLogRows(doc: DocKey, logIds: number[]): Promise<voi
  * Removes the document row and any log rows: the entity is gone, so nothing can receive them. The row goes first, so an
  * append that holds it commits before the log delete, which takes its row too.
  */
-export async function deleteDoc(doc: DocKey): Promise<void> {
-  await asSystem(doc, async (tx) => {
+export async function deleteDocument(doc: YjsDocKey): Promise<void> {
+  await asSystem(doc.tenantId, async (tx) => {
     await tx.delete(yjsDocumentsTable).where(docWhere(doc));
     await tx.delete(yjsUpdatesTable).where(logWhere(doc));
   });
@@ -151,8 +134,8 @@ export interface LiveStamp {
 }
 
 /** Stamps the document row live, so no sweep takes it for an orphan, and reads its newest log row. Creates no row. */
-export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
-  return asSystem(doc, async (tx) => {
+export async function stampDocumentLive(doc: YjsDocKey): Promise<LiveStamp> {
+  return asSystem(doc.tenantId, async (tx) => {
     const stamped = await tx
       .update(yjsDocumentsTable)
       .set({ updatedAt: sql`now()` })
@@ -170,10 +153,13 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
 /** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
 const sweepTenantConcurrency = 4;
 
-async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
+async function findStaleDocumentsOfTenant(tenantId: string, olderThanMs: number): Promise<YjsDocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;
-  return withRlsTx(tenantId, '', async (tx) => {
-    return tx
+  const sameDocument = sql`${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
+              AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
+              AND ${yjsUpdatesTable.tenantId} = ${yjsDocumentsTable.tenantId}`;
+  return asSystem(tenantId, (tx) =>
+    tx
       .select({
         entityType: yjsDocumentsTable.entityType,
         entityId: yjsDocumentsTable.entityId,
@@ -189,35 +175,31 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
           // another relay generation.
           sql`EXISTS (
             SELECT 1 FROM ${yjsUpdatesTable}
-            WHERE ${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
-              AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
-              AND ${yjsUpdatesTable.tenantId} = ${yjsDocumentsTable.tenantId}
+            WHERE ${sameDocument}
           ) AND NOT EXISTS (
             SELECT 1 FROM ${yjsUpdatesTable}
-            WHERE ${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
-              AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
-              AND ${yjsUpdatesTable.tenantId} = ${yjsDocumentsTable.tenantId}
+            WHERE ${sameDocument}
               AND ${yjsUpdatesTable.createdAt} >= ${cutoff}
           )`,
         ),
-      );
-  });
+      ),
+  );
 }
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every yjsLiveTouchMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
- * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
- * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
- * nothing.
+ * row every yjsLiveStampMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP.
+ * An idle document with nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits
+ * every tenant through its own tenant-scoped transaction, a bounded number at a time; a contextless query on the
+ * fail-closed policy returns nothing.
  */
-export async function listStaleDocs(olderThanMs: number): Promise<DocScope[]> {
+export async function findStaleDocuments(olderThanMs: number): Promise<YjsDocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.
   const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
-  const stale: DocScope[] = [];
+  const stale: YjsDocScope[] = [];
   for (let i = 0; i < tenantIds.length; i += sweepTenantConcurrency) {
     const batch = tenantIds.slice(i, i + sweepTenantConcurrency);
-    const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));
+    const perTenant = await Promise.all(batch.map((tenantId) => findStaleDocumentsOfTenant(tenantId, olderThanMs)));
     for (const rows of perTenant) stale.push(...rows);
   }
   return stale;

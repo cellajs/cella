@@ -1,31 +1,14 @@
-import { escapeLiteral } from 'pg';
 import type { ActorContext } from '#/core/context';
 import { transactionOpenedWith } from '#/db/create-connection';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
-
-/** The alphabet of tenant and actor ids: a value outside it never reaches the text that opens a tenant transaction. */
-const idAlphabet = /^[a-z0-9-]*$/i;
-
-interface SessionVars {
-  tenantId: string;
-  /** Empty for code with no request behind it. */
-  userId: string;
-  includeDeleted: boolean;
-}
+import { type TenantSessionVars, tenantTransactionOpening } from '#/db/tenant-transaction-opening';
 
 /**
- * A transaction that starts with the session variables the RLS policies read (tenant id, user id, include_deleted),
- * set transaction-local in the round trip that opens it.
+ * A transaction on the runtime pool that starts with the session variables the RLS policies read.
  * @throws An id outside the id alphabet, before a connection is taken.
  */
-async function tenantTransaction<T>({ tenantId, userId, includeDeleted }: SessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  if (!idAlphabet.test(tenantId) || !idAlphabet.test(userId)) throw new Error('Tenant transaction refused: an id outside the id alphabet');
-  const opening =
-    `BEGIN${readOnly ? ' READ ONLY' : ''}; ` +
-    `SELECT set_config('app.tenant_id', ${escapeLiteral(tenantId)}, true), ` +
-    `set_config('app.user_id', ${escapeLiteral(userId)}, true), ` +
-    `set_config('app.include_deleted', '${includeDeleted}', true)`;
-  return transactionOpenedWith(baseDb, opening, fn);
+async function tenantTransaction<T>(vars: TenantSessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), fn);
 }
 
 /** A tenant transaction for a request: `fn` gets a clone of the context whose `db` is the transaction. */
@@ -39,8 +22,8 @@ const requestTransaction = <T>(
 
 /**
  * Read-only RLS transaction for code with no request behind it, such as a CDC listener or a
- * scheduled job. Keeps the RLS session-variable contract in this file, so a policy that starts
- * reading a new `app.*` variable needs no change in background callers.
+ * scheduled job. Opens with `tenantTransactionOpening` like every tenant transaction, so a policy
+ * that starts reading a new `app.*` variable needs no change in background callers.
  *
  * `app.user_id` is set empty: product read policies are tenant-scoped, and any per-user rule must
  * be applied explicitly by the caller.

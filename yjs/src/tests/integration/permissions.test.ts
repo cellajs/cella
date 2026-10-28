@@ -7,8 +7,8 @@ import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/e
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
-import type { DocScope } from '../../constants';
-import { authorizeDoc } from '../../data/permissions';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { authorizeDocument } from '../../data/permissions';
 import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
 const tenantA = 'yjs-authz-tenant-a';
@@ -34,14 +34,14 @@ const hierarchyC = toStrictHomePlan(
 );
 
 /** The document a token asks for: attachmentA in its own scope unless overridden. */
-function requested(overrides: Partial<DocScope>): DocScope {
+function requested(overrides: Partial<YjsDocScope>): YjsDocScope {
   return { entityType: 'attachment', entityId: attachmentA, tenantId: tenantA, organizationId: orgA, ...overrides };
 }
 
-// Exercises the real `loadMemberships` / `resolveEntityScope` SQL and the shared permission engine
+// Exercises the real `findMemberships` / `findEntityScope` SQL and the shared permission engine
 // against Postgres, covering cross-tenant isolation. Cross-organization isolation within one tenant
 // is not representable: 1 tenant = 1 organization (organizations_tenant_id_key).
-describe('Local entity authorization (authorizeDoc)', () => {
+describe('Local entity authorization (authorizeDocument)', () => {
   assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
 
   let admin: pg.Client;
@@ -78,13 +78,13 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   it("returns the entity row's scope to an org admin editing in their organization (positive control)", async () => {
-    await expect(authorizeDoc(userA, requested({ entityId: attachmentA }))).resolves.toEqual({
+    await expect(authorizeDocument(userA, requested({ entityId: attachmentA }))).resolves.toEqual({
       scope: { entityType: 'attachment', entityId: attachmentA, tenantId: tenantA, organizationId: orgA },
     });
   });
 
   it('must not authorize a document via a tenant the user holds no membership in', async () => {
-    await expect(authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBe('denied');
+    await expect(authorizeDocument(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBe('denied');
   });
 
   it('must not authorize a row of another tenant than the token names, on a connection RLS does not bind (defense in depth)', async () => {
@@ -101,7 +101,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
     }));
     vi.resetModules();
     try {
-      const { authorizeDoc: authorizeUnbound } = await import('../../data/permissions');
+      const { authorizeDocument: authorizeUnbound } = await import('../../data/permissions');
       await expect(authorizeUnbound(userA, requested({ tenantId: tenantB, organizationId: orgA }))).resolves.toBe('denied');
       // Positive control on the same pool: the token naming the row's own tenant is authorized.
       await expect(authorizeUnbound(userA, requested({}))).resolves.toMatchObject({ scope: { tenantId: tenantA, organizationId: orgA } });
@@ -113,27 +113,27 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   it("must not authorize a request that names another tenant's organization", async () => {
-    await expect(authorizeDoc(userA, requested({ entityId: attachmentA, organizationId: orgC }))).resolves.toBe('denied');
+    await expect(authorizeDocument(userA, requested({ entityId: attachmentA, organizationId: orgC }))).resolves.toBe('denied');
   });
 
   it("must not let a member write another member's attachment through the relay", async () => {
-    await expect(authorizeDoc(memberA, requested({ entityId: attachmentA }))).resolves.toBe('denied');
+    await expect(authorizeDocument(memberA, requested({ entityId: attachmentA }))).resolves.toBe('denied');
     // Positive control: the member's own attachment.
-    await expect(authorizeDoc(memberA, requested({ entityId: attachmentM }))).resolves.toEqual({
+    await expect(authorizeDocument(memberA, requested({ entityId: attachmentM }))).resolves.toEqual({
       scope: { entityType: 'attachment', entityId: attachmentM, tenantId: tenantA, organizationId: orgA },
     });
   });
 
   it('tells a user who may update a soft-deleted entity that it is deleted (4410), and opens no document for it', async () => {
-    await expect(authorizeDoc(userA, requested({ entityId: deletedA }))).resolves.toBe('deleted');
+    await expect(authorizeDocument(userA, requested({ entityId: deletedA }))).resolves.toBe('deleted');
   });
 
   it('must not tell anyone without update access that a soft-deleted entity exists: denied (4003), as any refusal', async () => {
-    await expect(authorizeDoc(memberA, requested({ entityId: deletedA }))).resolves.toBe('denied');
-    await expect(authorizeDoc(userB, requested({ entityId: deletedA }))).resolves.toBe('denied');
+    await expect(authorizeDocument(memberA, requested({ entityId: deletedA }))).resolves.toBe('denied');
+    await expect(authorizeDocument(userB, requested({ entityId: deletedA }))).resolves.toBe('denied');
   });
 
   it('tells a missing entity deleted: the token proves its holder could update it within the last five minutes', async () => {
-    await expect(authorizeDoc(userA, requested({ entityId: randomUUID() }))).resolves.toBe('deleted');
+    await expect(authorizeDocument(userA, requested({ entityId: randomUUID() }))).resolves.toBe('deleted');
   });
 });

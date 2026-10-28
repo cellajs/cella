@@ -6,7 +6,7 @@ import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { DocScope } from '../../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { buildSyncUpdate, createSignedToken, mapUpdate, openSocket, readMap, startRelayServer, until } from '../helpers';
 import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser, storedState } from './seed';
 
@@ -23,7 +23,7 @@ const organizationId = '50000000-0000-4000-a000-000000000001';
 const member = randomUUID();
 const attachmentId = randomUUID();
 const plan = toStrictHomePlan(buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() }));
-const scope: DocScope = { entityType: 'attachment', entityId: attachmentId, tenantId, organizationId };
+const scope: YjsDocScope = { entityType: 'attachment', entityId: attachmentId, tenantId, organizationId };
 
 let admin: pg.Client;
 const relay = await startRelayServer();

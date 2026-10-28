@@ -3,23 +3,46 @@ import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
 import { MissingAncestorError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
-import { type SocketContext, yjsPendingQueueCap } from '../constants';
-import { authorizeDoc } from '../data/permissions';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { docKey, yjsMessageTypes, yjsPendingQueueCap } from '../constants';
+import { authorizeDocument } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
-import { handleLeave, handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
+import { handleLeave, handleMessage, peekMessageType, refuseFrame } from '../sync/relay';
 import { joinCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 
+/**
+ * One socket's context. Until the user's access is authorized against the entity row, the socket's sync frames wait in
+ * its queue and it relays nothing.
+ */
+export interface SocketContext {
+  /** The user its token names. */
+  userId: string;
+  /** The document its token asks for. */
+  requested: YjsDocScope;
+  /**
+   * The document as its entity row states it, null until authorization read that row. Only a scope read from the row
+   * reaches storage or a session: it is the session key, the tenant its rows are stored and read under, and the scope
+   * materialize writes in.
+   */
+  scope: YjsDocScope | null;
+  /**
+   * True from the relay's Step1 until the socket's Step2 answers it: an update sent meanwhile is dropped, since the
+   * reply carries it and its document may be one the client is about to drop.
+   */
+  awaitingReply: boolean;
+}
+
 const statusText = { 400: 'Bad Request', 403: 'Forbidden', 429: 'Too Many Requests', 500: 'Internal Server Error' } as const;
 
 /**
- * Rejects at the HTTP level for malformed requests (400), a token for another document (403) and rate limits (429),
- * then destroys the socket once the answer is flushed, as `ws` does for its own refusals: a peer that never closes
- * cannot hold it open. A browser cannot read the body or code of a failed upgrade and sees close 1006, so anything
- * the client must react to (an expired token) closes after the handshake.
+ * Rejects at the HTTP level for malformed requests (400), a token for another document (403), rate limits (429) and an
+ * error in the handler (500), then destroys the socket once the answer is flushed, as `ws` does for its own refusals: a
+ * peer that never closes cannot hold it open. A browser cannot read the body or code of a failed upgrade and sees close
+ * 1006, so anything the client must react to (an expired token) closes after the handshake.
  */
 function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: number, reason: string): void {
   if (socket.destroyed) return;
@@ -30,42 +53,36 @@ function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: nu
   );
 }
 
-/** Per-socket verification, awaited as the first task of the socket's queue so no sync frame runs before it settles. */
-const verifications = new WeakMap<WebSocket, Promise<void>>();
-
-/** `type:id` of the document a socket asks for, for log lines. */
-const docLabel = (ctx: SocketContext) => `${ctx.requested.entityType}:${ctx.requested.entityId}`;
-
 /**
  * Authorizes the socket's user against the entity row after the connection is established, locally through the shared
  * permission engine; on success the socket takes the row's scope, on failure it is disconnected and its queued sync
  * frames never run. A deleted entity closes with 4410, a refusal with 4003: close frames on the open socket, since a
  * browser reads no code from a refused upgrade.
  */
-async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<void> {
+async function verifyEntityAccess(ws: WebSocket, ctx: SocketContext): Promise<void> {
   try {
-    const verdict = await authorizeDoc(ctx.userId, ctx.requested);
+    const verdict = await authorizeDocument(ctx.userId, ctx.requested);
     if (ws.readyState !== ws.OPEN) return;
     if (verdict === 'deleted') {
-      log.info(`Entity deleted for ${docLabel(ctx)}`);
+      log.info(`Entity deleted for ${docKey(ctx.requested)}`);
       ws.close(4410, 'Entity deleted');
       return;
     }
     if (verdict === 'denied') {
-      log.warn(`Entity access denied for ${docLabel(ctx)}`);
+      log.warn(`Entity access denied for ${docKey(ctx.requested)}`);
       ws.close(4003, 'Access denied');
       return;
     }
     ctx.scope = verdict.scope;
-    log.debug(`Entity verified for ${docLabel(ctx)}`, { userId: ctx.userId });
+    log.debug(`Entity verified for ${docKey(ctx.requested)}`, { userId: ctx.userId });
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;
     if (err instanceof MissingAncestorError) {
-      log.warn(`Entity missing required ancestor for ${docLabel(ctx)}`, { missingChannel: err.missingChannel, missingKey: err.missingKey });
+      log.warn(`Entity missing required ancestor for ${docKey(ctx.requested)}`, { missingChannel: err.missingChannel, missingKey: err.missingKey });
       ws.close(4400, 'Missing entity ancestor');
       return;
     }
-    log.error(`Entity verify failed for ${docLabel(ctx)}`, { err: err });
+    log.error(`Entity verify failed for ${docKey(ctx.requested)}`, { err });
     ws.close(4503, 'Authorization unavailable');
   }
 }
@@ -73,7 +90,6 @@ async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<voi
 /** Parses the request target; the Host header plays no part, so only the path and query decide. Null when no URL can hold it. */
 function parseTarget(req: IncomingMessage): URL | null {
   try {
-    // Accepts both '/<entityId>' and '/yjs/<entityId>': the load balancer does not strip the prefix on the path-routed app origin.
     return new URL(stripYjsPrefix(req.url ?? '/'), 'http://relay.invalid');
   } catch {
     return null;
@@ -84,7 +100,7 @@ function parseTarget(req: IncomingMessage): URL | null {
  * Validates params and token, then accepts the connection until the token expires; entity-level access is verified
  * asynchronously while sync frames wait in the socket's queue and the socket stays outside the document.
  * Until `ws` takes the socket over, nothing else listens for its errors: a peer resetting the connection mid-handshake
- * would raise an uncaught 'error' and end the process, which under singleVM is the whole API. So the handler's own
+ * would raise an uncaught 'error', which ends the process, under singleVM the whole API. So the handler's own
  * listener destroys the socket, and a failure anywhere in the handler answers and ends the connection.
  */
 export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
@@ -96,12 +112,9 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
       if (socket.destroyed) return;
       handedOver = true;
       // `ws` listens for the socket's errors from here on, and re-emits a bad frame's error on the WebSocket, which
-      // must have a listener before `ws` parses any frame: a refused socket gets no other.
+      // must have a listener before `ws` parses any frame: `onOpen` adds one before it returns.
       socket.off('error', onSocketError);
-      server.handleUpgrade(req, socket, head, (ws) => {
-        ws.on('error', (err) => log.debug('WS error', { err }));
-        onOpen(ws);
-      });
+      server.handleUpgrade(req, socket, head, onOpen);
     };
     admitUpgrade(server, req, socket, handOver).catch((err) => {
       log.error('WS upgrade failed', { err });
@@ -136,14 +149,19 @@ async function admitUpgrade(
 
   const result = verifyToken(token);
   if (!result.ok) {
-    // Expiry is routine on a long-lived editor socket, so it logs at debug; a bad signature points at a mismatched key pair or tampering and warns.
+    // Expiry is routine on a long-lived editor socket, so it logs at debug; a bad signature points at a mismatched key
+    // pair or tampering and warns.
     if (result.reason === 'expired') {
       log.debug('WS token expired', { entityType: rawEntityType });
     } else {
       log.warn('WS token verification failed', { entityType: rawEntityType, reason: result.reason });
     }
-    // Closed after the handshake so the browser sees 4001, refreshes its token and reconnects; y-websocket 3 counts every closed connection towards its backoff, so no tight loop.
-    handOver((ws) => ws.close(4001, 'Invalid or expired token'));
+    // Closed after the handshake so the browser sees 4001, refreshes its token and reconnects; y-websocket 3 counts
+    // every closed connection towards its backoff, so no tight loop.
+    handOver((ws) => {
+      ws.on('error', (err) => log.debug('WS error', { err }));
+      ws.close(4001, 'Invalid or expired token');
+    });
     return;
   }
   const payload = result.payload;
@@ -160,7 +178,7 @@ async function admitUpgrade(
     return;
   }
 
-  const entityId = url.pathname.replace(/^\/+/, '') || undefined;
+  const entityId = url.pathname.replace(/^\/+/, '');
 
   if (!entityId) {
     rejectUpgrade(socket, 400, 4400, 'Missing entityId');
@@ -180,7 +198,6 @@ async function admitUpgrade(
     return;
   }
 
-  // Accepted optimistically: sync frames queue on the socket until entity access is verified.
   const ctx: SocketContext = {
     userId: payload.userId,
     requested: {
@@ -195,9 +212,10 @@ async function admitUpgrade(
 
   // A peer that reset the connection while the limiter answered is already gone.
   if (socket.destroyed) return;
-  log.info(`Connection accepted for ${docLabel(ctx)}`, { userId: ctx.userId, tenantId: payload.tenantId });
+  log.info(`Connection accepted for ${docKey(ctx.requested)}`, { userId: ctx.userId, tenantId: payload.tenantId });
   handOver((ws) => {
-    verifications.set(ws, verifyEntityAsync(ws, ctx));
+    // Awaited as the first task of the socket's queue, so no sync frame runs before it settles.
+    const verification = verifyEntityAccess(ws, ctx);
     // The socket lives no longer than its token: the client reconnects with a fresh one, which a user whose access was revoked cannot get.
     const deadline = setTimeout(
       () => {
@@ -206,7 +224,7 @@ async function admitUpgrade(
       Math.max(0, payload.exp - Date.now()),
     );
     ws.once('close', () => clearTimeout(deadline));
-    server.emit('connection', ws, ctx);
+    server.emit('connection', ws, ctx, verification);
   });
 }
 
@@ -221,24 +239,23 @@ async function admitUpgrade(
  * whose other sockets drop the presence it held.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
-  server.on('connection', (ws, ctx: SocketContext) => {
+  server.on('connection', (ws: WebSocket, ctx: SocketContext, verification: Promise<void>) => {
     let joined: SocketContext['scope'] = null;
     let heldAwareness: Uint8Array | null = null;
     const relayAwareness = (data: Uint8Array) => {
       handleMessage(ctx, ws, data).catch((err) => {
-        log.error(`Error handling awareness for ${docLabel(ctx)}`, { err });
+        log.error(`Error handling awareness for ${docKey(ctx.requested)}`, { err });
       });
     };
 
     // A frame whose handling failed may not be logged and gets no `Saved`: the socket closes, and the client's next
     // handshake uploads what the relay lacks.
     const queue = createSerialQueue((err) => {
-      log.error(`Error handling message for ${docLabel(ctx)}`, { err });
+      log.error(`Error handling message for ${docKey(ctx.requested)}`, { err });
       if (ws.readyState === ws.OPEN) ws.close(1011, 'Frame handling failed');
     });
-    const verification = verifications.get(ws);
     void queue.enqueue(async () => {
-      if (verification) await verification;
+      await verification;
       const held = heldAwareness;
       heldAwareness = null;
       // Denied, failed or closed during verification: queued frames must never apply, and the socket never joins.
@@ -272,7 +289,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       if (ws.readyState !== ws.OPEN) return;
       const messageType = peekMessageType(data);
       if (messageType === null) return refuseFrame(ctx.requested, ctx.userId, ws, 'Malformed frame');
-      if (messageType === YMessage.Awareness) {
+      if (messageType === yjsMessageTypes.Awareness) {
         if (joined) relayAwareness(data);
         else if (!queue.closed) heldAwareness = data;
         return;
@@ -291,7 +308,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       try {
         receive(new Uint8Array(rawData));
       } catch (err) {
-        log.error(`Frame handling failed for ${docLabel(ctx)}`, { err });
+        log.error(`Frame handling failed for ${docKey(ctx.requested)}`, { err });
         ws.close(1011, 'Frame handling failed');
       }
     });
@@ -299,7 +316,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
     ws.on('close', cleanup);
 
     ws.on('error', (err) => {
-      log.error('WebSocket error', { entityType: ctx.requested.entityType, entityId: ctx.requested.entityId, err });
+      log.error(`WebSocket error for ${docKey(ctx.requested)}`, { err });
       cleanup();
     });
   });

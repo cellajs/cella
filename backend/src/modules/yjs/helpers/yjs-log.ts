@@ -12,6 +12,9 @@ export const yjsLogNoticeMaxIds = 200;
 /** The largest update the log takes: the cap the relay's socket puts on one frame. */
 export const yjsMaxUpdateBytes = 2 * 1024 * 1024;
 
+/** Server-origin rows one materialize request may name: the route refuses more with 400, which no retry overcomes. */
+export const yjsMaxServerRowIds = 10_000;
+
 /**
  * The largest update one HTTP push carries. Base64url-encoded, a third larger, it stays under the API's 1 MB JSON body
  * limit. The frontend posts in chunks of this size (httpChunkBytes in yjs-http.ts).

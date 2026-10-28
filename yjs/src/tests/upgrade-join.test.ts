@@ -3,7 +3,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { DocScope } from '../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import {
   awarenessUpdate,
   buildAwarenessMessage,
@@ -26,7 +26,7 @@ import {
 // every entity row sits in tenant-1 / org-1, and authorization returns the row's scope, never the token's.
 const gates = new Map<string, { delayMs: number; allowed: boolean }>();
 vi.mock('../data/permissions', () => ({
-  authorizeDoc: vi.fn(async (userId: string, requested: DocScope) => {
+  authorizeDocument: vi.fn(async (userId: string, requested: YjsDocScope) => {
     const gate = gates.get(userId) ?? { delayMs: 0, allowed: true };
     if (gate.delayMs) await new Promise((resolve) => setTimeout(resolve, gate.delayMs));
     if (!gate.allowed || requested.tenantId !== 'tenant-1') return 'denied';
@@ -37,7 +37,7 @@ vi.mock('../data/permissions', () => ({
 let appendHold: ReturnType<typeof deferred> | null = null;
 const storage = fakeStorage((call) => (call === 'appendUpdate' ? appendHold?.promise : undefined));
 vi.mock('../data/storage', () => storage);
-vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn(async () => 'ok'), stateToBlocksJson: vi.fn(() => '[]') }));
+vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn(async () => 'ok'), stateToBlocksJsonOrNull: vi.fn(() => '[]') }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 
 const { getCollab } = await import('../sync/session-manager');

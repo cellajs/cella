@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { isProduct, type ProductEntityType, toTableName } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { LogRow, YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -9,11 +9,26 @@ import { getIsoDate } from '#/utils/iso-date';
 // passes its own transaction as `ctx.var.db`.
 
 /** `(entity_type, entity_id)` within the document's own tenant, so a read is the same with RLS bypassed. */
-const docWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
+export const docWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
   and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId), eq(yjsDocumentsTable.tenantId, tenantId));
 
-const logWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
+/** The document's log rows, by the same key as `docWhere`. */
+export const logWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
   and(eq(yjsUpdatesTable.entityType, entityType), eq(yjsUpdatesTable.entityId, entityId), eq(yjsUpdatesTable.tenantId, tenantId));
+
+interface FindYjsLogOpts {
+  doc: YjsDocKey;
+}
+
+/** The document's log, oldest first, in the caller's transaction; empty when nothing is logged. */
+export const findYjsLog = async (ctx: DbContext, { doc }: FindYjsLogOpts): Promise<LogRow[]> => {
+  const rows = await ctx.var.db
+    .select({ id: yjsUpdatesTable.id, payload: yjsUpdatesTable.payload, userId: yjsUpdatesTable.userId })
+    .from(yjsUpdatesTable)
+    .where(logWhere(doc))
+    .orderBy(asc(yjsUpdatesTable.id));
+  return rows.map((row) => ({ ...row, payload: new Uint8Array(row.payload) }));
+};
 
 interface FindYjsDocumentOpts {
   doc: YjsDocKey;
@@ -27,23 +42,13 @@ interface FindYjsDocumentOpts {
  * both tables are fail-closed under RLS, and a read without it finds no row.
  */
 export const findYjsDocument = async (ctx: DbContext, { doc }: FindYjsDocumentOpts): Promise<YjsDocumentRead | null> => {
-  const { db } = ctx.var;
-  const [document] = await db
+  const [document] = await ctx.var.db
     .select({ state: yjsDocumentsTable.state, generation: yjsDocumentsTable.generation })
     .from(yjsDocumentsTable)
     .where(docWhere(doc))
     .for('share');
   if (!document) return null;
-  const rows = await db
-    .select({ id: yjsUpdatesTable.id, payload: yjsUpdatesTable.payload, userId: yjsUpdatesTable.userId })
-    .from(yjsUpdatesTable)
-    .where(logWhere(doc))
-    .orderBy(asc(yjsUpdatesTable.id));
-  return {
-    generation: document.generation,
-    base: new Uint8Array(document.state),
-    rows: rows.map((row) => ({ ...row, payload: new Uint8Array(row.payload) })),
-  };
+  return { generation: document.generation, base: new Uint8Array(document.state), rows: await findYjsLog(ctx, { doc }) };
 };
 
 interface InsertYjsDocumentOpts {

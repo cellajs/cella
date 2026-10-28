@@ -13,7 +13,7 @@ import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
 
-/** Message types on the relay socket: y-websocket's sync, and the relay's own `Generation` and `Saved` (yjs/src/sync/relay.ts). */
+/** Message types on the relay socket: y-websocket's sync, and the relay's own `Generation` and `Saved` (yjs/src/constants.ts). */
 const MESSAGE = { sync: 0, generation: 4, saved: 5 } as const;
 const SYNC = { step2: 1, update: 2 } as const;
 /** The relay's log channel: every append notifies there since release 2, so a listener counts the relay's pg_notify volume. */

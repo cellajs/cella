@@ -6,10 +6,12 @@ export interface SerialQueue {
   close(): void;
   /** Tasks waiting to run. */
   readonly size: number;
+  /** True once `close` ran: no task starts after it. */
   readonly closed: boolean;
 }
 
-export function createSerialQueue(onError: (err: unknown) => void = () => {}): SerialQueue {
+/** An open, empty queue; `onError` receives what a task throws. */
+export function createSerialQueue(onError: (err: unknown) => void): SerialQueue {
   let tail: Promise<void> = Promise.resolve();
   let waiting = 0;
   let closed = false;

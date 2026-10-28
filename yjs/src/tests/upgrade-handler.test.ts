@@ -16,7 +16,7 @@ const verifyGate: { delayMs: number; allowed: boolean; deleted: boolean; hold: P
   error: null,
 };
 vi.mock('../data/permissions', () => ({
-  authorizeDoc: vi.fn(async (_userId: string, requested: unknown) => {
+  authorizeDocument: vi.fn(async (_userId: string, requested: unknown) => {
     if (verifyGate.hold) await verifyGate.hold;
     if (verifyGate.delayMs) await new Promise((resolve) => setTimeout(resolve, verifyGate.delayMs));
     if (verifyGate.error) throw verifyGate.error;
@@ -28,7 +28,6 @@ vi.mock('../data/permissions', () => ({
 const applied: { type: number; verified: boolean; body: number }[] = [];
 // A frame starting with 0xff stands for one the relay throws on.
 vi.mock('../sync/relay', () => ({
-  YMessage: { Sync: 0, Awareness: 1 },
   peekMessageType: (data: Uint8Array) => {
     if (data[0] === 0xff) throw new Error('relay failure');
     return data.length === 0 ? null : data[0];

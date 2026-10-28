@@ -1,19 +1,35 @@
 import type { WebSocket } from 'ws';
-import type { DocKey, DocScope } from '../constants';
-import { yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsCleanupMaxAttempts, yjsLiveTouchMs } from '../constants';
-import { deleteDoc, touchDoc } from '../data/storage';
+import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsCleanupMaxAttempts, yjsLiveStampMs, yjsMessageTypes } from '../constants';
+import { deleteDocument, stampDocumentLive } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 
+/** A document's collab session: what this relay keeps in memory for it while editors are connected and until its cleanup. */
 export interface CollabSession {
   /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
-  scope: DocScope;
+  scope: YjsDocScope;
   clients: Set<WebSocket>;
-  /** Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket relays that id. Up to yjsAwarenessMaxClients per socket. */
+  /**
+   * Sockets whose handshake answer is in flight, each with the frames broadcast to it meanwhile, sent right after the
+   * answer: its client drops every sync frame before the answer's `Generation`, and an update committed after the
+   * answer's read is in no part of it.
+   */
+  handshakes: Map<WebSocket, Uint8Array[]>;
+  /**
+   * Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket
+   * relays that id. Up to yjsAwarenessMaxClients per socket.
+   */
   awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
-  /** Document lock: seeding, compaction and finishing (cleanup or the sweep) run one at a time through this chain. */
+  /**
+   * Document lock: every load (a handshake's, an update's first, a catch-up's), compaction and finishing (cleanup or the
+   * sweep) run one at a time through this chain.
+   */
   chain: Promise<unknown>;
-  /** The generation of the document row the session loaded at its first handshake, null before. A row gone or of another generation since was retired: the session ends. */
+  /**
+   * The generation of the document row the session loaded at its first handshake, null before. A row gone or of another
+   * generation since was retired: the session ends.
+   */
   generation: string | null;
   /**
    * Log rows the session's sockets hold: rows it appended, relayed or loaded into a handshake. A row outside it (an
@@ -26,19 +42,15 @@ export interface CollabSession {
   compactTimer?: ReturnType<typeof setTimeout>;
   /** When the armed compaction runs at the latest: yjsCompactMaxWaitMs after the first update since the last run started. */
   compactDueAt?: number;
-  /** Stamps the session row live every yjsLiveTouchMs while the session lasts. */
+  /** Stamps the document row live every yjsLiveStampMs while the session lasts. */
   liveTimer: ReturnType<typeof setInterval>;
 }
 
 const collabSessions = new Map<string, CollabSession>();
 
-/** Keyed by tenant, type and id, so no session is shared across tenants. */
-function collabKey({ tenantId, entityType, entityId }: DocKey): string {
-  return `${tenantId}:${entityType}:${entityId}`;
-}
-
-export function getCollab(doc: DocKey): CollabSession | undefined {
-  return collabSessions.get(collabKey(doc));
+/** The document's session on this relay; undefined when it has none. */
+export function getCollab(doc: YjsDocKey): CollabSession | undefined {
+  return collabSessions.get(docKey(doc));
 }
 
 /** Every session this relay holds, for a catch-up after its notifications may have been missed. */
@@ -46,10 +58,12 @@ export function getCollabs(): CollabSession[] {
   return [...collabSessions.values()];
 }
 
+/** Sessions this relay holds, for health and metrics. */
 export function getActiveDocumentCount(): number {
   return collabSessions.size;
 }
 
+/** Sockets across this relay's sessions, for health and metrics. */
 export function getActiveClientCount(): number {
   let count = 0;
   for (const session of collabSessions.values()) {
@@ -59,7 +73,7 @@ export function getActiveClientCount(): number {
 }
 
 /** Runs `fn` after every earlier locked task on the document has settled; a failed task releases the lock like a successful one. */
-export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Promise<T> {
+export function withDocumentLock<T>(collab: CollabSession, fn: () => Promise<T>): Promise<T> {
   const run = collab.chain.then(fn, fn);
   collab.chain = run.then(
     () => undefined,
@@ -68,9 +82,10 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
   return run;
 }
 
-/** What the live stamp runs when the log holds a row the session never relayed: the relay's catch-up, set by sync/relay.ts. */
+/** What the live stamp runs when the log holds a row the session never relayed: the relay's catch-up. */
 let onUnseenRow: (collab: CollabSession) => void = () => undefined;
 
+/** Set by sync/relay.ts, which imports this module: an import back would be a cycle. */
 export function setUnseenRowHandler(handler: (collab: CollabSession) => void): void {
   onUnseenRow = handler;
 }
@@ -80,34 +95,35 @@ export function setUnseenRowHandler(handler: (collab: CollabSession) => void): v
  * the session has loaded it was retired: the session ends, and its sockets reconnect, to be told the entity is gone. A
  * newest log row the session never relayed means a notification was missed: the catch-up relays it.
  */
-function markLive(collab: CollabSession): void {
+function stampLive(collab: CollabSession): void {
   const loaded = collab.generation !== null;
-  touchDoc(collab.scope).then(
+  stampDocumentLive(collab.scope).then(
     ({ exists, lastLogId }) => {
       if (!exists && loaded) endCollab(collab);
       else if (loaded && lastLogId !== null && !collab.seen.has(lastLogId)) onUnseenRow(collab);
     },
-    (err) => log.warn(`Marking ${collabKey(collab.scope)} live failed`, { err }),
+    (err) => log.warn(`Marking ${docKey(collab.scope)} live failed`, { err }),
   );
 }
 
 /**
- * Opens the document's session in `scope`. It stamps its row live at once and every yjsLiveTouchMs while it lasts,
+ * Opens the document's session in `scope`. It stamps its row live at once and every yjsLiveStampMs while it lasts,
  * so the sweep of another relay generation never takes it for an orphan, however long it idles.
  */
-function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
+function openCollab(scope: YjsDocScope, clients: WebSocket[]): CollabSession {
   const collab: CollabSession = {
     scope,
     clients: new Set(clients),
+    handshakes: new Map(),
     awarenessOwners: new Map(),
     chain: Promise.resolve(),
     generation: null,
     seen: new Set(),
     // A session never keeps the process alive at shutdown.
-    liveTimer: setInterval(() => markLive(collab), yjsLiveTouchMs).unref(),
+    liveTimer: setInterval(() => stampLive(collab), yjsLiveStampMs).unref(),
   };
-  collabSessions.set(collabKey(scope), collab);
-  markLive(collab);
+  collabSessions.set(docKey(scope), collab);
+  stampLive(collab);
   return collab;
 }
 
@@ -116,8 +132,8 @@ function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
  * authorization read from the entity row, so every joiner of a document brings the same one and the first opens the
  * session in it.
  */
-export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
-  const collab = collabSessions.get(collabKey(scope));
+export function joinCollab(scope: YjsDocScope, ws: WebSocket): CollabSession {
+  const collab = collabSessions.get(docKey(scope));
   if (!collab) return openCollab(scope, [ws]);
 
   if (collab.cleanupTimer) {
@@ -129,7 +145,8 @@ export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
 }
 
 /** Takes a session out of the map, when it is still the one there, and clears its timers: none may later run on it. */
-function dropCollab(key: string, collab: CollabSession): void {
+function dropCollab(collab: CollabSession): void {
+  const key = docKey(collab.scope);
   clearTimeout(collab.cleanupTimer);
   clearTimeout(collab.compactTimer);
   clearInterval(collab.liveTimer);
@@ -146,9 +163,9 @@ function dropCollab(key: string, collab: CollabSession): void {
  * reaches a newer one.
  */
 export function endCollab(collab: CollabSession): void {
-  const key = collabKey(collab.scope);
+  const key = docKey(collab.scope);
   if (collabSessions.get(key) !== collab) return;
-  dropCollab(key, collab);
+  dropCollab(collab);
   log.info(`Document ${key} was retired: ending its session`);
   for (const ws of collab.clients) ws.close(1013, 'Document retired');
 }
@@ -157,7 +174,9 @@ export function endCollab(collab: CollabSession): void {
 type FinishOutcome = 'joined' | 'retry' | 'kept' | 'done';
 
 /** A socket joined since the finish started: it is still in the session, or its leave armed a newer cleanup. */
-const joinedSince = (collab: CollabSession) => collab.clients.size > 0 || collab.cleanupTimer !== undefined;
+function joinedSince(collab: CollabSession): boolean {
+  return collab.clients.size > 0 || collab.cleanupTimer !== undefined;
+}
 
 /**
  * Finishes a session no socket holds, under the document lock: compacts its log once more, which deletes the log rows
@@ -165,8 +184,9 @@ const joinedSince = (collab: CollabSession) => collab.clients.size > 0 || collab
  * it returns; it goes only with the entity (`gone`). An unwritten log keeps its rows: they hold edits the entity has
  * not received. A socket that joins meanwhile keeps the session.
  */
-async function finishCollab(key: string, collab: CollabSession): Promise<FinishOutcome> {
-  const outcome = await withDocLock(collab, async (): Promise<FinishOutcome> => {
+async function finishCollab(collab: CollabSession): Promise<FinishOutcome> {
+  const key = docKey(collab.scope);
+  const outcome = await withDocumentLock(collab, async (): Promise<FinishOutcome> => {
     if (joinedSince(collab)) return 'joined';
 
     let result: CompactionResult;
@@ -182,7 +202,7 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
     if (result === 'permanent') return 'kept';
     if (result === 'gone') {
       try {
-        await deleteDoc(collab.scope);
+        await deleteDocument(collab.scope);
       } catch (err) {
         log.error(`Failed to delete the rows of ${key}`, { err });
       }
@@ -198,11 +218,11 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
  * and it keeps the session. The session is forgotten unless a socket joined; a document that already has a session
  * here is left to it.
  */
-export async function finishOrphan(scope: DocScope): Promise<FinishOutcome> {
+export async function finishOrphan(scope: YjsDocScope): Promise<FinishOutcome> {
   if (getCollab(scope)) return 'joined';
   const collab = openCollab(scope, []);
-  const outcome = await finishCollab(collabKey(scope), collab);
-  if (outcome !== 'joined') dropCollab(collabKey(scope), collab);
+  const outcome = await finishCollab(collab);
+  if (outcome !== 'joined') dropCollab(collab);
   return outcome;
 }
 
@@ -221,8 +241,8 @@ export interface ReleasedClient {
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.
  */
-export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
-  const key = collabKey(doc);
+export function leaveCollab(doc: YjsDocKey, ws: WebSocket): ReleasedClient[] {
+  const key = docKey(doc);
   const collab = collabSessions.get(key);
   // Only a client of the live session leaves it: a socket that never joined it, or left it already, changes nothing.
   if (!collab?.clients.delete(ws)) return [];
@@ -245,7 +265,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
     collab.compactDueAt = undefined;
     attempts++;
 
-    const outcome = await finishCollab(key, collab);
+    const outcome = await finishCollab(collab);
     if (outcome === 'joined') return;
     if (outcome === 'retry') {
       if (attempts < yjsCleanupMaxAttempts) {
@@ -256,7 +276,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
       log.error(`Materialize failed ${attempts} times for ${key}: keeping the log for the next session or sweep`);
     }
     if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping the log for the next session`);
-    dropCollab(key, collab);
+    dropCollab(collab);
   };
 
   collab.cleanupTimer = setTimeout(cleanup, yjsCleanupDelayMs);
@@ -300,11 +320,16 @@ export function claimAwarenessClient(
   return 'relay';
 }
 
-/** Sends a frame to every open socket of the session but `exclude`: a sync update skips its sender, awareness reaches it too. */
+/**
+ * Sends a frame to every open socket of the session but `exclude`: a sync update skips its sender, awareness reaches it
+ * too. A socket whose handshake answer is in flight gets the frame right after the answer (`handshakes`).
+ */
 export function broadcastToCollab(collab: CollabSession, message: Uint8Array, exclude?: WebSocket): void {
   for (const client of collab.clients) {
-    if (client !== exclude && client.readyState === client.OPEN) {
-      client.send(message);
-    }
+    if (client === exclude || client.readyState !== client.OPEN) continue;
+    // Only sync frames wait for the handshake answer: awareness keeps a joining client from timing out a slow load.
+    const held = message[0] === yjsMessageTypes.Sync ? collab.handshakes.get(client) : undefined;
+    if (held) held.push(message);
+    else client.send(message);
   }
 }

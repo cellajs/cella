@@ -43,7 +43,7 @@ const yjsCloseCodes = { TOKEN_INVALID: 4001, ACCESS_DENIED: 4003, BAD_REQUEST: 4
 /**
  * Message types on the socket: y-websocket's sync, and the relay's own next to sync and awareness (1). `Generation` is
  * the document's generation, sent before every handshake answer; `Saved` is the relay's empty answer, to the sender
- * alone, to each sync Step2 or Update it handled. Must match yjs/src/sync/relay.ts.
+ * alone, to each sync Step2 or Update it handled. Must match the relay's `yjsMessageTypes` (yjs/src/constants.ts).
  */
 const yjsMessageTypes = { SYNC: 0, GENERATION: 4, SAVED: 5 } as const;
 /** The sync subtypes the relay answers with `Saved`. */

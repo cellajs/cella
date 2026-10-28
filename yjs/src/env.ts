@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
+import { envFlag, loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
 import { yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { z } from 'zod';
 
@@ -29,10 +29,8 @@ const envSchema = workerEnvBase.extend({
   YJS_DB_POOL_MAX: z.coerce.number().default(10),
 
   // A relay without a database: in-memory connection limiter, no TLS CA requirement, no log listener and no sweep.
-  NODB: z
-    .string()
-    .default('false')
-    .transform((v) => v === 'true'),
+  NODB: envFlag('false'),
 });
 
+/** The relay's environment, parsed at import: a missing or malformed variable stops the relay before it listens. */
 export const env = envSchema.parse(process.env);

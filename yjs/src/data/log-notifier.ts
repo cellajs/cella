@@ -1,6 +1,6 @@
-import { type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
+import { type LogNotice, type YjsDocKey, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
-import { type DocKey, yjsLogNoticeDelayMs } from '../constants';
+import { docKey, yjsLogNoticeDelayMs } from '../constants';
 import { log } from '../lib/pino';
 import { db } from './db';
 
@@ -17,7 +17,7 @@ type SendNotices = (notices: LogNotice[]) => Promise<void>;
  * as after a missed notification, at their next handshake, compaction or live stamp.
  */
 export function createLogNotifier(send: SendNotices, delayMs: number) {
-  const pending = new Map<string, { doc: DocKey; ids: number[] }>();
+  const pending = new Map<string, { doc: YjsDocKey; ids: number[] }>();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let sending: Promise<void> | undefined;
 
@@ -63,11 +63,11 @@ export function createLogNotifier(send: SendNotices, delayMs: number) {
   };
 
   /** Queues a committed row of `doc`; the first row of a batch arms its send. */
-  const queue = (doc: DocKey, id: number): void => {
-    const key = `${doc.tenantId}:${doc.entityType}:${doc.entityId}`;
+  const queue = (doc: YjsDocKey, id: number): void => {
+    const key = docKey(doc);
     const entry = pending.get(key);
     if (entry) entry.ids.push(id);
-    else pending.set(key, { doc: { tenantId: doc.tenantId, entityType: doc.entityType, entityId: doc.entityId }, ids: [id] });
+    else pending.set(key, { doc, ids: [id] });
     arm();
   };
 

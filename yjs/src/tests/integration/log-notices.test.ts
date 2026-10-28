@@ -3,8 +3,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { decodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
-import type { DocScope } from '../../constants';
+import { decodeLogNotice, type LogNotice, type YjsDocScope, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mapUpdate, until } from '../helpers';
 import { cleanupSeed, insertDocument, seedOrg } from './seed';
 
@@ -15,13 +14,13 @@ vi.mock('../../constants', async (importOriginal) => ({
   yjsLogNoticeDelayMs: delayMs,
 }));
 
-const { appendUpdate, loadDocument } = await import('../../data/storage');
+const { appendUpdate, findDocument } = await import('../../data/storage');
 
 const tenantId = 'yjs-notices-tenant';
 const organizationId = '00000000-0000-4000-a000-0000000000c1';
 const userId = '00000000-0000-4000-a000-0000000000c2';
 
-const scopeOf = (): DocScope => ({ entityType: appConfig.productEntityTypes[0], entityId: randomUUID(), tenantId, organizationId });
+const scopeOf = (): YjsDocScope => ({ entityType: appConfig.productEntityTypes[0], entityId: randomUUID(), tenantId, organizationId });
 
 let admin: pg.Client;
 let listener: pg.Client;
@@ -29,7 +28,7 @@ let listener: pg.Client;
 const heard: string[] = [];
 
 /** The notices heard for one document. */
-const heardFor = ({ entityId }: DocScope) =>
+const heardFor = ({ entityId }: YjsDocScope) =>
   heard.map(decodeLogNotice).filter((notice): notice is LogNotice => notice !== null && notice.entityId === entityId);
 
 /** Returns once a notification sent now is heard: notifications arrive in commit order, so every earlier one has too. */
@@ -39,7 +38,7 @@ async function barrier(): Promise<void> {
   await until(() => heard.includes(token), 5000);
 }
 
-async function appended(scope: DocScope, generation: string, key: string): Promise<number> {
+async function appended(scope: YjsDocScope, generation: string, key: string): Promise<number> {
   const result = await appendUpdate(scope, userId, mapUpdate(key, 1), generation);
   if (result.status !== 'appended') throw new Error(`append ${result.status}`);
   return result.id;
@@ -101,6 +100,6 @@ describe("a relay's appends announce themselves after commit, batched", () => {
     await new Promise((resolve) => setTimeout(resolve, delayMs * 2));
     await barrier();
     expect(heardFor(scope)).toEqual([]);
-    expect((await loadDocument(scope))!.rows).toEqual([]);
+    expect((await findDocument(scope))!.rows).toEqual([]);
   });
 });

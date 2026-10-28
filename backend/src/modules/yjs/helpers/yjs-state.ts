@@ -24,14 +24,15 @@ export function collectGarbage(state: Uint8Array): Uint8Array {
 }
 
 /**
- * The merged document and the log rows left out of it: a row Yjs cannot decode, or one that decodes but will not
- * merge, is left out, so one bad row never blocks the document or the rows logged after it. Rows merge in one call,
- * and one at a time only when that call throws. The base is written by compaction and seeding alone, so it is trusted.
+ * The merged document, the log rows it holds (`accepted`, in log order) and the rows left out of it: a row Yjs cannot
+ * decode, or one that decodes but will not merge, is left out, so one bad row never blocks the document or the rows
+ * logged after it. Rows merge in one call, and one at a time only when that call throws. The base is written by
+ * compaction and seeding alone, so it is trusted.
  */
 export function mergeLog<Row extends { payload: Uint8Array }>(
   base: Uint8Array | null,
   rows: readonly Row[],
-): { state: Uint8Array | null; rejected: Row[] } {
+): { state: Uint8Array | null; accepted: readonly Row[]; rejected: Row[] } {
   const rejected = rows.filter((row) => classifyUpdate(row.payload) === 'malformed');
   const decodable = rejected.length > 0 ? rows.filter((row) => !rejected.includes(row)) : rows;
   try {
@@ -40,20 +41,23 @@ export function mergeLog<Row extends { payload: Uint8Array }>(
         base,
         decodable.map((row) => row.payload),
       ),
+      accepted: decodable,
       rejected,
     };
   } catch {
     // A row that decodes can still fail to merge: merge one at a time to find it.
   }
   let state = base && base.length > 0 ? base : null;
+  const accepted: Row[] = [];
   for (const row of decodable) {
     try {
       state = state ? Y.mergeUpdates([state, row.payload]) : row.payload;
+      accepted.push(row);
     } catch {
       rejected.push(row);
     }
   }
-  return { state, rejected };
+  return { state, accepted, rejected };
 }
 
 /**

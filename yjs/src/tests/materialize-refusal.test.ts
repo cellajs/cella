@@ -49,7 +49,7 @@ describe('a refused materialize keeps the edits', () => {
     await vi.advanceTimersByTimeAsync(grace);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
     expect(storage.logs.get(key)).toHaveLength(2);
     expect(getCollab(ctx)).toBeDefined();
@@ -58,7 +58,7 @@ describe('a refused materialize keeps the edits', () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
     await vi.advanceTimersByTimeAsync(grace);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
     expect(storage.logs.get(key)).toHaveLength(0);
     expect(getCollab(ctx)).toBeUndefined();
@@ -74,7 +74,7 @@ describe('a refused materialize keeps the edits', () => {
 
     leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(grace);
-    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(2);
 
     // The rows wait for the next session or the startup sweep; cleanup does not retry in a loop.
@@ -89,7 +89,7 @@ describe('a refused materialize keeps the edits', () => {
     leaveCollab(ctx, ws as never);
     // The relay crashed before cleanup: only the rows remain.
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
-    storage.listStaleDocs.mockResolvedValueOnce([
+    storage.findStaleDocuments.mockResolvedValueOnce([
       { entityType: ctx.entityType, entityId: `${ctx.entityId}-orphan`, tenantId: ctx.tenantId, organizationId: null },
     ]);
     const orphanKey = `${key}-orphan`;
@@ -100,7 +100,7 @@ describe('a refused materialize keeps the edits', () => {
     await runSweep();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(storage.logs.get(orphanKey)).toHaveLength(2);
   });
 });
@@ -115,7 +115,7 @@ describe("a deleted entity's rows go", () => {
 
     // Nothing can receive the edits any more, unlike an access refusal (403), which keeps them.
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(storage.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(storage.deleteDocument).toHaveBeenCalledTimes(1);
     expect(storage.bases.has(key)).toBe(false);
     expect(storage.logs.has(key)).toBe(false);
     expect(getCollab(ctx)).toBeUndefined();
@@ -125,12 +125,12 @@ describe("a deleted entity's rows go", () => {
     const orphan = mockScope({ entityId: `gone-${++counter}` });
     storage.bases.set(storageKey(orphan), mapUpdate('seed', true));
     await storage.appendUpdate(orphan, 'user-1', mapUpdate('a', 1));
-    storage.listStaleDocs.mockResolvedValueOnce([orphan]);
+    storage.findStaleDocuments.mockResolvedValueOnce([orphan]);
     fetchMock.mockResolvedValue({ ok: false, status: 410 });
 
     await runSweep();
 
-    expect(storage.deleteDoc).toHaveBeenCalledWith(orphan);
+    expect(storage.deleteDocument).toHaveBeenCalledWith(orphan);
     expect(storage.logs.has(storageKey(orphan))).toBe(false);
   });
 });

@@ -2,8 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import {
   type AccessMembership,
   appConfig,
-  buildSubject,
-  type ChannelEntityType,
+  buildSubjectFromEntity,
   type ChannelIdColumns,
   checkAccess,
   draftVisibleTo,
@@ -13,19 +12,14 @@ import {
   toColumnName,
   toTableName,
 } from 'shared';
-import { asRecord } from 'shared/utils/as-record';
+import type { Tx } from '#/db/create-connection';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { getTableColumnNames } from '#/modules/yjs/yjs-queries';
-import type { DocScope } from '../constants';
-import { type Tx, withRlsTx } from './db';
+import { withRlsTx } from './db';
 
-// Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
-
-/**
- * Runs on an RLS-scoped transaction, so the result is limited to the active tenant.
- * @public
- */
-export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
+/** The user's memberships for the permission engine; the RLS-scoped transaction limits them to the active tenant. */
+async function findMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
   return tx
     .select({ channelType: membershipsTable.channelType, channelId: membershipsTable.channelId, role: membershipsTable.role })
     .from(membershipsTable)
@@ -33,21 +27,22 @@ export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMem
 }
 
 /** Entity row carrying just the ancestor scope and ownership columns the permission engine needs. */
-export interface EntityScopeRow extends Partial<ChannelIdColumns> {
+type EntityScopeRow = Partial<ChannelIdColumns> & {
   id: string;
   createdBy?: string | null;
   tenantId?: string | null;
   /** Set on a soft-deleted row, which a read that includes deleted rows returns. */
   deletedAt?: string | null;
-}
+};
 
-/** Table and column names come from the app's schema conventions, filtered to columns the table has. Returns `null` if the entity type is not declared or the row does not exist. */
-async function resolveEntityScope(tx: Tx, entityType: ChannelEntityType | ProductEntityType, entityId: string): Promise<EntityScopeRow | null> {
-  if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
-
+/**
+ * The entity row's scope and ownership columns. Table and column names come from the app's schema conventions,
+ * filtered to the columns the table has. Null when the table has no `id` column or the row does not exist.
+ */
+async function findEntityScope(tx: Tx, entityType: ProductEntityType, entityId: string): Promise<EntityScopeRow | null> {
   const table = toTableName(entityType);
   const existing = await getTableColumnNames({ var: { db: tx } }, { table });
-  if (!existing.has('id')) return null; // unknown / non-conforming table
+  if (!existing.has('id')) return null;
 
   // Logical keys the permission engine may read; an absent `publishedAt` column counts as published. `deletedAt` tells a
   // soft-deleted row, under a read that includes them.
@@ -65,7 +60,7 @@ async function resolveEntityScope(tx: Tx, entityType: ChannelEntityType | Produc
 }
 
 /** The verdict on a socket: the document's scope, as its entity row states it; `denied` (4003); or `deleted` (4410). */
-export type DocAuthorization = { scope: DocScope } | 'denied' | 'deleted';
+export type DocumentAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted';
 
 /**
  * Authorizes a user to edit the document a token asks for, as the backend's `getValidProduct(update)` does: one
@@ -81,7 +76,7 @@ export type DocAuthorization = { scope: DocScope } | 'denied' | 'deleted';
  *
  * @throws MissingAncestorError if the resolved entity is missing a required ancestor scope.
  */
-export async function authorizeDoc(userId: string, requested: DocScope): Promise<DocAuthorization> {
+export async function authorizeDocument(userId: string, requested: YjsDocScope): Promise<DocumentAuthorization> {
   const { entityType } = requested;
   // Tokens are issued for product entities only, the ones a materializer writes.
   if (!isProduct(entityType)) return 'denied';
@@ -89,8 +84,8 @@ export async function authorizeDoc(userId: string, requested: DocScope): Promise
   return withRlsTx(
     requested.tenantId,
     userId,
-    async (tx): Promise<DocAuthorization> => {
-      const [entity, memberships] = await Promise.all([resolveEntityScope(tx, entityType, requested.entityId), loadMemberships(tx, userId)]);
+    async (tx): Promise<DocumentAuthorization> => {
+      const [entity, memberships] = await Promise.all([findEntityScope(tx, entityType, requested.entityId), findMemberships(tx, userId)]);
 
       if (!entity) return 'deleted';
       if (typeof entity.tenantId !== 'string') return 'denied';
@@ -100,15 +95,10 @@ export async function authorizeDoc(userId: string, requested: DocScope): Promise
       if (organizationId !== requested.organizationId) return 'denied';
 
       // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
-      if (!draftVisibleTo(asRecord(entity), userId)) return 'denied';
+      if (!draftVisibleTo(entity, userId)) return 'denied';
 
-      const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
-      const subject = buildSubject(entityType, entity, {
-        id: entity.id,
-        createdBy,
-        // The row itself: without it, every row-derived grant ('own', public read) fails closed.
-        row: asRecord(entity),
-      });
+      // The row itself goes into the subject: without it, every row-derived grant ('own', public read) fails closed.
+      const subject = buildSubjectFromEntity(entityType, entity);
 
       // Collaborative editing confers no system-admin bypass, matching the backend materialize endpoint.
       const { allowed } = checkAccess({ actorId: userId, isSystemAdmin: false, memberships, scopes: null }, 'update', subject);

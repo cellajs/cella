@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import process from 'node:process';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
+import { envFlag } from 'shared/utils/worker-env';
 import { z } from 'zod';
 import { type ModeSecret, missingModeSecrets, processModes } from '#/env-mode-secrets';
 import { severityLevels } from '#/schemas/api-error-schemas';
@@ -16,13 +17,6 @@ const minSecretLength = 16;
 
 /** A secret of at least `min` characters, refused with a message that names it. */
 const secretString = (name: string, min = minSecretLength) => z.string().min(min, `${name} must be at least ${min} characters`);
-
-/** A flag that only the string `true` turns on; unset, it reads as `fallback`. */
-const envFlag = (fallback: 'true' | 'false') =>
-  z
-    .string()
-    .default(fallback)
-    .transform((value) => value === 'true');
 
 /** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;

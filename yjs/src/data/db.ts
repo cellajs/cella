@@ -1,13 +1,11 @@
 import process from 'node:process';
-import { sql } from 'drizzle-orm';
 import pg from 'pg';
 import { resolvePostgresSslCa, stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
-import { createPgConnection, type Tx } from '#/db/create-connection';
+import { createPgConnection, type Tx, transactionOpenedWith } from '#/db/create-connection';
+import { tenantTransactionOpening } from '#/db/tenant-transaction-opening';
 import { env } from '../env';
 
-export type { Tx };
-
-// Production requires the provisioned RDB CA to prevent a silent TLS downgrade.
+// Production requires the provisioned RDB CA, so the TLS connection is always verified.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
@@ -18,19 +16,18 @@ interface RlsOptions {
   includeDeleted?: boolean;
 }
 
-/** Runs `fn` in a transaction with tenant/user RLS context: `set_config(..., true)` scopes the vars to the transaction, so pooled connections never leak context. */
+/**
+ * Runs `fn` in a transaction that opens with the tenant/user RLS context, as the API's tenant transactions do: set
+ * transaction-local, so pooled connections never leak context.
+ * @throws An id outside the id alphabet, before a connection is taken.
+ */
 export async function withRlsTx<T>(
   tenantId: string,
   userId: string,
   fn: (tx: Tx) => Promise<T>,
   { includeDeleted = false }: RlsOptions = {},
 ): Promise<T> {
-  return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true), set_config('app.include_deleted', ${includeDeleted ? 'true' : 'false'}, true)`,
-    );
-    return fn(tx);
-  });
+  return transactionOpenedWith(db, tenantTransactionOpening({ tenantId, userId, includeDeleted }, false), fn);
 }
 
 /** The name the log listener's connection carries in `pg_stat_activity`: one per relay process. */
@@ -51,7 +48,7 @@ export function createListenerClient(): pg.Client {
   });
 }
 
+/** Ends the pool once its connections are released: the last step of the relay's shutdown. */
 export async function closeDb(): Promise<void> {
-  // The factory always constructs a pg.Pool ($client is only narrower for other drivers).
-  await (db.$client as pg.Pool).end();
+  await db.$client.end();
 }

@@ -9,7 +9,8 @@ import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { DocKey, DocScope, SocketContext } from '../constants';
+import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import type { SocketContext } from '../server/upgrade';
 
 interface TokenOptions {
   userId: string;
@@ -48,12 +49,12 @@ export function createExpiredToken(userId: string): string {
 }
 
 /** A document scope with sensible defaults, as authorization reads it from the entity row. */
-export function mockScope(overrides?: Partial<DocScope>): DocScope {
+export function mockScope(overrides?: Partial<YjsDocScope>): YjsDocScope {
   return { entityType: 'task', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1', ...overrides };
 }
 
 /** A socket's context: authorized in `requested` unless `scope` says otherwise (null for a socket still pending). */
-export function mockSocketContext(overrides: { userId?: string; requested?: DocScope; scope?: DocScope | null } = {}): SocketContext {
+export function mockSocketContext(overrides: { userId?: string; requested?: YjsDocScope; scope?: YjsDocScope | null } = {}): SocketContext {
   const requested = overrides.requested ?? mockScope();
   return {
     userId: overrides.userId ?? 'user-1',
@@ -64,7 +65,7 @@ export function mockSocketContext(overrides: { userId?: string; requested?: DocS
 }
 
 /** The fake storage's key for a document: its tenant, type and id. */
-export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
+export const storageKey = ({ tenantId, entityType, entityId }: YjsDocKey) => `${tenantId}:${entityType}:${entityId}`;
 
 const YMessage = { Sync: 0, Awareness: 1, Generation: 4, Saved: 5 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
@@ -179,15 +180,15 @@ export interface MockWebSocket {
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
-  loadDocument: vi.fn().mockResolvedValue(null),
+  findDocument: vi.fn().mockResolvedValue(null),
   seedDocument: vi.fn().mockResolvedValue({ generation: 'gen-1', base: new Uint8Array(), rows: [] }),
   appendUpdate: vi.fn().mockResolvedValue({ status: 'appended', id: 1 }),
-  readLogOf: vi.fn().mockResolvedValue([]),
-  compactState: vi.fn().mockResolvedValue('ok'),
+  findLog: vi.fn().mockResolvedValue([]),
+  foldLog: vi.fn().mockResolvedValue('ok'),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
-  deleteDoc: vi.fn().mockResolvedValue(undefined),
-  touchDoc: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
-  listStaleDocs: vi.fn().mockResolvedValue([]),
+  deleteDocument: vi.fn().mockResolvedValue(undefined),
+  stampDocumentLive: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
+  findStaleDocuments: vi.fn().mockResolvedValue([]),
 });
 
 /** A logged row as the fake storage keeps it: a client's under its sender, a server-origin one with none. */
@@ -231,11 +232,11 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     logs,
     descriptions,
     gone,
-    loadDocument: vi.fn(async (doc: DocKey) => {
-      await wait('loadDocument');
+    findDocument: vi.fn(async (doc: YjsDocKey) => {
+      await wait('findDocument');
       return read(key(doc));
     }),
-    seedDocument: vi.fn(async (scope: DocScope, toSeed: (description: string | null) => Uint8Array) => {
+    seedDocument: vi.fn(async (scope: YjsDocScope, toSeed: (description: string | null) => Uint8Array) => {
       await wait('seedDocument');
       const k = key(scope);
       if (gone.has(k)) return null;
@@ -246,27 +247,29 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       return read(k);
     }),
     /** A test arranges a log without a `generation`; the relay always names one, and appends only to its row. */
-    appendUpdate: vi.fn(async (scope: DocScope, userId: string | null, payload: Uint8Array, generation?: string, onLogged?: (id: number) => void) => {
-      await wait('appendUpdate');
-      const current = row(key(scope));
-      if (generation !== undefined && !current) return { status: 'no-document' as const };
-      if (generation !== undefined && current && current.generation !== generation) {
-        return { status: 'stale-generation' as const, generation: current.generation };
-      }
-      const list = logs.get(key(scope)) ?? [];
-      const id = nextId++;
-      list.push({ id, payload, userId: userId || null });
-      logs.set(key(scope), list);
-      onLogged?.(id);
-      return { status: 'appended' as const, id };
-    }),
-    readLogOf: vi.fn(async (doc: DocKey, generation: string) => {
-      await wait('readLogOf');
+    appendUpdate: vi.fn(
+      async (scope: YjsDocScope, userId: string | null, payload: Uint8Array, generation?: string, onLogged?: (id: number) => void) => {
+        await wait('appendUpdate');
+        const current = row(key(scope));
+        if (generation !== undefined && !current) return { status: 'no-document' as const };
+        if (generation !== undefined && current && current.generation !== generation) {
+          return { status: 'stale-generation' as const, generation: current.generation };
+        }
+        const list = logs.get(key(scope)) ?? [];
+        const id = nextId++;
+        list.push({ id, payload, userId: userId || null });
+        logs.set(key(scope), list);
+        onLogged?.(id);
+        return { status: 'appended' as const, id };
+      },
+    ),
+    findLog: vi.fn(async (doc: YjsDocKey, generation: string) => {
+      await wait('findLog');
       const current = row(key(doc));
       return current?.generation === generation ? [...(logs.get(key(doc)) ?? [])] : null;
     }),
-    compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[], generation?: string) => {
-      await wait('compactState');
+    foldLog: vi.fn(async (doc: YjsDocKey, merged: Uint8Array, ids: number[], generation?: string) => {
+      await wait('foldLog');
       const current = row(key(doc));
       if (!current || (generation !== undefined && current.generation !== generation)) return 'retired' as const;
       const log = logs.get(key(doc)) ?? [];
@@ -278,25 +281,25 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       );
       return 'ok' as const;
     }),
-    discardLogRows: vi.fn(async (doc: DocKey, ids: number[]) => {
+    discardLogRows: vi.fn(async (doc: YjsDocKey, ids: number[]) => {
       await wait('discardLogRows');
       logs.set(
         key(doc),
         (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
     }),
-    deleteDoc: vi.fn(async (doc: DocKey) => {
-      await wait('deleteDoc');
+    deleteDocument: vi.fn(async (doc: YjsDocKey) => {
+      await wait('deleteDocument');
       bases.delete(key(doc));
       generations.delete(key(doc));
       logs.delete(key(doc));
     }),
-    touchDoc: vi.fn(async (doc: DocKey) => {
-      await wait('touchDoc');
+    stampDocumentLive: vi.fn(async (doc: YjsDocKey) => {
+      await wait('stampDocumentLive');
       const log = logs.get(key(doc)) ?? [];
       return { exists: bases.has(key(doc)), lastLogId: bases.has(key(doc)) ? (log.at(-1)?.id ?? null) : null };
     }),
-    listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
+    findStaleDocuments: vi.fn(async (): Promise<YjsDocScope[]> => []),
   };
   return store;
 }
@@ -350,7 +353,7 @@ export async function startRelayServer() {
     port,
     baseUrl: `ws://127.0.0.1:${port}`,
     /** Ends every socket and closes the server. The relay arms timers per document session: none of `docs` outlives the file. */
-    async close(docs: DocKey[] = []) {
+    async close(docs: YjsDocKey[] = []) {
       for (const client of wss.clients) client.terminate();
       await until(() => wss.clients.size === 0);
       // A closed socket leaves its session through its frame queue, which arms the session's cleanup.

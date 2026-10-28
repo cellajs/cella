@@ -31,7 +31,8 @@ export function logListenerStatus(): LogListenerStatus {
 /**
  * Listens on the Yjs log channel on one dedicated connection per relay: every append and retirement, by the backend
  * or any relay, notifies there at commit. A dropped connection is replaced with backoff, and each new LISTEN is
- * followed by `onListening`, the relay's catch-up. Errors never reach the process: under singleVM it is the API.
+ * followed by `onListening`, the relay's catch-up. Errors never reach the process: an uncaught one ends it, under
+ * singleVM the whole API.
  */
 export function startLogListener(onNotice: ListenerHandlers['onNotice'], onListening: ListenerHandlers['onListening']): void {
   if (handlers) return;

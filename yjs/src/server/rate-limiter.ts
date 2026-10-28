@@ -4,20 +4,22 @@ import { db } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
 
+/** 20 connections per minute per user, the same in every store, the insurance one included. */
+const connectionBudget = { keyPrefix: 'yjs_ws', points: 20, duration: 60 };
+
 /** Per-user connection limiter over the backend's `rate_limits` table; falls back to in-memory limiting when the DB is unreachable. */
 const connectionLimiter = env.NODB
-  ? new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 })
+  ? new RateLimiterMemory(connectionBudget)
   : new RateLimiterDrizzle({
+      ...connectionBudget,
       storeClient: db,
       schema: rateLimitsTable,
-      keyPrefix: 'yjs_ws',
-      points: 20, // 20 connections per minute per user
-      duration: 60,
       blockDuration: 0, // No extra block: budget resets after the window
-      insuranceLimiter: new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 }),
-      inMemoryBlockOnConsumed: 20,
+      insuranceLimiter: new RateLimiterMemory(connectionBudget),
+      inMemoryBlockOnConsumed: connectionBudget.points,
     });
 
+/** Spends one connection of the user's budget; false when the budget is spent, which refuses the upgrade with 429. */
 export async function checkConnectionRate(userId: string): Promise<boolean> {
   try {
     await connectionLimiter.consume(userId);

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import type { DocScope } from '../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import {
   awarenessClientIds,
   awarenessEntries,
@@ -30,7 +30,7 @@ const gates = new Map<string, Promise<void>>();
 const storage = fakeStorage((call) => gates.get(call));
 vi.mock('../data/storage', () => storage);
 
-vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJson: vi.fn(() => '[]') }));
+vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJsonOrNull: vi.fn(() => '[]') }));
 
 const { handleLeave, handleMessage, onLogNotice, peekMessageType, relayUnseen, relayUnseenEverywhere, runCompaction } = await import('../sync/relay');
 const { postMaterialize } = await import('../sync/materialize');
@@ -49,7 +49,7 @@ function decodeFrames(sent: Uint8Array[]) {
 
 let counter = 0;
 /** A session for a fresh document so the module-level session map never leaks between tests. */
-function session(overrides: Partial<DocScope> = {}) {
+function session(overrides: Partial<YjsDocScope> = {}) {
   const scope = mockScope({ entityId: `entity-${++counter}`, ...overrides });
   const c = mockSocketContext({ requested: scope });
   const ws = mockWebSocket();
@@ -240,10 +240,39 @@ describe('handleMessage: sync step 1', () => {
 
     // The second Step1 saw the row the first one created.
     expect(storage.seedDocument).toHaveBeenCalledTimes(1);
-    expect(storage.loadDocument).toHaveBeenCalledTimes(2);
+    expect(storage.findDocument).toHaveBeenCalledTimes(2);
     expect(ws1.sent).toHaveLength(3);
     expect(ws2.sent).toHaveLength(3);
     leaveCollab(collab.scope, ws2 as never);
+  });
+
+  it("must not lose a peer's update committed after a joining socket's read: it follows the handshake answer", async () => {
+    const { ctx: typist, scope, ws: typistWs } = seededSession();
+    await handleMessage(typist, typistWs as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(typist, typistWs as never, buildSyncStep2());
+    const joiner = mockWebSocket();
+    joinCollab(scope, joiner as never);
+
+    // The joiner's load has read the document and is still committing when the typist's update commits.
+    const read = storage.findDocument.getMockImplementation()!;
+    const committing = deferred();
+    storage.findDocument.mockImplementationOnce(async (doc) => {
+      const snapshot = await read(doc);
+      await committing.promise;
+      return snapshot;
+    });
+    const handshake = handleMessage(mockSocketContext({ requested: scope }), joiner as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await flushMicrotasks();
+    await handleMessage(typist, typistWs as never, buildSyncUpdate(mapUpdate('typed', 1)));
+    committing.release();
+    await handshake;
+
+    // A client drops every sync frame before the `Generation`: the update comes after the answer, which lacks it.
+    expect(joiner.sent.map(peekMessageType)).toEqual([4, 0, 0, 0]);
+    expect(joiner.sent.slice(1).map((frame) => frame[1])).toEqual([1, 0, 2]);
+    expect(readMap(decodeSyncStep2(joiner.sent[1]))).toEqual({});
+    expect(readMap(decodeSyncStep2(joiner.sent[3]))).toEqual({ typed: 1 });
+    leaveCollab(scope, joiner as never);
   });
 
   it('existing base plus log: answers with the diff of the merged document and asks for the rest', async () => {
@@ -386,7 +415,7 @@ describe('handleMessage: sync update', () => {
     const gate = deferred();
     let slowed = false;
     gates.set('appendUpdate', gate.promise);
-    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string | null, payload: Uint8Array) => {
+    storage.appendUpdate.mockImplementationOnce(async (_scope: YjsDocScope, userId: string | null, payload: Uint8Array) => {
       slowed = true;
       await gate.promise;
       gates.delete('appendUpdate');
@@ -411,7 +440,7 @@ describe('handleMessage: sync update', () => {
 
     expect(storage.logs.get(key)).toHaveLength(3);
     await vi.advanceTimersByTimeAsync(3000);
-    expect(storage.compactState).toHaveBeenCalledTimes(1);
+    expect(storage.foldLog).toHaveBeenCalledTimes(1);
     const merged = storage.bases.get(key)!;
     const verify = new Y.Doc();
     Y.applyUpdate(verify, merged);
@@ -654,7 +683,7 @@ describe('handleMessage: awareness', () => {
 });
 
 /** A socket joined to the session under its own user. */
-function joined(scope: DocScope, userId: string) {
+function joined(scope: YjsDocScope, userId: string) {
   const ws = mockWebSocket();
   joinCollab(scope, ws as never);
   return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
@@ -964,7 +993,7 @@ describe('compaction', () => {
     expect(postMaterialize).toHaveBeenCalledTimes(1);
     // As the system, in the document's scope: no joiner's context rides along.
     expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-2', 'user-1'], '[]', []);
-    const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
+    const [, merged, ids] = storage.foldLog.mock.calls[0] as [never, Uint8Array, number[]];
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);
     expect(storage.logs.get(key)).toHaveLength(0);
@@ -995,7 +1024,7 @@ describe('compaction', () => {
       expect(postMaterialize).toHaveBeenCalledTimes(Math.floor(second / 10));
     }
     // Each run wrote the ten updates of its window.
-    expect(storage.compactState.mock.calls.map(([, , ids]) => (ids as number[]).length)).toEqual([10, 10]);
+    expect(storage.foldLog.mock.calls.map(([, , ids]) => (ids as number[]).length)).toEqual([10, 10]);
   });
 
   it('gives the next burst a deadline of its own after a run, whatever its outcome', async () => {
@@ -1067,7 +1096,7 @@ describe('compaction', () => {
 
   it('a thrown storage error counts as retry, so the compaction timer never sees a rejection', async () => {
     const { collab } = session();
-    storage.loadDocument.mockRejectedValueOnce(new Error('db down'));
+    storage.findDocument.mockRejectedValueOnce(new Error('db down'));
     expect(await runCompaction(collab)).toBe('retry');
   });
 
@@ -1083,7 +1112,7 @@ describe('compaction', () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.foldLog).not.toHaveBeenCalled();
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(getCollab(scope)).toBeUndefined();
     expect(collab.compactTimer).toBeUndefined();
@@ -1096,7 +1125,7 @@ describe('catch-up: log rows the session has not relayed', () => {
   const relayedTo = (ws: { sent: Uint8Array[] }) =>
     ws.sent.filter((frame) => frame[0] === 0 && frame[1] === 2).map((frame) => readMap(decodeSyncStep2(frame)));
   /** An outside write as the backend logs it: a server-origin row, appended with no relay involved. */
-  async function outsideWrite(scope: DocScope, key: string, value: number) {
+  async function outsideWrite(scope: YjsDocScope, key: string, value: number) {
     const appended = await storage.appendUpdate(scope, null, mapUpdate('outside', value));
     if (appended.status !== 'appended') throw new Error('not appended');
     expect(storage.logs.get(key)?.at(-1)?.userId).toBeNull();
@@ -1132,10 +1161,10 @@ describe('catch-up: log rows the session has not relayed', () => {
     expect(collab.compactTimer).toBeDefined();
 
     // The same notification again reads nothing and sends nothing.
-    storage.readLogOf.mockClear();
+    storage.findLog.mockClear();
     onLogNotice({ ...scope, logIds: [logId] });
     await flushMicrotasks();
-    expect(storage.readLogOf).not.toHaveBeenCalled();
+    expect(storage.findLog).not.toHaveBeenCalled();
     expect(relayedTo(ws)).toHaveLength(1);
     leaveCollab(scope, peer as never);
   });
@@ -1148,7 +1177,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     onLogNotice({ ...scope, logIds: [logId] });
     await flushMicrotasks();
 
-    expect(storage.readLogOf).not.toHaveBeenCalled();
+    expect(storage.findLog).not.toHaveBeenCalled();
     expect(ws.sent).toEqual([]);
     // Positive control: the handshake answers with the row.
     await handleMessage(mockSocketContext({ requested: scope }), ws as never, step1());
@@ -1177,7 +1206,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     gate.release();
     await done;
 
-    expect(storage.readLogOf).not.toHaveBeenCalled();
+    expect(storage.findLog).not.toHaveBeenCalled();
     expect(relayedTo(ws)).toEqual([]);
     expect(relayedTo(peer)).toEqual([{ mine: 1 }]);
     expect(ws.sent).toEqual([savedFrame]);
@@ -1194,7 +1223,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     onLogNotice({ ...scope, logIds: [older, newer] });
     await flushMicrotasks();
 
-    expect(storage.readLogOf).toHaveBeenCalledTimes(1);
+    expect(storage.findLog).toHaveBeenCalledTimes(1);
     expect(relayedTo(ws)).toEqual([{ outside: 1 }]);
     expect(relayedTo(peer)).toEqual([{ outside: 1 }]);
     leaveCollab(scope, peer as never);
@@ -1210,7 +1239,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     await flushMicrotasks();
 
     expect(ids).toHaveLength(2);
-    expect(storage.readLogOf).not.toHaveBeenCalled();
+    expect(storage.findLog).not.toHaveBeenCalled();
     expect(relayedTo(peer)).toEqual([{ one: 1 }, { two: 2 }]);
     leaveCollab(scope, peer as never);
   });
@@ -1224,7 +1253,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(peer.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(getCollab(scope)).toBeUndefined();
-    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
@@ -1258,7 +1287,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('typed', 1)));
     await outsideWrite(scope, key, 4);
     const gate = deferred();
-    gates.set('compactState', gate.promise);
+    gates.set('foldLog', gate.promise);
 
     const compaction = runCompaction(collab);
     await flushMicrotasks();
@@ -1280,7 +1309,7 @@ describe('catch-up: log rows the session has not relayed', () => {
   it('must not read once per notification in a burst: one read runs and one waits for the rest', async () => {
     const { scope, key, ws, peer } = await liveSession();
     const gate = deferred();
-    gates.set('readLogOf', gate.promise);
+    gates.set('findLog', gate.promise);
     const ids: number[] = [];
     for (let i = 0; i < 5; i++) ids.push(await outsideWrite(scope, key, i));
 
@@ -1292,12 +1321,12 @@ describe('catch-up: log rows the session has not relayed', () => {
       return relayUnseen(getCollab(scope)!);
     });
     await flushMicrotasks();
-    expect(storage.readLogOf).toHaveBeenCalledTimes(1);
-    gates.delete('readLogOf');
+    expect(storage.findLog).toHaveBeenCalledTimes(1);
+    gates.delete('findLog');
     gate.release();
     await Promise.all(runs);
 
-    expect(storage.readLogOf).toHaveBeenCalledTimes(2);
+    expect(storage.findLog).toHaveBeenCalledTimes(2);
     expect(relayedTo(ws)).toEqual([0, 1, 2, 3, 4].map((value) => ({ outside: value })));
     leaveCollab(scope, peer as never);
   });

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { DocScope } from '../../constants';
+import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { createSignedToken, startRelayServer, until } from '../helpers';
 import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, storedState } from './seed';
 
@@ -15,17 +15,17 @@ import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, 
 // the materialize POST is recorded. Sessions stamp their rows live every 100 ms; cleanup runs 500 ms after the last leave.
 vi.mock('../../constants', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../constants')>()),
-  yjsLiveTouchMs: 100,
+  yjsLiveStampMs: 100,
   yjsCleanupDelayMs: 500,
 }));
-vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => ({ scope: requested })) }));
+vi.mock('../../data/permissions', () => ({ authorizeDocument: vi.fn(async (_userId: string, requested: YjsDocScope) => ({ scope: requested })) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 const materialized: { entityId: string; editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../sync/materialize')>();
   return {
     ...actual,
-    postMaterialize: vi.fn(async (scope: DocScope, editors: string[], description: string) => {
+    postMaterialize: vi.fn(async (scope: YjsDocScope, editors: string[], description: string) => {
       materialized.push({ entityId: scope.entityId, editedBy: editors[0], description });
       return 'ok';
     }),
@@ -52,12 +52,12 @@ vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => ({
 const { runCompaction } = await import('../../sync/relay');
 const { startPeriodicSweep } = await import('../../sync/sweep');
 const { getCollab } = await import('../../sync/session-manager');
-const { loadDocument } = await import('../../data/storage');
+const { findDocument } = await import('../../data/storage');
 const { descriptionToSeed, stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
 
 /** The document's base state, and the log rows not folded into it. */
-const baseOf = async (doc: DocScope) => (await loadDocument(doc))!.base;
-const readLog = async (doc: DocScope) => (await loadDocument(doc))?.rows ?? [];
+const baseOf = async (doc: YjsDocScope) => (await findDocument(doc))!.base;
+const readLog = async (doc: YjsDocScope) => (await findDocument(doc))?.rows ?? [];
 
 const tenantId = 'yjs-e2e-tenant';
 const organizationId = '00000000-0000-4000-a000-000000000031';
@@ -78,7 +78,7 @@ const ids = {
 /** Another user's client, which reaches the API but not the relay. */
 const pusherId = '00000000-0000-4000-a000-0000000000e3';
 
-function ctx(entityId: string): DocScope {
+function ctx(entityId: string): YjsDocScope {
   return { entityType, entityId, tenantId, organizationId };
 }
 
@@ -234,7 +234,7 @@ describe('relay end to end', () => {
     await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await seedOrphan(ids.orphan, 'orphaned');
-    // The live session's next stamp, every yjsLiveTouchMs, makes the row fresh again; the sweep runs after it.
+    // The live session's next stamp, every yjsLiveStampMs, makes the row fresh again; the sweep runs after it.
     await until(async () => {
       const { rows } = await admin.query<{ fresh: boolean }>(
         "SELECT updated_at > now() - interval '1 minute' AS fresh FROM yjs_documents WHERE entity_id = $1",
@@ -297,7 +297,7 @@ describe('relay end to end', () => {
     const { doc, provider, generations, closes } = await connectClient(ids.outside);
     const text = firstText(doc);
     // Read before the client's edit is logged, as a write whose handler runs while someone types.
-    const read = (await loadDocument(ctx(ids.outside)))!;
+    const read = (await findDocument(ctx(ids.outside)))!;
     text.insert(text.length, ' again');
     await until(async () => (await readLog(ctx(ids.outside))).length >= 1);
 
@@ -321,7 +321,7 @@ describe('relay end to end', () => {
 
   it('a push over HTTP logged without its notice reaches a live client at the live stamp, and its compaction credits the pusher', async () => {
     const { doc, provider, generations, closes } = await connectClient(ids.pushed);
-    const read = (await loadDocument(ctx(ids.pushed)))!;
+    const read = (await findDocument(ctx(ids.pushed)))!;
 
     // The API stopped between the push's commit and its notice.
     const pushed = await pushOverHttp(ctx(ids.pushed), outsideUpdate(read, paragraph('Pushed: could you have a look?')), read.generation, pusherId, {
@@ -346,10 +346,10 @@ describe('relay end to end', () => {
     timeout: 60_000,
   }, async () => {
     // Two documents no session on this relay holds, each with a push logged now: the stamped one first, so its log is
-    // as old as the other's at every run. Another relay's live session stamps it every yjsLiveTouchMs.
+    // as old as the other's at every run. Another relay's live session stamps it every yjsLiveStampMs.
     for (const entityId of [ids.stamped, ids.posted]) {
       const generation = await seedAtRest(entityId);
-      const read = (await loadDocument(ctx(entityId)))!;
+      const read = (await findDocument(ctx(entityId)))!;
       const pushed = await pushOverHttp(ctx(entityId), outsideUpdate(read, paragraph(`Posted to ${entityId}`)), generation, pusherId);
       expect(pushed.status).toBe('appended');
     }
