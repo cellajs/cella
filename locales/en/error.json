@@ -195,7 +195,7 @@
   "sign_up_restricted": "Invite only",
   "sign_up_restricted.text": "We are currently invite-only. Can't wait? Contact us for an invite.",
   "slug_exists": "Slug already taken",
-  "slug_exists.text": "Another course or section uses it. Choose a different one.",
+  "slug_exists.text": "Something else already uses it. Choose a different one.",
   "sso_email_exists": "This address already has an account",
   "sso_email_exists.text": "The email address your institution shared already belongs to an account. If it is yours, sign in to that account first, then connect your institution account from your account settings.",
   "sso_email_missing": "No email address shared",

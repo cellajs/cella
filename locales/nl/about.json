@@ -241,7 +241,7 @@
   "stack.opentelemetry": "opentelemetry",
   "stack.opentelemetry.text": "Traces, metrics en logs uit de browser, de API en de workers. Exporteer naar elke OTLP-backend.",
   "stack.pulumi": "pulumi",
-  "stack.pulumi.text": "Infrastructure as code voor een herhaalbare setup. Uitrollen met GitHub Actions.",
+  "stack.pulumi.text": "Infrastructure as code voor een herhaalbare setup en uitrol.",
   "stack.react": "react & tanstack",
   "stack.react.text": "React met Tanstack Router. Tanstack Query voor ophalen en cachen.",
   "stack.text": "De beste open-sourcetools die goed samenwerken. Niet verstopt achter een framework.",

@@ -195,7 +195,7 @@
   "sign_up_restricted": "Alleen op uitnodiging",
   "sign_up_restricted.text": "Je kunt op dit moment alleen op uitnodiging meedoen. Kun je niet wachten? Neem contact met ons op voor een uitnodiging.",
   "slug_exists": "Slug is al in gebruik",
-  "slug_exists.text": "Een andere cursus of sectie gebruikt hem al. Kies een andere.",
+  "slug_exists.text": "Iets anders gebruikt hem al. Kies een andere.",
   "sso_email_exists": "Dit adres heeft al een account",
   "sso_email_exists.text": "Het e-mailadres dat je instelling heeft gedeeld, hoort al bij een account. Is dat van jou, log dan eerst in op dat account en koppel daarna je instellingsaccount via je accountinstellingen.",
   "sso_email_missing": "Geen e-mailadres gedeeld",
