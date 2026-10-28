@@ -186,10 +186,11 @@ export function BoardLayout({
     return <div className={cn('overflow-x-clip transition', className)}>{panelGroup}</div>;
   }
 
+  // contain on x bounces the board at its ends: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
     <ScrollArea
       className={cn('transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]', className)}
-      viewportClassName="overflow-y-hidden! overscroll-y-auto"
+      viewportClassName="overflow-y-hidden! overscroll-x-contain overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"
     >
