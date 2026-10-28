@@ -6,7 +6,6 @@ import { alertStore } from '~/modules/common/alerter/alert-store';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { checkConnectivity } from '~/query/offline/connectivity';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 import { getErrorInfo, getErrorMessage } from '~/utils/get-error-info';
@@ -47,11 +46,8 @@ const isSessionLost = (error: ApiError) => !error.type || sessionLostTypes.has(e
 
 /** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
-  // isNetworkError excludes ApiError, so a server that responded with any status falls through to the handling below.
-  if (isNetworkError(error)) {
-    checkConnectivity();
-    return;
-  }
+  // The API client reports a request without a response; an ApiError means the server answered, so it falls through.
+  if (isNetworkError(error)) return;
 
   if (error instanceof ApiError) {
     const isCasualSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
@@ -60,7 +56,6 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     const isDown = [503, 502].includes(error.status);
     if (isDown) alertStore.getState().setDownAlert('maintenance');
     else if (error.status === 500 && isCasualSessionAttempt) return alertStore.getState().setDownAlert('auth_unavailable');
-    else if (error.status === 504) return alertStore.getState().setDownAlert('offline');
 
     // A /me or /me/menu probe without a valid session shows no error.
     if (isCasualSessionAttempt && error.status === 401) return;

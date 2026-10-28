@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig, isProduct } from 'shared';
 import { devtools } from 'zustand/middleware';
@@ -6,6 +7,7 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
+import { reportReachable } from '~/query/offline/connectivity';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
@@ -110,12 +112,15 @@ export class StreamManager {
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
   private circuitOpen = false;
+  /** Opened by a refused session: no cooldown check and no back-online reconnect, only a tab that becomes visible looks again. */
+  private circuitPermanent = false;
   private circuitOpenedAt: number | null = null;
   private currentBackoff = initialBackoffMs;
   private connectedAt: number | null = null;
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
   private leaderUnsubscribe: (() => void) | null = null;
+  private onlineUnsubscribe: (() => void) | null = null;
   private silenceTimeout: ReturnType<typeof setTimeout> | null = null;
   /** Time of the last event of any kind on the open EventSource. */
   private lastEventAt = 0;
@@ -143,6 +148,7 @@ export class StreamManager {
     // Idempotent, cleaned up in disconnect.
     this.startVisibilityReconnect();
     this.startLeaderReconnect();
+    this.startOnlineReconnect();
 
     const { state } = this.store.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
@@ -270,7 +276,7 @@ export class StreamManager {
     resolveInitialCatchupGate();
 
     if (isPermanentError || this.consecutiveFailures >= maxFailures) {
-      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
+      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures', isPermanentError);
       return;
     }
 
@@ -306,6 +312,7 @@ export class StreamManager {
     const eventSource = new EventSource(endpoint, { withCredentials });
     const noteActivity = () => {
       this.lastEventAt = Date.now();
+      reportReachable();
     };
 
     eventSource.onopen = () => {
@@ -374,7 +381,7 @@ export class StreamManager {
         this.closeEventSource();
         this.store.getState().setState('error');
         if (permanent) {
-          this.openCircuit(`server error: ${payload.code}`);
+          this.openCircuit(`server error: ${payload.code}`, true);
         } else {
           this.scheduleReconnect();
         }
@@ -386,7 +393,7 @@ export class StreamManager {
     eventSource.onerror = () => this.handleStreamFailure('SSE error');
 
     this.eventSource = eventSource;
-    noteActivity();
+    this.lastEventAt = Date.now();
     this.watchForSilence(eventSource, streamSilenceMs);
   }
 
@@ -434,9 +441,10 @@ export class StreamManager {
     this.eventSource = null;
   }
 
-  private openCircuit(reason: string) {
+  private openCircuit(reason: string, permanent = false) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
+    this.circuitPermanent = permanent;
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
     // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
     resolveInitialCatchupGate();
@@ -446,6 +454,17 @@ export class StreamManager {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    this.scheduleCooldownCheck(circuitCooldownMs);
+  }
+
+  /** A tab that stays visible, or a hidden leader whose followers are in view, hears no visibilitychange: the end of the cooldown runs the same health-gated attempt. */
+  private scheduleCooldownCheck(delay: number) {
+    if (this.circuitPermanent) return;
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      void this.attemptReconnect();
+    }, delay);
   }
 
   private scheduleReconnect() {
@@ -473,6 +492,7 @@ export class StreamManager {
     if (elapsed < circuitCooldownMs) {
       const secondsRemaining = Math.round((circuitCooldownMs - elapsed) / 1000);
       console.debug(`[${this.name}] Circuit cooldown:`, secondsRemaining, 's remaining');
+      this.scheduleCooldownCheck(circuitCooldownMs - elapsed);
       return;
     }
 
@@ -481,17 +501,23 @@ export class StreamManager {
 
     console.debug(`[${this.name}] Circuit cooldown elapsed, checking health`);
 
+    // A disconnect or a forced reconnect while the check runs ends this connect cycle, and the answer with it.
+    const cycle = this.abortController;
     try {
       const response = await fetch(healthUrl);
+      if (this.abortController !== cycle) return;
       if (response.ok) {
         console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
       } else {
         this.circuitOpenedAt = Date.now();
+        this.scheduleCooldownCheck(circuitCooldownMs);
         console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
     } catch {
+      if (this.abortController !== cycle) return;
       this.circuitOpenedAt = Date.now();
+      this.scheduleCooldownCheck(circuitCooldownMs);
       console.debug(`[${this.name}] Health check unreachable, extending cooldown`);
     } finally {
       this.healthCheckInProgress = false;
@@ -534,9 +560,30 @@ export class StreamManager {
     this.leaderUnsubscribe = null;
   }
 
+  /** Back online: reconnect now, past the backoff and an open circuit, as queries and paused mutations resume. */
+  private startOnlineReconnect() {
+    if (this.onlineUnsubscribe) return;
+    let wasOnline = onlineManager.isOnline();
+    this.onlineUnsubscribe = onlineManager.subscribe((online) => {
+      const cameBack = online && !wasOnline;
+      wasOnline = online;
+      const shouldReconnect = !this.config.useTabCoordination || isLeader();
+      if (cameBack && shouldReconnect && !this.isConnected() && !this.circuitPermanent) {
+        console.debug(`[${this.name}] Back online, reconnecting...`);
+        this.reconnect();
+      }
+    });
+  }
+
+  private stopOnlineReconnect() {
+    this.onlineUnsubscribe?.();
+    this.onlineUnsubscribe = null;
+  }
+
   disconnect() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
+    this.stopOnlineReconnect();
     resolveInitialCatchupGate();
 
     this.buffering = false;
@@ -563,6 +610,7 @@ export class StreamManager {
   resetCircuitBreaker() {
     this.consecutiveFailures = 0;
     this.circuitOpen = false;
+    this.circuitPermanent = false;
     this.circuitOpenedAt = null;
     this.connectedAt = null;
     this.currentBackoff = initialBackoffMs;

@@ -1,98 +1,94 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockSetOnline = vi.fn();
-
-vi.mock('@tanstack/react-query', () => ({ onlineManager: { setOnline: mockSetOnline } }));
-
 vi.mock('shared', () => ({ appConfig: { backendUrl: 'https://test.example.com' } }));
 
-describe('connectivity probe', () => {
+const unreachable = new TypeError('Failed to fetch');
+const answered = new Response(null, { status: 204 });
+
+describe('connectivity', () => {
+  const page = { hidden: false, onVisibilityChange: () => {} };
+
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.stubGlobal('fetch', vi.fn());
-    mockSetOnline.mockClear();
-    // Reset module state between tests so each starts clean
+    // A fresh onlineManager and module state per test.
     vi.resetModules();
+    vi.stubGlobal('fetch', vi.fn());
+    vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    vi.stubGlobal('navigator', { onLine: true });
+    page.hidden = false;
+    vi.stubGlobal('document', {
+      get hidden() {
+        return page.hidden;
+      },
+      addEventListener: (_type: string, listener: () => void) => {
+        page.onVisibilityChange = listener;
+      },
+      removeEventListener: vi.fn(),
+    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  async function importModule() {
-    return import('~/query/offline/connectivity');
+  async function load() {
+    const { onlineManager } = await import('@tanstack/react-query');
+    return { onlineManager, ...(await import('~/query/offline/connectivity')) };
   }
 
   it('takes the app offline only once every probe attempt fails, so a radio waking after resume is no outage', async () => {
     // A backgrounded mobile PWA: the first fetch fails while the radio wakes, the retry reaches the server.
-    vi.mocked(fetch)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValueOnce({ ok: true } as Response);
-    const { checkConnectivity, resetConnectivityCache } = await importModule();
+    vi.mocked(fetch).mockRejectedValueOnce(unreachable).mockResolvedValueOnce(answered);
+    const { onlineManager, reportNetworkFailure } = await load();
 
-    const recovering = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delay
-    expect(await recovering).toBe(true);
-    expect(mockSetOnline).not.toHaveBeenCalled();
+    const recovering = reportNetworkFailure();
+    await vi.runAllTimersAsync();
+    await recovering;
+    expect(onlineManager.isOnline()).toBe(true);
 
     // Every attempt fails, by a network error or an error response: queries and mutations pause.
-    resetConnectivityCache();
     vi.mocked(fetch)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValue({ ok: false, status: 503 } as Response);
-    const failing = checkConnectivity();
-    await vi.runAllTimersAsync(); // flush retry delays
-    expect(await failing).toBe(false);
-    expect(mockSetOnline).toHaveBeenCalledWith(false);
+      .mockRejectedValueOnce(unreachable)
+      .mockResolvedValue(new Response(null, { status: 503 }));
+    const failing = reportNetworkFailure();
+    await vi.runAllTimersAsync();
+    await failing;
+    expect(onlineManager.isOnline()).toBe(false);
   });
 
-  it('re-probes on a tab resume past a cached failure, and brings the app back online only once the server answers', async () => {
-    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-    const { checkConnectivity, revalidateConnectivity } = await importModule();
+  // The re-check loop ends an outage on its own: one over within the alert's delay never shows it, and a dismissed alert leaves the loop running.
+  it('re-checks until the API answers however long the outage lasts, pauses in a hidden tab and re-checks at once on resume', async () => {
+    vi.mocked(fetch).mockRejectedValue(unreachable);
+    const { onlineManager, reportNetworkFailure, startConnectivity } = await load();
+    const stop = startConnectivity();
 
-    const offline = checkConnectivity(); // caches the failure
-    await vi.runAllTimersAsync();
-    expect(await offline).toBe(false);
+    const failing = reportNetworkFailure();
+    await vi.advanceTimersByTimeAsync(2000);
+    await failing;
+    expect(onlineManager.isOnline()).toBe(false);
 
-    const stillOffline = revalidateConnectivity();
-    await vi.runAllTimersAsync();
-    expect(await stillOffline).toBe(false);
-    expect(mockSetOnline).not.toHaveBeenCalledWith(true);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(onlineManager.isOnline()).toBe(false);
 
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
-    expect(await revalidateConnectivity()).toBe(true);
-    expect(mockSetOnline).toHaveBeenLastCalledWith(true);
-  });
+    vi.mocked(fetch).mockResolvedValue(answered);
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(onlineManager.isOnline()).toBe(true);
 
-  // --- Recovery poll behind the offline alert ---
+    // Offline again, then hidden: no probe runs until the tab is visible.
+    onlineManager.setOnline(false);
+    page.hidden = true;
+    page.onVisibilityChange();
+    vi.mocked(fetch).mockClear();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(fetch).not.toHaveBeenCalled();
 
-  it('polls until the backend answers, however long the outage lasts', async () => {
-    let failures = 12;
-    vi.mocked(fetch).mockImplementation(async () => {
-      if (failures-- > 0) throw new TypeError('Failed to fetch');
-      return { ok: true } as Response;
-    });
-    const { awaitRecovery } = await importModule();
+    page.hidden = false;
+    page.onVisibilityChange();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(onlineManager.isOnline()).toBe(true);
 
-    const recovered = awaitRecovery(new AbortController().signal);
-    await vi.runAllTimersAsync();
-
-    expect(await recovered).toBe(true);
-    expect(fetch).toHaveBeenCalledTimes(13);
-  });
-
-  it('stops polling once the alert cancels it', async () => {
-    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-    const { awaitRecovery } = await importModule();
-    const controller = new AbortController();
-
-    const recovered = awaitRecovery(controller.signal);
-    await vi.advanceTimersByTimeAsync(12_000);
-    controller.abort();
-    await vi.runAllTimersAsync();
-
-    expect(await recovered).toBe(false);
-    expect(fetch).toHaveBeenCalledTimes(3);
+    stop();
   });
 });

@@ -1,4 +1,5 @@
 import { getSerwist } from 'virtual:serwist';
+import { onlineManager } from '@tanstack/react-query';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,11 +42,13 @@ export function ReloadPrompt() {
         }
       };
       document.addEventListener('visibilitychange', check);
-      window.addEventListener('online', check);
+      const unsubscribeOnline = onlineManager.subscribe((online) => {
+        if (online) check();
+      });
       cleanups.push(() => {
         clearInterval(interval);
         document.removeEventListener('visibilitychange', check);
-        window.removeEventListener('online', check);
+        unsubscribeOnline();
       });
     })();
 

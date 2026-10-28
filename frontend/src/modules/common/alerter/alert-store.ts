@@ -1,47 +1,39 @@
 import { appConfig } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
-import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
-export type AlertKey = 'offline' | 'maintenance' | 'auth_unavailable';
+/** A down alert the server's answers set; the offline alert follows the connection, in `useOfflineAlert`. */
+export type AlertKey = 'maintenance' | 'auth_unavailable';
 
 // Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKey, number> = { maintenance: 2, auth_unavailable: 1, offline: 0 };
+const alertPriority: Record<AlertKey, number> = { maintenance: 1, auth_unavailable: 0 };
 
 interface AlertStoreState {
   /** Ids of the banners the user dismissed, which stay hidden. */
   alertsSeen: string[];
   downAlert: AlertKey | null;
+  /** Whether `DownAlert` shows the offline alert, so banners stay hidden under it too; never stored. */
+  offlineAlertShown: boolean;
 
   /** Adds one id to `alertsSeen`. */
   setAlertSeen: (alertId: string) => void;
   setDownAlert: (downAlert: AlertKey | null) => void;
+  setOfflineAlertShown: (shown: boolean) => void;
   /** Back to the initial state, on sign-out. */
   reset: () => void;
 }
 
-let recoveryController: AbortController | null = null;
-
-const cancelRecovery = () => {
-  recoveryController?.abort();
-  recoveryController = null;
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert' | 'offlineAlertShown'> = {
+  downAlert: appConfig.maintenance ? 'maintenance' : null,
+  offlineAlertShown: false,
+  alertsSeen: [],
 };
 
-/** Polls /health and runs `onRecovered` once it answers, unless a newer alert or a reset cancelled the poll first. */
-const startRecovery = (onRecovered: () => void) => {
-  recoveryController = new AbortController();
-  const { signal } = recoveryController;
-  awaitRecovery(signal).then((recovered) => {
-    if (recovered && !signal.aborted) onRecovered();
-  });
-};
-
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
-
-/** The current down alert and the dismissed banners; a recoverable down alert polls /health until it clears. */
+/** The server's down alert and the dismissed banners. */
 export const useAlertStore = create<AlertStoreState>()(
   devtools(
     immer(
@@ -55,28 +47,28 @@ export const useAlertStore = create<AlertStoreState>()(
           },
           setDownAlert: (downAlert) => {
             const current = get().downAlert;
-            // Re-setting the same alert would restart recovery polling
-            if (current === downAlert) return;
-
             if (downAlert && current && alertPriority[downAlert] < alertPriority[current]) return;
 
-            cancelRecovery();
             set((state) => {
               state.downAlert = downAlert;
             });
-
-            if (downAlert === 'offline' && navigator.onLine) startRecovery(forceOnline);
+          },
+          setOfflineAlertShown: (shown) => {
+            set((state) => {
+              state.offlineAlertShown = shown;
+            });
           },
           reset: () => {
-            cancelRecovery();
             set((state) => ({ ...state, ...initStore }), true);
           },
         }),
         {
-          version: 1,
+          // Version 2 stores no down alert, so a reload never shows a stale one; the dismissed banners carry over.
+          version: 2,
+          migrate: (persisted) => ({ alertsSeen: isRecord(persisted) && Array.isArray(persisted.alertsSeen) ? persisted.alertsSeen : [] }),
           name: 'alerts',
           skipHydration: true,
-          partialize: (state) => ({ alertsSeen: state.alertsSeen, downAlert: state.downAlert }),
+          partialize: (state) => ({ alertsSeen: state.alertsSeen }),
           storage: createJSONStorage(() => idbKvStorage('alerts')),
         },
       ),

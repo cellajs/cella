@@ -42,7 +42,7 @@ export function AlertBanner({
   const { t } = useTranslation();
   const alertsSeen = useAlertStore((state) => state.alertsSeen);
   const setAlertSeen = useAlertStore((state) => state.setAlertSeen);
-  const downAlert = useAlertStore((state) => state.downAlert);
+  const isDown = useAlertStore((state) => !!state.downAlert || state.offlineAlertShown);
   const publicAlertsSeen = useUIStore((state) => state.publicAlertsSeen);
   const setPublicAlertSeen = useUIStore((state) => state.setPublicAlertSeen);
 
@@ -52,7 +52,7 @@ export function AlertBanner({
     if (isPublicContext) setPublicAlertSeen(id);
     else setAlertSeen(id);
   };
-  const showAlert = !downAlert && !seenAlerts.includes(id);
+  const showAlert = !isDown && !seenAlerts.includes(id);
 
   const alertContent = (
     <Alert variant={variant} onClose={setAsSeen} className={animate ? undefined : className}>

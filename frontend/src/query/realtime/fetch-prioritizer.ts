@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
@@ -230,7 +231,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const { entityType, organizationId } = entries[0];
   const tenantId = entries.find((entry) => entry.tenantId)?.tenantId ?? null;
 
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+  if (!onlineManager.isOnline()) {
     for (const entry of entries) requeue(entry, offlineRecheckMs);
     return 'requeued';
   }
@@ -322,7 +323,9 @@ function installListeners(): void {
   });
 
   // Back online: retry what accumulated while offline.
-  window.addEventListener('online', armTimer);
+  onlineManager.subscribe((online) => {
+    if (online) armTimer();
+  });
 
   // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and changes that arrive just before mount.
   queryClient.getQueryCache().subscribe((event) => {

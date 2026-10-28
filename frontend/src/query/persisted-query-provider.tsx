@@ -6,8 +6,9 @@ import { initChannelEnrichment } from '~/query/enrichment/init-channel-enrichmen
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
+import { startConnectivity } from '~/query/offline/connectivity';
 import { persistOptions } from '~/query/persister';
-import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
+import { markCacheRestored, markReplayingMutations, queryClient } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
@@ -59,28 +60,7 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
     };
   }, []);
 
-  useEffect(() => {
-    const applyNetwork = (online: boolean) => {
-      console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
-      setOfflineStaleTime(!online);
-    };
-    const handleOnline = () => {
-      applyNetwork(true);
-      silentRevalidateOnReconnect();
-    };
-    const handleOffline = () => applyNetwork(false);
-
-    applyNetwork(navigator.onLine);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      setOfflineStaleTime(false);
-    };
-  }, []);
+  useEffect(() => startConnectivity(), []);
 
   return (
     <PersistQueryClientProvider

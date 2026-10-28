@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import Gleap from 'gleap';
 import { useEffect } from 'react';
 import type { User } from 'sdk';
@@ -18,13 +19,12 @@ function initGleap() {
   Gleap.showFeedbackButton(false);
 }
 
-window.ononline = initGleap;
+onlineManager.subscribe((online) => {
+  if (online) initGleap();
+  else Gleap.destroy();
+});
 
-window.onoffline = () => {
-  Gleap.destroy();
-};
-
-if (navigator.onLine) initGleap();
+if (onlineManager.isOnline()) initGleap();
 
 function setGleapUser(user: User) {
   if (!window.Gleap) return;

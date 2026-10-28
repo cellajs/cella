@@ -162,7 +162,7 @@ The REST API and the database work whatever the CDC worker does: it records each
 
 ### REST fallback
 
-Losing the stream costs live updates and nothing else: synced queries go stale with time, so lists refetch when opened. A stream counts as down when it errors, ends or falls silent, and the client reconnects with backoff. The next catchup fetches what its cursors miss. A range fetch that keeps failing, or returns fewer rows than announced, is given up and its lists invalidated.
+Losing the stream costs live updates and nothing else: synced queries go stale with time, so lists refetch when opened. A stream counts as down when it errors, ends or falls silent. The client reconnects with backoff, and at once when the app is back online. The next catchup fetches what its cursors miss. A range fetch that keeps failing, or returns fewer rows than announced, is given up and its lists invalidated.
 
 ### What happens when
 
