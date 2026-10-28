@@ -14,6 +14,8 @@ const probeRetryDelayMs = 750;
 const recheckDelaysMs = [1000, 2000, 5000];
 
 let probing = false;
+/** When a response last showed that the network reaches the API. */
+let reachableAt = 0;
 let recheckTimer: ReturnType<typeof setTimeout> | null = null;
 let recheckCount = 0;
 
@@ -33,25 +35,32 @@ async function isReachable(): Promise<boolean> {
 
 /**
  * A request got no response: probe `/health` and take the app offline once every attempt fails, which pauses queries
- * and mutations through `onlineManager`. A failure while offline or while a probe runs adds nothing.
+ * and mutations through `onlineManager`. A failure while offline or while a probe runs adds nothing, and a response
+ * that arrives while the probe runs overrules it.
  */
 export async function reportNetworkFailure(): Promise<void> {
   if (probing || !onlineManager.isOnline()) return;
   probing = true;
+  const startedAt = Date.now();
   try {
     for (let attempt = 0; attempt <= probeRetries; attempt++) {
       if (await isReachable()) return;
       if (attempt < probeRetries) await waitFor(probeRetryDelayMs);
     }
-    onlineManager.setOnline(false);
+    if (reachableAt < startedAt) onlineManager.setOnline(false);
   } finally {
     probing = false;
   }
 }
 
-/** A response arrived, whatever its status: the network reaches the API. After the browser's `offline` event only its `online` event ends the outage. */
+/**
+ * The API answered a request or sent a stream event. While the browser reports no network the answer may predate its
+ * `offline` event, so it proves nothing.
+ */
 export function reportReachable(): void {
-  if (navigator.onLine) onlineManager.setOnline(true);
+  if (!navigator.onLine) return;
+  reachableAt = Date.now();
+  onlineManager.setOnline(true);
 }
 
 function clearRecheck() {
@@ -88,7 +97,7 @@ export function startConnectivity(): () => void {
     else scheduleRecheck();
   });
   const onVisibilityChange = () => {
-    if (document.hidden || onlineManager.isOnline()) return clearRecheck();
+    if (document.hidden || onlineManager.isOnline() || !navigator.onLine) return clearRecheck();
     recheckCount = 0;
     void recheckNow();
   };

@@ -3,7 +3,9 @@ import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { apiErrorFromResponse, clientConfig } from '~/lib/api';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
-import { isNetworkError } from '~/query/offline/network-retry';
+
+/** What a load balancer or proxy answers while the API behind it is down or too slow. */
+const gatewayStatuses = new Set([502, 503, 504]);
 
 /**
  * Runtime config for the generated API client (SDK output in /sdk/gen/).
@@ -34,10 +36,11 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
       response = await clientConfig.fetch(nextInput, nextInit);
     } catch (error) {
       // Network-level failure (no HTTP response), probe actual connectivity
-      if (isNetworkError(error)) void reportNetworkFailure();
+      if (error instanceof TypeError) void reportNetworkFailure();
       throw error;
     }
-    reportReachable();
+    // A gateway answering for an absent API proves nothing, as the probe also reads it.
+    if (!gatewayStatuses.has(response.status)) reportReachable();
 
     if (response.ok) return response;
     throw await apiErrorFromResponse(response);

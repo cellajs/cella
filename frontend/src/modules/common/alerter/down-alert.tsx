@@ -1,5 +1,5 @@
 import { CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { type AlertKey, useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useOfflineAlert } from '~/modules/common/alerter/use-offline-alert';
@@ -17,11 +17,18 @@ export function DownAlert() {
   const { t } = useTranslation();
   const serverAlert = useAlertStore((state) => state.downAlert);
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
+  const setOfflineAlertShown = useAlertStore((state) => state.setOfflineAlertShown);
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
   const offlineAlert = useOfflineAlert();
 
   const shownServerAlert = serverAlert && !dismissedAlerts[serverAlert] ? serverAlert : null;
   const downAlert = shownServerAlert ?? (offlineAlert.isShown ? 'offline' : null);
+
+  const isOfflineShown = downAlert === 'offline';
+  useEffect(() => {
+    setOfflineAlertShown(isOfflineShown);
+    return () => setOfflineAlertShown(false);
+  }, [isOfflineShown, setOfflineAlertShown]);
 
   const dismissAlert = () => {
     if (!shownServerAlert) return offlineAlert.dismiss();

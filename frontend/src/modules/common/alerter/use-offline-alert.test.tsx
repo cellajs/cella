@@ -59,9 +59,12 @@ describe('useOfflineAlert', () => {
     await act(() => vi.advanceTimersByTimeAsync(1));
     expect(frames.at(-1)).toBe(true);
 
-    // An outage whose last probe reaches the API ends without the alert.
+    // An outage whose last probe reaches the API ends without the alert: the probe brings the app online.
     act(() => onlineManager.setOnline(true));
-    recheckNow.mockResolvedValueOnce(true);
+    recheckNow.mockImplementationOnce(async () => {
+      onlineManager.setOnline(true);
+      return true;
+    });
     const outageAt = frames.length;
     act(() => onlineManager.setOnline(false));
     await act(() => vi.advanceTimersByTimeAsync(5000));

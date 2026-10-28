@@ -7,6 +7,7 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
+import { reportReachable } from '~/query/offline/connectivity';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
@@ -111,7 +112,7 @@ export class StreamManager {
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
   private circuitOpen = false;
-  /** Opened by a refused session: no cooldown check, only a tab that becomes visible looks again. */
+  /** Opened by a refused session: no cooldown check and no back-online reconnect, only a tab that becomes visible looks again. */
   private circuitPermanent = false;
   private circuitOpenedAt: number | null = null;
   private currentBackoff = initialBackoffMs;
@@ -311,6 +312,7 @@ export class StreamManager {
     const eventSource = new EventSource(endpoint, { withCredentials });
     const noteActivity = () => {
       this.lastEventAt = Date.now();
+      reportReachable();
     };
 
     eventSource.onopen = () => {
@@ -391,7 +393,7 @@ export class StreamManager {
     eventSource.onerror = () => this.handleStreamFailure('SSE error');
 
     this.eventSource = eventSource;
-    noteActivity();
+    this.lastEventAt = Date.now();
     this.watchForSilence(eventSource, streamSilenceMs);
   }
 
@@ -455,13 +457,13 @@ export class StreamManager {
     this.scheduleCooldownCheck(circuitCooldownMs);
   }
 
-  /** A tab that stays visible hears no visibilitychange, so the end of the cooldown runs the same health-gated attempt. */
+  /** A tab that stays visible, or a hidden leader whose followers are in view, hears no visibilitychange: the end of the cooldown runs the same health-gated attempt. */
   private scheduleCooldownCheck(delay: number) {
     if (this.circuitPermanent) return;
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
-      if (document.visibilityState === 'visible') void this.attemptReconnect();
+      void this.attemptReconnect();
     }, delay);
   }
 
@@ -499,8 +501,11 @@ export class StreamManager {
 
     console.debug(`[${this.name}] Circuit cooldown elapsed, checking health`);
 
+    // A disconnect or a forced reconnect while the check runs ends this connect cycle, and the answer with it.
+    const cycle = this.abortController;
     try {
       const response = await fetch(healthUrl);
+      if (this.abortController !== cycle) return;
       if (response.ok) {
         console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
@@ -510,6 +515,7 @@ export class StreamManager {
         console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
     } catch {
+      if (this.abortController !== cycle) return;
       this.circuitOpenedAt = Date.now();
       this.scheduleCooldownCheck(circuitCooldownMs);
       console.debug(`[${this.name}] Health check unreachable, extending cooldown`);
@@ -562,7 +568,7 @@ export class StreamManager {
       const cameBack = online && !wasOnline;
       wasOnline = online;
       const shouldReconnect = !this.config.useTabCoordination || isLeader();
-      if (cameBack && shouldReconnect && !this.isConnected()) {
+      if (cameBack && shouldReconnect && !this.isConnected() && !this.circuitPermanent) {
         console.debug(`[${this.name}] Back online, reconnecting...`);
         this.reconnect();
       }

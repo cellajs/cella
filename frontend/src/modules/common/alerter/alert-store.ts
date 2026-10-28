@@ -16,15 +16,22 @@ interface AlertStoreState {
   /** Ids of the banners the user dismissed, which stay hidden. */
   alertsSeen: string[];
   downAlert: AlertKey | null;
+  /** Whether `DownAlert` shows the offline alert, so banners stay hidden under it too; never stored. */
+  offlineAlertShown: boolean;
 
   /** Adds one id to `alertsSeen`. */
   setAlertSeen: (alertId: string) => void;
   setDownAlert: (downAlert: AlertKey | null) => void;
+  setOfflineAlertShown: (shown: boolean) => void;
   /** Back to the initial state, on sign-out. */
   reset: () => void;
 }
 
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert' | 'offlineAlertShown'> = {
+  downAlert: appConfig.maintenance ? 'maintenance' : null,
+  offlineAlertShown: false,
+  alertsSeen: [],
+};
 
 /** The server's down alert and the dismissed banners. */
 export const useAlertStore = create<AlertStoreState>()(
@@ -44,6 +51,11 @@ export const useAlertStore = create<AlertStoreState>()(
 
             set((state) => {
               state.downAlert = downAlert;
+            });
+          },
+          setOfflineAlertShown: (shown) => {
+            set((state) => {
+              state.offlineAlertShown = shown;
             });
           },
           reset: () => {

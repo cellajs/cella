@@ -57,7 +57,7 @@ describe('connectivity', () => {
     expect(onlineManager.isOnline()).toBe(false);
   });
 
-  // Recovery needs no alert: an outage that ends within the alert's delay never shows it, and a dismissed alert leaves the re-checks running.
+  // The re-check loop ends an outage on its own: one over within the alert's delay never shows it, and a dismissed alert leaves the loop running.
   it('re-checks until the API answers however long the outage lasts, pauses in a hidden tab and re-checks at once on resume', async () => {
     vi.mocked(fetch).mockRejectedValue(unreachable);
     const { onlineManager, reportNetworkFailure, startConnectivity } = await load();

@@ -7,6 +7,8 @@ export function isNetworkError(error: unknown): boolean {
   return (
     message.includes('failed to fetch') || // Chrome, Edge
     message.includes('load failed') || // Safari
+    message.includes('network connection was lost') || // Safari on iOS
+    message.includes('internet connection appears to be offline') || // Safari on iOS
     message.includes('networkerror') // Firefox
   );
 }
