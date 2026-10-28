@@ -659,7 +659,10 @@
      overflow-x-clip (on html and body, iOS needs both) keeps stray wide content from widening the layout
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
-    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[118.75%];
+    @apply font-sans overflow-x-clip max-sm:text-[118.75%];
+    /* Touch keeps none for the app's own pull-to-refresh (body as well). A fine pointer gets contain: in Chrome a root
+       none on an axis also stops every nested scroller from bouncing on that axis. */
+    @apply overscroll-none pointer-fine:overscroll-contain;
 
     /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
        scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
@@ -699,7 +702,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip antialiased font-normal;
+    @apply bg-background text-foreground min-h-full overscroll-none pointer-fine:overscroll-contain overflow-x-clip antialiased font-normal;
   }
 
   .container {
