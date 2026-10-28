@@ -9,7 +9,7 @@ const membershipEntry = () => tableMetaOf('resource', 'membership');
 const inactiveMembershipEntry = () => tableMetaOf('resource', 'inactive_membership');
 
 describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
-  it('membership create: role + total count, plus org membership seq signal', () => {
+  it('membership create: role + total count, plus the version of membership.changed', () => {
     const plan = computeBatchUnifiedDeltas([
       changeEvent({
         tableMeta: membershipEntry(),
@@ -19,7 +19,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
     ]);
 
     expect(plan.orgSequenceGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:admin': 1, 'm:c:total': 1, membership: 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:admin': 1, 'm:c:total': 1, 's:membership.changed': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -31,7 +31,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:total': -1, membership: 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:total': -1, 's:membership.changed': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -44,7 +44,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, membership: 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, 's:membership.changed': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -56,7 +56,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, membership: 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, 's:membership.changed': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -69,7 +69,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': -1, membership: 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': -1, 's:membership.changed': 1 });
   });
 });
 

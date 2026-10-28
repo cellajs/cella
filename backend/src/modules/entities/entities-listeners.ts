@@ -4,11 +4,13 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
 import { type AppStreamSubscriber, dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
-import { toUser } from '#/modules/entities/stream/audiences';
+import { toReaders, toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
+import { versionedSignals } from '#/modules/entities/stream/versioned-signals';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
 // Activity bus listeners: product events reach authenticated SSE subscribers as changes, membership events as signals.
@@ -54,6 +56,20 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
 
     await sendSignal('membership.changed', toUser(membership.userId), { organizationId: event.organizationId, subjectId: membership.id });
   });
+}
+
+// The live half of a versioned signal: the organization's readers hear of it now, a client that misses it gets the version
+// at catchup. Registered after the membership listeners, so a reader's memberships are current when it is decided.
+for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
+  const types = versionedSignals[table];
+  if (!types) continue;
+  for (const verb of ['created', 'updated', 'deleted'] as const) {
+    activityBus.on(`${table}.${verb}`, async ({ organizationId }) => {
+      if (!organizationId) return;
+      const organization = buildSubject('organization', {}, { id: organizationId });
+      for (const type of types) await sendSignal(type, toReaders(organization), { organizationId });
+    });
+  }
 }
 
 // The CDC worker corrected or rebuilt its books: cursors a client holds say nothing about them any more.

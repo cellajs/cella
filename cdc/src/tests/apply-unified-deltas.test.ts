@@ -175,8 +175,8 @@ describe('mergeDelta', () => {
   });
 
   it('takes a key the channel does not hold yet as it is', () => {
-    expect(merged({ membership: 1 }, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 })).toEqual({
-      membership: 1,
+    expect(merged({ 's:membership.changed': 1 }, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 })).toEqual({
+      's:membership.changed': 1,
       'e:li:h:task': 1_751_000_000_000,
       'e:f:task': 7,
       'e:c:task': 1,

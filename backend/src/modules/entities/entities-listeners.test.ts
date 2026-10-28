@@ -18,7 +18,7 @@ defineBackendModule({
   owner: 'cella',
   description: 'Declares the membership signal the listeners send',
   scope: ['backend'],
-  signals: [{ type: 'membership.changed', audiences: ['user'] }],
+  signals: [{ type: 'membership.changed', audiences: ['user', 'readers'] }],
 });
 
 const membership = (role: EntityRole, userId: string): MembershipBaseModel =>
@@ -93,11 +93,13 @@ describe('entities listeners: a membership change on open streams', () => {
     // The stream's own copy of the memberships is what every later change is checked against.
     expect(removed.subscriber.memberships).toEqual([]);
     expect(staying.subscriber.memberships).toHaveLength(1);
-    // And the user hears of it on their own topic, as a signal about that membership.
+    // The user hears of their own membership; the organization's remaining readers hear that its member lists changed.
     expect(removed.sent.map(({ event, data }) => [event, JSON.parse(data)])).toEqual([
       ['signal', { type: 'membership.changed', organizationId: org, subjectId: `mem-${org}-removed-user`, version: null }],
     ]);
-    expect(staying.sent).toEqual([]);
+    expect(staying.sent.map(({ event, data }) => [event, JSON.parse(data)])).toEqual([
+      ['signal', { type: 'membership.changed', organizationId: org, subjectId: null, version: null }],
+    ]);
   });
 
   it('gives a new member the membership on their open stream', async () => {

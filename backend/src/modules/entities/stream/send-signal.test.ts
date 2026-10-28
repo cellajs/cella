@@ -2,7 +2,11 @@ import type { SSEStreamingApi } from 'hono/streaming';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { toUser } from './audiences';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
+import { buildSubject } from '#/permissions/build-subject';
+import { memberRole } from '../../../../tests/fixtures';
+import { toReaders, toUser } from './audiences';
 import { sendSignal } from './send-signal';
 import { streamSubscriberManager } from './subscriber-manager';
 
@@ -13,11 +17,11 @@ defineBackendModule({
   owner: 'cella',
   description: 'Declares the signal type the tests send',
   scope: ['backend'],
-  signals: [{ type: 'signal-test.changed', audiences: ['user'] }],
+  signals: [{ type: 'signal-test.changed', audiences: ['user', 'readers'] }],
 });
 
 /** A stream on the organization's topic and its user's topic, recording every frame written to it. */
-const openStream = (userId: string) => {
+const openStream = (userId: string, memberships: MembershipBaseModel[] = []) => {
   const frames: { event?: string; id?: string; data: string }[] = [];
   const stream = {
     writeSSE: async (frame: { event?: string; id?: string; data: string }) => {
@@ -33,7 +37,7 @@ const openStream = (userId: string) => {
     organizationIds: new Set([org]),
     isSystemAdmin: false,
     systemAccessAllowed: false,
-    memberships: [],
+    memberships,
   };
   streamSubscriberManager.register(subscriber, [`user:${userId}`]);
   return frames;
@@ -56,6 +60,23 @@ describe('sendSignal: who hears it', () => {
       expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1', version: null });
     }
     expect(bystander).toEqual([]);
+  });
+
+  it("reaches the organization's readers and must not reach a stream whose membership is gone or of another organization", async () => {
+    const member = openStream('member-user', [mockMembershipBase('mem-signals-member', { channelId: org, userId: 'member-user', role: memberRole })]);
+    // On the organization's topic since it connected, without the membership: the decision is made per signal.
+    const removed = openStream('removed-user');
+    const otherOrg = openStream('other-user', [
+      mockMembershipBase('mem-signals-other', { channelId: 'org-elsewhere', userId: 'other-user', role: memberRole }),
+    ]);
+
+    await sendSignal('signal-test.changed', toReaders(buildSubject('organization', {}, { id: org })), { organizationId: org });
+
+    expect(member.map(({ data }) => JSON.parse(data))).toEqual([
+      { type: 'signal-test.changed', organizationId: org, subjectId: null, version: null },
+    ]);
+    expect(removed).toEqual([]);
+    expect(otherOrg).toEqual([]);
   });
 
   it('must not send a type no module declared for that audience', async () => {

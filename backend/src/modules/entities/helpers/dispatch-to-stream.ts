@@ -1,4 +1,4 @@
-import { appConfig, isUnpublishedDraft, type SubjectForPermission } from 'shared';
+import { appConfig, type EntityActionType, isUnpublishedDraft, type SubjectForPermission } from 'shared';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
@@ -52,16 +52,11 @@ function rowReadSubject(event: AppStreamProductEvent, row: Record<string, unknow
 }
 
 /**
- * Whether each subscriber may read one row of a product event. Mirrors API row visibility in one fan-out check; an
- * invalid membership denies only its own subscriber.
- * @param subscribers - Who to decide for.
- * @param event - The event the row belongs to: it names the product type and the tenant.
- * @param row - The row's permission fields, or those it had before a move.
+ * Whether each subscriber may take an action on a subject, in one fan-out check that mirrors the API; an invalid
+ * membership denies only its own subscriber, and a check that fails denies all.
  * @returns One decision per subscriber, in their order.
  */
-export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent, row: Record<string, unknown>): boolean[] {
-  const subject = rowReadSubject(event, row);
-  if (!subject) return subscribers.map(() => false);
+export function accessDecisions(subscribers: readonly SubscriberAccess[], action: EntityActionType, subject: SubjectForPermission): boolean[] {
   try {
     // Stream subscribers hold sessions: never a key or token mask.
     const accesses = subscribers.map((subscriber) => ({
@@ -70,12 +65,24 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
       memberships: subscriber.memberships,
       scopes: null,
     }));
-    const results = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
+    const results = checkAccessFanout(accesses, action, subject, { onInvalidMembership: 'deny' });
     return results.map((result) => result.allowed);
   } catch {
-    log.error('Stream read decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id });
+    log.error('Stream access decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id, action });
     return subscribers.map(() => false);
   }
+}
+
+/**
+ * Whether each subscriber may read one row of a product event, as the API's row visibility decides it.
+ * @param event - The event the row belongs to: it names the product type and the tenant.
+ * @param row - The row's permission fields, or those it had before a move.
+ * @returns One decision per subscriber, in their order.
+ */
+export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent, row: Record<string, unknown>): boolean[] {
+  const subject = rowReadSubject(event, row);
+  if (!subject) return subscribers.map(() => false);
+  return accessDecisions(subscribers, 'read', subject);
 }
 
 /**
@@ -90,7 +97,7 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
 }
 
 /** The subscribers on an organization's topic that hold the organization. */
-function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
+export function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
   return streamSubscriberManager
     .getByTopic<AppStreamSubscriber>(organizationTopic(organizationId))
     .filter((subscriber) => subscriber.organizationIds.has(organizationId));

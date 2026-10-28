@@ -29,7 +29,7 @@ describe('Catchup (view-driven, sequence)', async () => {
 
     const counts = {
       sequence: 50,
-      membership: 3,
+      's:membership.changed': 3,
       'e:f:attachment': 42,
       'e:c:attachment': 15,
       'e:f:h:attachment': 40,
