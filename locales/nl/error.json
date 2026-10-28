@@ -1,8 +1,6 @@
 {
   "ambiguous_placement": "Onduidelijke plaatsing",
   "ambiguous_placement.text": "Noem één plek, de diepste: de plekken erboven volgen daaruit.",
-  "auth_key_not_found": "Authenticatiesleutel ontbreekt",
-  "auth_key_not_found.text": "Er ontbreekt een authenticatiesleutel. Neem contact op met support.",
   "bad_request_action": "Verzoek niet verwerkt",
   "body_too_large": "Te groot om op te slaan",
   "body_too_large.text": "Maak het korter of splits het op.",
