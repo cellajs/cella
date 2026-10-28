@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: valueSource: 'pulumi', INFRA_NON_INTERACTIVE, INFRA_DEPLOY_NOW, PULUMI_CONFIG_PASSPHRASE, SCW_OWNER_ACCESS_KEY, store-passphrase, deploy-pipeline, github-sync
@@ -21,7 +21,7 @@ or passphrase from disk. Design: `cella/DEPLOYMENT.md`.
 
 ## Blast radius
 
-Every app with a deployed stack, and its operators. Sync-breaking for operations: nothing deploys until the steps below
+Every app with a deployed stack, and its operators. Breaking for operations: nothing deploys until the steps below
 ran. No database, cache or wire change. An app that edited the removed workflows keeps a trigger that runs nothing.
 
 ## Run
@@ -30,7 +30,7 @@ No script: manual.
 
 ## Manual steps
 
-1. Sync, then rename `valueSource: 'pulumi'` to `'engine'` in app-owned entries of `infra/config/runtime-secrets.config.ts`.
+1. Upgrade, then rename `valueSource: 'pulumi'` to `'engine'` in app-owned entries of `infra/config/runtime-secrets.config.ts`.
 2. Delete `.github/workflows/deploy.yml`, `deploy-pipeline.yml`, `geoip-refresh.yml`, `infra-state-prune.yml` and `.github/actions/pulumi-cli` if the sync left them.
 3. Remove `INFRA_NON_INTERACTIVE`, `INFRA_DEPLOY_NOW`, `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` from env files, shell profiles, scripts and keychains.
 4. Per app, on the dedicated address: `pnpm infra operator-key` with an Owner API key; store the key it shows.

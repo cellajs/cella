@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: /auth/unsubscribed, unsubscribe_title, unsubscribe_text, unsubscribeNotificationsOp, listUnsubscribe
@@ -19,7 +19,7 @@ always spoke of the newsletter and showed the browser's address, not the link's.
 
 ## Blast radius
 
-Sync-breaking for app code that links to `/auth/unsubscribed` (the route types flag it), calls `unsubscribeNotificationsOp`,
+Breaking for app code that links to `/auth/unsubscribed` (the route types flag it), calls `unsubscribeNotificationsOp`,
 or has tests that open an unsubscribe link and expect the change. No database, lens or `clientCacheVersion` change.
 
 ## Run

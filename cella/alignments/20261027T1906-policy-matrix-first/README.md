@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: getEntityPolicies
@@ -17,7 +17,7 @@ then what they look up in it, so a reader learns one shape.
 
 ## Blast radius
 
-Sync-breaking for app-owned code that calls `getEntityPolicies` (typecheck flags each call). An app without such calls
+Breaking for app-owned code that calls `getEntityPolicies` (typecheck flags each call). An app without such calls
 has nothing to do. No database, lens or `clientCacheVersion` change.
 
 ## Run

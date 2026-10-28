@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: false
 grep: restrict_by_org
 ---
@@ -17,7 +17,7 @@ does not lift it.
 ## Blast radius
 
 Apps with a product module copied from the attachment module. An app that copied nothing gets the change with the
-sync. No database, lens or `clientCacheVersion` change.
+upgrade. No database, lens or `clientCacheVersion` change.
 
 ## Run
 

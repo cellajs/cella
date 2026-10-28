@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: modules/auth/tokens-db, bindTokenToUser, findConsentsByUser, findConsentOfUser, deleteConsentsOfUsers, findConnectionBindingUser
@@ -19,7 +19,7 @@ importer names one folder. Queries take the names of what they read and write.
 ## Blast radius
 
 App-owned files that import the old path or call a renamed query fail typecheck (projectcampus:
-`tests/course-publish.test.ts`, `tests/invitations/draft-invites-app.test.ts`). Synced files arrive with the sync. No
+`tests/course-publish.test.ts`, `tests/invitations/draft-invites-app.test.ts`). Template files arrive with the upgrade. No
 database, lens or `clientCacheVersion` change.
 
 ## Run

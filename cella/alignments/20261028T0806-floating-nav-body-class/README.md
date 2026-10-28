@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: compiler
 grep: docs-floating-nav, marketing-floating-nav
@@ -19,7 +19,7 @@ changes nothing they show.
 ## Blast radius
 
 The app-owned marketing module: raak and projectcampus `frontend/src/modules/marketing/nav.tsx`. `docs-layout.tsx`
-arrives with the sync. An app stylesheet that selects either old class loses it. No cache or database change.
+arrives with the upgrade. An app stylesheet that selects either old class loses it. No cache or database change.
 
 ## Run
 

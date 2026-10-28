@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: true
 caughtBy: compiler
 grep: clientCacheVersion, StreamNotification, AppStreamNotification, kind: 'membership', signals.membership, changes[, handleMembershipNotification, handleAppStreamNotification, handleProductNotification, registerNotificationSyncListener, sync-listener, dispatchToAppStream, onNotification, broadcastNotification, stream-notification, build-message, sse.notifications
@@ -22,8 +22,8 @@ client's `*Notification` names (now `*Change`) are gone.
 ## Blast radius
 
 App code that reads `kind`, `resourceType` or `channelType` off a stream frame, streams its own resource through the
-`kind` switch, reads `changes[orgId].signals.membership`, or follows the inbox from `onChangeEvent`. Synced files
-arrive with the sync. No database or lens change. The catchup rename breaks the spec, so upstream bumped
+`kind` switch, reads `changes[orgId].signals.membership`, or follows the inbox from `onChangeEvent`. Template files
+arrive with the upgrade. No database or lens change. The catchup rename breaks the spec, so upstream bumped
 `appConfig.clientCacheVersion` to `v23-stream-signals`: every client clears its cached query data on the next load and
 keeps its queued mutations.
 

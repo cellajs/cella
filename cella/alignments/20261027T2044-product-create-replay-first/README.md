@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: restrict_by_org, replayed ? 200 : 201, rejectedIds: [] as string[]

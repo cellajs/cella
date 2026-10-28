@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: false
 caughtBy: nothing
 grep: text-muted-foreground/70, text-muted-foreground/60, text-muted-foreground/50, text-foreground/80, text-foreground/90, text-sidebar-foreground/70, placeholder:text-muted-foreground, text-gray, text-slate, uppercase, lowercase, font-medium text-muted-foreground text-sm
@@ -22,7 +22,7 @@ and on palette grays; `pnpm style:audit` lists opacity on text.
 
 ## Blast radius
 
-Frontend only. Sync-breaking for app files with modifiers or palette grays: `pnpm style` fails on them. Opacity on
+Frontend only. Breaking for app files with modifiers or palette grays: `pnpm style` fails on them. Opacity on
 text, case transforms and hand-rolled labels only show by reading. An app without its own components only sees the new
 look. No database, lens or `clientCacheVersion` change.
 

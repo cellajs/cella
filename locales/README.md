@@ -57,7 +57,7 @@ A key names the concept, so its text can change without a rename. Texts are shor
 | File | Content | Runtime namespace |
 | --- | --- | --- |
 | `common.json` | generic cella texts, frontend and backend, including the backend texts an app adds its own of per type (notification and digest lines), since only `c` takes app overrides | `c` |
-| `app.json` | app-specific texts, kept apart so upstream syncs never conflict with cella-owned `common.json` | `c` |
+| `app.json` | app-specific texts, kept apart so upgrades never conflict with cella-owned `common.json` | `c` |
 | `about.json` | marketing 'about' page | `about:` |
 | `error.json` | error texts, frontend and backend | `error:` |
 | `backend.json` | pure backend texts, mostly emails | `backend:` |

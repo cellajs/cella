@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: false
 grep: cella migrate, cella.migrations.json, cella/migrations, Migration-Note
 ---
@@ -8,7 +8,7 @@ grep: cella migrate, cella.migrations.json, cella/migrations, Migration-Note
 
 Upstream's migration notes are now alignments: `pnpm cella align` lists them and `pnpm cella migrate`
 is gone, open ones are recorded in `cella/cella.alignments.json`, the `migrate` skill is now the
-`align` skill, and the commit trailer that waives one is `Alignment: none, <reason>`. Synced files
+`align` skill, and the commit trailer that waives one is `Alignment: none, <reason>`. Template files
 arrive renamed; change the app's own scripts, docs and prompts that use the old names.
 
 ## What & why
@@ -20,8 +20,8 @@ migrate`). Each alignment now says how its leftovers are caught (`caughtBy`), wh
 
 ## Blast radius
 
-Not sync-breaking, no `clientCacheVersion` bump, no database change. Needs `@cellajs/cli` 0.5, which
-the version gate asks for before the sync merges. An app whose own files never name the old command
+Not breaking, no `clientCacheVersion` bump, no database change. Needs `@cellajs/cli` 0.5, which
+the version gate asks for before the upgrade merges. An app whose own files never name the old command
 or folder only marks this alignment.
 
 ## Run

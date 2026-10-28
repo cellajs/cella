@@ -1,5 +1,5 @@
 ---
-syncBreaking: false
+breaking: false
 clientCacheBump: false
 grep: getOrganizationEntityCount, assertTenantQuota
 ---
@@ -18,7 +18,7 @@ API key quotas count theirs. `getOrganizationEntityCount` stays for list totals.
 
 ## Blast radius
 
-Not sync-breaking: app code keeps compiling and its quotas keep their current behavior until switched. No database,
+Not breaking: app code keeps compiling and its quotas keep their current behavior until switched. No database,
 lens or `clientCacheVersion` change. Known sites, under `backend/src/modules`: raak `label/operations/create-labels.ts`,
 `project/operations/create-projects.ts`, `task/operations/create-tasks.ts`, `workspace/operations/create-workspaces.ts`;
 projectcampus `comment`, `course`, `course-section`, `item`, `label`, `material`, `project` (each `operations/create-*.ts`).

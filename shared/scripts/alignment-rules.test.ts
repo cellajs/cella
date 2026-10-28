@@ -4,7 +4,7 @@ import { alignmentFindings, checkAlignmentReadme, owedAlignmentFindings, ownedPa
 const lines = (...rows: string[]) => rows.join('\n');
 const alignment = lines(
   '---',
-  'syncBreaking: true',
+  'breaking: true',
   'clientCacheBump: false',
   'caughtBy: compiler',
   'grep: principalId, principal_id',
@@ -31,22 +31,22 @@ describe('checkAlignmentReadme', () => {
       'must open with a `---` frontmatter block',
       'the title must be followed by a one-paragraph summary',
     ]);
-    expect(checkAlignmentReadme(lines('---', 'syncBreaking: false', 'clientCacheBump: false', '---', '', 'Text')).errors).toEqual([
+    expect(checkAlignmentReadme(lines('---', 'breaking: false', 'clientCacheBump: false', '---', '', 'Text')).errors).toEqual([
       'the first line after the frontmatter must be the `# ` title',
       'the title must be followed by a one-paragraph summary',
     ]);
   });
 
-  it('reports unknown keys, missing flags, flags that are not booleans and a sync-breaking change without caughtBy', () => {
-    const source = lines('---', 'syncBreaking: yes', 'version: next', '---', '', '# Title', '', 'Summary.');
+  it('reports unknown keys, missing flags, flags that are not booleans and a breaking change without caughtBy', () => {
+    const source = lines('---', 'breaking: yes', 'version: next', '---', '', '# Title', '', 'Summary.');
     expect(checkAlignmentReadme(source).errors).toEqual([
-      'syncBreaking must be true or false',
+      'breaking must be true or false',
       'unknown frontmatter key: version',
       'frontmatter is missing clientCacheBump',
     ]);
     const breaking = (...keys: string[]) =>
-      checkAlignmentReadme(lines('---', 'syncBreaking: true', 'clientCacheBump: false', ...keys, '---', '', '# Title', '', 'Summary.')).errors;
-    expect(breaking()).toEqual(['a sync-breaking alignment says how an app finds its leftovers: caughtBy']);
+      checkAlignmentReadme(lines('---', 'breaking: true', 'clientCacheBump: false', ...keys, '---', '', '# Title', '', 'Summary.')).errors;
+    expect(breaking()).toEqual(['a breaking alignment says how an app finds its leftovers: caughtBy']);
     expect(breaking('caughtBy: typecheck')).toEqual(['caughtBy must be one of compiler, tests, nothing']);
   });
 });
@@ -111,7 +111,7 @@ describe('owedAlignmentFindings', () => {
   const rule = (changed: string[], messages = '', added = changed) =>
     owedAlignmentFindings({ changed, added, messages }, config).map((finding) => finding.file);
 
-  it('reads the ignored and pinned entries of the sync config', () => {
+  it('reads the ignored and pinned entries of the CLI config', () => {
     expect(ownedPaths(config)).toEqual([
       'README.md',
       'shared/config',
@@ -123,7 +123,7 @@ describe('owedAlignmentFindings', () => {
     ]);
   });
 
-  it('asks for an alignment when a branch changes an app-owned path synced code reads from', () => {
+  it('asks for an alignment when a branch changes an app-owned path template code reads from', () => {
     expect(rule(['frontend/src/modules/common/logo.tsx', 'frontend/src/modules/auth/auth-layout.tsx'])).toEqual([
       'frontend/src/modules/common/logo.tsx',
     ]);

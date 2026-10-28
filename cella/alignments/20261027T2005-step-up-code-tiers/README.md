@@ -1,5 +1,5 @@
 ---
-syncBreaking: true
+breaking: true
 clientCacheBump: true
 caughtBy: nothing
 grep: stepUpGuard, ensureStepUp, requireStepUp, sendStepUpLink, stepUpUrl, step-up-confirmed, step-up-requested, sign_in_again, step_up_link_sent
@@ -20,9 +20,9 @@ accounts, OAuth consent) now need a second factor, and setting one up proves it 
 
 ## Blast radius
 
-Sync-breaking for an app with its own step-up guarded routes, `ensureStepUp` callers, a customized step-up mail or
+Breaking for an app with its own step-up guarded routes, `ensureStepUp` callers, a customized step-up mail or
 dialog. No database migration. Upstream bumps `clientCacheVersion` for the removed link route; an app that sets its own
-bumps it too. An app that never touched step-up gets the rest from the sync.
+bumps it too. An app that never touched step-up gets the rest from the upgrade.
 
 ## Run
 
