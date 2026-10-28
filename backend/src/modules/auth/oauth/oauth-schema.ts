@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { federationKeys } from 'shared';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
 import type { Env } from '#/core/context';
+import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 
 const oauthProviderIds = ['github', 'google', 'microsoft'] as const satisfies readonly BaseOAuthProviders[];
 

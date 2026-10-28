@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
-import { federationKeys } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';

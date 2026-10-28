@@ -1,11 +1,12 @@
 import { getColumns, sql } from 'drizzle-orm';
 import { type AnyPgColumn, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import { type FederationKey, federationKeys } from 'shared';
+import type { FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 

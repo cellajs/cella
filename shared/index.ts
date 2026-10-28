@@ -95,7 +95,7 @@ export type {
   UploadTemplateId,
   UserFlags,
 } from './types.ts';
-export { actionToVerb, activityActions, federationKeys, isValidEventType, trackedEventTypes } from './types.ts';
+export { actionToVerb, activityActions, isValidEventType, trackedEventTypes } from './types.ts';
 
 // Side-effect import: the config checks that need the policy matrix run in every program that imports `shared`.
 import './src/config-builder/config-validation.ts';
