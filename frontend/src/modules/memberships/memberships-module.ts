@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { defineFrontendModule } from '~/lib/module';
 import * as membershipOps from '~/query/realtime/membership-ops';
-import { appStreamManager } from '~/query/realtime/stream-store';
+import { appStreamManager } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
 
 defineFrontendModule({

@@ -3,7 +3,7 @@ import { CopyIcon, TrashIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { Connection, Tenant } from 'sdk';
+import type { Connection, CreateConnectionData, Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
@@ -81,7 +81,8 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
       {
         path: { tenantId: tenant.id },
         body: {
-          issuer: values.issuer as never,
+          // The select offers only appConfig.federations keys; the form keeps the value a string so its default can be empty.
+          issuer: values.issuer as CreateConnectionData['body']['issuer'],
           displayName: values.displayName,
           claimValues: splitList(values.claimValues, /[,\s]+/),
           idpEntityIds: splitList(values.idpEntityIds, /\n+/),

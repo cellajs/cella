@@ -1,4 +1,4 @@
-import { getLocalUserDb, subscribeOwnerChange, type YDocKey } from '~/query/local-user-db';
+import { getLocalUserDb, subscribeLocalUserChange, type YDocKey } from '~/query/local-user-db';
 
 /**
  * A message on the app's channel between tabs, one BroadcastChannel per user. Each carries the document's generation, so
@@ -39,7 +39,7 @@ function closeChannel() {
 }
 
 // Another user's edits must never reach this tab, nor this tab's reach theirs.
-subscribeOwnerChange(() => {
+subscribeLocalUserChange(() => {
   closeChannel();
   if (handlers.size > 0) currentChannel();
 });

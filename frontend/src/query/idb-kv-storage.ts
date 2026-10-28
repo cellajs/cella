@@ -30,7 +30,7 @@ export function idbKvStorage(key: string): StateStorage {
     if (!pending) return;
     const { value, db } = pending;
     pending = null;
-    // Skip if signed out or rebound to another owner since scheduling (cross-user isolation).
+    // Skip if signed out or rebound to another user since scheduling (cross-user isolation).
     if (getLocalUserDb() === db) void db.kv.put({ key, value });
   };
   flushers.add(flush);

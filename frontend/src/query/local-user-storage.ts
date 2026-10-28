@@ -6,7 +6,7 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, notifyOwnerChange } from '~/query/local-user-db';
+import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, notifyLocalUserChange } from '~/query/local-user-db';
 import { resetPersisters } from '~/query/persister';
 import { syncStore } from '~/query/realtime/sync-store';
 
@@ -19,11 +19,11 @@ export interface LocalUserStore {
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
 const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, offlineFilesStore, ...extraLocalUserStores];
 
-let boundOwner: string | null = null;
+let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-/** Owner to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
-function resolveOwner(): string | null {
+/** The user whose database to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
+function resolveLocalUserId(): string | null {
   const { user, impersonator } = userStore.getState();
   return impersonator ? null : user?.id || null;
 }
@@ -32,15 +32,15 @@ async function hydrateAll(): Promise<void> {
   await Promise.all(localUserStores.map((store) => store.persist.rehydrate()));
 }
 
-function bindOwner(ownerId: string): void {
-  boundOwner = ownerId;
-  bindLocalUserDb(ownerId);
+function bindLocalUser(userId: string): void {
+  boundUserId = userId;
+  bindLocalUserDb(userId);
   resetPersisters();
   readyPromise = hydrateAll();
 }
 
 function unbind(): void {
-  boundOwner = null;
+  boundUserId = null;
   closeLocalUserDb();
   resetPersisters();
   // The DB is already closed, so these resets no-op on persist.
@@ -49,21 +49,21 @@ function unbind(): void {
 }
 
 /** Reconcile the bound DB with the current auth state. Cheap; no-ops when unchanged. */
-function reconcileOwner(): void {
-  const owner = resolveOwner();
-  if (owner === boundOwner) return;
-  if (owner) bindOwner(owner);
+function reconcileLocalUser(): void {
+  const userId = resolveLocalUserId();
+  if (userId === boundUserId) return;
+  if (userId) bindLocalUser(userId);
   else unbind();
-  notifyOwnerChange(boundOwner);
+  notifyLocalUserChange(boundUserId);
 }
 
-/** Resolves once `localUserDb` is open and all local user stores have rehydrated for the current owner. */
+/** Resolves once `localUserDb` is open and all local user stores have rehydrated for the current user. */
 export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }
 
-userStore.subscribe(reconcileOwner);
-reconcileOwner();
+userStore.subscribe(reconcileLocalUser);
+reconcileLocalUser();
 
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. Lazy imports keep the
 // router and teardown out of this module's importer graph.

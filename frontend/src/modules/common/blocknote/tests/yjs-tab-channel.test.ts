@@ -3,15 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({ appConfig: { slug: 'test' } }));
 
-const { bindLocalUserDb, closeLocalUserDb, notifyOwnerChange } = await import('~/query/local-user-db');
+const { bindLocalUserDb, closeLocalUserDb, notifyLocalUserChange } = await import('~/query/local-user-db');
 const { onTabMessage, postTabMessage, yDocKeyString } = await import('~/modules/common/blocknote/yjs-tab-channel');
 type TabMessage = Parameters<Parameters<typeof onTabMessage>[0]>[0];
 
-/** Binds `owner`'s database as sign-in does, and tells the owner listeners, as local-user-storage does once bound. */
+/** Binds `owner`'s database as sign-in does, and tells the local user listeners, as local-user-storage does once bound. */
 function signIn(owner: string | null) {
   if (owner) bindLocalUserDb(owner);
   else closeLocalUserDb();
-  notifyOwnerChange(owner);
+  notifyLocalUserChange(owner);
 }
 
 /** Another tab of `owner`: a channel of its own on that user's name. */

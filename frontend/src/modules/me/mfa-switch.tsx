@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { MfaConfirmation } from '~/modules/me/mfa/confirmation';
+import { MfaConfirmation } from '~/modules/me/mfa-confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { WarningNote } from '~/modules/me/warning-note';
 import { Label } from '~/modules/ui/label';

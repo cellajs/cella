@@ -1,5 +1,5 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
-import type { IncomingTraceContext, SpanData, TraceContext } from 'shared/tracing';
+import type { SpanData, TraceContext } from 'shared/tracing';
 import { isDebugMode } from '~/env';
 import { spanStore, tracer } from '~/lib/otel';
 
@@ -17,21 +17,11 @@ export function clearSpans(): void {
   spanStore.clear();
 }
 
-interface SpanAttributes {
-  [key: string]: string | number | boolean | null | undefined | IncomingTraceContext;
-  _trace?: IncomingTraceContext;
-}
+type SpanAttributes = Record<string, string | number | boolean | null | undefined>;
 
 function applyAttributes(span: Span, attributes: SpanAttributes): void {
-  const { _trace, ...rest } = attributes;
-  for (const [key, value] of Object.entries(rest)) {
-    if (value !== undefined && value !== null && typeof value !== 'object') {
-      span.setAttribute(key, value);
-    }
-  }
-  if (_trace?.cdcTimestamp) {
-    span.setAttribute('sync.e2e_latency_ms', Date.now() - _trace.cdcTimestamp);
-    if (_trace.traceId) span.setAttribute('sync.cdc_trace_id', _trace.traceId);
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value !== undefined && value !== null) span.setAttribute(key, value);
   }
 }
 

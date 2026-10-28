@@ -1,4 +1,4 @@
-import { type PostAppCatchupResponse, postAppCatchup, type StreamSignal } from 'sdk';
+import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig, isProduct } from 'shared';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -24,7 +24,7 @@ import {
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
-import type { AppStreamChange, StreamState } from '~/query/realtime/types';
+import type { StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const maxFailures = 3;
@@ -51,7 +51,7 @@ interface StreamConfig {
   fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** A follower's side of catchup: process the answer the leader passed on. */
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
-  processChange: (change: AppStreamChange) => void;
+  processChange: (change: StreamChange) => void;
   processSignal: (signal: StreamSignal) => void;
   /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
   onPing?: (data: string) => void;
@@ -121,7 +121,7 @@ export class StreamManager {
   private lastEventAt = 0;
 
   /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
-  private pendingChanges: Array<{ change: AppStreamChange; eventId: string | undefined }> = [];
+  private pendingChanges: Array<{ change: StreamChange; eventId: string | undefined }> = [];
   private buffering = false;
   private bufferOverflowed = false;
 
@@ -266,18 +266,17 @@ export class StreamManager {
     reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutive_failures: this.consecutiveFailures });
     this.store.getState().setState('error');
 
-    // Open the gate on failure too, so paused mutations are not stuck forever.
-    resolveInitialCatchupGate();
-
     if (isPermanentError || this.consecutiveFailures >= maxFailures) {
-      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
+      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures', isPermanentError);
       return;
     }
 
+    // A failure that keeps the session opens the gate too, so paused mutations are not stuck forever.
+    resolveInitialCatchupGate();
     this.scheduleReconnect();
   }
 
-  private applyChange(change: AppStreamChange, eventId: string | undefined) {
+  private applyChange(change: StreamChange, eventId: string | undefined) {
     if (eventId) {
       this.store.getState().setCursor(eventId);
       if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);
@@ -374,7 +373,7 @@ export class StreamManager {
         this.closeEventSource();
         this.store.getState().setState('error');
         if (permanent) {
-          this.openCircuit(`server error: ${payload.code}`);
+          this.openCircuit(`server error: ${payload.code}`, true);
         } else {
           this.scheduleReconnect();
         }
@@ -404,7 +403,7 @@ export class StreamManager {
     this.closeEventSource();
 
     if (this.consecutiveFailures >= maxFailures) {
-      this.openCircuit('max consecutive SSE failures');
+      this.openCircuit('max consecutive SSE failures', false);
       return;
     }
 
@@ -434,12 +433,14 @@ export class StreamManager {
     this.eventSource = null;
   }
 
-  private openCircuit(reason: string) {
+  /** Stops reconnecting until the cooldown ends. A `permanent` circuit means the session or its access is gone. */
+  private openCircuit(reason: string, permanent: boolean) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
-    // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
-    resolveInitialCatchupGate();
+    // Paused mutations replay through the API, which arbitrates them by their `replayed` stx. Without a session each
+    // replay would answer 401 and move to failedSync, so a permanent circuit keeps them queued.
+    if (!permanent) resolveInitialCatchupGate();
 
     // Cancel the pending reconnect so it cannot fire while the circuit is open.
     if (this.reconnectTimeout) {
@@ -534,10 +535,11 @@ export class StreamManager {
     this.leaderUnsubscribe = null;
   }
 
-  disconnect() {
+  /** Closes the stream for good. After `sessionLost` the gate stays closed, as on a permanent circuit. */
+  disconnect({ sessionLost = false }: { sessionLost?: boolean } = {}) {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
-    resolveInitialCatchupGate();
+    if (!sessionLost) resolveInitialCatchupGate();
 
     this.buffering = false;
     this.bufferOverflowed = false;
@@ -641,7 +643,11 @@ onSyncHealth((health) => {
   applySyncHealth(health);
 });
 
-/** Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up. Safe to call before any stream connects. */
+/**
+ * Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up.
+ * A lost session (a 401 or 403 on catchup, a permanent server error, a disconnect after a 401) leaves it closed. Safe
+ * to call before any stream connects.
+ */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }

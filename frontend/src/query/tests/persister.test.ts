@@ -271,7 +271,7 @@ describe('queued mutations across a change of their variables shape', () => {
       key: 'rq:mut:closed-tab',
       timestamp: 1000,
       buster: '',
-      channelQueries: [],
+      bundledQueries: [],
       mutations: [
         queuedMutation(versionedKey, { tenantId: 't', tasks: 'throws', stx: { mutationId: 'mut-3' } }),
         queuedMutation(['label', 'update'], { id: 'l1', ops: { name: 'Kept' } }),

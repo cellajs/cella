@@ -10,12 +10,12 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { inviteBatches, memberQueryKeys } from '~/modules/memberships/query';
 import type {
-  DeleteMembership,
-  InviteMember,
+  DeleteMembershipsVariables,
   Member,
   MemberListSnapshot,
+  MembershipInviteVariables,
   MemberUpdateContext,
-  MutationUpdateMembership,
+  UpdateMembershipVariables,
 } from '~/modules/memberships/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 import { cacheUpdate } from '~/query/basic/cache-mutations';
@@ -78,7 +78,7 @@ const restoreMemberLists = (previousLists: MemberListSnapshot[] = []) => {
 };
 
 export const useInviteMemberMutation = () =>
-  useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
+  useMutation<MembershipInviteResponse, ApiError, MembershipInviteVariables, undefined>({
     mutationKey: memberQueryKeys.update,
     // Past the per-request limit the addresses go out in batches, one answer for all
     mutationFn: async ({ body, path, query }) => {
@@ -133,7 +133,7 @@ export const useWithdrawInvitationMutation = () =>
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MemberUpdateContext>({
+  useMutation<UpdateMembershipResponse, ApiError, UpdateMembershipVariables, MemberUpdateContext>({
     mutationKey: memberQueryKeys.update,
     mutationFn: ({ path, body }) => updateMembership({ body, path }),
     onMutate: async (variables) => {
@@ -193,7 +193,7 @@ export const useMemberUpdateMutation = () =>
   });
 
 export const useMembershipsDeleteMutation = () =>
-  useMutation<void, ApiError, DeleteMembership, MemberListSnapshot[]>({
+  useMutation<void, ApiError, DeleteMembershipsVariables, MemberListSnapshot[]>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
       await deleteMemberships({ path, body, query });

@@ -1,5 +1,5 @@
 import { zGetUsersQuery } from 'sdk/zod.gen';
-import z from 'zod';
+import { z } from 'zod';
 
 export const usersSearchDefaults = { q: '', sort: 'createdAt', order: 'desc' } as const;
 

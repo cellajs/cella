@@ -127,60 +127,13 @@ function StatsView({ spans }: SpansViewProps) {
   );
 }
 
-function TimelineView({ spans }: SpansViewProps) {
-  const spansWithLatency = spans.filter((span) => 'sync.e2e_latency_ms' in span.attributes);
-
-  if (spansWithLatency.length === 0) {
-    return (
-      <div className={emptyClass}>
-        No end-to-end latency data yet.
-        <br />
-        <span className="text-2xs">Latency is calculated from CDC timestamp to frontend processing.</span>
-      </div>
-    );
-  }
-
-  const recent = newestFirst(spansWithLatency, 20).map((span) => ({ span, latency: Number(span.attributes['sync.e2e_latency_ms']) || 0 }));
-  const maxLatency = Math.max(...recent.map(({ latency }) => latency), 100);
-  const avgLatency = recent.reduce((sum, { latency }) => sum + latency, 0) / recent.length;
-
-  return (
-    <div>
-      <div className={statCardClass}>
-        <div className={statLabelClass}>Avg E2E latency</div>
-        <div className={statValueClass}>{formatDuration(avgLatency)}</div>
-      </div>
-
-      <div className={statCardClass}>
-        <div className={statLabelClass}>Recent messages (CDC → frontend)</div>
-        <div className="mt-3">
-          {recent.map(({ span, latency }) => (
-            <div key={span.spanId} className="mb-2">
-              <div className="mb-0.5 flex justify-between text-2xs text-muted-foreground">
-                <span>{String(span.attributes['sync.entity_type'] || 'unknown')}</span>
-                <span>{formatDuration(latency)}</span>
-              </div>
-              <div className="h-1 overflow-hidden rounded-xs bg-muted">
-                <div
-                  className={cn('h-full rounded-xs', latency > 500 ? 'bg-red-500' : latency > 200 ? 'bg-amber-500' : 'bg-green-500')}
-                  style={{ width: `${(latency / maxLatency) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const tabs = ['spans', 'stats', 'timeline'] as const;
+const tabs = ['spans', 'stats'] as const;
 
 interface SyncDevtoolsProps {
   onClose: () => void;
 }
 
-/** Dev-only floating panel for the sync flow: recent spans, their stats and end-to-end latencies. */
+/** Dev-only floating panel for the sync flow: recent spans and their stats. */
 export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('spans');
@@ -215,7 +168,6 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
       <div className="flex-1 overflow-auto p-2">
         {activeTab === 'spans' && <SpanList spans={spans} filter={filter} />}
         {activeTab === 'stats' && <StatsView spans={spans} />}
-        {activeTab === 'timeline' && <TimelineView spans={spans} />}
       </div>
 
       <div className="flex gap-2 border-t p-2">

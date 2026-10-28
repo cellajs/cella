@@ -11,7 +11,7 @@ vi.stubGlobal('localStorage', {
   length: 0,
 });
 
-const { syncStore } = await import('./sync-store');
+const { syncStore } = await import('~/query/realtime/sync-store');
 
 describe('sync-store declareSyncView (re-baseline rule)', () => {
   afterEach(() => syncStore.getState().reset());

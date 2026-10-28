@@ -38,7 +38,8 @@ function quarantineOnClientError(error: ApiError, variables: unknown, mutationKe
   quarantineFailedSync({ mutationId, mutationKey, status, variables, error }).catch(() => {});
 }
 
-const defaultStaleTime = 30 * 1000;
+/** How long a query counts as fresh while online. */
+export const defaultStaleTime = 30 * 1000;
 /** Offline, no query goes stale by age; `Infinity` and not `'static'`, so an invalidated query still refetches. */
 const offlineStaleTime = Number.POSITIVE_INFINITY;
 const defaultGcTime = 7 * 24 * 60 * 60 * 1000;

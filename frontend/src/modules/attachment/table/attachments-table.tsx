@@ -77,7 +77,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
       <AttachmentsTableBar
         channel={channel}
         selected={selected}
-        searchVars={search}
+        searchVars={{ q, sort, order }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}

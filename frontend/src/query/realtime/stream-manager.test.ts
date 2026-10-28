@@ -12,9 +12,9 @@ vi.mock('~/query/realtime/sync-store', () => ({
     getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, getCatchupViews: () => [] }),
   },
 }));
-vi.mock('./app-stream-handler', () => ({ handleStreamChange: vi.fn() }));
-vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
-vi.mock('./catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
+vi.mock('~/query/realtime/app-stream-handler', () => ({ handleStreamChange: vi.fn() }));
+vi.mock('~/query/realtime/view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
+vi.mock('~/query/realtime/catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
 vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEntityTypes: () => [] }));
 // Controllable leader state so tests can drive the follower -> leader promotion transition, and hand a tab what the leader posted.
 const leaderControl = vi.hoisted(() => {
@@ -58,7 +58,7 @@ const leaderControl = vi.hoisted(() => {
   };
 });
 
-vi.mock('./tab-coordinator', () => ({
+vi.mock('~/query/realtime/tab-coordinator', () => ({
   broadcastCatchup: vi.fn(),
   broadcastStreamChange: vi.fn(),
   broadcastStreamSignal: vi.fn(),
@@ -116,10 +116,10 @@ vi.stubGlobal('EventSource', FakeEventSource);
 vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.fn(), visibilityState: 'visible' });
 
 const { postAppCatchup } = await import('sdk');
-const { processAppCatchup } = await import('./catchup-processor');
-const { broadcastCatchup, broadcastStreamChange, broadcastSyncHealth } = await import('./tab-coordinator');
+const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
+const { broadcastCatchup, broadcastStreamChange, broadcastSyncHealth } = await import('~/query/realtime/tab-coordinator');
 const { setSyncStreamHealthy, setSyncWorkerAway } = await import('~/query/basic/sync-stale-state');
-const { StreamManager, appStreamManager } = await import('./stream-store');
+const { StreamManager, appStreamManager } = await import('~/query/realtime/stream-manager');
 
 /** Flush pending microtasks so awaited catchup continuations run. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -264,7 +264,7 @@ describe('the gate that paused writes wait on', () => {
   it('must not stay closed in a follower tab, which runs no catchup of its own', async () => {
     // The gate lives for the page: a fresh module is a fresh page.
     vi.resetModules();
-    const fresh = await import('./stream-store');
+    const fresh = await import('~/query/realtime/stream-manager');
     leaderControl.setLeader(false);
     const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
       endpoint: 'http://api.test/stream',
@@ -290,7 +290,7 @@ describe('the gate that paused writes wait on', () => {
   it('opens once a stream that fails in transport gives up, and stays closed while it reconnects', async () => {
     vi.useFakeTimers();
     vi.resetModules();
-    const fresh = await import('./stream-store');
+    const fresh = await import('~/query/realtime/stream-manager');
     const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
       endpoint: 'http://api.test/stream',
       withCredentials: false,
@@ -319,6 +319,35 @@ describe('the gate that paused writes wait on', () => {
     failStream();
     await vi.advanceTimersByTimeAsync(0);
     expect(released).toBe(true);
+    manager.disconnect();
+  });
+
+  // A lost session opened the gate, so writes restored from the last session replayed into 401s and moved to failedSync.
+  it.each([
+    ['a catchup answered 401', (stream: FakeEventSource) => stream.emit('offset', '100')],
+    ['the server ended the stream as unauthorized', (stream: FakeEventSource) => stream.emitServerError('unauthorized')],
+    [
+      'the app disconnected after a 401',
+      (_stream: FakeEventSource, manager: InstanceType<typeof StreamManager>) => manager.disconnect({ sessionLost: true }),
+    ],
+  ])('stays closed when the session is lost: %s', async (_, loseSession) => {
+    vi.resetModules();
+    const fresh = await import('~/query/realtime/stream-manager');
+    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
+      endpoint: 'http://api.test/stream',
+      withCredentials: false,
+      useTabCoordination: false,
+      fetchAndProcessCatchup: () => Promise.reject(Object.assign(new Error('Unauthorized'), { status: 401 })),
+      processLeaderCatchup: () => Promise.resolve(),
+      processChange: () => {},
+      processSignal: () => {},
+    });
+
+    await manager.connect();
+    loseSession(FakeEventSource.instances.at(-1) as FakeEventSource, manager);
+    await tick();
+
+    expect(await Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)])).toBe(false);
     manager.disconnect();
   });
 });

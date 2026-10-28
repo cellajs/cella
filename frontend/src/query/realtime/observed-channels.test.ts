@@ -35,8 +35,8 @@ stubLocalStorage();
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { isObservedChannel } = await import('./observed-channels');
-const { isViewingChannel } = await import('./sync-priority');
+const { isObservedChannel } = await import('~/query/realtime/observed-channels');
+const { isViewingChannel } = await import('~/query/realtime/sync-priority');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.
 const task = 'task' as EntityType;

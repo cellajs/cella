@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { onChangeEvent, publishChangeEvent } from './sync-events';
+import { onChangeEvent, publishChangeEvent } from '~/query/realtime/sync-events';
 
 const change = {
   action: 'create' as const,

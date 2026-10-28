@@ -32,7 +32,7 @@ vi.mock('shared', async (importOriginal) => {
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { propagateEmbeddedProduct } = await import('./propagation');
+const { propagateEmbeddedProduct } = await import('~/query/realtime/propagation');
 
 // The synthetic 'label' and 'task' types exist only in this file's shared mock, hence the casts.
 const labelType = 'label' as ProductEntityType;
