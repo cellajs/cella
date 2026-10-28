@@ -125,6 +125,7 @@
   "offline_files.recent.text": "Bewaart de nieuwste bestanden met hun voorbeelden, zodat waar je laatst aan werkte zonder verbinding opent.",
   "offline_files.status": "{{percent}} vol: {{used}} van {{budget}} in gebruik op dit apparaat.",
   "offline_files.text": "Hoeveel bestanden van je organisaties dit apparaat bewaart, zodat je ze zonder verbinding kunt openen. De keuze geldt alleen voor dit apparaat.",
+  "offline_files.tier_usage": "{{tier}}: {{used}} van {{budget}}",
   "offline_files.usage": "{{used}} van {{budget}} in gebruik op dit apparaat",
   "onboarding_completed": "Mooi! Aan de slag.",
   "onboarding_completed.text": "Kijk rond en ontdek de mogelijkheden van {{appName}}.",
