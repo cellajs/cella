@@ -1,6 +1,6 @@
 ---
 syncBreaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: tests
 grep: errorResponseRefs, xMiddleware, setMiddlewareExtension, createXRoutes
 ---
@@ -21,8 +21,9 @@ in the document. 413 is documented on every route with a body, so `AppErrorStatu
 ## Blast radius
 
 Apps with routes of their own (every product module), guards, limiters or locks built with `xMiddleware`, or imports
-of `errorResponseRefs`. The OpenAPI document and the SDK change for every operation. No database, lens or
-`clientCacheVersion` change.
+of `errorResponseRefs`. The OpenAPI document and the SDK change for every operation. `clientCacheVersion` is bumped
+(`v25-route-errors`): the gate reads `checkSlug`'s 409 losing its documented JSON body as a wire change, though the
+handler always answered without one. No database or lens change.
 
 ## Run
 
