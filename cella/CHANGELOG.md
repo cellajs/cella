@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.27.0](https://github.com/cellajs/cella/compare/0.26.0...0.27.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** routes document the error statuses they answer with, and tests refuse an undocumented one ([#1591](https://github.com/cellajs/cella/issues/1591))
+
+### 🎉 New features
+
+* **backend:** routes document the error statuses they answer with, and tests refuse an undocumented one ([#1591](https://github.com/cellajs/cella/issues/1591)) ([7520e6a](https://github.com/cellajs/cella/commit/7520e6a27cc6588b21a16b775d5f74b5bfea232c))
+
+
+### 🐞 Bug fixes
+
+* **backend:** the deploy's migrate step reads pg_cron's database from its env on managed Postgres ([#1598](https://github.com/cellajs/cella/issues/1598)) ([7d7b6a3](https://github.com/cellajs/cella/commit/7d7b6a35913eac29525c9bc7d32d6067de283271))
+* sessions list reads as sign-ins, not alarms ([#1589](https://github.com/cellajs/cella/issues/1589)) ([8f5dfc6](https://github.com/cellajs/cella/commit/8f5dfc64f2a7b0658f8272cc460d071ca7aafcbd))
+
+
+### 🔧 Small improvements
+
+* **locales:** one key per sentence, key families made consistent, a lowercase formatter and default variables ([#1590](https://github.com/cellajs/cella/issues/1590)) ([c04fffe](https://github.com/cellajs/cella/commit/c04fffef6897a17f7296c9374b3e13d023967627))
+
+
+### 🧹 Chores
+
+* ui tuning: offline files button with a fill meter, shorter dialog bar, marks above it, fade-only text ([#1592](https://github.com/cellajs/cella/issues/1592)) ([ab7ae7e](https://github.com/cellajs/cella/commit/ab7ae7eb689c166abc7072b3ddc414807cf1c107))
+
 ## [0.26.0](https://github.com/cellajs/cella/compare/0.25.0...0.26.0) (2026-10-28)
 
 
