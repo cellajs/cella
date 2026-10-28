@@ -385,6 +385,14 @@
     "responses": {
       "BadRequestError": {
         "description": "Bad request: problem processing request.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -395,6 +403,14 @@
       },
       "UnauthorizedError": {
         "description": "Unauthorized: authentication required.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -405,6 +421,14 @@
       },
       "ForbiddenError": {
         "description": "Forbidden: insufficient permissions.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -415,6 +439,14 @@
       },
       "NotFoundError": {
         "description": "Not found: resource does not exist.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -425,6 +457,14 @@
       },
       "ConflictError": {
         "description": "Conflict: resource state conflict.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -433,8 +473,41 @@
           }
         }
       },
+      "PayloadTooLargeError": {
+        "description": "Payload too large: the request body exceeds its limit.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PayloadTooLargeError"
+            }
+          }
+        }
+      },
       "TooManyRequestsError": {
         "description": "Rate limit: too many requests.",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "Retry-After": {
+            "description": "Seconds to wait before trying again, at least 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
@@ -1100,12 +1173,38 @@
             }
           }
         ],
-        "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.",
+        "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
         "example": {
           "name": "Signed in as someone else",
           "message": "This link is for another account. Sign out, then open it again.",
           "type": "user_mismatch",
           "status": 409,
+          "severity": "warn",
+          "timestamp": "2025-01-01T12:00:00.000Z"
+        },
+        "x-tags": ["errors", "cella"]
+      },
+      "PayloadTooLargeError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [413]
+              }
+            }
+          }
+        ],
+        "description": "The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.",
+        "example": {
+          "name": "Too large to save",
+          "message": "Shorten it or split it up.",
+          "type": "body_too_large",
+          "status": 413,
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -3140,24 +3239,6 @@
                 }
               }
             }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -3211,17 +3292,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -3256,23 +3328,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -3426,15 +3483,6 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -3511,9 +3559,6 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
@@ -3582,11 +3627,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           }
         }
       }
@@ -3609,23 +3651,8 @@
           "204": {
             "description": "Stopped impersonating"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -3664,17 +3691,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -3696,23 +3714,8 @@
           "204": {
             "description": "User signed out"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -3759,17 +3762,11 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -3812,15 +3809,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -3924,9 +3912,6 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
@@ -3983,11 +3968,11 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4019,12 +4004,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4087,8 +4066,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4243,11 +4222,11 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4292,12 +4271,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4368,14 +4341,11 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4477,8 +4447,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4524,12 +4494,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4588,18 +4552,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -4655,18 +4607,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -4722,18 +4662,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5043,20 +4971,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5126,12 +5042,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5197,17 +5107,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5339,12 +5240,6 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -5410,18 +5305,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -5513,8 +5396,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5571,12 +5454,6 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -5609,12 +5486,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5683,11 +5554,11 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
-            "$ref": "#/components/responses/ConflictError"
+            "description": "Slug is taken"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5723,15 +5594,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5939,14 +5801,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -5979,23 +5835,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -6090,14 +5931,11 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6129,9 +5967,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
@@ -6192,11 +6027,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6229,23 +6061,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6367,23 +6184,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6580,11 +6382,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6635,9 +6434,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -6708,9 +6504,6 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -6751,23 +6544,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6819,23 +6597,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6906,14 +6669,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -6957,21 +6714,6 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7137,15 +6879,6 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -7215,17 +6948,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           }
         }
       }
@@ -7268,23 +6992,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -7353,17 +7062,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           }
         }
       }
@@ -7421,18 +7121,6 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -7485,14 +7173,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -7548,14 +7230,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -7594,23 +7270,8 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7692,17 +7353,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           }
         }
       },
@@ -7754,18 +7406,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7814,17 +7454,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -7948,15 +7579,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -8038,11 +7660,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8087,15 +7706,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8193,11 +7803,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8289,6 +7896,9 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8396,6 +8006,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -8486,11 +8099,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8691,15 +8301,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -8754,14 +8355,8 @@
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
           },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8903,8 +8498,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -8987,15 +8582,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -9106,11 +8692,11 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -9235,6 +8821,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -9298,9 +8887,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -9476,15 +9062,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -9604,12 +9181,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -9652,20 +9223,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -10063,11 +9622,11 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -10163,11 +9722,8 @@
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
           },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -10448,15 +10004,6 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -10548,12 +10095,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -10759,6 +10300,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -10899,9 +10443,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11162,9 +10703,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11567,8 +11105,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11706,8 +11244,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11874,8 +11412,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -11959,12 +11497,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -12085,8 +11617,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12211,6 +11743,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -12271,20 +11806,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -12350,13 +11873,53 @@
             "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
-            "$ref": "#/components/responses/ForbiddenError"
+            "description": "Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jsonrpc": {
+                      "type": "string",
+                      "enum": ["2.0"]
+                    },
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "data": {}
+                      },
+                      "required": ["code", "message"]
+                    }
+                  },
+                  "required": ["jsonrpc", "id", "error"]
+                }
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12550,6 +12113,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -12676,6 +12242,9 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12809,8 +12378,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -13016,6 +12585,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
           }
@@ -13072,9 +12644,6 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -13407,12 +12976,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -13617,12 +13180,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -13685,9 +13242,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -13753,9 +13307,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -13856,8 +13407,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14065,8 +13616,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14227,12 +13778,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -14325,8 +13870,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14432,12 +13977,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -14606,8 +14145,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14689,9 +14228,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14782,9 +14318,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -14897,8 +14430,8 @@
           "404": {
             "$ref": "#/components/responses/NotFoundError"
           },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -15008,6 +14541,9 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

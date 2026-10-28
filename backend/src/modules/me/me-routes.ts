@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockConnectedApp, mockPaginatedInvitationsResponse } from '#/modules/me/me-mocks';
@@ -43,7 +43,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Update self',
     description: 'Updates the current user.',
     request: { body: jsonBody(updateMeBodySchema) },
-    responses: { 200: json('User', userSchema) },
+    responses: { 200: json('User', userSchema), ...errors(409) },
   }),
   deleteMe: xRoute({
     method: 'delete',
@@ -53,7 +53,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Delete self',
     description:
       "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-    responses: { 204: { description: 'User deleted' } },
+    responses: { 204: { description: 'User deleted' }, ...errors(409) },
   }),
   getMyAuth: xRoute({
     method: 'get',
@@ -72,7 +72,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     description:
       'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.',
     request: { body: jsonBody(idsBodySchema()) },
-    responses: { 200: json('Sessions were revoked', batchResponseSchema(sessionBaseSchema)) },
+    responses: { 200: json('Sessions were revoked', batchResponseSchema(sessionBaseSchema)), ...errors(403) },
   }),
   deleteMyMembership: xRoute({
     method: 'delete',
@@ -82,7 +82,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Leave channel',
     description: 'Removes the current user from a channel entity they are a member of.',
     request: { query: entityWithTypeQuerySchema },
-    responses: { 204: { description: 'Membership removed' } },
+    responses: { 204: { description: 'Membership removed' }, ...errors(404, 409) },
   }),
   getUploadToken: xRoute({
     method: 'get',
@@ -93,7 +93,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     description:
       'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',
     request: { query: uploadTokenQuerySchema },
-    responses: { 200: json('Upload token with a scope for a user or organization', uploadTokenSchema) },
+    responses: { 200: json('Upload token with a scope for a user or organization', uploadTokenSchema), ...errors(403, 404) },
   }),
   toggleMfa: xRoute({
     method: 'put',
@@ -131,7 +131,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Revoke connected app',
     description: 'Revokes a consent: the grant and every token issued under it are deleted.',
     request: { params: entityIdParamSchema },
-    responses: { 200: json('Consent was revoked', batchResponseSchema()) },
+    responses: { 200: json('Consent was revoked', batchResponseSchema()), ...errors(404) },
   }),
 });
 

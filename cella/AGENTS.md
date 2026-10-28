@@ -13,6 +13,7 @@ Base config: [shared/config/config.default.ts](../shared/config/config.default.t
 ## Routing
 
 - **Backend** (Hono + OpenAPI): a module's routes are `createXRoutes` in `<module>-routes.ts`, never `createRoute`; `XRouteProps` documents each prop. A route's `operationId` is its key: set it only when the SDK name differs. Handlers use `.openapi()` in `<module>-handlers.ts`.
+- **Error responses**: a route documents the error statuses its guards, limiters, switch and request answer with (`chainErrors` in `x-routes.ts`), and spreads `errors(404, 409)` into `responses` for what its handler throws, nothing more: `errors()` of a status the chain answers is refused at load, and in tests an undocumented status answers a 500 naming the fix. A 5xx and the database's 409 `write_conflict` are never declared: the error table documents them once. A route that answers an error status with a body of its own declares it with `json()`.
 - **Frontend** (TanStack Router, file-based): never edit the generated `routeTree.gen.ts`. Route files are thin shims (path, `staticData`, glue); components and `beforeLoad` logic live in modules (`route-logic.ts`, `route-components.tsx`, `search-params-schemas.ts`) via `getRouteApi`. Layouts: [frontend/README](../frontend/README.md#routes).
 
 ## Middleware & guards
@@ -21,7 +22,7 @@ The API is same-origin: it has no CORS middleware. Guards and their usual chains
 
 - Type an operation on the narrowest context it needs: `DbContext`, `ActorContext` (no user row), `OrgContext`, `UserContext` (session fields only behind `userGuard`).
 - Mount `actorGuard` only on routes whose operations take `ActorContext`: an API key or access token sets no `ctx.var.user`.
-- `orgGuard` runs after `tenantGuard`, both after the guard that sets the actor. Wrap guards, limiters and caches in `xMiddleware`; a guard declares its `security` and the context it `provides` and `requires`.
+- `orgGuard` runs after `tenantGuard`, both after the guard that sets the actor. Wrap guards, limiters and caches in `xMiddleware`; each declares the error statuses it refuses with (`errors`), and a guard its `security` and the context it `provides` and `requires`.
 - Product entity handlers use the tenant helpers in `backend/src/db/tenant-context.ts` (`tenantReadAs` on a route without `tenantGuard`); channel entity handlers use `ctx.var.db` ([Multi-tenancy](./MULTI_TENANCY.md)).
 - Declare a secret column only in `backend/src/db/secret-columns.ts`: response schemas, log redaction and the CDC row image derive from it.
 

@@ -56,7 +56,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
   if (isFailMode) tiers.push(slowTier(keyPrefix));
 
   const handler = xMiddleware(
-    { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
+    { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', errors: [400, 429], name: name ?? key, description },
     async (ctx, next) => {
       const extractedIdentifiers = await extractIdentifiers(ctx, identifiers.flat());
 

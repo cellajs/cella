@@ -109,6 +109,7 @@ export const serviceGuard = xMiddleware(
   {
     functionName: 'serviceGuard',
     type: 'x-guard',
+    errors: [401, 403],
     security: [{ apiKey: [] }, { oauth2: [] }],
     provides: ['actor'],
     name: 'service',

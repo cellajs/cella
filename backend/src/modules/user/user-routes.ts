@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { relatableGuard, userGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { mockMemberUserResponse, mockPaginatedUsersResponse } from '#/modules/user/user-mocks';
@@ -25,6 +25,7 @@ const userRoutes = createXRoutes(['users', 'cella'], {
         ),
         mockPaginatedUsersResponse(),
       ),
+      ...errors(403),
     },
   }),
   getUser: xRoute({
@@ -37,6 +38,7 @@ const userRoutes = createXRoutes(['users', 'cella'], {
     request: { params: relatableUserIdParamSchema, query: slugIncludeQuerySchema },
     responses: {
       200: json('User', memberUserSchema.extend({ mfaRequired: z.boolean().optional() }), mockMemberUserResponse()),
+      ...errors(404),
     },
   }),
 });

@@ -14,6 +14,7 @@ export const userGuard = xMiddleware(
   {
     functionName: 'userGuard',
     type: 'x-guard',
+    errors: [401],
     security: [{ cookieAuth: [] }],
     provides: ['actor', 'session'],
     name: 'user',

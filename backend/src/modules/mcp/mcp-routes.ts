@@ -9,6 +9,13 @@ import { tenantOrgParamSchema } from '#/schemas';
 /** Where the MCP endpoint is mounted, in the API process and the MCP worker alike: the path a token's audience names. */
 export const mcpMountPath = '/:tenantId/:organizationId/mcp';
 
+/** A JSON-RPC 2.0 error response: what one call outside the token's scopes answers with. */
+const jsonRpcErrorSchema = z.object({
+  jsonrpc: z.literal('2.0'),
+  id: z.union([z.string(), z.number(), z.null()]),
+  error: z.object({ code: z.number().int(), message: z.string(), data: z.unknown().optional() }),
+});
+
 const mcpRoutes = createXRoutes(['mcp', 'cella'], {
   getMcpProtectedResourceMetadata: xRoute({
     method: 'get',
@@ -31,7 +38,10 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     description:
       'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.',
     request: { params: tenantOrgParamSchema, body: jsonBody(z.any()) },
-    responses: { 200: json('JSON-RPC response', z.any()) },
+    responses: {
+      200: json('JSON-RPC response', z.any()),
+      403: json('Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names', jsonRpcErrorSchema),
+    },
   }),
 });
 

@@ -1,4 +1,4 @@
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, relatableGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -46,7 +46,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: slugIncludeQuerySchema },
-    responses: { 200: json('Organization', organizationSchema) },
+    responses: { 200: json('Organization', organizationSchema), ...errors(404) },
   }),
   updateOrganization: xRoute({
     method: 'put',
@@ -57,7 +57,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     summary: 'Update organization',
     description: 'Updates an organization within a tenant.',
     request: { params: tenantIdParamSchema, body: jsonBody(organizationUpdateBodySchema, mockUpdateOrganizationBody()) },
-    responses: { 200: json('Organization was updated', organizationSchema) },
+    responses: { 200: json('Organization was updated', organizationSchema), ...errors(404, 409) },
   }),
   publishOrganization: xRoute({
     method: 'put',
@@ -68,7 +68,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     description:
       'Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.',
     request: { params: tenantIdParamSchema },
-    responses: { 200: json('Organization was published', organizationPublishResponseSchema, mockOrganizationPublishResponse()) },
+    responses: { 200: json('Organization was published', organizationPublishResponseSchema, mockOrganizationPublishResponse()), ...errors(404) },
   }),
   deleteOrganizations: xRoute({
     method: 'delete',

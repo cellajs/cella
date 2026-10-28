@@ -5,9 +5,10 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { XMiddlewareHandler } from '#/core/openapi-extensions';
 import { xMiddleware } from '#/core/x-middleware';
-import { createXRoute, createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoute, createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
+import { appErrorHandler } from '#/lib/error';
 import { actorGuard, orgGuard, publicGuard, stepUpGuard, tenantGuard, tokenGuard, userGuard } from '#/middlewares/guard';
-import { errorResponseRefs } from '#/schemas';
+import { sharedErrorResponses } from '#/schemas';
 
 const itemSchema = z.object({ id: z.string() });
 
@@ -45,9 +46,13 @@ describe('route helpers', () => {
     expect(routes.createThing.operationId).toBe('thingCreate');
   });
 
-  it('appends the error responses to every route, after its own', () => {
-    expect(Object.keys(routes.getThing.responses)).toEqual(['200', ...Object.keys(errorResponseRefs)]);
-    expect(routes.createThing.responses).toMatchObject({ 201: { description: 'Created' }, ...errorResponseRefs });
+  it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit for a body', () => {
+    expect(Object.keys(routes.getThing.responses)).toEqual(['200', '400']);
+    expect(routes.createThing.responses).toMatchObject({
+      201: { description: 'Created' },
+      400: sharedErrorResponses[400],
+      413: sharedErrorResponses[413],
+    });
   });
 
   it('builds a JSON response with its example only when given, and a required JSON body', () => {
@@ -62,17 +67,13 @@ describe('route helpers', () => {
     });
   });
 
-  it('appends the error responses in createXRoute too, where a route spreading them keeps one copy', () => {
-    const route = createXRoute({
-      operationId: 'single',
-      method: 'get',
-      path: '/single',
-      xGuard: [publicGuard],
-      tags: ['things'],
-      summary: 'Single',
-      responses: { 204: { description: 'Done' }, ...errorResponseRefs },
-    });
-    expect(Object.keys(route.responses)).toEqual(['204', ...Object.keys(errorResponseRefs)]);
+  it('documents what the guards, limiters and errors() declare, and nothing for a public route without a request', () => {
+    const route = (xGuard: XMiddlewareHandler[], responses: Parameters<typeof createXRoute>[0]['responses']) =>
+      createXRoute({ operationId: 'single', method: 'get', path: '/{tenantId}/single', xGuard, tags: ['things'], summary: 'Single', responses });
+
+    expect(Object.keys(route([publicGuard], { 204: { description: 'Done' } }).responses)).toEqual(['204']);
+    expect(Object.keys(route([publicGuard], { 204: { description: 'Done' }, ...errors(404, 409) }).responses)).toEqual(['204', '404', '409']);
+    expect(Object.keys(route([userGuard, tenantGuard, orgGuard], { 204: { description: 'Done' } }).responses)).toEqual(['204', '401', '403', '404']);
   });
 
   it('keeps the response a route declares for an error status, and adds the shared one for the others', () => {
@@ -80,14 +81,63 @@ describe('route helpers', () => {
     const route = createXRoute({
       operationId: 'ownError',
       method: 'get',
-      path: '/own-error',
-      xGuard: [publicGuard],
+      path: '/{tenantId}/own-error',
+      xGuard: [userGuard, tenantGuard],
       tags: ['things'],
       summary: 'Own error',
       responses: { 204: { description: 'Done' }, 403: forbidden },
     });
     expect(route.responses[403]).toBe(forbidden);
-    expect(route.responses[404]).toBe(errorResponseRefs[404]);
+    expect(route.responses[401]).toBe(sharedErrorResponses[401]);
+  });
+
+  it('refuses at load errors() of a status the chain already answers with, naming what answers it', () => {
+    const route =
+      (xGuard: XMiddlewareHandler[], responses: Parameters<typeof createXRoute>[0]['responses'], request?: { params: typeof itemSchema }) => () =>
+        createXRoute({ operationId: 'twice', method: 'get', path: '/{id}', xGuard, tags: ['things'], summary: 'Twice', request, responses });
+
+    expect(route([userGuard], { 204: { description: 'Done' }, ...errors(401) })).toThrow(
+      /twice \(get \/\{id\}\): errors\(401\) repeats the 401 that userGuard answers with/,
+    );
+    expect(route([publicGuard], { 204: { description: 'Done' }, ...errors(400) }, { params: itemSchema })).toThrow(
+      /that request validation answers with/,
+    );
+
+    // Positive control: a status no part of the chain answers with.
+    expect(route([userGuard], { 204: { description: 'Done' }, ...errors(409) })).not.toThrow();
+  });
+
+  it('answers an error status the route does not document as a 500 that names the fix, in tests', async () => {
+    const app = new OpenAPIHono<Env>();
+    app.openapi(
+      createXRoute({
+        operationId: 'throwsUndocumented',
+        method: 'get',
+        path: '/undocumented/{kind}',
+        xGuard: [publicGuard],
+        tags: ['things'],
+        summary: 'Throws',
+        request: { params: z.object({ kind: z.enum(['documented', 'undocumented']) }) },
+        responses: { 204: { description: 'Done' }, ...errors(409) },
+      }),
+      (ctx) => {
+        throw new AppError(ctx.req.valid('param').kind === 'documented' ? 409 : 404, 'not_found', 'warn');
+      },
+    );
+    app.onError(appErrorHandler);
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const undocumented = await app.request('/undocumented/undocumented');
+    expect(undocumented.status).toBe(500);
+    expect(await undocumented.json()).toMatchObject({
+      type: 'server_error',
+      message: expect.stringMatching(/throwsUndocumented answered 404.*errors\(404\)/),
+    });
+    expect(spy).toHaveBeenCalledOnce();
+
+    // Positive controls: a documented status, and validation's 400, which every route with a request documents.
+    expect((await app.request('/undocumented/documented')).status).toBe(409);
+    expect((await app.request('/undocumented/other')).status).toBe(400);
   });
 
   it('refuses a route at load whose guard reads what no guard before it sets, and names the route', () => {

@@ -1,4 +1,4 @@
-import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { mockPublicCountsResponse } from '#/modules/metrics/metrics-mocks';
@@ -13,7 +13,7 @@ const metricRoutes = createXRoutes(['metrics', 'cella'], {
     summary: 'Get public counts',
     description:
       'Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.',
-    responses: { 200: json('Public counts', publicCountsSchema, mockPublicCountsResponse()) },
+    responses: { 200: json('Public counts', publicCountsSchema, mockPublicCountsResponse()), ...errors(400) },
   }),
 });
 

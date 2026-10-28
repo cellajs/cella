@@ -159,20 +159,20 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 
 Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `actorGuard` in place of `userGuard` where an API key or access token may call too. The user's own account runs behind `[userGuard]` alone.
 
-| Guard | Admits |
-| --- | --- |
-| `publicGuard` | Anyone, with no actor |
-| `userGuard` | A session cookie: the signed-in user, or an admin [impersonating](./authentication/SESSIONS.md#impersonation) them |
-| `serviceGuard` | An API key or an access token, masked by its scopes, never a system admin ([Interoperability](./INTEROPERABILITY.md#face-rest-api)) |
-| `tokenGuard` | An access token only, for the [MCP face](../mcp/README.md#discovery-and-tokens) |
-| `actorGuard` | Any of the three proofs |
-| `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's [sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) |
-| `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin |
-| `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks ([Step-up](./AUTHENTICATION.md#step-up)) |
-| `sysAdminGuard` | A system admin from an allowed IP address, never an impersonation |
-| `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin |
+| Guard | Admits | Refuses with |
+| --- | --- | --- |
+| `publicGuard` | Anyone, with no actor | Nothing |
+| `userGuard` | A session cookie: the signed-in user, or an admin [impersonating](./authentication/SESSIONS.md#impersonation) them | 401 |
+| `serviceGuard` | An API key or an access token, masked by its scopes, never a system admin ([Interoperability](./INTEROPERABILITY.md#face-rest-api)) | 401; 403 from a browser origin |
+| `tokenGuard` | An access token only, for the [MCP face](../mcp/README.md#discovery-and-tokens) | 401 |
+| `actorGuard` | Any of the three proofs | 401, 403 |
+| `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's [sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) | 403 `forbidden`, `sso_required` |
+| `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin | 404 |
+| `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks ([Step-up](./AUTHENTICATION.md#step-up)) | 403 `step_up_required`, `impersonation_forbidden` |
+| `sysAdminGuard` | A system admin from an allowed IP address, never an impersonation | 403 |
+| `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
-`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above.
+`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above. Each guard declares its statuses in `errors`, so every route that lists it documents them; a rate limiter answers 429 (400 when it cannot name its subject), and a route lists what its handler throws beyond that itself ([Routing](./AGENTS.md#routing)).
 
 ## Refusals
 

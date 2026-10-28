@@ -4,7 +4,7 @@ import type { Context } from 'hono';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { baseDb } from '#/db/db';
 import { publicGuard } from '#/middlewares/guard';
 import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage } from '#/modules/mcp/mcp-server';
@@ -109,7 +109,7 @@ describe('mcp-server', () => {
         xGuard: [publicGuard],
         xTool: { description: 'Fails', approvalRequired: false, entity: 'attachment' },
         summary: 'Missing thing',
-        responses: { 200: json('ok', z.any()) },
+        responses: { 200: json('ok', z.any()), ...errors(404) },
       }),
     });
     const failing = new OpenAPIHono<Env>({ defaultHook });

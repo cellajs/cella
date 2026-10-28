@@ -14,9 +14,9 @@ import {
   type XMiddlewareHandler,
   type XRouteProps,
 } from '#/core/openapi-extensions';
-import { checksAuthoringRules } from '#/core/openapi-validation';
+import { checksAuthoringRules, recordDocumentedErrors } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
-import { errorResponseRefs } from '#/schemas/error-response-schemas';
+import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
 
 /**
  * A route that answers 302 is a browser navigation: whatever refuses the request, the switch gate, a guard, a limiter
@@ -28,6 +28,14 @@ const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   await next();
 };
 
+/** Names the operation on the request before anything can refuse it, for the error handler's documented-status check. */
+const operationMiddleware =
+  (operationId: string): MiddlewareHandler<Env> =>
+  async (ctx, next) => {
+    ctx.set('operationId', operationId);
+    await next();
+  };
+
 type RouteOptions = Parameters<typeof createRoute>[0] & XRouteProps & { operationId: string };
 
 /** A session is never narrowed, so of a route's security schemes only the key and the token carry its scope. */
@@ -35,9 +43,13 @@ const scopedSchemes = new Set(['apiKey', 'oauth2']);
 const withScope = (requirement: SecurityRequirement, scope: AccessScope): SecurityRequirement =>
   Object.fromEntries(Object.entries(requirement).map(([scheme, scopes]) => [scheme, scopedSchemes.has(scheme) ? [scope] : scopes]));
 
-/** The route `createXRoute` makes of a config: its own responses plus the error `$ref`s for the statuses it leaves out. */
+/**
+ * The route `createXRoute` makes of a config: its own responses plus the shared error responses for the statuses it
+ * leaves out. The type keeps every error status, which types only a handler's `ctx.json(body, status)`; the document
+ * lists the statuses the route's chain and handler answer with.
+ */
 type XRoute<R extends Draft> = ReturnType<
-  typeof createRoute<R['path'], Omit<R, ExtensionPropId> & { responses: Omit<typeof errorResponseRefs, keyof R['responses']> }>
+  typeof createRoute<R['path'], Omit<R, ExtensionPropId> & { responses: Omit<typeof sharedErrorResponses, keyof R['responses']> }>
 >;
 
 /** Refuses a route at load where a guard reads context (`requires`) that no guard before it provides. */
@@ -54,29 +66,70 @@ const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => 
   }
 };
 
+/** The shared error responses of `codes`, keyed by status. */
+const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
+  Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
+
+/**
+ * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
+ * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service, 400 for
+ * a sign-in method), and what each marked middleware declares in `errors`.
+ */
+const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): Map<ErrorCode, string> => {
+  const owners = new Map<ErrorCode, string>();
+  const claim = (code: ErrorCode, owner: string) => {
+    if (!owners.has(code)) owners.set(code, owner);
+  };
+  if (config.request) claim(400, 'request validation');
+  if (config.request?.body) claim(413, 'the body limit');
+  if (config.xEnabledBy) claim('service' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
+  for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
+  return owners;
+};
+
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
  * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, `xCache`, the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
- * Every route gets the error responses (`errorResponseRefs`); a status the route declares keeps the route's own response.
+ * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where
+ * `errors()` lists what the handler throws; a status the route declares keeps the route's own response. Where
+ * authoring rules are checked, `errors()` of a status the chain already answers is refused at load, so every listed
+ * status has one owner, and the error handler answers an undocumented status as a 500 in tests.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
+  const route = `${config.operationId} (${config.method} ${config.path})`;
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = [config.middleware ?? []].flat();
 
-  // The error page first, so every refusal finds it, the switch gate's included.
+  // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
-  const middleware = [...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
+  const middleware = [operationMiddleware(config.operationId), ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
 
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',
   );
-  assertGuardOrder(`${config.operationId} (${config.method} ${config.path})`, xMiddlewares);
+  assertGuardOrder(route, xMiddlewares);
   const specificationExtensions = createSpecificationExtensions((key) =>
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
+  );
+
+  const owners = chainErrors(config, xMiddlewares);
+  if (checksAuthoringRules) {
+    for (const [code, owner] of owners) {
+      if (config.responses[code] === sharedErrorResponses[code]) {
+        throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
+      }
+    }
+  }
+  const responses = { ...pickShared(owners.keys()), ...config.responses };
+  recordDocumentedErrors(
+    config.operationId,
+    Object.keys(responses)
+      .map(Number)
+      .filter((status) => status >= 400 && status < 500),
   );
 
   // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
@@ -89,7 +142,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   if (config.xTool && accepted.length && !accepted.some((requirement) => 'oauth2' in requirement)) {
     const schemes = accepted.flatMap((requirement) => Object.keys(requirement)).join(', ');
     throw new Error(
-      `[MCP] The tool route ${config.operationId} (${config.method} ${config.path}) takes no access token: its guards accept ${schemes} only. ` +
+      `[MCP] The tool route ${route} takes no access token: its guards accept ${schemes} only. ` +
         'Guard it with actorGuard or serviceGuard, or remove xTool.',
     );
   }
@@ -100,7 +153,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     ...createMetadataExtensions(config),
   } as Omit<R, ExtensionPropId>;
 
-  return createRoute({ security, ...cleanConfig, responses: { ...errorResponseRefs, ...config.responses }, middleware, ...specificationExtensions });
+  return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };
 
 type JsonResponse<S extends z.ZodType> = {
@@ -116,6 +169,12 @@ export const json = <S extends z.ZodType>(description: string, schema: S, exampl
   description,
   content: { 'application/json': example === undefined ? { schema } : { schema, example } },
 });
+
+/**
+ * The shared error responses of the statuses a route's handler throws, to spread into `responses` beside the route's
+ * own. The statuses its guards, limiters, switch and validation answer with are documented without it.
+ */
+export const errors = <C extends ErrorCode>(...codes: C[]): Pick<typeof sharedErrorResponses, C> => pickShared(codes);
 
 type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S; example?: unknown } } };
 

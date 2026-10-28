@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
@@ -28,7 +28,7 @@ const connectionRoutes = createXRoutes(['connections', 'cella'], {
     description:
       'Connects an institution to the tenant: the federation it signs in through, its domains and its IdP entity ids. Starts `pending` until the institution activated the service at the federation; one SSO connection per tenant, and a domain belongs to one connection.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(createConnectionBodySchema) },
-    responses: { 200: json('Created connection', connectionSchema) },
+    responses: { 200: json('Created connection', connectionSchema), ...errors(409) },
   }),
   updateConnection: xRoute({
     method: 'put',
@@ -39,7 +39,7 @@ const connectionRoutes = createXRoutes(['connections', 'cella'], {
     summary: 'Update connection',
     description: 'Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.',
     request: { params: tenantIdParamSchema, body: jsonBody(updateConnectionBodySchema) },
-    responses: { 200: json('Updated connection', connectionSchema) },
+    responses: { 200: json('Updated connection', connectionSchema), ...errors(404, 409) },
   }),
   deleteConnection: xRoute({
     method: 'delete',
@@ -50,7 +50,7 @@ const connectionRoutes = createXRoutes(['connections', 'cella'], {
     summary: 'Delete connection',
     description: 'Removes a connection. Identities and sessions that came through it keep their rows; members stay members.',
     request: { params: tenantIdParamSchema },
-    responses: { 200: json('Removed connection', connectionSchema) },
+    responses: { 200: json('Removed connection', connectionSchema), ...errors(404) },
   }),
 });
 

@@ -92,6 +92,8 @@ export type Env = {
     errorStatus?: number;
     /** Where a refusal of this request redirects to: set for a route that answers 302, a handler may point it elsewhere. */
     errorPagePath?: string;
+    /** The `operationId` of the matched route, set before anything can refuse the request; the error handler's documented-status check reads it. */
+    operationId?: string;
   };
   /** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */
   Bindings: HttpBindings;

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -17,7 +17,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     description:
       "What the entry page of an institution's sign-in shows: the organization, the institution and whether sign-in is active. Public by the connection id, the link an institution shares with its members.",
     request: { params: ssoConnectionParamSchema },
-    responses: { 200: json('SSO entry', ssoEntrySchema) },
+    responses: { 200: json('SSO entry', ssoEntrySchema), ...errors(404) },
   }),
   startSso: xRoute({
     method: 'get',
@@ -28,7 +28,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     description:
       "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
     request: { params: ssoConnectionParamSchema, query: oauthQuerySchema },
-    responses: { 302: { description: 'Redirect to the federation', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to the federation', headers: locationSchema }, ...errors(401, 403, 404) },
   }),
   startSsoFederation: xRoute({
     method: 'get',
@@ -39,7 +39,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     description:
       "Sends the browser to the federation without naming an institution: the federation's own picker lists the connected ones, and the callback finds the connection by the institution the sign-in asserts.",
     request: { params: ssoFederationParamSchema, query: oauthQuerySchema },
-    responses: { 302: { description: 'Redirect to the federation', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to the federation', headers: locationSchema }, ...errors(401, 404) },
   }),
   ssoCallback: xRoute({
     method: 'get',
@@ -51,7 +51,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'The redirect URI registered at every federation. Verifies the tokens, asserts the institution against the connection, signs the user in (creating the account and its membership on a first sign-in) or links the identity, and redirects to the frontend.',
     request: { query: oauthCallbackQuerySchema },
-    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   sendSsoRecoveryLink: xRoute({
     method: 'post',
@@ -63,7 +63,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Send an SSO recovery link',
     description:
       'For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.',
-    responses: { 200: json('The address the link was sent to', z.object({ email: z.string() })) },
+    responses: { 200: json('The address the link was sent to', z.object({ email: z.string() })), ...errors(401, 403) },
   }),
 });
 

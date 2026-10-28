@@ -1,4 +1,4 @@
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPaginatedTenantsResponse } from '#/modules/tenants/tenants-mocks';
@@ -36,7 +36,7 @@ const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(updateTenantBodySchema) },
-    responses: { 200: json('Updated tenant', tenantSchema) },
+    responses: { 200: json('Updated tenant', tenantSchema), ...errors(404) },
   }),
 });
 

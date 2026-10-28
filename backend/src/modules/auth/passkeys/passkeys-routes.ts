@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, stepUpEnrollGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
@@ -22,7 +22,7 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     request: { body: jsonBody(passkeyChallengeBodySchema) },
-    responses: { 200: json('Challenge generated', passkeyChallengeSchema, mockPasskeyChallengeResponse()) },
+    responses: { 200: json('Challenge generated', passkeyChallengeSchema, mockPasskeyChallengeResponse()), ...errors(401, 404) },
   }),
   createPasskey: xRoute({
     method: 'post',
@@ -34,7 +34,7 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.',
     request: { body: jsonBody(passkeyCreateBodySchema) },
-    responses: { 201: json('Passkey created', passkeySchema, mockPasskeyResponse()) },
+    responses: { 201: json('Passkey created', passkeySchema, mockPasskeyResponse()), ...errors(409) },
   }),
   deletePasskey: xRoute({
     method: 'delete',
@@ -55,7 +55,7 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',
     request: { body: jsonBody(passkeyVerificationBodySchema) },
-    responses: { 204: { description: 'Passkey verified', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
+    responses: { 204: { description: 'Passkey verified', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(401, 403, 404) },
   }),
 });
 

@@ -15,6 +15,7 @@ export const orgGuard = xMiddleware(
   {
     functionName: 'orgGuard',
     type: 'x-guard',
+    errors: [404],
     requires: ['actor', 'tenant'],
     name: 'org',
     description: 'Requires being in the organization: a member of it or of a channel below it, or a system admin',

@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { createBaseApp } from '#/server';
 import { defaultHook } from '#/utils/default-hook';
@@ -42,7 +42,7 @@ const thingRoutes = createXRoutes(['things'], {
     xTool: tool('attachment'),
     summary: 'Refuse thing',
     request: { params: z.object({ tenantId: z.string(), organizationId: z.string(), id: z.string() }) },
-    responses: { 200: json('Deleted', z.any()) },
+    responses: { 200: json('Deleted', z.any()), ...errors(404) },
   }),
 });
 

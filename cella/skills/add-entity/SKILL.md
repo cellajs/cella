@@ -101,8 +101,10 @@ and the renderers.
   under `withFakerSeed`, and the request-body mocks the route examples use.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })`, every route with
   `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, the detail read with
-  `xCache: [productCache('<name>')]`. A route agents may call takes `xTool`, which implies its
-  scope; any other route takes `xScope: '<name>:read'` or `'<name>:write'`.
+  `xCache: [productCache('<name>')]`, and `...errors(…)` in `responses` for the statuses its
+  handler throws beyond its guards and limiters, as attachment's routes list them. A route agents
+  may call takes `xTool`, which implies its scope; any other route takes `xScope: '<name>:read'`
+  or `'<name>:write'`.
 - `<name>-module.ts`: `defineBackendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
   description, productEntity: '<name>', routes: [{ path: '/:tenantId/:organizationId/<name>s', app, phase: 'tenant' }] })`,
   imported in `backend/src/modules.ts`.

@@ -46,6 +46,7 @@ const allowedIpCheck = ipRestriction(
 export const sysAdminGuard = setMiddlewareExtension(every(sysAdminCheck, allowedIpCheck), {
   functionName: 'sysAdminGuard',
   type: 'x-guard',
+  errors: [403],
   requires: ['session'],
   name: 'sysAdmin',
   description: 'Requires the system admin role and an allowed IP address; refuses impersonation',

@@ -70,7 +70,8 @@ export const rateLimiterCoreMock = () => ({
     const handler = async (_: Context, next: Next) => {
       await next();
     };
-    return Object.assign(handler, { keyPrefix: `${key}_${mode}`, buckets: [] });
+    // Marked as the real limiter is, so a route documents the limiter's 400 and 429 under tests too.
+    return Object.assign(handler, { keyPrefix: `${key}_${mode}`, buckets: [], __extensionType: 'x-rate-limiter', __errors: [400, 429] });
   }),
 });
 

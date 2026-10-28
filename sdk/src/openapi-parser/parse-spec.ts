@@ -62,6 +62,7 @@ function summarizeResponse(
   let contentType: string | undefined;
   let schema: GenSchema | undefined;
   let example: unknown;
+  let headers: GenResponseSummary['headers'];
 
   if ('$ref' in response) {
     ref = response.$ref;
@@ -72,6 +73,12 @@ function summarizeResponse(
       contentType = component.content ? pickContentType(component.content) : undefined;
       const componentSchema = contentType ? component.content?.[contentType]?.schema : undefined;
       if (componentSchema) schema = resolveSchema(componentSchema, spec);
+      if (component.headers) {
+        headers = Object.entries(component.headers).map(([headerName, header]) => ({
+          name: headerName,
+          description: ('description' in header && header.description) || '',
+        }));
+      }
     }
   } else {
     description = response.description ?? '';
@@ -97,6 +104,7 @@ function summarizeResponse(
   if (name) summary.name = name;
   if (ref) summary.ref = ref;
   if (contentType) summary.contentType = contentType;
+  if (headers?.length) summary.headers = headers;
 
   // Error schemas are not embedded: the viewer resolves them from schemas.gen.json by response.name.
   const isErrorSchema = schema?.ref?.endsWith('Error') && schema.ref.includes('/schemas/');

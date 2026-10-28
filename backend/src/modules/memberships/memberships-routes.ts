@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -43,7 +43,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCreateBodySchema) },
-    responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()) },
+    responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()), ...errors(409) },
   }),
   checkMembershipInvite: xRoute({
     method: 'post',
@@ -65,7 +65,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       'Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.',
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(idsBodySchema()) },
-    responses: { 200: json('Success', batchResponseSchema()) },
+    responses: { 200: json('Success', batchResponseSchema()), ...errors(409) },
   }),
   updateMembership: xRoute({
     method: 'put',
@@ -76,7 +76,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
     request: { params: idInTenantOrgParamSchema, body: jsonBody(membershipUpdateBodySchema) },
-    responses: { 200: json('Membership updated', updatedMembershipSchema, mockMembershipResponse()) },
+    responses: { 200: json('Membership updated', updatedMembershipSchema, mockMembershipResponse()), ...errors(409) },
   }),
   handleMembershipInvitation: xRoute({
     method: 'post',
@@ -87,7 +87,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
     request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
-    responses: { 200: json("The invitation's organization", channelBaseSchema) },
+    responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
   }),
   getMembers: xRoute({
     method: 'get',

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, stepUpEnrollGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
@@ -15,7 +15,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
-    responses: { 200: json('TOTP key generated', z.object({ totpUri: z.string(), manualKey: z.string() }), mockTotpKeyResponse()) },
+    responses: { 200: json('TOTP key generated', z.object({ totpUri: z.string(), manualKey: z.string() }), mockTotpKeyResponse()), ...errors(409) },
   }),
   createTotp: xRoute({
     method: 'post',
@@ -27,7 +27,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
     request: { body: jsonBody(totpCodeBodySchema) },
-    responses: { 201: { description: 'TOTP created' } },
+    responses: { 201: { description: 'TOTP created' }, ...errors(409) },
   }),
   deleteTotp: xRoute({
     method: 'delete',
@@ -47,7 +47,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
     request: { body: jsonBody(totpCodeBodySchema) },
-    responses: { 204: { description: 'TOTP verified', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
+    responses: { 204: { description: 'TOTP verified', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(401, 403, 404) },
   }),
 });
 
