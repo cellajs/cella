@@ -31,8 +31,8 @@ vi.mock('shared', async (importOriginal) => {
 
 // Real propagation, observed: the deferral tests assert when it runs relative to the delta fetch.
 const propagateEmbeddingsSpy = vi.fn();
-vi.mock('./propagation', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./propagation')>();
+vi.mock('~/query/realtime/propagation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('~/query/realtime/propagation')>();
   return {
     ...actual,
     propagateEmbeddings: (hint: Parameters<typeof actual.propagateEmbeddings>[0]) => {
@@ -42,19 +42,23 @@ vi.mock('./propagation', async (importOriginal) => {
   };
 });
 
-vi.mock('./membership-ops', () => ({
+vi.mock('~/query/realtime/membership-ops', () => ({
   invalidateChannelList: vi.fn(),
   invalidateMemberQueries: vi.fn(),
   fetchMemberships: vi.fn(),
   refreshMe: vi.fn(),
 }));
 
-vi.mock('./sync-priority', () => ({
-  getTenantIdForOrg: vi.fn(() => null),
-  // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
-  getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
-  isViewingChannel: () => true,
-}));
+vi.mock('~/query/realtime/sync-priority', async () => {
+  const { syncStore } = await import('~/query/realtime/sync-store');
+  return {
+    // The persisted sync store answers, as it does before the memberships cache hydrates.
+    getTenantIdForOrg: (organizationId: string) => syncStore.getState().getOrgTenantId(organizationId),
+    // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
+    getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
+    isViewingChannel: () => true,
+  };
+});
 
 // The real fetch prioritizer runs as the single fetch path; only its outward boundaries are mocked.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
@@ -67,8 +71,8 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
-const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
-const { processAppCatchup } = await import('./catchup-processor');
+const { flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
+const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
 
 // The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
@@ -275,7 +279,7 @@ describe('catchup → fetch prioritizer fold', () => {
   });
 
   it("holds a background org's catchup to its flush: the range fetch, the cursor and the propagation hint all wait for it", async () => {
-    const { getSyncTier } = await import('./sync-priority');
+    const { getSyncTier } = await import('~/query/realtime/sync-priority');
     vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
@@ -302,7 +306,7 @@ describe('catchup → fetch prioritizer fold', () => {
   });
 
   it('propagates at once for a viewing org, whose delta fetch was awaited inline', async () => {
-    const { getSyncTier } = await import('./sync-priority');
+    const { getSyncTier } = await import('~/query/realtime/sync-priority');
     vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');

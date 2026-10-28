@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 
 /** operationTag is a string because tag names are fetched at runtime. */
 export const operationsRouteSearchParamsSchema = z.object({ operationTag: z.string().optional(), q: z.string().optional() });

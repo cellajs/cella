@@ -101,7 +101,7 @@ this skill inside the raak checkout, whose shot list writes the four files to it
 ## Gotchas
 
 - The color mode and the one-time UI go into the persisted ui store, whose key carries the app slug
-  (`frontend/src/modules/ui/ui-store.ts`), derived from the session cookie name. `themer.tsx` turns `mode` into the
+  (`frontend/src/modules/ui/ui-store.ts`), derived from the session cookie name. `themer.ts` turns `mode` into the
   `.light` / `.dark` class.
 - The menu sheet is the sheeter's `#nav-sheet`, opened with `Alt+M` (`ControlOrMeta+K` search, `Alt+A` account). The
   `#<id>-nav` buttons are the mobile bottom bar's only: the desktop sidebar's carry no id, so a desktop shot that

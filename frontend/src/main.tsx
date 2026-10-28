@@ -19,7 +19,7 @@ import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
-import { QueryClientProvider } from '~/query/provider';
+import { PersistedQueryProvider } from '~/query/persisted-query-provider';
 import { checkForUpdate } from '~/utils/app-update';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
@@ -77,12 +77,12 @@ if (canonicalUrl) {
       <MotionConfig reducedMotion="user">
         {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
         <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
-          <QueryClientProvider>
+          <PersistedQueryProvider>
             <AppRouter />
             {/* Outside the router: the root error page replaces the root route's component, and both outlive it */}
             <ReloadPrompt />
             <ToasterProvider />
-          </QueryClientProvider>
+          </PersistedQueryProvider>
         </LucideProvider>
       </MotionConfig>
     </StrictMode>,

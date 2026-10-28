@@ -1,5 +1,5 @@
 import { zGetAttachmentsQuery } from 'sdk/zod.gen';
-import z from 'zod';
+import { z } from 'zod';
 import { attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
 
 /** Default list view state: the single source for URL stripping and default-view detection. */

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 /** Value-to-label map: lets the trigger show the label before the popup has ever opened. */
@@ -87,15 +87,17 @@ export const ShouldSelectOption: Story = {
     await step('open and select item', async () => {
       await userEvent.click(select);
       await userEvent.click(await canvasBody.findByRole('option', { name: /banana/i }));
-      expect(select).toHaveTextContent('Banana');
+      await waitFor(() => expect(select).toHaveTextContent('Banana'));
     });
 
     await step('verify the selected option', async () => {
       await userEvent.click(select);
       const option = await canvasBody.findByRole('option', { name: /banana/i });
-      expect(option).toHaveAttribute('data-selected');
       // The check mark shows in an uncontrolled select too
-      expect(option.querySelector('svg')).not.toBeNull();
+      await waitFor(() => {
+        expect(option).toHaveAttribute('data-selected');
+        expect(option.querySelector('svg')).not.toBeNull();
+      });
       await userEvent.click(option);
     });
   },

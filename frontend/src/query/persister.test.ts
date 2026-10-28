@@ -84,14 +84,14 @@ describe('persister per-tab mutation records', () => {
     await persister.persistClient(clientWith([pausedMutation('own')]));
     await persister.flush();
     // A tab that is still open has written its own queue (each tab reads its id once, so its record is written here)...
-    await db?.meta.put({ key: 'rq:mut:other-live-tab', timestamp: Date.now(), buster: '', mutations: [pausedMutation('other')], channelQueries: [] });
+    await db?.meta.put({ key: 'rq:mut:other-live-tab', timestamp: Date.now(), buster: '', mutations: [pausedMutation('other')], bundledQueries: [] });
     // ...and a tab that crashed hours ago left one behind (without the locks API, age tells a dead tab).
     await db?.meta.put({
       key: 'rq:mut:dead-tab',
       timestamp: Date.now() - 3 * 60 * 60 * 1000,
       buster: '',
       mutations: [pausedMutation('crashed')],
-      channelQueries: [],
+      bundledQueries: [],
     });
 
     const restored = await persister.restoreClient();
@@ -100,5 +100,23 @@ describe('persister per-tab mutation records', () => {
     // The open tab keeps its record, the dead one's is taken over, and this tab's own stays until its next write.
     const keys = ((await db?.meta.toArray()) ?? []).map((record) => record.key);
     expect(keys.sort()).toEqual(['rq', 'rq:mut:other-live-tab', `rq:mut:${thisTab}`].sort());
+  });
+
+  // The restore deleted a dead tab's record and stored its queue only at this tab's first write, up to a second later.
+  it("keeps a dead tab's queue when this tab reloads before its first write", async () => {
+    const db = getLocalUserDb();
+    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], bundledQueries: [] });
+    await db?.meta.put({
+      key: 'rq:mut:dead-tab',
+      timestamp: Date.now() - 3 * 60 * 60 * 1000,
+      buster: '',
+      mutations: [pausedMutation('crashed')],
+      bundledQueries: [],
+    });
+
+    await persister.restoreClient();
+    const restored = await persister.restoreClient();
+
+    expect(restored?.clientState.mutations.map(({ state }) => (state.variables as { id: string }).id)).toEqual(['crashed']);
   });
 });

@@ -16,7 +16,7 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
-import { numberToColorClass } from '~/utils/number-to-color-class';
+import { placeholderColorClass } from '~/utils/placeholder-color-class';
 
 /** The app runs installed, in its own window without browser controls. */
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
@@ -69,7 +69,7 @@ export function AccountSheet() {
         <div
           className={cn(
             'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-colors duration-300',
-            !user.bannerUrl && numberToColorClass(user.id),
+            !user.bannerUrl && placeholderColorClass(user.id),
           )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         >

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
 import { resendPendingInvitation } from 'sdk';
+import { hierarchy, isUnpublishedDraft } from 'shared';
 import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -12,6 +13,8 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (path: { tenantId: string; organizationId: string }, channel: EnrichedChannel) => {
   const { t } = useTranslation();
+  // A held invitation goes out when its draft channel is published: a resend before that sends nothing.
+  const isHeld = (row: PendingMembership) => isUnpublishedDraft(channel) && !hierarchy.getPrepareRoles(channel.entityType).includes(row.role);
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
     emailColumn({ name: t('c:email') }),
@@ -42,7 +45,9 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       width: 220,
       renderCell: ({ row }) => (
         <div className="flex gap-1">
-          <ResendInvitationButton variant="ghost" size="sm" send={() => resendPendingInvitation({ path: { ...path, id: row.id } })} />
+          {!isHeld(row) && (
+            <ResendInvitationButton variant="ghost" size="sm" send={() => resendPendingInvitation({ path: { ...path, id: row.id } })} />
+          )}
           <WithdrawInvitationButton channel={channel} invitationId={row.id} />
         </div>
       ),

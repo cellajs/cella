@@ -36,8 +36,7 @@ export interface PersistedMetaRecord {
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
   mutations: DehydratedState['mutations'];
-  /** The bundled queries. The stored name stays: renaming it orphans every stored bundle. */
-  channelQueries: DehydratedQuery[];
+  bundledQueries: DehydratedQuery[];
 }
 
 /** A collaborative document's key in the Yjs tables: its entity. */
@@ -95,22 +94,22 @@ export interface UnsaveableYDocRecord extends YjsDocScope {
 }
 
 let currentDb: LocalUserDatabase | null = null;
-let currentOwnerId: string | null = null;
+let localUserId: string | null = null;
 
 /** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
 export const deletedElsewhereListeners = new Set<() => void>();
 
-const ownerListeners = new Set<(owner: string | null) => void>();
+const localUserListeners = new Set<(userId: string | null) => void>();
 
 /** Fires after the DB is rebound or closed, so callbacks see the live instance via `getLocalUserDb()`. Long-lived holders of a `liveQuery` must re-subscribe here. */
-export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
-  ownerListeners.add(listener);
-  return () => ownerListeners.delete(listener);
+export function subscribeLocalUserChange(listener: (userId: string | null) => void): () => void {
+  localUserListeners.add(listener);
+  return () => localUserListeners.delete(listener);
 }
 
-/** Tells the owner listeners that another owner, or none, is bound; local-user-storage runs it once a rebind settled. */
-export function notifyOwnerChange(owner: string | null): void {
-  for (const listener of ownerListeners) listener(owner);
+/** Tells the listeners that another user's database, or none, is bound; local-user-storage runs it once a rebind settled. */
+export function notifyLocalUserChange(userId: string | null): void {
+  for (const listener of localUserListeners) listener(userId);
 }
 
 /** All tables share one version ladder: bump the single `version(n)` here, which means concurrent PRs changing it must serialize. */
@@ -133,8 +132,8 @@ export class LocalUserDatabase extends Dexie {
   /** Edits that can never be saved, kept until the user copies or discards them; never evicted. */
   unsaveableYDocs!: Dexie.Table<UnsaveableYDocRecord, number>;
 
-  constructor(ownerId: string) {
-    super(`${appConfig.slug}:${ownerId}`);
+  constructor(userId: string) {
+    super(`${appConfig.slug}:${userId}`);
     // A database still on version 1 upgrades in place: Dexie adds the missing tables and keeps every row.
     this.version(2).stores({
       kv: 'key',
@@ -157,7 +156,7 @@ export class LocalUserDatabase extends Dexie {
       this.close();
       if (currentDb !== this) return false;
       currentDb = null;
-      currentOwnerId = null;
+      localUserId = null;
       for (const listener of deletedElsewhereListeners) listener();
       return false;
     });
@@ -169,12 +168,12 @@ export function getLocalUserDb(): LocalUserDatabase | null {
   return currentDb;
 }
 
-/** Open (or reuse) the per-user DB for `ownerId`. Idempotent per owner; closes any prior owner. */
-export function bindLocalUserDb(ownerId: string): LocalUserDatabase {
-  if (currentDb && currentOwnerId === ownerId) return currentDb;
+/** Open (or reuse) the per-user DB for `userId`. Idempotent per user; closes another user's. */
+export function bindLocalUserDb(userId: string): LocalUserDatabase {
+  if (currentDb && localUserId === userId) return currentDb;
   if (currentDb) closeLocalUserDb();
-  currentDb = new LocalUserDatabase(ownerId);
-  currentOwnerId = ownerId;
+  currentDb = new LocalUserDatabase(userId);
+  localUserId = userId;
   return currentDb;
 }
 
@@ -182,12 +181,12 @@ export function bindLocalUserDb(ownerId: string): LocalUserDatabase {
 export function closeLocalUserDb(): void {
   currentDb?.close();
   currentDb = null;
-  currentOwnerId = null;
+  localUserId = null;
 }
 
 /** Close the current per-user DB and delete it from disk: a hard sign-out. */
 export async function deleteLocalUserDb(): Promise<void> {
-  const owner = currentOwnerId;
+  const userId = localUserId;
   closeLocalUserDb();
-  if (owner) await Dexie.delete(`${appConfig.slug}:${owner}`);
+  if (userId) await Dexie.delete(`${appConfig.slug}:${userId}`);
 }

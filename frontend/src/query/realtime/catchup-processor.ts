@@ -86,7 +86,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       if (frontier <= clientCursor) continue;
       hadGap = true;
 
-      const tenantId = syncState.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
+      const tenantId = getTenantIdForOrg(organizationId);
 
       // Nothing cached means nothing to patch and mount hydration fetches fresh, so advance to stop the window being re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {

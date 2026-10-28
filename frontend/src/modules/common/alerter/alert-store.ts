@@ -6,10 +6,10 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
-export type AlertKey = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
+export type AlertKey = 'offline' | 'maintenance' | 'auth_unavailable';
 
 // Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKey, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
+const alertPriority: Record<AlertKey, number> = { maintenance: 2, auth_unavailable: 1, offline: 0 };
 
 interface AlertStoreState {
   /** Ids of the banners the user dismissed, which stay hidden. */
@@ -66,13 +66,6 @@ export const useAlertStore = create<AlertStoreState>()(
             });
 
             if (downAlert === 'offline' && navigator.onLine) startRecovery(forceOnline);
-            else if (downAlert === 'backend_not_ready') {
-              startRecovery(() =>
-                set((state) => {
-                  state.downAlert = null;
-                }),
-              );
-            }
           },
           reset: () => {
             cancelRecovery();

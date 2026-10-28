@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import type React from 'react';
+import type { ReactNode } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -27,7 +27,7 @@ import { formResolver } from '~/utils/form-resolver';
 interface CreateOrganizationFormProps {
   /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
@@ -63,7 +63,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
   const onSubmit = async (values: FormValues) => {
     let tenantId: string;
     try {
-      const tenant = await selfCreateTenantMutation.mutateAsync({ name: `${values.name} workspace` });
+      const tenant = await selfCreateTenantMutation.mutateAsync({ name: values.name });
       tenantId = tenant.id;
     } catch {
       // The global error handler says what went wrong

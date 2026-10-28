@@ -1,7 +1,7 @@
 import { liveQuery, type Subscription } from 'dexie';
 import { useSyncExternalStore } from 'react';
 import { type AttachmentBlob, attachmentsDb, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
-import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
+import { getLocalUserDb, subscribeLocalUserChange } from '~/query/local-user-db';
 import { objectKeys } from '~/utils/object-keys';
 
 interface BlobUploadInfo {
@@ -69,7 +69,7 @@ async function readUploadInfos(): Promise<Map<string, BlobUploadInfo>> {
 let infos = new Map<string, BlobUploadInfo>();
 const listeners = new Set<() => void>();
 let subscription: Subscription | null = null;
-let stopOwnerChange: (() => void) | null = null;
+let stopLocalUserChange: (() => void) | null = null;
 
 function publish(next: Map<string, BlobUploadInfo>) {
   for (const [attachmentId, info] of next) {
@@ -93,7 +93,7 @@ function subscribe(listener: () => void) {
   if (listeners.size === 1) {
     subscribeQuery();
     // A rebound per-user DB starts empty and gets its own live query.
-    stopOwnerChange = subscribeOwnerChange(() => {
+    stopLocalUserChange = subscribeLocalUserChange(() => {
       publish(new Map());
       subscribeQuery();
     });
@@ -103,8 +103,8 @@ function subscribe(listener: () => void) {
     if (listeners.size > 0) return;
     subscription?.unsubscribe();
     subscription = null;
-    stopOwnerChange?.();
-    stopOwnerChange = null;
+    stopLocalUserChange?.();
+    stopLocalUserChange = null;
     infos = new Map();
   };
 }

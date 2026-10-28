@@ -33,7 +33,7 @@ No script: manual.
 
 ## Manual steps
 
-1. Rename `StreamNotification` to `StreamChange`, `AppStreamNotification` to `AppStreamChange`, `handleAppStreamNotification` to `handleStreamChange`, `onNotification` to `onStreamChange`, `broadcastNotification` to `broadcastStreamChange`.
+1. Rename `StreamNotification` and `AppStreamNotification` to `StreamChange` (from `sdk`), `handleAppStreamNotification` to `handleStreamChange`, `onNotification` to `onStreamChange`, `broadcastNotification` to `broadcastStreamChange`.
 2. Read the catchup's `organizations[orgId].signals['membership.changed']` where app code read `changes[orgId].signals.membership`.
 3. An app-owned resource that reached clients through the `kind` switch: declare a signal type in its backend module, send it with `sendSignal`, add the type to `StreamSignalTypes` (`frontend/src/query/realtime/signal-types.ts`) and handle it in its frontend module.
 4. An app that refetched its own state from `onChangeEvent` to follow a non-product row: send a signal for that row and handle it.

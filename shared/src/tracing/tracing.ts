@@ -130,14 +130,6 @@ export function computeSpanStats(spans: SpanData[]): SpanStats {
   return { total: spans.length, byPrefix, avgDurationMs, errorCount };
 }
 
-/** Carried in message payloads for end-to-end correlation. */
-export interface IncomingTraceContext {
-  traceId?: string;
-  spanId?: string;
-  cdcTimestamp?: number;
-  lsn?: string;
-}
-
 export interface CdcInput {
   lsn: string;
   tag?: string;

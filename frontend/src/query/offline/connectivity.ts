@@ -85,7 +85,7 @@ export function forceOnline() {
 export async function awaitRecovery(signal: AbortSignal): Promise<boolean> {
   while (!signal.aborted) {
     try {
-      const response = await fetch(fullHealthUrl);
+      const response = await fetch(fullHealthUrl, { cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(probeTimeoutMs)]) });
       if (response.ok) return true;
     } catch {
       // Backend still unreachable.

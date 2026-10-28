@@ -9,7 +9,7 @@ import { postTabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-ta
 import {
   getLocalUserDb,
   type LocalUserDatabase,
-  subscribeOwnerChange,
+  subscribeLocalUserChange,
   type UnsaveableReason,
   type YDocKey,
   type YDocRecord,
@@ -666,10 +666,10 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
   };
   subscribe();
   // liveQuery tracks only the database it first resolved.
-  const stopOwnerChange = subscribeOwnerChange(subscribe);
+  const stopLocalUserChange = subscribeLocalUserChange(subscribe);
   return () => {
     subscription?.unsubscribe();
-    stopOwnerChange();
+    stopLocalUserChange();
   };
 }
 
@@ -741,8 +741,8 @@ export function startYjsStore(): () => void {
     void resumeYDocs();
   };
   const stops = [
-    subscribeOwnerChange((owner) => {
-      if (owner) evictAndResume();
+    subscribeLocalUserChange((userId) => {
+      if (userId) evictAndResume();
     }),
     tabCoordinatorStore.subscribe((state, prev) => {
       if (state.isLeader && !prev.isLeader) void resumeYDocs();

@@ -79,7 +79,7 @@ export const ShouldChangeTabs: Story = {
       await step(`click the '${tabs[i].innerText}' tab`, async () => {
         await userEvent.click(tabs[i]);
         await waitFor(() => expect(tabs[i]).toHaveAttribute('aria-selected', 'true'));
-        await expect(await canvas.queryByRole('tabpanel', { name: tabs[i].innerText })).toBeVisible();
+        await waitFor(() => expect(canvas.queryByRole('tabpanel', { name: tabs[i].innerText })).toBeVisible());
       });
 
       await step('check other tabs are not selected', async () => {

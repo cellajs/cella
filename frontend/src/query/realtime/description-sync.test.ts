@@ -32,7 +32,7 @@ const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-reg
 const { queryClient } = await import('~/query/query-client');
 const { registerYjsOwnedFields } = await import('~/modules/common/blocknote/yjs-owned-fields');
 const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
-const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('./cache-ops');
+const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.
 const task = 'task' as EntityType;

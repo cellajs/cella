@@ -14,10 +14,6 @@ export type InfiniteQueryData<TItem, TPageParam = PageParams> = InfiniteData<Que
 export type BaseQueryItem<TItem, TPageParam = PageParams> = QueryData<TItem> | InfiniteQueryData<TItem, TPageParam>;
 export type BaseQueryResponse<TItem, TPageParam = PageParams> = [QueryKey, BaseQueryItem<TItem, TPageParam> | undefined];
 
-export type ChannelQueryProp<TItem, TOptimisticId = undefined, TPageParam = PageParams> = TOptimisticId extends undefined | null
-  ? BaseQueryResponse<TItem, TPageParam>
-  : [...BaseQueryResponse<TItem, TPageParam>, TOptimisticId];
-
 /** Org context needed by mutation defaults for offline persistence. */
 export type QueryOrgContext = { tenantId: string; organizationId: string };
 

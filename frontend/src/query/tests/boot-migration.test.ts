@@ -69,7 +69,7 @@ async function seedScope(scope: string, schemaVersion: number) {
     clientCacheVersion: 'v1',
     schemaVersion,
     mutations: [queuedMutation({ name: 'offline edit' })] as never,
-    channelQueries: [],
+    bundledQueries: [],
   });
   await db.queries.put({
     id: `${scope}:["attachment","list"]`,

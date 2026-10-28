@@ -9,14 +9,14 @@ import { syncStore } from '~/query/realtime/sync-store';
 // Mock the boundaries: fetch/invalidate, tiers, propagation, unseen recount, router.
 const fetchRangeAndPatch = vi.fn();
 const invalidateEntityListForOrg = vi.fn();
-vi.mock('./cache-ops', () => ({
+vi.mock('~/query/realtime/cache-ops', () => ({
   fetchRangeAndPatch: (...a: unknown[]) => fetchRangeAndPatch(...a),
   invalidateEntityListForOrg: (...a: unknown[]) => invalidateEntityListForOrg(...a),
 }));
 const getSyncTier = vi.fn();
-vi.mock('./sync-priority', () => ({ getSyncTier: (...a: unknown[]) => getSyncTier(...a), isViewingChannel: () => false }));
+vi.mock('~/query/realtime/sync-priority', () => ({ getSyncTier: (...a: unknown[]) => getSyncTier(...a), isViewingChannel: () => false }));
 const propagateEmbeddings = vi.fn();
-vi.mock('./propagation', () => ({
+vi.mock('~/query/realtime/propagation', () => ({
   propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a),
 }));
 const invalidateUnseenCounts = vi.fn();
@@ -24,14 +24,14 @@ vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
-vi.mock('./view-declaration', () => ({ resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a) }));
+vi.mock('~/query/realtime/view-declaration', () => ({ resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a) }));
 
 // Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
 vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
 
 const { queryClient } = await import('~/query/query-client');
-const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
-const { onSyncedRows } = await import('./sync-events');
+const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
+const { onSyncedRows } = await import('~/query/realtime/sync-events');
 
 const background = { min: 2_000, max: 30_000 };
 const viewing = { min: 0, max: 0 };

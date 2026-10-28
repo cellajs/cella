@@ -13,7 +13,7 @@ import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
-import { numberToColorClass } from '~/utils/number-to-color-class';
+import { placeholderColorClass } from '~/utils/placeholder-color-class';
 
 const ChannelTileContext = createContext<ChannelTileEntity | null>(null);
 
@@ -88,7 +88,7 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
     <div className="relative">
       <TileLink className="block">
         <div
-          className={cn('relative flex aspect-3/1 min-h-30 flex-col bg-center bg-cover', !entity.bannerUrl && numberToColorClass(entity.id))}
+          className={cn('relative flex aspect-3/1 min-h-30 flex-col bg-center bg-cover', !entity.bannerUrl && placeholderColorClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
