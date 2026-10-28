@@ -7,8 +7,8 @@ const holdTimeoutMs = 250;
 /** A warm reason not renewed for this long cools. */
 const warmIdleMs = 30_000;
 /** Warm editors per tab outside editing; the least recently warmed beyond this cool. */
-const maxWarmSlots = 2;
-/** The slot's own warm reason: a checklist toggle waiting for its editor. */
+const maxWarmEditors = 2;
+/** The hook's own warm reason: a checklist toggle waiting for its editor. */
 const toggleReason = 'toggle';
 
 type Point = { x: number; y: number };
@@ -19,32 +19,32 @@ type Cursor = Point | 'end';
 /** The editor's content at a hand-off or toggle, with the description it replaced. */
 type Handoff = { content: string; base: string | null };
 
-/** Slots warm outside editing in this tab, least recently warmed first; each value cools its slot. */
-const warmSlots = new Map<object, () => void>();
+/** Descriptions warm outside editing in this tab, least recently warmed first; each value cools its description. */
+const warmDescriptions = new Map<object, () => void>();
 
-/** Registers a slot as the most recently warmed and cools the least recent ones beyond the cap. */
-function registerWarmSlot(slot: object, cool: () => void) {
-  warmSlots.delete(slot);
-  warmSlots.set(slot, cool);
-  for (const [other, coolOther] of warmSlots) {
-    if (warmSlots.size <= maxWarmSlots) break;
-    warmSlots.delete(other);
+/** Registers a description as the most recently warmed and cools the least recent ones beyond the cap. */
+function registerWarm(key: object, cool: () => void) {
+  warmDescriptions.delete(key);
+  warmDescriptions.set(key, cool);
+  for (const [other, coolOther] of warmDescriptions) {
+    if (warmDescriptions.size <= maxWarmEditors) break;
+    warmDescriptions.delete(other);
     coolOther();
   }
   return () => {
-    warmSlots.delete(slot);
+    warmDescriptions.delete(key);
   };
 }
 
-/** Moves a registered slot to the most recently warmed end. */
-function touchWarmSlot(slot: object) {
-  const cool = warmSlots.get(slot);
+/** Moves a registered description to the most recently warmed end. */
+function touchWarm(key: object) {
+  const cool = warmDescriptions.get(key);
   if (!cool) return;
-  warmSlots.delete(slot);
-  warmSlots.set(slot, cool);
+  warmDescriptions.delete(key);
+  warmDescriptions.set(key, cool);
 }
 
-interface UseDescriptionSlotOptions {
+interface UseInPlaceDescriptionOptions {
   /** Whether the editor is live; the app owns when editing starts and ends. */
   editing: boolean;
   /** Edit rights: without them nothing warms and the static takes no toggles. */
@@ -57,7 +57,7 @@ interface UseDescriptionSlotOptions {
   cursorAtPoint?: boolean;
 }
 
-export interface DescriptionSlot {
+export interface InPlaceDescription {
   /** The editor's `contentApiRef`. */
   apiRef: RefObject<BlockNoteContentApi | null>;
   /** The editor's `onEditorReady`: a frame later, applies queued toggles, then the pending cursor. Stable. */
@@ -70,7 +70,7 @@ export interface DescriptionSlot {
   warm: (reason: string) => void;
   /** Releases a reason; the editor cools once none is left. Stable. */
   cool: (reason: string) => void;
-  /** The slot's click capture: a checklist checkbox on the static toggles through the editor, a text click marks the cursor. Stable. */
+  /** The layers' click capture: a checklist checkbox on the static toggles through the editor, a text click marks the cursor. Stable. */
   onClickCapture: (event: MouseEvent<HTMLElement>) => void;
   /** Whether the editor renders: warm, editing or held. */
   editorMounted: boolean;
@@ -86,21 +86,21 @@ export interface DescriptionSlot {
  * The lifecycle of a description shown in place, with one editor instance: the static, the editor warmed invisibly
  * behind it, the live editor, and the hand-off back without a blink. The app owns `editing`, its warm triggers, how
  * editing ends and both views; `<DescriptionLayers>` stacks them. The hook cools idle editors itself: never without
- * edit rights, none in a hidden tab, a reason after 30 s idle, and at most two per tab outside editing. The slot places
- * and focuses the cursor itself, so its editor takes no `autoFocus`: that focuses the start after the slot's cursor.
+ * edit rights, none in a hidden tab, a reason after 30 s idle, and at most two per tab outside editing. The hook places
+ * and focuses the cursor itself, so its editor takes no `autoFocus`: that focuses the start after the hook's cursor.
  */
-export function useDescriptionSlot({
+export function useInPlaceDescription({
   editing,
   canEdit,
   description,
   holdOnExit = true,
   cursorAtPoint = false,
-}: UseDescriptionSlotOptions): DescriptionSlot {
+}: UseInPlaceDescriptionOptions): InPlaceDescription {
   const [wasEditing, setWasEditing] = useState(editing);
   const [holding, setHolding] = useState(false);
   const [handoff, setHandoff] = useState<Handoff | null>(null);
   const [reasons, setReasons] = useState<ReadonlySet<string>>(() => new Set());
-  const [slotKey] = useState(() => ({}));
+  const [instanceKey] = useState(() => ({}));
 
   const apiRef = useRef<BlockNoteContentApi | null>(null);
   const pendingCursorRef = useRef<Cursor | null>(editing ? 'end' : null);
@@ -158,9 +158,9 @@ export function useDescriptionSlot({
       const idleTimer = window.setTimeout(() => cool(reason), warmIdleMs);
       idleTimersRef.current.set(reason, idleTimer);
       setReasons((current) => (current.has(reason) ? current : new Set(current).add(reason)));
-      touchWarmSlot(slotKey);
+      touchWarm(instanceKey);
     },
-    [cool, optionsRef, slotKey],
+    [cool, optionsRef, instanceKey],
   );
 
   const flushCursor = useCallback(() => {
@@ -257,8 +257,8 @@ export function useDescriptionSlot({
   const capped = isWarm && !editing && !holding && !reasons.has(toggleReason);
   useEffect(() => {
     if (!capped) return;
-    return registerWarmSlot(slotKey, () => coolReasons((reason) => reason !== toggleReason));
-  }, [capped, slotKey, coolReasons]);
+    return registerWarm(instanceKey, () => coolReasons((reason) => reason !== toggleReason));
+  }, [capped, instanceKey, coolReasons]);
 
   useEffect(() => {
     const timers = idleTimersRef.current;

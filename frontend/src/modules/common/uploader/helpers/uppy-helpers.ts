@@ -6,13 +6,16 @@ import ScreenCapture from '@uppy/screen-capture';
 import Transloadit, { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
+import { t } from 'i18next';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback; not eligible for a React Query hook.
 import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import { makeBlobKey, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
 import { getImageEditorOptions, isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
 import { prepareFilesForOffline, storeUploadBlobs } from '~/modules/common/uploader/helpers/prepare-for-offline';
@@ -22,7 +25,8 @@ import { cleanFileName } from '~/utils/clean-file-name';
 
 /**
  * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit
- * is configured and the app is online. Offline uploads queue as pending.
+ * is configured and the app is online. Offline uploads queue as pending; a public template refuses
+ * files while it cannot upload.
  */
 export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   let cloudToken: UploadToken | null = null;
@@ -43,11 +47,22 @@ export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: Upl
     }
   }
 
+  // Others read a public image from the public bucket, so a copy on this device serves no one
+  const isPublic = uploadStorage(tokenQuery.templateId).publicBucket;
+  const refusesPublic = () => {
+    if (!isPublic || (hasCloudUpload && onlineManager.isOnline())) return false;
+    if (onlineManager.isOnline()) toaster.error(t('c:restrict_image_upload'));
+    else toastOffline();
+    return true;
+  };
+
   const uppy = new Uppy({
     ...uppyOptions,
     meta: { offlineUploaded: !hasCloudUpload },
-    onBeforeFileAdded,
+    onBeforeFileAdded: (file) => (refusesPublic() ? false : onBeforeFileAdded(file)),
     onBeforeUpload: (files) => {
+      // The connection can drop between adding a file and uploading it
+      if (refusesPublic()) return false;
       for (const file of Object.values(files)) {
         const cleanName = cleanFileName(file.name || 'file');
         file.name = cleanName;

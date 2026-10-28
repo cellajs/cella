@@ -21,9 +21,9 @@ export const navIconStrokeWidth = 1.8;
 export const navItemIconClass = tw('size-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5');
 
 function NavItemIcon({ navItem }: { navItem: NavItem }) {
-  if (navItem.iconSlot) {
-    const IconSlot = navItem.iconSlot;
-    return <IconSlot className={navItemIconClass} icon={navItem.icon} />;
+  if (navItem.iconOverride) {
+    const IconOverride = navItem.iconOverride;
+    return <IconOverride className={navItemIconClass} icon={navItem.icon} />;
   }
 
   const Icon = navItem.icon;
@@ -31,9 +31,9 @@ function NavItemIcon({ navItem }: { navItem: NavItem }) {
 }
 
 function NavItemBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
-  if (!navItem.badgeSlot) return null;
-  const BadgeSlot = navItem.badgeSlot;
-  return <BadgeSlot isActive={isActive} className={className} />;
+  if (!navItem.badge) return null;
+  const ItemBadge = navItem.badge;
+  return <ItemBadge isActive={isActive} className={className} />;
 }
 
 interface SidebarNavButtonProps {

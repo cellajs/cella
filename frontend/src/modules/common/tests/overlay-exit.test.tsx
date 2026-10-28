@@ -120,14 +120,19 @@ describe('overlay exit', () => {
     target.remove();
   });
 
-  it('removes a dismissed dialog after its exit and then runs onClose once', async () => {
+  it('runs onClose of a dismissed dialog as the close starts and removes the dialog after its exit', async () => {
     const onClose = vi.fn();
     await act(async () => {
       dialoger.getState().create(<p>Dialog body</p>, { id: 'dialog', triggerRef: createRef(), title: 'Dialog', onClose });
     });
+    const endExit = holdExits();
 
     await pressEscape();
 
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(dialoger.getState().dialogs).toHaveLength(1);
+
+    await endExit();
     expect(dialoger.getState().dialogs).toEqual([]);
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(uiStore.getState().uiLocks).not.toContain('dialoger');

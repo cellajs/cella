@@ -45,8 +45,7 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
 
   const removeDialog = () => dialoger.getState().remove(dialog.id);
 
-  // The dialog animates out before its entry (and onClose) is removed.
-  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().update(dialog.id, { open: false }), removeDialog);
+  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().hide(dialog.id), removeDialog);
 
   // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
   const dismiss = dialog.instantClose ? removeDialog : closeDialog;

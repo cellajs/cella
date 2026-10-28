@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -28,7 +29,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
 
-  const toggleItems: { value: SchemaViewMode; icon: typeof TextAlignStartIcon; label: string; ariaLabel: string; show: boolean }[] = [
+  const toggleItems: { value: SchemaViewMode; icon: IconComponent; label: string; ariaLabel: string; show: boolean }[] = [
     { value: 'format', icon: TextAlignStartIcon, label: t('c:docs.format'), ariaLabel: t('c:docs.view_format'), show: true },
     { value: 'example', icon: BirdIcon, label: t('c:example'), ariaLabel: t('c:docs.view_example'), show: example !== undefined },
     { value: 'zod', icon: BracesIcon, label: t('c:docs.zod'), ariaLabel: t('c:docs.view_zod'), show: !!zodCode },

@@ -31,7 +31,7 @@ export const tokenDataQueryOptions = (type: TokenType, tokenId?: string) =>
     queryKey: authKeys.token(type, tokenId),
     queryFn: () => getTokenData({ path: { type, id: tokenId ?? '' } }),
     enabled: !!tokenId,
-    staleTime: 0,
+    gcTime: 0,
     meta: { persist: false },
   });
 

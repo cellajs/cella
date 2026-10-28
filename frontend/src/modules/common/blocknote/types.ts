@@ -15,7 +15,7 @@ export type CustomBlock = typeof customSchema.Block;
 // biome-ignore lint/suspicious/noExplicitAny: schema-agnostic editor type
 export type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
-export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
+export type CustomBlockTypes = CustomBlock['type'];
 export type CustomBlockMediaTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
 export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockMediaTypes>;
 

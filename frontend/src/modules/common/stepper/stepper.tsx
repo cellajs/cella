@@ -3,7 +3,7 @@ import { Children, cloneElement, isValidElement, useState } from 'react';
 import type { StepProps, StepperProps } from '~/modules/common/stepper/types';
 import { StepperContext, useStepper } from '~/modules/common/stepper/use-stepper';
 import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
 /** Vertical stepper: every step shows a numbered button and its label, only the current step's content is open. */
@@ -69,9 +69,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
       )}
       <div className="group-not-last/step:min-h-4 max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)">
         <Collapsible open={isCurrentStep}>
-          <CollapsibleContent className="overflow-hidden motion-safe:data-closed:animate-collapsible-up motion-safe:data-open:animate-collapsible-down">
-            {children}
-          </CollapsibleContent>
+          <CollapsibleContent className={collapsiblePanelClass}>{children}</CollapsibleContent>
         </Collapsible>
       </div>
     </div>

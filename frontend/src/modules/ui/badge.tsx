@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '~/utils/cn';
 
 export const badgeVariants = cva(
-  'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3',
+  'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] aria-invalid:border-destructive [&>svg]:pointer-events-none [&>svg]:size-3',
   {
     variants: {
       variant: {
@@ -11,8 +11,7 @@ export const badgeVariants = cva(
         brand: 'intent-brand border-transparent',
         success: 'intent-success border-transparent',
         secondary: 'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
-        plain: 'border-primary/20 bg-primary/5 text-primary',
-        destructive: 'intent-destructive border-transparent focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+        destructive: 'intent-destructive border-transparent',
         outline: 'text-foreground [a&]:hover:bg-muted [a&]:hover:text-foreground',
         warning: 'intent-warning border-transparent',
       },

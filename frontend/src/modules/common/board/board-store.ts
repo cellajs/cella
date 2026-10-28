@@ -6,15 +6,10 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface BoardUIState {
   panelCollapseState: Record<string, boolean>;
-  togglePanelCollapsedState: (panelId: string, collapsed: boolean) => void;
+  setPanelCollapsed: (panelId: string, collapsed: boolean) => void;
 
   activeBoardId: string | null;
-  activeBoardType: string | null;
-  setActiveBoard: (boardId: string, boardType: string) => void;
-
-  /** Set by hover or focus on desktop and by tab on mobile; one panel at a time. */
-  activePanelId: string | null;
-  setActivePanel: (panelId: string | null) => void;
+  setActiveBoard: (boardId: string) => void;
 
   /** boardId => (panelId => width in px). */
   boardLayouts: Record<string, Record<string, number>>;
@@ -29,14 +24,9 @@ interface BoardUIState {
   reset: () => void;
 }
 
-const initStore: Pick<
-  BoardUIState,
-  'panelCollapseState' | 'activeBoardId' | 'activeBoardType' | 'activePanelId' | 'boardLayouts' | 'boardPanelOrders'
-> = {
+const initStore: Pick<BoardUIState, 'panelCollapseState' | 'activeBoardId' | 'boardLayouts' | 'boardPanelOrders'> = {
   panelCollapseState: {},
   activeBoardId: null,
-  activeBoardType: null,
-  activePanelId: null,
   boardLayouts: {},
   boardPanelOrders: {},
 };
@@ -47,7 +37,7 @@ export const useBoardStore = create<BoardUIState>()(
       immer((set, get) => ({
         ...initStore,
 
-        togglePanelCollapsedState: (panelId, collapsed) => {
+        setPanelCollapsed: (panelId, collapsed) => {
           set((state) => {
             const current = state.panelCollapseState[panelId] ?? false;
             if (collapsed === current) return;
@@ -55,17 +45,9 @@ export const useBoardStore = create<BoardUIState>()(
           });
         },
 
-        setActiveBoard: (boardId, boardType) => {
+        setActiveBoard: (boardId) => {
           set((state) => {
             state.activeBoardId = boardId;
-            state.activeBoardType = boardType;
-          });
-        },
-
-        setActivePanel: (panelId) => {
-          set((state) => {
-            if (state.activePanelId === panelId) return;
-            state.activePanelId = panelId;
           });
         },
 

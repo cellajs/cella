@@ -43,9 +43,6 @@ interface BoardLayoutProps {
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   /** `marked` when panel content carries `hintFadeOut`, so frames and avatars stay solid through a collapse hint */
   panelFade?: 'all' | 'marked';
-  className?: string;
-  groupClassName?: string;
-  separatorClassName?: string;
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
@@ -60,12 +57,9 @@ export function BoardLayout({
   reorderable,
   onPanelReorder,
   panelFade,
-  className,
-  groupClassName,
-  separatorClassName,
   ref,
 }: BoardLayoutProps) {
-  const setCollapseState = useBoardStore((state) => state.togglePanelCollapsedState);
+  const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
 
   const handleReady = useCallback((api: PanelGroupApi) => {
@@ -94,13 +88,6 @@ export function BoardLayout({
       onLayoutChanged?.(layout);
     },
     [onLayoutChanged],
-  );
-
-  const handleCollapseChange = useCallback(
-    (panelId: string, collapsed: boolean) => {
-      setCollapseState(panelId, collapsed);
-    },
-    [setCollapseState],
   );
 
   // Keep a ref to current panel IDs so drag wrappers can read it without needing deps
@@ -138,9 +125,9 @@ export function BoardLayout({
       id={`panels-${boardId}`}
       defaultLayout={defaultLayout}
       onLayoutChanged={handleLayoutChanged}
-      onCollapseChange={handleCollapseChange}
+      onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
-      className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
+      className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
       {panels.map(({ panelId, label }, i) => (
         <motion.div key={panelId} layout="position" layoutId={`${boardId}-${panelId}`} className="relative flex shrink-0">
@@ -169,10 +156,7 @@ export function BoardLayout({
           {i < panels.length - 1 && (
             <ResizableSeparator
               index={i}
-              className={cn(
-                'mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary',
-                separatorClassName,
-              )}
+              className="mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary"
             />
           )}
         </motion.div>
@@ -183,13 +167,13 @@ export function BoardLayout({
   // Window-scroll mode clips horizontal overflow without creating a scroll container, so section
   // bars and card headers stay sticky to the window.
   if (autoHeight) {
-    return <div className={cn('overflow-x-clip transition', className)}>{panelGroup}</div>;
+    return <div className="overflow-x-clip transition">{panelGroup}</div>;
   }
 
   // contain on x bounces the board at its ends: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
     <ScrollArea
-      className={cn('transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]', className)}
+      className="transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
       viewportClassName="overflow-y-hidden! overscroll-x-contain overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"

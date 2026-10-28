@@ -29,12 +29,6 @@ export const Default: Story = {};
 export const Secondary: Story = { args: { variant: 'secondary' } };
 
 /**
- * Use the `plain` badge for the most minimal appearance, blending seamlessly
- * with the background while still providing context.
- */
-export const Plain: Story = { args: { variant: 'plain' } };
-
-/**
  * Use the `success` badge to indicate positive statuses, confirmations,
  * or successful actions.
  */
@@ -52,7 +46,7 @@ export const Destructive: Story = { args: { variant: 'destructive' } };
  */
 export const Outline: Story = { args: { variant: 'outline' } };
 
-const badgeVariantNames = ['default', 'brand', 'destructive', 'success', 'warning', 'secondary', 'plain', 'outline'] as const;
+const badgeVariantNames = ['default', 'brand', 'destructive', 'success', 'warning', 'secondary', 'outline'] as const;
 
 /** Every badge variant in soft and solid fill, side by side, to catch soft text losing the cascade. */
 export const VariantMatrix: Story = {

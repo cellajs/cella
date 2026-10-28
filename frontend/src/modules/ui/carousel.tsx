@@ -46,7 +46,7 @@ function useCarousel() {
   return context;
 }
 
-function Carousel({
+export function Carousel({
   orientation = 'horizontal',
   isDialog = false,
   opts,
@@ -149,7 +149,7 @@ function Carousel({
   );
 }
 
-function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
+export function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   const { carouselRef, orientation } = useCarousel();
 
   return (
@@ -159,7 +159,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
+export function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   const { t } = useTranslation();
   const { orientation } = useCarousel();
 
@@ -174,7 +174,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+export function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
   const { t } = useTranslation();
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
@@ -198,7 +198,7 @@ function CarouselPrevious({ className, variant = 'outline', size = 'icon', ...pr
   );
 }
 
-function CarouselNext({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
+export function CarouselNext({ className, variant = 'outline', size = 'icon', ...props }: React.ComponentProps<typeof Button>) {
   const { t } = useTranslation();
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
@@ -232,7 +232,7 @@ const carouselDotsVariants = cva('group/dot focus-effect relative mx-1 flex curs
 
 interface CarouselDotsProps extends React.ComponentProps<'div'>, VariantProps<typeof carouselDotsVariants> {}
 
-function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
+export function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   const { t } = useTranslation();
   const { api } = useCarousel();
   const [current, setCurrent] = React.useState(0);
@@ -282,5 +282,3 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
     </div>
   );
 }
-
-export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious };
