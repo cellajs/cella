@@ -72,8 +72,8 @@ and the renderers.
   order, and ends with `organizationForeignKey(table)`, `tenantSelectPolicy('<name>s', table)` and
   `...writeThroughPolicies('<name>s')`. A secret column (a hash, a token) goes in
   `backend/src/db/secret-columns.ts`, a column naming a stored file in `backend/src/db/storage-columns.ts`.
-- A lazy getter in `backend/src/db/product-tables.ts`. It feeds `entityTables`, and with it the RLS
-  grants, the CDC publication, the immutability triggers and activity tracking.
+- A lazy getter in `backend/src/db/product-tables.ts`, which feeds `entityTables`: RLS grants, the
+  CDC publication, triggers and activity tracking follow from it.
 - `<name>-schema.ts` from `attachment-schema.ts`: the response schema (the select schema with
   `auditShape`, `tombstoneShape` and `stx`, named with `.openapi('<Name>', …)`), then
   `<name>Contract = evolutionContract.product('<name>', { createItem, updateOps, blockFields })`.
@@ -134,15 +134,13 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     the stx built when the edit is made (`createStxForCreate`, `createStxForUpdate`,
     `createStxForDelete`) and passed in the variables. `squashIntoPendingCreate` gets the keys of
     the create item schema.
-  - `addMutationRegistrar(…)` with the defaults of all three, so a mutation paused offline replays
-    after a reload.
+  - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
     row refetches only the lists it can belong to. A column the server stamps when another one is
     written goes in `derivedKeys` of `mergeServerResponse`.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
-  description, product: { entityType: '<name>' } })`, with `import '~/modules/<name>/query'` at the top
-  so the mutation defaults exist before the cache restore. `frontend/src/modules.ts` loads every
-  module file.
+  description, product: { entityType: '<name>' } })`, with `import '~/modules/<name>/query'` at the top,
+  so the mutation defaults exist before the cache restore.
 - `types.ts`, `search-params-schemas.ts` and the UI. A reorderable list moves its rows through
   `ReorderHandle`.
 - `frontend/src/entity-sync-queries.ts`: import the canonical options and push them in the parent
@@ -184,9 +182,10 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `canCreateEntity(ctx, buildSubject('<name>', { organizationId, <parent>Id }))` (the organization
   skips it). One transaction inserts the rows, dispatches `<name>.created` and inserts the creator's
   membership with `insertMemberships` (role `hierarchy.getMostPrivilegedRole('<name>')`). Run it in
-  `tenantContext` when a `<name>.created` handler writes product rows, which RLS checks. Then
-  `invalidateCache.user(user.id)`. A channel that declares `drafts` accepts `draft` and creates with
-  `publishedAt: null`, as the organization does.
+  `tenantContext` when a `<name>.created` handler writes product rows, whose fail-closed select policy
+  hides every row outside a tenant transaction. Then `invalidateCache.user(user.id)`. A channel that
+  declares `drafts` accepts `draft` and creates with `publishedAt: null`, as the organization does
+  ([Drafts](../../PERMISSIONS.md#drafts)).
 - The policy case needs elevation and self lines ([Permissions](../../PERMISSIONS.md#the-policy-consulted)).
 
 ### Frontend
@@ -198,9 +197,8 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `declare module '~/lib/placements' { interface ChannelEntityByType { <name>: Enriched<Name> } }`.
 - `frontend/src/routes-config.tsx`: `<name>: { path: '/$tenantId/$organizationSlug/<name>/$slug',
   paramName: 'slug' }`, with `subitemOf: { entityType, searchParam }` for a menu subentity.
-- `shared/config/config.default.ts`: an entry in `menuStructure`. To fix which tabs its page shows
-  and in which order, list them in `surfaces['<name>.tabs']`; the first is the tab a link to the
-  channel opens.
+- `shared/config/config.default.ts`: an entry in `menuStructure`, and `surfaces['<name>.tabs']` to fix
+  which tabs its page shows and in which order.
 - Routes under `frontend/src/routes/_app/$tenantId.$organizationSlug/<name>.$slug/`, built like the
   `organization/` folder: `route.tsx` with `tabsSlot: '<name>.tabs'` and `guardNavTabs` in its
   `beforeLoad`, which also resolves the channel from the slug (`resolveChannelBySlug`) into the route
@@ -225,13 +223,11 @@ exist need a data migration that gives them the new id column.
   in the backend module, and in `query.ts` `registerYjsOwnedFields` plus
   `registerDescriptionDerivation` for the columns derived from it, as attachment does. Model:
   [Sync engine](../../SYNC_ENGINE.md#yjs).
-- **Drafts**: spread `...publishedColumn` (`backend/src/db/utils/published-column.ts`) into the table
-  and generate again. A draft stays author-only and out of the CDC stream until `publishedAt` is
-  set. Publishing is a route of its own: read the row with `getValidProduct(txCtx, id, '<name>',
-  'update', { forUpdate: true })`, which only the author passes on a draft, return a published row as
-  it is, store `<name>Contract.resolveServerUpdateOps(row, { publishedAt })` and dispatch
-  `<name>.updated`. Replication emits the publish as an insert, so sync, counters and mentions treat
-  it as the row's creation.
+- **Drafts** ([Sync engine](../../SYNC_ENGINE.md#drafts)): spread `...publishedColumn`
+  (`backend/src/db/utils/published-column.ts`) into the table and generate again. Publishing is a
+  route of its own: read the row with `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })`,
+  return a published row as it is, store `<name>Contract.resolveServerUpdateOps(row, { publishedAt })`
+  and dispatch `<name>.updated`.
 - **Public read**: `publicRead()` in the policy case. A row whose `public` flag is set then reads for
   anonymous actors too, on reads and on the stream.
 - **Notifications**: `notifications: true` in the backend module (or the readers of
@@ -242,8 +238,8 @@ exist need a data migration that gives them the new id column.
 - **View counts**: `findProductViewCount` for one row, `productViewCountSelect()` with
   `productViewCountJoin(<table>.id)` for a list, `productViewCountSchema` for the response field
   (`backend/src/modules/entities/`). Never query `product_counters` yourself.
-- **Embedding in another product**: an id array on the host, declared in `appConfig.productEmbeddings`.
-  A host write keeps only the ids `filterExistingProductIds` returns.
+- **Embedding in another product**: an id array on the host, declared in `appConfig.productEmbeddings`
+  ([Embeddings](../../SYNC_ENGINE.md#embeddings)). A host write keeps only the ids `filterExistingProductIds` returns.
 - **Limits**: `defaultRestrictions.quotas` for a per-tenant cap, `requestLimits` for batch sizes.
 - **Tables that are no entity**: register them in `backend/src/db/product-tables.ts`:
   `appPartitionConfigs` for a time-partitioned table with retention (its period from
@@ -264,7 +260,7 @@ exist need a data migration that gives them the new id column.
 
 ## 7. Verify
 
-1. `pnpm check` passes: SDK, typecheck, `lens:check`, lint and the style rules.
+1. `pnpm check` passes.
 2. `pnpm test`. The suites that loop over every configured type (RLS isolation, schema verification,
    the product mock registry, request bodies, secret columns) now cover the entity. A failure there
    is a registration this skill names, never a test to adjust. Add a test only for a rule of the

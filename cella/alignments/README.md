@@ -35,35 +35,10 @@ upstream never count.
 
 ## For apps: aligning after a sync
 
-The sync records the alignments that arrive with it in the app-owned file
-`cella/cella.alignments.json` (`{ "pending": [...] }`), and every sync run ends with a line such as
-`alignments: 94 of 97 handled · 3 open: pnpm cella align`. No file means nothing is pending.
-Alignments are information, not a gate: handle them in the sync PR or later; they stay listed
-until recorded.
-
-```sh
-pnpm cella align                        # open alignments: summary, tags, the PR that added each, grep hits
-pnpm cella align --show <id>            # one alignment's README, plus the files of yours its PR touched
-pnpm cella align --run <id> -- <args>   # run its codemod; files identical to upstream stay as they are
-pnpm cella align --mark <id>            # record it as handled
-```
-
-For each alignment: run its codemod or work its manual steps, run the follow-ups in its **Verify**
-section, gate on `pnpm check`, then mark it. A green check proves nothing for an alignment caught
-by `nothing`: read the app code that its grep hits and your files point at. The
-[align skill](../skills/align/SKILL.md) drives this loop with an agent and reports each
-alignment's outcome in the sync PR, which is how upstream learns which alignments were precise.
-
-Several alignments that change the schema make one migration: work them all, then generate once
-with their `hints.json` arrays joined, and place each one's `data.sql` statements where their
-comments say. A second generate reports no changes.
-
-The migration notes that preceded alignments stay in git history. An app whose last sync predates
-this folder reads one at the commit before they were removed:
-
-```sh
-git show "$(git log -1 --format=%H --diff-filter=D cella-upstream/main -- cella/migrations)^:cella/migrations/<id>/README.md"
-```
+The sync records the alignments that arrive with it in the app-owned `cella/cella.alignments.json`, and every sync run
+ends with a line such as `alignments: 94 of 97 handled · 3 open: pnpm cella align`. They are information, not a gate:
+they stay listed until recorded. The [align skill](../skills/align/SKILL.md) works through them and reports each
+outcome in the sync PR, which is how upstream learns which alignments were precise.
 
 ## For maintainers: authoring an alignment
 

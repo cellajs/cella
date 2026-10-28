@@ -25,6 +25,7 @@ export const evolutionContract = {
     const blockFields = options.blockFields ?? [];
     return {
       entityType,
+      /** One create item with its `stx`; the module bounds the request array with `.array().min().max()`. */
       createItemSchema: widenBodySchema(entityType, options.createItem.extend({ stx: stxBaseSchema })),
       updateBodySchema: createUpdateSchema(entityType, options.updateOps),
       normalizeCreateItem: <T extends { stx: StxBase }>(item: T): T => normalizeCreateItem(entityType, item),

@@ -5,29 +5,14 @@ description: Run the WCAG audit, fix what it finds, check each fix in the runnin
 
 # The accessibility audit loop
 
-`pnpm a11y:run` decides what tools can prove and writes the ledger, `json/accessibility-conformance.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. `a11y/README.md` explains the audit itself.
-
-An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the draft report marks it, and a person confirms it before the report is published as final. Until then `report --publish --draft` publishes it as a draft, and the accessibility statement calls the results provisional. Studies of per-criterion agents find most real failures and also report many that are not there, so the rules below lean toward leaving a row open.
+`pnpm a11y:run` decides what tools can prove and writes the ledger, `json/accessibility-conformance.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. The [a11y README](../../../a11y/README.md) owns the audit: its commands, partial runs, failed visits, what an app lists in `scope-config.ts`, and why an agent's decision stays provisional until a person confirms it. Agents also report failures that are not there, so the rules below lean toward leaving a row open.
 
 ## Run
 
-```
-pnpm a11y:run            # database, app, audit, stop
-pnpm a11y:run --keep     # the same, and leave the stack up for the fix loop
-pnpm -C a11y report      # draft report and the checklist a11y/results/manual-pass.md
-pnpm -C a11y report --publish --draft   # the draft PDF where the app serves it, and the values for the statement
-```
+Run `pnpm a11y:run --keep` for the fix loop, so the stack stays up between partial runs.
 
-- One audit stack per machine at a time: runs share the database `db_a11y`.
-- A kept stack is reached with the `DEV_PORT_OFFSET` the run printed: `DEV_PORT_OFFSET=<n> pnpm a11y --states <ids>` audits some states and writes `a11y/results/ledger-partial.json`, never the ledger. End it with `pnpm a11y:run --stop`.
-- A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. The skipped visit names the step that failed and leaves `failure-<mode>.png` and `failure-<mode>.json` in `a11y/results/review/<state>/`: the page at that moment, its console errors and the steps that ran on it before. Read those first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
+- A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. Read the visit's `failure-<mode>.png` and `.json` first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
 - A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
-
-## First run in an app
-
-- List the app's routes and states in `a11y/scope-config.ts`: every page type, plus each dialog, sheet and menu. Add a resolver under `placeholders` for every `{name}` in a path.
-- The ledger and `scope-config.ts` are the app's own: `ignored` and `pinned` in `cella/cella.config.ts`. A ledger that carries another product's name is never read, so the first run starts a new one.
-- The openers find controls by their English names; change the names where the app's default language differs.
 
 ## Patterns for app UI
 
@@ -35,10 +20,10 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 
 - **Names (1.1.1, 4.1.2)**: an icon-only button, toggle or link has a translated `aria-label`; a custom control states its role and state.
 - **Focus (2.4.7)**: a custom focus target carries `focus-effect`. Never remove the ring (`focus-visible:outline-hidden`, `ring-0`) without another visible indicator.
-- **Dragging (2.5.7)**: every drag (reorder, resize, move) has a button or key that does the same. A reorder grip (`ReorderHandle`) opens a move menu on a click when increased contrast is on, which the audit always runs with; its arrow keys cover the keyboard.
+- **Dragging (2.5.7)**: every drag (reorder, resize, move) has a button or key that does the same. A reorder moves through `ReorderHandle`, which has both.
 - **Character keys (2.1.4)**: every hotkey needs Ctrl, Alt or Meta (`Mod`), as in `app-nav.tsx`. There is no switch to turn shortcuts off, so a character alone or with Shift is never registered.
 - **Motion (2.2.2)**: animation follows the reduced-motion preference: `motion-reduce:` on CSS transitions and animations, `<MotionConfig reducedMotion="user">` or `useReducedMotion()` for `motion` components.
-- **Dimmed text (1.4.3)**: dim text with a step: `text-muted-foreground` for support text, `text-faint-foreground` for hints. `opacity-*` or a modifier such as `/70` on text lowers its contrast below what the token was measured at.
+- **Dimmed text (1.4.3)**: dim text with a text step (`text-muted-foreground`, `text-faint-foreground`), never with opacity: `opacity-*` or `/70` lowers its contrast below what the token was measured at.
 
 ## The fix loop
 
@@ -47,9 +32,9 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 3. Check the fix in the running app before trusting it. Drive the kept stack with a short Playwright script: `startSession` (`a11y/src/session.ts`) signs in, `openState(session, '<id>')` (`a11y/src/drive.ts`) opens a state of the scope, also as a phone, a zoomed desktop or with motion allowed. Run it with the kept stack's `DEV_PORT_OFFSET` and `NODE_ENV=development`. Check the state the fix is about and one neighbor that shares the component.
 4. Changes that alter data (a reorder, a mute) are put back before the next run: the audit opens the first organization the audit user administers, and a changed order changes which one that is.
 5. Rerun the full audit. Rows the audit decides move by themselves.
-6. A row a reviewer decided keeps its decision and its remark, which now describes the old code. Decide it again, after step 3 showed the fix holds. `manual-pass.md` lists the rows whose evidence names a file that changed since.
+6. A row a reviewer decided keeps its decision and its remark, which now describes the old code: decide it again once step 3 showed the fix holds.
 
-What the tools measure for you, so you do not script it again: text contrast where axe cannot decide and the edge of form controls (`a11y/src/probes/contrast.ts`), both color modes; color token contrast and memo dependencies a callback never reads (`pnpm style`).
+Do not script what the tools already measure: contrast the audit takes from the pixels and token contrast in `pnpm style` ([How a row is decided](../../../a11y/README.md#how-a-row-is-decided)).
 
 # Reviewing the open criteria
 
@@ -58,7 +43,7 @@ Use this part after a full audit, when `pnpm -C a11y report` lists open criteria
 ## Preconditions
 
 - A fresh `pnpm a11y:run` with no skipped visits.
-- Packets in `a11y/results/review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (title, headings, landmarks, images, fields, visible label against accessible name, other languages, live regions) and `tab-order.json`. States are listed in `a11y/scope-config.ts`.
+- Packets in `a11y/results/review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (headings, landmarks, images, fields, label against name, other languages) and `tab-order.json`.
 - The open rows and the tools' notes: `a11y/results/manual-pass.md`.
 
 ## Rules

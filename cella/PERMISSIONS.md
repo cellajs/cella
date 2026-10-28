@@ -17,17 +17,10 @@ Creator-only rules compare the user with the row's `createdBy` value.
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Config, validated once at boot                                              │
 │  ┌───────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│  │ shared/config/                │  │ shared/config/                      │  │
-│  │   hierarchy-config.ts         │  │   permissions-config.ts             │  │
-│  │                               │  │                                     │  │
-│  │ createEntityHierarchy(roles)  │  │ configurePermissions(types, cb)     │  │
-│  │   .user()                     │  │   entity × channel × role → cell    │  │
-│  │   .organization({roles,       │  │   cell = 0 | 1 | 'own'              │  │
-│  │     elevated})                │  │   publicRead()                      │  │
-│  │   .channel(name, {parent,     │  │                                     │  │
-│  │     roles, organizationRoles})│  │                                     │  │
-│  │   .product(name, {parent})    │  │                                     │  │
-│  │ kinds, ancestor chains, roles │  │ → policyMatrix, publicReadGrants    │  │
+│  │ hierarchy-config.ts           │  │ permissions-config.ts               │  │
+│  │   kinds, ancestor chains,     │  │   policy matrix: entity × channel   │  │
+│  │   roles, elevated roles       │  │   × role → 0 | 1 | 'own'            │  │
+│  │                               │  │   public read per entity type       │  │
 │  └──────────────┬────────────────┘  └────────────────┬────────────────────┘  │
 │                 │                                    │                       │
 │                 └────────────────┬───────────────────┘                       │
@@ -35,67 +28,48 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │      ┌──────────────────────────────────────────────────────────┐            │
 │      │      Permission engine: shared/, tier-neutral, ORM-free  │            │
 │      │                                                          │            │
-│      │  getAllDecisions(policies, memberships, subject, opts)   │            │
-│      │                                                          │            │
 │      │  1. order channels   most-specific → organization        │            │
-│      │       channel entity → [self, ...ancestors]              │            │
-│      │       product entity → [...ancestors]                    │            │
 │      │  2. system admin?    allow every action, short-circuit   │            │
 │      │  3. memberships      policy cell per (channelType, role) │            │
-│      │       1           → grant            grantedBy membership│            │
-│      │       condition   → grant iff matches(row, actor)        │            │
-│      │                                      grantedBy relation  │            │
+│      │       1           → grant                                │            │
+│      │       condition   → grant iff the row matches            │            │
 │      │       0           → nothing                              │            │
 │      │  4. public read      widens `read` only                  │            │
-│      │                                      grantedBy public    │            │
-│      │  5. emit `can` + full grant attribution                  │            │
+│      │  5. emit `can` + why each action was granted             │            │
 │      └───┬───────────┬────────────────┬────────────────┬────────┘            │
 │          │           │                │                │                     │
 │   ┌──────▼─────┐ ┌───▼──────────┐ ┌───▼───────────┐ ┌──▼─────────────┐       │
 │   │ Backend    │ │ SSE dispatch │ │ Yjs relay     │ │ Frontend       │       │
 │   │ routes     │ │              │ │               │ │                │       │
-│   │ single row │ │ per event    │ │ WS upgrade,   │ │ computeCan →   │       │
-│   │ + compiled │ │ row, class-  │ │ no backend    │ │ can-map, drives│       │
-│   │ SQL for    │ │ collapsed    │ │ round-trip    │ │ UI controls    │       │
-│   │ list reads │ │ fan-out      │ │               │ │ (never trusted)│       │
+│   │ single row │ │ per change,  │ │ WS upgrade,   │ │ `can` map      │       │
+│   │ + compiled │ │ every        │ │ no backend    │ │ drives UI      │       │
+│   │ SQL for    │ │ subscriber   │ │ round-trip    │ │ controls       │       │
+│   │ list reads │ │ at once      │ │               │ │ (never trusted)│       │
 │   └────────────┘ └──────────────┘ └───────────────┘ └────────────────┘       │
-│                                                                              │
-│  Postgres RLS (app.tenant_id): separate layer, tenant isolation only.        │
-│  Fail-closed on SELECT for tenant-scoped product tables. No role awareness.  │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The engine **never loads rows**. Callers hand in the row data a decision needs. The two config files are validated once at boot and change together. A role or channel without a policy row denies. Postgres RLS: [Multi-tenancy](./MULTI_TENANCY.md).
+The engine **never loads rows**. Callers hand in the row data a decision needs. The two config files change together. Tenant isolation in the database is a separate layer: [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Vocabulary
 
 | Term | Meaning |
 | --- | --- |
-| **Channel** | Owns roles and memberships. `organization` is the fixed spine every channel nests under. Orders as `[self, ...ancestors]`. |
-| **Product** | Owns no roles and inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
-| **User entity** | Carries no policies. `configurePermissions` filters it out. |
-| **Membership** | Explicit `user → channel` relation. The engine reads only `{ channelType, channelId, role }` (`AccessMembership`). |
-| **Actor** | Who acts: a user or a service account, one row in `actors` either way. `actor.id` is what provenance columns and the `own` condition compare against. |
-| **Binding** | A role on a channel, whoever holds it: a membership row for a user, a stored binding for a service account. `actor.bindings` is what the guards and the engine read. |
-| **Subject** | What is acted on: entity type, optional id, `channelIds` scope, optionally `row`. |
-| **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` in policies: allow on qualifying rows). |
-| **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
+| **Channel** | Owns roles and memberships. `organization` is the fixed spine every channel nests under. |
+| **Product** | Owns no roles and inherits from the channels above it (`attachment`). Must have a channel parent. |
+| **Home** | A product row's deepest non-null channel ancestor: the channel the row lives in. |
+| **Membership** | A user's role on one channel. |
+| **Actor** | Who acts: a user or a service account ([Actors](./INTEROPERABILITY.md#actors)). |
+| **Binding** | A role on a channel, whoever holds it: a membership for a user, a stored binding for a service account. |
+| **Subject** | What is acted on: entity type, optional id, its ancestor channel ids, optionally the row. |
+| **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'`: allow on qualifying rows). |
+| **Action** | `create`, `read`, `update`, `delete`. |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
-| **Access scope** | The mask an API key or access token puts over its actor's bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
+| **Access scope** | The mask an API key or access token puts over its actor's bindings ([Access scopes](./INTEROPERABILITY.md#access-scopes)). |
 
 ## The access you present
 
-Every `checkAccess*` call takes an explicit `Access`, actor plus memberships:
-
-```ts
-export type Access<T extends AccessMembership = AccessMembership> =
-  | { actorId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
-  | { anonymous: true };
-```
-
-Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the guard-populated actor (`id`, `bindings`, `scopes`) and `isSystemAdmin` off the request context and yields `{ anonymous: true }` when nobody is signed in. `scopes` is required so a hand-built access states its mask: a session passes `null`; an API key or an access token passes what it was issued with, and the decision is `allowed AND the scope covers the action`. Where scopes come from: [Interoperability](./INTEROPERABILITY.md#access-scopes).
-
-A user's bindings are their memberships, which each process caches under `actors.bindings_version`. A trigger on `memberships` gives that column a new random value on every insert, update and delete, cascades included. A token request reads the version at every use. A session request takes it from the cached session, which the writing operation drops (`invalidateCache.user`) and the API process drops when CDC reports the membership change, so a change counts within CDC lag there and within the session cache's 10 seconds elsewhere, whatever wrote it.
+Every check takes an `Access`: the actor with its bindings and scopes, or anonymous. Handlers get it from `accessFrom(ctx)`, never by hand. A session is unmasked; an API key or access token narrows every decision to its scopes. A membership change reaches every check within seconds, whatever wrote it ([Sessions](./authentication/SESSIONS.md#sessions)).
 
 ## The policy consulted
 
@@ -114,7 +88,7 @@ export const hierarchy = createEntityHierarchy(roles)
 **`shared/config/permissions-config.ts`** declares the matrix:
 
 ```ts
-export const { policyMatrix, publicReadGrants } = configurePermissions(
+export const { policyMatrix, publicReadGrants, accessScopes } = configurePermissions(
   appConfig.entityTypes,
   ({ entityType, channels }) => {
     switch (entityType) {
@@ -131,13 +105,15 @@ export const { policyMatrix, publicReadGrants } = configurePermissions(
 );
 ```
 
-Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition. The engine reads the cell verbatim and only ever sees `0 | 1 | 'own'`. Public-read declarations are collected separately, being membership-independent.
+Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
 
 Channel entities have two row kinds: **elevation** rows on an ancestor channel say what a parent's member may do to the child (where `create` lives). **Self** rows on the same channel say what the entity's own members may do to it (a self-row `create` is inert). Product entities have only **home** rows, where `create` grants creating inside that channel.
 
+A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+
 ## The permission returned
 
-`getAllDecisions(policies, memberships, subject, options)` is the core. The **`checkAccess*` family** is what every tier calls, injecting the configured `publicReadGrants` and the hierarchy-compiled `elevatedGrants` (per-channel `elevated` declarations as `channelType:role` keys):
+The **`checkAccess*` family** is what every tier calls:
 
 ```ts
 checkAccess(access, action, subject); // → PermissionResult: the request-path check
@@ -145,85 +121,55 @@ checkAccessBatch(access, action, subjects); // → BatchPermissionResult: one ac
 checkAccessFanout(accesses, action, subject, options?); // → PermissionResult[]: many actors, one row (stream fan-out)
 ```
 
-```ts
-export type SubjectForPermission = {
-  entityType: ChannelEntityType | ProductEntityType;
-  id?: string;
-  createdBy?: string | null;
-  channelIds: AncestorChannelIds; // Partial<Record<ChannelEntityType, string | null>>
-  row?: Record<string, unknown>; // for row conditions + public read
-};
-```
-
-Ancestor scope is **tri-state**. `undefined` means a required scope was omitted and throws `MissingAncestorError` (HTTP 400 `missing_ancestor`, WebSocket close `4400`). `null` means explicitly not scoped to that ancestor. A string is a concrete channel id. A missing scope never defaults to unscoped, which would bypass permissions.
+A subject's ancestor scope is **tri-state**: a channel id, `null` for explicitly not scoped to that ancestor, or `undefined` for a required scope left out, which throws. A missing scope never defaults to unscoped, which would bypass permissions.
 
 ## Row conditions
 
-Two mechanisms widen access beyond the policy matrix, both reading the row's own columns. The set is **closed** to `own` and `public`: every rule must be evaluable in JS, compiled SQL, the frontend, and by dispatch from the row alone, so no cross-row or app-defined conditions.
+Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set. The set is **closed** to `own` and `public` (`shared/src/permissions/row-conditions.ts`): every rule must be evaluable in JS, compiled SQL, the frontend, and by dispatch from the row alone, so no cross-row or app-defined conditions.
 
-A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a grant per row: a cell of `1` grants on every row in channel scope, a condition cell only on matching rows. A condition is just its **name**:
+Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The flag is row-local: the server copies the home channel's flag onto a new row, and it never cascades.
 
-```ts
-export type RowConditionName = "own" | "public"; // this union IS the contract
-```
+### Drafts
 
-**Public read** (`shared/src/permissions/public-read.ts`) makes rows whose own `public` flag is set readable by any actor, anonymous included, independent of memberships. Declared per subject with `publicRead()`, it widens `read` only. It is not a policy cell, but it resolves through the same `'public'` row condition and parity test.
-
-Two row columns sit beside the engine: drafts (`publishedAt`) are checked before the engine. A product draft is visible to its author alone ([Drafts](./SYNC_ENGINE.md#drafts)); a channel draft to its own members and to a grant above it that also holds `update` on the type, in a list and by id alike (`draftChannelVisibleTo`). Public read (`public`) is row-local: the server copies the home channel's flag onto a new row, and never cascades.
+A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone ([Sync engine, Drafts](./SYNC_ENGINE.md#drafts)). A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish, except those for its `prepareRoles`, which go out at once so those people can set it up.
 
 ## Frontend map
 
-`computeCan(channelType, grants, policyMatrix)` derives the `can` map the UI reads (`entity.can[entityType][action]`) from the actor's grants on a channel and on the channels above it, as the engine reads them: the channel's own cells plus every descendant type's cells, merged so a cell holds what any grant allows. The enrichment pipeline collects those memberships from the ancestor ids a cached row carries, and a system admin gets every action, with or without a membership. A cell reaches the UI as `true`, `false` or a condition the frontend resolves per row with `resolveCan(state, createdBy, actorId, home)`:
+The UI reads a `can` map per channel (`entity.can[entityType][action]`), built by `computeCan` from the same policy matrix and the actor's grants on the channel and above it. A cell is `true`, `false` or a condition `resolveCan` checks per row: `'own'` for the creator's rows, `'home'` for rows homed at the map's channel, or both combined. A row control passes the row and the channel; a channel-wide feature asks `isUnconditionalCan`.
 
-| State | Resolves to | Where it comes from |
-| --- | --- | --- |
-| `'own'` | the actor created the row | the policy cell |
-| `'home'` | the row is homed at the map's channel: `home.row` (its deepest non-null ancestor id, `hierarchy.resolveDeepestAncestorId(type, row)`) equals `home.channel` | a `1` cell of a home-scoped grant |
-| `'home:own'` | both | an `'own'` cell of a home-scoped grant |
-| `'home\|own'` | either | a home-scoped grant on the channel beside an `'own'` cell of a grant above it |
-
-`'home'` is the map's form of the engine's home scoping: a role outside `hierarchy.elevatedGrants` reaches only product rows homed at its own channel. On the map's own channel that grant's product cells carry the mark, except `create` (no row: the frontend creates at the map's channel, the new row's home) and grants at the product's declared parent (every row below is homed there). On a channel above, such a grant reaches no row the map is asked about and adds nothing to a product cell. Channel entries are never marked: the engine scopes product subjects only, so a grant above counts in full for the channel itself and for the channel types below it. A call without `home` denies the home part of a marked state, so every product row affordance passes `{ row, channel }`; channel-wide features use `isUnconditionalCan`. The map shapes the interface only: `shared/src/permissions/compute-can.test.ts` runs every combination of roles an actor can hold on a channel and above it against the engine, for every action, on rows homed at the channel and below it and on the channels themselves, and the two agree.
-
-A route gate asks the same map before the page loads: `requireEntityAction` (`frontend/src/routes/-permission-guard.ts`) reads the actor's memberships itself, cache-first, since a row resolved on a cold load carries none yet. Where they cannot be read (offline with none cached) it lets the caller through, and the server decides.
+A route gate (`requireEntityAction`) asks the same map before the page loads, and lets the page load when it cannot read the memberships (offline with none cached): the server decides. The map shapes the interface only, and a parity test checks it against the engine for every combination of roles.
 
 ## Enforcement paths
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | [Guards](#guards), such as `userGuard` → `tenantGuard` → `orgGuard` | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 401 or 403 before the handler; the tenant is one 403 whether missing, inactive or not the actor's, the organization one 404 whether missing or without a foothold ([Refusals](#refusals)) |
-| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 404 for a row that is missing, out of scope, a draft that does not show to the caller or one the caller may not read; 403 only for an action denied on a row the caller reads |
+| Guard chain | [Guards](#guards) | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 401 or 403 before the handler ([Refusals](#refusals)) |
+| Single row | `getValidProduct`, `getValidChannel` | Loads the row, checks it is in the request's tenant and organization, runs the engine | 404 for a row the caller may not read, 403 for a denied action on one it reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
-| Bulk | `splitByPermission` | The single-row checks for every id: scope, the draft rule, read, then the action. Splits allowed from rejected | `rejectedIds` in request order, one list for every reason; 403 only when nothing is allowed |
-| Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying; a home channel passed as `requested` outside the readable scope is 404. A list's `channelId` is no part of the scope: `buildSubtreeCoverWhere` narrows on top of it, and a channel no readable row lives under is an empty page |
-| SSE dispatch | `accessDecisions`: `rowReadDecisions` for a change (`canReceiveProductEvent` is its batch-of-1), `toReaders` for a signal | One `checkAccessFanout` per row or signal subject over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable by seq |
-| Catchup views | `resolveViewReadStatus` | May the caller see the subtree's frontiers and counts (`e:f:`/`e:c:`)? `ok` needs a grant on the node or a verified ancestor. Claimed prefixes must equal the counters row's canonical path ([Access](./SYNC_ENGINE.md#access)) | `opaque` or `forbidden` |
+| Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed; 403 only when nothing is allowed |
+| Collection read | `buildCollectionReadWhere` | Compiles readable scope, row conditions, and public read into one SQL predicate. Never loads rows to reject them. | An empty list |
+| SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
+| Catchup views | `resolveViewReadStatus` | May the caller see a subtree's frontiers and counts ([Access](./SYNC_ENGINE.md#access)) | `opaque` or `forbidden` |
 
-Two rules bind every path: **the system-admin bypass applies to collection reads too** (a sysadmin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**. The collection path returns a **tri-state** so "no restriction" is never confused with "no rows":
-
-```ts
-export type CollectionReadWhere =
-  | { kind: "all" } // org-wide read: no scope restriction
-  | { kind: "none" } // no readable scope: return [] without querying
-  | { kind: "where"; where: SQL };
-```
+Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
 
 ### Guards
 
-Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. A guard that reads what an earlier one sets (the actor, the session, the tenant) declares it, so a route that lists them out of order fails when its module loads. Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, or `actorGuard` in place of `userGuard` where an API key or access token may call too; the user's own account runs behind `[userGuard]` alone.
+Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. A guard declares what it reads of an earlier one, so a route that lists them out of order fails when its module loads.
+
+Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `actorGuard` in place of `userGuard` where an API key or access token may call too. The user's own account runs behind `[userGuard]` alone.
 
 | Guard | Admits |
 | --- | --- |
 | `publicGuard` | Anyone, with no actor |
-| `userGuard` | A session cookie: the signed-in user, or an admin impersonating them. System admin only from an allowed IP address |
-| `serviceGuard` | A secret API key (its service account) or an access token (a service account, or the user who consented), masked by its scopes. Never system admin; an API key never with a browser `Origin` |
-| `tokenGuard` | An access token only, for the MCP face; without one, a 401 with the RFC 9728 challenge that tells an MCP client where to authorize |
-| `actorGuard` | Any of the three proofs: a key or token goes to `serviceGuard`, a cookie to `userGuard` |
-| `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) |
+| `userGuard` | A session cookie: the signed-in user, or an admin [impersonating](./authentication/SESSIONS.md#impersonation) them |
+| `serviceGuard` | An API key or an access token, masked by its scopes, never a system admin ([Interoperability](./INTEROPERABILITY.md#face-rest-api)) |
+| `tokenGuard` | An access token only, for the [MCP face](../mcp/README.md#discovery-and-tokens) |
+| `actorGuard` | Any of the three proofs |
+| `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's [sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) |
 | `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin |
-| `stepUpGuard` | A session that recently proved its user's presence again, never an impersonation ([Step-up](./AUTHENTICATION.md#step-up)) |
-| `stepUpEnrollGuard` | As `stepUpGuard`, for setting up a factor: a user who lost theirs, with MFA off, may also pass with an emailed code |
-| `stepUpFactorGuard` | A session that recently proved a second factor the user holds, or an SSO sign-in with asserted MFA, never an impersonation |
-| `sysAdminGuard` | The system admin role from an allowed IP address, never an impersonation |
+| `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks ([Step-up](./AUTHENTICATION.md#step-up)) |
+| `sysAdminGuard` | A system admin from an allowed IP address, never an impersonation |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin |
 
 `tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above.
@@ -232,32 +178,30 @@ Every route lists its guards in `xGuard`, and they run in that order before the 
 
 One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn` (a warning toast, no log id); `error` is kept for the app's own faults, such as a row that must exist and is gone.
 
-Unexpected server errors include internal details in client responses only in development and test. Other modes return a log ID; failed queries are logged without SQL or values.
-
 | Situation | Answer | Why |
 | --- | --- | --- |
-| The tenant: missing, inactive, none of the actor's, or not the tenant an API key belongs to | 403 `forbidden`, `meta.resource: 'tenant'` | The tenant is the URL segment every member knows, so the answer only says "not yours"; one answer for every case keeps the six-character ids from being enumerated |
-| Anything under a tenant the caller may not read, missing and unreadable alike: an organization (`orgGuard`), a channel or product (`getValidChannel`, `getValidProduct`: out of scope, soft-deleted, a draft that does not show to the caller, read denied), a home channel named in a list query, an invitation | 404 `not_found` with `entityType`; an invitation carries `meta.resource: 'invitation'` | A 403 would confirm the id. The access is the actor masked by its scopes, so an API key or access token without the entity's scope reads it as missing too |
-| An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, and `meta.action` for a single row | The caller already knows the row |
-| A list option the caller may not use: the system role as filter or sort of `getUsers` for anyone but a system admin; another user's `role` or `excludeArchived` in `getOrganizations` | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list. A sort is never refused; the `displayOrder` default names the caller's own menu, so another user's list comes by name |
-| Another user the caller shares no organization with (`relatableGuard`, `getUser`), missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | The guard answers before validation and never loads the user; one answer hides existence as a 404 would |
-| A token this browser does not hold: no cookie, an unknown or spent value, a URL that names another token | 401 `<type>_not_found`; expired, 401 `<type>_expired` with `meta.tokenId` so the error page can offer a new link | The proof is the cookie, for a link and a cookie-carried type alike. These keys are spelled after the token type (`confirm-mfa_not_found`, `step-up_expired`); the step-up feature's own keys are snake_case (`step_up_required`) |
-| A link or invitation of another account: opened while signed in as someone else, bound to another user, or the race that binds it lost | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
-| An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
-| Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
-| A tenant quota that is full | 403: `restrict_by_app` with `meta.resource` and `meta.quota` from `assertTenantQuota` (service accounts, API keys); `restrict_by_org` for members, invitations and attachments | The tenant's policy, not a rate: waiting does not lift it, so it is never a 429, which tells the client to retry after `Retry-After` |
-| An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | [Authentication](./AUTHENTICATION.md#step-up) |
-| An action on the account itself while impersonating: stepping up, revoking the user's sessions, every step-up guarded route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in the step-up guards and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
+| The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | Every member knows the tenant id, so the answer only says "not yours" and ids cannot be enumerated |
+| Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
+| An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
+| A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
+| Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
+| A token this browser does not hold, or one that expired | 401 `<type>_not_found` or `<type>_expired` | [Tokens](./AUTHENTICATION.md#tokens) |
+| A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
+| An address or provider account another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app |
+| Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | [Sessions](./authentication/SESSIONS.md#sessions) |
+| A tenant quota that is full | 403 `restrict_by_app` with `meta.resource` and `meta.quota`; `restrict_by_org` for member seats | The tenant's policy, not a rate: waiting does not lift it, so never a 429 |
+| An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | [Step-up](./AUTHENTICATION.md#step-up) |
+| An action on the account itself while impersonating | 403 `impersonation_forbidden` | [Impersonation](./authentication/SESSIONS.md#impersonation) |
+| A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | [Tenant sign-in policy](./authentication/SSO.md#tenant-sign-in-policy) |
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same. `member-personal-view.test.ts` and `pending-invitations.test.ts` hold both rules.
+Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same.
 
 ## Behavior
 
 | Scenario | Outcome |
 | --- | --- |
-| Member with `update: 'own'` edits someone else's row | Denied. The UI enables the control optimistically and the backend rejects on save. |
-| Actor reads a row whose `public` flag is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
-| Actor loses access mid-Yjs-session | The socket closes when its five-minute token expires, and a reconnect is authorized again. Materialization credits the newest editor who still has `update` |
-| System admin joins a Yjs collab session | No bypass. Authorized as the acting user, matching materialization |
+| Member with `update: 'own'` edits someone else's row | Denied: the UI resolves `'own'` against the row's creator, and the backend refuses a save all the same |
+| Actor loses access mid-Yjs-session | The socket closes when its short-lived token expires, and a reconnect is authorized again |
+| System admin joins a Yjs collab session | No bypass: authorized as the acting user |

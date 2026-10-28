@@ -1,13 +1,12 @@
-## Stack Control State
+# infra/lib/stack
 
-`control-store.ts` stores mutable rollout state in the Pulumi state bucket at `s3://<slug>-pulumi-state/control/<stack>.json`: a plaintext object with per-service generation pointers, image SHAs, bootstrap markers, and writer metadata.
+The stack's state beside Pulumi's own, and the CLI's edits to Pulumi's.
 
-The Pulumi program reads it at plan time so `pulumi up` converges to the live rollout truth; the deploy orchestrator writes it around cutover.
-
-Scaleway Object Storage conditional writes (`If-Match`, `If-None-Match`) back the optimistic concurrency path and the create-if-absent stack lock.
-
-## Interrupted operations
-
-A Pulumi run killed mid-operation leaves a `pending_operations` entry in the stack checkpoint (`.pulumi/stacks/<project>/<stack>.json` in the same bucket), and every later run warns about it. `pending-operations.ts` reads the entries straight from that object, so `infra status` reports them without a login or the passphrase.
-
-The Unlock action clears only pending creates, and only when nothing else is pending: it saves `pulumi stack export` to `infra/.state-backups/`, then runs `pulumi stack import` on the export without the creates. Pulumi's import drops every pending entry (checked on Pulumi 3.265), so an interrupted update or delete would vanish unread; those go to `pulumi refresh`, which reads each resource first. `pulumi refresh --clear-pending-creates` clears creates too, but it rewrites every resource from its live read and the next deploy diffs against that, while the export and import change nothing but the records. The LB pools' `serverIps`, which the cutover sets, carry `ignoreChanges`, so a refresh recording them is harmless.
+| File | Holds |
+| --- | --- |
+| [control-store.ts](./control-store.ts) | The control object (`control/<stack>.json` in the state bucket: per-service generation pointers and image SHAs) and the stack lock beside it. The program reads the pointers at plan time; the deploy writes them around a cutover. Conditional writes (`If-Match`, `If-None-Match`) keep both safe from a concurrent writer. |
+| [stack-lease.ts](./stack-lease.ts) | The stack lock as a lease its holder renews, so a dead run frees the stack within minutes. |
+| [pending-operations.ts](./pending-operations.ts) | The operations an interrupted Pulumi run left in the checkpoint, read without a login or the passphrase, and the Unlock action's clear of pending creates. |
+| [retired-state.ts](./retired-state.ts) | Resources the program no longer declares that an apply takes out of the state and leaves live. |
+| [plan-basis.ts](./plan-basis.ts) | What a plan was made on, so an apply sees the state move before it applies. |
+| [privileged-footprint.ts](./privileged-footprint.ts) | What an environment's code owes an apply or an Owner moment, for the pull request check. |
