@@ -80,7 +80,7 @@ What a delete does depends on what is deleted:
 
 Whichever way a row leaves, the files and collaborative document it stored go after it. A device away longer than the activity window refetches what it holds; a tombstone outlives that window, so a device that keeps up never misses a deletion.
 
-Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. A nightly pg_cron job in the database removes the rows past their period, archived tenants aside, and runs only where the admin role may use pg_cron ([Deployment](./DEPLOYMENT.md#overview)). Backups and bucket object versions expire on their own schedule.
 
 ## Contracts and operations
 

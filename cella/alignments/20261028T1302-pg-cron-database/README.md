@@ -16,6 +16,7 @@ companion gets `PG_CRON_DATABASE: rdb`. An app that deploys elsewhere, with an a
 Since the deploy's migrate step schedules the retention job, it read `cron.database_name`, a superuser-only setting.
 Scaleway's admin user may not read it, so every deploy failed with `permission denied to examine "cron.database_name"`.
 `scheduleRetention` now takes `PG_CRON_DATABASE` when set, and `services.config.ts` sets it from `CRON_HOME_DATABASE`.
+Scaleway also refuses the admin user pg_cron's `cron` schema, so the step then warns and migrates without the job.
 
 ## Blast radius
 
