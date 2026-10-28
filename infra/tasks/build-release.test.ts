@@ -6,9 +6,13 @@ import { type BuildEffects, type BuildReleaseOptions, buildRelease } from './bui
 
 const epoch = '0123456789ab';
 
-function fake(opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string; outOfStock?: string } = {}) {
+/** `earlier`: the result an earlier build of the commit left under its prefix an hour before, served with its step and log for two polls. */
+function fake(
+  opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string; outOfStock?: string; earlier?: string } = {},
+) {
   const ops: string[] = [];
   let built = false;
+  let polls = 0;
   const fx: BuildEffects = {
     imagePresent: async () => opts.present === true || built,
     entryFile: async (name) => {
@@ -33,12 +37,19 @@ function fake(opts: { present?: boolean; result?: string; never?: boolean; step?
     },
     report: async (name) => {
       if (opts.never) return undefined;
-      if (name === 'step') return opts.step ?? 'images';
-      if (name === 'log') return 'the end of the log';
+      if (opts.earlier && polls <= 2) {
+        const body = name === 'result' ? opts.earlier : name === 'step' ? 'files' : 'the earlier log';
+        return { body, modified: new Date(Date.now() - 3_600_000) };
+      }
+      const modified = new Date();
+      if (name === 'step') return { body: opts.step ?? 'images', modified };
+      if (name === 'log') return { body: 'the end of the log', modified };
       built = opts.result !== 'failed';
-      return opts.result ?? 'ok';
+      return { body: opts.result ?? 'ok', modified };
     },
-    sleep: async () => {},
+    sleep: async () => {
+      polls++;
+    },
   };
   return { fx, ops };
 }
@@ -95,6 +106,13 @@ describe('buildRelease', () => {
     const { fx } = fake({ result: 'failed', step: 'clone' });
     await expect(buildRelease(options(), fx)).rejects.toThrow(/failed at 'clone'[\s\S]*pnpm infra repository-key/);
     await expect(buildRelease(options(), fake({ result: 'failed' }).fx)).rejects.not.toThrow(/repository-key/);
+  });
+
+  it("reads only its own builder's reports: an earlier build of the commit left its result under the same prefix", async () => {
+    // Staging, 2026-10-28: every retry of a failed build read that build's result 15 s in, while its own builder was still booting.
+    expect(await buildRelease(options(), fake({ earlier: 'failed' }).fx)).toBe('built');
+    // After a rotation a commit built before builds again under the new epoch: its earlier `ok` must not end the wait.
+    await expect(buildRelease(options(), fake({ earlier: 'ok', result: 'failed' }).fx)).rejects.toThrow(/failed at 'images'/);
   });
 
   it('stops waiting at its time limit, and deletes the builder', async () => {
