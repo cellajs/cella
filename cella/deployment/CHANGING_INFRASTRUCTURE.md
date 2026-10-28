@@ -13,6 +13,7 @@ request checks for privileged changes that are still owed.
 **Privileged** resources are the ones only an apply on your operator key changes:
 
 - the database, the VPC and the private network
+- the machines' security groups
 - buckets and their policies
 - secret containers and their versions
 - DNS records

@@ -9,8 +9,8 @@ import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
 /**
- * Pulumi resource types only an apply (on the operator key) writes: the database, IAM, the VPC and private network, secret containers, DNS
- * records, buckets with their policies, and the load balancer. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
+ * Pulumi resource types only an apply (on the operator key) writes: the database, IAM, the VPC and private network, security groups, secret
+ * containers, DNS records, buckets with their policies, and the load balancer. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
  * A deploy still moves the load balancer's pools: the cutover sets their servers through the API, which the program leaves alone.
  */
 // Secret containers and their versions are privileged: the deploy key writes no app secret, only its hand-over bundles.
@@ -19,6 +19,8 @@ const PRIVILEGED_URN_TYPES = [
   'scaleway:iam/',
   'scaleway:network/vpc:',
   'scaleway:network/privateNetwork:',
+  // A security group decides what reaches a machine: the deploy key writes none.
+  'scaleway:instance/securityGroup',
   'scaleway:secrets/',
   // A record follows the load balancer's address, which the setup's first apply makes: the deploy key writes no DNS.
   'scaleway:domain/',
