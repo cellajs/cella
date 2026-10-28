@@ -81,6 +81,27 @@ describe('Show runs', () => {
     expect(detail).toContain('line 2');
   });
 
+  it('flags a run started with a repository of its own (D-b): the start call can set any value, and the job cannot refuse it', async () => {
+    const lines: string[] = [];
+    const definition = { command: 'bash -c script', env: { MODE: 'production', REPO: 'https://github.com/example/app.git', RELEASES_ONLY: '1' } };
+    const run = (id: string, values: Record<string, string>, created_at: string) => ({
+      id,
+      state: 'running',
+      created_at,
+      command: 'bash -c script',
+      environment_variables: { ...definition.env, TARGET_SHA: 'c'.repeat(40), RETRY: '0', ...values },
+    });
+    await showRuns(store([]), {
+      pick: false,
+      print: (line) => lines.push(line),
+      jobRuns: [run('r2', { REPO: 'https://github.com/mallory/app.git' }, '2026-10-15T02:00:00Z'), run('r1', {}, '2026-10-15T01:00:00Z')],
+      definition,
+      environment: 'production',
+    });
+    expect(lines[0]).toContain('started with its own values: sets REPO to another value');
+    expect(lines[1]).not.toContain('its own values');
+  });
+
   it('says so when no run has left a record', async () => {
     const lines: string[] = [];
     await showRuns(store([]), { pick: false, print: (line) => lines.push(line) });

@@ -10,6 +10,8 @@ export interface JobRun {
   started_at?: string | null;
   terminated_at?: string | null;
   environment_variables?: Record<string, string>;
+  /** The command the run ran: the definition's, or the one its start call set. */
+  command?: string | null;
 }
 
 const FINAL_STATES = new Set(['succeeded', 'failed', 'canceled', 'internal_error']);
@@ -35,18 +37,51 @@ export async function findJobDefinition(auth: ScwAuth, opts: { region: string; p
   }
 }
 
-/** What a job definition runs, as Scaleway holds it: the image and the startup command; undefined where the API names neither. */
-export async function readJobDefinition(
-  auth: ScwAuth,
-  opts: { region: string; definitionId: string },
-): Promise<{ imageUri?: string; command?: string }> {
-  const definition = await scwFetch<{ image_uri?: string; startup_command?: string[] | null; command?: string | null }>(
-    auth,
-    'GET',
-    `${base(opts.region)}/job-definitions/${opts.definitionId}`,
-  );
+/** What a job definition runs, as Scaleway holds it: undefined where the API names a field not. */
+export interface JobDefinitionFacts {
+  imageUri?: string;
+  command?: string;
+  env: Record<string, string>;
+  /** When the definition last changed: a run started before it may have run another command. */
+  updatedAt?: string;
+}
+
+/** What a job definition runs, as Scaleway holds it: the image, the startup command, the env and when it last changed. */
+export async function readJobDefinition(auth: ScwAuth, opts: { region: string; definitionId: string }): Promise<JobDefinitionFacts> {
+  const definition = await scwFetch<{
+    image_uri?: string;
+    startup_command?: string[] | null;
+    command?: string | null;
+    environment_variables?: Record<string, string> | null;
+    updated_at?: string | null;
+  }>(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}`);
   const command = definition.startup_command?.length ? definition.startup_command.join('\n') : (definition.command ?? undefined);
-  return { imageUri: definition.image_uri, command };
+  return {
+    imageUri: definition.image_uri,
+    command,
+    env: definition.environment_variables ?? {},
+    updatedAt: definition.updated_at ?? undefined,
+  };
+}
+
+/** One secret a definition references: the Secret Manager id, and the env var or file it lands in. */
+export interface JobSecretReference {
+  secretId: string;
+  env?: string;
+  file?: string;
+}
+
+/** The secrets a job definition references, as Scaleway holds them. */
+export async function readJobDefinitionSecrets(auth: ScwAuth, opts: { region: string; definitionId: string }): Promise<JobSecretReference[]> {
+  const { secrets = [] } = await scwFetch<{
+    secrets?: Array<{ secret_manager_id: string; env_var?: { name?: string } | null; file?: { path?: string } | null }>;
+  }>(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}/secrets`);
+  return secrets.map((secret) => ({
+    // An id may come as `<region>/<uuid>`, as the provider writes it.
+    secretId: secret.secret_manager_id.split('/').pop() ?? secret.secret_manager_id,
+    ...(secret.env_var?.name ? { env: secret.env_var.name } : {}),
+    ...(secret.file?.path ? { file: secret.file.path } : {}),
+  }));
 }
 
 /**

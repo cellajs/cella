@@ -1,7 +1,8 @@
-import { findJobDefinition, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
-import { MAIN_JOB_SCRIPT, mainJobImage, rootNodeVersion } from '../../deploy/main-job';
+import { findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
+import { declaredMainJob, MAIN_JOB_SCRIPT, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
+import { repositoryUrl } from '../../deploy/repository-key';
 import { deriveInfra } from '../../naming';
-import { actionCommand } from '../../operator-actions';
+import { actionCommand, actionLabel } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
@@ -31,7 +32,16 @@ export interface InventoryFacts {
   /** Each service's active generation, from the control object. */
   activeGenerations: Record<string, string>;
   /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
-  mainJob?: { running: boolean; imageUri?: string; command?: string };
+  mainJob?: {
+    running: boolean;
+    imageUri?: string;
+    command?: string;
+    env: Record<string, string>;
+    /** Each secret it references, with the name and folder Secret Manager gives it; undefined when they could not be read. */
+    secretReferences?: Array<{ env?: string; file?: string; secretId: string; name?: string; path?: string }>;
+  };
+  /** The organization the key belongs to, which the main job's definition names. */
+  organizationId: string;
 }
 
 /** What an environment's code declares (C11): its applications, the ones that hold one key, its project and how its machines are named. */
@@ -45,11 +55,16 @@ export interface InventoryExpectation {
   oneKey: readonly string[];
   /** Every machine of this environment starts with it (`<slug>-`). */
   machinePrefix: string;
+  /** The app's operator: Set up operator key removes its extra key, Rotate keys every other. */
+  operator: string;
 }
 
 export interface InventoryFindings {
   applications: string[];
+  /** An extra key that Rotate keys removes, or a person's key without an end date. */
   keys: string[];
+  /** An extra key of the operator, which Set up operator key replaces. */
+  operatorKeys: string[];
   policies: string[];
   /** A machine the engine did not make. */
   machines: string[];
@@ -64,7 +79,7 @@ export interface InventoryFindings {
  * people are the Owner's to judge in the console.
  */
 export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpectation): InventoryFindings {
-  const found: InventoryFindings = { applications: [], keys: [], policies: [], machines: [], passing: [] };
+  const found: InventoryFindings = { applications: [], keys: [], operatorKeys: [], policies: [], machines: [], passing: [] };
   const nameOf = new Map(facts.applications.map((application) => [application.id, application.name]));
   const own = new Set(facts.applications.filter((application) => application.name in expect.declared).map((application) => application.id));
   for (const application of facts.applications) {
@@ -106,7 +121,7 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   for (const [id, keys] of keysOf) {
     const name = nameOf.get(id) ?? id;
     if (expect.oneKey.includes(name) && keys.length > 1) {
-      found.keys.push(
+      (name === expect.operator ? found.operatorKeys : found.keys).push(
         `${name} holds ${keys.length} keys: ${keys.map((key) => `${key.access_key} (${key.description || 'no description'})`).join(', ')}`,
       );
     }
@@ -129,22 +144,52 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   return found;
 }
 
+const folderOf = (path: string | undefined) => (path ?? '').replace(/\/+$/, '');
+
 /**
- * Whether the main job's definition runs what this checkout declares: the runner key may edit a definition, and a run of an edited one reads
- * the deploy key and the passphrase. A difference is an apply owed, or an edit nobody declared.
+ * Where a definition differs from the declared one (D-b): the runner key may edit it, and a run of an edited one reads the deploy key and the
+ * passphrase. The image, the command, every env value, an env var it adds, and each secret reference: one outside the engine folder, one the
+ * declaration does not name, one that reads another secret, and a required one that is gone.
  */
-function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob']): Check {
+export function mainJobDifferences(live: NonNullable<InventoryFacts['mainJob']>, declared: MainJobDeclaration): string[] {
+  const differs: string[] = [];
+  if (live.imageUri !== declared.imageUri) differs.push(`image ${live.imageUri}`);
+  if (!live.command?.includes(MAIN_JOB_SCRIPT.trim())) differs.push('its command');
+  for (const [name, value] of Object.entries(declared.env)) {
+    if (live.env[name] !== value) differs.push(name in live.env ? `env ${name} differs` : `env ${name} is missing`);
+  }
+  for (const name of Object.keys(live.env)) if (!(name in declared.env)) differs.push(`an extra env var ${name}`);
+  for (const reference of live.secretReferences ?? []) {
+    const where = reference.env ?? reference.file ?? reference.secretId;
+    const expected = reference.env ? declared.secretReferences[reference.env] : undefined;
+    if (folderOf(reference.path) !== folderOf(declared.secretFolder)) {
+      differs.push(
+        `${where} reads a secret outside the engine folder (${reference.path ? `${reference.path}/${reference.name}` : reference.secretId})`,
+      );
+    } else if (!expected) differs.push(`an extra secret reference ${where} (${reference.name})`);
+    else if (expected.name !== reference.name) differs.push(`${where} reads ${reference.name}, not ${expected.name}`);
+  }
+  for (const [env, { name, optional }] of Object.entries(declared.secretReferences)) {
+    if (live.secretReferences && !optional && !live.secretReferences.some((reference) => reference.env === env)) {
+      differs.push(`the secret reference ${env} (${name}) is missing`);
+    }
+  }
+  return differs;
+}
+
+/** Whether the main job's definition runs what this checkout declares: a difference is an apply owed, or an edit nobody declared. */
+function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'], declared: () => MainJobDeclaration): Check {
   if (!mainJob) return builder.ok('no main job yet');
   if (!mainJob.command || !mainJob.imageUri) return builder.warn('its command or image could not be read');
-  const differs = [
-    mainJob.imageUri === mainJobImage(rootNodeVersion()) ? '' : `image ${mainJob.imageUri}`,
-    mainJob.command.includes(MAIN_JOB_SCRIPT.trim()) ? '' : 'its command',
-  ].filter(Boolean);
-  if (differs.length === 0) return builder.ok('runs the declared script and image');
-  return builder.error(`${differs.join(' and ')} differ from this checkout's: an apply is owed, or someone edited the definition`, {
-    description: 'An apply writes the declared definition again',
-    command: actionCommand('apply'),
-  });
+  const differs = mainJobDifferences(mainJob, declared());
+  if (differs.length > 0) {
+    return builder.error(`${differs.join('; ')}: an apply is owed, or someone edited the definition`, {
+      description: 'An apply writes the declared definition again',
+      command: actionCommand('apply'),
+    });
+  }
+  if (!mainJob.secretReferences) return builder.warn('runs the declared script, image and env; its secret references could not be read');
+  return builder.ok('runs the declared script, image, env and secret references');
 }
 
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
@@ -164,6 +209,7 @@ function expectationOf(appConfig: { slug: string; appSlug: string }, mode: strin
     declared,
     oneKey: Object.keys(declared).filter((name) => name !== app.observer),
     machinePrefix: `${appConfig.slug}-`,
+    operator: app.operator,
   };
 }
 
@@ -195,6 +241,16 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const rollout = (await session.scalewayFacts()).rollout;
       if (!rollout) return undefined;
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
+      // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
+      const secretPlace = (secretId: string) =>
+        scwFetch<{ name: string; path: string }>(
+          auth,
+          'GET',
+          `https://api.scaleway.com/secret-manager/v1beta1/regions/${region}/secrets/${secretId}`,
+        ).then(
+          ({ name, path }) => ({ name, path }),
+          () => ({}),
+        );
       const [applications, groups, apiKeys, policies, servers, mainJob] = await Promise.all([
         listAll<InventoryFacts['applications'][number]>(auth, org('applications'), 'applications'),
         listAll<InventoryFacts['groups'][number]>(auth, org('groups'), 'groups'),
@@ -212,11 +268,15 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         ).then((perZone) => perZone.flat()),
         findJobDefinition(auth, { region, projectId: session.projectId, name: naming.resource('main') }).then(async (definitionId) => {
           if (!definitionId) return undefined;
-          const [runs, definition] = await Promise.all([
+          const [runs, definition, secretReferences] = await Promise.all([
             listJobRuns(auth, { region, projectId: session.projectId ?? '', definitionId }),
             readJobDefinition(auth, { region, definitionId }),
+            readJobDefinitionSecrets(auth, { region, definitionId })
+              .then((references) => Promise.all(references.map(async (reference) => ({ ...reference, ...(await secretPlace(reference.secretId)) }))))
+              .catch(() => undefined),
           ]);
-          return { running: runs.some((run) => !runEnded(run)), ...definition };
+          const { imageUri, command, env } = definition;
+          return { running: runs.some((run) => !runEnded(run)), imageUri, command, env, secretReferences };
         }),
       ]);
       const withRules = await Promise.all(
@@ -230,7 +290,8 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           })),
       );
       const activeGenerations = Object.fromEntries(rollout.flatMap((row) => (row.activeGeneration ? [[row.slug, row.activeGeneration]] : [])));
-      return { applications, groups, apiKeys, policies: withRules, machines: servers.map((server) => server.name), activeGenerations, mainJob };
+      const machines = servers.map((server) => server.name);
+      return { applications, groups, apiKeys, policies: withRules, machines, activeGenerations, mainJob, organizationId };
     } catch {
       return undefined;
     }
@@ -248,9 +309,17 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     const listed = (builder: CheckBuilder, lines: string[], fine: string, nextAction?: NextAction) =>
       lines.length === 0 ? builder.ok(fine) : builder.error(lines.join('; '), nextAction);
     const rotate = { description: 'Rotate keys deletes every key beside the declared ones', command: actionCommand('rotate-keys') };
+    const operatorKey = { description: `${actionLabel('operator-key')} replaces every key of the operator`, command: actionCommand('operator-key') };
     return [
       item('inventory.applications', 'Applications', (b, { found }) => listed(b, found.applications, 'only the declared ones can act here')),
-      item('inventory.keys', 'API keys', (b, { found }) => listed(b, found.keys, 'one key per identity, as declared', rotate)),
+      item('inventory.keys', 'API keys', (b, { found }) =>
+        listed(
+          b,
+          [...found.keys, ...found.operatorKeys.map((line) => `${line}, which ${actionLabel('operator-key')} removes`)],
+          'one key per identity, as declared',
+          found.keys.length > 0 ? rotate : operatorKey,
+        ),
+      ),
       item('inventory.policies', 'Policies', (b, { found }) => listed(b, found.policies, 'one per identity, as declared')),
       item('inventory.machines', 'Machines', (b, { facts, found }) =>
         found.machines.length > 0
@@ -259,7 +328,19 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
             ? b.warn(found.passing.join('; '))
             : b.ok(`${facts.machines.length} machine(s), each an active generation`),
       ),
-      item('inventory.mainJob', 'Main job', (b, { facts }) => mainJobVerdict(b, facts.mainJob)),
+      item('inventory.mainJob', 'Main job', (b, { facts }) =>
+        mainJobVerdict(b, facts.mainJob, () =>
+          declaredMainJob({
+            slug: session.appConfig.slug,
+            mode: session.mode,
+            projectId: session.projectId ?? '',
+            organizationId: facts.organizationId,
+            region: deriveInfra(session.appConfig).region,
+            repository: repositoryUrl(),
+            nodeVersion: rootNodeVersion(),
+          }),
+        ),
+      ),
     ];
   },
 };

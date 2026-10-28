@@ -20,7 +20,7 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
  * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
- * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
+ * atomic frontend entry publish, smoke checks, the reap, the keys out of user data, and boot diagnostics on failure.
  * The main job runs this with the deploy key in `SCW_*`, the one key it needs.
  */
 export interface DeployOptions {
@@ -43,7 +43,8 @@ export type TaskName =
   | 'assert-deploy-policy'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
-  | 'smoke';
+  | 'smoke'
+  | 'scrub-user-data';
 
 /** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select, docker login). */
 export interface DeployEffects {
@@ -200,6 +201,21 @@ export async function runDeploy(
         process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
       ]),
     );
+    // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
+    // this step checks from metadata that every copy a machine reads has one. Secret containers are privileged, so nothing after this step
+    // makes a copy: a missing one ends the run blocked before any machine exists, and storing it starts the target again.
+    await step('Verify runtime secrets are deliverable', () =>
+      fx.task('assert-secrets-deliverable', [
+        '--region',
+        env.region,
+        '--project-id',
+        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+        '--services-json',
+        env.enabled_services_json,
+        '--mode',
+        opts.mode,
+      ]),
+    );
 
     // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
     // their own for the publish below. No app code runs beside the deploy key.
@@ -265,21 +281,6 @@ export async function runDeploy(
         ]);
       }
     });
-    // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
-    // this step checks from metadata that every copy a machine reads has one.
-    await step('Verify runtime secrets are deliverable', () =>
-      fx.task('assert-secrets-deliverable', [
-        '--region',
-        env.region,
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--services-json',
-        env.enabled_services_json,
-        '--mode',
-        opts.mode,
-      ]),
-    );
-
     try {
       await step('Waved rollout', () =>
         fx.rollout([
@@ -342,13 +343,17 @@ export async function runDeploy(
       ]),
     );
     await step('Reap displaced generations', () => fx.update(stack));
+    // Every machine left runs this release; the Instance API serves its user data to every key that reads machines, the observer's included.
+    await step('Take the keys out of user data', () =>
+      fx.task('scrub-user-data', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '']),
+    );
   } catch (err) {
     outcome = 'error';
     failure = err;
     throw err;
   } finally {
     await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
-    // A preflight that found an owed privileged change ends the run blocked, not failed: an apply comes first, then the same target.
+    // A step that found a privileged change or a required secret owed ends the run blocked, not failed: the operator settles it, then the same target.
     const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
     recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
     const run = recorder.record().run;
@@ -429,6 +434,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
+  'scrub-user-data': async (argv) => (await import('./scrub-user-data')).main(argv),
 };
 
 function createRealEffects(): DeployEffects {

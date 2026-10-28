@@ -33,7 +33,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
   return {
     identity: { observerAppId: 'app-1', keyAges: [] },
     runs: { last: { id: 'r1', state: 'succeeded', environment_variables: { TARGET_SHA: 'abc123def456' } } },
-    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {} },
+    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {}, organizationId: 'org-1' },
     state: {
       stateBucketExists: true,
       lock: { held: false },
@@ -147,13 +147,13 @@ describe('DNS', () => {
 });
 
 describe('the last deploy', () => {
-  it('points a blocked run at the apply, and a failed one at Show runs', () => {
+  it('points a blocked run and a failed one at Show runs: a blocked run’s record names the apply or the secret it waits for', () => {
     const blocked = find(
       reportFor(base({ runs: { last: { id: 'r2', state: 'failed', exit_code: 2, environment_variables: { TARGET_SHA: 'abc' } } } })).checks,
       'runs.last',
     );
     expect(blocked?.status).toBe('warn');
-    expect(blocked?.nextAction?.command).toContain('apply');
+    expect(blocked?.nextAction?.command).toContain('runs');
     const failed = find(reportFor(base({ runs: { last: { id: 'r3', state: 'failed', exit_code: 1 } } })).checks, 'runs.last');
     expect(failed?.status).toBe('error');
     expect(failed?.nextAction?.command).toContain('runs');

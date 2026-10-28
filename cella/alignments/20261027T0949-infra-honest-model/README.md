@@ -26,7 +26,7 @@ No script: manual.
 1. In `infra/environments`, change a `production` line that names a commit or `branch:` to `releases` or a release tag.
 2. Per environment, at the dedicated address: `pnpm infra identity --mode <env>` (Owner API key), which rewrites the deploy key's policy.
 3. Per environment: `pnpm infra apply --mode <env>` (operator key): the diagnostics bucket's versioning, the main job's definition and its salt reference. The apply starts a blocked target again.
-4. Once: move `release` in `infra/runner.json` to a commit that carries this change, then `pnpm infra runner-identity --mode <env> --rotate-key` (Owner API key) and `pnpm infra runner-replace` (operator key): the runner then checks targets with the releases-only rule, holds a new key and runs the pinned `node` image.
+4. Once: move `release` in `infra/runner.json` to a commit that carries this change, then `pnpm infra runner-replace` (operator key): the runner then checks targets with the releases-only rule and runs the pinned `node` image. Its new key comes with **Rotate keys**, as the alignment `20261028T1240-infra-decisions` says.
 5. Replace `pnpm --filter infra diag` in scripts and runbooks with `pnpm infra runs --machines` or `pnpm infra runs --sha <sha>`.
 
 ## Verify

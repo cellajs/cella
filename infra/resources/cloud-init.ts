@@ -203,14 +203,17 @@ ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a ${bootLo
 [Install]
 WantedBy=multi-user.target`;
 
+/** The heredoc terminators of the two key files, which {@link withoutKeyFiles} finds them by. */
+const KEY_FILE_MARKERS = { accessKey: 'SCW_ACCESS_KEY_EOF', secretKey: 'SCW_SECRET_KEY_EOF' } as const;
+
 const writeBootInputs = (p: CloudInitParams): string => {
   const paths = bootPaths(p.slug);
   return `mkdir -p ${paths.etcDir} /opt/app /etc/runtime-secrets
 ${writeHeredoc(paths.plan, 'BOOT_PLAN_EOF', bootPlan(p))}
 chmod 600 ${paths.plan}
-${writeHeredoc(paths.accessKey, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
+${writeHeredoc(paths.accessKey, KEY_FILE_MARKERS.accessKey, p.accessKey)}
 chmod 600 ${paths.accessKey}
-${writeHeredoc(paths.secretKey, 'SCW_SECRET_KEY_EOF', p.secretKey)}
+${writeHeredoc(paths.secretKey, KEY_FILE_MARKERS.secretKey, p.secretKey)}
 chmod 600 ${paths.secretKey}
 ${writeBootEnv(p)}
 ${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
@@ -229,4 +232,21 @@ systemctl start infra-boot.service`;
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return `${[bootHeader(p.slug), installBootReplayService(), writeBootInputs(p), startBootRunner(p), scrubCloudInitLogs()].join('\n\n')}\n`;
+}
+
+/**
+ * A booted machine's cloud-init without its key files, each heredoc left as a comment that names the file. Cloud-init runs the script at a
+ * machine's first boot only, and the boot unit reads the key from disk at every boot, so the rest of the script stays as it ran. Undefined
+ * when the script writes no key file.
+ * @throws when a key file's heredoc is still there after the rewrite: user data that keeps a key is never written back.
+ */
+export function withoutKeyFiles(cloudInit: string): string | undefined {
+  const markers = Object.values(KEY_FILE_MARKERS);
+  if (!markers.some((marker) => cloudInit.includes(`<<'${marker}'`))) return undefined;
+  const scrubbed = markers.reduce(
+    (text, marker) => text.replace(new RegExp(`^cat > (\\S+) <<'${marker}'\\n[\\s\\S]*?\\n${marker}$`, 'gm'), '# $1: written at the first boot'),
+    cloudInit,
+  );
+  if (markers.some((marker) => scrubbed.includes(marker))) throw new Error('a key file is still in the cloud-init after its rewrite');
+  return scrubbed;
 }

@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { engineSecretPath } from '../scaleway/secret-paths';
+import { ENCRYPTION_SALT_SECRET_NAME, PASSPHRASE_SECRET_NAME } from '../../tasks/passphrase-custody';
+import { deployFolderPath, engineSecretPath } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
+import { defaultRule } from './target';
 
 /**
  * The main job (plan §3.5): one Serverless Jobs definition per environment, made by the operator's apply, that runs one deploy of a target
@@ -10,20 +12,23 @@ import { infraDir } from '../utils/paths';
  */
 
 /** The deploy key's copy the main job's definition references: `{ accessKey, secretKey }`, written when the key is made or replaced. */
-export const DEPLOY_KEY_SECRET_NAME = 'deploy-key';
+const DEPLOY_KEY_SECRET_NAME = 'deploy-key';
 
 /** The folder of the secrets the definition references: the engine's, which only the operator reads. */
-export function mainJobSecretFolder(slug: string, mode: string): string {
+function mainJobSecretFolder(slug: string, mode: string): string {
   return engineSecretPath(slug, mode).replace(/\/$/, '');
 }
 
-/** How a run ends, as its exit code. The runner starts a target once; a blocked one is started again by the apply that clears the block (D21). */
+/** How a run ends, as its exit code. The runner starts a target once; a blocked one is started again by the action that clears the block (D21). */
 export const MAIN_JOB_EXIT = {
   /** The target is live. */
   deployed: 0,
   /** The deploy failed; the running release is untouched or rolled back. A failed target is not started again by itself. */
   failed: 1,
-  /** A privileged change is owed (the preflight's exit code): the apply that makes it starts the target again at its end. */
+  /**
+   * Something only the operator makes is owed, and the run's record names it: a privileged change, which the apply makes, or a required secret,
+   * which Manage runtime secrets stores. Either action starts the target again at its end.
+   */
   blocked: 2,
 } as const;
 
@@ -41,7 +46,7 @@ export function mainJobOutcome(run: { state: string; exit_code?: number | null }
  * The public image a run starts from, at the root `engines.node` (D26): Debian with git and curl, and nothing of the app's. Everything else
  * is fetched by the run. The image is part of the definition, so a Node bump owes an apply.
  */
-export function mainJobImage(nodeVersion: string): string {
+function mainJobImage(nodeVersion: string): string {
   return `docker.io/library/node:${nodeVersion}-bookworm`;
 }
 
@@ -51,10 +56,28 @@ export function rootNodeVersion(root = join(infraDir, '..')): string {
 }
 
 /**
+ * The script's refusal of a target no release names, where the definition sets `RELEASES_ONLY=1` (D3): before the fetch, the repository's
+ * release tags must name `TARGET_SHA`, an annotated tag by the commit it points to. It runs before any code of the target, so the target cannot
+ * skip it; a start call that sets its own values or command can, and Show runs flags such a run. It calls `git_read`, which the script defines.
+ */
+export const RELEASE_CHECK = String.raw`if [ "$(printenv RELEASES_ONLY || true)" = 1 ]; then
+  TAGS=$(git_read ls-remote origin 'refs/tags/*')
+  if ! printf '%s\n' "$TAGS" | awk -v sha="$TARGET_SHA" '
+    { ref = $2; peeled = (substr(ref, length(ref) - 2) == "^{}"); if (peeled) ref = substr(ref, 1, length(ref) - 3) }
+    ref !~ /^refs\/tags\/[0-9]+\.[0-9]+\.[0-9]+$/ { next }
+    peeled { commit[ref] = $1 ""; next }
+    !(ref in commit) { commit[ref] = $1 "" }
+    END { for (ref in commit) if (commit[ref] == sha "") exit 0; exit 1 }'; then
+    echo "$MODE deploys releases only: $TARGET_SHA is no release" >&2
+    exit 1
+  fi
+fi`;
+
+/**
  * The run's first program, written into the definition at the apply: it fetches the target commit (with the repository read key for a
  * private repository, read with the deploy key), installs the engine's workspace from the frozen lockfile and the Pulumi CLI at its SDK
  * version, and hands over to the target's own `main-job` task, whose exit code is the run's; a failure before it ends the run with 1, so a
- * tool's own exit code is never read as blocked. Written with String.raw: no dollar-brace may
+ * tool's own exit code is never read as blocked. Written with String.raw: the one dollar-brace places {@link RELEASE_CHECK}, no other may
  * appear, and keys are never echoed.
  */
 export const MAIN_JOB_SCRIPT = String.raw`set -euo pipefail
@@ -68,7 +91,7 @@ unset DEPLOY_KEY_JSON
 echo "== $(date -u +%FT%TZ) fetch $TARGET_SHA"
 git init -q /work
 git -C /work remote add origin "$REPO"
-# A private repository's read key (D19), from the deploy folder, goes with the one fetch as a header.
+# A private repository's read key (D19), from the deploy folder, goes as a header with the tag listing and the fetch.
 REPO_KEY=$(node -e '
   const base = "https://api.scaleway.com/secret-manager/v1beta1/regions/" + process.env.REGION;
   const headers = { "X-Auth-Token": process.env.SCW_SECRET_KEY };
@@ -83,11 +106,15 @@ REPO_KEY=$(node -e '
       process.stdout.write(Buffer.from((await res.json()).data, "base64").toString().trim());
     });
 ')
-if [ -n "$REPO_KEY" ]; then
-  git -C /work -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$REPO_KEY" | base64 -w0)" fetch -q --depth 1 origin "$TARGET_SHA"
-else
-  git -C /work fetch -q --depth 1 origin "$TARGET_SHA"
-fi
+git_read() {
+  if [ -n "$REPO_KEY" ]; then
+    git -C /work -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$REPO_KEY" | base64 -w0)" "$@"
+  else
+    git -C /work "$@"
+  fi
+}
+${RELEASE_CHECK}
+git_read fetch -q --depth 1 origin "$TARGET_SHA"
 unset REPO_KEY
 git -C /work checkout -q FETCH_HEAD
 cd /work
@@ -108,6 +135,48 @@ fi
 echo "== $(date -u +%FT%TZ) deploy"
 exec pnpm --silent --filter infra main-job
 `;
+
+/** The main job's definition as this checkout declares it (D-b): the apply writes it, and the inventory compares the live one against it. */
+export interface MainJobDeclaration {
+  imageUri: string;
+  startupCommands: string[];
+  env: Record<string, string>;
+  /** The secrets a run reads, by the env var each lands in: its name in {@link secretFolder}. An optional one may be missing from an older stack. */
+  secretReferences: Record<string, { name: string; optional?: true }>;
+  secretFolder: string;
+}
+
+/** The declared definition of an environment's main job, from its names and the checkout's repository and `engines.node`. */
+export function declaredMainJob(opts: {
+  slug: string;
+  mode: string;
+  projectId: string;
+  organizationId: string;
+  region: string;
+  repository: string;
+  nodeVersion: string;
+}): MainJobDeclaration {
+  return {
+    imageUri: mainJobImage(opts.nodeVersion),
+    startupCommands: ['bash', '-c', MAIN_JOB_SCRIPT],
+    env: {
+      MODE: opts.mode,
+      REPO: opts.repository,
+      REGION: opts.region,
+      DEPLOY_FOLDER: deployFolderPath(opts.slug, opts.mode).replace(/\/$/, ''),
+      SCW_DEFAULT_PROJECT_ID: opts.projectId,
+      SCW_DEFAULT_ORGANIZATION_ID: opts.organizationId,
+      ...(defaultRule(opts.mode).kind === 'releases' ? { RELEASES_ONLY: '1' } : {}),
+    },
+    secretReferences: {
+      DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME },
+      PULUMI_CONFIG_PASSPHRASE: { name: PASSPHRASE_SECRET_NAME },
+      // A stack set up before the salt was kept beside the passphrase has none yet: its runs read the target's stack file.
+      PULUMI_ENCRYPTION_SALT: { name: ENCRYPTION_SALT_SECRET_NAME, optional: true },
+    },
+    secretFolder: mainJobSecretFolder(opts.slug, opts.mode),
+  };
+}
 
 /** The Secret Manager calls that store the deploy key's copy. */
 interface DeployKeySecrets {
