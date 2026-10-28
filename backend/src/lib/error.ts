@@ -6,6 +6,7 @@ import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
+import { checksAuthoringRules, undocumentedErrorStatus } from '#/core/openapi-validation';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
 import { getIsoDate } from '#/utils/iso-date';
@@ -181,12 +182,21 @@ export function toClientError(
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`
   const safePath = scrubUrl(ctx.req.path);
-  const clientError = toClientError(err, {
+  const answered = toClientError(err, {
     path: safePath,
     method: ctx.req.method,
     userId: ctx.get('user')?.id,
     organizationId: ctx.get('organization')?.id,
   });
+
+  // An error status the route does not document is an authoring mistake: a test gets a 500 that names the fix, development a warning.
+  const undocumented = checksAuthoringRules ? undocumentedErrorStatus(ctx.var.operationId, answered.status, answered.type) : undefined;
+  if (undocumented && appConfig.mode === 'test') console.error(undocumented);
+  else if (undocumented) log.warn(undocumented);
+  const clientError: ClientError =
+    undocumented && appConfig.mode === 'test'
+      ? { ...answered, status: 500, type: 'server_error', severity: 'error', name: 'ApiError', message: undocumented, willRedirect: false }
+      : answered;
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
   ctx.set('errorStatus', clientError.status);

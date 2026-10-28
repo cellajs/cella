@@ -13,6 +13,7 @@ export const actorGuard = xMiddleware(
   {
     functionName: 'actorGuard',
     type: 'x-guard',
+    errors: [401, 403],
     security: [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }],
     provides: ['actor'],
     name: 'actor',

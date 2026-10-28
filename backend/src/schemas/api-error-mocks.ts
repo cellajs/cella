@@ -5,6 +5,7 @@ const errorTexts = {
   403: { name: 'No access', message: "You don't have permission to do this.", type: 'forbidden' },
   404: { name: 'Not found', message: 'This resource does not exist or has been deleted.', type: 'not_found' },
   409: { name: 'Signed in as someone else', message: 'This link is for another account. Sign out, then open it again.', type: 'user_mismatch' },
+  413: { name: 'Too large to save', message: 'Shorten it or split it up.', type: 'body_too_large' },
   429: { name: 'Too many attempts', message: 'Wait a moment, then try again.', type: 'too_many_requests' },
 };
 

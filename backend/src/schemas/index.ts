@@ -40,7 +40,7 @@ export {
   validUuidSchema,
 } from '#/schemas/common-schemas';
 export { membershipCountSchema } from '#/schemas/count-schemas';
-export { errorResponseRefs } from '#/schemas/error-response-schemas';
+export { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
 export { minimalBaseSchema } from '#/schemas/minimal-base';
 export {
   type AppCatchupResponse,

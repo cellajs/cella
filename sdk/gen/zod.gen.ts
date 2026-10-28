@@ -188,11 +188,20 @@ export const zNotFoundError = zApiError.and(
 );
 
 /**
- * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.
+ * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
  */
 export const zConflictError = zApiError.and(
   z.object({
     status: z.literal(409).optional(),
+  }),
+);
+
+/**
+ * The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.
+ */
+export const zPayloadTooLargeError = zApiError.and(
+  z.object({
+    status: z.literal(413).optional(),
   }),
 );
 

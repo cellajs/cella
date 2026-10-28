@@ -15,6 +15,7 @@ export const tokenGuard = xMiddleware(
   {
     functionName: 'tokenGuard',
     type: 'x-guard',
+    errors: [401],
     security: [{ oauth2: [] }],
     provides: ['actor'],
     name: 'token',

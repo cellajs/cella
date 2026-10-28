@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { AccessScope, AccessScopedEntityType, ConfigSwitch, EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
+import type { ErrorCode } from '#/schemas/error-response-schemas';
 
 type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
 
@@ -36,10 +37,12 @@ export type SecurityRequirement = Record<string, string[]>;
 /** Request context one guard sets for the guards after it: who acts, a signed-in user's session (`userGuard` only), the tenant. */
 export type GuardContext = 'actor' | 'session' | 'tenant';
 
-/** A middleware marked by `setMiddlewareExtension`: its extension type and, for a guard, what it accepts, sets and reads. */
+/** A middleware marked by `setMiddlewareExtension`: its extension type, the statuses it refuses with and, for a guard, what it accepts, sets and reads. */
 export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __extensionType: ExtensionType;
   __description?: string;
+  /** The error statuses this middleware answers with; `createXRoute` documents them on every route that lists it. */
+  __errors?: readonly ErrorCode[];
   /** For guards: the security schemes the route accepts, emitted per operation; `[]` means public. */
   __security?: SecurityRequirement[];
   /** For guards: the context this guard sets. */

@@ -247,10 +247,17 @@ export type NotFoundError = ApiError & {
 };
 
 /**
- * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.
+ * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
  */
 export type ConflictError = ApiError & {
   status?: 409;
+};
+
+/**
+ * The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.
+ */
+export type PayloadTooLargeError = ApiError & {
+  status?: 413;
 };
 
 /**
@@ -732,35 +739,6 @@ export type GetAuthHealthData = {
   url: '/auth/health';
 };
 
-export type GetAuthHealthErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAuthHealthError = GetAuthHealthErrors[keyof GetAuthHealthErrors];
-
 export type GetAuthHealthResponses = {
   /**
    * Auth health status
@@ -795,21 +773,9 @@ export type CheckEmailErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Payload too large: the request body exceeds its limit.
    */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -838,29 +804,9 @@ export type GetPendingMfaData = {
 
 export type GetPendingMfaErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
@@ -934,18 +880,6 @@ export type GetTokenDataErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -1036,10 +970,6 @@ export type ConfirmInvitationAddressErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
@@ -1091,13 +1021,9 @@ export type StartImpersonationErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
+  413: PayloadTooLargeError;
 };
 
 export type StartImpersonationError = StartImpersonationErrors[keyof StartImpersonationErrors];
@@ -1120,29 +1046,9 @@ export type StopImpersonationData = {
 
 export type StopImpersonationErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type StopImpersonationError = StopImpersonationErrors[keyof StopImpersonationErrors];
@@ -1171,21 +1077,9 @@ export type ResendInvitationWithTokenErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Payload too large: the request body exceeds its limit.
    */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1212,29 +1106,9 @@ export type SignOutData = {
 
 export type SignOutErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type SignOutError = SignOutErrors[keyof SignOutErrors];
@@ -1264,21 +1138,13 @@ export type SendMagicLinkErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1312,18 +1178,6 @@ export type GetPendingMagicLinkErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -1400,10 +1254,6 @@ export type GenerateTotpKeyErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
@@ -1448,14 +1298,6 @@ export type DeleteTotpErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -1495,13 +1337,13 @@ export type CreateTotpErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1544,9 +1386,9 @@ export type SignInWithTotpErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1602,13 +1444,13 @@ export type CreatePasskeyErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1658,14 +1500,6 @@ export type DeletePasskeyErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -1701,17 +1535,13 @@ export type GeneratePasskeyChallengeErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1772,9 +1602,9 @@ export type SignInWithPasskeyErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -1813,14 +1643,6 @@ export type StartOAuthConnectErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -1856,22 +1678,6 @@ export type GithubErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GithubError = GithubErrors[keyof GithubErrors];
@@ -1895,22 +1701,6 @@ export type GoogleErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GoogleError = GoogleErrors[keyof GoogleErrors];
@@ -1934,22 +1724,6 @@ export type MicrosoftErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type MicrosoftError = MicrosoftErrors[keyof MicrosoftErrors];
@@ -2095,25 +1869,9 @@ export type GetSsoEntryErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetSsoEntryError = GetSsoEntryErrors[keyof GetSsoEntryErrors];
@@ -2156,14 +1914,6 @@ export type StartSsoErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type StartSsoError = StartSsoErrors[keyof StartSsoErrors];
@@ -2190,21 +1940,9 @@ export type StartSsoFederationErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type StartSsoFederationError = StartSsoFederationErrors[keyof StartSsoFederationErrors];
@@ -2272,14 +2010,6 @@ export type SendSsoRecoveryLinkErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -2319,22 +2049,6 @@ export type GetStepUpErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetStepUpError = GetStepUpErrors[keyof GetStepUpErrors];
@@ -2398,9 +2112,9 @@ export type StepUpErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -2438,14 +2152,6 @@ export type GetStepUpPasskeyChallengeErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -2486,14 +2192,6 @@ export type SendStepUpCodeErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -2537,13 +2235,13 @@ export type CheckSlugErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Slug is taken
    */
-  404: NotFoundError;
+  409: unknown;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -2577,18 +2275,6 @@ export type GetAppStreamErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -2649,17 +2335,9 @@ export type PostAppCatchupErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Payload too large: the request body exceeds its limit.
    */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -2764,10 +2442,6 @@ export type DeleteMeErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
@@ -2797,29 +2471,9 @@ export type GetMeData = {
 
 export type GetMeErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -2863,17 +2517,13 @@ export type UpdateMeErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -2914,13 +2564,9 @@ export type ToggleMfaErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -2947,29 +2593,9 @@ export type GetMyAuthData = {
 
 export type GetMyAuthErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
@@ -2992,29 +2618,9 @@ export type GetMyInvitationsData = {
 
 export type GetMyInvitationsErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitationsErrors];
@@ -3057,13 +2663,9 @@ export type RevokeMySessionsErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -3136,10 +2738,6 @@ export type DeleteMyMembershipErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
@@ -3192,10 +2790,6 @@ export type GetUploadTokenErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -3221,29 +2815,9 @@ export type GetMyMembershipsData = {
 
 export type GetMyMembershipsErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMyMembershipsError = GetMyMembershipsErrors[keyof GetMyMembershipsErrors];
@@ -3268,29 +2842,9 @@ export type GetConnectedAppsData = {
 
 export type GetConnectedAppsErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetConnectedAppsError = GetConnectedAppsErrors[keyof GetConnectedAppsErrors];
@@ -3325,17 +2879,9 @@ export type RevokeConnectedAppErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -3377,26 +2923,6 @@ export type GetPublicCountsErrors = {
    * Bad request: problem processing request.
    */
   400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetPublicCountsError = GetPublicCountsErrors[keyof GetPublicCountsErrors];
@@ -3439,18 +2965,6 @@ export type GetNotificationsErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -3510,21 +3024,9 @@ export type MarkNotificationsReadErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Payload too large: the request body exceeds its limit.
    */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
+  413: PayloadTooLargeError;
 };
 
 export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkNotificationsReadErrors];
@@ -3549,29 +3051,9 @@ export type GetNotificationPreferencesData = {
 
 export type GetNotificationPreferencesErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetNotificationPreferencesError = GetNotificationPreferencesErrors[keyof GetNotificationPreferencesErrors];
@@ -3610,21 +3092,9 @@ export type UpdateNotificationPreferencesErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Payload too large: the request body exceeds its limit.
    */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
+  413: PayloadTooLargeError;
 };
 
 export type UpdateNotificationPreferencesError = UpdateNotificationPreferencesErrors[keyof UpdateNotificationPreferencesErrors];
@@ -3659,22 +3129,6 @@ export type OpenUnsubscribeLinkErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -3703,17 +3157,9 @@ export type UnsubscribeNotificationsErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -3752,17 +3198,9 @@ export type ResubscribeNotificationsErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -3789,29 +3227,9 @@ export type GetPushVapidData = {
 
 export type GetPushVapidErrors = {
   /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetPushVapidError = GetPushVapidErrors[keyof GetPushVapidErrors];
@@ -3845,22 +3263,6 @@ export type DeletePushSubscriptionErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type DeletePushSubscriptionError = DeletePushSubscriptionErrors[keyof DeletePushSubscriptionErrors];
@@ -3900,21 +3302,9 @@ export type CreatePushSubscriptionErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Payload too large: the request body exceeds its limit.
    */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
+  413: PayloadTooLargeError;
 };
 
 export type CreatePushSubscriptionError = CreatePushSubscriptionErrors[keyof CreatePushSubscriptionErrors];
@@ -3954,13 +3344,9 @@ export type DeleteRequestsErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4016,18 +3402,6 @@ export type GetRequestsErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
@@ -4061,21 +3435,9 @@ export type CreateRequestErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Payload too large: the request body exceeds its limit.
    */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4109,18 +3471,6 @@ export type GetUnseenCountsErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -4165,13 +3515,9 @@ export type SystemInviteErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4232,6 +3578,10 @@ export type DeleteUsersErrors = {
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4301,6 +3651,10 @@ export type UpdateUserErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -4345,13 +3699,9 @@ export type SendNewsletterErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4399,18 +3749,6 @@ export type GetTenantsErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
@@ -4446,17 +3784,9 @@ export type SelfCreateTenantErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Payload too large: the request body exceeds its limit.
    */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4527,9 +3857,9 @@ export type UpdateTenantErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4569,18 +3899,6 @@ export type GetConnectionsErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetConnectionsError = GetConnectionsErrors[keyof GetConnectionsErrors];
@@ -4637,13 +3955,13 @@ export type CreateConnectionErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -4688,10 +4006,6 @@ export type DeleteConnectionErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -4757,6 +4071,10 @@ export type UpdateConnectionErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -4800,18 +4118,6 @@ export type GetUsersErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
@@ -4865,14 +4171,6 @@ export type GetUserErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetUserError = GetUserErrors[keyof GetUserErrors];
@@ -4904,25 +4202,9 @@ export type GetApiProtectedResourceMetadataErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetApiProtectedResourceMetadataError = GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
@@ -4961,13 +4243,9 @@ export type DeleteOrganizationsErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Payload too large: the request body exceeds its limit.
    */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5028,13 +4306,13 @@ export type CreateOrganizationsErrors = {
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5124,18 +4402,6 @@ export type GetOrganizationsErrors = {
    * Forbidden: insufficient permissions.
    */
   403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
@@ -5182,14 +4448,6 @@ export type GetOrganizationErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
@@ -5267,6 +4525,10 @@ export type UpdateOrganizationErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -5310,10 +4572,6 @@ export type PublishOrganizationErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -5371,9 +4629,9 @@ export type DeleteAttachmentsErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5446,10 +4704,6 @@ export type GetAttachmentsErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -5518,9 +4772,9 @@ export type CreateAttachmentsErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5599,9 +4853,9 @@ export type GetPresignedUrlsErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5663,14 +4917,6 @@ export type GetAttachmentErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
@@ -5719,9 +4965,9 @@ export type UpdateAttachmentErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5780,6 +5026,10 @@ export type LinkAttachmentKeysErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -5812,25 +5062,9 @@ export type GetMcpProtectedResourceMetadataErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMcpProtectedResourceMetadataError = GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
@@ -5864,17 +5098,25 @@ export type HandleMcpErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names
    */
-  403: ForbiddenError;
+  403: {
+    jsonrpc: '2.0';
+    id: string | number | null;
+    error: {
+      code: number;
+      message: string;
+      data?: unknown;
+    };
+  };
   /**
    * Not found: resource does not exist.
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5926,6 +5168,10 @@ export type DeleteMembershipsErrors = {
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -5993,6 +5239,10 @@ export type MembershipInviteErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -6057,9 +5307,9 @@ export type CheckMembershipInviteErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -6117,6 +5367,10 @@ export type UpdateMembershipErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -6167,10 +5421,6 @@ export type HandleMembershipInvitationErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
   /**
    * Not found: resource does not exist.
    */
@@ -6234,14 +5484,6 @@ export type GetMembersErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetMembersError = GetMembersErrors[keyof GetMembersErrors];
@@ -6324,14 +5566,6 @@ export type GetPendingMembershipsErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetPendingMembershipsError = GetPendingMembershipsErrors[keyof GetPendingMembershipsErrors];
@@ -6387,10 +5621,6 @@ export type ResendPendingInvitationErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -6435,10 +5665,6 @@ export type WithdrawPendingInvitationErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -6493,9 +5719,9 @@ export type MarkSeenErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -6549,14 +5775,6 @@ export type GetServiceAccountsErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetServiceAccountsError = GetServiceAccountsErrors[keyof GetServiceAccountsErrors];
@@ -6609,9 +5827,9 @@ export type CreateServiceAccountErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -6672,9 +5890,9 @@ export type UpdateServiceAccountErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -6720,14 +5938,6 @@ export type GetApiKeysErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
 };
 
 export type GetApiKeysError = GetApiKeysErrors[keyof GetApiKeysErrors];
@@ -6778,9 +5988,9 @@ export type CreateApiKeyErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -6833,10 +6043,6 @@ export type RevokeApiKeyErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -6883,10 +6089,6 @@ export type GetYjsTokenErrors = {
    * Not found: resource does not exist.
    */
   404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
   /**
    * Rate limit: too many requests.
    */
@@ -6941,9 +6143,9 @@ export type PullYjsDocumentErrors = {
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Payload too large: the request body exceeds its limit.
    */
-  409: ConflictError;
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */
@@ -7016,6 +6218,10 @@ export type PushYjsUpdateErrors = {
    * Conflict: resource state conflict.
    */
   409: ConflictError;
+  /**
+   * Payload too large: the request body exceeds its limit.
+   */
+  413: PayloadTooLargeError;
   /**
    * Rate limit: too many requests.
    */

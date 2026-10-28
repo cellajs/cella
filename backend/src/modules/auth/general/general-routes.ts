@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -28,7 +28,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Start impersonating',
     description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { body: jsonBody(z.object({ targetUserId: validIdSchema })) },
-    responses: { 204: { description: 'Impersonating', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
+    responses: { 204: { description: 'Impersonating', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(404) },
   }),
   stopImpersonation: xRoute({
     method: 'post',
@@ -58,7 +58,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Get pending MFA challenge',
     description:
       'For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.',
-    responses: { 200: json('The address of the account the held challenge signs in to', z.object({ email: z.string() })) },
+    responses: { 200: json('The address of the account the held challenge signs in to', z.object({ email: z.string() })), ...errors(401) },
   }),
   invokeToken: xRoute({
     method: 'get',
@@ -70,7 +70,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.',
     request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string() }) },
-    responses: { 302: { description: 'Redirect with token session', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect with token session', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   getTokenData: xRoute({
     method: 'get',
@@ -82,7 +82,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.',
     request: { params: z.object({ type: z.enum(linkTokenTypes), id: validIdSchema }) },
-    responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()) },
+    responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()), ...errors(401) },
   }),
   acceptInvitationToken: xRoute({
     method: 'post',
@@ -93,7 +93,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Accept invitation token as current user',
     description:
       'Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.',
-    responses: { 200: json('Invitation was accepted', channelBaseSchema) },
+    responses: { 200: json('Invitation was accepted', channelBaseSchema), ...errors(403, 404, 409) },
   }),
   confirmInvitationAddress: xRoute({
     method: 'post',
@@ -104,7 +104,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Confirm the invited address',
     description:
       'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.',
-    responses: { 204: { description: 'Confirmation link sent to the invited address' } },
+    responses: { 204: { description: 'Confirmation link sent to the invited address' }, ...errors(404, 409) },
   }),
   resendInvitationWithToken: xRoute({
     method: 'post',
@@ -123,7 +123,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Sign out',
     description: 'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.',
-    responses: { 204: { description: 'User signed out' } },
+    responses: { 204: { description: 'User signed out' }, ...errors(401) },
   }),
 });
 

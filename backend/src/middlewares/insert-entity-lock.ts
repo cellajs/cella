@@ -12,6 +12,7 @@ export const insertEntityLock = xMiddleware(
   {
     functionName: 'insertEntityLock',
     type: 'x-rate-limiter',
+    errors: [409],
     name: 'insertEntityLock',
     description: 'Creates per tenant: 1 at a time',
   },

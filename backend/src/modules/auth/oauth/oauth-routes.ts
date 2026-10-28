@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, xRoute } from '#/core/x-routes';
 import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
@@ -26,7 +26,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     request: { query: oauthQuerySchema },
-    responses: { 302: { description: 'Redirect to GitHub', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to GitHub', headers: locationSchema }, ...errors(401) },
   }),
   githubCallback: xRoute({
     method: 'get',
@@ -37,7 +37,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
-    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   google: xRoute({
     method: 'get',
@@ -48,7 +48,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     request: { query: oauthQuerySchema },
-    responses: { 302: { description: 'Redirect to Google', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to Google', headers: locationSchema }, ...errors(401) },
   }),
   googleCallback: xRoute({
     method: 'get',
@@ -59,7 +59,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Callback for Google',
     description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
-    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   microsoft: xRoute({
     method: 'get',
@@ -70,7 +70,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
     request: { query: oauthQuerySchema },
-    responses: { 302: { description: 'Redirect to Microsoft', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to Microsoft', headers: locationSchema }, ...errors(401) },
   }),
   microsoftCallback: xRoute({
     method: 'get',
@@ -81,7 +81,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Callback for Microsoft',
     description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
-    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
 });
 

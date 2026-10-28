@@ -6,10 +6,10 @@ import type { ErrorCode } from '#/schemas/error-response-schemas';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 /**
- * The statuses an `AppError` carries: a documented error code, 410 (the Yjs relay's internal route: the entity is gone),
- * 413 or a server error.
+ * The statuses an `AppError` carries: a documented error code, 410 (the Yjs relay's internal route: the entity is gone)
+ * or a server error.
  */
-export type AppErrorStatus = ErrorCode | 410 | 413 | 500 | 503;
+export type AppErrorStatus = ErrorCode | 410 | 500 | 503;
 type ErrorMeta = NonNullable<ErrorSchemaType['meta']> & {
   errorPagePath?: string;
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */

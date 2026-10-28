@@ -16,7 +16,7 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     description:
       'Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants. Primarily used to prevent slug collisions before creating or updating an entity.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(checkSlugBodySchema) },
-    responses: { 204: { description: 'Slug is available' } },
+    responses: { 204: { description: 'Slug is available' }, 409: { description: 'Slug is taken' } },
   }),
 
   appStream: xRoute({

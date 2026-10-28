@@ -102,7 +102,6 @@ import type {
   GetAttachmentsErrors,
   GetAttachmentsResponses,
   GetAuthHealthData,
-  GetAuthHealthErrors,
   GetAuthHealthResponses,
   GetConnectedAppsData,
   GetConnectedAppsErrors,
@@ -470,12 +469,12 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * **GET /auth/health** ·· [getAuthHealth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/health) ·· _auth · cella_
  *
  * @param {getAuthHealthData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200
  */
 export const getAuthHealth = <ThrowOnError extends boolean = true>(
   options?: Options<GetAuthHealthData, ThrowOnError>,
-): RequestResult<GetAuthHealthResponses, GetAuthHealthErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetAuthHealthResponses, GetAuthHealthErrors, ThrowOnError, 'data'>({
+): RequestResult<GetAuthHealthResponses, unknown, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetAuthHealthResponses, unknown, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetAuthHealthResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/health',
@@ -491,7 +490,7 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 413, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(
   options: Options<CheckEmailData, ThrowOnError>,
@@ -515,7 +514,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
  * **GET /auth/mfa/pending** ·· [getPendingMfa](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/mfa/pending) ·· _auth · cella_
  *
  * @param {getPendingMfaData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getPendingMfa = <ThrowOnError extends boolean = true>(
   options?: Options<GetPendingMfaData, ThrowOnError>,
@@ -558,7 +557,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
  * @param {getTokenDataData} options
  * @param {enum} options.path.type - `enum`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getTokenData = <ThrowOnError extends boolean = true>(
   options: Options<GetTokenDataData, ThrowOnError>,
@@ -598,7 +597,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
  * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
  *
  * @param {confirmInvitationAddressData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 404, 409, 429
  */
 export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
   options?: Options<ConfirmInvitationAddressData, ThrowOnError>,
@@ -619,7 +618,7 @@ export const confirmInvitationAddress = <ThrowOnError extends boolean = true>(
  *
  * @param {startImpersonationData} options
  * @param {string=} options.body.targetUserId - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(
   options: Options<StartImpersonationData, ThrowOnError>,
@@ -643,7 +642,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
  * **POST /auth/impersonation/stop** ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/impersonation/stop) ·· _auth · cella_
  *
  * @param {stopImpersonationData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 401
  */
 export const stopImpersonation = <ThrowOnError extends boolean = true>(
   options?: Options<StopImpersonationData, ThrowOnError>,
@@ -664,7 +663,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
  *
  * @param {resendInvitationWithTokenData} options
  * @param {string=} options.body.tokenId - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 413, 429
  */
 export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
   options: Options<ResendInvitationWithTokenData, ThrowOnError>,
@@ -688,7 +687,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· _auth · cella_
  *
  * @param {signOutData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 401
  */
 export const signOut = <ThrowOnError extends boolean = true>(
   options?: Options<SignOutData, ThrowOnError>,
@@ -710,7 +709,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  * @param {sendMagicLinkData} options
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.redirect - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 403, 413, 429
  */
 export const sendMagicLink = <ThrowOnError extends boolean = true>(
   options: Options<SendMagicLinkData, ThrowOnError>,
@@ -734,7 +733,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
  * **GET /auth/magic/pending** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/magic/pending) ·· _auth · cella_
  *
  * @param {getPendingMagicLinkData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
   options?: Options<GetPendingMagicLinkData, ThrowOnError>,
@@ -773,7 +772,7 @@ export const confirmMagicLink = <ThrowOnError extends boolean = true>(
  * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp/generate-key) ·· _auth · cella_
  *
  * @param {generateTotpKeyData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 429
  */
 export const generateTotpKey = <ThrowOnError extends boolean = true>(
   options?: Options<GenerateTotpKeyData, ThrowOnError>,
@@ -793,7 +792,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
  * **DELETE /auth/totp** ·· [deleteTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/totp) ·· _auth · cella_
  *
  * @param {deleteTotpData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 429
  */
 export const deleteTotp = <ThrowOnError extends boolean = true>(
   options?: Options<DeleteTotpData, ThrowOnError>,
@@ -814,7 +813,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
  */
 export const createTotp = <ThrowOnError extends boolean = true>(
   options: Options<CreateTotpData, ThrowOnError>,
@@ -838,7 +837,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(
   options: Options<SignInWithTotpData, ThrowOnError>,
@@ -864,7 +863,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  * @param {createPasskeyData} options
  * @param {object} options.body.attestation - `object`
  * @param {string=} options.body.nameOnDevice - `string` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(
   options: Options<CreatePasskeyData, ThrowOnError>,
@@ -889,7 +888,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 429
  */
 export const deletePasskey = <ThrowOnError extends boolean = true>(
   options: Options<DeletePasskeyData, ThrowOnError>,
@@ -910,7 +909,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum=} options.body.type - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 404, 413, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
   options: Options<GeneratePasskeyChallengeData, ThrowOnError>,
@@ -936,7 +935,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
  * @param {enum=} options.body.type - `enum` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(
   options: Options<SignInWithPasskeyData, ThrowOnError>,
@@ -960,7 +959,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
  * **POST /auth/oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/oauth-connect) ·· _auth · cella_
  *
  * @param {startOAuthConnectData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 429
  */
 export const startOAuthConnect = <ThrowOnError extends boolean = true>(
   options?: Options<StartOAuthConnectData, ThrowOnError>,
@@ -982,7 +981,7 @@ export const startOAuthConnect = <ThrowOnError extends boolean = true>(
  * @param {githubData} options
  * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 401
  */
 export const github = <ThrowOnError extends boolean = true>(
   options?: Options<GithubData, ThrowOnError>,
@@ -1003,7 +1002,7 @@ export const github = <ThrowOnError extends boolean = true>(
  * @param {googleData} options
  * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 401
  */
 export const google = <ThrowOnError extends boolean = true>(
   options?: Options<GoogleData, ThrowOnError>,
@@ -1024,7 +1023,7 @@ export const google = <ThrowOnError extends boolean = true>(
  * @param {microsoftData} options
  * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 401
  */
 export const microsoft = <ThrowOnError extends boolean = true>(
   options?: Options<MicrosoftData, ThrowOnError>,
@@ -1116,7 +1115,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
  *
  * @param {getSsoEntryData} options
  * @param {string} options.path.connectionId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 404
  */
 export const getSsoEntry = <ThrowOnError extends boolean = true>(
   options: Options<GetSsoEntryData, ThrowOnError>,
@@ -1139,7 +1138,7 @@ export const getSsoEntry = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.connectionId - `string`
  * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 401, 403, 404
  */
 export const startSso = <ThrowOnError extends boolean = true>(
   options: Options<StartSsoData, ThrowOnError>,
@@ -1161,7 +1160,7 @@ export const startSso = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.federation - `string`
  * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 401, 404
  */
 export const startSsoFederation = <ThrowOnError extends boolean = true>(
   options: Options<StartSsoFederationData, ThrowOnError>,
@@ -1204,7 +1203,7 @@ export const ssoCallback = <ThrowOnError extends boolean = true>(
  * **POST /auth/sso/recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sso/recovery-link) ·· _auth · cella_
  *
  * @param {sendSsoRecoveryLinkData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
   options?: Options<SendSsoRecoveryLinkData, ThrowOnError>,
@@ -1225,7 +1224,7 @@ export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
  *
  * @param {getStepUpData} options
  * @param {enum=} options.query.tier - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401
  */
 export const getStepUp = <ThrowOnError extends boolean = true>(
   options?: Options<GetStepUpData, ThrowOnError>,
@@ -1248,7 +1247,7 @@ export const getStepUp = <ThrowOnError extends boolean = true>(
  * @param {object} options.body.passkeyData - `object`
  * @param {string=} options.body.totpCode - `string` (optional)
  * @param {string=} options.body.emailCode - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
  */
 export const stepUp = <ThrowOnError extends boolean = true>(
   options: Options<StepUpData, ThrowOnError>,
@@ -1272,7 +1271,7 @@ export const stepUp = <ThrowOnError extends boolean = true>(
  * **POST /auth/step-up/passkey-challenge** ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/passkey-challenge) ·· _auth · cella_
  *
  * @param {getStepUpPasskeyChallengeData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
   options?: Options<GetStepUpPasskeyChallengeData, ThrowOnError>,
@@ -1292,7 +1291,7 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
  * **POST /auth/step-up/code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/code) ·· _auth · cella_
  *
  * @param {sendStepUpCodeData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 429
  */
 export const sendStepUpCode = <ThrowOnError extends boolean = true>(
   options?: Options<SendStepUpCodeData, ThrowOnError>,
@@ -1315,7 +1314,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string=} options.body.slug - `string` (optional)
  * @param {enum=} options.body.entityType - `enum` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 409, 413, 429
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(
   options: Options<CheckSlugData, ThrowOnError>,
@@ -1339,7 +1338,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
  * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· _entities · cella_
  *
  * @param {getAppStreamData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getAppStream = <ThrowOnError extends boolean = true>(
   options?: Options<GetAppStreamData, ThrowOnError, unknown>,
@@ -1360,7 +1359,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
  * @param {any[]=} options.body.views - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 413, 429
  */
 export const postAppCatchup = <ThrowOnError extends boolean = true>(
   options: Options<PostAppCatchupData, ThrowOnError>,
@@ -1384,7 +1383,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
  * **DELETE /me** ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me) ·· _me · cella_
  *
  * @param {deleteMeData} options
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 409, 429
  */
 export const deleteMe = <ThrowOnError extends boolean = true>(
   options?: Options<DeleteMeData, ThrowOnError>,
@@ -1404,7 +1403,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
  * **GET /me** ·· [getMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me) ·· _me · cella_
  *
  * @param {getMeData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getMe = <ThrowOnError extends boolean = true>(
   options?: Options<GetMeData, ThrowOnError>,
@@ -1434,7 +1433,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
  * @param {object=} options.body.userFlags - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 409, 413, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(
   options: Options<UpdateMeData, ThrowOnError>,
@@ -1459,7 +1458,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
  *
  * @param {toggleMfaData} options
  * @param {boolean=} options.body.mfaRequired - `boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const toggleMfa = <ThrowOnError extends boolean = true>(
   options: Options<ToggleMfaData, ThrowOnError>,
@@ -1483,7 +1482,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
  * **GET /me/auth** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· _me · cella_
  *
  * @param {getMyAuthData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getMyAuth = <ThrowOnError extends boolean = true>(
   options?: Options<GetMyAuthData, ThrowOnError>,
@@ -1503,7 +1502,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  * **GET /me/invitations** ·· [getMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
  *
  * @param {getMyInvitationsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getMyInvitations = <ThrowOnError extends boolean = true>(
   options?: Options<GetMyInvitationsData, ThrowOnError>,
@@ -1524,7 +1523,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
  *
  * @param {revokeMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const revokeMySessions = <ThrowOnError extends boolean = true>(
   options: Options<RevokeMySessionsData, ThrowOnError>,
@@ -1550,7 +1549,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
  * @param {deleteMyMembershipData} options
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 404, 409, 429
  */
 export const deleteMyMembership = <ThrowOnError extends boolean = true>(
   options: Options<DeleteMyMembershipData, ThrowOnError>,
@@ -1572,7 +1571,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
  * @param {getUploadTokenData} options
  * @param {string=} options.query.organizationId - `string` (optional)
  * @param {enum} options.query.templateId - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUploadToken = <ThrowOnError extends boolean = true>(
   options: Options<GetUploadTokenData, ThrowOnError>,
@@ -1592,7 +1591,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
  * **GET /me/memberships** ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· _me · cella_
  *
  * @param {getMyMembershipsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getMyMemberships = <ThrowOnError extends boolean = true>(
   options?: Options<GetMyMembershipsData, ThrowOnError>,
@@ -1612,7 +1611,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
  * **GET /me/connected-apps** ·· [getConnectedApps](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/connected-apps) ·· _me · cella_
  *
  * @param {getConnectedAppsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getConnectedApps = <ThrowOnError extends boolean = true>(
   options?: Options<GetConnectedAppsData, ThrowOnError>,
@@ -1633,7 +1632,7 @@ export const getConnectedApps = <ThrowOnError extends boolean = true>(
  *
  * @param {revokeConnectedAppData} options
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 404, 429
  */
 export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
   options: Options<RevokeConnectedAppData, ThrowOnError>,
@@ -1653,7 +1652,7 @@ export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
  * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· _metrics · cella_
  *
  * @param {getPublicCountsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400
  */
 export const getPublicCounts = <ThrowOnError extends boolean = true>(
   options?: Options<GetPublicCountsData, ThrowOnError>,
@@ -1676,7 +1675,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  * @param {enum | boolean=} options.query.unread - `enum | boolean` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string=} options.query.before - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getNotifications = <ThrowOnError extends boolean = true>(
   options?: Options<GetNotificationsData, ThrowOnError>,
@@ -1698,7 +1697,7 @@ export const getNotifications = <ThrowOnError extends boolean = true>(
  * @param {markNotificationsReadData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @param {string=} options.body.contextId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 413
  */
 export const markNotificationsRead = <ThrowOnError extends boolean = true>(
   options: Options<MarkNotificationsReadData, ThrowOnError>,
@@ -1722,7 +1721,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
  * **GET /notifications/preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/preferences) ·· _notifications · cella_
  *
  * @param {getNotificationPreferencesData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
   options?: Options<GetNotificationPreferencesData, ThrowOnError>,
@@ -1745,7 +1744,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
  * @param {boolean=} options.body.commentEmail - `boolean` (optional)
  * @param {enum=} options.body.digest - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 413
  */
 export const updateNotificationPreferences = <ThrowOnError extends boolean = true>(
   options: Options<UpdateNotificationPreferencesData, ThrowOnError>,
@@ -1772,7 +1771,7 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 302, 400, 429
  */
 export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
   options: Options<OpenUnsubscribeLinkData, ThrowOnError>,
@@ -1794,7 +1793,7 @@ export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 404, 429
  */
 export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<UnsubscribeNotificationsData, ThrowOnError>,
@@ -1817,7 +1816,7 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 404, 429
  */
 export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<ResubscribeNotificationsData, ThrowOnError>,
@@ -1837,7 +1836,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push · cella_
  *
  * @param {getPushVapidData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 401
  */
 export const getPushVapid = <ThrowOnError extends boolean = true>(
   options?: Options<GetPushVapidData, ThrowOnError>,
@@ -1858,7 +1857,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  *
  * @param {deletePushSubscriptionData} options
  * @param {string} options.query.endpoint - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401
  */
 export const deletePushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<DeletePushSubscriptionData, ThrowOnError>,
@@ -1881,7 +1880,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.endpoint - `string` (optional)
  * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 413
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,
@@ -1906,7 +1905,7 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(
   options: Options<DeleteRequestsData, ThrowOnError>,
@@ -1935,7 +1934,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {integer=} options.query.offset - `integer` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403
  */
 export const getRequests = <ThrowOnError extends boolean = true>(
   options?: Options<GetRequestsData, ThrowOnError>,
@@ -1958,7 +1957,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.email - `string` (optional)
  * @param {enum=} options.body.type - `enum` (optional)
  * @param {string | null=} options.body.message - `string | null` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 413, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(
   options: Options<CreateRequestData, ThrowOnError>,
@@ -1982,7 +1981,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
  * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· _seen · cella_
  *
  * @param {getUnseenCountsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getUnseenCounts = <ThrowOnError extends boolean = true>(
   options?: Options<GetUnseenCountsData, ThrowOnError>,
@@ -2003,7 +2002,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  *
  * @param {systemInviteData} options
  * @param {any[]=} options.body.emails - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const systemInvite = <ThrowOnError extends boolean = true>(
   options: Options<SystemInviteData, ThrowOnError>,
@@ -2028,7 +2027,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
  *
  * @param {deleteUsersData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const deleteUsers = <ThrowOnError extends boolean = true>(
   options: Options<DeleteUsersData, ThrowOnError>,
@@ -2061,7 +2060,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.newsletter - `boolean` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const updateUser = <ThrowOnError extends boolean = true>(
   options: Options<UpdateUserData, ThrowOnError>,
@@ -2090,7 +2089,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  * @param {any[]=} options.body.roles - `any[]` (optional)
  * @param {string=} options.body.subject - `string` (optional)
  * @param {string=} options.body.content - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 413, 429
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(
   options: Options<SendNewsletterData, ThrowOnError>,
@@ -2120,7 +2119,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.offset - `integer` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {enum=} options.query.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403
  */
 export const getTenants = <ThrowOnError extends boolean = true>(
   options?: Options<GetTenantsData, ThrowOnError>,
@@ -2141,7 +2140,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
  *
  * @param {selfCreateTenantData} options
  * @param {string=} options.body.name - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 413, 429
  */
 export const selfCreateTenant = <ThrowOnError extends boolean = true>(
   options: Options<SelfCreateTenantData, ThrowOnError>,
@@ -2173,7 +2172,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
  * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
  * @param {any[]=} options.body.authStrategies - `any[]` (optional)
  * @param {object=} options.body.restrictions - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const updateTenant = <ThrowOnError extends boolean = true>(
   options: Options<UpdateTenantData, ThrowOnError>,
@@ -2198,7 +2197,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
  *
  * @param {getConnectionsData} options
  * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403
  */
 export const getConnections = <ThrowOnError extends boolean = true>(
   options: Options<GetConnectionsData, ThrowOnError>,
@@ -2226,7 +2225,7 @@ export const getConnections = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
  * @param {string=} options.body.logoUrl - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 429
  */
 export const createConnection = <ThrowOnError extends boolean = true>(
   options: Options<CreateConnectionData, ThrowOnError>,
@@ -2252,7 +2251,7 @@ export const createConnection = <ThrowOnError extends boolean = true>(
  * @param {deleteConnectionData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteConnection = <ThrowOnError extends boolean = true>(
   options: Options<DeleteConnectionData, ThrowOnError>,
@@ -2280,7 +2279,7 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
  * @param {string=} options.body.logoUrl - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const updateConnection = <ThrowOnError extends boolean = true>(
   options: Options<UpdateConnectionData, ThrowOnError>,
@@ -2310,7 +2309,7 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.offset - `integer` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403
  */
 export const getUsers = <ThrowOnError extends boolean = true>(
   options?: Options<GetUsersData, ThrowOnError>,
@@ -2333,7 +2332,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.relatableUserId - `string`
  * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getUser = <ThrowOnError extends boolean = true>(
   options: Options<GetUserData, ThrowOnError>,
@@ -2354,7 +2353,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
  *
  * @param {getApiProtectedResourceMetadataData} options
  * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 404
  */
 export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
   options: Options<GetApiProtectedResourceMetadataData, ThrowOnError>,
@@ -2376,7 +2375,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
  * @param {deleteOrganizationsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const deleteOrganizations = <ThrowOnError extends boolean = true>(
   options: Options<DeleteOrganizationsData, ThrowOnError>,
@@ -2401,7 +2400,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
  *
  * @param {createOrganizationsData} options
  * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
  */
 export const createOrganizations = <ThrowOnError extends boolean = true>(
   options: Options<CreateOrganizationsData, ThrowOnError>,
@@ -2434,7 +2433,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(
   options?: Options<GetOrganizationsData, ThrowOnError>,
@@ -2458,7 +2457,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.id - `string`
  * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(
   options: Options<GetOrganizationData, ThrowOnError>,
@@ -2498,7 +2497,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {object=} options.body.organizationFlags - `object` (optional)
  * @param {object=} options.body.setupConfig - `object` (optional)
  * @param {object=} options.body.toolsConfig - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(
   options: Options<UpdateOrganizationData, ThrowOnError>,
@@ -2524,7 +2523,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  * @param {publishOrganizationData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const publishOrganization = <ThrowOnError extends boolean = true>(
   options: Options<PublishOrganizationData, ThrowOnError>,
@@ -2548,7 +2547,7 @@ export const publishOrganization = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @param {object} options.body.stx - `object`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(
   options: Options<DeleteAttachmentsData, ThrowOnError>,
@@ -2582,7 +2581,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.afterSeq - `integer` (optional)
  * @param {integer=} options.query.untilSeq - `integer` (optional)
  * @param {string=} options.query.channelId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(
   options: Options<GetAttachmentsData, ThrowOnError>,
@@ -2604,7 +2603,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  * @param {createAttachmentsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 413, 429
  */
 export const createAttachments = <ThrowOnError extends boolean = true>(
   options: Options<CreateAttachmentsData, ThrowOnError>,
@@ -2631,7 +2630,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {any[]=} options.body.items - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const getPresignedUrls = <ThrowOnError extends boolean = true>(
   options: Options<GetPresignedUrlsData, ThrowOnError>,
@@ -2658,7 +2657,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(
   options: Options<GetAttachmentData, ThrowOnError>,
@@ -2683,7 +2682,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.id - `string`
  * @param {object=} options.body.ops - `object` (optional)
  * @param {any=} options.body.stx - `any` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(
   options: Options<UpdateAttachmentData, ThrowOnError>,
@@ -2712,7 +2711,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.id - `string`
  * @param {object} options.body.keys - `object`
  * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
   options: Options<LinkAttachmentKeysData, ThrowOnError>,
@@ -2738,7 +2737,7 @@ export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
  * @param {getMcpProtectedResourceMetadataData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 404
  */
 export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
   options: Options<GetMcpProtectedResourceMetadataData, ThrowOnError>,
@@ -2760,7 +2759,7 @@ export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = t
  * @param {handleMcpData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const handleMcp = <ThrowOnError extends boolean = true>(
   options: Options<HandleMcpData, ThrowOnError>,
@@ -2788,7 +2787,7 @@ export const handleMcp = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
  * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const deleteMemberships = <ThrowOnError extends boolean = true>(
   options: Options<DeleteMembershipsData, ThrowOnError>,
@@ -2818,7 +2817,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
  * @param {enum} options.query.entityType - `enum`
  * @param {any[]=} options.body.emails - `any[]` (optional)
  * @param {enum=} options.body.role - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const membershipInvite = <ThrowOnError extends boolean = true>(
   options: Options<MembershipInviteData, ThrowOnError>,
@@ -2847,7 +2846,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
  * @param {any[]=} options.body.emails - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
   options: Options<CheckMembershipInviteData, ThrowOnError>,
@@ -2878,7 +2877,7 @@ export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
  * @param {boolean=} options.body.archived - `boolean` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const updateMembership = <ThrowOnError extends boolean = true>(
   options: Options<UpdateMembershipData, ThrowOnError>,
@@ -2904,7 +2903,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
  * @param {enum} options.path.acceptOrReject - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 404, 409, 429
  */
 export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
   options: Options<HandleMembershipInvitationData, ThrowOnError>,
@@ -2936,7 +2935,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @param {string=} options.query.userIds - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getMembers = <ThrowOnError extends boolean = true>(
   options: Options<GetMembersData, ThrowOnError>,
@@ -2965,7 +2964,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getPendingMemberships = <ThrowOnError extends boolean = true>(
   options: Options<GetPendingMembershipsData, ThrowOnError>,
@@ -2988,7 +2987,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
   options: Options<ResendPendingInvitationData, ThrowOnError>,
@@ -3011,7 +3010,7 @@ export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const withdrawPendingInvitation = <ThrowOnError extends boolean = true>(
   options: Options<WithdrawPendingInvitationData, ThrowOnError>,
@@ -3035,7 +3034,7 @@ export const withdrawPendingInvitation = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {any[]=} options.body.entityIds - `any[]` (optional)
  * @param {enum=} options.body.entityType - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const markSeen = <ThrowOnError extends boolean = true>(
   options: Options<MarkSeenData, ThrowOnError>,
@@ -3064,7 +3063,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {integer=} options.query.offset - `integer` (optional)
  * @param {integer=} options.query.limit - `integer` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getServiceAccounts = <ThrowOnError extends boolean = true>(
   options: Options<GetServiceAccountsData, ThrowOnError>,
@@ -3089,7 +3088,7 @@ export const getServiceAccounts = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.role - `enum` (optional)
  * @param {object} options.body.key - `object`
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
  */
 export const createServiceAccount = <ThrowOnError extends boolean = true>(
   options: Options<CreateServiceAccountData, ThrowOnError>,
@@ -3118,7 +3117,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.id - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const updateServiceAccount = <ThrowOnError extends boolean = true>(
   options: Options<UpdateServiceAccountData, ThrowOnError>,
@@ -3145,7 +3144,7 @@ export const updateServiceAccount = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404
  */
 export const getApiKeys = <ThrowOnError extends boolean = true>(
   options: Options<GetApiKeysData, ThrowOnError>,
@@ -3173,7 +3172,7 @@ export const getApiKeys = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.expiresAt - `string` (optional)
  * @param {string=} options.body.rollFrom - `string` (optional)
  * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
  */
 export const createApiKey = <ThrowOnError extends boolean = true>(
   options: Options<CreateApiKeyData, ThrowOnError>,
@@ -3201,7 +3200,7 @@ export const createApiKey = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.id - `string`
  * @param {string} options.path.keyId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const revokeApiKey = <ThrowOnError extends boolean = true>(
   options: Options<RevokeApiKeyData, ThrowOnError>,
@@ -3225,7 +3224,7 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {enum} options.query.entityType - `enum`
  * @param {string} options.query.entityId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getYjsToken = <ThrowOnError extends boolean = true>(
   options: Options<GetYjsTokenData, ThrowOnError>,
@@ -3250,7 +3249,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.entityType - `enum` (optional)
  * @param {string=} options.body.entityId - `string` (optional)
  * @param {string=} options.body.stateVector - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
  */
 export const pullYjsDocument = <ThrowOnError extends boolean = true>(
   options: Options<PullYjsDocumentData, ThrowOnError>,
@@ -3280,7 +3279,7 @@ export const pullYjsDocument = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.entityId - `string` (optional)
  * @param {string=} options.body.generation - `string` (optional)
  * @param {string=} options.body.update - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
 export const pushYjsUpdate = <ThrowOnError extends boolean = true>(
   options: Options<PushYjsUpdateData, ThrowOnError>,

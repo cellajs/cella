@@ -62,6 +62,16 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
               </div>
             </AccordionTrigger>
             <AccordionContent>
+              {response.headers && (
+                <dl className="flex flex-wrap gap-x-4 gap-y-1 px-3 pt-2 text-sm">
+                  {response.headers.map((header) => (
+                    <div key={header.name}>
+                      <dt className="inline font-mono text-foreground-soft">{header.name}</dt>
+                      <dd className="inline text-muted-foreground"> {header.description}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
               {schema ? (
                 <ViewerGroup
                   schema={schema}

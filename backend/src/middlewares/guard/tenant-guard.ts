@@ -31,6 +31,7 @@ export const tenantGuard = xMiddleware(
   {
     functionName: 'tenantGuard',
     type: 'x-guard',
+    errors: [403],
     requires: ['actor'],
     provides: ['tenant'],
     name: 'tenant',
