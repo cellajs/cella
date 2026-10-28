@@ -703,7 +703,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
 /**
  * Send magic link
  *
- * Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.
+ * Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.
  *
  * **POST /auth/magic/send** ·· [sendMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/send) ·· _auth · cella_
  *
@@ -1307,8 +1307,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
 /**
  * Check slug availability
  *
- * Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants.
- * Primarily used to prevent slug collisions before creating or updating an entity.
+ * Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants. Primarily used to prevent slug collisions before creating or updating an entity.
  *
  * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· _entities · cella_
  *
@@ -1649,7 +1648,7 @@ export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
 /**
  * Get public counts
  *
- * Returns basic count metrics for entity types such as users and organizations. This endpoint is public and uses a 1 minute in memory cache for performance.
+ * Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.
  *
  * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· _metrics · cella_
  *
@@ -1978,7 +1977,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
 /**
  * Get unseen counts
  *
- * Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.
+ * Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.
  *
  * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· _seen · cella_
  *
@@ -2136,7 +2135,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.
+ * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.
  *
  * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· _tenants · cella_
  *
@@ -2433,7 +2432,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string=} options.query.relatableUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum=} options.query.excludeArchived - `enum` (optional)
+ * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -2598,7 +2597,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Create attachments
  *
- * Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.
+ * Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.
  *
  * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
  *

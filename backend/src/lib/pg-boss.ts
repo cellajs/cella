@@ -1,6 +1,6 @@
 import { type ConstructorOptions, PgBoss } from 'pg-boss';
 import { appConfig } from 'shared';
-import { resolvePostgresSslCa, stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
+import { resolvePostgresSslCa, verifiedPostgresConnection } from 'shared/utils/postgres-tls';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 
@@ -30,8 +30,7 @@ const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'produc
 export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOptions> = {}): ConstructorOptions {
   const url = overrides.connectionString ?? env.DATABASE_URL;
   return {
-    connectionString: stripPostgresSslParams(url),
-    ssl: verifiedPostgresSsl(url, sslCa),
+    ...verifiedPostgresConnection(url, sslCa),
     application_name: `${appConfig.slug}-jobs-${role}`,
     schema: jobsSchema,
     max: poolMax[role],

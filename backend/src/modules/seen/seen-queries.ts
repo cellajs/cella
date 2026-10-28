@@ -1,8 +1,9 @@
-import { and, count, getColumns, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type SeenTrackedProductType, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
+import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { seenByTable } from '#/modules/seen/seen-by-db';
@@ -41,7 +42,6 @@ export const findUnseenCountsByUser = async (
   for (const productType of productTypes) {
     const entityTable = getEntityTable(productType);
     const orgTable = entityTable as OrgScopedEntityTable;
-    const columns = getColumns(entityTable) as Record<string, PgColumn | undefined>;
 
     const channelIdColumn = homeChannelIdSql(productType, entityTable);
 
@@ -49,7 +49,7 @@ export const findUnseenCountsByUser = async (
       inArray(channelIdColumn, channelIds),
       gt(seenRecencySql(orgTable), cutoff),
       sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.productId} = ${orgTable.id})`,
-      columns.deletedAt ? isNull(columns.deletedAt) : undefined,
+      hasDeletedAt(entityTable) ? isNull(entityTable.deletedAt) : undefined,
       // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.
       publishedRowsPredicate(entityTable),
       scopeWhereByType?.[productType],
@@ -73,24 +73,22 @@ interface FindSeenCandidatesOpts {
   where: SQL[];
 }
 
-/** The rows of `productType` the filters admit, each with its home channel. */
+/** The ids of the rows of `productType` the filters admit. */
 export const findSeenCandidates = async (ctx: DbContext, { productType, where }: FindSeenCandidatesOpts) => {
   const table = getEntityTable(productType) as OrgScopedEntityTable;
   // The entity table is resolved at runtime, so its id column reads as unknown; every entity id is a string.
   const rows = await ctx.var.db
-    .select({ id: table.id, channelId: homeChannelIdSql(productType, table) })
+    .select({ id: table.id })
     .from(table)
     .where(and(...where));
-  return rows as { id: string; channelId: string }[];
+  return rows.map(({ id }) => id as string);
 };
 
 interface InsertSeenByOpts {
   userId: string;
   productType: SeenTrackedProductType;
-  organizationId: string;
-  tenantId: string;
-  /** The rows the user saw, each with its home channel. */
-  rows: { productId: string; channelId: string }[];
+  /** The rows the user saw. */
+  productIds: string[];
 }
 
 /**
@@ -99,26 +97,23 @@ interface InsertSeenByOpts {
  * transaction-scoped lock on the user makes two marks of one user (two tabs, a beacon beside the timer flush) wait for
  * each other: the second one sees the first one's rows and counts nothing twice. Runs in the caller's transaction.
  */
-export const insertSeenBy = async (ctx: DbContext, { userId, productType, organizationId, tenantId, rows }: InsertSeenByOpts) => {
+export const insertSeenBy = async (ctx: DbContext, { userId, productType, productIds }: InsertSeenByOpts) => {
   const { db } = ctx.var;
   // Its own statement: the insert below must take its snapshot after the lock is granted.
   await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`seen_by:${userId}`}, 0))`);
 
   const values = sql.join(
-    rows.map(
-      ({ productId, channelId }) =>
-        sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, ${channelId}::uuid, ${organizationId}::uuid, ${tenantId}, now())`,
-    ),
+    productIds.map((productId) => sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, now())`),
     sql`, `,
   );
 
   const result = await db.execute<{ new_count: number }>(sql`
-    WITH candidate (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at) AS (
+    WITH candidate (id, user_id, product_id, product_type, created_at) AS (
       VALUES ${values}
     ),
     inserted AS (
-      INSERT INTO seen_by (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at)
-      SELECT c.id, c.user_id, c.product_id, c.product_type, c.channel_id, c.organization_id, c.tenant_id, c.created_at
+      INSERT INTO seen_by (id, user_id, product_id, product_type, created_at)
+      SELECT c.id, c.user_id, c.product_id, c.product_type, c.created_at
       FROM candidate c
       WHERE NOT EXISTS (
         SELECT 1 FROM seen_by sb WHERE sb.user_id = c.user_id AND sb.product_id = c.product_id

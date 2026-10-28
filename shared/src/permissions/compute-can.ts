@@ -72,9 +72,9 @@ const eitherState = (a: CanState, b: CanState): CanState => {
  * type outside the chain is left out.
  */
 export const computeCan = (
+  policies: PolicyMatrix,
   channelType: ChannelEntityType,
   grants: CanGrant | readonly CanGrant[] | undefined | null,
-  policies: PolicyMatrix,
   overrides?: HierarchyOverrides,
 ): EntityCanMap => {
   if (!grants) return {};

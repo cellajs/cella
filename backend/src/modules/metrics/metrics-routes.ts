@@ -12,7 +12,7 @@ const metricRoutes = createXRoutes(['metrics', 'cella'], {
     middleware: isNoBot,
     summary: 'Get public counts',
     description:
-      'Returns basic count metrics for entity types such as users and organizations. This endpoint is public and uses a 1 minute in memory cache for performance.',
+      'Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.',
     responses: { 200: json('Public counts', publicCountsSchema, mockPublicCountsResponse()) },
   }),
 });

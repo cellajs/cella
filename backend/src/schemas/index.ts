@@ -6,7 +6,6 @@ export {
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,
-  excludeArchivedQuerySchema,
   /** @public */
   fullResponseQuerySchema,
   type IncludeOption,
@@ -42,7 +41,6 @@ export {
 } from '#/schemas/common-schemas';
 export { membershipCountSchema } from '#/schemas/count-schemas';
 export { errorResponseRefs } from '#/schemas/error-response-schemas';
-export { mapEntitiesToSchema } from '#/schemas/map-entities-to-schema';
 export { minimalBaseSchema } from '#/schemas/minimal-base';
 export {
   type AppCatchupResponse,

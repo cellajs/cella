@@ -124,7 +124,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
   },
   scwAiApiKey: {
     secretName: 'scw-ai-api-key',
-    description: 'Scaleway AI API key for the MCP worker',
+    description: "Scaleway AI API key for the app's own AI features; the MCP endpoint never needs it",
     envVar: 'SCW_AI_API_KEY',
     required: false,
     valueSource: 'operator',

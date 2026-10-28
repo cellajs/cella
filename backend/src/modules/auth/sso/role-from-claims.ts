@@ -3,7 +3,7 @@ import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
 import type { ConnectionModel } from '#/modules/connections/connections-db';
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
 
-/** What an institution sign-in hands the role seam. */
+/** What an institution sign-in hands `roleFromClaims`. */
 export interface SsoRoleFacts {
   /** The federation's config key, which is also the identity's issuer. */
   federation: string;
@@ -14,9 +14,9 @@ export interface SsoRoleFacts {
 }
 
 /**
- * The role of the membership an institution sign-in grants in the connection's organization. This file is the role
- * seam (pinned; apps own their fill): an app maps what the institution asserts, such as `eduperson_affiliation`, to
- * its own organization roles. The default is the least-privileged role.
+ * The role of the membership an institution sign-in grants in the connection's organization. The app fills this
+ * pinned file: it maps what the institution asserts, such as `eduperson_affiliation`, to its own organization roles.
+ * The default is the least-privileged role.
  *
  * Consulted once, when the membership is created: on a first sign-in, or when a user connects their institution
  * account and holds no membership there yet. Later sign-ins never change a role, and an invitation to the

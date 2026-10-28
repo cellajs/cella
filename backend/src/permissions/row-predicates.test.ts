@@ -270,7 +270,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       // Frontend vs engine per membership and in-scope row; both omit system-admin and public grants, as `computeCan` models one membership.
       // The map reads the app's `elevatedGrants`, so the engine gets the same set here.
       for (const m of scenario.memberships) {
-        const canMap = computeCan(m.channelType as ChannelEntityType, m, scenario.policies);
+        const canMap = computeCan(scenario.policies, m.channelType as ChannelEntityType, m);
         const state = canMap.attachment?.read ?? false;
         const rowsInScope = m.channelType === root ? parityRows : parityRows.filter((r) => r.homeChannelId === m.channelId);
 

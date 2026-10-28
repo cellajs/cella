@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
 
 /**

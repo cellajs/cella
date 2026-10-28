@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { federationKeys } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -8,8 +8,6 @@ import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
 import { validDomainSchema, validNameSchema, validUrlSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
-
-const federationKeys = Object.keys(appConfig.federations);
 
 /** A federation key of this app's config; the enum is listed when the app declares any. */
 const federationKeySchema = z

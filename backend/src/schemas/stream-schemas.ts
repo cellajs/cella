@@ -5,11 +5,11 @@ import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
 const propagationHintSchema = z.object({
-  embeddedProduct: z.enum(appConfig.productEntityTypes).describe('Product type whose change triggered the propagation (e.g. label)'),
-  hostProduct: z.enum(appConfig.productEntityTypes).describe('Host product type whose cache should be patched (e.g. task)'),
-  hostColumn: z.string().describe('Column on the host product that embeds the changed product (e.g. labels)'),
-  update: z.array(z.string()).describe('Host product IDs that need cache refresh'),
-  remove: z.array(z.string()).describe('Host product IDs that need the embedded reference removed'),
+  embeddedProduct: z.enum(appConfig.productEntityTypes).describe('Embedded product type whose change triggered the propagation'),
+  hostProduct: z.enum(appConfig.productEntityTypes).describe('Host product type whose cache should be patched'),
+  hostColumn: z.string().describe('Column on the host product that embeds the changed product'),
+  update: z.array(z.string()).describe('Embedded row IDs whose cached copies in host rows need a refresh'),
+  remove: z.array(z.string()).describe('Embedded row IDs (deleted or soft deleted) that host rows drop'),
 });
 
 /** Clients fetch the changed rows separately. */
@@ -24,7 +24,7 @@ export const streamChangeSchema = z
     tenantId: z.string().nullable(),
     path: z.string().nullable().describe('Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
     seq: z.number().int().nullable().describe('Org-sequence position (one order per organization, shared across product entity types)'),
-    channelId: z.string().nullable().describe('Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
+    channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
     stx: nullableStxBaseSchema,
     batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched change: client should fetch range'),
     count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),

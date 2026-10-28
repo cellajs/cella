@@ -464,8 +464,8 @@ const rlsSuiteReady = await (async () => {
       const seenId = '00000000-0000-4000-a000-0000000000a1';
       // `seen_by` is partitioned by `created_at`, so no unique arbiter on `(user_id, product_id)`.
       await adminDb.execute(sql`
-        INSERT INTO seen_by (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at)
-        VALUES (${seenId}, ${TEST_USER_A}, ${trackedFixture.rowId}, ${trackedType}, ${trackedFixture.homeChannelId}, ${TEST_ORG_A}, ${TEST_TENANT_A}, NOW())
+        INSERT INTO seen_by (id, user_id, product_id, product_type, created_at)
+        VALUES (${seenId}, ${TEST_USER_A}, ${trackedFixture.rowId}, ${trackedType}, NOW())
       `);
       try {
         const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);

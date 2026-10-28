@@ -6,7 +6,7 @@ import { makeDeepHierarchy } from '../../testing/deep-fixture.ts';
  * rule is proven on the deep fixture. `course` stays non-nullable here so possibleHomeChannels
  * can prove its first-non-nullable boundary.
  */
-describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
+describe('the deepest non-null ancestor rule of EntityHierarchy', () => {
   const h = makeDeepHierarchy(['project', 'courseSection']);
 
   const fullDepthRow = { id: 'i1', projectId: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1' };

@@ -1,11 +1,14 @@
-import { and, count, countDistinct, eq, inArray, isNull, notExists, notInArray, or } from 'drizzle-orm';
-import type { EntityRole } from 'shared';
+import { and, count, countDistinct, eq, getColumns, inArray, isNotNull, isNull, notExists, notInArray, or } from 'drizzle-orm';
+import { appConfig, type EntityRole, hierarchy } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { channelBaseSchema } from '#/schemas/entity-base';
+import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 
 interface CountPendingInactiveMembershipSeatsOpts {
   organizationId: string;
@@ -326,4 +329,38 @@ export const updateInactiveMemberships = async (ctx: DbContext, { ids, values }:
 /** Stamps an inactive membership rejected now. */
 export const stampInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
+};
+
+interface FindPendingInactiveMembershipsByUserOpts {
+  userId: string;
+}
+
+/** The user's open invitations: inactive memberships not rejected, each with its channel's base columns. */
+export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { userId }: FindPendingInactiveMembershipsByUserOpts) => {
+  const { db } = ctx.var;
+  const results = await Promise.all(
+    appConfig.channelEntityTypes.map((channelType) => {
+      const channelTable = getEntityTable(channelType);
+      const cols = getColumns(channelTable);
+      const channelBaseSelect = pick(cols, channelBaseSchema.keyof().options);
+      const prepareRoles = hierarchy.getPrepareRoles(channelType);
+
+      return db
+        .select({ entity: channelBaseSelect, inactiveMembership: inactiveMembershipsTable })
+        .from(inactiveMembershipsTable)
+        .innerJoin(channelTable, eq(channelTable.id, inactiveMembershipsTable.channelId))
+        .where(
+          and(
+            eq(inactiveMembershipsTable.channelType, channelType),
+            eq(inactiveMembershipsTable.userId, userId),
+            isNull(inactiveMembershipsTable.rejectedAt),
+            // An invitation to an unpublished channel stays hidden until it is published, except one for a prepare role:
+            // its email went out at once, so the invitee must be able to answer it.
+            or(isNotNull(cols.publishedAt), prepareRoles.length ? inArray(inactiveMembershipsTable.role, prepareRoles) : undefined),
+          ),
+        );
+    }),
+  );
+
+  return results.flat();
 };

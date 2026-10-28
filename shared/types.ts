@@ -24,6 +24,9 @@ export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[numb
 /** A federation in `appConfig.federations`: a session strategy, an identities issuer slug and an env prefix. */
 export type FederationKey = keyof typeof appConfig.federations & string;
 
+/** Every {@link FederationKey}, in config order. */
+export const federationKeys = Object.keys(appConfig.federations) as FederationKey[];
+
 export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 
 export type Language = (typeof appConfig.languages)[number];

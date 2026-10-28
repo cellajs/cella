@@ -1056,9 +1056,6 @@ importers:
       pino-pretty:
         specifier: ^13.2.0
         version: 13.2.0
-      tsx:
-        specifier: ^4.23.15
-        version: 4.23.15
       typescript:
         specifier: 6.0.3
         version: 6.0.3

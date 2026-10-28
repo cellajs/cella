@@ -61,7 +61,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
   if (!reissued) return false;
 
   // Replies reach the inviter, as on the first invitation; without one it reads as a system invite.
-  const sender = (oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined) ?? { name: 'System' };
+  const sender = oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined;
   const { invitation, tokenId, rawToken } = reissued;
   const invited = [{ email, userId: oldToken.userId, rawToken }];
 

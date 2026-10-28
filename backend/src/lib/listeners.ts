@@ -107,8 +107,7 @@ export function serveInternal(
 ): { server: ServerType; close: () => void } {
   const server = serve({ fetch: internalApp.fetch, hostname, port }, onListening);
   // An upgrade is the CDC worker's, or nothing: the exact raw path, the source policy, then the worker's own secret.
-  // ServerType is broader than the HTTP/1 server that emits 'upgrade'.
-  (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+  server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const peer = request.socket.remoteAddress;
     if (!isCdcUpgradePath(request.url)) return refuseUpgrade(socket, 404);
     const sourceRefusal = internalSourceRefusal(peer);

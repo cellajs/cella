@@ -25,7 +25,7 @@ import { idInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from
  * All routes are user-only: creating and managing machine actors is a human act. Each operation first checks that the
  * caller may update the organization.
  */
-export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
+const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
   createServiceAccount: xRoute({
     method: 'post',
     path: '/',
@@ -92,3 +92,5 @@ export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'],
     responses: { 200: json('API key was revoked', apiKeySchema) },
   }),
 });
+
+export { serviceAccountRoutes };

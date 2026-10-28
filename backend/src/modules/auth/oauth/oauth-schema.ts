@@ -1,11 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { appConfig, type FederationKey } from 'shared';
+import { federationKeys } from 'shared';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
 import type { Env } from '#/core/context';
 
 const oauthProviderIds = ['github', 'google', 'microsoft'] as const satisfies readonly BaseOAuthProviders[];
-const federationKeys = Object.keys(appConfig.federations) as FederationKey[];
 
 const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
 

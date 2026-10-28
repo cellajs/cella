@@ -1,6 +1,6 @@
 import process from 'node:process';
 import pg from 'pg';
-import { resolvePostgresSslCa, stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
+import { resolvePostgresSslCa, verifiedPostgresConnection } from 'shared/utils/postgres-tls';
 import { createPgConnection, type Tx, transactionOpenedWith } from '#/db/create-connection';
 import { tenantTransactionOpening } from '#/db/tenant-transaction-opening';
 import { env } from '../env';
@@ -39,8 +39,7 @@ export const listenerApplicationName = `yjs-log-listener:${process.pid}`;
  */
 export function createListenerClient(): pg.Client {
   return new pg.Client({
-    connectionString: stripPostgresSslParams(env.DATABASE_URL),
-    ssl: verifiedPostgresSsl(env.DATABASE_URL, sslCa),
+    ...verifiedPostgresConnection(env.DATABASE_URL, sslCa),
     connectionTimeoutMillis: 10_000,
     keepAlive: true,
     keepAliveInitialDelayMillis: 30_000,

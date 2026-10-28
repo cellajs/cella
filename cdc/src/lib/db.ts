@@ -1,13 +1,10 @@
-import { resolvePostgresSslCa, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
+import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { createPgConnection, type DB } from '#/db/create-connection';
 import { resourceLimits } from '../constants';
 import { env } from '../env';
 
 // Production requires the Pulumi-provisioned database CA and verified TLS.
-const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production');
-
-/** The verified TLS options for a connection to `connectionString`, with the database CA: the replication connection's. */
-export const buildVerifiedSsl = (connectionString: string) => verifiedPostgresSsl(connectionString, sslCa);
+export const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production');
 
 /** What a statement runs through: the worker's pool or one of its transactions. Only `execute`, so a test can pass a stand-in. */
 export type Executor = Pick<DB, 'execute'>;

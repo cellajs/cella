@@ -71,9 +71,11 @@ export const proseRules: ProseRule[] = [
   },
   {
     name: 'materialization-jargon',
-    pattern: /\bmateriali[sz](?:e|ed|es|ing|ation|ations)\b/i,
+    // The Yjs operation is the word's one use: a comment that names Yjs, the relay or a collaborative document passes.
+    pattern: /(?<!\b(?:yjs|relay|collaborative)\b[\s\S]*)\bmateriali[sz](?:e|ed|es|ing|ation|ations)\b(?![\s\S]*\b(?:yjs|relay|collaborative)\b)/i,
     level: 'review',
     message: 'use a concrete verb unless this names the formal Yjs operation',
+    exclude: /yjs/i,
   },
   {
     name: 'load-bearing',
@@ -103,9 +105,11 @@ export const proseRules: ProseRule[] = [
   },
   {
     name: 'surface-as-verb',
-    pattern: /\b(?:surface|surfaces|surfaced)\b/i,
+    // The noun names a placement surface (`appConfig.surfaces`): a bare form counts as a verb only after a modal, a
+    // negation or an adverb.
+    pattern: /\bsurfac(?:ed|ing)\b|(?<=\b(?:to|will|would|can|could|may|might|must|should|shall|not|never|still|also|\w+ly)\s+)surfaces?\b/i,
     ...agentWording,
-    message: 'when used as a verb, prefer report, show, return, or expose',
+    message: 'prefer report, show, return, or expose',
   },
   {
     name: 'wiring-metaphor',

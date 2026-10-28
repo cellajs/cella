@@ -51,7 +51,10 @@ vi.mock('ws', async () => {
 
 vi.mock('../lib/db', () => ({ cdcDb: { execute: vi.fn(async () => ({ rows: [] })) } }));
 // The real monitor measures this test process, which is busy at times.
-vi.mock('shared/utils/event-loop-monitor', () => ({ getEventLoopLagMs: () => 0 }));
+vi.mock('shared/utils/event-loop-monitor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared/utils/event-loop-monitor')>()),
+  getEventLoopLagMs: () => 0,
+}));
 
 const latest = () => sockets.at(-1) as FakeSocket;
 

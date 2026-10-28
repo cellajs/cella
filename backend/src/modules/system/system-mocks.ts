@@ -1,15 +1,6 @@
-import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
-import type { SystemRoleModel } from '#/modules/system/system-roles-db';
+import { mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockSystemRoleBase = (key = 'system-role:base') =>
   withFakerSeed(key, () => ({ id: mockUuid(), userId: mockUuid(), role: 'admin' as const }));
-
-/** @public */
-export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleModel =>
-  withFakerSeed(key, () => {
-    const createdAt = mockPastIsoDate();
-
-    return { id: mockUuid(), userId: mockUuid(), role: 'admin' as const, createdAt, updatedAt: createdAt };
-  });
 
 export const mockSystemInviteResponse = () => ({ data: [], rejectedIds: [], invitesSentCount: 2 });

@@ -4,8 +4,8 @@ import { tenantRead } from '#/db/tenant-context';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembersPaginated } from '#/modules/memberships/memberships-queries';
 import type { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
+import { getValidChannel } from '#/permissions';
 import { administeredOrganizationIds } from '#/permissions/administered-organizations';
-import { getValidChannel } from '#/permissions/get-valid-channel';
 
 type GetMembersInput = z.infer<typeof memberListQuerySchema>;
 

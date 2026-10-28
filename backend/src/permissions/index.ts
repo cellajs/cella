@@ -1,2 +1,2 @@
-export { checkAccess, checkAccessBatch, checkAccessFanout } from './check-access';
-export { getValidChannel } from './get-valid-channel';
+export { checkAccess, checkAccessBatch, checkAccessFanout } from '#/permissions/check-access';
+export { getValidChannel } from '#/permissions/get-valid-channel';

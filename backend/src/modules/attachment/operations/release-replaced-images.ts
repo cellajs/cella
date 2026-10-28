@@ -44,7 +44,9 @@ export async function releaseReplacedImages({ holder, before, after }: ReleaseRe
   try {
     const [images, attachments] = await Promise.all([
       findNamedImageKeys({ var: { db: baseDb } }, { keys, holder }),
-      'tenantId' in holder ? tenantReadById(holder.tenantId, (db) => findLiveAttachmentKeys({ var: { db } }, { keys })) : new Set<string>(),
+      'tenantId' in holder
+        ? tenantReadById(holder.tenantId, (db) => findLiveAttachmentKeys({ var: { db } }, { tenantId: holder.tenantId, keys }))
+        : new Set<string>(),
     ]);
     const released = keys.filter((key) => !images.has(key) && !attachments.has(key));
     if (released.length > 0) await deleteStoredObjects(appConfig.s3.publicBucket, released);

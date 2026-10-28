@@ -5,14 +5,19 @@ import { nanoid } from 'nanoid';
 const suffix = () => nanoid(6).toLowerCase();
 
 import { getAuthHealth, getMyAuth, getOrganization, getTokenData, sendMagicLink } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { ssoRequiredEmail } from '../../emails';
 import { defaultHeaders, memberRole } from '../fixtures';
 import {
+  authCookie,
   createOrganizationAdminUser,
   createSystemAdminUser,
   createTestOrganization,
@@ -20,6 +25,7 @@ import {
   createUser,
   expectRefusal,
   linkIdentity,
+  mailsTo,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { insertImpersonation, insertSession } from '../security/session-helpers';
@@ -113,14 +119,25 @@ describe("the tenant's sign-in policy", async () => {
     expect(unpoliced.response.status).toBe(200);
   });
 
-  it('refuses a magic link to an address the institution proved while the tenant excludes magic links', async () => {
+  it('mails no magic link to an address the institution proved while the tenant excludes magic links', async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
     const email = `l.jansen-${suffix()}@hu.nl`;
     const user = await createUser(email);
     await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
     await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, email));
 
-    const refused = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
+    // Any browser gets the answer every address gets: the inbox learns where to sign in.
+    expect((await call(sendMagicLink, { body: { email }, headers: defaultHeaders })).response.status).toBe(204);
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.userId, user.id))).toHaveLength(0);
+    expect(mailsTo(email)).toMatchObject([
+      { template: ssoRequiredEmail, statics: { institution: 'Hogeschool Utrecht', entryUrl: `${appConfig.frontendUrl}/auth/sso/${connection.id}` } },
+    ]);
+
+    // A browser that signed in to the account knows it exists, and is told directly.
+    const deviceId = nanoid(24);
+    await enrollDevice(user.id, deviceId);
+    const ownBrowser = { ...defaultHeaders, Cookie: authCookie('device-id', deviceId, 400 * 24 * 60 * 60) };
+    const refused = await call(sendMagicLink, { body: { email }, headers: ownBrowser });
     await expectRefusal(refused, 403, 'sso_required');
     expect((refused.error as { meta?: Record<string, unknown> })?.meta).toMatchObject({ connectionId: connection.id });
 

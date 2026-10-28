@@ -41,7 +41,7 @@ interface MaterializeDescriptionResult {
  * from the entity row: a row missing from the named tenant is gone (410, so the relay deletes the document's rows),
  * and another organization is refused (403). The write is credited to the newest editor who may still update the
  * entity, through the entity's materializer, which runs the normal update operation and its permission check. When
- * no editor may, the write is refused (403) and the relay keeps the edits. A server-origin row of the document's log
+ * no editor may, or the tenant is suspended or archived, the write is refused (403) and the relay keeps the edits. A server-origin row of the document's log
  * outside `serverRowIds` is an outside write committed after the relay read its window: the write is refused (409), so
  * it never overwrites that write, and the relay retries with a window that holds it.
  */
@@ -76,6 +76,10 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
   ]);
   // The entity row's foreign keys hold both, so a miss is a tenant removed since that read.
   if (!tenant || !organization) throw gone();
+  // As `tenantGuard` refuses every request to a tenant that is not active; the relay keeps the edits and retries.
+  if (tenant.status !== 'active') {
+    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { resource: 'tenant', tenantStatus: tenant.status } });
+  }
 
   for (const editorId of input.editors) {
     const user = users.find((candidate) => candidate.id === editorId);

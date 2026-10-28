@@ -81,7 +81,7 @@ jobs:
       - name: Run style checks (terminology / docs / comments / frontend)
         run: pnpm style
 
-      - name: Run lens checks (append-only / collision / purity / wire completeness)
+      - name: Run lens checks (append-only / collision / expand-before-contract / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
       # knip loads the vitest configs, which read DB_TEST_PORT from backend/.env

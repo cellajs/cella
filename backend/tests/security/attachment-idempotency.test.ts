@@ -200,7 +200,8 @@ describe('Idempotent attachment creates', async () => {
   it('refuses a create past the tenant quota with 403 restrict_by_app, and still answers a replay of rows it wrote', async () => {
     const body = bodyFor(generateId(), generateId());
     expect((await create(owner, body)).status).toBe(201);
-    await limitAttachments(1);
+    // The stored row counts before the CDC worker (absent here) has counted it: 1 stored and 2 more pass a quota of 2.
+    await limitAttachments(2);
 
     const overQuota = await call(createAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },

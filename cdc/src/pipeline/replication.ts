@@ -1,11 +1,11 @@
 import { sql } from 'drizzle-orm';
 import { LogicalReplicationService, type Pgoutput, type PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
-import { stripPostgresSslParams } from 'shared/utils/postgres-tls';
+import { verifiedPostgresConnection } from 'shared/utils/postgres-tls';
 import { findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
 import { cdcSlotName, resourceLimits } from '../constants';
 import { env } from '../env';
-import { buildVerifiedSsl, cdcDb } from '../lib/db';
+import { cdcDb, sslCa } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
 import { wsClient } from '../network/websocket-client';
@@ -18,16 +18,14 @@ import { ensureBooksStateRestored, readLostCaseFacts, rebuildAllowed, rebuildBoo
 
 const { reconnection, runtime, slotTakeover } = resourceLimits;
 
-/**
- * Strips the `sslmode=require&uselibpqcompat=true` params so the explicit, CA-verified `ssl` config
- * of {@link createReplicationService} applies and pg cannot downgrade to unverified libpq-compat.
- */
-function buildReplicationUrl(): URL {
-  const replicationUrl = new URL(stripPostgresSslParams(env.DATABASE_CDC_URL));
+/** The replication connection's string and verified TLS, matching the query connection's; the string asks for replication. */
+function replicationConnection() {
+  const { connectionString, ssl } = verifiedPostgresConnection(env.DATABASE_CDC_URL, sslCa);
+  const replicationUrl = new URL(connectionString);
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }
-  return replicationUrl;
+  return { connectionString: replicationUrl.toString(), ssl };
 }
 
 /**
@@ -35,13 +33,11 @@ function buildReplicationUrl(): URL {
  * timer that keeps Postgres from dropping a held stream. The loop makes a new one for every subscription.
  */
 export function createReplicationService(): LogicalReplicationService {
-  const connectionUrl = buildReplicationUrl();
   const service = new LogicalReplicationService(
     {
-      connectionString: connectionUrl.toString(),
+      // Certificate identity is pinned to the dialed host in production.
+      ...replicationConnection(),
       application_name: `${appConfig.slug}-cdc-worker`,
-      // Verified TLS, matching the query connection; certificate identity is pinned to the dialed host in production.
-      ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
       // A peer that is gone without a word is noticed by the probes, and the read fails like any other.
       keepAlive: true,
       keepAliveInitialDelayMillis: 30_000,
