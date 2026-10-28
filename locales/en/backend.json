@@ -40,6 +40,7 @@
   "email.author_email": "Message the author",
   "email.ending.ignore": "Not you? Ignore this email: nothing happens without this link.",
   "email.ending.invitation": "Not expecting this? Ignore this email: nothing happens unless you accept.",
+  "email.ending.no_change": "Not you? Ignore this email: nothing on your account changed.",
   "email.ending.no_forward": "Do not forward it: the link works for whoever opens it.",
   "email.ending.reply": "Not expecting this? Reply to this email to let us know.",
   "email.ending.reply_to_sender": "Reply to this email to reach {{senderName}} directly.",

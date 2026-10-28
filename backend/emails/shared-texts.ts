@@ -13,10 +13,10 @@ export const linkExpiresText = (lng: string, type: LinkTokenType) => {
 };
 
 /**
- * What a reader does when the mail was not their doing: `ignore` a link nothing happens without, `secure` an account
- * someone acted in, `reply` to say so. Translated HTML for the end of the body panel.
+ * What a reader does when the mail was not their doing: `ignore` a link nothing happens without, `no_change` a request
+ * that changed nothing, `secure` an account someone acted in, `reply` to say so. Translated HTML for the end of the body panel.
  */
-export const endingFor = (lng: string, kind: 'ignore' | 'secure' | 'reply') =>
+export const endingFor = (lng: string, kind: 'ignore' | 'no_change' | 'secure' | 'reply') =>
   i18n.t(`backend:email.ending.${kind}`, { lng, accountUrl: `${appConfig.frontendUrl}/account` });
 
 /**

@@ -28,7 +28,7 @@ export const ssoRequiredEmail = defineEmailTemplate<SsoRequiredStatic>()({
       bodyHtml: i18n.t('backend:email.sso_required.text', { lng, appName, institution }),
       buttonText: i18n.t('c:sign_in_with_institution', { lng, institution, ...plainText }),
       entryUrl,
-      endingHtml: endingFor(lng, 'ignore'),
+      endingHtml: endingFor(lng, 'no_change'),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
