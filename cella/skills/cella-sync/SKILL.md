@@ -36,17 +36,14 @@ advances one stage (steps 6 and 7).
    `upstream.commit` in `cella/cella.manifest.json`) and copy the `ignored`, `pinned` and
    `packageJsonSync` entries that fit the app, then commit. A path upstream newly ignores arrives
    as ordinary synced files otherwise.
-3. Once the first run has merged, `pnpm cella align` lists the alignments that arrived (the merge
-   already recorded them, conflicts or not). Read each one (`--show <id>`, which also reads an id
-   from the fetched upstream before the merge) BEFORE resolving conflicts; conflicts usually belong
-   to one of them.
+3. Once the first run has merged, read the alignments that arrived (`pnpm cella align`, steps 1 and 2
+   of the `align` skill) BEFORE resolving conflicts; conflicts usually belong to one of them.
 4. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
    contributions come back as conflicts where ours = theirs + app payload.
 
 ## 2. Conflict triage
 
-Resolve in this order. Pinned files are absent here on purpose: the CLI already restored them to the app
-copy, and their upstream hunks wait in the analyze list.
+Resolve in this order. Pinned files never conflict (see Vocabulary).
 
 | Conflict shape | Resolution |
 |---|---|
@@ -97,10 +94,8 @@ get the same range diff: app modules copied their patterns, and an alignment nam
 
 ## 5. Alignment bookkeeping
 
-Run the `align` skill; entries whose change originated here or arrived by an earlier sync are
-verified (README "Verify" steps) and marked, not re-applied. Handle the open alignments in the
-sync PR when you can; one left for later stays listed by `pnpm cella align` until it is marked.
-The skill ends with an outcome table in the sync PR description.
+Run the [align skill](../align/SKILL.md). An alignment whose change originated in this app or arrived
+by an earlier sync is verified and marked, not re-applied.
 
 ## 6. Commit, then drift triage
 
@@ -125,7 +120,7 @@ commit; `--json` lists `{ path, status }` per file). Follow-up triage commits ma
 | Fork axis shared by several files | Extension-point request: ask upstream for an empty stub file the fork fills and pins (setup-config / app-product-mocks pattern), then collapse the pins. |
 
 Target state per sync: `diverged 0`, `behind 0`, every `drifted` file has a designated action, and
-the pinned list did not grow except for documented scaffolding with an unwind condition.
+the pinned list did not grow except for documented temporary pins with an unwind condition.
 
 ## 7. Finish
 

@@ -30,12 +30,9 @@ sdk
 ## Generation lifecycle
 
 1. The backend writes `backend/openapi.cache.json`
-2. `generate-sdk.ts` runs `@hey-api/openapi-ts` with `openapi-ts.config.ts`
-3. Output lands in a temp folder and is diffed against `sdk/gen/`
-4. Only changed files are copied, which avoids needless HMR triggers
-5. A lock file prevents concurrent runs
-6. `src/.spec-hash` caches the spec hash so the watcher skips redundant runs on restart
-7. Vite serves `openapi.json` from `sdk/gen` under `/static`, plus `docs.gen/`, which `frontend/vite/sdk-static.ts` derives from it; a deploy first writes its environment's spec over `openapi.json`
+2. `generate-sdk.ts` runs `@hey-api/openapi-ts` with `openapi-ts.config.ts` into a temp folder
+3. Only files that differ from `sdk/gen/` are copied, which avoids needless HMR triggers
+4. Vite serves `openapi.json`, `types.gen.ts` and `zod.gen.ts` from `sdk/gen` under `/static`, plus `docs.gen/`, which [sdk-static.ts](../frontend/vite/sdk-static.ts) derives from the spec; a deploy first writes its environment's spec over `openapi.json`
 
 ## Exports
 

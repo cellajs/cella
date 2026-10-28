@@ -112,3 +112,8 @@ gh api -X PATCH repos/{owner}/{repo}/pulls/<number> -F body=@/tmp/body.md
 - **`syncBreaking: false`** alignments an in-sync app gets for free (compiler-enforced renames, no
   app-specific code involved) are still marked once `pnpm check` is green, so the list stays
   accurate.
+- **Before alignments.** An app whose last sync predates `cella/alignments/` reads the migration notes
+  that preceded them at the commit before they were removed:
+  ```sh
+  git show "$(git log -1 --format=%H --diff-filter=D cella-upstream/main -- cella/migrations)^:cella/migrations/<id>/README.md"
+  ```

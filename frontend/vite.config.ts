@@ -125,6 +125,8 @@ const repoDocRoutes = {
   'infra/README.md': '/docs/page/guides/deployment/infra-cli',
 } as const;
 
+const repoLinks = { repoRoot: path.resolve(import.meta.dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes };
+
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
 const devPort = Number(frontendUrl.port) || appConfig.devPorts.frontend;
 const isTunneled = frontendUrl.hostname !== 'localhost';
@@ -370,10 +372,7 @@ const viteConfig = {
           remarkGfm,
           remarkStripRepoDocH1,
           // Autolink inline code that names a real repo file to its GitHub blob URL.
-          [
-            remarkLinkRepoPaths,
-            { repoRoot: path.resolve(import.meta.dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes },
-          ],
+          [remarkLinkRepoPaths, repoLinks],
         ],
         // Generate GitHub-compatible heading slugs with the scroll-spy's DOM prefix.
         // Keep aligned with frontmatter heading extraction.
@@ -395,8 +394,8 @@ const viteConfig = {
       }),
     },
     // Build-time frontmatter index of docs pages (virtual:docs-frontmatter), so the
-    // docs sidebar/table metadata doesn't statically import the page bodies.
-    docsFrontmatter(),
+    // docs sidebar/table metadata doesn't statically import the page bodies; also /llms.txt.
+    docsFrontmatter({ ...repoLinks, name: appConfig.name, description: appConfig.description, siteUrl: appConfig.frontendUrl }),
     // Dev-only write-back endpoint so the pages table can edit frontmatter and
     // reparent pages by rewriting/moving the md/mdx files (apply: 'serve').
     docsEditor(),

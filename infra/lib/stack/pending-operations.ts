@@ -101,6 +101,8 @@ const operationKey = (operation: PendingOperation): string => `${operation.kind}
 /**
  * Drop the pending creates the operator reviewed: export the state, refuse when its pending operations differ from the reviewed ones or include
  * anything but creates, save the export as a rollback, import it without the creates, and confirm they are gone. The caller holds the stack lease.
+ * `pulumi refresh --clear-pending-creates` would rewrite every resource from its live read, which the next deploy diffs against; the export and
+ * import change the records only.
  */
 export async function clearPendingCreates(reviewed: PendingOperation[], fx: PendingClearEffects): Promise<{ backupPath: string }> {
   const exportedText = fx.exportState();

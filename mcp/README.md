@@ -21,24 +21,24 @@ MCP endpoint  /<tenant>/<org>/mcp
 the route: its guards, limiters, cache and handler, as for a REST request
 ```
 
-The worker is a `MODE` of the backend image: its own process on `devPorts.mcp`, or folded into the API under `singleVM`; the reverse proxy routes `/mcp/*` to it. It serves only the MCP routes; a tool call runs through the module routes mounted in the same process, which it never serves. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md); tokens: [OAuth worker](../oauth/README.md).
+The worker is a `MODE` of the backend image ([Deployment](../cella/DEPLOYMENT.md#overview)), and the reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls but serves only the MCP routes. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md); tokens: [OAuth worker](../oauth/README.md).
 
-The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the tools (`mcp-tools.ts`: built from the mounted routes, called through the app); `mcp/src/mcp-worker.ts` is the development entry. Error codes, limits and schema details are documented there, at their declarations.
+The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the tools (`mcp-tools.ts`); `mcp/src/mcp-worker.ts` is the development entry. Error codes, limits and schema details are documented there, at their declarations.
 
 ## Discovery and tokens
 
 | Request | Response |
 | --- | --- |
-| `GET …/mcp/.well-known/oauth-protected-resource` | RFC 9728 metadata: the resource identifier, the authorization server, `scopes_supported` |
-| `POST …/mcp` without a token | 401, `WWW-Authenticate: Bearer resource_metadata="…"`: where to read the metadata |
-| `POST …/mcp` with a token for another tenant, or an MCP token for another organization | 401 `invalid_token`: the audience does not match |
-| `tools/call` outside the token's scopes | 403, `WWW-Authenticate: Bearer error="insufficient_scope", scope="attachment:write", resource_metadata="…"`, plus a JSON-RPC error carrying the scope |
+| The protected-resource metadata (`…/mcp/.well-known/oauth-protected-resource`) | The resource identifier, the authorization server and the scopes it supports (RFC 9728) |
+| A call without a token | 401 with a challenge that says where the metadata lives |
+| A token for another tenant or another organization's endpoint | 401: the audience must be this endpoint or the tenant's REST API |
+| `tools/call` outside the token's scopes | 403 with a challenge and a JSON-RPC error, both naming the scope to step up to |
 
-A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries. The step-up on 403 works the same way with a wider scope. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
+A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries; a 403 step-up works the same way. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
 
 ## MCP tools are routes
 
-A route opts in by carrying `xTool` in its `xRoute` config, after its `xGuard`, `xRateLimiter` and `xCache`:
+A route opts in by carrying `xTool` in its `xRoute` config:
 
 ```ts
 xTool: {
@@ -48,28 +48,28 @@ xTool: {
 },
 ```
 
-The OpenAPI spec shows it under `x-tool`; the MCP endpoint builds its tools from the mounted routes that carry it. Everything else is derived:
+Its guards must accept an access token (`actorGuard` or `serviceGuard`), since a tool call carries nothing else: a tool route behind a cookie-only guard is refused when its module loads.
+
+The OpenAPI spec shows it under `x-tool`, and the rest of a tool is derived from the route:
 
 | Tool field | Source |
 | --- | --- |
 | `name` | The route's `operationId`: its key in `createXRoutes` unless set |
-| `inputSchema` | The route's request: path params minus the tenant and organization the endpoint already resolved, the query, and the body. A body's sync transaction (`stx`) is left out of what the model sees and rebuilt server-side. |
-| Scope | `entity` with the method: `GET` needs `<entity>:read`, anything else `<entity>:write` |
-| `annotations` | `readOnlyHint`, `destructiveHint`, `idempotentHint` from the method |
-| `_meta.scope` | The scope, so a client can ask for it up front |
+| `inputSchema` | The route's request: path params minus the tenant and organization the endpoint already resolved, the query, and the body |
+| Scope, also in `_meta.scope` | `entity` with the method: `GET` needs `<entity>:read`, anything else `<entity>:write` |
+| `annotations` | Read-only, destructive and idempotent hints from the method |
 
-`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas, then sends the request through the app with the caller's token: the route's guards, limiters, cache and handler run as for a REST request, and its JSON answer is the result. A permission or domain error from the route comes back as a tool result, which a model can act on; only transport-level faults are JSON-RPC errors.
+`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas and runs the route with the caller's token; its JSON answer is the result. A permission or domain error from the route comes back as a tool result, which a model can act on; only transport-level faults are JSON-RPC errors.
 
 The template registers the five attachment routes (list, get, create, update, delete). An app adds `xTool` to any organization route that answers JSON. "Every operation is a tool" is not the default on purpose.
 
 ## Transport
 
-JSON-RPC 2.0 over Streamable HTTP with JSON responses: `initialize`, `ping`, `tools/list`, `tools/call`, and the `notifications/*` messages, which get no reply. Batches are accepted. Results carry both a `text` content block and `structuredContent`. There is no server-initiated stream, no sessions, no resources or prompts yet.
+JSON-RPC 2.0 over Streamable HTTP with JSON responses. Batches are accepted. Results carry both a `text` content block and `structuredContent`. There is no server-initiated stream, no sessions, no resources or prompts yet.
 
 ## Operational constraints
 
 - **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
-- **One organization per endpoint.** The path binds the tenant and organization; the token's audience must be this organization's MCP resource or the tenant's REST API resource, never another tenant.
-- **In-process requests.** A tool call passes the route's own guards, limiters and cache, and counts against the per-account limits there as a REST request with the same token does. The endpoint also has a request limit of its own per account. A server error reaches the model without its message.
+- **Limits.** A tool call spends the route's limits as a REST request with the same token does, plus the endpoint's own limit per account. A server error reaches the model without its message.
 - **The AI key is unrelated.** `SCW_AI_API_KEY` switches on the app's own AI features (job queues); the MCP endpoint never needs it.
 - **Tool descriptions are model-facing English.** They are not translated.

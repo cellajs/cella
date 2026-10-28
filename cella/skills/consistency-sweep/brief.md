@@ -23,21 +23,17 @@ Behavior is preserved by default. The maintainer's rule: less code wins; a bug o
 
 ## Conventions
 
+[AGENTS.md](../../AGENTS.md) applies in full: its coding patterns, style and naming rules and comment budget. The sweep adds:
+
 Code shape
-- Components are named `function` declarations; wrappers use a named function expression (`memo(function X() {})`), except where the inner name would shadow the wrapper (a recursive component: `memo(XBase)`). Never `FC`; a component stored as a value is `ComponentType<Props>`. Props are `interface XProps`; a union of shapes stays a `type`. React types are imported by name, never `React.X`.
-- Imports use the `~/` alias. No `index.ts` barrels. Named imports, sorted by Biome.
-- Zustand: inside a component a selector (`useX((state) => state.field)`, `useShallow` for four or more fields); outside hooks the store's alias (`sheeter.getState()`, `uiStore`, `navigationStore`). Every store exports `export { useX as x };`.
-- Avoid `as` assertions; prefer typed parameters, type guards, `satisfies`, `as const`. `as unknown as` is banned. An unavoidable `any` carries a `biome-ignore` line with its reason.
-- React Compiler is on: no `useMemo`/`useCallback` unless a comment says why.
-- Callback props are `onX`; handlers inside a component are `handleX` or a plain verb; a predicate is `isX`/`canX`. Refs end in `Ref`. Lambda parameters are nouns, not letters (`a, b` in a comparator and an index are fine). Module constants are camelCase. Files are named after their main export in kebab-case.
-- All UI text through `t('c:key')`; never hardcoded. An offline refusal is `toastOffline()`. `aria-hidden` on a lucide icon is redundant (lucide sets it); an `aria-label` that repeats visible text goes.
-- Icons: `lucide-react` with `*Icon` names, sized with `size-*` classes only, `strokeWidth` from the provider unless a site needs another weight.
-- Prefer plain composable functions over configuration factories.
+- Components are `function` declarations; a wrapper takes a named function expression (`memo(function X() {})`), or `memo(XBase)` where the inner name would shadow the wrapper. A component stored as a value is `ComponentType<Props>`. Props are `interface XProps`; a union of shapes stays a `type`. React types are imported by name, never `React.X`.
+- Imports use the `~/` alias, as named imports. No `index.ts` barrels.
+- Outside hooks a store is reached through its alias (`sheeter.getState()`, `uiStore`, `navigationStore`). Every store exports `export { useX as x };`.
+- An unavoidable `any` carries a `biome-ignore` line with its reason. A `useMemo` or `useCallback` stays only with a comment that says why.
+- Callback props are `onX`; handlers inside a component are `handleX` or a plain verb; a predicate is `isX`/`canX`. Refs end in `Ref`. Lambda parameters are nouns, not letters (`a, b` in a comparator and an index are fine). Files are named after their main export.
+- An offline refusal is `toastOffline()`. `aria-hidden` on a lucide icon is redundant (lucide sets it); an `aria-label` that repeats visible text goes.
 
 Comments
-- A frontend export gets one JSDoc line, none when identifier and types already carry the meaning. No file-level comments above imports.
-- A member gets one line when name and type underdetermine it (default, constraint, unit, null or empty case). A local gets at most one line of rationale (two lines means rename or extract). JSX comments keep the constraint only. The same comment text never appears in two files.
-- Never an em dash. No contrast or history phrasing and none of the agent-flavored words `pnpm style` lists. State the current behavior.
 - Keep a comment that explains a non-obvious constraint or a bug workaround; trim or delete one that restates the code, names a location that moved, or promises behavior the code does not have.
 
 Tailwind
@@ -46,7 +42,9 @@ Tailwind
 - A class that restates an initial value, repeats a component base, or has no consumer goes, each with its proof. `!` only where the cascade needs it. `transition-all` becomes the properties that change when they can be listed.
 - Do not change `z-*` values, color, opacity or spacing steps for their own sake; a visible change is only the by-product of removing code, and the report names it.
 
-## Verification (green before you report)
+## Verification
+
+Green before you report:
 
 ```sh
 pnpm -C <worktree> --filter frontend ts
@@ -55,7 +53,7 @@ pnpm -C <worktree> style
 pnpm -C <worktree> unused            # when an export changed
 ```
 
-Plus the tests that import a touched file and the stories that render a changed component.
+Plus the tests that import a touched file (`pnpm -C <worktree> --filter frontend exec vitest run <files>`) and the stories that render a changed component (`pnpm -C <worktree>/frontend exec vitest run --project=storybook <story file>`).
 
 ## Report
 

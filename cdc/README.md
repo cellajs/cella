@@ -24,9 +24,9 @@ Make sure you already read the [Sync engine](../cella/SYNC_ENGINE.md#selective-s
 | **Read again** | Stop reading without acknowledging and start anew. Postgres delivers the same changes again, and what is recorded already is not recorded twice. |
 | **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience. |
 | **Books** | The numbers the worker keeps in `channel_counters`: the counts, the sequence counter and the frontiers. |
-| **Stuck** | Five failures in a row at one position that the change itself caused. |
+| **Stuck** | Failing again and again at one position, for a reason the change itself caused. |
 | **Lost case** | A state the WAL cannot repair: no slot, empty counters, a stuck worker, a rebuild that was interrupted. It ends in a rebuild. |
-| **Generation** | A number that moves on whenever the books were rebuilt. A client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
+| **Sync generation** | A number that moves on whenever the books were rebuilt. A client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
 
 ## How it fits
 
@@ -47,100 +47,76 @@ record the flush in one transaction: activities, sequence values, counters, row 
 hand to the API → acknowledge the commit of the last source transaction of the flush
 ```
 
-The API receives the messages on `/internal/cdc` of its internal listener, passes them to its ActivityBus, and fans them out over SSE. Clients order by `seq`, not arrival.
+The API receives the messages on its internal listener and fans them out to clients ([Sync engine](../cella/SYNC_ENGINE.md)). Clients order by `seq`, not arrival.
 
-The worker is `cdc/src/`, with the steps above in `pipeline/` and the limits this page names in `constants.ts`. The API's receiving side is `backend/src/lib/cdc-websocket.ts`. Details are documented there, at their declarations.
+The worker is `cdc/src/`, with the steps above in `pipeline/` and its limits in `constants.ts`. The API's receiving side is `backend/src/lib/cdc-websocket.ts`. Details are documented there, at their declarations.
 
 ## Normal flow
 
 ### Read
 
-The worker reads one publication through one replication slot. It tracks the tables in the backend's entity and resource table maps and ignores every other table. Drafts never reach it: a product table with a draft lifecycle is published with a row filter, so a row enters the stream when it is published ([Sync engine, Drafts](../cella/SYNC_ENGINE.md#drafts)).
+The worker reads one publication through one replication slot. It tracks the tables in the backend's entity and resource table maps and ignores every other table. Drafts never reach it ([Sync engine, Drafts](../cella/SYNC_ENGINE.md#drafts)).
 
 ### Collect
 
-The worker holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. Those rows are no activity, and they still leave the counts of every channel that remains above the deleted one. For an app with product embeddings the worker also drops a host update that does nothing but take a deleted row out of its references; an update that changed anything else stays a change. What remains joins a flush. A flush takes whole source transactions in commit order, and one flush runs at a time. A worker that falls behind stops reading until its pending changes are flushed, so the backlog waits in Postgres and not in the worker.
+The worker holds a source transaction until its commit, so it can drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush. A flush takes whole source transactions in commit order, and one flush runs at a time.
+
+A worker that falls behind stops reading until its pending changes are flushed, so the backlog waits in Postgres and not in the worker.
 
 ### Record
 
-A flush is recorded in one transaction of the worker: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete and a restore count as a delete and a create, for a row's own count and for the uses of the rows it embeds. The later removal of a tombstone by the retention procedure is no activity: every client learned of the delete when the tombstone came ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
+A flush is recorded in one transaction: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete counts as a delete and a restore as a create. Removing a tombstone after the deleted-items period records nothing ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
 
-Recording happens once per change, however often the change arrives. An activity's id comes from the commit position of its source transaction and the place of the change in it, so a second delivery inserts nothing, and only an inserted activity gets a sequence value and counts.
+Recording happens once per change, however often the change arrives: an activity's id comes from its commit position, so a second delivery inserts nothing and counts nothing.
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a change frame that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows; the API turns those into change frames ([Sync engine](../cella/SYNC_ENGINE.md#changes-and-signals)). Then the worker acknowledges the flush.
+
+For an app with product embeddings, the worker also takes a deleted row's id out of the hosts that referenced it ([Embeddings](../cella/SYNC_ENGINE.md#embeddings)). That write is its own and records no activity.
 
 ## Internal API socket
 
-One WebSocket from the worker to the API carries every change, with entity row data. It must never be reachable from a browser or an external network: the API serves it only on its internal listener, to peers on the private network, checks a shared secret and accepts one worker at a time.
+One WebSocket from the worker to the API carries every change, with entity row data. It must never be reachable from a browser or an external network: the API serves it only on its internal listener ([Deployment](../cella/DEPLOYMENT.md#overview)), checks a shared secret and accepts one worker at a time.
 
 The API sends nothing back. A message the socket took counts as handed over, even when the API dies before it dispatched it. A client learns of that change at its next catchup.
 
 ## Failure and recovery
 
-Nothing here stops a write: the REST API and the database work whatever the worker does ([Sync engine](../cella/SYNC_ENGINE.md#resilience)).
+Nothing here stops a write: the REST API and the database work whatever the worker does.
 
-The slot is the only durable buffer, and it advances only after a flush committed. After a crash, or any failure, Postgres delivers the unacknowledged changes again. Delivery is **at least once**, recording is **once**: a change that is delivered again changes no activity, counter or sequence value, and its message is sent again with the sequence value its row already holds.
+Failure handling has three levels and no more. The core records a change once. Whatever fails is read again from the slot: the worker acknowledges nothing, forgets what it holds and reads again after a growing delay, so nothing is retried in place or left out to keep going. And when the WAL cannot help, or the books turn out wrong, they are rebuilt from the tables.
 
-There is one way a failure is handled: the worker acknowledges nothing, forgets what it holds and reads again from the slot's acknowledged position, after a growing delay. Nothing is retried in place and nothing is left out to keep going.
+The slot is the only durable buffer, and it advances only after a flush committed. Delivery is **at least once**, recording is **once**: a change delivered again changes no activity, counter or sequence value, and its message goes out again with the sequence value its row already holds.
 
 | Failure | What the worker does |
 | --- | --- |
-| A flush or a change fails | Reads again. A failure that says nothing about the change (the connection, a lock, the API away) is read again for as long as it lasts. Five failures in a row that the change itself caused make the worker stuck: it reports unhealthy and rebuilds. A position that keeps failing for ten minutes is reported unhealthy too, whatever the cause: a failure that passes never makes the worker stuck. |
+| A flush or a change fails | Reads again. A failure that says nothing about the change (the connection, a lock, the API away) is read again for as long as it lasts, and a position that keeps failing is reported unhealthy. Repeated failures the change itself caused make the worker stuck. |
 | The API is away | Records nothing. The stream is held, Postgres keeps the changes, and the worker reads on when the socket is back. |
 | Another worker holds the slot (a rolling deploy) | Retries until the slot is free, and reports degraded meanwhile. |
-| The WAL cannot help: the slot is gone or invalidated, the counters are empty, or the worker is stuck | A lost case: the worker rebuilds its books from the tables and every client refetches. See [Verify and rebuild](#verify-and-rebuild). |
+| A lost case: the slot is gone, the counters are empty, or the worker is stuck | Rebuilds ([Verify and rebuild](#verify-and-rebuild)). |
 
 ## Verify and rebuild
 
-The failure handling has three levels and no more. The core records a change once. Whatever fails is read again from the slot. And when the WAL cannot help, or the books turn out wrong, they are rebuilt from the tables. There is one repair, the rebuild; a verify only detects. The worker runs both by itself while writes go on.
+There is one repair, the rebuild; a verify only detects. Both start with a recount of every counter from the tables at one snapshot, and both run while writes go on: a change that commits during the recount is counted once.
 
-Both start with a recount: every counter, counted anew from the tables at one snapshot.
-
-- **Verify** compares the books with the recount, beside the running stream. Right books stay untouched, wrong books are rebuilt. It runs once a day and on `pnpm sync:verify`.
+- **Verify** compares the books with the recount. Right books stay untouched, wrong books are rebuilt. It runs once a day and on `pnpm sync:verify`.
 - **Rebuild** replaces the books by the recount, between two flushes, while the worker keeps reading. It runs when a verify found the books wrong, in the lost cases and on `pnpm sync:rebuild`.
 
-A change that commits around the snapshot would count twice, in the recount and from the stream. The worker tells those apart by their transaction: the fence, in `src/services/fence.ts`. Both commands exit 1 when the books were wrong or the worker did not answer.
+The worker settles the lost cases by itself before it reads the stream. A missing or invalidated slot is made anew. A stuck worker moves its slot past the backlog it could not record, at most once per interval, so a fault that repeats costs one refetch per interval.
 
-One verify or rebuild runs at a time. A rebuild starts by itself in these cases; all but the first are checked before every read of the stream:
-
-| Case | What the worker does first |
-| --- | --- |
-| A verify found the books wrong | Nothing: it rebuilds between two flushes |
-| No slot, or one Postgres invalidated, on a database with a history | Makes a new slot at the current position |
-| A slot older than its publication | Drops it and makes a new one |
-| `channel_counters` is empty on a database with a history (a truncate, a partial restore) | Nothing |
-| A rebuild was interrupted: the worker before this one ended inside its fence | Nothing |
-| The worker is stuck | Moves the slot to the current position, which gives up its backlog: everything it had not recorded. At most once in ten minutes |
-
-Every rebuild leaves an incident and moves the generation on, and one the worker started by itself logs an error. A generation grows and is never below the clock in minutes, so a database restored from a backup cannot hand out a number a client already holds. The API learns of a new generation from the worker's health push and ends every app stream with `resync`. What a client does then: [Sync engine](../cella/SYNC_ENGINE.md#rebuilt-books).
+Every rebuild leaves an incident and starts a new sync generation, never one a client already holds, even after a restore from a backup. The API then ends every app stream, and clients refetch: [Sync engine](../cella/SYNC_ENGINE.md#what-happens-when).
 
 What a lost case costs: rows changed while the slot was gone, or in a given-up backlog, keep the `seq` they had and get no activity and no change frame. Counts, sequence values and every client's data are right again afterwards.
 
 ## Operational constraints
 
-- **Adding a tracked table takes two steps:** the backend's entity or resource table map, then rerunning the CDC migration, which builds the publication. Before it reads, the worker checks that publication and table maps match. While they do not, it reads nothing and reports unhealthy with what is wrong.
-- **`REPLICA IDENTITY FULL` is mandatory:** a delete needs the old row. Publication column lists are therefore unavailable, and the worker strips large columns itself, so a consumer must tolerate their absence from the row data.
+- **Adding a tracked table takes two steps:** the backend's entity or resource table map, then rerunning the CDC migration, which builds the publication. While the two do not match, the worker reads nothing and reports unhealthy with what is wrong.
+- **`REPLICA IDENTITY FULL` is mandatory:** a delete needs the old row, so the worker strips large columns itself, and a consumer must tolerate their absence from the row data.
 - **Only one worker may read the slot.**
-- **A source transaction is held whole, up to 100,000 changes.** A larger one fails, the worker gets stuck on it and rebuilds: its rows are counted and get no activity. Write a backfill in smaller transactions.
-- **WAL retention is the recovery margin.** Postgres needs `wal_level=logical` and a `max_slot_wal_keep_size`: without that limit, a worker that is down keeps WAL until the disk is full. A managed provider may not offer the limit: [Deployment](../cella/DEPLOYMENT.md#overview) says what holds then.
-- **The worker's role needs `REPLICATION` and an effective RLS bypass** (it owns the tables and none forces row-level security, or it holds `BYPASSRLS`). Without the bypass a `seq` stamp changes zero rows. The worker reads nothing and reports unhealthy while either is missing.
-- **The worker cannot hold the API's rows.** A flush locks the product rows it stamps, and server-side timeouts on the worker's sessions make Postgres take those locks back from a worker that hangs or is cut off.
+- **A source transaction is held whole, up to a limit.** A larger one makes the worker stuck, and it rebuilds: its rows are counted and get no activity. Write a backfill in smaller transactions.
+- **WAL retention is the recovery margin.** A worker that is down keeps WAL until the disk is full unless the database bounds it: [Deployment](../cella/DEPLOYMENT.md#overview).
+- **The worker's role needs `REPLICATION` and an effective RLS bypass:** it owns the tables and none forces row-level security, or it holds `BYPASSRLS` ([Database roles](../cella/MULTI_TENANCY.md#database-roles)). While either is missing, the worker reads nothing and reports unhealthy.
+- **A hung worker cannot hold API writes for long:** server-side timeouts take back the row locks of its flush.
 
-## Reference
-
-### Counter keys
-
-Keys in `channel_counters` are `sequence`, `s:<signal type>`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
-
-| Key | Scope | Meaning |
-| --- | --- | --- |
-| `sequence` | Org-wide | Sequence reservation counter |
-| `s:{signal type}` | Org-wide | Version of a versioned signal, such as `s:membership.changed` |
-| `e:f:{type}` | Subtree | Frontier of rows at or below the node |
-| `e:f:h:{type}` | Home-only | Frontier of rows homed at the node |
-| `e:c:{type}` | Subtree | Count of countable rows at or below the node |
-| `e:c:h:{type}` | Home-only | Count of countable rows homed at the node |
-| `e:li:h:{type}` / `e:lu:h:{type}` | Home-only | Last insert and update timestamps |
-| `m:c:{role}` / `m:c:total` / `m:c:pending` | Channel | Membership counts |
+Counter keys in `channel_counters` and how each one merges: `backend/src/modules/entities/counter-keys.ts`.

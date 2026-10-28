@@ -4,6 +4,7 @@ import GithubSlugger from 'github-slugger';
 import type { Plugin } from 'vite';
 import { parse } from 'yaml';
 import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-at.ts';
+import { type LlmsOptions, type LlmsPage, llmsFiles } from './llms-txt.ts';
 
 const VIRTUAL_ID = 'virtual:docs-frontmatter';
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
@@ -157,17 +158,16 @@ function importTargets(file: string, source: string): string[] {
   return [...source.matchAll(RELATIVE_MD_IMPORT)].map((m) => path.resolve(path.dirname(file), m[1]));
 }
 
-/** A page's size as it reads: frontmatter, MDX module lines and bare component tags (`<Content />`) left out. */
+/** A page body as it reads: frontmatter, MDX module lines and bare component tags (`<Content />`) left out. */
+function pageBody(source: string): string {
+  return source
+    .replace(FRONTMATTER_BLOCK, '')
+    .replace(/^(import|export)\s.+$/gm, '')
+    .replace(/^<[A-Z]\w*\s*\/>$/gm, '');
+}
+
 function pageSize(sources: string[]): DocSize {
-  const text = sources
-    .map((source) =>
-      source
-        .replace(FRONTMATTER_BLOCK, '')
-        .replace(/^(import|export)\s.+$/gm, '')
-        .replace(/^<[A-Z]\w*\s*\/>$/gm, ''),
-    )
-    .join('\n')
-    .trim();
+  const text = sources.map(pageBody).join('\n').trim();
   return { chars: text.length, words: text ? text.split(/\s+/).length : 0 };
 }
 
@@ -182,10 +182,27 @@ export function pageStructure(file: string, source: string): { headings: DocHead
   return { headings, sections };
 }
 
-/** Exposes page metadata and search text as virtual modules without importing page components. */
-export function docsFrontmatter(): Plugin {
+/**
+ * Exposes page metadata and search text as virtual modules without importing page components. With `llms`, it also
+ * serves and emits `llms.txt` and a Markdown copy of each page (llms-txt.ts).
+ */
+export function docsFrontmatter(llms?: LlmsOptions): Plugin {
   let contentDir: string;
   let resolver: UpdatedAtResolver | undefined;
+
+  const llmsPages = (): LlmsPage[] =>
+    collectPages(contentDir).map((file) => {
+      const source = readFileSync(file, 'utf8');
+      const imported = importTargets(file, source)
+        .filter((target) => existsSync(target))
+        .map((target) => ({ file: target, source: readFileSync(target, 'utf8') }));
+      return {
+        relative: path.relative(contentDir, file).replaceAll(path.sep, '/'),
+        frontmatter: parseFrontmatter(source),
+        body: pageBody(source),
+        imported,
+      };
+    });
 
   const buildIndex = () => {
     const targets = new Set<string>();
@@ -248,6 +265,17 @@ export function docsFrontmatter(): Plugin {
     // event, which the app applies in place (modules/page/content.ts, table/doc-sizes.ts). Only an edit to the
     // root index.mdx reloads: the docs config it holds is read once.
     configureServer(server) {
+      if (llms) {
+        server.middlewares.use((req, res, next) => {
+          const name = decodeURIComponent((req.url ?? '').split('?')[0]).slice(1);
+          if (name !== 'llms.txt' && !(name.startsWith('docs/page/') && name.endsWith('.md'))) return next();
+          const file = llmsFiles(llmsPages(), llms).get(name);
+          if (file === undefined) return next();
+          res.setHeader('Content-Type', name.endsWith('.txt') ? 'text/plain; charset=utf-8' : 'text/markdown; charset=utf-8');
+          res.end(file);
+        });
+      }
+
       const initial = buildIndex();
       let index = JSON.stringify(initial.index);
       let sizes = JSON.stringify(initial.sizes);
@@ -304,6 +332,10 @@ export function docsFrontmatter(): Plugin {
       server.watcher.on('add', maybeInvalidate);
       server.watcher.on('unlink', maybeInvalidate);
       server.watcher.on('change', maybeInvalidate);
+    },
+    generateBundle() {
+      if (!llms) return;
+      for (const [fileName, source] of llmsFiles(llmsPages(), llms)) this.emitFile({ type: 'asset', fileName, source });
     },
   };
 }

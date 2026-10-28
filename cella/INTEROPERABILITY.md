@@ -19,42 +19,38 @@ The OpenAPI contract and the generated SDK are the same for every caller ([Clien
 
 ## Face: REST API
 
-Routes that accept a machine caller say so through their guard. `actorGuard` takes a session cookie, an API key, or an access token; `serviceGuard` takes only keys and tokens. An operation behind either is typed on `ActorContext`, which has no user row, so it cannot accidentally read one. Session-only routes keep `userGuard` ([AGENTS.md](./AGENTS.md#middleware--guards)).
+A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard` ([Guards](./PERMISSIONS.md#guards)). Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them ([Step-up](./AUTHENTICATION.md#step-up)).
 
-An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant: `tenantGuard` compares the two before loading the tenant row, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per actor) and, on routes that carry it, the tenant's hourly points budget, keyed on tenant and actor.
+An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own, checked before the tenant row loads, so a key learns nothing about other tenants.
 
-A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again when it has not read for the activity window: a deleted row stays a tombstone only for the deleted-items period, and its removal sends nothing ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
 ## Face: OAuth
 
-The app is its own authorization server, on the same origin under `/oauth`. A person is sent to a consent screen that names the client and the scopes it asks for; the resulting token acts as that person, masked by those scopes, in one tenant. Two kinds of client reach the consent screen: MCP clients identify themselves with a Client ID Metadata Document (an HTTPS URL, nothing pre-registered; a tenant can refuse them), and registered apps have a row in `oauth_clients` and are installed per tenant as a service account carrying the client id (consent refuses an app that is not installed; the installation route is not built yet). A service account is its own `client_credentials` client and needs neither a row nor consent. People see and revoke their consents under "Connected apps" in their account settings. Mechanics: [OAuth worker](../oauth/README.md).
+The app is its own authorization server, on the same origin under `/oauth`. A person consents on a screen that names the client and the scopes it asks for, and the resulting token acts as that person, masked by those scopes, in one tenant. MCP clients, registered apps and service accounts each reach it in their own way, and people revoke their consents in their account settings ([Clients and consent](../oauth/README.md#clients-and-consent)).
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives (RFC 9728), consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents. Mechanics: [MCP worker](../mcp/README.md).
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents. Mechanics: [MCP worker](../mcp/README.md).
 
 ## The substrate
 
 ### Actors
 
-Every actor is a row in `actors`, of kind `user` or `service`. Provenance columns (`createdBy`, `updatedBy`, `deletedBy`) reference actors, so a row written by a service account keeps a real foreign key. A service account is tenant-scoped, holds role bindings like a member does, and is disabled rather than deleted so provenance keeps pointing at it. Creating one is an organization admin's act, and the role it gets is capped at the creator's own.
+Every actor is a row in `actors`, a user or a service account, and the writer columns of channel and product rows reference it. A service account is tenant-scoped, holds role bindings like a member does, and is disabled, never deleted, so the rows it wrote keep pointing at it. Creating one is an organization admin's act, and the role it gets is capped at the creator's own.
 
 ### API keys
 
-A key is `<slug>_sk_live_…` (or `_test_` outside production): a prefix, 32 random characters and a checksum. Only its hash is stored, with the prefix and the last four characters for display; the plaintext is shown once at creation. A key can expire, can be rolled (the new key is issued and the old one keeps working for an overlap window, in one transaction) and can be revoked, which keeps the row as the audit trail. The one-step "Create API key" in organization settings makes a service account named after the key, bound to the organization as a member; an app that needs several keys per account or other roles builds on the same routes.
+Only a key's hash is stored, with its prefix and last four characters for display; the plaintext is shown once at creation. A key can expire, can be rolled (the old key keeps working for an overlap window) and can be revoked, which keeps the row as the audit trail. "Create API key" in organization settings makes a service account named after the key, a member of the organization; an app that needs other roles or several keys per account builds on the same routes.
 
 ### Access scopes
 
-The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`. A scope is a mask over the actor's bindings, applied at the end of every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else; `write` implies `read`; a scope the vocabulary no longer knows fails closed. A session, and a key issued without scopes, are unmasked. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
+The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else. An unknown scope fails closed; a session, and a key issued without scopes, are unmasked. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
 
 ### Tokens
 
-Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then reads what the token rests on at every request: the grant and the user's bindings version for a user, the key and its account for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
-
-### Guards
-
-Which proof each guard admits, and the tenant and organization guards that follow it: [Permissions, Guards](./PERMISSIONS.md#guards). The step-up guards cover the account-security routes, and minting an API key needs a second factor proven on the session, so no API key or access token reaches them: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
+Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request. Lifetimes and refresh: [OAuth worker](../oauth/README.md#tokens).
 
 ### Quotas and limits
 
-Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the actor: a service account spends its own budget, and an app acting on a person's consent spends that person's. Shared limiter behavior: [Authentication, Rate limits](./AUTHENTICATION.md#rate-limits).
+Tenant restrictions cap the active service accounts and live API keys a tenant holds (`appConfig.defaultRestrictions`, `0` lifts a cap). Machine calls pass a per-second burst limit and, on routes that carry it, the tenant's hourly points budget, both per actor: an app acting on a person's consent spends that person's budget. Shared limiter behavior: [Authentication, Rate limits](./AUTHENTICATION.md#rate-limits).

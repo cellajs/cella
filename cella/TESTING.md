@@ -1,19 +1,18 @@
 # Testing
 
-<!-- Sync test marker: 2026-01-28-test-1 -->
-
 What the test suite is for, how to run it and where new tests belong.
 
 ### TL;DR
 
-The suite's main job is to prove that attacks fail, and a feature test is the exception. All package tests use [Vitest](https://vitest.dev)
-and share one root setup. `pnpm test` starts the Docker test database and runs everything with a
-coverage summary. Storybook UI tests run separately in a browser with `pnpm test:storybook`. Keep unit
-tests next to their source. Tests that need extra services or network servers go in `tests/integration/`.
+The suite's main job is to prove that attacks fail; a feature test is the exception. Every package runs on
+[Vitest](https://vitest.dev) with one root setup, and `pnpm test` starts the Docker test database and runs it all.
+Storybook UI tests run separately, in a browser.
 
 ## Goals
 
-The suite's main job is to prove that attacks fail. A feature test is the exception: it earns its place when it reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball, and a test that restates the code next to it is not added ([AGENTS.md](./AGENTS.md#testing)). A security test acts as the attacker: it signs in as one user, tries to do something that user has no right to, and passes only when the app refuses. It checks for the exact refusal: the status code or Postgres error, no leaked rows, and any side effect such as a revoked grant. A matching test shows the rightful user still gets through, so an endpoint that refuses everyone can't pass. Name these tests after the attack (`must not leak attachments via another tenant's id`) and put the route-level ones in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
+Verify every change with a Playwright run, a measurement or a check by hand that the PR description reports. Committing a test is a separate decision: a test earns its place when it proves an attack fails, reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball. Judge a test by what it asserts: ask what has to change for it to fail, and if the answer is "the implementation", drop it. The usual mirror is one `it` per method or branch; branch tests that together guard one property, such as a cap, become one test of that property. The default for a performance, UI or refactor PR is zero new tests.
+
+A security test acts as the attacker: it signs in as one user, tries to do something that user has no right to, and passes only when the app refuses. It checks for the exact refusal: the status code or Postgres error, no leaked rows, and any side effect such as a revoked grant. A matching test shows the rightful user still gets through, so an endpoint that refuses everyone can't pass. Name these tests after the attack (`must not leak attachments via another tenant's id`) and put the route-level ones in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
 
 - **Crossing a boundary:** reading or writing another tenant's or organization's data, through the API or directly against the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
@@ -21,11 +20,7 @@ The suite's main job is to prove that attacks fail. A feature test is the except
 - **Steering the app with attacker input:** open redirects, redirect URIs that aren't registered, unsafe URLs in content.
 - **Leaking secrets:** hashes, token secrets or private keys appearing in responses, logs or the CDC stream.
 
-Route-wide checks read `x-guard` from the generated OpenAPI document: every operation without
-`publicGuard` must refuse anonymous access, and every `sysAdminGuard` operation must refuse a normal
-user. Cross-tenant and cross-organization tests try another scope's IDs; mass-assignment tests send
-fields outside each request body schema. The backend suite also runs as `runtime_role` to exercise
-database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
+A rule that holds for every route goes in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts), which reads its table from the generated OpenAPI document, an app's routes included; `request-bodies.test.ts` beside it checks that every request body is required and bounded. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
 
 ## Running tests
 
@@ -33,13 +28,7 @@ database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
 pnpm test
 ```
 
-Uses the `db_test` service in [backend/compose.yaml](../backend/compose.yaml).
-
-Requirements:
-
-- Docker running
-- `backend/.env` with `DB_TEST_PORT` set (copied from `.env.example` during setup). [shared/src/test-db.ts](../shared/src/test-db.ts) derives the test database URL from it
-- The backend's test setup creates and migrates every database on that server: one per backend test worker, the shared one of the Yjs integration tests, and `cdc_integration` for the CDC worker's integration tests, which drop the slot and empty the sync books of the database they run on. Run the backend suite, or the root `pnpm test`, once before the worker's suite on a fresh server
+It needs Docker running and `DB_TEST_PORT` in `backend/.env`, copied from `.env.example` during setup. The backend's test setup creates and migrates the test databases, so on a fresh server run the backend suite once before the `yjs` or `cdc` suite.
 
 ### Variants
 
@@ -49,10 +38,10 @@ Requirements:
 | `pnpm test:full:verbose` | Same, plus passing test output |
 | `pnpm test:core` | Skips integration tests (backend, yjs, cdc). Rarely needed (`test:core:verbose` for full output) |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium. Not part of `pnpm test` ([see below](#storybook)) |
-| `pnpm app-shape:check` | The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter member policy. Runs on the release PR |
+| `pnpm app-shape:check` | The core suites again under a config shaped like an app's. Runs on the release PR |
 | `pnpm story` | Interactive Storybook dev server. Runs no tests. |
 
-The `TEST_MODE` env var selects `core` or `full`. In `core` mode the per-package vitest configs exclude `tests/integration/**`. A test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
+The `TEST_MODE` env var selects `core` or `full`; a test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
 
 ### Running a subset
 
@@ -64,11 +53,11 @@ pnpm vitest run backend/tests/health.test.ts # one file
 pnpm vitest run -t 'rate limiter'            # by test name
 ```
 
-Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker. The `yjs` and `cdc` integration tests expect a test database the `backend` project has already migrated: on a fresh volume run one backend test file first.
+Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker.
 
 ## Conventions
 
-A branch that adds migrations runs its suite against a throwaway database (`DB_TEST_PORT=<port>` with a fresh container from the same image), never the shared test database other worktrees migrate. Tests that need the authorization server start it in-process with `backend/tests/oauth-helpers.ts`: no separate process, it listens on a random loopback port and its tokens verify against the same keystore the guards read.
+A branch that adds migrations runs its suite against a throwaway database (`DB_TEST_PORT=<port>` with a fresh container from the same image), never the shared test database other worktrees migrate. Tests that need the authorization server start it in-process with `backend/tests/oauth-helpers.ts`.
 
 **Placement.** Pick by scope:
 
@@ -78,15 +67,15 @@ A branch that adds migrations runs its suite against a throwaway database (`DB_T
 
 Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not change coverage numbers.
 
-**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Backend test files run in parallel, each vitest worker on its own database (`backend_worker_<n>` in the test container), so files never see each other's rows. [backend/tests/global-setup.ts](../backend/tests/global-setup.ts) creates these once and migrates them with the shared database the yjs and cdc tests use. Tests that open their own connection take the URL from `shared/test-db`, which points at the worker's database. Never assume an empty database: a worker's database keeps the rows of earlier files and runs. Clean up with `clearDatabase()`: it deletes the rows, since `TRUNCATE` costs ~400ms a call. Server-wide views (`pg_stat_activity`, `pg_locks`) show every worker, so a query on them filters on `datname = current_database()`. Use the `#/` import alias as in source.
+**Backend specifics.** Test env vars are preset in [backend/vitest.config.ts](../backend/vitest.config.ts): do not load `.env` in tests. Use the `#/` import alias as in source.
 
-**App config.** A template test also runs in every app, on that app's hierarchy, surfaces, feature flags and policies. A test that needs a particular value states it and puts the app's back: `assumeMemberAttachmentPolicy` (`shared/testing/member-policy`) for what a member may do with an attachment, `assumeNoSurfaces` and `withSurface` (`shared/testing/surfaces`) for `appConfig.surfaces`, a `beforeEach` that sets the flag for `appConfig.has`. A fixture row carries every ancestor column the app's hierarchy gives the product (`buildTestEntityHierarchyPlan`, `seedAttachmentHome`), never the organization alone. `pnpm app-shape:check` runs the core suites under such a config.
+Backend test files run in parallel, each vitest worker on a database of its own, so files never see each other's rows. A worker's database keeps the rows of earlier files and runs: never assume it is empty, and clean up with `clearDatabase()`. A test that opens its own connection takes the URL from `shared/test-db`.
 
-**Every route.** `backend/tests/security/route-guards.test.ts` reads its table from the API document, an app's routes included: no route without `publicGuard` answers a request without a session, no route behind `sysAdminGuard` answers a user without the system role, a route with a `relatableUserId` parameter runs `relatableGuard`, and no route answers an organization member with a server error for ids that name nothing (a write that validates its body stops at 400 before its handler, so this covers reads and body-less writes) or for a NUL character in a path parameter, which Postgres takes in no text value. A rule that holds for every route goes there; an app tests its own entities in files named `*-app.test.ts`, with the helpers in `backend/tests/security/helpers.ts`. `request-bodies.test.ts` beside it reads the same document for the request schemas: an operation that takes a body requires it, and every request array and record has a size limit, so an oversized one fails with one validation issue.
+**App config.** A template test also runs in every app, on that app's hierarchy, surfaces, feature flags and policies. A test that needs a particular value states it and puts the app's back, with the helpers in `shared/testing/`. A fixture row carries every ancestor column the app's hierarchy gives the product, never the organization alone.
 
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
-**Mutation hooks.** A product module's mutation hooks are tested under the app's own query client with `frontend/src/query/tests/mutation-hooks-kit.ts`: `callHook` runs a hook, `goOffline` and `goOnline` queue and replay its mutations, and the test mocks `sdk` with spies (`attachment-mutation-hooks.test.ts`).
+**Mutation hooks.** A product module's mutation hooks are tested under the app's own query client with the kit in `frontend/src/query/tests/mutation-hooks-kit.ts`, which also takes them offline and back. `attachment-mutation-hooks.test.ts` is the example.
 
 ## Storybook
 
@@ -103,4 +92,4 @@ pnpm sdk
 pnpm test:storybook
 ```
 
-Every story is render-tested in headless Chromium. Stories with `play` functions also get their interactions exercised. A new component story is a test automatically. CI runs this project on the release PR only, so run `pnpm test:storybook` before merging a frontend change.
+Every story is render-tested in headless Chromium. Stories with `play` functions also get their interactions exercised. CI runs this project on the release PR only, so run `pnpm test:storybook` before merging a frontend change.

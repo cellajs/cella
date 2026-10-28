@@ -5,7 +5,6 @@ import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { DocsSidebarSection } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/docs-sidebar-sheet';
-import { getDocPage } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { tw } from '~/utils/tw';
 
@@ -19,7 +18,6 @@ export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement>(null);
   const hasStatusPage = !!appConfig.statusUrl?.trim();
-  const hasLlmsPage = !!getDocPage('llms');
 
   return (
     <DocsSidebarSection label={label}>
@@ -37,15 +35,9 @@ export function LinksSection({ label }: LinksSectionProps) {
         openapi.json
       </Button>
 
-      {hasLlmsPage && (
-        <Button
-          variant="ghost"
-          className={rowClass}
-          render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} onClick={closeSidebarSheetAndNavigate} />}
-        >
-          llms.txt
-        </Button>
-      )}
+      <Button variant="ghost" className={rowClass} render={<a href="/llms.txt" target="_blank" rel="noreferrer" />}>
+        llms.txt
+      </Button>
     </DocsSidebarSection>
   );
 }
