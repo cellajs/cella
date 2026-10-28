@@ -55,6 +55,7 @@ Resources and traffic flow:
 - **Database:** private-network only, with logical replication on for the CDC worker. A break-glass action exposes it for a while ([Runbooks](./deployment/RUNBOOKS.md)).
 - **Replication slot:** a stopped CDC worker's slot keeps WAL. Where the provider offers `max_slot_wal_keep_size`, set it; the worker warns while WAL is unbounded. Scaleway's managed database has no such setting: it removes a slot inactive for 24 hours, and until then a stopped worker's WAL fills the volume while its health degrades.
 - **Lost slot:** when a worker cannot be brought back, drop the slot by hand (`SELECT pg_drop_replication_slot('cdc_slot')`). A slot that is gone, whoever removed it, ends in a rebuild of the sync books ([CDC worker](../cdc/README.md#verify-and-rebuild)).
+- **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron's database, `rdb` on Scaleway. Scaleway's admin user may not use the `cron` schema there, so the companion warns and the job stays unscheduled: until the provider grants the admin user that schema and its functions, a deployed database keeps every row the procedure would remove.
 - **Buckets:** outside the VPC. Browsers read the public upload bucket directly and use presigned URLs for the private one.
 
 ## Deploys
