@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig, isProduct } from 'shared';
 import { devtools } from 'zustand/middleware';
@@ -116,6 +117,7 @@ export class StreamManager {
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
   private leaderUnsubscribe: (() => void) | null = null;
+  private onlineUnsubscribe: (() => void) | null = null;
   private silenceTimeout: ReturnType<typeof setTimeout> | null = null;
   /** Time of the last event of any kind on the open EventSource. */
   private lastEventAt = 0;
@@ -143,6 +145,7 @@ export class StreamManager {
     // Idempotent, cleaned up in disconnect.
     this.startVisibilityReconnect();
     this.startLeaderReconnect();
+    this.startOnlineReconnect();
 
     const { state } = this.store.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
@@ -534,9 +537,30 @@ export class StreamManager {
     this.leaderUnsubscribe = null;
   }
 
+  /** Back online: reconnect now, past the backoff and an open circuit, as queries and paused mutations resume. */
+  private startOnlineReconnect() {
+    if (this.onlineUnsubscribe) return;
+    let wasOnline = onlineManager.isOnline();
+    this.onlineUnsubscribe = onlineManager.subscribe((online) => {
+      const cameBack = online && !wasOnline;
+      wasOnline = online;
+      const shouldReconnect = !this.config.useTabCoordination || isLeader();
+      if (cameBack && shouldReconnect && !this.isConnected()) {
+        console.debug(`[${this.name}] Back online, reconnecting...`);
+        this.reconnect();
+      }
+    });
+  }
+
+  private stopOnlineReconnect() {
+    this.onlineUnsubscribe?.();
+    this.onlineUnsubscribe = null;
+  }
+
   disconnect() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
+    this.stopOnlineReconnect();
     resolveInitialCatchupGate();
 
     this.buffering = false;
