@@ -49,6 +49,8 @@ export const env = createEnv({
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
+    // The database pg_cron runs in, where migrations schedule the retention job: needed where the admin role is no superuser and so may not read `cron.database_name`.
+    PG_CRON_DATABASE: z.string().optional(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('staging'), z.literal('tunnel'), z.literal('test')]),
     PORT: z.coerce.number().default(appConfig.devPorts.api),
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.

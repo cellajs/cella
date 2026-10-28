@@ -69,6 +69,7 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       MODE: migrate
+      PG_CRON_DATABASE: rdb
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
   cdc:

@@ -1,4 +1,5 @@
 import { defineServices } from '../compose/infrastructure';
+import { CRON_HOME_DATABASE } from '../lib/scaleway/db-privileges';
 
 /** App-owned registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing, certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. */
 export const appServices = defineServices({
@@ -14,7 +15,8 @@ export const appServices = defineServices({
     // Immutable-node cutover: the new generation is health-gated, the LB overlaps both, then contracts. The one-shot release companion applies migrations at the new generation's boot, so the app block does not migrate on its own.
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
-    release: { env: { MODE: 'migrate' }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
+    // The managed instance's admin user is no superuser, so it may not read `cron.database_name`: the migrate step is told pg_cron's database.
+    release: { env: { MODE: 'migrate', PG_CRON_DATABASE: CRON_HOME_DATABASE }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
     primaryRollout: true,
     drainSeconds: 10,
     // Reached at https://<app-host>/api/... through an LB path-begin route; the backend self-mounts '/api', so the LB strips nothing.
