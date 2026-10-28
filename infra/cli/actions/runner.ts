@@ -61,12 +61,50 @@ function checkoutCommit(): string {
 }
 
 /**
+ * Replace the runner key, at an Owner moment: a new key in the runner's project, and every other key of the runner deleted, as it can start
+ * the main job of every environment it serves and so read their deploy keys. The running machine holds the deleted key: Replace the runner
+ * gives it the new one. Returns how many keys it replaced.
+ * @throws when the runner was never set up: it has no application or no stored key.
+ */
+export async function rotateRunnerKey(
+  ownerKey: { secretKey: string; organizationId: string },
+  opts: { appSlug: string; region: string },
+): Promise<number> {
+  const file = readRunnerFile();
+  const name = runnerName(opts.appSlug);
+  const auth = { secretKey: ownerKey.secretKey };
+  const applicationId = await resolveApplicationIdByName(auth, ownerKey.organizationId, name);
+  const secrets = file ? createSecretManagerClient({ secretKey: ownerKey.secretKey, region: opts.region, projectId: file.projectId }) : undefined;
+  const stored = await secrets?.getSecretByName(RUNNER_KEY.name, RUNNER_KEY.path);
+  if (!file || !secrets || !applicationId || !stored) {
+    throw new Error(`'${name}' has no ${applicationId ? 'stored key' : 'application'}: \`${actionCommand('runner-identity')}\` sets the runner up`);
+  }
+  const old = await listApiKeys(auth, ownerKey.organizationId, applicationId);
+  const key = await createApiKey(auth, { applicationId, description: `${name} key`, defaultProjectId: file.projectId });
+  if (!key.secret_key) throw new Error(`the new key of '${name}' came without its secret`);
+  await secrets.putSecretValue({
+    secretId: stored.id,
+    value: key.secret_key,
+    description: 'Written when the runner key was rotated',
+    disablePrevious: true,
+  });
+  for (const previous of old) await deleteApiKey(auth, previous.access_key);
+  return old.length;
+}
+
+/** True when `infra/runner.json` lists the environment: its runner then holds a key that starts this environment's deploys. */
+export function runnerServes(opts: { projectId: string; definition: string }): boolean {
+  return (readRunnerFile()?.environments ?? []).some(
+    (environment) => environment.projectId === opts.projectId && environment.definition === opts.definition,
+  );
+}
+
+/**
  * Set up the runner, at an Owner moment (D28-D30): the app's runner project and its reserved address, the runner application
  * with the right to start and read job runs in every environment it serves from that address only, the runner key in its project, and the
  * app operator's reach over the runner project; then this environment in `infra/runner.json`. The first run makes the key; a later one
- * extends the policy in place, so the key the running machine holds keeps working, unless `--rotate-key` asks for a new key, which deletes
- * every other key of the runner (it can start the main job of every environment it serves, and so read their deploy keys). The address is
- * made here, though it is no IAM: the policy's condition names it.
+ * extends the policy in place, so the key the running machine holds keeps working. Rotate keys replaces the key. The address is made here,
+ * though it is no IAM: the policy's condition names it.
  */
 export async function runRunnerIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -82,7 +120,6 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
     ),
   );
 
-  const rotateKey = process.argv.includes('--rotate-key');
   const ownerKey = await acquireIdentityKey(context, "Setting up the runner writes its application and policy, and the operator's reach.");
   try {
     const { organizationId } = ownerKey;
@@ -142,23 +179,6 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
       console.info(
         `  ${reach === 'extended' ? changeMark : checkMark} '${name}' ${reach === 'extended' ? 'now reaches' : 'reaches'} ${context.environment}.`,
       );
-      if (rotateKey) {
-        const applicationId = await resolveApplicationIdByName(auth, organizationId, name);
-        if (!applicationId) throw new Error(`no application '${name}' to rotate the key of`);
-        const old = await listApiKeys(auth, organizationId, applicationId);
-        const key = await createApiKey(auth, { applicationId, description: `${name} key`, defaultProjectId: project.id });
-        if (!key.secret_key) throw new Error(`the new key of '${name}' came without its secret`);
-        await secrets.putSecretValue({
-          secretId: stored.id,
-          value: key.secret_key,
-          description: 'Written when the runner key was rotated',
-          disablePrevious: true,
-        });
-        for (const previous of old) await deleteApiKey(auth, previous.access_key);
-        console.info(
-          `  ${changeMark} A new runner key replaced ${old.length} key(s): \`${actionCommand('runner-replace')}\` gives it to the machine.`,
-        );
-      }
     }
 
     const operator = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
@@ -201,9 +221,10 @@ async function ensureSecurityGroup(auth: ScwAuth, opts: { zone: string; projectI
 /**
  * Replace the runner machine, on the operator key (D24, D28, D30): delete the one that runs and start one at the reserved address that
  * fetches the release `infra/runner.json` pins and serves its environments, with the runner key in its user data. Nothing changes when the
- * machine runs that release and list already.
+ * machine runs that release and list already. After a rotation of the runner key the machine holds a deleted key, so it is replaced without a
+ * question: the rotation asked.
  */
-export async function runRunnerReplace(context: InfraContext): Promise<void> {
+export async function runRunnerReplace(context: InfraContext, opts: { afterKeyRotation?: boolean } = {}): Promise<void> {
   const file = readRunnerFile();
   if (!file) {
     console.error(`${crossMark} No ${RUNNER_FILE}: \`${actionCommand('runner-identity')}\` sets the runner up, with your Owner API key.`);
@@ -235,14 +256,17 @@ export async function runRunnerReplace(context: InfraContext): Promise<void> {
     `${instanceApi(zone)}/servers?project=${file.projectId}&name=${encodeURIComponent(name)}`,
   );
   const running = servers.find((server) => server.name === name);
-  if (running?.state === 'running' && tags.every((tag) => running.tags?.includes(tag))) {
+  if (!opts.afterKeyRotation && running?.state === 'running' && tags.every((tag) => running.tags?.includes(tag))) {
     console.info(`${checkMark} The runner runs ${release.sha.slice(0, 10)} for ${serves} already.`);
     return;
   }
   console.info(
     `\n${actionLabel('runner-replace')}: ${running ? 'replace' : 'start'} '${name}' with ${release.sha.slice(0, 10)} (${file.release}), serving ${serves}.`,
   );
-  if (!(await confirmOrDefault({ message: running ? 'Replace the runner machine?' : 'Start the runner machine?', default: true }))) return;
+  const confirmed =
+    opts.afterKeyRotation ||
+    (await confirmOrDefault({ message: running ? 'Replace the runner machine?' : 'Start the runner machine?', default: true }));
+  if (!confirmed) return;
 
   const address = await findRunnerAddress(auth, { zone, projectId: file.projectId, name });
   const stored = await secrets.getSecretByName(RUNNER_KEY.name, RUNNER_KEY.path);

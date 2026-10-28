@@ -18,8 +18,12 @@ const { acquireOwnerKey } = await import('./owner-key');
 const { forgetSession, rememberedOwnerKey } = await import('../session');
 
 const typed = { accessKey: 'SCWTYPED', secretKey: 'typed-secret' };
-/** An application key: used as it is, so nothing else calls Scaleway. */
-const application = { desc: { accessKey: 'SCWTYPED', bearer: 'application', bearerId: 'app-1', bearerName: 'operator' }, role: 'application' };
+const inHours = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
+/** An application key made for one hour: used as it is, so nothing else calls Scaleway. */
+const application = {
+  desc: { accessKey: 'SCWTYPED', bearer: 'application', bearerId: 'app-1', bearerName: 'operator', expiresAt: inHours(1) },
+  role: 'application',
+};
 
 const acquire = () =>
   acquireOwnerKey({
@@ -69,5 +73,13 @@ describe('acquireOwnerKey in one run of the CLI', () => {
     await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });
 
     expect(rememberedOwnerKey()).toBeUndefined();
+  });
+
+  it('must not take a key that writes IAM beyond its moment (C1): one with no expiry, or more than a day left, is refused', async () => {
+    for (const expiresAt of [undefined, inHours(24 * 7)]) {
+      assertIamManager.mockResolvedValueOnce({ ...application, desc: { ...application.desc, expiresAt } });
+      await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });
+      expect(rememberedOwnerKey()).toBeUndefined();
+    }
   });
 });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
+import { ExitCodeError } from '../lib/utils/errors';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import { assertSecretsDeliverable, type SecretToCheck, serviceNamesFromServicesJson } from './assert-secrets-deliverable';
+import { assertSecretsDeliverable, blockOnMissing, type SecretToCheck, serviceNamesFromServicesJson } from './assert-secrets-deliverable';
 
 const REGION = 'fr-par';
 const PROJECT = 'proj-1';
@@ -77,6 +79,31 @@ describe('assertSecretsDeliverable', () => {
     expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }]);
     // An optional secret is not even probed.
     expect(urls).toHaveLength(1);
+  });
+});
+
+describe('a missing required secret', () => {
+  it('ends the deploy blocked, the exit code the runner and the apply read, naming the secret and the action that stores it (D-g)', async () => {
+    const { fetchImpl } = fakeFetch([]);
+    const result = await assertSecretsDeliverable({
+      secretKey: KEY,
+      region: REGION,
+      projectId: PROJECT,
+      secrets: [{ envVar: 'ADMIN_EMAIL', secretName: 'admin-email', required: true, path: '/app-staging/backend/' }],
+      log: silent,
+      fetchImpl,
+    });
+    const blocked = (() => {
+      try {
+        blockOnMissing(result);
+      } catch (error) {
+        return error;
+      }
+    })();
+    expect(blocked).toBeInstanceOf(ExitCodeError);
+    expect(blocked).toMatchObject({ exitCode: MAIN_JOB_EXIT.blocked });
+    expect((blocked as Error).message).toContain('admin-email');
+    expect((blocked as Error).message).toContain('pnpm infra secrets');
   });
 });
 

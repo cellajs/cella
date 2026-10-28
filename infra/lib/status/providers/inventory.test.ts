@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type InventoryFacts, inventoryFindings } from './inventory';
+import { declaredMainJob, MAIN_JOB_SCRIPT } from '../../deploy/main-job';
+import { type InventoryFacts, inventoryFindings, mainJobDifferences } from './inventory';
 
 const expect_ = {
   projectId: 'p-staging',
@@ -12,6 +13,7 @@ const expect_ = {
   },
   oneKey: ['app-staging-boot', 'app-staging-ci-deploy', 'app-operator'],
   machinePrefix: 'app-',
+  operator: 'app-operator',
 };
 
 describe('the inventory', () => {
@@ -48,11 +50,13 @@ describe('the inventory', () => {
       ],
       machines: ['app-backend-g1', 'app-backend-g0', 'app-builder-abc', 'mallory'],
       activeGenerations: { backend: 'g1' },
-      mainJob: { running: false },
+      mainJob: { running: false, env: {} },
+      organizationId: 'o',
     };
     expect(inventoryFindings(facts, expect_)).toEqual({
       applications: ['other-production-ci-deploy: can act in this environment through other-production-ci-deploy-policy: IAMApplicationManager'],
       keys: ['app-staging-boot holds 2 keys: SCWBOOT (no description), SCWPLANTED (planted)'],
+      operatorKeys: [],
       policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
       machines: [
         'app-backend-g0: a generation that is not active, and no deploy runs (a failed run left it, or someone named it so)',
@@ -61,11 +65,36 @@ describe('the inventory', () => {
       ],
       passing: [],
     });
-    const deploying = inventoryFindings({ ...facts, mainJob: { running: true } }, expect_);
+    const deploying = inventoryFindings({ ...facts, mainJob: { running: true, env: {} } }, expect_);
     expect(deploying.machines).toEqual(['mallory: not made by the engine']);
     expect(deploying.passing).toEqual([
       'app-backend-g0: a generation that is not active, while a deploy runs',
       'app-builder-abc: a builder, while a deploy runs',
     ]);
+  });
+
+  it("finds a main job edited to read the database's password and to fetch another repository (D-b): the runner key may edit a definition", () => {
+    const mainJob = declaredMainJob({
+      slug: 'app',
+      mode: 'staging',
+      projectId: 'p-staging',
+      organizationId: 'o',
+      region: 'nl-ams',
+      repository: 'https://github.com/example/app.git',
+      nodeVersion: '26.12.1',
+    });
+    const engine = mainJob.secretFolder;
+    const live = {
+      running: false,
+      imageUri: mainJob.imageUri,
+      command: `bash -c ${MAIN_JOB_SCRIPT}`,
+      env: { ...mainJob.env, REPO: 'https://github.com/mallory/app.git' },
+      secretReferences: [
+        { env: 'DEPLOY_KEY_JSON', secretId: 's1', name: 'deploy-key', path: engine },
+        { env: 'PULUMI_CONFIG_PASSPHRASE', secretId: 's2', name: 'pulumi-passphrase', path: engine },
+        { env: 'DB_PASSWORD', secretId: 's3', name: 'database-admin-password', path: engine },
+      ],
+    };
+    expect(mainJobDifferences(live, mainJob)).toEqual(['env REPO differs', 'an extra secret reference DB_PASSWORD (database-admin-password)']);
   });
 });

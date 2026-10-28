@@ -1,9 +1,10 @@
 import { confirm, select } from '@inquirer/prompts';
+import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { deleteApiKey } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
-import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
-import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
+import type { KeyPair } from '../../lib/scaleway/operator-identity';
+import { allPrincipalNames, type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import type { Environment } from '../../lib/stack/bootstrap-stack-state';
@@ -15,11 +16,13 @@ import { ensureMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
+import { forgetOwnerKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
-import { autoAcceptDefaults, confirmOrDefault, inputOrDefault, keyPairOrPrompt } from '../shared';
+import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared';
 import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
-import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
+import { acquireOwnerKey } from './owner-key';
+import { rotateRunnerKey, runnerServes } from './runner';
 
 export type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
@@ -36,6 +39,8 @@ export interface OwnerMomentResult {
   ciKey: CiKeyResult;
   /** The operator key, when this moment created the app's operator: the operator part runs on it without asking. */
   operatorKey?: KeyPair;
+  /** True when the rotation replaced the runner key: the runner machine still holds the deleted one until it is replaced. */
+  runnerKeyRotated: boolean;
 }
 
 /** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
@@ -90,6 +95,7 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
   }
   try {
     await withSpinner('Revoking the Owner API key', () => deleteApiKey({ secretKey: pair.secretKey }, pair.accessKey));
+    forgetOwnerKey();
     console.info(`${checkMark} Key ${pair.accessKey} revoked.`);
   } catch (error) {
     console.warn(
@@ -102,12 +108,10 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
  * Pick or create this environment's Scaleway project when it has none yet, using the Owner API key. Every environment has a project of its own:
  * the project of another environment is listed and cannot be taken. The chosen id is written to infra/.env.<mode> as SCW_PROJECT_ID.
  */
-async function ensureProjectId(opts: { slug: string; mode: Environment; accessKey: string; secretKey: string }): Promise<string> {
+async function ensureProjectId(opts: { slug: string; mode: Environment; secretKey: string; organizationId: string }): Promise<string> {
   console.info(`\n→ Scaleway project for ${opts.mode} ${pc.dim('(none configured yet)')}`);
-  const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
-    const organizationId = await organizationIdOfKey({ accessKey: opts.accessKey, secretKey: opts.secretKey });
-    return { organizationId, projects: await listProjects(opts.secretKey, organizationId) };
-  });
+  const { organizationId } = opts;
+  const projects = await withSpinner('Loading Scaleway projects', () => listProjects(opts.secretKey, organizationId));
   const CREATE = '__create__';
   const offered = projectChoices(projects, opts.slug, projectsOfOtherModes(opts.mode), CREATE);
   const choice = await select<string>({
@@ -130,10 +134,11 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; accessKe
 }
 
 /**
- * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt, and nothing else runs on it
- * (no Pulumi, no state, no value of the app's). The machine identities with their policies and standing keys (in the deploy folder), the CI
- * deploy key (its copy for the main job), and the app's operator and observer: created when the app has none, else given this environment's project
- * in place; the observer's key goes to this machine's env files. A rotation replaces every key. Undefined when declined.
+ * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt and checked as every Owner
+ * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The machine identities with their policies and
+ * standing keys (in the deploy folder), the CI deploy key (its copy for the main job), and the app's operator and observer: created when the
+ * app has none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces
+ * every key, the runner's too when the runner serves this environment. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -142,9 +147,16 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   console.info(
     pc.dim(`\n→ Owner moment for ${environment}: the project and the identities, written with your Owner API key. Nothing else runs on it.`),
   );
-  const pair = await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT);
-  const projectId = context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, ...pair }));
-  const organizationId = await organizationIdOfKey(pair, projectId);
+  const ownerKey = await acquireOwnerKey({
+    names: allPrincipalNames(appConfig, environment),
+    projectId: context.projectId || undefined,
+    slug: appConfig.slug,
+    mode: environment,
+  });
+  const { organizationId } = ownerKey;
+  const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
+  const projectId =
+    context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
   const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
 
@@ -168,7 +180,6 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   console.info('\n→ CI deploy key');
   const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
   console.info('\n→ Operator');
-  const ownerKey: OwnerKey = { ...pair, organizationId, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
 
   // The observer takes the operator's address list, so it follows the operator.
@@ -177,8 +188,22 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
 
+  // The runner key starts this environment's deploys, so after a compromise it goes with the rest; the operator part replaces the machine.
+  let runnerKeyRotated = false;
+  const { naming, region } = deriveInfra(appConfig);
+  if (mode === 'rotate-keys' && runnerServes({ projectId, definition: naming.resource('main') })) {
+    console.info('\n→ Runner key');
+    try {
+      const replaced = await rotateRunnerKey(ownerKey, { appSlug: appConfig.appSlug, region });
+      console.info(`  ${changeMark} A new runner key replaced ${replaced} key(s); the runner machine is replaced next, on the operator key.`);
+      runnerKeyRotated = true;
+    } catch (error) {
+      console.warn(`${warningMark} Runner key not rotated: ${errorMessage(error)}. Run \`${actionCommand('rotate-keys')}\` again.`);
+    }
+  }
+
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
   await offerOwnerKeyRevoke(pair);
-  return { projectId, ciKey, operatorKey };
+  return { projectId, ciKey, operatorKey, runnerKeyRotated };
 }

@@ -305,7 +305,11 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     },
     {
       // Generation VMs keep their initial cloud-init and image: changes roll a new content-addressed generation, and ignoring image UUID drift prevents in-place replacement outside LB cutover.
+      // It also keeps an update from writing back the key files a deploy took out of a booted machine's user data (tasks/scrub-user-data.ts).
       ignoreChanges: ['cloudInit', 'image'],
+      // The provider reads all user data back into both outputs after every create and refresh, the boot key included, and marks neither
+      // secret: the state keeps them under the passphrase.
+      additionalSecretOutputs: ['userData', 'cloudInit'],
     },
   );
 

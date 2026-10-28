@@ -29,7 +29,7 @@ Without a local `Pulumi.<stack>.yaml`, `pnpm infra` runs the install wizard; on 
 1. Easiest: as an organization Owner, generate an [API key for your user](https://console.scaleway.com/iam/users) (User menu → API keys → Generate), with an expiry of hours.
 2. Or an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) with **ProjectManager + IAMManager** on the organization, with a key that expires.
 
-The key serves the setup's Owner moment and **Set up the runner** (step 4). Later Owner moments, such as **Update identities** or **Rotate keys**, take a key made for the occasion ([API keys](./KEYS.md#api-keys)); everything else runs on the operator key.
+The key serves the setup's Owner moment and **Set up the runner** (step 4). The CLI refuses a key without an expiry or with more than a day left. Later Owner moments, such as **Update identities** or **Rotate keys**, take a key made for the occasion ([API keys](./KEYS.md#api-keys)); everything else runs on the operator key.
 
 ## 3. Run the infra CLI
 
@@ -63,7 +63,7 @@ A second environment of the same app runs the same two parts: its Owner moment a
 
 ## 5. Sign in as first admin
 
-Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty ([main.migrate.ts](../../backend/src/main.migrate.ts)). A deploy fails at "Verify runtime secrets are deliverable" while that secret is missing: set it in **Manage runtime secrets**, then run `pnpm infra start-deploy`, as the runner does not start a failed target again.
+Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty ([main.migrate.ts](../../backend/src/main.migrate.ts)). Until that secret has a value, the first deploy ends blocked at "Verify runtime secrets are deliverable", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
 2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.

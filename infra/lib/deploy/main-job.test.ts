@@ -1,6 +1,27 @@
 import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MAIN_JOB_EXIT, MAIN_JOB_SCRIPT, mainJobOutcome, storeDeployKeyCopy } from './main-job';
+import { MAIN_JOB_EXIT, MAIN_JOB_SCRIPT, mainJobOutcome, RELEASE_CHECK, storeDeployKeyCopy } from './main-job';
+
+/** Run the release check in bash, against a `git` on PATH whose `ls-remote` lists a lightweight and an annotated release tag. */
+function releaseCheck(targetSha: string) {
+  const bin = mkdtempSync(join(tmpdir(), 'release-check-'));
+  const refs = [
+    `${'1'.repeat(40)}\trefs/tags/0.25.0`,
+    `${'2'.repeat(40)}\trefs/tags/0.26.0`,
+    `${'3'.repeat(40)}\trefs/tags/0.26.0^{}`,
+    `${'4'.repeat(40)}\trefs/tags/nightly`,
+  ];
+  writeFileSync(join(bin, 'git'), `#!/bin/sh\nprintf '%s\\n' ${refs.map((ref) => `'${ref}'`).join(' ')}\n`);
+  chmodSync(join(bin, 'git'), 0o755);
+  const script = `set -euo pipefail\ngit_read() { git "$@"; }\n${RELEASE_CHECK}\necho checked`;
+  return spawnSync('bash', ['-c', script], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, RELEASES_ONLY: '1', MODE: 'production', TARGET_SHA: targetSha },
+  });
+}
 
 describe('the main job', () => {
   it('runs a script bash accepts', () => {
@@ -29,6 +50,21 @@ describe('the main job', () => {
   it("installs the Pulumi CLI from its release archive without restoring owners, which a job's root may not, and pipes no script into a shell", () => {
     expect(MAIN_JOB_SCRIPT).toContain('tar -xz --no-same-owner');
     expect(MAIN_JOB_SCRIPT).not.toMatch(/\|\s*(ba)?sh\b/);
+  });
+
+  it('must not fetch a commit no release names where the environment deploys releases only (D-f): a hand-started run is refused', () => {
+    const refused = releaseCheck('a'.repeat(40));
+    expect(refused.status).toBe(MAIN_JOB_EXIT.failed);
+    expect(refused.stderr).toContain(`production deploys releases only: ${'a'.repeat(40)} is no release`);
+    expect(refused.stdout).not.toContain('checked');
+    // An annotated tag names its commit on the peeled line; the tag object itself is no release commit.
+    expect(releaseCheck('2'.repeat(40)).status).toBe(MAIN_JOB_EXIT.failed);
+    expect(releaseCheck('4'.repeat(40)).status).toBe(MAIN_JOB_EXIT.failed);
+    for (const release of ['1'.repeat(40), '3'.repeat(40)]) {
+      const passed = releaseCheck(release);
+      expect(passed.status).toBe(0);
+      expect(passed.stdout).toContain('checked');
+    }
   });
 
   it('reads a succeeded run as deployed: Scaleway reports a run that exited 0 with no exit code (staging, 2026-10-20)', () => {

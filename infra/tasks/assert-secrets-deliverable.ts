@@ -1,7 +1,10 @@
 import type { ServiceName } from '../compose/compose';
+import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
+import { actionCommand } from '../lib/operator-actions';
 import { runtimeSecrets } from '../lib/runtime-secrets';
 import { secretCopies } from '../lib/scaleway/secret-paths';
 import { serviceNames } from '../lib/services';
+import { ExitCodeError } from '../lib/utils/errors';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { runIfMain } from '../lib/utils/is-main';
 import { parseJsonBody } from '../lib/utils/json';
@@ -127,13 +130,21 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { slug } = await loadEngineConfig();
 
   const secrets = secretsForServices(enabled, slug, mode);
-  const result = await assertSecretsDeliverable({ secretKey, region, projectId, secrets });
-  if (!result.ok) {
-    throw new Error(
-      `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}${o.path ? ` in ${o.path}` : ''}] (${o.reason})`).join(', ')}. ` +
-        'A missing required value is made by an apply (generated, database) or set in "Manage runtime secrets" (operator) before the roll.',
-    );
-  }
+  blockOnMissing(await assertSecretsDeliverable({ secretKey, region, projectId, secrets }));
+}
+
+/**
+ * End the deploy blocked on a required copy with no value (D-g): the operator owes it, as with a privileged change, so the run's exit code
+ * is the one the runner and the apply read as blocked, and its record names the secret and the action that stores it.
+ * @throws an ExitCodeError with exit code 2 when a required copy has no value.
+ */
+export function blockOnMissing(result: AssertSecretsDeliverableResult): void {
+  if (result.ok) return;
+  const missing = result.offenders.map((o) => `${o.envVar} [${o.secretName}${o.path ? ` in ${o.path}` : ''}]`).join(', ');
+  throw new ExitCodeError(
+    `Blocked: required runtime secrets have no value: ${missing}. Store an operator value with \`${actionCommand('secrets')}\`, which starts this target again; a generated or database value is made by \`${actionCommand('apply')}\`.`,
+    MAIN_JOB_EXIT.blocked,
+  );
 }
 
 runIfMain(import.meta.url, main);

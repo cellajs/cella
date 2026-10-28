@@ -1,5 +1,7 @@
 import { confirm } from '@inquirer/prompts';
-import { pc } from '../../lib/utils/cli-output';
+import { actionCommand } from '../../lib/operator-actions';
+import { pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
@@ -7,6 +9,7 @@ import type { InfraContext } from '../shared';
 import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
 import type { OwnerKey } from './owner-key';
 import { printRevokeReminder } from './owner-key';
+import { startBlockedTarget } from './start-deploy';
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string };
 
@@ -19,7 +22,7 @@ async function selectWithEscape<T extends string>(options: { message: string; ch
 /**
  * Manage this environment's runtime secrets. Writing a secret version needs Secret Manager write, so this takes the operator key the
  * way every privileged action does. Minting a managed key writes IAM, which takes an Owner API key, asked
- * for when a mint is confirmed.
+ * for when a mint is confirmed. A deploy that ended blocked, on a missing secret among others, is started again at the end.
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -45,4 +48,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
     await identityKey?.release();
   }
   if (identityKey) printRevokeReminder();
+  await startBlockedTarget(context, operator).catch((error) =>
+    console.warn(`${warningMark} Could not start the blocked deploy again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
+  );
 }

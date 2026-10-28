@@ -7,7 +7,7 @@ import {
   releaseAccounts,
   serviceAccountKeys,
 } from '../../lib/deploy/boot-accounts';
-import { findJobDefinition, type JobRun, listJobRuns, runEnded } from '../../lib/deploy/job-runs';
+import { findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { type RunRecord, runSummaryLine } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
@@ -16,6 +16,7 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
+import { runOverrides } from '../../lib/status/providers/runs';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { getFlag } from '../../tasks/args';
@@ -84,31 +85,44 @@ function wroteRecord(run: JobRun, record: RunRecord): boolean {
  * What Scaleway says of the job run that wrote a record, when that differs from the record: a record cut short by the job's time limit, or one
  * a key that may write the bucket changed. Scaleway's list of runs is written by no key of the engine.
  */
-function disagreement(record: RunRecord, jobRuns: readonly JobRun[]): string {
-  const run = jobRuns.find((candidate) => wroteRecord(candidate, record));
+function disagreement(record: RunRecord, run: JobRun | undefined): string {
   if (!run || !runEnded(run)) return '';
   const outcome = mainJobOutcome(run);
   return outcome === record.outcome ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
 }
 
+/** A run started with values or a command of its own, which no start of the engine sets (D-b): flagged, as only a key holder's start does it. */
+function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | undefined): string {
+  const own = run && definition ? runOverrides(run, definition) : [];
+  return own.length > 0 ? `  ${warningMark} started with its own values: ${own.join(', ')}` : '';
+}
+
 /**
  * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. The environment's job runs that left
- * no record are listed beside the records (D27), so a run is never missing from the list.
+ * no record are listed beside the records (D27), so a run is never missing from the list. With the main job's definition, a run started with
+ * values or a command of its own is flagged.
  */
 export async function showRuns(
   store: RunStore,
-  opts: { pick: boolean; print?: (line: string) => void; jobRuns?: readonly JobRun[]; environment?: string },
+  opts: { pick: boolean; print?: (line: string) => void; jobRuns?: readonly JobRun[]; definition?: JobDefinitionFacts; environment?: string },
 ): Promise<void> {
   const print = opts.print ?? ((line: string) => console.info(line));
   const records = (await Promise.all((await store.listRuns(LIST_LENGTH)).map((run) => store.readRecord(run)))).filter((record): record is RunRecord =>
     Boolean(record),
   );
+  const jobRuns = opts.jobRuns ?? [];
   // A full list's oldest record bounds the job runs: an older run's record is past the list, not missing.
   const since = records.length === LIST_LENGTH ? (records.at(-1)?.startedAt ?? '') : '';
-  const unrecorded = (opts.jobRuns ?? []).filter((run) => (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record)));
+  const unrecorded = jobRuns.filter((run) => (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record)));
   const rows = [
-    ...records.map((record) => ({ at: record.startedAt, line: `${runSummaryLine(record)}${disagreement(record, opts.jobRuns ?? [])}` })),
-    ...unrecorded.map((run) => ({ at: run.created_at ?? '', line: runWithoutRecordLine(run, opts.environment ?? '') })),
+    ...records.map((record) => {
+      const run = jobRuns.find((candidate) => wroteRecord(candidate, record));
+      return { at: record.startedAt, line: `${runSummaryLine(record)}${disagreement(record, run)}${ownValues(run, opts.definition)}` };
+    }),
+    ...unrecorded.map((run) => ({
+      at: run.created_at ?? '',
+      line: `${runWithoutRecordLine(run, opts.environment ?? '')}${ownValues(run, opts.definition)}`,
+    })),
   ].sort((a, b) => b.at.localeCompare(a.at));
   if (rows.length === 0) return print('No run has left a record yet.');
   for (const row of rows.slice(0, LIST_LENGTH)) print(`  ${row.line}`);
@@ -186,16 +200,24 @@ export async function runRuns(context: InfraContext): Promise<void> {
     return showMachines(bucketBootAccountReader(s3, naming.bootDiagBucket), services, { sha });
   }
   const auth = { secretKey: observer.secretKey };
-  const jobRuns = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') })
-    .then((definitionId) => (definitionId ? listJobRuns(auth, { region, projectId: context.projectId, definitionId }) : []))
-    .catch((error) => {
-      console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
-      return [];
-    });
+  const read = async (): Promise<{ jobRuns: JobRun[]; definition?: JobDefinitionFacts }> => {
+    const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
+    if (!definitionId) return { jobRuns: [] };
+    const [jobRuns, definition] = await Promise.all([
+      listJobRuns(auth, { region, projectId: context.projectId, definitionId }),
+      readJobDefinition(auth, { region, definitionId }),
+    ]);
+    return { jobRuns, definition };
+  };
+  const { jobRuns, definition } = await read().catch((error): Awaited<ReturnType<typeof read>> => {
+    console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
+    return { jobRuns: [] };
+  });
   console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
   await showRuns(bucketRunStore(s3, naming.bootDiagBucket), {
     pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
     jobRuns,
+    definition,
     environment: context.environment,
   });
 }

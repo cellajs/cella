@@ -164,6 +164,8 @@ describe('runDeploy sequencing', () => {
       'task:sync-rollout-config',
       'task:preflight-privileged',
       'task:assert-deploy-policy',
+      // A missing secret blocks the run before any machine exists, the builder included.
+      'task:assert-secrets-deliverable',
       'task:build-release',
       'task:stage-generation-keys',
       'update:production',
@@ -171,8 +173,9 @@ describe('runDeploy sequencing', () => {
       'rollout',
       'publish-entry',
       'task:smoke',
-      // The displaced generations are reaped last, once smoke passed, under the same lock.
+      // The displaced generations are reaped once smoke passed, under the same lock; then the keys leave the user data of every machine left.
       'update:production',
+      'task:scrub-user-data',
       'lease:release',
     ];
     let cursor = -1;

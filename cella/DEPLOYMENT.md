@@ -59,7 +59,7 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job). The [runner](#the-runner) starts one when the environment's target moves; a rotation, an apply that clears a block and `pnpm infra start-deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job). The [runner](#the-runner) starts one when the environment's target moves; a rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
 
 ### What a deploy deploys
 
@@ -89,10 +89,12 @@ Each environment has a Serverless Jobs definition, `<slug>-<mode>-main`, and eve
 A run ends in one of three outcomes:
 
 - **Deployed:** the target serves.
-- **Blocked:** a privileged change is owed, and the apply that makes it starts the target again ([Changing infrastructure](./deployment/CHANGING_INFRASTRUCTURE.md)).
+- **Blocked:** the run's record names what is owed. A privileged change is made by an apply ([Changing infrastructure](./deployment/CHANGING_INFRASTRUCTURE.md)), a required secret stored in **Manage runtime secrets**, and either starts the target again.
 - **Failed:** the running release stays, and the target waits for a change in git or a start by hand.
 
 `pnpm infra start-deploy` starts a run on your operator key and follows it to its end. The run's log is in Cockpit under Serverless Jobs.
+
+**Releases only.** In an environment that follows the releases, as production does, the definition's own script refuses a target that no release tag names, before it fetches anything. It catches a start by hand that names the wrong commit. A key that may start runs can also start one with values or a command of its own, which gets past that check: Show runs flags such a run.
 
 ### The runner
 
@@ -106,7 +108,7 @@ Every deploy writes one record to the environment's boot-diag bucket, updated af
 
 **Show runs** (`pnpm infra runs`, observer key) lists the last ten runs and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
 
-Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs flags a record that disagrees with Scaleway's job run, which no key of the engine writes. A record that cannot be written does not fail the deploy.
+Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs flags a record that disagrees with Scaleway's job run, which no key of the engine writes, and a job run started with values or a command the engine never sets. A record that cannot be written does not fail the deploy.
 
 ### The builder
 
@@ -117,7 +119,7 @@ When the registry lacks one of the release's images, or the frontend bucket its 
 ```
 The runner sees a new target and starts a run of the main job
         ↓
-Stack lock + preflight: no privileged change may be owed
+Stack lock + preflight: no privileged change or required secret may be owed
         ↓
 Release not built yet: a builder machine builds the images
 and the frontend files, then is deleted
@@ -132,7 +134,11 @@ Publish the frontend entry files + smoke checks
 (degraded components warn, unhealthy ones fail the run)
         ↓
 Remove every displaced generation
+        ↓
+Take the boot key out of the user data of every machine that booted
 ```
+
+A machine's first boot writes its boot key to disk, where every later boot reads it. Scaleway shows a machine's user data to every key that may read machines, so the key stays in it only until the machine's boot account arrives.
 
 The primary service owns migrations: the migrate companion runs at the boot of its new generation, before the app starts. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
 
@@ -150,8 +156,8 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 At every boot the boot runner reads the machine's runtime secrets from Secret Manager, with each service's own key, into its compose env file ([Secret folders](./deployment/KEYS.md#secret-folders)).
 
-- **The Pulumi state holds no secret value.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager ([ensure-secrets.ts](../infra/tasks/ensure-secrets.ts)). A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation).
-- **A deploy writes no secret of the app's.** An apply makes and copies every value, so a secret added to the registry reaches the stack through **Review & apply changes**. Before the rollout, the deploy checks that every required copy holds a value.
+- **The Pulumi state holds no secret value but two.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager ([ensure-secrets.ts](../infra/tasks/ensure-secrets.ts)). A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The two exceptions sit under the passphrase: the boot key, which each machine's user data carries, and the password of a Redis store an app enables.
+- **A deploy writes no secret of the app's.** An apply makes and copies every value, so a secret added to the registry reaches the stack through **Review & apply changes**. Before it makes any machine, the deploy checks that every required copy holds a value. A missing one ends the run blocked, and storing it in **Manage runtime secrets** starts the target again.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 - **A missing required secret stops the boot**, so a machine never crash-loops behind a 502.
 

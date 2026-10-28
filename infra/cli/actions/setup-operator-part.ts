@@ -86,8 +86,8 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
     if (missing.length > 0) {
       const services = [...new Set(missing.flatMap((secret) => secret.services))].join(', ');
       console.warn(
-        `  ${warningMark} Required runtime secret(s) not set yet: ${missing.map((secret) => secret.secretName).join(', ')}. ` +
-          `Use "Manage runtime secrets" before deploying ${services}.`,
+        `  ${warningMark} Required runtime secret(s) not set yet: ${missing.map((secret) => secret.secretName).join(', ')}, which ${services} read. ` +
+          `The first deploy waits for them, blocked: storing them in "Manage runtime secrets" starts it again.`,
       );
     }
   } catch {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deployHealthGateSeconds } from '../tasks/rollout-runtime';
 import { bootPlanIn } from '../tests/helpers/pulumi-mock';
-import { type CloudInitParams, releaseCommandTimeoutSeconds, renderCloudInit } from './cloud-init';
+import { type CloudInitParams, releaseCommandTimeoutSeconds, renderCloudInit, withoutKeyFiles } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
   return {
@@ -169,5 +169,16 @@ describe('renderCloudInit', () => {
       expect(re.test('DATABASE_URL=postgres://…')).toBe(true);
       expect(re.test('harmless log line')).toBe(false);
     }
+  });
+});
+
+describe('withoutKeyFiles', () => {
+  it('must leave no key in the user data a booted machine keeps, which every key that reads machines can read (D-e)', () => {
+    const scrubbed = withoutKeyFiles(renderCloudInit(params())) ?? '';
+    expect(scrubbed).not.toContain('SCW-SECRET-KEY');
+    expect(scrubbed).not.toContain('SCW-ACCESS-KEY');
+    expect(scrubbed).toContain('# /etc/cella/scw-secret-key: written at the first boot');
+    expect(bootPlanIn(scrubbed, '/etc/cella/boot-plan.json').plan.releaseSha).toBe('abc123def');
+    expect(withoutKeyFiles(scrubbed)).toBeUndefined();
   });
 });

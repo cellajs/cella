@@ -75,7 +75,7 @@ export function parseEnvironmentsFile(text: string): Map<string, EnvironmentLine
 }
 
 /** The rule of an environment without a line: production follows the releases, every other environment the main branch. */
-function defaultRule(environment: string): TargetRule {
+export function defaultRule(environment: string): TargetRule {
   return environment === 'production' ? { kind: 'releases' } : { kind: 'branch', branch: 'main' };
 }
 

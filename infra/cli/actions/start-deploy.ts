@@ -53,7 +53,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
     console.warn(
-      `${warningMark} Blocked: a privileged change is owed. Apply it (\`${actionCommand('apply')}\`): the apply starts this target again.`,
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either starts this target again.`,
     );
   else
     console.error(
@@ -91,9 +91,9 @@ export async function startTargetAfterRotation(context: InfraContext, key: { sec
 }
 
 /**
- * Start the environment's main job again for the target whose last run ended blocked (D21), on the operator key: the apply that cleared the
- * block does it at its end, as the runner holds rights over jobs only and cannot see an apply. Nothing when the last run ended otherwise or
- * runs still; a target that moved on since is the runner's.
+ * Start the environment's main job again for the target whose last run ended blocked (D21), on the operator key: the apply, or Manage runtime
+ * secrets for a missing secret, does it at its end, as the runner holds rights over jobs only and cannot see either. Nothing when the last
+ * run ended otherwise or runs still; a target that moved on since is the runner's.
  */
 export async function startBlockedTarget(context: InfraContext, key: { secretKey: string }): Promise<void> {
   const auth = { secretKey: key.secretKey };
