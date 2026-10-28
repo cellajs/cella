@@ -1,5 +1,6 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { UnplugIcon } from 'lucide-react';
+import { ChevronDownIcon, LogOutIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { TileListHeading } from '~/modules/common/expandable-tile';
@@ -9,9 +10,11 @@ import { isLiveSession, SessionTile, sessionEndedAt } from '~/modules/me/session
 import type { Session } from '~/modules/me/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 
 export function SessionsList() {
   const { t } = useTranslation();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const {
     data: { sessions: allSessions },
@@ -47,8 +50,8 @@ export function SessionsList() {
             loading={isPending && variables?.length === revocable.length}
             onClick={() => handleRevoke(revocable.map((session) => session.id))}
           >
-            <UnplugIcon />
-            {t('c:revoke_others')}
+            <LogOutIcon />
+            {t('c:sign_out_others')}
           </Button>
         )}
       </TileListHeading>
@@ -67,12 +70,26 @@ export function SessionsList() {
         />
       </div>
       {history.length > 0 && (
-        <>
-          <TileListHeading className="mt-6 mb-3" title={t('c:ended')} count={history.length} />
-          <div className="flex flex-col gap-2">
-            <ExpandableList items={history} renderItem={(session) => <SessionTile session={session} />} initialDisplayCount={2} />
-          </div>
-        </>
+        <Collapsible open={historyOpen} onOpenChange={setHistoryOpen} className="mt-6">
+          <TileListHeading title={t('c:ended')} count={history.length}>
+            <CollapsibleTrigger
+              nativeButton
+              render={
+                <Button variant="ghost" size="sm" className="group/session-history -mr-2">
+                  {t(historyOpen ? 'c:hide' : 'c:show_all')}
+                  <ChevronDownIcon className="transition-transform duration-200 group-data-panel-open/session-history:rotate-180" />
+                </Button>
+              }
+            />
+          </TileListHeading>
+          <CollapsibleContent className={collapsiblePanelClass}>
+            <div className="mt-2 flex flex-col gap-2">
+              {history.map((session) => (
+                <SessionTile key={session.id} session={session} />
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </Accordion>
   );
