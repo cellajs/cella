@@ -56,7 +56,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
     // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
     // as a real request, to prevent email enumeration.
     log.info('Magic link requested for unknown email');
-    await rememberLinkRequest(ctx, 'magic', generateId());
+    rememberLinkRequest(ctx, 'magic', generateId());
     return;
   }
 
@@ -66,7 +66,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
   const { token: tokenRecord, rawToken } = await issueToken(ctx, { type: 'magic', userId, email: normalizedEmail, createdBy: userId, redirectPath });
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
-  await rememberLinkRequest(ctx, 'magic', tokenRecord.id);
+  rememberLinkRequest(ctx, 'magic', tokenRecord.id);
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 

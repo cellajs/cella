@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -18,7 +17,8 @@ import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/mo
 import { apiKeyFrom, apiKeyRefusal, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
-import { type UserModel, usersTable } from '#/modules/user/user-db';
+import type { UserModel } from '#/modules/user/user-db';
+import { findUserModelsByIds } from '#/modules/user/user-queries';
 
 /** The 401 that refuses a machine proof, naming why in `meta.reason`. */
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
@@ -79,7 +79,7 @@ const resolveUserToken = async (token: UserToken): Promise<{ user: UserModel; bi
 /** The grant policy's verdict on a live grant, with the user row. */
 const readTokenGrant = async (token: UserToken): Promise<TokenGrantEntry> => {
   const refusal = await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId });
-  const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
+  const [user] = refusal ? [] : await findUserModelsByIds({ var: { db: baseDb } }, { ids: [token.actorId] });
   return user ? { refusal: null, user } : { refusal: refusal ?? 'unknown_user' };
 };
 

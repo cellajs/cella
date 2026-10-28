@@ -85,7 +85,7 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
 };
 
 /** Sets a signed auth cookie; SameSite per `isLaxCookie`. */
-export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
+export const setAuthCookie = (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
   // A lifetime measured from a stored expiry has milliseconds; the cookie and its seal both take whole seconds.
   const maxAge = Math.floor(timeSpan.seconds());
   const options = {
@@ -100,7 +100,7 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
 };
 
 /** Reads an auth cookie's content; a missing, forged, transplanted or expired value reads as undefined. */
-export const getAuthCookie = async (ctx: Context, name: CookieName) => {
+export const getAuthCookie = (ctx: Context, name: CookieName) => {
   const sealed = getCookie(ctx, versionedCookieName(name), prefix);
   return sealed ? openAuthCookie(name, sealed) : undefined;
 };

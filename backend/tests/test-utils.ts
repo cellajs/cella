@@ -117,15 +117,15 @@ export const cookieMock = () => ({
   // The store keeps plain values, so a sealed value is its content.
   sealAuthCookie: (_name: string, content: string) => content,
   cookieSecrets: ['test-cookie-secret-for-unit-tests'],
-  setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
+  setAuthCookie: vi.fn().mockImplementation((ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     mockCookieStore.set(name, stringValue);
     ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`);
   }),
-  getAuthCookie: vi.fn().mockImplementation(async (_ctx, name) => {
+  getAuthCookie: vi.fn().mockImplementation((_ctx, name) => {
     return mockCookieStore.get(name) || null;
   }),
-  deleteAuthCookie: vi.fn().mockImplementation(async (ctx, name) => {
+  deleteAuthCookie: vi.fn().mockImplementation((ctx, name) => {
     mockCookieStore.delete(name);
     ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
   }),

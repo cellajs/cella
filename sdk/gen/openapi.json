@@ -235,7 +235,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They\n    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,\n    Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover\n    sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -3336,7 +3336,7 @@
         "operationId": "getTokenData",
         "tags": ["auth", "cella"],
         "summary": "Get token data",
-        "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
+        "description": "Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],

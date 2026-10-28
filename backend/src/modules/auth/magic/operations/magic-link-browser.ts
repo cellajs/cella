@@ -4,7 +4,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { requestedHere } from '#/modules/auth/tokens/token-lifecycle';
+import { isRequestedHere } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteUnopenedLinkToken, findLinkToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { TimeSpan } from '#/utils/time-span';
@@ -35,8 +35,8 @@ export const findOpenableMagicLink = async (rawToken: string) => openable(await 
  * The raw value of the magic link this browser holds for confirmation.
  * @throws AppError 401 `magic_expired` when it holds none.
  */
-export const readHeldMagicLink = async (ctx: Context<Env>) => {
-  const rawToken = await getAuthCookie(ctx, 'magic-pending');
+export const readHeldMagicLink = (ctx: Context<Env>) => {
+  const rawToken = getAuthCookie(ctx, 'magic-pending');
   if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
   return rawToken;
 };
@@ -66,10 +66,10 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
   // An unknown link takes the direct path, which refuses it the same way it always has. So does an opened one: only the
   // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
   if (!token || token.invokedAt) return null;
-  if (await requestedHere(ctx, 'magic', token.id)) return null;
+  if (isRequestedHere(ctx, 'magic', token.id)) return null;
 
   openable(token);
-  await setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);
+  setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);
   return ctx.redirect(new URL(confirmSignInPath, appConfig.frontendUrl), 302);
 };
 
@@ -78,7 +78,7 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
  * computer can neither confirm it here nor reopen it from the history.
  */
 export const dropHeldMagicLink = async (ctx: Context<Env>) => {
-  const rawToken = await getAuthCookie(ctx, 'magic-pending');
+  const rawToken = getAuthCookie(ctx, 'magic-pending');
   if (!rawToken) return;
   deleteAuthCookie(ctx, 'magic-pending');
   await deleteUnopenedLinkToken(dbCtx, { type: 'magic', rawToken });

@@ -3,7 +3,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, stepUpEnrollGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
-import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
+import { totpCodeBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema } from '#/schemas';
 
 const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
@@ -26,7 +26,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Set TOTP',
     description:
       'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
-    request: { body: jsonBody(totpCreateBodySchema) },
+    request: { body: jsonBody(totpCodeBodySchema) },
     responses: { 201: { description: 'TOTP created' } },
   }),
   deleteTotp: xRoute({
@@ -46,7 +46,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [totpVerificationLimiter],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
-    request: { body: jsonBody(totpCreateBodySchema) },
+    request: { body: jsonBody(totpCodeBodySchema) },
     responses: { 204: { description: 'TOTP verified', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
   }),
 });

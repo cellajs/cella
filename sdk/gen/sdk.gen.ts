@@ -551,7 +551,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
 /**
  * Get token data
  *
- * Get basic token data from single-use token session, It returns basic data if the session is still valid.
+ * Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.
  *
  * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· _auth · cella_
  *

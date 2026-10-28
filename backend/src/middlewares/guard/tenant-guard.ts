@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { routeTarget } from '#/middlewares/guard/route-target';
-import { findConnectionBindingUser } from '#/modules/connections/connections-queries';
+import { findUserSsoConnection } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
@@ -63,7 +63,7 @@ export const tenantGuard = xMiddleware(
     if (actor.kind === 'user' && !ctx.var.isSystemAdmin && !ctx.var.impersonator && tenant.authStrategies.length > 0) {
       const strategy = actor.authStrategy ?? null;
       if (!strategy || !tenant.authStrategies.includes(strategy)) {
-        const connection = await findConnectionBindingUser(ctx, { userId: actor.id, tenantId: tenant.id });
+        const connection = await findUserSsoConnection(ctx, { userId: actor.id, tenantId: tenant.id });
         if (connection) {
           throw new AppError(403, 'sso_required', 'warn', {
             meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },

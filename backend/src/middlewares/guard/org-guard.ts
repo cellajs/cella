@@ -1,12 +1,10 @@
-import { and, eq } from 'drizzle-orm';
 import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { loadCachedOrganization } from '#/middlewares/guard/org-cache';
 import { missingRouteParam } from '#/middlewares/guard/route-target';
 import { isMembershipRow } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
-import { organizationsTable } from '#/modules/organization/organization-db';
+import { loadOrganization } from '#/modules/organization/load-organization';
 
 /**
  * Grants org-scoped routes to system admins and to anyone holding a membership inside the
@@ -26,7 +24,7 @@ export const orgGuard = xMiddleware(
     const organizationId = ctx.req.param('organizationId')?.toLowerCase();
     if (!organizationId) throw missingRouteParam('organizationId');
 
-    const { db, isSystemAdmin, tenantId } = ctx.var;
+    const { isSystemAdmin, tenantId } = ctx.var;
     const bindings: readonly ActorBinding[] | undefined = ctx.var.actor?.bindings;
 
     if (!tenantId) {
@@ -40,13 +38,7 @@ export const orgGuard = xMiddleware(
     const missing = () => new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
     // The lookup is bound to the request's tenant, so an organization of another tenant does not resolve.
-    const orgRow = await loadCachedOrganization(tenantId, organizationId, async () => {
-      const [row] = await db
-        .select()
-        .from(organizationsTable)
-        .where(and(eq(organizationsTable.id, organizationId), eq(organizationsTable.tenantId, tenantId)));
-      return row;
-    });
+    const orgRow = await loadOrganization(ctx, { tenantId, organizationId });
     if (!orgRow) throw missing();
 
     // Rows store organizationFlags sparse; merge config defaults under the stored bag

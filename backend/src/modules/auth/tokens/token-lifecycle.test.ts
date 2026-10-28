@@ -9,7 +9,7 @@ import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { invokeToken, issueToken, issueTokens, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { isTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { authCookie, cookieChange, createTestUser, setCookiePair } from '../../../../tests/helpers';
 import { clearDatabase } from '../../../../tests/test-utils';

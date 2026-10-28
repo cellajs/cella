@@ -25,7 +25,7 @@ export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTena
   if (orphanTenant?.name === input.name) return withActorRef(ctx, orphanTenant);
 
   const { id } = orphanTenant
-    ? await updateTenant(ctx, { targetTenantId: orphanTenant.id, values: { name: input.name, ...updateStamps(actorId) } })
+    ? await updateTenant(ctx, { id: orphanTenant.id, values: { name: input.name, ...updateStamps(actorId) } })
     : await createTenant(ctx, { name: input.name, createdBy: actorId, userEmail: ctx.var.user.email });
 
   const tenant = await findTenant(ctx, { where: eq(tenantsTable.id, id) });

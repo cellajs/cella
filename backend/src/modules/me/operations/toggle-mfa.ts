@@ -21,14 +21,13 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   const { factor, methods } = await readStepUp(session, 'account');
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
-  const { updatedUser, changed } = await mfaFactorRules.locked(user.id, async (tx) => {
+  const { updatedUser, changed } = await mfaFactorRules.locked(user.id, async (txCtx) => {
     if (mfaRequired) {
-      await mfaFactorRules.assertCanEnable(tx, user.id);
+      await mfaFactorRules.assertCanEnable(txCtx, user.id);
       // The factor that proved this session is the step-up of the mfa session minted below. A session proven by an SSO
       // sign-in names none, so turning MFA on asks for one of the two factors it needs enrolled.
       if (!factor) throw new AppError(403, 'step_up_required', 'info', { meta: { methods } });
     }
-    const txCtx = { var: { db: tx } };
     // Read under the lock, so the owner is mailed only for a switch this request flipped.
     const changed = (await findMfaRequired(txCtx, { userId: user.id })) !== mfaRequired;
     const updated = await updateUserMfa(txCtx, { id: user.id, mfaRequired });

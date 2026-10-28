@@ -5,19 +5,19 @@ import { authOAuthHandlers } from '#/modules/auth/oauth/oauth-handlers';
 import { authPasskeysHandlers } from '#/modules/auth/passkeys/passkeys-handlers';
 import { authSsoHandlers } from '#/modules/auth/sso/sso-handlers';
 import { authStepUpHandlers } from '#/modules/auth/step-up/step-up-handlers';
-import { authTotpHandlers } from '#/modules/auth/totps/totps-handlers';
+import { authTotpsHandlers } from '#/modules/auth/totps/totps-handlers';
 
 defineBackendModule({
   name: 'auth',
   owner: 'cella',
   scope: ['frontend', 'backend'],
-  description: `Endpoints for authentication, supporting multiple sign-in methods including OAuth
-    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They
-    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.`,
+  description: `Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,
+    Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover
+    sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.`,
   routes: [
     { path: '/auth/', app: authGeneralHandlers },
     { path: '/auth/', app: authMagicLinkHandlers },
-    { path: '/auth/', app: authTotpHandlers },
+    { path: '/auth/', app: authTotpsHandlers },
     { path: '/auth/', app: authPasskeysHandlers },
     { path: '/auth/', app: authOAuthHandlers },
     { path: '/auth/', app: authSsoHandlers },

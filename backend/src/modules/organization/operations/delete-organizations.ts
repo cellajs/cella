@@ -18,7 +18,7 @@ export async function deleteOrganizationsOp(ctx: ActorContext, ids: string[]) {
 
   if (allowedIds.length > 0) {
     const at = getIsoDate();
-    await updateTenant(ctx, { targetTenantId: tenantId, values: { status: 'archived', statusChangedAt: at, ...updateStamps(actor.id, at) } });
+    await updateTenant(ctx, { id: tenantId, values: { status: 'archived', statusChangedAt: at, ...updateStamps(actor.id, at) } });
     invalidateCache.tenant(tenantId);
     for (const id of allowedIds) invalidateCache.org(tenantId, id);
     await applyTenantStatusChange(ctx, tenantId);

@@ -15,11 +15,12 @@ import type { PasskeyChallengePurpose } from '#/modules/auth/passkeys/passkey-ch
 import {
   deletePasskeyChallenge,
   deleteStalePasskeyChallenges,
+  findCredentialIdsByUser,
   findPasskeyByCredentialId,
   insertPasskeyChallenge,
   updatePasskeyCounter,
 } from '#/modules/auth/passkeys/passkeys-queries';
-import type { WebAuthnAttestation } from '#/modules/auth/passkeys/passkeys-schema';
+import type { WebAuthnAssertion, WebAuthnAttestation } from '#/modules/auth/passkeys/passkeys-schema';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
@@ -44,26 +45,28 @@ const registrationFailed = (error?: unknown) =>
 
 interface IssuePasskeyChallengeOpts {
   purpose: PasskeyChallengePurpose;
-  /** For an mfa or step-up challenge: the account whose passkey must answer it. */
+  /** For an mfa or step-up challenge: the account whose passkey must answer it, and whose passkeys are offered. */
   userId?: string;
 }
 
 /**
  * Hands this browser a new challenge for `purpose`: its row stores the hash, the challenge itself travels in a signed
  * cookie and in the response. The challenge the browser held before is dropped, and so are expired ones.
- * @returns The challenge, 32 random bytes as base64url: the value the WebAuthn options take as they are.
+ * @returns The challenge response: the challenge, 32 random bytes as base64url (the value the WebAuthn options take as
+ *   they are), and the credential ids of `userId`'s passkeys, none without one.
  */
 export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId }: IssuePasskeyChallengeOpts) => {
-  const previous = await getAuthCookie(ctx, 'passkey-challenge');
+  const previous = getAuthCookie(ctx, 'passkey-challenge');
   await deleteStalePasskeyChallenges(dbCtx, { previousHash: previous ? hashToken(previous) : undefined });
 
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
   await insertPasskeyChallenge(dbCtx, {
     values: { challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: isoDateIn(challengeLifetime) },
   });
-  await setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
+  setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
 
-  return challenge;
+  const passkeys = userId ? await findCredentialIdsByUser(dbCtx, { userId }) : [];
+  return { challenge, credentialIds: passkeys.map((passkey) => passkey.credentialId) };
 };
 
 /**
@@ -74,7 +77,7 @@ export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId
  *   was issued for another purpose, or for another account than `userId`.
  */
 const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurpose, userId?: string) => {
-  const challenge = await getAuthCookie(ctx, 'passkey-challenge');
+  const challenge = getAuthCookie(ctx, 'passkey-challenge');
   deleteAuthCookie(ctx, 'passkey-challenge');
   if (!challenge) throw verificationFailed();
 
@@ -113,7 +116,7 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
 };
 
 interface VerifyPasskeyAssertionOpts {
-  assertion: AuthenticationResponseJSON;
+  assertion: WebAuthnAssertion;
   purpose: Exclude<PasskeyChallengePurpose, 'registration'>;
   /** The account the passkey must belong to. Omitted for a sign-in, where the passkey names its account. */
   userId?: string;
@@ -135,7 +138,8 @@ export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, pur
   // The library throws for most mismatches (challenge, origin, relying party, flags, counter) and answers false for a
   // bad signature.
   const { verified, authenticationInfo } = await verifyAuthenticationResponse({
-    response: assertion,
+    // The same gap as the registration's: `clientExtensionResults`.
+    response: assertion as AuthenticationResponseJSON,
     expectedChallenge: challenge,
     expectedOrigin,
     expectedRPID: relyingPartyId,

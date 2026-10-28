@@ -11,7 +11,7 @@ import { serveInternal } from '#/lib/listeners';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';

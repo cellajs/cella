@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { startOAuthConnect } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestUser, insertTestSession, setCookieOf } from '../helpers';
 import { createAppClient } from '../test-client';

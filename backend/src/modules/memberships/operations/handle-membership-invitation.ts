@@ -10,7 +10,7 @@ import {
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
   stampInactiveMembershipRejected,
-} from '#/modules/memberships/memberships-queries';
+} from '#/modules/memberships/inactive-memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { log } from '#/utils/logger';

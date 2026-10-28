@@ -5,8 +5,8 @@ import { resendInvitationEmail } from '#/modules/auth/invitations/operations/res
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
-import { findInactiveMembershipInOrg, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
-import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
+import { findInactiveMembershipInOrg, stampInactiveMembershipsReminded } from '#/modules/memberships/inactive-memberships-queries';
+import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { findUserById } from '#/modules/user/user-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { EntityModel } from '#/tables';

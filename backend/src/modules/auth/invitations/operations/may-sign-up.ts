@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
-import { findPendingInactiveMembershipByEmail } from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembershipByEmail } from '#/modules/memberships/inactive-memberships-queries';
 
 interface SignUpEmailOpts {
   email: string;

@@ -5,7 +5,7 @@ import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findPendingInactiveMembership } from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembership } from '#/modules/memberships/inactive-memberships-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { invitationAddressEmail } from '../../../../../emails';

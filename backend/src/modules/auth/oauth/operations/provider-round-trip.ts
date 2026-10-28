@@ -87,7 +87,7 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
   // The route's `xEnabledBy` switch refuses a provider this app has off.
   const strategy = provider as EnabledOAuthProvider;
 
-  const cookiePayload = await readOAuthCookie(ctx, state);
+  const cookiePayload = readOAuthCookie(ctx, state);
 
   if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
 

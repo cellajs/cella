@@ -9,8 +9,8 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
 import { type CodeTokenType, type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import type { InsertTokenModel } from '#/modules/auth/tokens/tokens-db';
 import {
-  bindTokenToUser,
   deleteBoundToken,
   deleteReplacedTokens,
   deleteSessionCodeToken,
@@ -20,8 +20,8 @@ import {
   insertTokens,
   type TokenRecord,
   updateTokenRedeemed,
+  updateTokenUser,
 } from '#/modules/auth/tokens/tokens-queries';
-import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -111,7 +111,7 @@ export const issueToken = async (ctx: DbContext, token: NewToken) => {
  */
 export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { type: CookieTokenType }) => {
   const { token: record, rawToken } = await issueToken(dbCtx, token);
-  await setAuthCookie(ctx, token.type, rawToken, tokenPolicies[token.type].ttl);
+  setAuthCookie(ctx, token.type, rawToken, tokenPolicies[token.type].ttl);
   return record;
 };
 
@@ -140,7 +140,7 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
  * by itself: it may come from another link of the same type.
  */
 const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
-  const cookie = await getAuthCookie(ctx, token.type);
+  const cookie = getAuthCookie(ctx, token.type);
   if (!cookie) return null;
 
   const held = await findTokenBySingleUse(dbCtx, { id: token.id, cookie });
@@ -200,11 +200,11 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
           const won = await redeem(txCtx);
           if (!won) return won;
           const userId = await claimHolder(tx, won);
-          return bindTokenToUser(txCtx, { tokenId: won.id, userId });
+          return updateTokenUser(txCtx, { id: won.id, userId });
         });
 
   if (redeemed) {
-    await setAuthCookie(ctx, type, singleUse.raw, singleUseWindow);
+    setAuthCookie(ctx, type, singleUse.raw, singleUseWindow);
     return redeemed;
   }
 
@@ -226,8 +226,7 @@ export const rememberLinkRequest = (ctx: Context<Env>, type: RequestedLinkType, 
   setAuthCookie(ctx, `${type}-requested`, tokenId, tokenPolicies[type].ttl);
 
 /** Whether this browser asked for the link: its marker for the type names the token. */
-export const requestedHere = async (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) =>
-  (await getAuthCookie(ctx, `${type}-requested`)) === tokenId;
+export const isRequestedHere = (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) => getAuthCookie(ctx, `${type}-requested`) === tokenId;
 
 /** Drops the marker once the link is used: it has nothing left to say. */
 export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) => deleteAuthCookie(ctx, `${type}-requested`);
@@ -240,7 +239,7 @@ export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) =>
  *   expired: one shape for a link and a cookie-carried type alike.
  */
 export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord> => {
-  const cookie = await getAuthCookie(ctx, type);
+  const cookie = getAuthCookie(ctx, type);
   const token = cookie ? await findBoundToken(dbCtx, { type, cookie }) : undefined;
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
@@ -300,7 +299,7 @@ export const spendCookieToken = async (
   opts: SpendCookieTokenOpts = { deleteCookie: 'now' },
 ): Promise<TokenRecord | null> => {
   const spendCtx = opts.deleteCookie === 'after-commit' ? opts.txCtx : dbCtx;
-  const cookie = await getAuthCookie(ctx, type);
+  const cookie = getAuthCookie(ctx, type);
   if (opts.deleteCookie === 'now') deleteAuthCookie(ctx, type);
   if (!cookie) return null;
 

@@ -2,7 +2,7 @@ import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { clearActorActivity } from '#/modules/actors/actors-queries';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderRowsByUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { deleteUsersByIds } from '#/modules/user/user-queries';
 
 interface DeleteAccountsOpts {
@@ -22,7 +22,7 @@ export async function deleteAccounts(ctx: DbContext, { userIds, by }: DeleteAcco
     const txCtx = { var: { db: tx } };
     await deleteUsersByIds(txCtx, { ids: userIds });
     await clearActorActivity(txCtx, { ids: userIds });
-    await deleteConsentsOfUsers(txCtx, { userIds });
+    await deleteProviderRowsByUsers(txCtx, { userIds });
   });
   // After the commit: `user_deleted` stamps nothing, and the cache drop and the stream close must follow the delete.
   for (const userId of userIds) await revokeSessions(ctx, { userId, all: true, reason: 'user_deleted', by });

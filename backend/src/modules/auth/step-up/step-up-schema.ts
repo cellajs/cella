@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { stepUpMethods, stepUpTiers } from '#/modules/auth/step-up/helpers/step-up';
-import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
+import { totpCodeBodySchema } from '#/modules/auth/totps/totps-schema';
 
 export const stepUpQuerySchema = z.object({
   tier: z
@@ -23,6 +23,6 @@ export const stepUpStateSchema = z.object({
  */
 export const stepUpBodySchema = z.object({
   passkeyData: webAuthnAssertionSchema.optional(),
-  totpCode: totpCreateBodySchema.shape.code.optional(),
-  emailCode: totpCreateBodySchema.shape.code.optional(),
+  totpCode: totpCodeBodySchema.shape.code.optional(),
+  emailCode: totpCodeBodySchema.shape.code.optional(),
 });

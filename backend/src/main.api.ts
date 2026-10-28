@@ -20,7 +20,7 @@ otel.verifyConnection();
 
 let server: ReturnType<typeof serveApi> | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-/** Stops what this process starts besides its listeners: the GeoIP refresh, and under `singleVM` the CDC worker. */
+/** Stops what this process starts besides its own two listeners: the GeoIP refresh, and under `singleVM` the services it runs. */
 const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -72,16 +72,16 @@ const main = async () => {
       if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
       // Folded workers listen on their own ports (the LB routes each path to the host VM on that port); the API
       // process keeps PORT for itself.
-      if (appConfig.services.mcp.enabled)
-        await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker({
-          port: appConfig.devPorts.mcp,
-          inProcess: true,
-        });
-      if (appConfig.services.oauth.enabled)
-        await (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthWorker({
-          port: appConfig.devPorts.oauth,
-          inProcess: true,
-        });
+      if (appConfig.services.mcp.enabled) {
+        const mcp = await import('#/modules/mcp/worker/mcp-worker-entry');
+        stops.push(mcp.shutdownMcpWorker);
+        await mcp.startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
+      }
+      if (appConfig.services.oauth.enabled) {
+        const oauth = await import('#/modules/oauth-server/worker/oauth-worker-entry');
+        stops.push(oauth.shutdownOauthWorker);
+        await oauth.startOauthWorker({ port: appConfig.devPorts.oauth, inProcess: true });
+      }
       // The folded jobs worker needs no port: this process's /health carries the jobs component.
       if (appConfig.services.jobs.enabled) await (await import('#/lib/jobs-worker')).startJobsWorker({ inProcess: true });
     }

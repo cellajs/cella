@@ -10,7 +10,7 @@ import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';

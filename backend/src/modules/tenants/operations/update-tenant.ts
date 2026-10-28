@@ -34,7 +34,7 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     ...(statusChanged ? { statusChangedAt: getIsoDate() } : {}),
     ...updateStamps(ctx.var.actor.id),
   };
-  const updated = await updateTenant(ctx, { targetTenantId: tenantId, values });
+  const updated = await updateTenant(ctx, { id: tenantId, values });
 
   invalidateCache.tenant(tenantId);
   if (statusChanged) await applyTenantStatusChange(ctx, tenantId);
