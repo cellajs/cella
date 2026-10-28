@@ -1,5 +1,92 @@
 # Changelog
 
+## [0.26.0](https://github.com/cellajs/cella/compare/0.25.0...0.26.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* consistency sweep leftovers, SSO pointer mail, suspended tenants refuse materialize, quota counts rows ([#1586](https://github.com/cellajs/cella/issues/1586))
+* **shared:** consistency sweep group 36, style rules refuse what AGENTS.md refuses, commit bodies cannot skip headers ([#1579](https://github.com/cellajs/cella/issues/1579))
+* **stream:** change and signal frames, membership and the inbox as signals ([#1583](https://github.com/cellajs/cella/issues/1583)).
+* **auth,oauth-server,guards:** consistency sweep follow-up, cross-group names, MCP and OAuth stop with the API ([#1582](https://github.com/cellajs/cella/issues/1582))
+* **emails:** request details, address-proven invitations, one text per job, unsubscribe on POST and dark mode ([#1571](https://github.com/cellajs/cella/issues/1571))
+* **middlewares,permissions:** consistency sweep group 29, detail cache keyed by row id, concurrent misses answer ([#1576](https://github.com/cellajs/cella/issues/1576))
+* **oauth-server,tenants:** consistency sweep group 27, consent bodies parse, the sweep keeps restored tenants ([#1570](https://github.com/cellajs/cella/issues/1570))
+* **frontend:** buttons follow shadcn base-vega, plain and none variants removed ([#1568](https://github.com/cellajs/cella/issues/1568))
+* **entities,organization:** consistency sweep group 24, catchup hints reach apps without leaking ids, stream topics ([#1567](https://github.com/cellajs/cella/issues/1567))
+* **auth:** step-up mails a code, API keys and consent need a second factor ([#1565](https://github.com/cellajs/cella/issues/1565))
+* **attachment,yjs:** consistency sweep group 26, replaced images stay while their holder names them, replays first ([#1566](https://github.com/cellajs/cella/issues/1566))
+* **frontend:** four text color steps, one group-label recipe, and a style rule that keeps them ([#1564](https://github.com/cellajs/cella/issues/1564))
+* **shared:** consistency sweep group 34, one channel order in the permission engine, one regex escape ([#1562](https://github.com/cellajs/cella/issues/1562))
+* **auth:** consistency sweep group 21, verification links spent once, state cookies cleared, provider deadlines ([#1561](https://github.com/cellajs/cella/issues/1561))
+* **backend:** consistency sweep group 31, deployed databases get the retention job, one migration sequence ([#1556](https://github.com/cellajs/cella/issues/1556))
+* **notification,push,system:** consistency sweep group 25, the inbox shows the newest rows, admin saves keep the name ([#1554](https://github.com/cellajs/cella/issues/1554))
+* **infra:** the deploy path writes no secret, builds trust no push from before a rotation, rotations deploy ([#1549](https://github.com/cellajs/cella/issues/1549))
+
+### 🎉 New features
+
+* **auth:** step-up mails a code, API keys and consent need a second factor ([#1565](https://github.com/cellajs/cella/issues/1565)) ([c5df0aa](https://github.com/cellajs/cella/commit/c5df0aa6e0957ef2e987e1ac93b3b461c1e10abd))
+* **docs:** llms.txt from the docs pages, and the docs cut by 30% ([#1585](https://github.com/cellajs/cella/issues/1585)) ([a58930a](https://github.com/cellajs/cella/commit/a58930a6aaa5a974b9991d7c0d68e6454151bb60))
+* **docs:** the pages table edits without reloading the app, and shows each page's size ([#1578](https://github.com/cellajs/cella/issues/1578)) ([37181aa](https://github.com/cellajs/cella/commit/37181aa70bf809732db5a9507e2689a749f718eb))
+* **emails:** request details, address-proven invitations, one text per job, unsubscribe on POST and dark mode ([#1571](https://github.com/cellajs/cella/issues/1571)) ([2f35d54](https://github.com/cellajs/cella/commit/2f35d5497600541894de97a4f646125d91f82f7b))
+* **frontend:** buttons follow shadcn base-vega, plain and none variants removed ([#1568](https://github.com/cellajs/cella/issues/1568)) ([a265537](https://github.com/cellajs/cella/commit/a26553773dd5daaea98d86d7ca8443ea8209b63f))
+* **frontend:** four text color steps, one group-label recipe, and a style rule that keeps them ([#1564](https://github.com/cellajs/cella/issues/1564)) ([e15a0f7](https://github.com/cellajs/cella/commit/e15a0f7df5d180bcd2df36bffe7bc5303d11fd89))
+* **stream:** change and signal frames, membership and the inbox as signals ([#1583](https://github.com/cellajs/cella/issues/1583)). ([4112423](https://github.com/cellajs/cella/commit/41124238e448bbfe8bb0e89932a5eb36a01fcac0))
+
+
+### 🐞 Bug fixes
+
+* **attachment,yjs:** consistency sweep group 26, replaced images stay while their holder names them, replays first ([#1566](https://github.com/cellajs/cella/issues/1566)) ([a794c3a](https://github.com/cellajs/cella/commit/a794c3acffd09a30d771e0e8f9371bf4bf6d8a91))
+* **auth:** consistency sweep group 21, verification links spent once, state cookies cleared, provider deadlines ([#1561](https://github.com/cellajs/cella/issues/1561)) ([2645184](https://github.com/cellajs/cella/commit/26451845df646ce00ad346cc8e1513894ee6c67d))
+* **auth:** consistency sweep group 22, no false deleted mails, passkey responses drop counter, holder names ([#1560](https://github.com/cellajs/cella/issues/1560)) ([d27f6ea](https://github.com/cellajs/cella/commit/d27f6ea6701cbe9ce3dae28b5556006e1f34b7b6))
+* **backend:** consistency sweep group 31, deployed databases get the retention job, one migration sequence ([#1556](https://github.com/cellajs/cella/issues/1556)) ([4e6621e](https://github.com/cellajs/cella/commit/4e6621e54ebafb3fc6bdc5c75a9f0ef7f1fb877a))
+* **cdc:** consistency sweep group 32, failures outlive a late flush, lost-slot rebuilds are retried, API-led shutdown ([#1577](https://github.com/cellajs/cella/issues/1577)) ([321a512](https://github.com/cellajs/cella/commit/321a5126e2c7eba5e2fda9426c08fb4c204c92c4))
+* consistency sweep leftovers, SSO pointer mail, suspended tenants refuse materialize, quota counts rows ([#1586](https://github.com/cellajs/cella/issues/1586)) ([a875c1c](https://github.com/cellajs/cella/commit/a875c1cf40bbc9934985d5d252f828c8ac333f50))
+* **entities,organization:** consistency sweep group 24, catchup hints reach apps without leaking ids, stream topics ([#1567](https://github.com/cellajs/cella/issues/1567)) ([11e47bd](https://github.com/cellajs/cella/commit/11e47bdec7f7c0b33c44ff38e517570460695381))
+* **entities:** the deleted-storage cleanup keeps a file its organization image still names ([#1574](https://github.com/cellajs/cella/issues/1574)) ([747fa75](https://github.com/cellajs/cella/commit/747fa75b8532bd8b2d3287b43df01070aa968702))
+* **frontend:** no offline blink after resume, connectivity owns recovery, mutations keep their offline defaults ([#1587](https://github.com/cellajs/cella/issues/1587)) ([dced2e6](https://github.com/cellajs/cella/commit/dced2e68e5b0be9ee309c0d7fdce2626bb3f052a))
+* **infra:** an existing stack migrates in place, and production joins the runner ([#1543](https://github.com/cellajs/cella/issues/1543)) ([c6c87c7](https://github.com/cellajs/cella/commit/c6c87c7f67dda3337441906d1469823c1d7b3661))
+* **infra:** storage and operator-identity tests pass in an app not named cella ([#1547](https://github.com/cellajs/cella/issues/1547)) ([45dd25e](https://github.com/cellajs/cella/commit/45dd25eb4fa30488b6575f447a3362fdd10337c9))
+* **memberships,seen:** consistency sweep group 23, invitation answers stop leaking the org row, seat quota fixes ([#1563](https://github.com/cellajs/cella/issues/1563)) ([e263381](https://github.com/cellajs/cella/commit/e2633813969352ab12c248a0c168411a0c6da2bc))
+* **middlewares,permissions:** consistency sweep group 29, detail cache keyed by row id, concurrent misses answer ([#1576](https://github.com/cellajs/cella/issues/1576)) ([45685f0](https://github.com/cellajs/cella/commit/45685f0343970620653c5f5ee7374d6726b026d8))
+* **notification,push,system:** consistency sweep group 25, the inbox shows the newest rows, admin saves keep the name ([#1554](https://github.com/cellajs/cella/issues/1554)) ([d93f75f](https://github.com/cellajs/cella/commit/d93f75fa1176b0457687c3a56cdf5c0f29fb13f1))
+* **oauth-server,tenants:** consistency sweep group 27, consent bodies parse, the sweep keeps restored tenants ([#1570](https://github.com/cellajs/cella/issues/1570)) ([e8ce5cf](https://github.com/cellajs/cella/commit/e8ce5cff9db52689e506cef91551a90735eb98da))
+* **schemas:** the slug pattern no longer backtracks exponentially on a refused slug ([#1555](https://github.com/cellajs/cella/issues/1555)) ([7c81d98](https://github.com/cellajs/cella/commit/7c81d98f9f15a9cd4bce8cfadb024e28fa9d8315))
+* **shared:** consistency sweep group 35, browsers read OAUTH_URL, one telemetry resource, row location on the hierarchy ([#1559](https://github.com/cellajs/cella/issues/1559)) ([3afd2d4](https://github.com/cellajs/cella/commit/3afd2d475e71e9f1d3d53ad321cd820f6b820858))
+* **shared:** consistency sweep group 36, style rules refuse what AGENTS.md refuses, commit bodies cannot skip headers ([#1579](https://github.com/cellajs/cella/issues/1579)) ([f415143](https://github.com/cellajs/cella/commit/f415143ffab20b0ea5eb6ff88cb39e1391ca9e72))
+* **user,me,mcp:** consistency sweep group 28, admins list users, atomic account deletion, MCP batches answer each call ([#1572](https://github.com/cellajs/cella/issues/1572)) ([5873ad4](https://github.com/cellajs/cella/commit/5873ad46f261d326f9d8434e30b0f628ceaf945b))
+* **yjs:** consistency sweep group 33, joining editors keep peers updates, API-led shutdown, one RLS round trip ([#1580](https://github.com/cellajs/cella/issues/1580)) ([dd18470](https://github.com/cellajs/cella/commit/dd18470b5311a482bf59dbc5514836aae617ccae))
+
+
+### 🔧 Small improvements
+
+* **auth,oauth-server,guards:** consistency sweep follow-up, cross-group names, MCP and OAuth stop with the API ([#1582](https://github.com/cellajs/cella/issues/1582)) ([8ee9173](https://github.com/cellajs/cella/commit/8ee9173aaaa0132b046d18d35a082aabf9f6ce82))
+* **db,core,schemas:** consistency sweep group 30, spec examples parse, one database type, dead refinements go ([#1558](https://github.com/cellajs/cella/issues/1558)) ([e6ece12](https://github.com/cellajs/cella/commit/e6ece1291e463e5fba6137223b0c8877bb853e81))
+* **frontend:** consistency follow-up: one row key, cells press once, one secret box, one invite opener ([#1553](https://github.com/cellajs/cella/issues/1553)) ([ef9dd06](https://github.com/cellajs/cella/commit/ef9dd06e633f2ae2d36631be2b3841dc7ce98c7d))
+* **frontend:** React smell sweep: bugs, typed channel lists, compiler gate ([#1548](https://github.com/cellajs/cella/issues/1548)) ([dba99e3](https://github.com/cellajs/cella/commit/dba99e3b9f5cb891fb44ce6d3232f7330a2b6a3e))
+* **infra:** the deploy path writes no secret, builds trust no push from before a rotation, rotations deploy ([#1549](https://github.com/cellajs/cella/issues/1549)) ([8a9048e](https://github.com/cellajs/cella/commit/8a9048e29845842ed5423eb3970c8015a6502aa3))
+* **navigation:** one menu reorder, row depth from its list, one nav sheet opener ([#1551](https://github.com/cellajs/cella/issues/1551)) ([8cdb910](https://github.com/cellajs/cella/commit/8cdb9100861c15f19e1905e24e3c636714d75dc7))
+* **shared:** consistency sweep group 34, one channel order in the permission engine, one regex escape ([#1562](https://github.com/cellajs/cella/issues/1562)) ([e327489](https://github.com/cellajs/cella/commit/e327489e73b1c61aa4abc30f50ba86c608c942a3))
+
+
+### 📖 Documentation
+
+* no operations group, deployment and authentication split into child pages ([#1573](https://github.com/cellajs/cella/issues/1573)) ([7843cb7](https://github.com/cellajs/cella/commit/7843cb706d0862e0aa0beb6e53ff4877699b4e9c))
+* sidebar groups for the sync engine, security, interoperability and operations ([#1569](https://github.com/cellajs/cella/issues/1569)) ([772c86b](https://github.com/cellajs/cella/commit/772c86b3ade75bda91c9b743a6173508b752fc1d))
+* the new entity guide becomes the add-entity skill ([#1581](https://github.com/cellajs/cella/issues/1581)) ([381c22d](https://github.com/cellajs/cella/commit/381c22de890c9a368fd1efec53d037c77fcd786c))
+
+
+### 🧹 Chores
+
+* **deps:** update hono, i18next, maplibre-gl and @cellajs/cli 0.5.0 ([#1546](https://github.com/cellajs/cella/issues/1546)) ([a874d18](https://github.com/cellajs/cella/commit/a874d1872e66c04e6af1aec36b8674fd6ca72679))
+* **infra:** docs, messages and the runner pin say what the code does ([#1550](https://github.com/cellajs/cella/issues/1550)) ([d4fa63d](https://github.com/cellajs/cella/commit/d4fa63d0d77655f5bcd013232e6fbd820a98b2ba))
+* ui tuning: edited cells show their save, middle cuts for long values, field hover edges, viewer zoom ([#1557](https://github.com/cellajs/cella/issues/1557)) ([9cf5392](https://github.com/cellajs/cella/commit/9cf539290305847fbcfb345ea2209f71d411ae19))
+* ui tuning: info alerts, floating layers inside sheets, menu archive motion, popconfirm width ([#1545](https://github.com/cellajs/cella/issues/1545)) ([4a1be27](https://github.com/cellajs/cella/commit/4a1be279c0cc34f69ae9bfade6be08a4698eae22))
+* ui tuning: offline access always on, offline files in preferences, friendlier errors ([#1552](https://github.com/cellajs/cella/issues/1552)) ([8cb31e5](https://github.com/cellajs/cella/commit/8cb31e548a0948f9318f49c2f785d91d87fdf550))
+* ui tuning: overscroll bounce on the board and nested scrollers ([#1584](https://github.com/cellajs/cella/issues/1584)) ([6144961](https://github.com/cellajs/cella/commit/614496174d9776245e0df279dbd8fe1c6df88712))
+* ui tuning: panel status dot waits for the collapse, footer links line up with their heading ([#1588](https://github.com/cellajs/cella/issues/1588)) ([0f68952](https://github.com/cellajs/cella/commit/0f689522f5dabdd6cc39b0bba635365c420ec063))
+* **ui:** tuning, checkmark sized by class, editor field frame fills with the editable area ([#1575](https://github.com/cellajs/cella/issues/1575)) ([99770ab](https://github.com/cellajs/cella/commit/99770abcf7c78d647372b01fcd0cbba43d23a863))
+
 ## [0.25.0](https://github.com/cellajs/cella/compare/0.24.0...0.25.0) (2026-10-26)
 
 
