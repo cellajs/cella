@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.29.0](https://github.com/cellajs/cella/compare/0.28.0...0.29.0) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** staging is opt-in: it deploys only while infra/environments has its line ([#1607](https://github.com/cellajs/cella/issues/1607))
+* **infra:** the infra decisions in code: runner reach watched, Rotate keys covers it, Owner keys expire ([#1596](https://github.com/cellajs/cella/issues/1596))
+
+### 🎉 New features
+
+* **infra:** staging is opt-in: it deploys only while infra/environments has its line ([#1607](https://github.com/cellajs/cella/issues/1607)) ([cb69d6a](https://github.com/cellajs/cella/commit/cb69d6a03b52036cdd15b48faf5173192111c598))
+
+
+### 🐞 Bug fixes
+
+* **infra:** a builder whose type is out of stock is made in the next zone of the region ([#1605](https://github.com/cellajs/cella/issues/1605)) ([16add0d](https://github.com/cellajs/cella/commit/16add0d05820fbd8d0844ad9d5b95f4f5217397b))
+
+
+### 🔧 Small improvements
+
+* **infra:** the infra decisions in code: runner reach watched, Rotate keys covers it, Owner keys expire ([#1596](https://github.com/cellajs/cella/issues/1596)) ([39bc621](https://github.com/cellajs/cella/commit/39bc621948fef295c6dbbf4637843179a206215f))
+
 ## [0.28.0](https://github.com/cellajs/cella/compare/0.27.0...0.28.0) (2026-10-28)
 
 
