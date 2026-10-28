@@ -111,6 +111,8 @@ export class StreamManager {
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
   private circuitOpen = false;
+  /** Opened by a refused session: no cooldown check, only a tab that becomes visible looks again. */
+  private circuitPermanent = false;
   private circuitOpenedAt: number | null = null;
   private currentBackoff = initialBackoffMs;
   private connectedAt: number | null = null;
@@ -273,7 +275,7 @@ export class StreamManager {
     resolveInitialCatchupGate();
 
     if (isPermanentError || this.consecutiveFailures >= maxFailures) {
-      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
+      this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures', isPermanentError);
       return;
     }
 
@@ -377,7 +379,7 @@ export class StreamManager {
         this.closeEventSource();
         this.store.getState().setState('error');
         if (permanent) {
-          this.openCircuit(`server error: ${payload.code}`);
+          this.openCircuit(`server error: ${payload.code}`, true);
         } else {
           this.scheduleReconnect();
         }
@@ -437,9 +439,10 @@ export class StreamManager {
     this.eventSource = null;
   }
 
-  private openCircuit(reason: string) {
+  private openCircuit(reason: string, permanent = false) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
+    this.circuitPermanent = permanent;
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
     // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
     resolveInitialCatchupGate();
@@ -449,6 +452,17 @@ export class StreamManager {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    this.scheduleCooldownCheck(circuitCooldownMs);
+  }
+
+  /** A tab that stays visible hears no visibilitychange, so the end of the cooldown runs the same health-gated attempt. */
+  private scheduleCooldownCheck(delay: number) {
+    if (this.circuitPermanent) return;
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      if (document.visibilityState === 'visible') void this.attemptReconnect();
+    }, delay);
   }
 
   private scheduleReconnect() {
@@ -476,6 +490,7 @@ export class StreamManager {
     if (elapsed < circuitCooldownMs) {
       const secondsRemaining = Math.round((circuitCooldownMs - elapsed) / 1000);
       console.debug(`[${this.name}] Circuit cooldown:`, secondsRemaining, 's remaining');
+      this.scheduleCooldownCheck(circuitCooldownMs - elapsed);
       return;
     }
 
@@ -491,10 +506,12 @@ export class StreamManager {
         this.reconnect();
       } else {
         this.circuitOpenedAt = Date.now();
+        this.scheduleCooldownCheck(circuitCooldownMs);
         console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
     } catch {
       this.circuitOpenedAt = Date.now();
+      this.scheduleCooldownCheck(circuitCooldownMs);
       console.debug(`[${this.name}] Health check unreachable, extending cooldown`);
     } finally {
       this.healthCheckInProgress = false;
@@ -587,6 +604,7 @@ export class StreamManager {
   resetCircuitBreaker() {
     this.consecutiveFailures = 0;
     this.circuitOpen = false;
+    this.circuitPermanent = false;
     this.circuitOpenedAt = null;
     this.connectedAt = null;
     this.currentBackoff = initialBackoffMs;
