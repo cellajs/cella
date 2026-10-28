@@ -4,7 +4,7 @@ import { SearchIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, isChannel } from 'shared';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
@@ -16,11 +16,14 @@ import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
-import { Combobox, ComboboxEmpty, ComboboxList } from '~/modules/ui/combobox';
+import type { RecentSelection } from '~/modules/navigation/types';
+import { Combobox, ComboboxEmpty, ComboboxList, ComboboxSeparator } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
+import { findInCache } from '~/query/basic/find-in-list-cache';
 import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
+import { findMembership, getCachedMemberships } from '~/query/enrichment/helpers';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { resolveSearchInput } from '~/utils/recent-searches';
@@ -54,13 +57,17 @@ export function AppSearch() {
 
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
-  // Collapse state lives here, so it survives result reloads while typing; it resets with the dialog.
-  const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<SearchableEntityType, boolean>>>({});
-  const toggleCollapsed = (entityType: SearchableEntityType) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
+
+  const collapsedTypes = useNavigationStore((state) => state.searchCollapsedTypes);
+  const toggleCollapsed = useNavigationStore((state) => state.toggleSearchCollapsed);
 
   const recentSearches = useNavigationStore((state) => state.recentSearches);
   const saveRecentSearch = useNavigationStore((state) => state.saveRecentSearch);
   const removeRecentSearch = useNavigationStore((state) => state.removeRecentSearch);
+
+  const recentSelections = useNavigationStore((state) => state.recentSelections);
+  const saveRecentSelection = useNavigationStore((state) => state.saveRecentSelection);
+  const removeRecentSelection = useNavigationStore((state) => state.removeRecentSelection);
 
   const { focusRef } = useFocusByRef();
 
@@ -85,10 +92,23 @@ export function AppSearch() {
   const isQueryFetching = hasQuery && queries.some((query) => query.isFetching);
   const isFetching = isDebouncePending || isQueryFetching;
   const isLoading = searchValue.length > 0 && (isDebouncePending || queries.some((query) => query.isLoading));
-  const hasHistoryToShow = !searchValue.length && recentSearches.length > 0;
+  // Null while memberships load: every cached entry then shows, and none is pruned
+  const memberships = getCachedMemberships();
+  // Only what the query cache still holds, and a channel only while the viewer is a member of it
+  const resolveRecent = ({ entityType, id }: RecentSelection) => {
+    const item = findInCache<EnrichedChannel | UserBase>(entityType, id);
+    if (item && isChannel(entityType) && memberships && !findMembership(memberships, id)) return undefined;
+    return item;
+  };
+  const recentGroups = searchableEntityTypes.flatMap((entityType) => {
+    const items = recentSelections.flatMap((entry) => (entry.entityType === entityType ? (resolveRecent(entry) ?? []) : []));
+    return items.length ? [{ entityType, items }] : [];
+  });
+  const hasHistoryToShow = !searchValue.length && (recentSearches.length > 0 || recentGroups.length > 0);
 
   const openItem = (item: EnrichedChannel | UserBase) => {
     saveRecentSearch(searchValue);
+    saveRecentSelection({ entityType: item.entityType, id: item.id }, (entry) => !memberships || !!resolveRecent(entry));
 
     if (item.entityType === 'user') {
       navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
@@ -152,7 +172,24 @@ export function AppSearch() {
           )}
           {isLoading && <SearchResultsSkeleton />}
           <ComboboxList className="h-full max-h-none overflow-visible" hidden={notFound ? !hasHistoryToShow : isLoading}>
-            {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
+            {notFound && recentGroups.length > 0 && (
+              <div className="p-1 pb-0">
+                {recentGroups.map(({ entityType, items }, index) => (
+                  <SearchResultBlock
+                    key={entityType}
+                    results={items}
+                    entityType={entityType}
+                    label={t('c:recent_resource', { resource: t(`c:${entityType}_other`) })}
+                    hideSeparator={index === 0}
+                    collapsed={!!collapsedTypes[entityType]}
+                    onToggleCollapsed={() => toggleCollapsed(entityType)}
+                    onRemove={(item) => removeRecentSelection(item.id)}
+                  />
+                ))}
+                {recentSearches.length > 0 && <ComboboxSeparator className="h-0 border-t border-dashed bg-transparent" />}
+              </div>
+            )}
+            {notFound && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
             {!notFound && (
               <div className="p-1">
                 {searchableEntityTypes.map((entityType) => (

@@ -52,7 +52,8 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
         onAnimationComplete={() => {
           if (!isOpen) setIsBodyVisible(false);
         }}
-        className="overflow-hidden"
+        // The 4px either side holds the focus ring (offset plus ring) of full-width rows, which the clip would cut
+        className="-mx-1 overflow-hidden px-1"
       >
         <Activity mode={isBodyVisible ? 'visible' : 'hidden'}>
           <Suspense fallback={null}>{children}</Suspense>

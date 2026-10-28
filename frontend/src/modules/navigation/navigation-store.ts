@@ -1,8 +1,9 @@
+import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
-import type { NavItemId } from '~/modules/navigation/types';
+import type { NavItemId, RecentSelection } from '~/modules/navigation/types';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 import { addRecentSearch, withoutRecentSearch } from '~/utils/recent-searches';
 
@@ -11,6 +12,14 @@ interface NavigationStoreState {
   /** Records a search that opened a result: most recent first, a value contained in another kept once. */
   saveRecentSearch: (value: string) => void;
   removeRecentSearch: (value: string) => void;
+
+  recentSelections: RecentSelection[]; // Most recent first
+  /** Puts the entry first and drops the ones `isAvailable` rejects, so an entry that can no longer open holds no place. */
+  saveRecentSelection: (entry: RecentSelection, isAvailable: (entry: RecentSelection) => boolean) => void;
+  removeRecentSelection: (id: string) => void;
+
+  searchCollapsedTypes: Record<string, boolean>; // Per entity type, whether its AppSearch groups are collapsed, recent and results alike
+  toggleSearchCollapsed: (entityType: string) => void;
 
   navSheetOpen: NavItemId | null;
   navSheetOrganizationId: string | null; // Organization the menu sheet holds alone; null while it lists every channel
@@ -48,6 +57,8 @@ interface InitStore
   extends Pick<
     NavigationStoreState,
     | 'recentSearches'
+    | 'recentSelections'
+    | 'searchCollapsedTypes'
     | 'keepNavOpen'
     | 'detailedMenu'
     | 'activeSections'
@@ -60,8 +71,12 @@ interface InitStore
     | 'navSheetPanel'
   > {}
 
+const maxRecentSelections = 6;
+
 const initStore: InitStore = {
   recentSearches: [],
+  recentSelections: [],
+  searchCollapsedTypes: {},
   navSheetOpen: null,
   navSheetOrganizationId: null,
   lastOrganizationId: null,
@@ -93,6 +108,24 @@ export const useNavigationStore = create<NavigationStoreState>()(
             if (recentSearches === get().recentSearches) return;
             set((state) => {
               state.recentSearches = recentSearches;
+            });
+          },
+          saveRecentSelection: (entry, isAvailable) => {
+            const rest = get().recentSelections.filter((other) => other.id !== entry.id && isAvailable(other));
+            set((state) => {
+              state.recentSelections = [entry, ...rest].slice(0, maxRecentSelections);
+            });
+          },
+          removeRecentSelection: (id) => {
+            const recentSelections = get().recentSelections;
+            if (!recentSelections.some((entry) => entry.id === id)) return;
+            set((state) => {
+              state.recentSelections = recentSelections.filter((entry) => entry.id !== id);
+            });
+          },
+          toggleSearchCollapsed: (entityType) => {
+            set((state) => {
+              state.searchCollapsedTypes[entityType] = !state.searchCollapsedTypes[entityType];
             });
           },
           setNavSheetOpen: (navSheetOpen, organizationId = null) => {
@@ -151,7 +184,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
           reset: () => set(initStore),
         }),
         {
-          version: 1,
+          // Version 1 kept recent selections per entity type: those start over
+          version: 2,
+          migrate: (persisted) => ({ ...(isRecord(persisted) ? persisted : {}), recentSelections: [] }),
           name: 'navigation',
           skipHydration: true,
           partialize: (state) => ({
@@ -159,6 +194,8 @@ export const useNavigationStore = create<NavigationStoreState>()(
             detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            recentSelections: state.recentSelections,
+            searchCollapsedTypes: state.searchCollapsedTypes,
             lastOrganizationId: state.lastOrganizationId,
             lastChannelIds: state.lastChannelIds,
           }),

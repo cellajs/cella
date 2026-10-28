@@ -108,26 +108,6 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 Baselines and logs live in `cella-bench/` inside the git directory (`git rev-parse --git-common-dir`), which every worktree of the clone shares and `git status` never shows. A passing full run appends to `baselines/<scenario>.json`, and the next run compares its `primary` latency with it: the p95 response time unless the scenario picks another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
 
-## Collaborative typing
-
-`yjs-typing` drives real y-websocket clients ([yjs-typing.ts](./src/yjs-typing.ts)) against the relay. Each document is a bench attachment with a few typing clients and an idle viewer, while other users watch the SSE stream.
-
-```sh
-pnpm bench yjs-typing                                  # with its checks
-YJS_DOCS=40 YJS_DURATION_S=60 pnpm bench yjs-typing    # another shape
-```
-
-| Variable | Meaning |
-| --- | --- |
-| `YJS_DOCS` | Documents edited at once |
-| `YJS_TYPERS` | Typing clients per document |
-| `YJS_DURATION_S` | Typing time |
-| `YJS_DOC_OFFSET` | First bench attachment: a second run on one database takes fresh documents |
-
-The others, with every default, are in [config.ts](./src/config.ts). The report covers the latency from a keystroke to a viewer and to the relay's `Saved` answer, how often each document is materialized to its row, the load on the relay, API, CDC worker and Postgres, and how long until every edit is saved and the same everywhere.
-
-The relay writes a document's last state a while after its last client leaves (`yjsCleanupDelayMs`): wait that long after a typing run before a run whose activity count must be exact.
-
 ## Interpreting results
 
 Bench measures the live dev stack. Before calling a result a regression:

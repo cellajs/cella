@@ -77,7 +77,8 @@ interface PreferenceButtonProps {
 
 /**
  * A button that opens a preference's dialog. Its icon takes the switch column, so its label lines up with the switches,
- * and its description below opens with the group's help toggle.
+ * and its description below opens with the group's help toggle. Its hover background is `bg-muted`, so a muted fill in
+ * `status` or `children` switches on `group-hover/preference` to stay visible.
  */
 export function PreferenceButton({ icon: Icon, label, status, description, ref, onClick, children }: PreferenceButtonProps) {
   const descriptionId = useId();
@@ -91,9 +92,9 @@ export function PreferenceButton({ icon: Icon, label, status, description, ref, 
         aria-haspopup="dialog"
         aria-describedby={description ? descriptionId : undefined}
         onClick={onClick}
-        className="grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_1rem] gap-x-3 gap-y-1.5 whitespace-normal px-3 py-2.5 text-left"
+        className="group/preference grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_1rem] gap-x-3 gap-y-1.5 whitespace-normal px-3 py-2.5 text-left"
       >
-        <Icon className="size-4 justify-self-center text-muted-foreground" />
+        <Icon className="size-4 justify-self-center" />
         <span>{label}</span>
         {status}
         <ChevronRightIcon className="col-start-4 size-4 text-muted-foreground" />
