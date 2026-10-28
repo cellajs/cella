@@ -1,4 +1,3 @@
-import { hydrate } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { type ReactNode, useEffect } from 'react';
 import { downloadService } from '~/modules/attachment/offline/download-service';
@@ -6,18 +5,9 @@ import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-channel-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
-import { subscribeLocalUserChange } from '~/query/local-user-db';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
-import { mutationIdOf } from '~/query/offline/mutation-variables';
-import { persister, persistOptions } from '~/query/persister';
-import {
-  cacheRestored,
-  markCacheRestored,
-  markReplayingMutations,
-  queryClient,
-  setOfflineStaleTime,
-  silentRevalidateOnReconnect,
-} from '~/query/query-client';
+import { persistOptions } from '~/query/persister';
+import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
@@ -31,44 +21,10 @@ initMutationDefaults(queryClient);
 
 const unsubscribeEnrichment = initChannelEnrichment();
 
-/** Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup. */
-const resumeAfterCatchup = () =>
-  waitForActiveCatchup().then(() => {
-    markReplayingMutations();
-    return queryClient.resumePausedMutations();
-  });
-
-/**
- * Restores what a database bound after the boot restore stores, as the boot restore does: a sign-in after a lost session
- * or a sign-out, an impersonation ending. Writes an impersonation kept in memory are not hydrated twice.
- */
-async function restoreRebound(): Promise<void> {
-  const restored = await persister.restoreClient();
-  if (!restored) return;
-  const { queries, mutations } = restored.clientState;
-  const cachedIds = new Set(
-    queryClient
-      .getMutationCache()
-      .getAll()
-      .map(({ state }) => mutationIdOf(state.variables)),
-  );
-  hydrate(queryClient, { queries, mutations: mutations.filter(({ state }) => !cachedIds.has(mutationIdOf(state.variables))) });
-  await resumeAfterCatchup();
-}
-
-let bootRestored = false;
-void cacheRestored.then(() => {
-  bootRestored = true;
-});
-const unsubscribeRebind = subscribeLocalUserChange((userId) => {
-  if (userId && bootRestored) void restoreRebound();
-});
-
-// HMR cleanup: re-evaluation would otherwise leave duplicate enrichment and rebind subscribers.
+// HMR cleanup: re-evaluation would otherwise leave duplicate enrichment subscribers.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubscribeEnrichment();
-    unsubscribeRebind();
   });
 }
 
@@ -133,7 +89,11 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
       onSuccess={() => {
         markCacheRestored();
         warnMutationsWithoutDefaults(queryClient);
-        resumeAfterCatchup();
+        // Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup.
+        waitForActiveCatchup().then(() => {
+          markReplayingMutations();
+          return queryClient.resumePausedMutations();
+        });
       }}
     >
       {children}
