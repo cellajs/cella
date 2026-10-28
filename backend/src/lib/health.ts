@@ -45,8 +45,7 @@ function buildCdcComponent(): HealthComponent {
 
 /** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */
 function buildMcpSelfComponent(): HealthComponent {
-  const mode = env.SCW_AI_API_KEY ? 'active' : 'noop';
-  return { status: 'healthy', checkedVia: 'local', details: { mode } };
+  return { status: 'healthy', checkedVia: 'local' };
 }
 
 /** The job store as read from the database: the api process and the jobs worker report the same component. */
