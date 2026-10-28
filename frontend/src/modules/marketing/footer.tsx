@@ -53,7 +53,7 @@ function FooterLinks() {
 
             <ul className={textClass}>
               {section.links.filter(isShown).map((link) => (
-                <li key={link.title} className="mt-4">
+                <li key={link.title} className="-mx-1 mt-4">
                   <FooterLink title={link.title} href={link.href} />
                 </li>
               ))}
