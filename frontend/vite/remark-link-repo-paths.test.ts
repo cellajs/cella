@@ -11,7 +11,7 @@ const docsTransform = remarkLinkRepoPaths({
   docRoutes: {
     'cella/ARCHITECTURE.md': '/docs/page/architecture',
     'cella/CLIENT.md': '/docs/page/architecture/client',
-    'cella/ADD_ENTITY.md': '/docs/page/guides/new-entity',
+    'cella/TESTING.md': '/docs/page/guides/testing',
   },
 });
 
@@ -105,7 +105,7 @@ describe('relative markdown links in repo docs', () => {
       '/docs/page/architecture#entity-hierarchy-model',
     );
     expect(runLink('./CLIENT.md', repoDocFile, docsTransform).url).toBe('/docs/page/architecture/client');
-    expect(runLink('./ADD_ENTITY.md', repoDocFile, docsTransform).url).toBe('/docs/page/guides/new-entity');
+    expect(runLink('./TESTING.md', repoDocFile, docsTransform).url).toBe('/docs/page/guides/testing');
   });
 
   it('keeps using GitHub for repository docs without a first-class page', () => {

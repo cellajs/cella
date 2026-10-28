@@ -49,7 +49,7 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Guide: [New entity](./ADD_ENTITY.md).
+Code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Adding one: the [add-entity skill](./skills/add-entity/SKILL.md).
 
 ## Selective sync engine
 
