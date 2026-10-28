@@ -43,7 +43,7 @@ export function AccountSessionsCard() {
   const { t } = useTranslation();
 
   return (
-    <ToolCard label="c:sessions" description={t('c:sessions.text')}>
+    <ToolCard label="c:sessions" description={t('c:sessions.text', { days: appConfig.retention.sessionDaysAfterExpiry })}>
       <SessionsList />
     </ToolCard>
   );

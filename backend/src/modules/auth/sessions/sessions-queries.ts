@@ -49,12 +49,21 @@ interface FindUserSessionsOpts {
   revokedSince: string;
 }
 
-/** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
+/**
+ * The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. An
+ * impersonation of the user is held by its admin and left out.
+ */
 export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) => {
   return ctx.var.db
     .select(sessionSafeColumns)
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
+    .where(
+      and(
+        eq(sessionsTable.userId, userId),
+        ne(sessionsTable.type, 'impersonation'),
+        or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince)),
+      ),
+    )
     .orderBy(desc(sessionsTable.createdAt));
 };
 

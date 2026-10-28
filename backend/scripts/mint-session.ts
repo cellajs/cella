@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull, lte, or } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { baseDb as db } from '#/db/db';
@@ -6,6 +6,7 @@ import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/c
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { newHashedToken } from '#/utils/hash-token';
+import { getIsoDate } from '#/utils/iso-date';
 
 /**
  * Mints a session for a local user and prints its signed cookie, for driving the app with curl or a browser without
@@ -31,6 +32,21 @@ if (!owner) {
   process.exit(1);
 }
 
+// The user's sessions list shows a minted row; the name tells it apart from their own browsers
+const deviceName = 'session:mint';
+const now = getIsoDate();
+
+// Ended mints of earlier runs would otherwise fill the user's sessions list for the retention period
+await db
+  .delete(sessionsTable)
+  .where(
+    and(
+      eq(sessionsTable.userId, owner.userId),
+      eq(sessionsTable.deviceName, deviceName),
+      or(isNotNull(sessionsTable.revokedAt), lte(sessionsTable.expiresAt, now)),
+    ),
+  );
+
 const hours = Number(hoursArg ?? 24);
 const { raw: sessionToken, hash: secret } = newHashedToken();
 
@@ -38,11 +54,10 @@ await db.insert(sessionsTable).values({
   id: generateId(),
   secret,
   userId: owner.userId,
-  // The user's sessions list shows this row; the name tells it apart from their own browsers
-  deviceName: 'session:mint',
+  deviceName,
   type: 'regular',
   authStrategy: 'magic',
-  createdAt: new Date().toISOString(),
+  createdAt: now,
   expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),
 });
 
