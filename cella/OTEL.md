@@ -68,7 +68,7 @@ Add observable gauges for runtime state, and counters and histograms for request
 
 ### Manual spans
 
-Use `@opentelemetry/api` directly in any service with OTel started. CDC's `withSpan()` runs a function in a span and sends its trace context to the API as `_trace`, so the API continues the trace ([cdc/src/lib/tracing.ts](../cdc/src/lib/tracing.ts)).
+Use `@opentelemetry/api` directly in any service with OTel started. CDC's `withSpan()` runs a function in a span and sends its trace context to the API as `_trace`, so the API continues the trace.
 
 ### Span names and attributes
 
@@ -110,4 +110,4 @@ Every HTTP service answers `GET /health` with a shallow 204 for load balancers a
 | CDC | Its grade and reasons, replication and slot state, the socket to the API |
 | Yjs | Connection, document and client counts |
 
-A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on, so a deploy that ends on a stuck CDC worker fails ([CDC worker](../cdc/README.md#failure-and-recovery)). The jobs component only ever degrades ([Jobs worker](../jobs/README.md#operating)).
+A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on, so a deploy that ends on a stuck CDC worker fails. The jobs component only ever degrades.

@@ -107,7 +107,7 @@ A sweep, at boot and periodically, saves the logs no collab session holds: those
 | What happens | Outcome |
 | --- | --- |
 | A client loses its connection | It keeps editing and reconnects with backoff. A document with unconfirmed edits is never thrown away, and the tab asks before it unloads. |
-| The client is offline | A document the user opened for editing is stored per user ([Client](../cella/CLIENT.md#the-per-user-database)) and stays editable, its unconfirmed edits included. One never opened is read-only. |
+| The client is offline | A document the user opened for editing is stored per user and stays editable, its unconfirmed edits included. One never opened is read-only. |
 | The relay is out of reach, the API is not | The editor continues [over HTTP](#over-http) and switches back once the socket works again. |
 | The relay ends a session for good | The client stops reconnecting and the editor turns read-only with a notice. Edits that can no longer be saved are offered to copy before they are discarded. |
 | The backend is unavailable, or refuses for a reason that can change | The log stays, and materialization is retried at the next window, when the collab session ends or by the sweep. |
@@ -116,7 +116,7 @@ A sweep, at boot and periodically, saves the logs no collab session holds: those
 | Entity deleted | Its document is retired: collab sessions end at once and each client stops, offering the edits it never saved to copy. |
 | Description written outside the relay | It overrides earlier edits where it differs. Concurrent edits in blocks it keeps survive, and text typed into a block it removes is lost with the block. |
 | The notice listener drops | It reconnects with backoff, every collab session catches up, and health reports `degraded` meanwhile. |
-| A live update arrives during editing | A read that lags the relay cannot undo what the editor shows: [Sync engine](../cella/SYNC_ENGINE.md#yjs). |
+| A live update arrives during editing | A read that lags the relay cannot undo what the editor shows. |
 
 ## Operational constraints
 

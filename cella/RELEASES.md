@@ -9,13 +9,13 @@ both, and merging it tags the release, which production then deploys. Never set 
 
 ## How it works
 
-1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch and a breaking change (`feat!:`) the minor, so apps syncing upstream can tell a breaking release apart.
+1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch and a breaking change (`feat!:`) the minor, so an upgrading app can tell a breaking release apart.
 2. On every merge, release-please updates the open **release PR** with the next version and the [Changelog](./CHANGELOG.md).
 3. Merging the release PR tags the version and publishes the GitHub Release; the runner deploys it about a minute later ([Deploys](./DEPLOYMENT.md#deploys)).
 
 ## Gating
 
-Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes, so a broken `main` blocks the release before anything is tagged or deployed. The scaffolder's output is tested nightly in [its own repo](https://github.com/cellajs/create-cella/blob/main/.github/workflows/create-flow.yml).
+Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes, so a broken `main` blocks the release before anything is tagged or deployed.
 
 ## Setup
 

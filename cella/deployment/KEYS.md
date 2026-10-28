@@ -23,13 +23,13 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | **Builder** (`<slug>-<mode>-builder`) | Image pushes and the release's frontend files | Any address | The deploy folder, handed over read-once | **Rotate keys** |
 | **Runner** (`<app>-runner`) | Starts and reads the main job's runs | The runner's address | The runner's project and user data | `pnpm infra runner-identity --rotate-key` |
 
-**Owner moments.** The CLI asks for an Owner API key only where IAM is written: a first setup, **Set up operator key**, **Set up the runner**, **Rotate keys**, **Update identities**, minting a managed key (a scoped key an app service reads, such as the AI worker's) and the identities part of **Tear down stack**. Keep the Owner account for recovery, with MFA.
+**Owner moments.** The CLI asks for an Owner API key only where IAM is written: a first setup, **Set up operator key**, **Set up the runner**, **Rotate keys**, **Update identities**, minting a managed key (a scoped key an app service reads, such as an AI key) and the identities part of **Tear down stack**. Keep the Owner account for recovery, with MFA.
 
 **The observer** has one key per operator machine, which serves every environment there. **Update identities** on another machine, with your Owner API key, makes that machine its own.
 
 **What the deploy path reaches.** The deploy key, the runner and the code a merge or a release puts there reach the environment's runtime secrets: the deploy key hands every new machine its key, and the runner can start the main job with a command of its own. The runner key can edit a job definition, as Scaleway has no permission set that only starts runs.
 
-**What it cannot do.** The deploy key writes no IAM, database instance or backups, VPC, DNS, bucket configuration or policy, job definition or state history: those take the operator key or an Owner moment. It writes load balancers and private networks for a rollout, and only the deploy's preflight stops it from changing more of them. Of the buckets, it never reaches the private uploads bucket, and of the public one only `geoip/`. A deploy whose key policy differs from the declared one ([deploy-policy.ts](../../infra/lib/scaleway/deploy-policy.ts)) stops blocked.
+**What it cannot do.** The deploy key writes no IAM, database instance or backups, VPC, DNS, bucket configuration or policy, job definition or state history: those take the operator key or an Owner moment. It writes load balancers and private networks for a rollout, and only the deploy's preflight stops it from changing more of them. Of the buckets, it never reaches the private uploads bucket, and of the public one only `geoip/`. A deploy whose key policy differs from the declared one stops blocked.
 
 **The Pulumi passphrase** encrypts the stack's secret outputs in the state bucket, the boot key among them. Nobody types it: the CLI reads it from the engine folder with your operator key, and the main job by reference. The main job writes the stack's salt into the stack file of the commit it deploys, so any commit decrypts the state, a release older than a passphrase rotation too.
 
@@ -130,9 +130,3 @@ The operator key is one per app, so a person who held it could read every secret
 1. **Set up operator key**, and hand the new key to the people who stay.
 2. **Rotate keys**, then **Rotate secrets**, in each environment. `data-encryption-key` and `pii-hash-secret` do not rotate here ([Rotate secrets](#rotate-secrets)).
 3. Remove the person from the Scaleway organization and from the repository.
-
-## Retired admin application
-
-Stacks set up before the observer have a `<slug>-<mode>-admin` application, and bucket policies that name it and shut the operator out: a bucket policy shuts out every principal it does not name, the Owner included.
-
-The first apply on such a stack admits the operator with the admin key from its custody secret, then writes the program's policies, and **Update identities** deletes the admin application with its keys and custody secret. The CLI reads none of the admin key's old names in `infra/.env.<mode>` (`SCW_ADMIN_*`, `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_STATE_*`) and says to remove them.

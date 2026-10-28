@@ -87,7 +87,7 @@ A run fails, and is neither compared nor saved, when one of these fails:
 - **Counters.** `expect` names counters that must have counted, `forbid` counters that must stay at zero. `--short` checks only `forbid`: each role plays once.
 - **Activities.** The rows a scenario counts as `bench.rows_written` must match the activities the CDC worker recorded for the bench organization.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change of the organization's `<type>` count in `channel_counters`.
-- **Books.** A full run ends with the worker's own verify (`pnpm sync:verify`) of its counters against the tables. Differences, or no answer in time, fail the run; on a difference the worker also rebuilds its books ([Verify and rebuild](../cdc/README.md#verify-and-rebuild)).
+- **Books.** A full run ends with the worker's own verify (`pnpm sync:verify`) of its counters against the tables. Differences, or no answer in time, fail the run.
 
 A scenario of your own gets the response check for free and the CDC checks by counting those rows. `--all` pauses between scenarios so a saturating one does not slow the next.
 
@@ -117,4 +117,3 @@ Bench measures the live dev stack. Before calling a result a regression:
 - **Saturation.** At their configured arrival rates `attachment-edit` and `page-load` saturate a laptop that also runs the stack: latencies then show queueing, not the endpoint. Compare the trend between runs.
 - **One generator thread.** The runner sends all load from one Node thread. A high `gen lag`, which the run warns about, means that thread is the limit, not the stack.
 - **A worktree's own stack.** Bench follows the checkout's port offset, so a worktree measures its own stack, never the main checkout's.
-- **Telemetry is off without a key** ([Observability](../cella/OTEL.md#destination)).

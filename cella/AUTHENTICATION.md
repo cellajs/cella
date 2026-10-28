@@ -78,14 +78,8 @@ Revoking a key, a session or a connected app, disabling a service account and le
 
 On the frontend, wrap the action in `withStepUp(action)`: on a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
 
-## The authorization server
-
-The app's OAuth authorization server keeps a browser session of its own, which signing out ends too: [OAuth worker](../oauth/README.md#clients-and-consent). Tokens, scopes and consent: [Interoperability](./INTEROPERABILITY.md#face-oauth).
-
 ## Rate limits
 
 Routes declare their limiter in `xRateLimiter`, and the OpenAPI docs show it with its budget. An IP or email address enters a limiter's key as a keyed pseudonym, so `rate_limits` holds neither in the clear. Counts are shared across processes, and a refusal is a 429 with `Retry-After`.
 
 Mails are capped per address and per user, address lookups and passkey challenges per IP. Failed proofs count per IP, and failed second factors also per account, so changing IP does not help a guesser. Every failure budget also has a daily ceiling.
-
-Machine-facing rate limits: [Interoperability](./INTEROPERABILITY.md#quotas-and-limits).

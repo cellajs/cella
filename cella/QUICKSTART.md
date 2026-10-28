@@ -8,7 +8,7 @@ One command creates your app and five more run it with seeded data. Sign in as t
 
 ## Create
 
-The [create-cella](https://github.com/cellajs/create-cella) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs. Requirements: docker, node, [pnpm](https://pnpm.io/installation). Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
+The [create-cella](https://github.com/cellajs/create-cella) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later upgrades. Requirements: docker, node, [pnpm](https://pnpm.io/installation). Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
 
 ```bash
 pnpm create @cellajs/cella my-app
@@ -38,8 +38,6 @@ pnpm check
 
 ## Run tests
 
-What to test and how: [Testing](./TESTING.md).
-
 ```bash
 pnpm test # Run tests (excluding ui stories)
 pnpm story # Start storybook
@@ -56,11 +54,10 @@ pnpm offline
 ## Customize & contribute
 
 1. Set your app identity in `shared/config/config.default.ts`, and its colors and fonts in `frontend/src/styling/app.css`.
-2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
+2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`. A coding agent with the `add-entity` skill takes a new entity from its hierarchy entry to a page that syncs.
 3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
-4. Read the [architecture](./ARCHITECTURE.md).
-5. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
-6. Coding agents read their rules from `cella/AGENTS.md` and their skills from `cella/skills/`. Claude Code finds neither on its own: in the gitignored `.claude/`, run `ln -s ../cella/skills .claude/skills` and add a `CLAUDE.md` holding `@../cella/AGENTS.md`.
+4. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
+5. Coding agents read their rules from `cella/AGENTS.md` and their skills from `cella/skills/`. Claude Code finds neither on its own: in the gitignored `.claude/`, run `ln -s ../cella/skills .claude/skills` and add a `CLAUDE.md` holding `@../cella/AGENTS.md`.
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
 
