@@ -1,7 +1,7 @@
 /**
- * What an environment deploys (D8): by default the newest commit of the branch it follows, or the newest release; one optional line in the
- * repository's environments file pins a release or a commit, raises the retry counter, or adds an environment. An environment that follows
- * the releases deploys releases only: its line names `releases` or a release tag. The runner reads this, as data, once a minute.
+ * What an environment deploys (D8): production the newest release, any other environment only what its line in the repository's environments
+ * file names. A line also pins a release or a commit, or raises the retry counter; an environment that follows the releases takes `releases`
+ * or a release tag only. The runner reads this, as data, once a minute.
  */
 
 /** Where the environments file lives in the repository, relative to its root. */
@@ -66,7 +66,7 @@ export function parseEnvironmentsFile(text: string): Map<string, EnvironmentLine
       throw new Error(`${where}: ${error instanceof Error ? error.message : String(error)}`);
     }
     // Merging a line is not publishing a release: an environment that follows the releases takes no commit and no branch from a line.
-    if (defaultRule(environment).kind === 'releases' && (rule.kind === 'branch' || (rule.kind === 'pin' && !RELEASE_TAG.test(rule.ref)))) {
+    if (defaultRule(environment)?.kind === 'releases' && (rule.kind === 'branch' || (rule.kind === 'pin' && !RELEASE_TAG.test(rule.ref)))) {
       throw new Error(`${where}: ${environment} deploys releases only: write releases or a release tag such as 0.18.1, got '${target}'`);
     }
     lines.set(environment, { environment, rule, retry });
@@ -74,9 +74,9 @@ export function parseEnvironmentsFile(text: string): Map<string, EnvironmentLine
   return lines;
 }
 
-/** The rule of an environment without a line: production follows the releases, every other environment the main branch. */
-export function defaultRule(environment: string): TargetRule {
-  return environment === 'production' ? { kind: 'releases' } : { kind: 'branch', branch: 'main' };
+/** The rule of an environment without a line: production follows the releases, and any other environment has none, so it deploys nothing. */
+export function defaultRule(environment: string): TargetRule | undefined {
+  return environment === 'production' ? { kind: 'releases' } : undefined;
 }
 
 const semverParts = (tag: string) => tag.split('.').map(Number) as [number, number, number];
@@ -91,15 +91,23 @@ function tagCommit(refs: readonly RemoteRef[], tag: string): string | undefined 
   return refs.find((ref) => ref.ref === `refs/tags/${tag}^{}`)?.sha ?? refs.find((ref) => ref.ref === `refs/tags/${tag}`)?.sha;
 }
 
-/** Find an environment's target from its line, or its default, and the repository's refs. */
-export async function resolveTarget(opts: {
+interface TargetQuery {
   environment: string;
   line?: EnvironmentLine;
   listRemote: (patterns: string[]) => Promise<RemoteRef[]>;
-}): Promise<Target> {
+}
+
+/**
+ * Find an environment's target from its line, or production's default, and the repository's refs: none for an environment other than
+ * production without a line.
+ */
+export function resolveTarget(opts: TargetQuery & { line: EnvironmentLine }): Promise<Target>;
+export function resolveTarget(opts: TargetQuery): Promise<Target | undefined>;
+export async function resolveTarget(opts: TargetQuery): Promise<Target | undefined> {
   const retry = opts.line?.retry ?? 0;
   const of = (sha: string, source: string): Target => ({ environment: opts.environment, sha, retry, source });
   const rule = opts.line?.rule ?? defaultRule(opts.environment);
+  if (!rule) return undefined;
   if (rule.kind === 'branch') {
     const head = (await opts.listRemote([`refs/heads/${rule.branch}`])).find((ref) => ref.ref === `refs/heads/${rule.branch}`);
     if (!head) throw new Error(`${opts.environment} follows branch ${rule.branch}, which the repository does not have`);

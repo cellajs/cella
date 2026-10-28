@@ -64,6 +64,7 @@ async function serve(
   const auth = { secretKey: opts.secretKey };
   const line = parseEnvironmentsFile(await opts.environmentsFile(entry.repository)).get(entry.environment);
   const target = await resolveTarget({ environment: entry.environment, line, listRemote: listRemoteRefs(entry.repository, opts.readKey) });
+  if (!target) return `no line in ${ENVIRONMENTS_FILE}: starts nothing`;
   const what = `${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry})`;
   const definitionId = await findJobDefinition(auth, { region: entry.region, projectId: entry.projectId, name: entry.definition });
   if (!definitionId) return `${what}: no job definition ${entry.definition}; an apply makes it`;

@@ -63,12 +63,12 @@ Every deploy is a run of the environment's [main job](#the-main-job). The [runne
 
 ### What a deploy deploys
 
-Without further instructions staging follows main's newest commit and production the newest release (the highest `x.y.z` tag). An optional file in the repository, `infra/environments`, changes that with one line per environment:
+Production deploys the newest release (the highest `x.y.z` tag). Staging, or any other environment, is optional: it deploys only while the repository's file `infra/environments` has a line for it. The file holds one line per environment:
 
 ```
 # <environment> <target> [retry <n>]
 production 0.18.0 retry 1    # held at 0.18.0, deployed once more
-staging    branch:my-branch  # staging follows my-branch
+staging    branch:main       # staging follows main's newest commit
 ```
 
 A target is one of:
@@ -79,6 +79,8 @@ A target is one of:
 - A full commit id.
 
 An environment that follows the releases, as production does, takes `releases` or a release tag only: merging a line is not publishing a release. A line holds its environment until it is removed, also when a newer release is published. Raising the retry counter asks for the same target once more. The runner reads the file at the head of the default branch, so a change takes effect about a minute after its merge, and a file it cannot read starts nothing.
+
+**Pausing staging.** Removing staging's line stops its deploys, not its cost: its machines keep running. To stop the cost, tear staging down (`pnpm infra teardown --mode staging`), drop it from `infra/runner.json` and **Replace the runner**.
 
 **Rollback.** No old generation is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a generation is named by what it runs. It also runs the engine of its target, so a release deploys the way it was made. A release made before a planned break of the engine's state cannot be deployed after it: roll forward then.
 

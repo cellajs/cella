@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseEnvironmentsFile, parseLsRemote, type RemoteRef, resolveTarget } from './target';
+import { parseEnvironmentsFile, parseLsRemote, type RemoteRef, resolveTarget, type Target } from './target';
 
 const sha = (digit: string) => digit.repeat(40);
 const refs: RemoteRef[] = [
@@ -38,21 +38,18 @@ describe('the environments file', () => {
 });
 
 describe('resolveTarget', () => {
-  it('follows main for staging and the newest release for production by default', async () => {
-    expect(await resolveTarget({ environment: 'staging', listRemote })).toMatchObject({ sha: sha('a'), source: 'branch main', retry: 0 });
+  it.each<{ file: string; environment: string; deploys?: Pick<Target, 'sha' | 'source' | 'retry'> }>([
     // The newest by version, not by name, and the commit an annotated tag points to; other tags are no releases.
-    expect(await resolveTarget({ environment: 'production', listRemote })).toMatchObject({ sha: sha('3'), source: 'release 0.18.1' });
-  });
-
-  it('deploys what a line pins, with its retry counter', async () => {
-    const lines = parseEnvironmentsFile(`production 0.9.8 retry 1\nstaging ${sha('c')}\npreview branch:infra-rewrite`);
-    expect(await resolveTarget({ environment: 'production', line: lines.get('production'), listRemote })).toMatchObject({
-      sha: sha('1'),
-      retry: 1,
-      source: 'pinned release 0.9.8',
-    });
-    expect(await resolveTarget({ environment: 'staging', line: lines.get('staging'), listRemote })).toMatchObject({ sha: sha('c') });
-    expect(await resolveTarget({ environment: 'preview', line: lines.get('preview'), listRemote })).toMatchObject({ sha: sha('b') });
+    { file: '', environment: 'production', deploys: { sha: sha('3'), source: 'release 0.18.1', retry: 0 } },
+    { file: 'production 0.9.8 retry 1', environment: 'production', deploys: { sha: sha('1'), source: 'pinned release 0.9.8', retry: 1 } },
+    { file: '', environment: 'staging' },
+    { file: 'preview branch:main', environment: 'staging' },
+    { file: 'staging branch:main', environment: 'staging', deploys: { sha: sha('a'), source: 'branch main', retry: 0 } },
+    { file: `staging ${sha('c')}`, environment: 'staging', deploys: { sha: sha('c'), source: 'pinned commit cccccccccc', retry: 0 } },
+    { file: 'preview branch:infra-rewrite', environment: 'preview', deploys: { sha: sha('b'), source: 'branch infra-rewrite', retry: 0 } },
+  ])('deploys production always, any other environment only from its line: $environment with "$file"', async ({ file, environment, deploys }) => {
+    const target = await resolveTarget({ environment, line: parseEnvironmentsFile(file).get(environment), listRemote });
+    expect(target && { sha: target.sha, source: target.source, retry: target.retry }).toEqual(deploys);
   });
 
   it('says what is missing when a branch or a release is not there', async () => {

@@ -93,7 +93,7 @@ Stable check `id`s:
 - `config.stackState`, `identity.project`, `identity.keyAges`
 - `inventory.applications`, `inventory.keys`, `inventory.policies`, `inventory.machines`, `inventory.mainJob`
 - `state.bucket`, `state.lock`, `state.pendingOperations`, `rollout`
-- `secrets.required`, `runs.last`, `live.<service>`, `live.components`
+- `secrets.required`, `environments.lines`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`
 
 ## Key files

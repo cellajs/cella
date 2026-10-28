@@ -1,3 +1,5 @@
-# What an environment deploys when it does not follow its default (production: the newest release; any other: branch main).
+# What each environment deploys. Production always deploys: the newest release, or the release its line names. Any other environment
+# deploys only while it has a line here: without one the runner starts nothing for it. Removing such a line pauses deploys, not costs.
 # <environment> <target> [retry <n>], the target being branch:<name>, releases, a release tag or a full commit id.
 # Read by the runner at the head of the default branch.
+staging branch:main
