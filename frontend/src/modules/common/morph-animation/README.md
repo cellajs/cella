@@ -1,11 +1,13 @@
 # Morph animation
 
 A generative take on the mark: one WebGL2 fragment shader draws a "liquid pixel" cell
-that continuously morphs, anchored to the logo. Two variants share the engine:
-`single` (one resting cell, marketing hero) and `colony` (divides 1 → 2 → 3 → 5 and
-flows back together, auth background).
+that continuously morphs, anchored to the logo. Three variants share the engine:
+`single` (one resting cell, marketing hero), `colony` (divides 1 → 2 → 3 → 5 and
+flows back together, auth background) and `database` (the database icon in the same
+grains, features page).
 
-`single` fills the container its caller gives it; the hero positions and blends it.
+`single` and `database` fill the container their caller gives them; the page positions
+and blends them.
 `colony` is the page background of the auth layout, which renders it bare: the
 component lays itself out as a fixed, non-interactive layer at 20% opacity with
 `mix-blend-multiply` (normal blending in dark mode). An app that replaces this module
@@ -31,6 +33,10 @@ How it works:
 - **Theme-aware shading.** Dark mode glows: brighter band core, white rim. Light mode
   inverts: saturated hues, whiteish band body, a thin vivid contour, tuned for the
   low-opacity `mix-blend-multiply` layer both variants are shown in.
+- **The database icon.** `database` swaps the morphing curve for the distance to the
+  strokes of lucide's database icon, with rounded joins, thicker strokes and more warp
+  than the mark, so it reads as a blob first and its three discs second. Grains,
+  palette, entrance and fizz work as they do for the mark.
 - **Mitosis.** Colony cells join through a smooth minimum, so a split pinches a shared
   membrane apart. Each daughter runs the same system at a time offset that scales with
   separation: siblings drift apart in character and re-synchronize as they merge.
@@ -40,14 +46,16 @@ How it works:
   it, and at 1 the shader is the resting piece, so the entrance costs nothing after.
 - **Reduced motion = slow, no entrance.** `prefers-reduced-motion` drops each instance
   to a fifth of its `speed` and skips the entrance for a plain opacity fade; the piece
-  keeps living, gently.
+  keeps living, gently. A still holds its frame without fizzing.
 
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;
-below 1 it magnifies), `stamp` and `still`. A still freezes the clock at a chosen value:
+below 1 it magnifies), `stamp`, `still` and `fizz`. A still freezes the clock at a chosen value:
 the piece condenses in on mount, in view or not, then holds that frame and draws again only
 when the theme or another prop changes, so a page can show a fixed shape and palette at no
-ongoing cost. `grid` counts cells across the canvas, so grains
+ongoing cost. `fizz` keeps a still's grains alive on a clock of their own while the shape
+and palette hold: the grid slowly wavers and edge grains flicker and fade in and out. A
+fizzing still draws while in view, as a running piece does. `grid` counts cells across the canvas, so grains
 shrink with it; `minGrainPx` in the renderer stops that at a size that still reads as
 a pixel, and a phone-sized canvas draws the same piece with fewer, larger grains. Below
 the `sm` breakpoint `minGrainPxPhone` takes over, so a phone's grains come out larger
@@ -55,5 +63,6 @@ than a desktop's. The static `+` texture language in
 `styling/plus-grain.css` shares this module's pixel vocabulary for non-animated uses.
 
 Cost: one fullscreen pass, no textures, no feedback buffers; at rest only one cell is
-evaluated. The prototypes under `.todos/morph-animation/` document how the system was
+evaluated. A canvas larger than a full HD screen renders at a lower resolution, so it costs
+no more than that screen. The prototypes under `.todos/morph-animation/` document how the system was
 found; the shader and the call sites carry the final tuned values.

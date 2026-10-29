@@ -21,7 +21,6 @@ import { nanoid } from 'shared/utils/nanoid';
 import type { TKey } from '~/lib/i18n-locales';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { ElementIcon } from '~/modules/common/icons/element';
-import { GithubIcon } from '~/modules/common/icons/github';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
@@ -46,7 +45,6 @@ export const marketingNavConfig = [
 export const socials = [
   { title: 'c:social', href: appConfig.company.socialUrl, icon: CloudIcon },
   { title: 'c:chat', href: appConfig.company.element, icon: ElementIcon },
-  { title: 'c:github', href: appConfig.company.githubUrl, icon: GithubIcon },
 ] satisfies (FooterLinkProps & { icon: IconComponent })[];
 
 export const footerSections = [
@@ -61,8 +59,9 @@ export const footerSections = [
     title: 'c:documentation',
     hideOnMobile: true,
     links: [
-      { title: 'c:api_docs', href: '/docs' },
-      { title: 'c:architecture', href: 'https://github.com/cellajs/cella/blob/main/cella/ARCHITECTURE.md' },
+      { title: 'c:getting_started', href: '/docs/page/quickstart' },
+      { title: 'c:docs.api_reference', href: '/docs/operations' },
+      { title: 'c:source_code', href: appConfig.company.githubUrl },
     ],
   },
   {

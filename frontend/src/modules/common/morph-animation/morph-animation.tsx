@@ -6,7 +6,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface MorphAnimationProps {
-  /** `single` fills the container it is given (hero); `colony` positions itself as a fixed page background (auth) */
+  /** `single` (hero) and `database`, the database icon's strokes, fill the container they are given; `colony` positions itself as a fixed page background (auth) */
   variant?: MorphVariant;
   /** Grain cells across the canvas (default: 96); lower is chunkier */
   grid?: number;
@@ -17,6 +17,8 @@ interface MorphAnimationProps {
   stamp?: MorphStamp;
   /** Clock value to freeze the piece at: it condenses in on mount, then holds that frame */
   still?: number;
+  /** With `still`: how strongly its grains keep fizzing while the shape holds, 0 to 1 (default: 0) */
+  fizz?: number;
   className?: string;
 }
 
@@ -28,6 +30,7 @@ export function MorphAnimation({
   overscan = 1.2,
   stamp = 'square',
   still,
+  fizz = 0,
   className,
 }: MorphAnimationProps) {
   const mode = useUIStore((state) => state.mode);
@@ -44,6 +47,7 @@ export function MorphAnimation({
     renderer.setStamp(stamp);
     renderer.setSpeed(speed);
     renderer.setStill(still ?? null);
+    renderer.setFizz(fizz);
   });
 
   // fragmentSource in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
@@ -94,6 +98,10 @@ export function MorphAnimation({
   useEffect(() => {
     rendererRef.current?.setStill(still ?? null);
   }, [still]);
+
+  useEffect(() => {
+    rendererRef.current?.setFizz(fizz);
+  }, [fizz]);
 
   // The shader's entrance brings the piece in; under reduced motion the canvas crossfades while the shader opens at rest
   const canvas = (

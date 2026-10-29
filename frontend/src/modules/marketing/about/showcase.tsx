@@ -27,7 +27,8 @@ function CellaShare({ cellaLoc, totalLoc }: CellaShareProps) {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ once: true });
   const percentage = Math.round((cellaLoc / totalLoc) * 100);
-  const value = useCountUp(0, inView ? percentage : 0);
+  const start = Math.floor(percentage / 2);
+  const value = useCountUp(start, inView ? percentage : start);
 
   return (
     <div ref={ref} className="text-left">
@@ -52,12 +53,12 @@ export function Showcase() {
 
           return (
             <div key={item.id}>
-              <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link focus-effect mt-4 block rounded-md">
-                <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">
+              <h3 className="mt-4 mb-2 font-medium text-xl 2xl:text-[1.38rem]">
+                <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link link-inline focus-effect rounded-sm">
                   {t(title)}
                   <ExternalArrow />
-                </h3>
-              </a>
+                </a>
+              </h3>
               <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>
               {item.cellaLoc && item.totalLoc && <CellaShare cellaLoc={item.cellaLoc} totalLoc={item.totalLoc} />}
             </div>

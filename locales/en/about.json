@@ -210,7 +210,7 @@
   "integrations.title": "Integrations",
   "pricing.text": "How to build a dedicated & sustainable community around CellaJS? Membership perhaps.",
   "pricing.title": "Pricing (conceptual)",
-  "selective_sync.text": "Modern web apps have a UI that is <strong>instant</strong>, it provides <strong>live data</strong> and works <strong>offline</strong>.",
+  "selective_sync.text": "Modern web apps have a UI that is <strong>instant</strong>, it provides <strong>live\u00a0data</strong> and works <strong>offline</strong>.",
   "selective_sync.title": "A selective sync engine",
   "how.concept_1": "Sync processes don't compete, they complement the REST API",
   "how.concept_2": "Synced data should be shaped & treated like non-synced data",

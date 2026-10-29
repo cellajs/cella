@@ -24,7 +24,7 @@ export function SyncEnginePage() {
   return (
     <MarketingLayout title="about:selective_sync.title">
       <AboutSection>
-        <AboutStatement text="about:selective_sync.text" className="sm:glow-underline mb-12 sm:leading-relaxed md:mb-20" />
+        <AboutStatement text="about:selective_sync.text" className="glow-underline mb-12 leading-relaxed md:mb-20" />
 
         <p className="mx-auto max-w-3xl">
           <Trans
@@ -55,7 +55,7 @@ export function SyncEnginePage() {
         <div className="relative overflow-x-clip" aria-hidden="true">
           <Suspense fallback={null}>
             <div className="mask-[linear-gradient(to_right,transparent_7rem,black_11rem)] pointer-events-none absolute -top-24 left-[calc(50%+18rem)] size-300 -translate-y-1/2 opacity-30 saturate-300 dark:opacity-25">
-              <MorphAnimation still={31} grid={230} stamp="plus" />
+              <MorphAnimation still={31} fizz={1} grid={230} stamp="plus" />
             </div>
           </Suspense>
         </div>

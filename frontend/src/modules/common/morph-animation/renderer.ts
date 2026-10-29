@@ -1,10 +1,12 @@
 import { fragmentSource, vertexSource } from '~/modules/common/morph-animation/shader';
 
-export type MorphVariant = 'single' | 'colony';
+export type MorphVariant = 'single' | 'colony' | 'database';
 export type MorphStamp = 'square' | 'plus';
 
 // The grain look tolerates a low render resolution, so touch devices get a lower cap to save battery
 const maxPixelRatio = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
+// A canvas larger than a full HD screen renders at a lower ratio, so it costs no more than that screen at the cap
+const maxCanvasPixels = 1920 * 1080 * maxPixelRatio ** 2;
 // The shader lays `grid * gridSpan` cells across the canvas's short side
 const gridSpan = 1.25;
 // Smaller than this in CSS pixels a grain reads as noise, not as a pixel by design, so a small canvas gets fewer, larger grains
@@ -41,6 +43,9 @@ const uniformNames = [
   'uGrid',
   'uStamp',
   'uEnter',
+  'uFizz',
+  'uFizzAmount',
+  'uShape',
 ] as const;
 type UniformName = (typeof uniformNames)[number];
 
@@ -76,6 +81,9 @@ export class MorphRenderer {
   private speed = 1;
   /** Clock value the piece is frozen at; `null` lets it run. */
   private stillTime: number | null = null;
+  /** Fizz strength of a still, 0..1; its grains run on `fizzTime` while the shape holds. */
+  private fizz = 0;
+  private fizzTime = 0;
   private timeScale = 1;
   private reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   private enter = 0;
@@ -93,7 +101,10 @@ export class MorphRenderer {
     cancelAnimationFrame(this.frameHandle);
   };
   private handleContextRestored = () => this.start();
-  private handleMotionChange = () => this.applyMotion();
+  private handleMotionChange = () => {
+    this.applyMotion();
+    this.redrawStill();
+  };
 
   constructor(canvas: HTMLCanvasElement, variant: MorphVariant) {
     this.canvas = canvas;
@@ -124,6 +135,12 @@ export class MorphRenderer {
     if (time !== null) this.time = time;
     this.applyMotion();
     this.resume();
+  }
+
+  /** Keeps a still's grains alive at `amount` (0..1) while its shape holds; a fizzing still draws while seen, like a running piece. */
+  setFizz(amount: number) {
+    this.fizz = amount;
+    this.redrawStill();
   }
 
   /** A small canvas draws fewer cells than this: see `minGrainPx`. */
@@ -177,6 +194,11 @@ export class MorphRenderer {
     if (this.stillTime !== null) this.resume();
   }
 
+  /** Reduced motion keeps a still still. */
+  private fizzAmount() {
+    return this.stillTime === null || this.reducedMotionQuery.matches ? 0 : this.fizz;
+  }
+
   private initGl() {
     const gl = this.canvas.getContext('webgl2', {
       alpha: true,
@@ -226,6 +248,7 @@ export class MorphRenderer {
     gl.uniform4f(this.uniforms.uG, 0, 0, 0, 0);
     gl.uniform1f(this.uniforms.uCellScale, 1);
     gl.uniform1f(this.uniforms.uWidth, bandHalfWidth);
+    gl.uniform1i(this.uniforms.uShape, this.variant === 'database' ? 1 : 0);
   }
 
   private resume() {
@@ -233,12 +256,14 @@ export class MorphRenderer {
     this.lastNow = performance.now();
     cancelAnimationFrame(this.frameHandle);
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - this.lastNow) / 1000);
+      // A frame's timestamp can precede the performance.now() that resume() took, so the first step clamps at 0
+      const dt = Math.max(0, Math.min(0.05, (now - this.lastNow) / 1000));
       this.lastNow = now;
       this.drawFrame(dt);
-      // A still draws until it has entered, seen or not; a running piece draws while seen
-      const keepDrawing = this.stillTime === null ? !this.paused : this.enter < 1;
-      if (!this.disposed && keepDrawing) this.frameHandle = requestAnimationFrame(loop);
+      // A still draws until it has entered, seen or not; a running or fizzing piece draws while seen
+      const entering = this.stillTime !== null && this.enter < 1;
+      const live = (this.stillTime === null || this.fizzAmount() > 0) && !this.paused;
+      if (!this.disposed && (entering || live)) this.frameHandle = requestAnimationFrame(loop);
     };
     this.frameHandle = requestAnimationFrame(loop);
   }
@@ -246,7 +271,7 @@ export class MorphRenderer {
   private fitCanvas(gl: WebGL2RenderingContext) {
     const rect = this.canvas.getBoundingClientRect();
     this.shortSide = Math.min(rect.width, rect.height);
-    const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+    const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio, Math.sqrt(maxCanvasPixels / Math.max(1, rect.width * rect.height)));
     const width = Math.max(2, Math.round(rect.width * ratio));
     const height = Math.max(2, Math.round(rect.height * ratio));
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -263,6 +288,8 @@ export class MorphRenderer {
     this.time += dt * this.timeScale;
     // Advances on drawn frames only, so a running instance mounted off-screen enters when it scrolls into view
     this.enter = Math.min(1, this.enter + dt / enterSeconds);
+    const fizz = this.fizzAmount();
+    if (fizz > 0) this.fizzTime += dt;
 
     const u = this.uniforms;
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height);
@@ -271,6 +298,8 @@ export class MorphRenderer {
     gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (gridSpan * this.minGrain))));
     gl.uniform1i(u.uStamp, this.stamp);
     gl.uniform1f(u.uEnter, this.enter);
+    gl.uniform1f(u.uFizz, this.fizzTime);
+    gl.uniform1f(u.uFizzAmount, fizz);
 
     if (this.variant === 'colony') {
       const [g1, g2, g3, g4] = splitProgress(this.time);
