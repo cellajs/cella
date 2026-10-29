@@ -29,7 +29,7 @@ An account exists only once its inbox is proven. The account, its proven address
 
 - **Magic link.** A link to an unknown address names no user. The account is created when the link is clicked.
 - **Provider.** A provider sign-up waits on a verification mail to the provider's address. The account is created when the same provider account signs in again in the browser that opened the mail.
-- **Invitation.** An invitation link can be forwarded, so an invitee skips that mail only when the provider verified the invited address itself. An account accepts an invitation only once it holds the invited address; an account on another address adds it through a link mailed to that inbox.
+- **Invitation.** An invitation link can be forwarded, so an invitee skips that mail only when the provider verified the invited address itself. An account accepts an invitation once it holds the invited address, or through a link mailed to that inbox for this account. Accepting grants the membership and never adds the invited address to the accepting account.
 - **Who may sign up.** Open registration or a standing invitation, checked at the start and at completion.
 
 An account is identified by the proofs it holds (`identities`, `emails`), never by an address.

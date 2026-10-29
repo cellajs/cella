@@ -81,7 +81,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(await membershipsOf(other.id)).toHaveLength(0);
   });
 
-  it('lets the account that opens the confirmation link from the invited inbox join, holding the address', async () => {
+  it('must not add an invited address to the account that accepts the invitation', async () => {
     const { organization, invitationCookie } = await setup();
     const me = await createTestUser('my-account@example.com');
     const sessionCookie = await createTestSession(me);
@@ -96,8 +96,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const { response } = await accept([sessionCookie, setCookiePair(opened.response, 'invitation')]);
     expect(response.status).toBe(200);
     expect((await membershipsOf(me.id)).map(({ organizationId }) => organizationId)).toEqual([organization.id]);
-    const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, invitedEmail));
-    expect(address?.userId).toBe(me.id);
+    expect(await db.select().from(emailsTable).where(eq(emailsTable.email, invitedEmail))).toEqual([]);
   });
 
   it('lets the new member into the organization right after accepting', async () => {

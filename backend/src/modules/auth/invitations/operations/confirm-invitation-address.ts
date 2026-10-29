@@ -12,8 +12,8 @@ import { invitationAddressEmail } from '../../../../../emails';
 
 /**
  * Mails the invited address a new link to the invitation, linked to the signed-in account, for an account that does not
- * hold that address yet. The new link replaces every older one, so a forwarded link stops working; opened from the
- * invited inbox it proves the address, which `acceptInvitationTokenOp` then adds to the account.
+ * hold that address. The new link replaces every older one, so a link forwarded earlier stops working. Opened by this
+ * account, it lets `acceptInvitationTokenOp` accept the invitation; the address stays off the account.
  * @throws AppError 409 `user_mismatch` for a token linked to another account or an address another account holds, 400
  *   `invalid_request` when the account holds the address already, 404 `not_found` for an invitation no longer pending.
  */

@@ -30,8 +30,8 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
   const otherAddress = invitedEmail !== accountEmail;
   // Linked to another account: the backend refuses it, so the step says so and offers no accept button.
   const boundToOther = !!tokenData.userId && tokenData.userId !== user.id;
-  // Linked to this account on another address: the link came through the invited inbox, and joining adds the address.
-  const addsAddress = otherAddress && tokenData.userId === user.id;
+  // Linked to this account on another address: the link came through the invited inbox, and the account joins without it.
+  const confirmedByLink = otherAddress && tokenData.userId === user.id;
 
   const leave = () => navigate({ to: appConfig.defaultRedirectPath, replace: true });
 
@@ -88,11 +88,11 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
           <AlertTitle>{t('c:invite_confirm_address', { invitedEmail })}</AlertTitle>
           <AlertDescription>{t('c:invite_confirm_address.text', { invitedEmail, accountEmail })}</AlertDescription>
         </Alert>
-      ) : addsAddress ? (
+      ) : confirmedByLink ? (
         <Alert variant="info">
           <InfoIcon />
           <AlertTitle>{t('c:invite_other_address')}</AlertTitle>
-          <AlertDescription>{t('c:invite_address_added', { invitedEmail })}</AlertDescription>
+          <AlertDescription>{t('c:invite_address_confirmed', { invitedEmail, accountEmail })}</AlertDescription>
         </Alert>
       ) : (
         otherAddress && (
