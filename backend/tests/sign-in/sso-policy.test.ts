@@ -128,10 +128,15 @@ describe("the tenant's sign-in policy", async () => {
 
     // Any browser gets the answer every address gets: the inbox learns where to sign in.
     expect((await call(sendMagicLink, { body: { email }, headers: defaultHeaders })).response.status).toBe(204);
+    await vi.waitFor(() =>
+      expect(mailsTo(email)).toMatchObject([
+        {
+          template: ssoRequiredEmail,
+          statics: { institution: 'Hogeschool Utrecht', entryUrl: `${appConfig.frontendUrl}/auth/sso/${connection.id}` },
+        },
+      ]),
+    );
     expect(await db.select().from(tokensTable).where(eq(tokensTable.userId, user.id))).toHaveLength(0);
-    expect(mailsTo(email)).toMatchObject([
-      { template: ssoRequiredEmail, statics: { institution: 'Hogeschool Utrecht', entryUrl: `${appConfig.frontendUrl}/auth/sso/${connection.id}` } },
-    ]);
 
     // A browser that signed in to the account knows it exists, and is told directly.
     const deviceId = nanoid(24);

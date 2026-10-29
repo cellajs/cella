@@ -5,11 +5,17 @@ import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests'
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
 import { requestRoutes } from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
+import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(requestRoutes.createRequest, async (ctx) => {
-  await createRequestOp(ctx, ctx.req.valid('json'));
+  const input = ctx.req.valid('json');
+  const stored = createRequestOp(ctx, input);
+  // A waitlist or newsletter answer waits for nothing: its time would tell an address with an account, or one listed
+  // already, from a new one. A contact message is stored alike for every address, so its sender hears when that fails.
+  if (input.type === 'contact') await stored;
+  else stored.catch((err) => log.error('Failed to store a request', { err }));
   return ctx.body(null, 204);
 });
 

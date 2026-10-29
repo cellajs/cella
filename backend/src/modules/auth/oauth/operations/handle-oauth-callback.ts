@@ -97,6 +97,13 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
     return { type: 'unverified', identity };
   }
 
+  // An unverified provider address gets one answer whether or not an account holds it: refused while registration is
+  // closed (an invitee signs up from the invitation link), else a sign-up whose completion refuses a held address.
+  if (!providerUser.emailVerified) {
+    if (!appConfig.has.selfRegistration) throw new AppError(403, 'sign_up_restricted', 'info');
+    return pendingSignUp(providerUser, provider);
+  }
+
   // An account holds the address: its holder signs in to it and connects the provider from there.
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
@@ -143,9 +150,12 @@ const connectCallbackFlow = async ({
     return { type: 'unverified', identity };
   }
 
-  // A new identity: the address must not belong to another account.
-  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
-  if (holder && holder.id !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
+  // A new identity: an address the provider verified must not belong to another account. An unverified one gets the
+  // same answer either way; the click on its mail refuses a held address (addProvenEmail).
+  if (providerUser.emailVerified) {
+    const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
+    if (holder && holder.id !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
+  }
 
   const newIdentity = await insertIdentity(dbCtx, {
     values: { userId: user.id, issuer: provider, subject: providerUser.id, email: providerUser.email },

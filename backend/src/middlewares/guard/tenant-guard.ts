@@ -23,8 +23,8 @@ const holdsFoothold = async (ctx: Context<Env>, actor: Actor, tenant: TenantMode
 
 /**
  * Resolves the URL's tenant and checks the actor may act in it (see {@link holdsFoothold}). A missing tenant, one the
- * actor holds no foothold in and an inactive one without a foothold get one identical 403, so the six-character tenant
- * ids cannot be enumerated; the tenant's status shows only past that check. Sets baseDb + tenant context; orgGuard
+ * actor holds no foothold in and an inactive one without a foothold get one identical 403, which says only "not yours":
+ * a tenant id is no secret. The tenant's status shows only past that check. Sets baseDb + tenant context; orgGuard
  * resolves organizations.
  */
 export const tenantGuard = xMiddleware(
