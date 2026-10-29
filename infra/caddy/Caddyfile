@@ -63,8 +63,35 @@
 	@assets path /assets/*
 	handle @assets {
 		header >Cache-Control "public, max-age=31536000, immutable"
-		reverse_proxy https://{$ORIGIN_HOST} {
-			header_up Host {$ORIGIN_HOST}
+
+		# The build writes a brotli copy beside each script and stylesheet (`<file>.br`), smaller than what `encode`
+		# makes per response. Its encoding is set on the upstream response whatever S3 stored, as that header is what
+		# tells `encode` to leave the bytes alone. An asset of a release older than these copies has none, so a 404
+		# falls back to the original, which `encode` compresses per response.
+		@brotli {
+			path *.js *.mjs *.css
+			header Accept-Encoding *br*
+		}
+		handle @brotli {
+			rewrite * {path}.br
+			reverse_proxy https://{$ORIGIN_HOST} {
+				header_up Host {$ORIGIN_HOST}
+				header_down Content-Encoding br
+				header_down Vary Accept-Encoding
+				@nocopy status 404
+				handle_response @nocopy {
+					rewrite * {http.request.orig_uri.path}
+					reverse_proxy https://{$ORIGIN_HOST} {
+						header_up Host {$ORIGIN_HOST}
+					}
+				}
+			}
+		}
+
+		handle {
+			reverse_proxy https://{$ORIGIN_HOST} {
+				header_up Host {$ORIGIN_HOST}
+			}
 		}
 	}
 

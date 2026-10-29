@@ -18,7 +18,7 @@ const sha256 = (data) => createHash('sha256').update(data).digest('hex');
 const hmac = (key, data) => createHmac('sha256', key).update(data).digest();
 const encodeKey = (key) => key.split('/').map((part) => encodeURIComponent(part).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())).join('/');
 
-async function put(bucket, key, body, contentType, cacheControl) {
+async function put(bucket, key, body, contentType, cacheControl, contentEncoding) {
   const host = bucket + '.s3.' + region + '.scw.cloud';
   const path = '/' + encodeKey(key);
   const amzDate = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
@@ -37,6 +37,7 @@ async function put(bucket, key, body, contentType, cacheControl) {
   };
   if (contentType) headers['content-type'] = contentType;
   if (cacheControl) headers['cache-control'] = cacheControl;
+  if (contentEncoding) headers['content-encoding'] = contentEncoding;
   for (let attempt = 1; ; attempt++) {
     const res = await fetch('https://' + host + path, { method: 'PUT', headers, body });
     if (res.ok) return;
@@ -65,7 +66,7 @@ if (command === 'put') {
   const send = async (rows, width) => {
     const queue = [...rows];
     await Promise.all(Array.from({ length: width }, async () => {
-      for (let row = queue.shift(); row; row = queue.shift()) await put(bucket, row[1], readFileSync(row[0]), row[2], row[3]);
+      for (let row = queue.shift(); row; row = queue.shift()) await put(bucket, row[1], readFileSync(row[0]), row[2], row[3], row[4]);
     }));
   };
   // The release's entry files after every file they reference.

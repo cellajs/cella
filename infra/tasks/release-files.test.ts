@@ -38,6 +38,7 @@ describe('releaseFiles', () => {
     const distDir = dist({
       'assets/kept-abc.js': 'kept',
       'assets/new-def.js': 'new',
+      'assets/new-def.js.br': 'brotli',
       'static/same.json': 'same',
       'static/changed.json': 'changed',
       'index.html': '<html>',
@@ -56,11 +57,14 @@ describe('releaseFiles', () => {
     });
     expect(files.map((file) => file.key)).toEqual([
       'assets/new-def.js',
+      'assets/new-def.js.br',
       'static/changed.json',
       `releases/${SHA}/index.html`,
       `releases/${SHA}/sw.js`,
     ]);
     expect(files[0]).toMatchObject({ contentType: 'text/javascript; charset=utf-8', cacheControl: 'public, max-age=31536000, immutable' });
+    // A browser runs a module script only with a JavaScript type, so the brotli copy keeps its original's.
+    expect(files[1]).toMatchObject({ contentType: 'text/javascript; charset=utf-8', contentEncoding: 'br' });
     // An entry file never goes to the root: the deploy publishes it after the rollout.
     expect(files.filter((file) => !file.key.startsWith('releases/') && /^(index\.html|sw\.js)$/.test(file.key))).toEqual([]);
     expect(files.at(-1)?.cacheControl).toBe('no-cache, no-store, must-revalidate');
