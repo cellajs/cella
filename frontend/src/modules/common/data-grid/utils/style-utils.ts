@@ -36,11 +36,14 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
   // Hosts with merged slots clamp only the main-content wrapper: display:-webkit-box on a slot wrapper breaks its flex layout.
   const hasMergedSlots = column.mergedSlots != null;
   const textOverflow =
-    wrapLines > 0
-      ? hasMergedSlots
-        ? 'whitespace-pre-line overflow-hidden [&_[data-tile-main]>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&_[data-tile-main]>*]:text-ellipsis [&_[data-tile-main]>*]:py-0!'
-        : 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:py-0!'
-      : 'whitespace-nowrap overflow-clip text-ellipsis';
+    wrapLines === 0
+      ? 'whitespace-nowrap overflow-clip text-ellipsis'
+      : // An unlimited wrap clamps no child: the clamp's overflow would cut the focus ring of a control in the cell
+        column.wrapText === true
+        ? 'whitespace-pre-line overflow-hidden'
+        : hasMergedSlots
+          ? 'whitespace-pre-line overflow-hidden [&_[data-tile-main]>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&_[data-tile-main]>*]:text-ellipsis [&_[data-tile-main]>*]:py-0!'
+          : 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:py-0!';
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden scroll-mt-32 border-t-[0.05rem] border-border ${textOverflow}`,
     'sm:group-hover/row:bg-muted/50',

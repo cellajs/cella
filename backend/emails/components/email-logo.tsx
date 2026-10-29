@@ -2,7 +2,8 @@ import type { JSX } from 'react';
 import { appConfig } from 'shared';
 import { Img } from './primitives';
 
-// Mail clients never recolor an image: the logo sits on a light tile baked into the file, legible on any background.
+// Mail clients never recolor an image: the logo sits on a tile in the page's #f5f5f5 baked into the file, so it blends
+// into the page and stays legible on any background.
 const logoUrl = `${appConfig.productionUrl}/static/common/logo/logo-email.png`;
 const darkLogoUrl = `${appConfig.productionUrl}/static/common/logo/logo-email-dark.png`;
 // An Outlook-only property React's style type does not know; the renderer writes it as `mso-hide`.

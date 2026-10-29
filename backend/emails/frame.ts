@@ -13,7 +13,7 @@ export interface RequestDetailRow {
 export interface EmailFrame {
   /** Rows at the end of the body panel; set only for a template that declares them and a send inside a request. */
   requestDetails?: RequestDetailRow[];
-  /** "Sent to <address>", the recipient's address as the mailer's placeholder fills it per recipient. */
+  /** "Sent to <address> by <app>", the recipient's address as the mailer's placeholder fills it per recipient. */
   sentTo?: string;
 }
 
