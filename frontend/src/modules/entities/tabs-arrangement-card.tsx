@@ -33,10 +33,10 @@ interface TabRow {
 
 // The label cell stacks a tab's name and description, centred in the row
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// Below `sm` the top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
-const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
-// Below `sm` the other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
-const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
+// The top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
+const helpLabelCellClass = tw('justify-start pt-[calc((var(--rdg-row-height)-1.5rem)/2)] pb-3');
+// The other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
+const firstLineCellClass = tw('h-(--rdg-row-height) justify-center self-start');
 
 function renderRowDragPreview(row: TabRow) {
   return <RowDragPreview name={row.name} />;
@@ -125,18 +125,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       renderCell: ({ row }) => {
         const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
         if (!row.description) return name;
-
-        // A narrow column wraps a description over many lines, so there it unfolds from a help toggle
-        if (isMobile) {
-          return <HelpText content={<p className="text-xs">{row.description}</p>}>{name}</HelpText>;
-        }
-
-        return (
-          <>
-            {name}
-            <span className="text-muted-foreground text-xs">{row.description}</span>
-          </>
-        );
+        return <HelpText content={<p className="text-xs">{row.description}</p>}>{name}</HelpText>;
       },
     },
     {

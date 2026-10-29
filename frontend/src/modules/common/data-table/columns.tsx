@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { exportDate } from '~/lib/export';
 import type { TKey } from '~/lib/i18n-locales';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
-import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
+import { type EllipsisOption, type EllipsisRow, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { MiddleCut } from '~/modules/common/middle-cut';
@@ -120,7 +120,7 @@ export function SrOnlyHeader({ label }: SrOnlyHeaderProps) {
 }
 
 /** Row actions behind an ellipsis button; a row without options gets an empty cell. */
-export const ellipsisColumn = <T extends { id: string }>(
+export const ellipsisColumn = <T extends EllipsisRow>(
   getOptions: (row: T) => EllipsisOption<T>[],
   maxBreakpoint?: BreakpointKey,
 ): ColumnOrColumnGroup<T> => ({

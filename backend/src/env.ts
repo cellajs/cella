@@ -125,7 +125,7 @@ export const env = createEnv({
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
     GEOIP_SOURCE_URL: z.string().default(''),
-    GEOIP_DEV_SAMPLE_IP: z.string().default('8.8.8.8'),
+    GEOIP_DEV_SAMPLE_IP: z.string().default('193.0.6.139'),
 
     SCW_AI_API_KEY: z.string().optional(),
 

@@ -26,6 +26,7 @@ const options: EllipsisOption<{ id: string }>[] = [
       title: 'Delete Acme?',
       content: (
         <DeleteForm
+          resource="c:organization"
           pending={false}
           allowOfflineDelete
           onDelete={() => {
@@ -80,7 +81,7 @@ export const ConfirmWithMouse: Story = {
     await waitFor(() => expect(body().getByRole('menuitem', { name: /cancel/i })).toHaveFocus());
 
     await pastArmDelay();
-    await userEvent.click(body().getByRole('menuitem', { name: /confirm.delete/i }));
+    await userEvent.click(body().getByRole('menuitem', { name: /delete.resource/i }));
     await expect(onDelete).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(body().queryByRole('menu')).toBeNull());
   },
@@ -104,7 +105,7 @@ export const ConfirmWithKeyboard: Story = {
     const cancel = body().getByRole('menuitem', { name: /cancel/i });
     await waitFor(() => expect(cancel).toHaveFocus());
     await userEvent.keyboard('{ArrowUp}');
-    await waitFor(() => expect(document.activeElement).toHaveTextContent(/confirm.delete/i));
+    await waitFor(() => expect(document.activeElement).toHaveTextContent(/delete.resource/i));
     await userEvent.keyboard('{ArrowDown}');
     await waitFor(() => expect(cancel).toHaveFocus());
 
@@ -125,7 +126,7 @@ export const DoubleClickIsNotAConfirmation: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button'));
     await userEvent.dblClick(await body().findByRole('menuitem', { name: /Delete/ }));
-    await userEvent.click(await body().findByRole('menuitem', { name: /confirm.delete/i }));
+    await userEvent.click(await body().findByRole('menuitem', { name: /delete.resource/i }));
 
     await expect(onDelete).not.toHaveBeenCalled();
     await waitFor(() => expect(body().getByRole('group', { name: 'Delete Acme?' })).toBeVisible());

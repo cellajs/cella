@@ -41,8 +41,14 @@ export interface ExpandableTileProps {
 /** A list item as a card that opens to its details and actions. An `Accordion` holds its tiles and keeps one of them open at a time. */
 export function ExpandableTile({ value, icon, iconLabel, title, badges, status, meta, lead, details, actions }: ExpandableTileProps) {
   return (
-    <AccordionPrimitive.Item value={value} render={<Card className="gap-0 py-0 sm:gap-0 sm:py-0" />}>
-      <AccordionPrimitive.Trigger className="group/expandable-tile focus-effect flex min-h-14 w-full items-center gap-3 rounded-lg px-3 py-2 text-left">
+    // The trigger's focus ring draws on the card, so an open tile rings its details too
+    <AccordionPrimitive.Item
+      value={value}
+      render={
+        <Card className="gap-0 py-0 focus-ring:has-[>button:focus-visible]:ring-2 focus-ring:has-[>button:focus-visible]:ring-ring focus-ring:has-[>button:focus-visible]:ring-offset-2 focus-ring:has-[>button:focus-visible]:ring-offset-background sm:gap-0 sm:py-0" />
+      }
+    >
+      <AccordionPrimitive.Trigger className="group/expandable-tile flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left focus-visible:outline-hidden">
         {iconLabel && <span className="sr-only">{iconLabel}</span>}
         <span className="relative shrink-0 [&>img]:size-6 [&>svg]:size-6" aria-hidden="true">
           {icon}

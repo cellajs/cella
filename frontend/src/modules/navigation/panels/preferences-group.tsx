@@ -1,7 +1,6 @@
 import { ChevronRightIcon } from 'lucide-react';
 import { type ReactNode, type Ref, useId, useState } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
 import { Button } from '~/modules/ui/button';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { Switch } from '~/modules/ui/switch';
@@ -22,7 +21,7 @@ export function PreferencesGroup({ title, help, className, children }: Preferenc
   return (
     <div data-help-open={helpOpen} className={cn('group/prefs flex flex-col gap-4', className)}>
       <div className="flex items-center gap-2 px-3">
-        <PanelHeading>{title}</PanelHeading>
+        <h3 className="group-label">{title}</h3>
         {help && <HelpToggle open={helpOpen} onToggle={() => setHelpOpen((prev) => !prev)} className="-my-1" />}
       </div>
       {children}
@@ -54,7 +53,7 @@ export function PreferenceSwitch({ id, label, description, checked, onCheckedCha
         aria-describedby={description ? descriptionId : undefined}
       />
       <div className="flex min-w-0 flex-col">
-        <label htmlFor={id} className="cursor-pointer select-none text-sm leading-4">
+        <label htmlFor={id} className="cursor-pointer select-none font-medium text-sm leading-4">
           {label}
         </label>
         {description && <PreferenceDescription id={descriptionId}>{description}</PreferenceDescription>}

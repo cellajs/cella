@@ -20,7 +20,11 @@ import { cn } from '~/utils/cn';
 
 type BadgeVariant = ComponentProps<typeof Badge>['variant'];
 
-const statusVariants: Record<Tenant['status'], BadgeVariant> = { active: 'success', suspended: 'warning', archived: 'default' };
+const statusTextClasses: Record<Tenant['status'], string> = {
+  active: 'text-success',
+  suspended: 'text-warning',
+  archived: 'text-muted-foreground',
+};
 
 const subscriptionVariants: Record<Exclude<Tenant['subscriptionStatus'], 'none'>, BadgeVariant> = {
   trialing: 'default',
@@ -115,11 +119,7 @@ export const useColumns = () => {
       width: 100,
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row }) => (
-        <Badge variant={statusVariants[row.status]} soft={row.status === 'archived'}>
-          {t(`c:${row.status}`)}
-        </Badge>
-      ),
+      renderCell: ({ row }) => <span className={cn('font-medium', statusTextClasses[row.status])}>{t(`c:${row.status}`)}</span>,
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
     {

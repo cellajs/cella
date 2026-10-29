@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 
 /**
@@ -11,8 +12,8 @@ const meta = {
   component: ComboboxSelect,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
-  argTypes: { options: { control: 'object' }, value: { control: 'text' }, disabled: { control: 'boolean' }, showAvatar: { control: 'boolean' } },
-  args: { disabled: false, showAvatar: false },
+  argTypes: { options: { control: 'object' }, value: { control: 'text' }, disabled: { control: 'boolean' } },
+  args: { disabled: false },
 } satisfies Meta<typeof ComboboxSelect>;
 
 export default meta;
@@ -21,18 +22,20 @@ type Story = StoryObj<typeof meta>;
 
 // Mock data for stories
 const mockOptions = [
-  { value: '1', label: 'John Doe', url: 'https://picsum.photos/100/100?random=1' },
-  { value: '2', label: 'Jane Smith', url: 'https://picsum.photos/100/100?random=2' },
-  { value: '3', label: 'Bob Johnson', url: 'https://picsum.photos/100/100?random=3' },
-  { value: '4', label: 'Alice Brown', url: 'https://picsum.photos/100/100?random=4' },
-  { value: '5', label: 'Charlie Wilson', url: 'https://picsum.photos/100/100?random=5' },
+  { value: '1', label: 'John Doe' },
+  { value: '2', label: 'Jane Smith' },
+  { value: '3', label: 'Bob Johnson' },
+  { value: '4', label: 'Alice Brown' },
+  { value: '5', label: 'Charlie Wilson' },
 ];
 
-const largeOptions = Array.from({ length: 1000 }, (_, i) => ({
-  value: i.toString(),
-  label: `Option ${i + 1}`,
-  url: `https://picsum.photos/100/100?random=${i}`,
+const avatarOptions = mockOptions.map(({ value, label }) => ({
+  value,
+  label,
+  icon: <EntityAvatar className="size-6" id={value} name={label} url={`https://picsum.photos/100/100?random=${value}`} />,
 }));
+
+const largeOptions = Array.from({ length: 1000 }, (_, i) => ({ value: i.toString(), label: `Option ${i + 1}` }));
 
 /**
  * Default combobox with basic options.
@@ -58,16 +61,15 @@ export const Default: Story = {
  */
 export const WithAvatars: Story = {
   args: {
-    options: mockOptions,
+    options: avatarOptions,
     value: '',
     onChange: () => {},
-    showAvatar: true,
   },
   render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} showAvatar={args.showAvatar} />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} />
       </div>
     );
   },
@@ -208,7 +210,7 @@ export const Multiple: Story = {
     return (
       <div className="w-80 space-y-4">
         <ComboboxSelect {...args} options={args.options} value={value1} onChange={setValue1} />
-        <ComboboxSelect {...args} options={args.options} value={value2} onChange={setValue2} showAvatar={true} />
+        <ComboboxSelect {...args} options={avatarOptions} value={value2} onChange={setValue2} />
       </div>
     );
   },

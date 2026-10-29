@@ -3,8 +3,10 @@ import { type CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
+import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
+import { SelectDrawerRows } from '~/modules/common/form-fields/select-drawer';
 
 interface SelectLanguagesProps {
   value: Language[];
@@ -21,9 +23,17 @@ interface SelectLanguagesContentProps extends Pick<SelectLanguagesProps, 'onChan
 /** Keeps local state because the dropdowner renders a snapshot of its content. */
 function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: SelectLanguagesContentProps) {
   const { t } = useTranslation();
+  const inDrawer = useInDropdownerDrawer();
   const [selected, setSelected] = useState<Language[]>(initialValue);
 
-  const options = appConfig.languages.map((lang) => ({ value: lang, label: t(`c:${lang}`) }));
+  const options = appConfig.languages.map((lang) => ({
+    value: lang,
+    label: (
+      <span className="truncate" lang={lang}>
+        {t(`c:${lang}`)}
+      </span>
+    ),
+  }));
 
   const toggleLanguage = (language: Language) => {
     if (selected.includes(language) && selected.length === 1) return;
@@ -31,6 +41,8 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
     setSelected(next);
     onChange(next);
   };
+
+  if (inDrawer) return <SelectDrawerRows options={options} selected={selected} onSelect={toggleLanguage} />;
 
   return (
     <div
@@ -54,9 +66,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
           }}
           tabIndex={0}
         >
-          <span className="truncate" lang={option.value}>
-            {option.label}
-          </span>
+          {option.label}
           <CheckIcon className="invisible text-success group-aria-selected/language-option:visible" />
         </div>
       ))}

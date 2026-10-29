@@ -5,6 +5,8 @@ export interface OverlayClose {
   close: () => void;
   /** Returns to what the overlay showed before this content (a menu before its confirmation), or closes when nothing came before. */
   back: () => void;
+  /** The overlay is a phone's bottom drawer, where a confirmation's choices are action-sheet rows. */
+  drawer?: boolean;
 }
 
 export const OverlayCloseContext = createContext<OverlayClose | null>(null);

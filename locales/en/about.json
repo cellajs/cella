@@ -216,7 +216,7 @@
   "how.concept_2": "Synced data should be shaped & treated like non-synced data",
   "how.title": "Sync architecture",
   "sync_diagram.part_1.label": "Part 1",
-  "sync_diagram.part_1.text": "Every change to your data passes through a <strong>REST API</strong> (OpenAPI 3.1). Permissions are checked on every request. 3rd party services can use it. When the sync engine is down, the app keeps working as a plain REST app.",
+  "sync_diagram.part_1.text": "Every change to your data passes through a <strong>REST API</strong> (OpenAPI 3.1). Permissions are checked on every request. 3rd party services can use it. When the sync engine is down, your API still works.",
   "sync_diagram.part_2.label": "Part 2",
   "sync_diagram.part_2.text": "The <strong>CDC (Change Data Capture)</strong> worker subscribes to a WAL (Write-Ahead Log), processes the logs & stores activities in db, and sends changes back to the API → API sends an SSE to notify the client about a change → client then does a normal API request.",
   "sync_diagram.part_3.label": "Part 3",

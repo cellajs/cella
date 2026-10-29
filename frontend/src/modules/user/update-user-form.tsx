@@ -8,6 +8,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -123,13 +124,13 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
           </>
         )}
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <FormActions>
           <SubmitButton disabled={!compact && (!form.isDirty || Object.keys(form.formState.errors).length > 0)} loading={isPending}>
             {t(`c:${compact ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
           {children}
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

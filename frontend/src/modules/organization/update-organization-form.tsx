@@ -10,6 +10,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { CountryFormField } from '~/modules/common/form-fields/select-combobox/country';
 import { TimezoneFormField } from '~/modules/common/form-fields/select-combobox/timezone';
@@ -23,6 +24,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
+import { soleTimeZone } from '~/utils/time-zones';
 
 // welcomeText belongs to the details form
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
@@ -39,7 +41,7 @@ interface UpdateOrganizationFormProps {
 }
 
 export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: UpdateOrganizationFormProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const languagesId = useId();
 
@@ -52,6 +54,13 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
 
   useBeforeUnload(form.isDirty);
+
+  const country = useWatch({ control: form.control, name: 'country' });
+  const fillSoleTimezone = (code: string) => {
+    if (!code || form.getValues('timezone')) return;
+    const zone = soleTimeZone(code, i18n.language);
+    if (zone) form.setValue('timezone', zone, { shouldDirty: true });
+  };
 
   const onSubmit = (body: FormValues) => {
     mutate(
@@ -123,15 +132,15 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         />
         <DefaultLanguageField form={form} />
 
-        <CountryFormField control={form.control} name="country" label={t('c:country')} />
-        <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} />
+        <CountryFormField control={form.control} name="country" label={t('c:country')} onSelect={fillSoleTimezone} />
+        <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} country={country} />
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <FormActions>
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
           <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

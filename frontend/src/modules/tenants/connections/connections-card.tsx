@@ -10,6 +10,7 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
 import { openConfirm } from '~/modules/common/open-confirm';
@@ -102,6 +103,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
     openConfirm(event.currentTarget, {
       id: `delete-connection-${connection.id}`,
       title: <DeleteQuestion resource="c:connection" name={connection.displayName} />,
+      resource: 'c:connection',
       onConfirm: () => remove({ path: { tenantId: tenant.id, id: connection.id } }),
     });
 
@@ -234,12 +236,12 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                     </FormItem>
                   )}
                 />
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <FormActions>
                   <SubmitButton disabled={!form.isDirty} loading={creating}>
                     {t('c:create_resource', { resource: t('c:connection') })}
                   </SubmitButton>
                   <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
-                </div>
+                </FormActions>
               </form>
             </Form>
           )}

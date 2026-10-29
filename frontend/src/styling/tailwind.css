@@ -311,13 +311,12 @@
   @apply font-medium text-muted-foreground text-sm;
 }
 
-/* A field framed by what it sits in, such as a filter bar, draws no edge of its own, at rest or under the pointer: its
-   edge tokens turn transparent. Increased contrast leaves them alone, so the edge and its hover come back there. */
+/* A field framed by what it sits in, such as a filter bar, draws no edge of its own: its edge token turns transparent.
+   Increased contrast leaves it alone, so the edge comes back there. */
 @utility edgeless {
   @media not (prefers-contrast: more) {
     :root:not([data-contrast="more"]) & {
       --input: transparent;
-      --input-hover: transparent;
     }
   }
 }
@@ -349,18 +348,12 @@
 /* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar or the on-screen keyboard is up. */
 @custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *));
 
-/* A field under the pointer, or whose label is: the label around it, beside it, or its form item's (never a group's
-   options, which sit in labels of their own). :where holds one-class specificity, so an invalid or checked edge still
-   wins. Never a label: a choice card is one, so its sibling cards would light up; it takes plain hover. */
+/* A checkbox or radio under the pointer, or whose label is: Base UI renders no element a label is for, so a hovered
+   label never reaches it natively. :where holds one-class specificity, so an invalid or checked edge still wins. Never a
+   label: a choice card is one, so its sibling cards would light up; it takes plain hover. */
 @custom-variant field-hover {
   @media (hover: hover) {
-    &:where(
-        :hover,
-        label:hover *,
-        :has(~ label:hover),
-        label:hover ~ *,
-        [data-slot="form-item"]:has([data-slot="form-label"]:hover) :not(label *)
-      ):where(:not(label, :disabled, [data-disabled], [readonly])) {
+    &:where(:hover, label:hover *, :has(~ label:hover), label:hover ~ *):where(:not(label, [data-disabled], [data-readonly])) {
       @slot;
     }
   }
@@ -561,7 +554,7 @@
     /* What --border, --input, --sidebar-border and --edge-overlay become under increased contrast, and what --input-hover
        is otherwise. Never used by a class: those tokens are what components read, this only holds the raised value. */
     --edge-raised: oklch(0.64 0.005 285.75);
-    /* A field's edge while the pointer is on it or on its label (field-hover); increased contrast takes it to the foreground. */
+    /* A checkbox's, radio's or choice card's edge under the pointer; increased contrast takes it to the foreground. */
     --input-hover: var(--edge-raised);
     /* An edge drawn on top of media, such as a tile's cover: translucent, so it shades a colored cover in its own hue
        and still shows on a white one. On a plain card it lands close to --border. */

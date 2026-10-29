@@ -143,7 +143,7 @@ interface ChannelTileStatsProps {
   countRole?: EntityRole;
 }
 
-/** Compact counts: members, a draft's pending invites and posts per `memberStatProductTypes` entry, then the latest post date (or the creation date). */
+/** Compact counts: members, a draft's pending invites and posts per `memberStatProductTypes` entry, then from `sm` the latest post date (or the creation date). */
 export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
@@ -180,7 +180,7 @@ export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
           })}
         </span>
       )}
-      <span>
+      <span className="max-sm:hidden">
         {memberCount !== undefined && '· '}
         {dateShort(lastPostedAt ? new Date(lastPostedAt) : entity.createdAt)}
       </span>
@@ -254,8 +254,7 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
   if (entity.invited) return <Badge variant="secondary">{t('c:pending')}</Badge>;
-  if (entity.membership)
-    return <JoinedButton channel={entity} role={entity.membership.role} variant="outline" className="w-full" redirectPath={null} />;
+  if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} className="w-full" redirectPath={null} />;
   return fallback;
 }
 

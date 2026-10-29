@@ -12,14 +12,16 @@ import { cn } from '~/utils/cn';
 interface JoinedButtonProps extends LeaveChannelProps {
   /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */
   role?: MembershipBase['role'] | null;
-  /** `outline` leaves the success color to the check, for places that repeat the button, such as a grid of tiles. */
+  /** `outline` leaves the success color to the check; `success` fills the whole button with it. */
   variant?: 'success' | 'outline';
   size?: ButtonProps['size'];
+  /** Hides the label below `xs`, for a button that shares its row with a title. */
+  iconOnlyOnPhone?: boolean;
   className?: string;
 }
 
 /** The joined state: its check turns into an X on hover or focus, and a click asks to leave in a popconfirm (a drawer below `sm`). */
-export function JoinedButton({ role, variant = 'success', size = 'sm', className, ...props }: JoinedButtonProps) {
+export function JoinedButton({ role, variant = 'outline', size = 'sm', iconOnlyOnPhone = false, className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
@@ -39,7 +41,7 @@ export function JoinedButton({ role, variant = 'success', size = 'sm', className
         )}
       />
       <XIcon className="hidden group-hover/joined-button:block group-focus-visible/joined-button:block group-data-dropdowner-active/joined-button:block" />
-      <span className="max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
+      <span className={cn(iconOnlyOnPhone && 'max-xs:hidden')}>{role ? t(role) : t('c:joined')}</span>
       <span className="sr-only">{t('c:leave')}</span>
     </Button>
   );

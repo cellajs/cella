@@ -10,10 +10,10 @@ import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { HelpText } from '~/modules/common/help-text';
 import { NamedText } from '~/modules/common/named-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
-import { AuthSectionTitle } from '~/modules/me/auth-section-title';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { IdentityTile } from '~/modules/me/identity-tile';
@@ -94,13 +94,14 @@ export function AccountAuthenticationCard() {
       <Accordion className="text-sm [&>:last-child]:mb-0">
         {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
           <>
-            <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
+            <HelpText content={t('c:mfa.text')} className="mb-3">
+              <h3 className="group-label">{t('c:mfa')}</h3>
               {!user.mfaRequired && (
                 <Badge variant="success" soft className="max-sm:hidden">
                   {t('c:recommended')}
                 </Badge>
               )}
-            </AuthSectionTitle>
+            </HelpText>
             <MfaSwitch />
           </>
         )}
@@ -109,14 +110,18 @@ export function AccountAuthenticationCard() {
 
         {isStrategyEnabled('totp') && (
           <>
-            <AuthSectionTitle title={t('c:totp')} help={t('c:totp.text')} />
+            <HelpText content={t('c:totp.text')} className="mb-3">
+              <h3 className="group-label">{t('c:totp')}</h3>
+            </HelpText>
             <Totp />
           </>
         )}
 
         {isStrategyEnabled('oauth') && (
           <>
-            <AuthSectionTitle title={t('c:oauth')} help={t('c:oauth.text')} />
+            <HelpText content={t('c:oauth.text')} className="mb-3">
+              <h3 className="group-label">{t('c:oauth')}</h3>
+            </HelpText>
             <div className="mb-8 flex flex-col gap-2">
               {enabledOAuthProviders.map(({ id, name }) => {
                 const identity = oauthIdentities.find(({ provider }) => provider === id);
@@ -141,7 +146,9 @@ export function AccountAuthenticationCard() {
 
         {isStrategyEnabled('sso') && institutions.length > 0 && (
           <>
-            <AuthSectionTitle title={t('c:institution_accounts')} help={t('c:institution_accounts.text')} />
+            <HelpText content={t('c:institution_accounts.text')} className="mb-3">
+              <h3 className="group-label">{t('c:institution_accounts')}</h3>
+            </HelpText>
             {toConnect && (
               <Alert variant="info" className="mb-3">
                 <InfoIcon />

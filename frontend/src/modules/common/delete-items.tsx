@@ -12,8 +12,10 @@ export interface DeleteItemsProps<TItem, TVariables> {
   mutation: { mutate: (variables: TVariables, options?: { onSuccess: () => void }) => void; isPending: boolean };
   toVariables: (items: TItem[]) => TVariables;
   callback?: (args: CallbackArgs<TItem[]>) => void;
-  /** Names the items in a success toast, e.g. `c:project`. */
+  /** Names the items, e.g. `c:project`: in the act ("Delete projects") and, for a delete that waits for the server, the success toast. */
   resource?: TKey;
+  /** The act, interpolated with `resource`, e.g. `c:remove_resource`; a delete by default. */
+  label?: TKey;
   /** Warn and send nothing while offline. */
   onlineOnly?: boolean;
   /** Report to `callback` before closing; by default the confirmation closes first. */
@@ -39,7 +41,7 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
   const handleDelete = () => {
     if (props.onlineOnly && !onlineManager.isOnline()) return toastOffline();
     const succeed = () => {
-      if (resource) {
+      if (resource && !props.optimistic) {
         const count = items.length;
         toaster.success(
           count === 1
@@ -53,5 +55,15 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
     if (props.optimistic) succeed();
   };
 
-  return <DeleteForm allowOfflineDelete={props.optimistic} onDelete={handleDelete} onCancel={props.onCancel} pending={mutation.isPending} />;
+  return (
+    <DeleteForm
+      resource={resource}
+      count={items.length}
+      label={props.label}
+      allowOfflineDelete={props.optimistic}
+      onDelete={handleDelete}
+      onCancel={props.onCancel}
+      pending={mutation.isPending}
+    />
+  );
 }

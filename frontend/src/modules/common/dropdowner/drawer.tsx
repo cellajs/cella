@@ -3,7 +3,7 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { DropdownerContent, useDropdownerSurface } from '~/modules/common/dropdowner/surface';
 import { type MorphAnchor, type MorphTiming, useSwapMorph } from '~/modules/common/dropdowner/swap-morph';
 import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
-import { Drawer, DrawerContent, DrawerRowGroup, DrawerTitle, DrawerVirtualKeyboardProvider } from '~/modules/ui/drawer';
+import { Drawer, DrawerContent, DrawerLead, DrawerRowGroup, DrawerTitle, DrawerVirtualKeyboardProvider } from '~/modules/ui/drawer';
 
 /** Whether this content renders in the mobile drawer, where actions are action-sheet rows (`Button variant="row"`). */
 export const useInDropdownerDrawer = () => useDropdownerSurface() === 'drawer';
@@ -17,7 +17,7 @@ interface DropdownerDrawerProps {
 }
 
 export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
-  const { id, content, triggerLabel, kind } = dropdown;
+  const { id, content, triggerLabel, kind, lead, history } = dropdown;
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +39,8 @@ export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
             <div ref={containerRef}>
               {/* A menu's items are one group of rows; a panel (a form) lays out its own. */}
               <div ref={contentRef} className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
+                {/* A pushed confirmation asks its own question about the same thing */}
+                {lead && !history.length && <DrawerLead>{lead}</DrawerLead>}
                 {kind === 'menu' ? <DrawerRowGroup>{content}</DrawerRowGroup> : content}
               </div>
             </div>

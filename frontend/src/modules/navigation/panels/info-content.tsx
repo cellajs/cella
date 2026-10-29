@@ -8,7 +8,6 @@ import { contactFormHandler } from '~/modules/common/contact-form/contact-form-h
 import { askForHelp } from '~/modules/common/error-helpers';
 import { StatusDot, type StatusDotVariant } from '~/modules/common/status-dot';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
-import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/panels/query';
 import { type GradedStatusEntry, gradeStatusEntries, worstStatus } from '~/modules/navigation/panels/status-entries';
 import { Button } from '~/modules/ui/button';
@@ -69,7 +68,7 @@ export function InfoContent() {
   return (
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
-        <PanelHeading className="px-3">{t('c:support')}</PanelHeading>
+        <h3 className="group-label px-3">{t('c:support')}</h3>
         <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} />} />
         <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" />} />
         {appConfig.has.chatSupport && (
@@ -80,7 +79,7 @@ export function InfoContent() {
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2 px-3">
-          <PanelHeading>{t('c:status')}</PanelHeading>
+          <h3 className="group-label">{t('c:status')}</h3>
           {hasStatusPage && (
             <Button
               variant="link"

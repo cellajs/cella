@@ -74,7 +74,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       onInputValueChange={setSearchQuery}
       filter={() => true}
     >
-      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input field-hover:border-input-hover bg-background p-1.5 pr-10">
+      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input bg-background p-1.5 pr-10">
         {/* Lies behind the chip row, whose remove buttons cannot nest in a button, and reads out the selection itself */}
         <ComboboxPrimitive.Trigger
           ref={triggerRef}

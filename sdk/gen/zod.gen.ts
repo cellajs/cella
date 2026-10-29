@@ -1864,7 +1864,10 @@ export const zUpdateOrganizationBody = z.object({
     .max(255)
     .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
-  country: z.string().max(255).nullish(),
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullish(),
   timezone: z.string().max(255).nullish(),
   defaultLanguage: z.enum(['en', 'nl']).optional(),
   languages: z

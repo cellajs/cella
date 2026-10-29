@@ -3,7 +3,7 @@ import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface CancelButtonProps extends ButtonProps {
-  /** Shows the button; for a clean form it keeps its place, unseen. */
+  /** Shows the button; for a clean form it keeps its place unseen, except in a `FormActions` row, where the submit button takes it. */
   dirty: boolean;
 }
 
@@ -12,7 +12,7 @@ export function CancelButton({ dirty, className, ...props }: CancelButtonProps) 
   const { t } = useTranslation();
 
   return (
-    <Button type="reset" variant="secondary" className={cn(!dirty && 'invisible', className)} {...props}>
+    <Button type="reset" variant="secondary" className={cn(!dirty && 'invisible in-data-form-actions:hidden', className)} {...props}>
       {t('c:cancel')}
     </Button>
   );

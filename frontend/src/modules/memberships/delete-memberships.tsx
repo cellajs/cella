@@ -21,5 +21,7 @@ export function DeleteMemberships({ members, entityId, entityType, tenantId, org
     members: items,
   });
 
-  return <DeleteItems items={members} mutation={mutation} toVariables={toVariables} optimistic {...props} />;
+  return (
+    <DeleteItems items={members} mutation={mutation} toVariables={toVariables} resource="c:member" label="c:remove_resource" optimistic {...props} />
+  );
 }

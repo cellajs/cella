@@ -11,5 +11,5 @@ export function DeleteAttachments({ attachments, ...props }: DeleteAttachmentsPr
   const mutation = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
 
   // The rows leave the list at once and a refusal puts them back with a toast, so the form does not wait for the server.
-  return <DeleteItems items={attachments} mutation={mutation} toVariables={(items) => items} optimistic {...props} />;
+  return <DeleteItems items={attachments} mutation={mutation} toVariables={(items) => items} resource="c:attachment" optimistic {...props} />;
 }

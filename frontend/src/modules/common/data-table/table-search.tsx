@@ -47,6 +47,11 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, onSe
         name={name}
         value={inputValue}
         onChange={(event) => setInputValue(event.target.value)}
+        // On a phone's open search the search key only lowers the keyboard; the list already follows the typing
+        enterKeyHint="search"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && isFilterActive) event.currentTarget.blur();
+        }}
         ref={inputRef}
         aria-label={t('c:placeholder.search')}
       />
@@ -55,7 +60,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, onSe
         <SearchSpinner value={inputValue} isSearching={isSearching} />
       </InputGroupAddon>
 
-      <InputGroupAddon className="pr-2 max-sm:hidden" align="inline-end">
+      <InputGroupAddon className="pr-2" align="inline-end">
         <SearchClearButton
           className={cn(!inputValue.length && 'invisible')}
           onClick={() => {

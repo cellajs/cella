@@ -4466,7 +4466,13 @@ export type UpdateOrganizationData = {
     slug?: string;
     name?: string;
     shortName?: string | null;
+    /**
+     * ISO 3166-1 alpha-2 country code.
+     */
     country?: string | null;
+    /**
+     * IANA time zone id.
+     */
     timezone?: string | null;
     defaultLanguage?: 'en' | 'nl';
     languages?: Array<'en' | 'nl'>;

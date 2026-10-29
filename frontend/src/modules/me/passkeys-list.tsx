@@ -2,8 +2,8 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { FingerprintPatternIcon, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
+import { HelpText } from '~/modules/common/help-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
-import { AuthSectionTitle } from '~/modules/me/auth-section-title';
 import { PasskeyTile } from '~/modules/me/passkey-tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
@@ -27,9 +27,9 @@ export function PasskeysList() {
 
   return (
     <>
-      <AuthSectionTitle
-        title={t('c:passkeys')}
-        help={t('c:passkey.text')}
+      <HelpText
+        content={t('c:passkey.text')}
+        className="mb-3"
         action={
           passkeys.length > 0 && (
             <Button className="-mr-2" variant="ghost" size="sm" onClick={() => createPasskey()}>
@@ -38,7 +38,9 @@ export function PasskeysList() {
             </Button>
           )
         }
-      />
+      >
+        <h3 className="group-label">{t('c:passkeys')}</h3>
+      </HelpText>
       <div className="mb-8">
         {passkeys.length > 0 ? (
           <div className="flex flex-col gap-2">

@@ -17,5 +17,5 @@ export function DeleteSelf() {
       },
     });
 
-  return <DeleteForm onDelete={deleteAndSignOut} pending={isPending} />;
+  return <DeleteForm label="c:delete_account" onDelete={deleteAndSignOut} pending={isPending} />;
 }

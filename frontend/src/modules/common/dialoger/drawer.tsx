@@ -3,6 +3,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+import { cn } from '~/utils/cn';
 
 interface DialogerDrawerProps {
   dialog: InternalDialog;
@@ -23,12 +24,19 @@ export function DialogerDrawer({ dialog }: DialogerDrawerProps) {
       <DrawerContent id={String(id)} data-overlay="dialog" className={className}>
         {(title || description) && (
           <DrawerHeader className={headerClassName}>
-            {title && <DrawerTitle>{titleContent}</DrawerTitle>}
-            {description && <DrawerDescription>{description}</DrawerDescription>}
+            {/* Above a confirmation's rows the question alone heads the sheet, as in a menu's confirmation; the title it repeats stays for screen readers */}
+            {title && (
+              <DrawerTitle className={cn(description && 'group-has-data-[slot=drawer-row-group]/drawer-content:sr-only')}>{titleContent}</DrawerTitle>
+            )}
+            {description && (
+              <DrawerDescription className="group-has-data-[slot=drawer-row-group]/drawer-content:text-balance group-has-data-[slot=drawer-row-group]/drawer-content:text-foreground">
+                {description}
+              </DrawerDescription>
+            )}
           </DrawerHeader>
         )}
         <div className="px-3 pb-3">
-          <OverlayCloseContext.Provider value={{ close: closeDialog, back: closeDialog }}>{content}</OverlayCloseContext.Provider>
+          <OverlayCloseContext.Provider value={{ close: closeDialog, back: closeDialog, drawer: true }}>{content}</OverlayCloseContext.Provider>
         </div>
       </DrawerContent>
     </Drawer>
