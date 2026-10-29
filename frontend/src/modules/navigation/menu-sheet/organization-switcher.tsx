@@ -1,7 +1,9 @@
-import { Link } from '@tanstack/react-router';
-import { ArchiveIcon, ChevronsUpDownIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { ArchiveIcon, ArrowRightIcon, ChevronsUpDownIcon, PlusIcon } from 'lucide-react';
+import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { getMenuSection } from '~/lib/entity-modules';
 import { CountBadge } from '~/modules/common/count-badge';
 import { DropdownActionItem, DropdownActionSeparator } from '~/modules/common/dropdowner/dropdown-action-item';
 import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
@@ -12,12 +14,12 @@ import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
-import { showMenuOrganization } from '~/modules/navigation/nav-sheet';
+import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { useOrganizationUnseenCounts } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
-import { ButtonGroup } from '~/modules/ui/button-group';
 import { useUserStore } from '~/modules/user/user-store';
-import { getChannelRoute } from '~/utils/channel-route';
+import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
 /** The organizations of the signed-in user's menu in display order, active and archived apart. */
@@ -52,16 +54,34 @@ function SwitcherOrganizationItem({ organization, selected, unseenCount }: Switc
   );
 }
 
-interface OrganizationSwitcherProps {
+interface OrganizationSwitcherMenuProps {
   organization: UserMenuItem;
+  /** The switcher row, which a dialog opened from the menu returns focus to. */
+  triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
-function OrganizationSwitcherMenu({ organization }: OrganizationSwitcherProps) {
+/** The organization's page first, then every organization to swap the sheet to, and a way to create one. */
+function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwitcherMenuProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const isMobile = useBreakpointBelow('sm', false);
   const { active, archived } = useSwitcherOrganizations();
   const unseenCounts = useOrganizationUnseenCounts();
+  const createOrganization = getMenuSection('organization')?.createAction;
   // Folds again with every opening, as the menu remounts; open from the start when the sheet shows an archived one
   const [showsArchived, setShowsArchived] = useState(organization.membership.archived);
+
+  const openOrganizationPage = () => {
+    if (!navigationStore.getState().keepNavOpen) closeNavSheet();
+    const { to, params, search } = getChannelRoute(organization);
+    navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
+  };
+
+  // The create dialog opens over the page, as a section's create button does, since a phone's menu would hide it
+  const create = () => {
+    if (isMobile) closeNavSheet();
+    createOrganization?.(triggerRef);
+  };
 
   const renderItem = (item: UserMenuItem) => (
     <SwitcherOrganizationItem key={item.id} organization={item} selected={item.id === organization.id} unseenCount={unseenCounts.get(item.id) ?? 0} />
@@ -69,6 +89,10 @@ function OrganizationSwitcherMenu({ organization }: OrganizationSwitcherProps) {
 
   return (
     <>
+      <DropdownActionItem icon={ArrowRightIcon} onSelect={openOrganizationPage}>
+        {t('c:go_to_organization_page')}
+      </DropdownActionItem>
+      <DropdownActionSeparator />
       {active.map(renderItem)}
       {archived.length > 0 && <DropdownActionSeparator />}
       {showsArchived
@@ -79,11 +103,26 @@ function OrganizationSwitcherMenu({ organization }: OrganizationSwitcherProps) {
               <span className="ml-auto text-faint-foreground text-xs">{archived.length}</span>
             </DropdownActionItem>
           )}
+      {createOrganization && (
+        <>
+          <DropdownActionSeparator />
+          <DropdownActionItem icon={PlusIcon} onSelect={create}>
+            {t('c:create_resource', { resource: t('c:organization') })}
+          </DropdownActionItem>
+        </>
+      )}
     </>
   );
 }
 
-/** Heads the mobile menu sheet with the organization it shows: a link to its page, and a toggle that picks another to swap the sheet to. */
+interface OrganizationSwitcherProps {
+  organization: UserMenuItem;
+}
+
+/**
+ * Heads the mobile menu sheet with the organization it shows: a row built like the channel rows under it, which opens
+ * the switcher menu to reach the organization's page, pick another organization or create one.
+ */
 export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -97,7 +136,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
   for (const item of active) if (item.id !== organization.id) otherUnseenCount += unseenCounts.get(item.id) ?? 0;
 
   const openMenu = () => {
-    dropdowner.getState().create(<OrganizationSwitcherMenu organization={organization} />, {
+    dropdowner.getState().create(<OrganizationSwitcherMenu organization={organization} triggerRef={triggerRef} />, {
       id: 'organization-switcher',
       triggerId: 'organization-switcher',
       triggerRef,
@@ -108,37 +147,26 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
 
   return (
     <div className="px-3 pt-2 pb-2">
-      <ButtonGroup className="w-full">
-        <Button
-          variant="outline"
-          render={<Link {...getChannelRoute(organization)} draggable={false} />}
-          className="h-14 min-w-0 grow justify-start gap-3 px-3"
-        >
-          <EntityAvatar
-            className="size-9 shrink-0"
-            type={organization.entityType}
-            id={organization.id}
-            name={organization.name}
-            url={organization.thumbnailUrl}
-          />
-          <span className="flex min-w-0 grow flex-col text-left">
-            <span className="truncate">{organization.name}</span>
-            <span className="truncate font-normal text-muted-foreground text-xs">{t(organization.membership.role)}</span>
-          </span>
-          {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
-        </Button>
-        <Button
-          ref={triggerRef}
-          variant="outline"
-          onClick={openMenu}
-          aria-label={t('c:switch_organization', { name: organization.name })}
-          className="relative h-14 w-12 shrink-0 data-dropdowner-active:bg-muted"
-        >
-          <ChevronsUpDownIcon className="size-4 opacity-50" />
-          {/* On the corner, as on the nav buttons, so it reads as the other organizations' count and not this one's */}
-          {otherUnseenCount > 0 && <CountBadge count={otherUnseenCount} className="absolute -top-2 -right-2" />}
-        </Button>
-      </ButtonGroup>
+      <Button
+        ref={triggerRef}
+        variant="ghost"
+        onClick={openMenu}
+        aria-label={t('c:switch_organization', { name: organization.name })}
+        className="relative h-12 w-full justify-start gap-3 px-3 text-md data-dropdowner-active:bg-muted"
+      >
+        <EntityAvatar
+          className="size-8 shrink-0"
+          type={organization.entityType}
+          id={organization.id}
+          name={organization.name}
+          url={organization.thumbnailUrl}
+        />
+        <span className="min-w-0 grow truncate text-left">{organization.name}</span>
+        {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
+        <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+        {/* On the corner, as on the nav buttons, so it reads as the other organizations' count and not this one's */}
+        {otherUnseenCount > 0 && <CountBadge count={otherUnseenCount} className="absolute -top-1 -right-1" />}
+      </Button>
     </div>
   );
 }

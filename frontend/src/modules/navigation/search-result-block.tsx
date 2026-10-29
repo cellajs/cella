@@ -44,7 +44,7 @@ export function SearchResultBlock({
       <ComboboxGroup>
         <button
           type="button"
-          className="group-label sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-4 py-2 backdrop-blur-sm hover:text-foreground"
+          className="group-label sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover px-4 py-2 hover:text-foreground"
           onClick={onToggleCollapsed}
         >
           {label ?? t(entityType)}

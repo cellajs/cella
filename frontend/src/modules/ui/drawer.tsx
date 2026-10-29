@@ -119,7 +119,7 @@ export function DrawerHeader({ className, sticky, ...props }: React.ComponentPro
       data-slot="drawer-header"
       className={cn(
         'flex flex-col gap-0.5 p-4 pb-6 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-1.5 md:text-left',
-        sticky && 'sticky top-0 z-20 bg-background/70 backdrop-blur-xs',
+        sticky && 'sticky top-0 z-20 bg-background',
         className,
       )}
       {...props}

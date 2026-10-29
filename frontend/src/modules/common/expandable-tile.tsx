@@ -85,7 +85,7 @@ interface ExpandableTileDetailProps {
 export function ExpandableTileDetail({ label, wide, children }: ExpandableTileDetailProps) {
   return (
     <div className={cn('min-w-0', wide && 'col-span-full')}>
-      <dt className="group-label">{label}</dt>
+      <dt className="group-label text-xs">{label}</dt>
       <dd className={cn('text-sm', !wide && 'truncate')}>{children}</dd>
     </div>
   );
@@ -107,7 +107,7 @@ export function TileListHeading({ title, count, level = 3, className, children }
 
   return (
     <div className={cn('flex items-center justify-between gap-2', children && 'min-h-9', className)}>
-      <Heading className="group-label">
+      <Heading className="group-label text-xs">
         {title}
         <span className="ml-3 font-normal text-faint-foreground">{count}</span>
       </Heading>

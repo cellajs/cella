@@ -189,7 +189,7 @@ export interface SyncPageItem extends InfoGridItem<SyncCategory> {
 
 export const syncPageItems: SyncPageItem[] = [
   // Realtime & collaboration
-  { id: 'notify_then_fetch', category: 'realtime', layers: ['cdc', 'api', 'client'] },
+  { id: 'live_changes', category: 'realtime', layers: ['cdc', 'api', 'client'] },
   { id: 'yjs_collaboration', category: 'realtime', layers: ['yjs', 'api', 'client'] },
   { id: 'embedded_propagation', category: 'realtime', layers: ['api', 'client'] },
   { id: 'multi_tab', category: 'realtime', layers: ['client'] },

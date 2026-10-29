@@ -4,7 +4,7 @@ This document explains how product data, and the facts around it, stay current a
 
 ### TL;DR
 
-**Announce-then-fetch**: when data changes, the server announces it on a live stream and the client fetches it through the normal API, often from cache, then patches only the affected cached entries. The sync engine adds no second data model, storage or permission check. Product rows travel as **changes**; anything else a client must hear about, such as a new membership or an inbox item, travels as a **signal**.
+When data changes, the server announces it on a live stream and the client fetches it through the normal API, often from cache, then patches only the affected cached entries. The sync engine adds no second data model, storage or permission check. Product rows travel as **changes**; anything else a client must hear about, such as a new membership or an inbox item, travels as a **signal**.
 
 ## One edit, end to end
 

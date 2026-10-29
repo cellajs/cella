@@ -78,8 +78,8 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
       ),
       ...(canEditDocs && {
         editable: true,
-        renderEditCell: ({ row, onRowChange }) => (
-          <EditCellInput value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
+        renderEditCell: ({ row, column, onRowChange }) => (
+          <EditCellInput name={column.key} value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
         ),
       }),
     },

@@ -42,7 +42,7 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
   }
 
   return (
-    <div className={cn('rounded-lg p-6', tileClassName)}>
+    <div className={cn('rounded-lg p-2 sm:p-6', tileClassName)}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-medium">{t(title)}</h3>
         {layers?.map((layer) => (

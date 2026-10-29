@@ -139,7 +139,7 @@ export function AppSearch() {
       // On touch the keyboard's Search key would open a highlighted first result the user never chose.
       autoHighlight={!isTouchInteraction()}
     >
-      <div className="flex min-h-0 flex-col rounded-lg shadow-2xl max-sm:flex-1">
+      <div className="flex min-h-0 flex-col max-sm:flex-1 sm:rounded-lg sm:shadow-2xl">
         <SearchDialogBar>
           <ComboboxSearchInput
             ref={focusRef}
@@ -159,7 +159,7 @@ export function AppSearch() {
           id="item-search"
           ref={scrollAreaRef}
           className="max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col sm:h-[40vh]"
-          viewportClassName="max-sm:min-h-0 overscroll-contain"
+          viewportClassName="max-sm:min-h-0 overscroll-contain max-sm:pb-[env(safe-area-inset-bottom)]"
         >
           {!isLoading && notFound && !hasHistoryToShow && (
             <ComboboxEmpty className="h-full sm:h-[36vh]">

@@ -98,7 +98,7 @@ export function SheetHeader({ className, sticky, children, ...props }: React.Com
   return (
     <div
       data-slot="sheet-header"
-      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs', className)}
+      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-background', className)}
       {...props}
     >
       {children}

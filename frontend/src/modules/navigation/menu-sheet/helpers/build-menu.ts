@@ -18,7 +18,7 @@ export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['s
   for (const section of menuStructure) {
     const items = byType.get(section.entityType) ?? [];
 
-    // Sub-items are always attached, so unseen badge aggregation has its data whatever detailedMenu renders.
+    // Sub-items are always attached, so unseen badge aggregation has its data for an archived row too, which shows none.
     if (!section.subentityType) {
       menu[section.entityType] = items.map((item) => ({ ...item, submenu: [] }));
       continue;

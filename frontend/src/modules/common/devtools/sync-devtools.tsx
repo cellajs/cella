@@ -172,6 +172,7 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
 
       <div className="flex gap-2 border-t p-2">
         <input
+          id="sync-devtools-filter"
           type="text"
           placeholder="Filter spans..."
           className="flex-1 rounded border bg-card px-2 py-1.5 outline-none placeholder:text-faint-foreground"

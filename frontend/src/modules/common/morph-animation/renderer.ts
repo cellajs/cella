@@ -74,6 +74,8 @@ export class MorphRenderer {
   private lastNow = 0;
   private time = Math.random() * 1000;
   private speed = 1;
+  /** Clock value the piece is frozen at; `null` lets it run. */
+  private stillTime: number | null = null;
   private timeScale = 1;
   private reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   private enter = 0;
@@ -108,6 +110,7 @@ export class MorphRenderer {
 
   setDark(dark: boolean) {
     this.dark = dark;
+    this.redrawStill();
   }
 
   setSpeed(speed: number) {
@@ -115,30 +118,42 @@ export class MorphRenderer {
     this.applyMotion();
   }
 
+  /** Freezes the piece at clock value `time`: the entrance plays from mount, seen or not, then the loop stops. `null` lets it run. */
+  setStill(time: number | null) {
+    this.stillTime = time;
+    if (time !== null) this.time = time;
+    this.applyMotion();
+    this.resume();
+  }
+
   /** A small canvas draws fewer cells than this: see `minGrainPx`. */
   setGrid(grid: number) {
     this.grid = grid;
+    this.redrawStill();
   }
 
   /** A phone-sized viewport gets the larger minimum grain: see `minGrainPxPhone`. */
   setPhone(isPhone: boolean) {
     this.minGrain = isPhone ? minGrainPxPhone : minGrainPx;
+    this.redrawStill();
   }
 
   setStamp(stamp: MorphStamp) {
     this.stamp = stamp === 'plus' ? 1 : 0;
+    this.redrawStill();
   }
 
   /** Margin factor around the shape: the canvas is this much wider than the blob, so warp and grain tails never clip. */
   setOverscan(overscan: number) {
     this.overscan = overscan;
+    this.redrawStill();
   }
 
   setPaused(paused: boolean) {
     if (this.paused === paused) return;
     this.paused = paused;
-    if (paused) cancelAnimationFrame(this.frameHandle);
-    else this.resume();
+    if (!paused) this.resume();
+    else if (this.stillTime === null) cancelAnimationFrame(this.frameHandle);
   }
 
   dispose() {
@@ -152,8 +167,14 @@ export class MorphRenderer {
   }
 
   private applyMotion() {
-    this.timeScale = this.speed * (this.reducedMotionQuery.matches ? reducedMotionSpeed : 1);
+    const motionSpeed = this.speed * (this.reducedMotionQuery.matches ? reducedMotionSpeed : 1);
+    this.timeScale = this.stillTime === null ? motionSpeed : 0;
     if (this.reducedMotionQuery.matches) this.enter = 1;
+  }
+
+  /** A still that has entered draws no frames of its own, so a change to its look draws one. */
+  private redrawStill() {
+    if (this.stillTime !== null) this.resume();
   }
 
   private initGl() {
@@ -215,7 +236,9 @@ export class MorphRenderer {
       const dt = Math.min(0.05, (now - this.lastNow) / 1000);
       this.lastNow = now;
       this.drawFrame(dt);
-      if (!this.paused && !this.disposed) this.frameHandle = requestAnimationFrame(loop);
+      // A still draws until it has entered, seen or not; a running piece draws while seen
+      const keepDrawing = this.stillTime === null ? !this.paused : this.enter < 1;
+      if (!this.disposed && keepDrawing) this.frameHandle = requestAnimationFrame(loop);
     };
     this.frameHandle = requestAnimationFrame(loop);
   }
@@ -238,7 +261,7 @@ export class MorphRenderer {
     if (!gl) return;
     this.fitCanvas(gl);
     this.time += dt * this.timeScale;
-    // Advances on drawn frames only, so an instance mounted off-screen enters when it scrolls into view
+    // Advances on drawn frames only, so a running instance mounted off-screen enters when it scrolls into view
     this.enter = Math.min(1, this.enter + dt / enterSeconds);
 
     const u = this.uniforms;

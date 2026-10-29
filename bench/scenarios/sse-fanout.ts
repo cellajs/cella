@@ -32,7 +32,7 @@ function hashSpread(key: string): number {
  * server's spread window); one in ten writes edits. `SYNC_MODE=immediate` fetches per change for comparison.
  */
 export default defineScenario({
-  description: 'SSE fan-out: announce-then-fetch under many live subscribers.',
+  description: 'SSE fan-out: many live subscribers fetching what the stream announces.',
   phases: [
     { name: 'ramp subscribers', duration: 10, arrivalRate: 8 },
     { name: 'hold with writes', duration: 20, arrivalRate: 12 },

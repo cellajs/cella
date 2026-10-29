@@ -173,6 +173,37 @@
   background-size: 2px 4px;
 }
 
+/* The glow gradient of the install command on /about (glow-button.css) and of glow-underline */
+:root {
+  --glow-stops: rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%;
+}
+
+/* Underlines the strong phrases inside with a 1px glow line whose blurred copy is cut at the line, so the glow only
+   rises into the words. A phrase keeps to one line, since the underline spans a single line box. */
+@utility glow-underline {
+  & strong {
+    position: relative;
+    white-space: nowrap;
+  }
+  & strong::before,
+  & strong::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: -5px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--glow-stops));
+  }
+  & strong::after {
+    bottom: -6px;
+    height: 4px;
+    filter: blur(5px);
+    opacity: 0.6;
+    clip-path: inset(-16px -12px 2px -12px);
+  }
+}
+
 @utility submenu-section {
   &:before {
     @apply dotted-line;

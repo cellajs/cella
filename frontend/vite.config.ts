@@ -218,7 +218,8 @@ const viteConfig = {
             { name: 'base-ui', test: /node_modules[\\/](@base-ui[\\/]|@floating-ui[\\/](core|dom|react-dom|utils)[\\/])/, minSize: 0 },
             { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
-            { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
+            // The app's `lib/zod-config.ts` rides in this chunk so its `jitless` call runs before any chunk builds a schema.
+            { name: 'zod', test: /node_modules[\\/]zod[\\/]|src[\\/]lib[\\/]zod-config\.ts$/, minSize: 0 },
             { name: 'motion', test: /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/, minSize: 0 },
             { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
             // Tracing initialises during boot, so it is on the boot path by design.

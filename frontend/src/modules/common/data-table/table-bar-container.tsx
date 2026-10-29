@@ -23,5 +23,5 @@ export function TableBarContainer({ children, className, searchVars }: TableBarC
     scrollToReset();
   }, [serialized]);
 
-  return <div className={cn('flex items-center py-2 max-sm:justify-between md:gap-2', className)}>{children}</div>;
+  return <div className={cn('flex items-center gap-2 py-2 max-sm:justify-between', className)}>{children}</div>;
 }

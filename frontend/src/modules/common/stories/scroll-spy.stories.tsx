@@ -211,7 +211,7 @@ const TestPanel = () => {
 const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: boolean; label?: string; showTests?: boolean }) => (
   <div className="min-h-svh bg-background text-foreground">
     {/* Sticky header */}
-    <div className="sticky top-0 z-10 border-b bg-background/95 p-3 backdrop-blur">
+    <div className="sticky top-0 z-10 border-b bg-background p-3">
       <h1 className="font-semibold text-base">{label ?? 'Scroll Spy Test'}</h1>
       <p className="text-muted-foreground text-xs">{withRouter ? 'TanStack Router (production-like)' : 'No Router (isolation)'}</p>
     </div>

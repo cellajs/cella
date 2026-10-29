@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -14,11 +13,7 @@ export function PreferencesContent() {
   const { t } = useTranslation();
 
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-  const setDetailedMenu = useNavigationStore((state) => state.setDetailedMenu);
   const setKeepOpenPreference = useNavigationStore((state) => state.setKeepOpenPreference);
-
-  const showDetailedMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
@@ -61,15 +56,6 @@ export function PreferencesContent() {
           onCheckedChange={setKeepOpenPreference}
           className="max-2xl:hidden"
         />
-        {showDetailedMenuOption && (
-          <PreferenceSwitch
-            id="detailedMenu"
-            label={t('c:detailed_menu')}
-            description={t('c:detailed_menu.text')}
-            checked={detailedMenu}
-            onCheckedChange={setDetailedMenu}
-          />
-        )}
       </PreferencesGroup>
 
       {tools.map((tool) => (

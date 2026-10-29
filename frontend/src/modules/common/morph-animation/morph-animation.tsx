@@ -15,11 +15,21 @@ interface MorphAnimationProps {
   /** Canvas margin around the shape (default: 1.2); below 1 it magnifies */
   overscan?: number;
   stamp?: MorphStamp;
+  /** Clock value to freeze the piece at: it condenses in on mount, then holds that frame */
+  still?: number;
   className?: string;
 }
 
 /** Generative mark animation on a transparent canvas; mount it lazily with a `null` Suspense fallback. */
-export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, overscan = 1.2, stamp = 'square', className }: MorphAnimationProps) {
+export function MorphAnimation({
+  variant = 'single',
+  grid = 96,
+  speed = 0.7,
+  overscan = 1.2,
+  stamp = 'square',
+  still,
+  className,
+}: MorphAnimationProps) {
   const mode = useUIStore((state) => state.mode);
   const isPhone = useBreakpointBelow('sm');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,6 +43,7 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
     renderer.setOverscan(overscan);
     renderer.setStamp(stamp);
     renderer.setSpeed(speed);
+    renderer.setStill(still ?? null);
   });
 
   // fragmentSource in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
@@ -79,6 +90,10 @@ export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, ove
   useEffect(() => {
     rendererRef.current?.setStamp(stamp);
   }, [stamp]);
+
+  useEffect(() => {
+    rendererRef.current?.setStill(still ?? null);
+  }, [still]);
 
   // The shader's entrance brings the piece in; under reduced motion the canvas crossfades while the shader opens at rest
   const canvas = (

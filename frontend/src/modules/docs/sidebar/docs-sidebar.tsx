@@ -31,15 +31,15 @@ export function DocsSidebar() {
             className="focus-effect active:press ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105"
             onClick={closeSidebarSheetAndNavigate}
           >
-            <Logo iconOnly height={28} title={null} />
+            <Logo iconOnly className="h-8 w-auto" title={null} />
           </Link>
         </TooltipButton>
-        <div aria-hidden="true" className="h-5 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
+        <div aria-hidden="true" className="h-6 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
         <TooltipButton toolTipContent={t('c:go_to_docs')}>
           <Link
             to="/docs"
             draggable={false}
-            className="focus-effect flex h-8 items-center rounded-md px-1 font-medium transition-opacity hover:opacity-70"
+            className="focus-effect flex h-8 items-center rounded-md px-1 font-medium text-lg transition-opacity hover:opacity-70"
             onClick={closeSidebarSheetAndNavigate}
           >
             {t('c:docs')}

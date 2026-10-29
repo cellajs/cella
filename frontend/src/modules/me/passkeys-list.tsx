@@ -39,7 +39,7 @@ export function PasskeysList() {
           )
         }
       />
-      <div className="mb-6">
+      <div className="mb-8">
         {passkeys.length > 0 ? (
           <div className="flex flex-col gap-2">
             <ExpandableList

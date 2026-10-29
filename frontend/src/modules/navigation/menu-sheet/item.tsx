@@ -9,7 +9,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { closeNavSheet } from '~/modules/navigation/nav-sheet';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
@@ -24,11 +25,11 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   const canAccess = isOnline || !item.membership.archived;
 
-  const unseenCount = useMenuItemUnseenCount(item, isSubmenuShown(item, detailedMenu));
+  const hasSubmenu = isSubmenuShown(item);
+  const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
 
   const { to, params, search } = getChannelRoute(item, isSubitem);
 
@@ -36,7 +37,9 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
     <Link
       disabled={!canAccess}
       onClick={() => {
-        if (!canAccess) toaster.warning(t('c:show_archived.offline.text'));
+        if (!canAccess) return toaster.warning(t('c:show_archived.offline.text'));
+        // A subitem may change only the search of the page it is on, which the route listener that closes sheets never sees
+        if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       }}
       data-subitem={isSubitem}
       aria-label={item.name}
@@ -76,13 +79,18 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
         )}
       </span>
       <div className="flex grow flex-col justify-center truncate pr-2 text-left">
-        <div className="truncate pt-3.5 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[link-active=true]/menu-sheet-item:font-medium group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]">
+        <div
+          className={cn(
+            'truncate pt-3.5 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]',
+            isSubitem ? 'group-data-[link-active=true]/menu-sheet-item:font-medium' : 'font-medium',
+          )}
+        >
           {item.name}
         </div>
         <div className="pointer-events-none text-muted-foreground text-xs">
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 sm:group-hover/menu-sheet-item:opacity-100">
             {item.membership.role ? t(item.membership.role) : ''}
-            {!detailedMenu && item.submenu?.length
+            {!hasSubmenu && item.submenu?.length
               ? `${item.membership.role ? ' · ' : ''}${t('c:resource_count', { count: item.submenu.length, resource: t(item.submenu[0].entityType, { count: item.submenu.length }) })}`
               : ''}
           </span>

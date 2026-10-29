@@ -37,9 +37,6 @@ interface NavigationStoreState {
   keepOpenPreference: boolean; // User preference behind keepNavOpen
   setKeepOpenPreference: (keepOpenPreference: boolean) => void;
 
-  detailedMenu: boolean; // Menu sheet shows submenus
-  setDetailedMenu: (detailedMenu: boolean) => void;
-
   activeSections: Record<string, boolean> | null; // Expanded state per section the user toggled, including archived ones
   setSectionOpen: (sectionKey: string, open: boolean) => void;
   resetSections: () => void;
@@ -60,7 +57,6 @@ interface InitStore
     | 'recentSelections'
     | 'searchCollapsedTypes'
     | 'keepNavOpen'
-    | 'detailedMenu'
     | 'activeSections'
     | 'navSheetOpen'
     | 'navSheetOrganizationId'
@@ -83,7 +79,6 @@ const initStore: InitStore = {
   lastChannelIds: {},
   keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
-  detailedMenu: false,
   floatingNavActive: false,
   activeSections: null,
   navSheetPanel: null,
@@ -156,11 +151,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.keepOpenPreference = keepOpenPreference;
             });
           },
-          setDetailedMenu: (detailedMenu) => {
-            set((state) => {
-              state.detailedMenu = detailedMenu;
-            });
-          },
           setFloatingNavActive: (floatingNavActive) => {
             set((state) => {
               state.floatingNavActive = floatingNavActive;
@@ -191,7 +181,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           skipHydration: true,
           partialize: (state) => ({
             keepOpenPreference: state.keepOpenPreference,
-            detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
             recentSelections: state.recentSelections,

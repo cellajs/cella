@@ -10,6 +10,8 @@ interface TableFilterBarProps {
   children: ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
+  /** Shown after the search toggle on a phone and gone while the search is open; the bar shows its own copy from sm up. */
+  controls?: ReactNode;
 }
 
 interface FilterBarChildProps {
@@ -76,7 +78,7 @@ export function FilterBarFilters(props: FilterBarChildProps) {
 }
 
 /** Filter bar; on phones a toggle swaps its actions for the search and filter overlays. */
-export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFilterBarProps) {
+export function TableFilterBar({ onResetFilters, isFiltered, controls, children }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('sm');
 
@@ -92,7 +94,7 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
       <TableFilterBarContext.Provider value={{ isFilterActive: !isDesktop && isFilterActive }}>{children}</TableFilterBarContext.Provider>
 
       <Button
-        variant="secondary"
+        variant="outline"
         size="icon"
         onClick={toggleFilter}
         aria-label={isFilterActive ? t('c:cancel') : t('c:search')}
@@ -122,6 +124,7 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
           )}
         </AnimatePresence>
       </Button>
+      {controls && !isFilterActive && <div className="sm:hidden">{controls}</div>}
     </div>
   );
 }
