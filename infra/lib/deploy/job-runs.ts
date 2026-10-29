@@ -1,27 +1,42 @@
 import { type ScwAuth, scwFetch } from '../scaleway/scw-fetch.ts';
 
-/** One run of a job definition, as the Serverless Jobs API reports it. */
-export interface JobRun {
+/** How a definition or a run names what it executes: the startup command and its arguments, and the single command Scaleway deprecates. */
+interface CommandFields {
+  startup_command?: string[] | null;
+  args?: string[] | null;
+  command?: string | null;
+}
+
+/** One run of a job definition, as the Serverless Jobs API reports it. Its command fields hold the definition's, or what its start call set. */
+export interface JobRun extends CommandFields {
   id: string;
-  state: 'queued' | 'scheduled' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'internal_error' | string;
+  state: 'initialized' | 'validated' | 'queued' | 'running' | 'retrying' | 'interrupting' | 'succeeded' | 'failed' | 'interrupted' | string;
   exit_code?: number | null;
   error_message?: string;
   created_at?: string;
   started_at?: string | null;
   terminated_at?: string | null;
   environment_variables?: Record<string, string>;
-  /** The command the run ran: the definition's, or the one its start call set. */
-  command?: string | null;
 }
 
-const FINAL_STATES = new Set(['succeeded', 'failed', 'canceled', 'internal_error']);
+const FINAL_STATES = new Set(['succeeded', 'failed', 'interrupted']);
 
 /** True once a run has ended, whatever the outcome. */
 export function runEnded(run: Pick<JobRun, 'state'>): boolean {
   return FINAL_STATES.has(run.state);
 }
 
-const base = (region: string) => `https://api.scaleway.com/serverless-jobs/v1alpha1/regions/${region}`;
+/**
+ * What a definition or a run executes, as one string to compare: the startup command, its arguments, and the deprecated command where one is
+ * set, joined by newlines. Undefined when none is set.
+ */
+export function commandOf(fields: CommandFields): string | undefined {
+  const parts = [...(fields.startup_command ?? []), ...(fields.args ?? []), ...(fields.command ? [fields.command] : [])];
+  return parts.length > 0 ? parts.join('\n') : undefined;
+}
+
+// v1alpha1 reports a definition written with a startup command, and each of its runs, with an empty command and no startup command.
+const base = (region: string) => `https://api.scaleway.com/serverless-jobs/v1alpha2/regions/${region}`;
 
 /** The id of the project's job definition of that name, or undefined when there is none. */
 export async function findJobDefinition(auth: ScwAuth, opts: { region: string; projectId: string; name: string }): Promise<string | undefined> {
@@ -40,25 +55,21 @@ export async function findJobDefinition(auth: ScwAuth, opts: { region: string; p
 /** What a job definition runs, as Scaleway holds it: undefined where the API names a field not. */
 export interface JobDefinitionFacts {
   imageUri?: string;
+  /** What it executes, as {@link commandOf} reads it. */
   command?: string;
   env: Record<string, string>;
   /** When the definition last changed: a run started before it may have run another command. */
   updatedAt?: string;
 }
 
-/** What a job definition runs, as Scaleway holds it: the image, the startup command, the env and when it last changed. */
+/** What a job definition runs, as Scaleway holds it: the image, the command and its arguments, the env and when it last changed. */
 export async function readJobDefinition(auth: ScwAuth, opts: { region: string; definitionId: string }): Promise<JobDefinitionFacts> {
-  const definition = await scwFetch<{
-    image_uri?: string;
-    startup_command?: string[] | null;
-    command?: string | null;
-    environment_variables?: Record<string, string> | null;
-    updated_at?: string | null;
-  }>(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}`);
-  const command = definition.startup_command?.length ? definition.startup_command.join('\n') : (definition.command ?? undefined);
+  const definition = await scwFetch<
+    CommandFields & { image_uri?: string; environment_variables?: Record<string, string> | null; updated_at?: string | null }
+  >(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}`);
   return {
     imageUri: definition.image_uri,
-    command,
+    command: commandOf(definition),
     env: definition.environment_variables ?? {},
     updatedAt: definition.updated_at ?? undefined,
   };
@@ -75,7 +86,7 @@ export interface JobSecretReference {
 export async function readJobDefinitionSecrets(auth: ScwAuth, opts: { region: string; definitionId: string }): Promise<JobSecretReference[]> {
   const { secrets = [] } = await scwFetch<{
     secrets?: Array<{ secret_manager_id: string; env_var?: { name?: string } | null; file?: { path?: string } | null }>;
-  }>(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}/secrets`);
+  }>(auth, 'GET', `${base(opts.region)}/secrets?job_definition_id=${opts.definitionId}`);
   return secrets.map((secret) => ({
     // An id may come as `<region>/<uuid>`, as the provider writes it.
     secretId: secret.secret_manager_id.split('/').pop() ?? secret.secret_manager_id,

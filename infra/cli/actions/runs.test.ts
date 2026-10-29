@@ -83,12 +83,13 @@ describe('Show runs', () => {
 
   it('flags a run started with a repository of its own (D-b): the start call can set any value, and the job cannot refuse it', async () => {
     const lines: string[] = [];
-    const definition = { command: 'bash -c script', env: { MODE: 'production', REPO: 'https://github.com/example/app.git', RELEASES_ONLY: '1' } };
+    const definition = { command: 'bash\n-c\nscript', env: { MODE: 'production', REPO: 'https://github.com/example/app.git', RELEASES_ONLY: '1' } };
     const run = (id: string, values: Record<string, string>, created_at: string) => ({
       id,
       state: 'running',
       created_at,
-      command: 'bash -c script',
+      startup_command: ['bash', '-c', 'script'],
+      args: [],
       environment_variables: { ...definition.env, TARGET_SHA: 'c'.repeat(40), RETRY: '0', ...values },
     });
     await showRuns(store([]), {
