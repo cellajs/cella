@@ -67,6 +67,7 @@
     "cella": "cella",
     "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc-worker dev & pnpm --filter frontend offline",
     "story": "pnpm --filter frontend storybook",
+    "studio": "pnpm -C studio studio",
     "bench": "pnpm -C bench bench",
     "a11y": "pnpm -C a11y a11y",
     "a11y:run": "pnpm -C a11y stack",

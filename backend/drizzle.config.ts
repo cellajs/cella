@@ -5,7 +5,7 @@ import { defineConfig } from 'drizzle-kit';
 if (existsSync('.env')) process.loadEnvFile('.env');
 
 const databaseUrl = process.env.DATABASE_URL || '';
-// Use admin URL for Drizzle Studio/push so it bypasses RLS (admin_role has BYPASSRLS)
+// Drizzle Studio and push use the admin URL, which RLS does not restrict: the postgres superuser in `.env.example`
 const databaseAdminUrl = process.env.DATABASE_ADMIN_URL || databaseUrl;
 
 /**

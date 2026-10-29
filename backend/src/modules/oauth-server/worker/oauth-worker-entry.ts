@@ -1,5 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import { appConfig } from 'shared';
+import { listenHost } from 'shared/utils/listen-host';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
@@ -33,7 +34,7 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
   const provider = await createProvider();
   server = createServer(createOauthListener(provider));
 
-  server.listen(port, '0.0.0.0', () => baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`));
+  server.listen(port, listenHost(), () => baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`));
 
   if (!options.inProcess) {
     setupGracefulShutdown({

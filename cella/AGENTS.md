@@ -124,4 +124,4 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - `pnpm generate`: Drizzle migrations from schema changes. `pnpm sdk`: the OpenAPI spec and the SDK.
 - `pnpm seed`: test data. `pnpm test`: the full suite with summary coverage.
 - `pnpm infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm bench`: load tests ([Load testing](../bench/README.md)).
-- `pnpm cella`: template upgrades and more (`@cellajs/cli`). `pnpm story`: Storybook.
+- `pnpm cella`: template upgrades and more (`@cellajs/cli`). `pnpm story`: Storybook. `pnpm studio`: Drizzle Studio.
