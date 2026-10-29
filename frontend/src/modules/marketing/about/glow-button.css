@@ -6,7 +6,7 @@
   inset: -1px;
   z-index: -2;
   border-radius: 100px;
-  background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
+  background: linear-gradient(45deg, var(--glow-stops));
 }
 
 .glow-button:after {

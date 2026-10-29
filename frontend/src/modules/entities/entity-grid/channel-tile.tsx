@@ -88,7 +88,8 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
     <div className="relative">
       <TileLink className="block">
         <div
-          className={cn('relative flex aspect-3/1 min-h-30 flex-col bg-center bg-cover', !entity.bannerUrl && placeholderColorClass(entity.id))}
+          // A min height would transfer through the aspect ratio into a min width wider than a phone's column
+          className={cn('relative flex aspect-5/2 flex-col bg-center bg-cover sm:aspect-3/1', !entity.bannerUrl && placeholderColorClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
@@ -125,7 +126,7 @@ export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
   const entity = useTileEntity();
   return (
     <>
-      {leading ?? <EntityAvatar className="size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />}
+      {leading ?? <EntityAvatar className="size-8 sm:size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />}
       <div className="flex grow flex-col gap-0.5 truncate">
         <div className="inline-flex items-center gap-2 truncate font-semibold text-sm leading-5">
           <span className="truncate">{entity.name}</span>
@@ -152,7 +153,7 @@ export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
   const lastPostedAt = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
 
   return (
-    <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-sm">
+    <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-xs sm:text-sm">
       {memberCount !== undefined && (
         <span>
           {formatCount(memberCount)} {t(`c:${countRole ?? 'member'}`, { count: memberCount }).toLowerCase()}
@@ -198,7 +199,7 @@ export function ChannelTileMembers() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 bottom-14 flex items-center justify-center [&_button]:pointer-events-auto">
-      <MemberAvatarGroup members={members} total={total} itemClassName="size-10" />
+      <MemberAvatarGroup members={members} total={total} itemClassName="size-8 sm:size-10" />
     </div>
   );
 }

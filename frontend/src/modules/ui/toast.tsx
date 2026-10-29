@@ -8,6 +8,12 @@ import { cn } from '~/utils/cn';
 /** Screen edge the toast stack grows from. */
 export type ToastPosition = 'top' | 'bottom';
 
+/** What a toast carries besides its text. */
+export interface ToastData {
+  /** Leaves out the close X: the action or a swipe ends the toast. */
+  hideClose?: boolean;
+}
+
 const toastIcons: Record<string, ReactNode> = {
   success: <CircleCheckIcon className="text-success" />,
   info: <InfoIcon />,
@@ -39,7 +45,7 @@ const toastRootClassName = cn(
 
 function ToastList({ position }: { position: ToastPosition }) {
   const { t } = useTranslation();
-  const { toasts } = ToastPrimitive.useToastManager();
+  const { toasts } = ToastPrimitive.useToastManager<ToastData>();
   const swipeDirection: ToastPrimitive.Root.Props['swipeDirection'] = position === 'top' ? ['up', 'right'] : ['down', 'right'];
 
   return toasts.map((toast) => (
@@ -61,15 +67,17 @@ function ToastList({ position }: { position: ToastPosition }) {
           <ToastPrimitive.Title data-slot="toast-title" className="wrap-break-word font-medium text-sm" />
           <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="wrap-break-word text-muted-foreground text-sm" />
         </div>
-        <ToastPrimitive.Action data-slot="toast-action" render={<Button variant="outline" size="xs" />} className="shrink-0" />
-        <ToastPrimitive.Close
-          data-slot="toast-close"
-          aria-label={t('c:close')}
-          render={<Button variant="ghost" size="icon" />}
-          className="relative size-6 shrink-0 after:absolute after:-inset-2"
-        >
-          <XIcon className="size-4" />
-        </ToastPrimitive.Close>
+        <ToastPrimitive.Action data-slot="toast-action" render={<Button variant="outline" size="sm" />} className="shrink-0" />
+        {!toast.data?.hideClose && (
+          <ToastPrimitive.Close
+            data-slot="toast-close"
+            aria-label={t('c:close')}
+            render={<Button variant="ghost" size="icon" />}
+            className="relative size-6 shrink-0 after:absolute after:-inset-2"
+          >
+            <XIcon className="size-4" />
+          </ToastPrimitive.Close>
+        )}
       </ToastPrimitive.Content>
     </ToastPrimitive.Root>
   ));

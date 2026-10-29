@@ -1,4 +1,7 @@
-import { useRef } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { type RefObject, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getMenuSection } from '~/lib/entity-modules';
 import { CountBadge } from '~/modules/common/count-badge';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -54,6 +57,31 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
   );
 }
 
+interface SidebarCreateOrganizationButtonProps {
+  isCollapsed: boolean;
+  onClick: (triggerRef: RefObject<HTMLButtonElement | null>) => void;
+}
+
+/** Ends the rail's organizations: the way into creating one, and the only button there for a user who has none yet. */
+function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreateOrganizationButtonProps) {
+  const { t } = useTranslation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <SidebarNavButton
+      ref={buttonRef}
+      label={t('c:create_resource', { resource: t('c:organization') })}
+      isCollapsed={isCollapsed}
+      onClick={() => onClick(buttonRef)}
+      itemClassName="pb-0"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-foreground/40 border-dashed transition-transform group-hover:scale-110">
+        <PlusIcon className="size-4" />
+      </span>
+    </SidebarNavButton>
+  );
+}
+
 interface SidebarOrganizationButtonsProps {
   /** The rail shows icons without labels. */
   isCollapsed: boolean;
@@ -70,6 +98,7 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: SidebarOrga
   const organizations = menuOrganizations(menu);
   const routeOrganizationId = useRouteOrganizationId(organizations);
   const unseenCounts = useOrganizationUnseenCounts();
+  const createOrganization = getMenuSection('organization')?.createAction;
 
   // An open menu sheet shows these counts itself: the full menu on its rows, an organization's sheet on its header and sections
   const isFullMenuOpen = navSheetOpen === 'menu' && !navSheetOrganizationId;
@@ -90,6 +119,7 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: SidebarOrga
           />
         );
       })}
+      {createOrganization && <SidebarCreateOrganizationButton isCollapsed={isCollapsed} onClick={createOrganization} />}
     </SidebarMenu>
   );
 }

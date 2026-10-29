@@ -45,12 +45,13 @@ export function OpenApiSpecViewer() {
         className="mb-2 w-full *:flex-1 sm:hidden"
       />
 
-      <div className="sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 bg-background/60 py-2 backdrop-blur-xs max-sm:flex-col">
+      <div className="sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 bg-background py-2 max-sm:flex-col">
         <InputGroup>
           <InputGroupAddon>
             <SearchSpinner value={searchText} isSearching={false} />
           </InputGroupAddon>
           <InputGroupInput
+            id="openapi-search"
             type="text"
             placeholder={`${t('c:search')}...`}
             value={searchText}

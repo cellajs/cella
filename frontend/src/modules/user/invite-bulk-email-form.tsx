@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isInviteEmail } from '~/modules/common/form-fields/select-emails';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
 import { InviteGroups } from '~/modules/user/invite-groups';
 import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
@@ -40,14 +40,16 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <FormItem name="bulk-emails">
           <FormLabel help={t('c:paste_emails.text')}>{t('c:paste_emails')}</FormLabel>
-          <Textarea
-            value={rawText ?? emails.join('\n')}
-            onChange={(event) => handleTextChange(event.target.value)}
-            placeholder={t('c:placeholder.paste_emails')}
-            autoResize
-            className="min-h-24"
-            autoComplete="off"
-          />
+          <FormControl>
+            <Textarea
+              value={rawText ?? emails.join('\n')}
+              onChange={(event) => handleTextChange(event.target.value)}
+              placeholder={t('c:placeholder.paste_emails')}
+              autoResize
+              className="min-h-24"
+              autoComplete="off"
+            />
+          </FormControl>
           <div className="text-muted-foreground text-sm">{t('c:emails_recognized', { count: emails.length })}</div>
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>

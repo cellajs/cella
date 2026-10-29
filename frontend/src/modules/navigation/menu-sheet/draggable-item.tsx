@@ -29,7 +29,6 @@ interface MenuSheetDraggableItemProps {
   /** It is a row of a submenu. */
   isSubitem: boolean;
   isArchived: boolean;
-  detailedMenu: boolean;
   /** Its list is already on screen; read at mount, when it tells a restored row from one the list opened with. */
   isArriving: boolean;
   options?: MenuSectionOptions;
@@ -45,7 +44,6 @@ export function MenuSheetDraggableItem({
   isArchived,
   options,
   isSubmenuArchivedVisible = false,
-  detailedMenu,
   isArriving,
   onSubmenuArchivedChange,
   onArchive,
@@ -107,7 +105,7 @@ export function MenuSheetDraggableItem({
   const [isFolding, setIsFolding] = useState(false);
 
   const archivedSubitemCount = item.submenu?.filter((sub) => sub.membership.archived).length ?? 0;
-  const hasSubmenu = isSubmenuShown(item, detailedMenu);
+  const hasSubmenu = isSubmenuShown(item);
   // Empty, it has nothing to fold: kept open, a first archived subitem moves in without waiting for it to unfold
   const showsArchivedSubitems = isSubmenuArchivedVisible || !archivedSubitemCount;
 

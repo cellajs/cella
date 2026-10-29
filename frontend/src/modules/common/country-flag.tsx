@@ -8,7 +8,7 @@ interface CountryFlagProps extends ImgHTMLAttributes<HTMLImageElement> {
   imgType?: 'svg' | 'png';
 }
 
-export function CountryFlag({ countryCode, className, imgType = 'svg', width = 16, height = 12, ...props }: CountryFlagProps) {
+export function CountryFlag({ countryCode, className, imgType = 'svg', width = 16, height = 12, style, ...props }: CountryFlagProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
@@ -20,13 +20,15 @@ export function CountryFlag({ countryCode, className, imgType = 'svg', width = 1
   if (!isOnline) return null;
   return (
     <img
-      className={cn('inline overflow-hidden shadow-xs', className)}
+      className={cn('inline object-contain shadow-xs', className)}
       draggable={false}
       {...props}
       src={flagUrl}
       alt={t('c:country_flag', { country: code.toUpperCase() })}
       width={width}
       height={height}
+      // Tailwind's preflight gives images `height: auto`, which Chrome's lazy-image audit reads as no explicit size, so the box is sized in CSS too
+      style={{ width, height, ...style }}
       loading="lazy"
       decoding="async"
     />

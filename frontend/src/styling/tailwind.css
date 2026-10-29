@@ -173,6 +173,35 @@
   background-size: 2px 4px;
 }
 
+/* The glow gradient of the install command on /about (glow-button.css) and of glow-underline */
+:root {
+  --glow-stops: rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%;
+}
+
+/* Underlines the strong phrases inside with a 1px glow line, painted in their bottom padding, and a blurred copy cut at
+   the line, so the glow only rises into the words. A phrase of several words joins them with a no-break space:
+   `white-space: nowrap` would make Chrome drop `text-wrap: balance` for the whole paragraph. */
+@utility glow-underline {
+  & strong {
+    position: relative;
+    padding-bottom: 5px;
+    background: linear-gradient(90deg, var(--glow-stops)) no-repeat 2px 100% / calc(100% - 4px) 1px;
+  }
+  /* A leading pseudo-element: Chrome's balancing can wrap a trailing out-of-flow one onto the next line, which leaves the phrase an empty second box */
+  & strong::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: -1px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--glow-stops));
+    filter: blur(5px);
+    opacity: 0.6;
+    clip-path: inset(-16px -12px 2px -12px);
+  }
+}
+
 @utility submenu-section {
   &:before {
     @apply dotted-line;

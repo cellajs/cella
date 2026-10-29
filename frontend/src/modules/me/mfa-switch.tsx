@@ -30,7 +30,7 @@ export function MfaSwitch() {
   };
 
   return (
-    <div className="mb-6 flex flex-col gap-3">
+    <div className="mb-8 flex flex-col gap-3">
       <div className="flex items-center gap-4">
         <Switch id="mfaRequired" ref={triggerRef} disabled={!canEnable} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
         <Label htmlFor="mfaRequired">{t('c:enable_resource', { resource: t('c:mfa_short') })}</Label>

@@ -36,7 +36,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: InviteF
                 placeholder={t('c:add_email')}
                 value={value}
                 onChange={onChange}
-                inputProps={{ autoComplete: 'off' }}
+                inputProps={{ id: 'invite-emails', autoComplete: 'off' }}
                 chipState={(email) => ({ state: check.stateOf(email), note: inviteNote(check.outcomeOf(email), t) })}
               />
               <FormMessage />

@@ -24,7 +24,10 @@ uniform float uWidth;      /* band half-width */
 uniform float uZoom;       /* view eases back as the colony divides */
 uniform float uGrid;       /* pixel-grid cells across: lower is chunkier */
 uniform int uStamp;        /* grain stamp: 0 square, 1 plus */
+uniform int uShape;        /* 0 the morphing mark, 1 the database icon */
 uniform float uEnter;      /* entrance progress 0..1; at 1 the piece is at rest */
+uniform float uFizz;       /* fizz clock in seconds, separate from the frozen shape clock of a still */
+uniform float uFizzAmount; /* fizz strength 0..1; 0 leaves every grain as uTime draws it */
 out vec4 outColor;
 
 /* marketing gradient hues (styling/gradients.css) */
@@ -108,16 +111,39 @@ float bandField(vec2 p, float t, float R){
 /* Real mark proportions: outer band centerline 0.4628, inner 0.25, half-width
    0.0372, all in units where the full logo spans [-0.5, 0.5]. The inner band
    trails the outer one by 0.8s. */
+/* Lucide's database icon as stroke distance, its 24-unit box scaled so the strokes span the mark's width: a top
+   ellipse, the front arcs of the middle and bottom discs, and the two sides. The ellipse distance is an
+   approximation that holds near the curve, which is all a stroke needs. */
+float ellipseDist(vec2 p, vec2 ab){
+  float k0 = length(p / ab);
+  float k1 = max(length(p / (ab * ab)), 1e-4);
+  return abs(k0 * (k0 - 1.0) / k1);
+}
+float frontArcDist(vec2 p, vec2 ab){
+  return p.y <= 0.0 ? ellipseDist(p, ab) : length(vec2(abs(p.x) - ab.x, p.y));
+}
+float databaseField(vec2 p){
+  vec2 ab = vec2(9.0, 3.0) / 22.0;
+  float h = 7.0 / 22.0;
+  /* smooth unions round the joins, so the strokes flow into each other like the mark's bands */
+  float d = ellipseDist(p - vec2(0.0, h), ab);
+  d = smin(d, frontArcDist(p, ab), 0.12);
+  d = smin(d, frontArcDist(p + vec2(0.0, h), ab), 0.12);
+  return smin(d, length(vec2(abs(p.x) - ab.x, max(abs(p.y) - h, 0.0))), 0.12);
+}
+
 float scene(vec2 p, float time){
   p *= uZoom;
   float act = activity(time);
-  float warp = uWarp + uMelt * act;
+  /* the icon takes more warp than the mark and thicker strokes, so it reads as a blob first and the icon second */
+  float warp = (uWarp + uMelt * act) * (uShape == 1 ? 1.35 : 1.0);
   vec2 w = vec2(
     sin(p.y * 3.3 + time * 0.6) + 0.5 * sin(p.y * 6.7 - time * 0.9),
     sin(p.x * 3.1 - time * 0.7) + 0.5 * sin(p.x * 5.9 + time * 0.8));
   p += warp * 0.06 * w;
   float s = 1.0 + 0.02 * sin(time * 0.8);
   p /= s;
+  if (uShape == 1) return (databaseField(p) - uWidth * 1.2) * s;
   float dOut = abs(bandField(p, time, 0.4628)) - uWidth;
   float dIn = abs(bandField(p, time - 0.8, 0.25)) - uWidth;
   return min(dOut, dIn) * s;
@@ -150,19 +176,34 @@ vec3 brandFlow(vec2 p, float time){
    the edge dissolves granularly, with no pixel cliff.
    Entrance (condense): the survival falloff K starts wide open, so sparse grains dust
    the whole frame; as it tightens they wink out from the outside in and the mark
-   precipitates. No grain travels, and at uEnter = 1 every factor is the identity. */
+   precipitates. No grain travels, and at uEnter = 1 every factor is the identity.
+   Fizz keeps the grains of a still alive on their own clock while the shape and palette hold: the grid slowly wavers
+   by up to half a cell, and edge grains flicker harder and re-roll their survival on staggered beats, fading into the
+   new roll. Grains inside the boundary always survive, so the outline stays put. It fades in with the entrance and is
+   the identity at 0. */
 vec4 pixelLiquid(vec2 q, float time, float N, float K, float shrink, float alphaMul, float flick, float soft){
+  float ez = uEnter * uEnter * (3.0 - 2.0 * uEnter);
+  float fz = uFizzAmount * ez;
+  float ft = time + uFizz;
+  q += fz * 0.5 / N * vec2(sin(q.y * N * 0.37 + ft * 0.9), sin(q.x * N * 0.41 - ft * 0.8));
   vec2 cell = floor(q * N);
   vec2 qq = (cell + 0.5) / N;
   float d = scene(qq, time);
   float h = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
   float h2 = fract(h * 7.13);
-  float ez = uEnter * uEnter * (3.0 - 2.0 * uEnter);
   K = mix(0.75, K, ez * ez);
   float p = clamp(exp(-(d + 0.01) * K), 0.0, 1.0);
-  p *= mix(1.0, 0.6 + 0.4 * sin(time * 1.4 + h * 6.2831), flick * clamp(d * K, 0.0, 1.0));
+  p *= mix(1.0, 0.6 + 0.4 * sin(ft * 1.4 + h * 6.2831), mix(flick, 0.5, fz) * clamp(d * K, 0.0, 1.0));
   p *= mix(0.10, 1.0, ez);
   float on = step(h, p);
+  if (h2 < fz) {
+    /* beats wrap, so the hash input stays small enough for float precision */
+    float beatAt = uFizz * 0.7 + h * 7.0;
+    float beat = mod(floor(beatAt), 61.0);
+    float rollA = fract(sin(dot(cell + beat * vec2(13.7, 7.1), vec2(127.1, 311.7))) * 43758.5453);
+    float rollB = fract(sin(dot(cell + mod(beat + 1.0, 61.0) * vec2(13.7, 7.1), vec2(127.1, 311.7))) * 43758.5453);
+    on = mix(step(rollA, p), step(rollB, p), smoothstep(0.5, 1.0, fract(beatAt)));
+  }
   float grainA = on * mix(1.0, p, soft);
   vec2 f = fract(q * N) - 0.5;
   vec2 a = abs(f);

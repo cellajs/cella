@@ -46,10 +46,10 @@ export function AboutPage() {
         >
           <div className="mb-8 flex xs:flex-row flex-col items-center gap-4">
             <Button
-              variant="secondary"
+              variant="outline-ghost"
               size="lg"
               render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
-              className="group h-14 rounded-full px-8 transition"
+              className="group h-14 rounded-full px-8 backdrop-blur-xs transition"
             >
               <GithubIcon className="size-4 transition-transform group-hover:scale-110" />
               {t('about:github_star')}
@@ -57,6 +57,7 @@ export function AboutPage() {
             <div className="glow-button relative max-sm:hidden">
               <Input
                 readOnly
+                id="install-command"
                 aria-label={t('c:install_command')}
                 value={installCommand}
                 className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"

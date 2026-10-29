@@ -17,10 +17,8 @@ export function Why() {
 
             return (
               <div className="w-full" key={item.id}>
-                <div className="mb-12 flex">
-                  <div className="mr-4 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-primary font-semibold text-lg md:-mt-2 md:size-12 md:text-xl">
-                    {index + 1}
-                  </div>
+                <div className="mb-12 flex items-baseline gap-5">
+                  <span className="w-5 shrink-0 font-mono text-muted-foreground text-sm">{String(index + 1).padStart(2, '0')}</span>
                   <div className="w-full">
                     <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">{t(title)}</h3>
                     <p className="leading-relaxed">

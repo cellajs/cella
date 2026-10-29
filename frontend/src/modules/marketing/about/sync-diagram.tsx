@@ -14,16 +14,23 @@ type SyncMode = 'rest' | 'cdc' | 'yjs' | 'vm';
 // Parts in story order: a part's own lines are the ones the part before it lacked.
 const modeOrder: SyncMode[] = ['rest', 'cdc', 'yjs', 'vm'];
 
-// Node positions in a 0-100 coordinate space (percentages of the container).
+// Node rows in percent of the container height; the columns follow.
 const nodes = {
-  database: { x: 50, y: 80, Icon: DatabaseIcon, label: 'Postgres DB' },
-  api: { x: 65, y: 20, Icon: ServerIcon, label: 'API server' },
-  cdc: { x: 80, y: 80, Icon: ServerIcon, label: 'CDC worker' },
-  client: { x: 35, y: 20, Icon: MonitorIcon, label: 'Client' },
-  yjs: { x: 20, y: 80, Icon: ServerIcon, label: 'Yjs worker' },
+  database: { y: 80, Icon: DatabaseIcon, label: 'Postgres DB' },
+  api: { y: 20, Icon: ServerIcon, label: 'API server' },
+  cdc: { y: 80, Icon: ServerIcon, label: 'CDC worker' },
+  client: { y: 20, Icon: MonitorIcon, label: 'Client' },
+  yjs: { y: 80, Icon: ServerIcon, label: 'Yjs worker' },
 } as const;
 
 type NodeKey = keyof typeof nodes;
+
+// Node columns in percent of the container width. A phone spreads them to the edges, where its small boxes would leave
+// the margins empty; from `sm` up the gentler line angles keep the labels clear of the boxes.
+const columns: Record<'phone' | 'wide', Record<NodeKey, number>> = {
+  phone: { yjs: 13, client: 32, database: 50, api: 68, cdc: 87 },
+  wide: { yjs: 20, client: 35, database: 50, api: 65, cdc: 80 },
+};
 
 interface Edge {
   /** Names a second line between the same two nodes. */
@@ -295,6 +302,7 @@ export function SyncDiagram() {
   const isMobile = useBreakpointBelow('sm');
   const reducedMotion = useReducedMotion();
   const animateHint = inView && !isMobile && !reducedMotion;
+  const layout = isMobile ? 'phone' : 'wide';
 
   // Keeps everything the previous part showed and animates only the delta.
   const switchMode = (target: SyncMode) => {
@@ -579,7 +587,7 @@ export function SyncDiagram() {
           </svg>
         )}
 
-        {objectEntries(nodes).map(([key, { x, y, Icon, label }]) => {
+        {objectEntries(nodes).map(([key, { y, Icon, label }]) => {
           // A worker Part 4 folds away stays mounted to fade out where it stands.
           const folding = fold.nodes.includes(key);
           if (!activeNodes.includes(key) && !folding) return null;
@@ -590,7 +598,7 @@ export function SyncDiagram() {
               key={key}
               aria-hidden={folding || undefined}
               className={cn('absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2', y < 50 ? 'flex-col-reverse' : 'flex-col')}
-              style={{ left: `${x}%`, top: `${y}%` }}
+              style={{ left: `${columns[layout][key]}%`, top: `${y}%` }}
               initial={{ opacity: 0 }}
               animate={{ opacity: folding ? 0 : 1 }}
               transition={

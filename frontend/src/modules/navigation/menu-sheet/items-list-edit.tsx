@@ -5,7 +5,6 @@ import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggabl
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuSheetNoItems } from '~/modules/navigation/menu-sheet/items-list';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface MenuSheetItemsListEditProps {
   items: UserMenuItem[];
@@ -18,7 +17,6 @@ interface MenuSheetItemsListEditProps {
 }
 
 export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive, isSubmenu = false }: MenuSheetItemsListEditProps) {
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuArchivedVisible, setSubmenuArchivedVisible] = useState<Record<string, boolean>>({});
   // A row that mounts once the list is on screen arrived by a restore or a create, and unfolds its submenu
   const { hasStarted: isShown } = useMountedState();
@@ -39,7 +37,6 @@ export function MenuSheetItemsListEdit({ items, isArchived, options, onArchive, 
       isSubitem={isSubmenu}
       options={options}
       isArchived={isArchived}
-      detailedMenu={detailedMenu}
       isArriving={isShown}
       isSubmenuArchivedVisible={submenuArchivedVisible[item.id]}
       onSubmenuArchivedChange={setSubmenuArchivedOpen}

@@ -41,6 +41,7 @@ export function DialogContent({
   layer,
   outsideScroll = false,
   viewportClassName,
+  overlayClassName,
   dock,
   ...props
 }: DialogPrimitive.Popup.Props & {
@@ -50,12 +51,14 @@ export function DialogContent({
   /** Scroll tall content inside the popup by default, or outside through the viewport. */
   outsideScroll?: boolean;
   viewportClassName?: string;
+  /** Classes of the backdrop, e.g. to leave it out where the popup covers the screen. */
+  overlayClassName?: string;
   /** Sits at the bottom edge and rises from below the screen. */
   dock?: 'bottom';
 }) {
   return (
     <DialogPortal container={container || layer || undefined}>
-      {!container && <DialogOverlay className={layer ? 'absolute' : undefined} />}
+      {!container && <DialogOverlay className={cn(layer && 'absolute', overlayClassName)} />}
       <DialogPrimitive.Viewport
         data-slot="dialog-viewport"
         className={cn(

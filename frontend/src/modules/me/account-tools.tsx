@@ -91,7 +91,7 @@ export function AccountAuthenticationCard() {
 
   return (
     <ToolCard label="c:authentication" description={t('c:authentication.text')}>
-      <Accordion className="text-sm">
+      <Accordion className="text-sm [&>:last-child]:mb-0">
         {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
           <>
             <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
@@ -117,7 +117,7 @@ export function AccountAuthenticationCard() {
         {isStrategyEnabled('oauth') && (
           <>
             <AuthSectionTitle title={t('c:oauth')} help={t('c:oauth.text')} />
-            <div className="mb-6 flex flex-col gap-2">
+            <div className="mb-8 flex flex-col gap-2">
               {enabledOAuthProviders.map(({ id, name }) => {
                 const identity = oauthIdentities.find(({ provider }) => provider === id);
                 return identity ? (
@@ -148,7 +148,7 @@ export function AccountAuthenticationCard() {
                 <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
               </Alert>
             )}
-            <div className="mb-6 flex flex-col gap-2">
+            <div className="mb-8 flex flex-col gap-2">
               {institutions.map((institution) => {
                 const { connectionId, displayName, identity } = institution;
                 return identity ? (

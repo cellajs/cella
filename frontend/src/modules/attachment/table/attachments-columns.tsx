@@ -66,8 +66,8 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       ),
       // For 'own' policies the backend enforces the final owner check on save.
       ...(canUpdate && {
-        renderEditCell: ({ row, onRowChange }) => (
-          <EditCellInput value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
+        renderEditCell: ({ row, column, onRowChange }) => (
+          <EditCellInput name={column.key} value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
         ),
       }),
     },

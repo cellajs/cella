@@ -9,7 +9,6 @@ import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-subme
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { getChannelRoute } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
@@ -43,12 +42,10 @@ interface MenuSheetItemsListProps {
 }
 
 export function MenuSheetItemsList({ items, entityType, isArchived, options, isSubmenu = false }: MenuSheetItemsListProps) {
-  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
 
   return sortAndFilterMenu(items, isArchived).map((item) => {
-    const hasSubmenu = isSubmenuShown(item, detailedMenu);
+    const hasSubmenu = isSubmenuShown(item);
     return (
       <li className={cn(hasSubmenu && 'submenu-section relative')} key={item.id}>
         <MenuSheetItem item={item} isSubitem={isSubmenu} icon={options?.icon} />

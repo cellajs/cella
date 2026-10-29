@@ -2,26 +2,27 @@ import { Toast, type ToastManager, type ToastManagerAddOptions } from '@base-ui/
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import { prefersMoreContrast } from '~/hooks/use-more-contrast';
+import type { ToastData } from '~/modules/ui/toast';
 
 /** Toast variants with their own icon. */
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 
 /** Base UI toast options; the message and severity come from the call. */
-export type ToastOptions = Omit<ToastManagerAddOptions<object>, 'title' | 'type'>;
+export type ToastOptions = Omit<ToastManagerAddOptions<ToastData>, 'title' | 'type'>;
 
 // Errors and toasts with a description carry more to read, so they stay longer
 const timeout = 4_000;
 const longTimeout = 10_000;
 
-const manager = Toast.createToastManager();
-let held: ToastManagerAddOptions<object>[] = [];
+const manager = Toast.createToastManager<ToastData>();
+let held: ToastManagerAddOptions<ToastData>[] = [];
 let subscriberCount = 0;
 
 /**
  * The manager the app's `Toaster` renders. Toasts shown before any `Toaster` subscribes (a route `beforeLoad` on
  * first load, for instance) are held and replayed to the first subscriber, where a bare manager would drop them.
  */
-export const toastManager: ToastManager = {
+export const toastManager: ToastManager<ToastData> = {
   ...manager,
   ' subscribe': (listener) => {
     const unsubscribe = manager[' subscribe'](listener);
@@ -34,7 +35,7 @@ export const toastManager: ToastManager = {
   },
 };
 
-function add(options: ToastManagerAddOptions<object>) {
+function add(options: ToastManagerAddOptions<ToastData>) {
   if (subscriberCount > 0) return manager.add(options);
   const id = options.id ?? crypto.randomUUID();
   held.push({ ...options, id });

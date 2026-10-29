@@ -90,7 +90,7 @@ export function TableBarShell<TRow extends object>({
   return (
     <>
       <TableBarContainer searchVars={searchVars}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered} controls={controls}>
           <FilterBarActions>
             {!isFiltered && actions}
             {/* TableCount hides on phones to leave the actions room; without actions it stays */}
@@ -115,7 +115,7 @@ export function TableBarShell<TRow extends object>({
 
         {columns && setColumns && <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />}
         {columns && exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
-        {controls}
+        {controls && <div className="max-sm:hidden">{controls}</div>}
         {focusView && <FocusView iconOnly />}
       </TableBarContainer>
 

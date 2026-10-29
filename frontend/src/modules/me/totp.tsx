@@ -56,7 +56,7 @@ export function Totp() {
 
   if (!totp)
     return (
-      <div className="mb-6">
+      <div className="mb-8">
         <Button ref={triggerRef} variant="secondary" className="max-sm:w-full" onClick={openTotpSetup}>
           <RotateCcwKeyIcon />
           {t('c:totp_setup')}
@@ -65,7 +65,7 @@ export function Totp() {
     );
 
   return (
-    <div className="mb-6">
+    <div className="mb-8">
       <ExpandableTile
         value="totp"
         icon={<RotateCcwKeyIcon />}

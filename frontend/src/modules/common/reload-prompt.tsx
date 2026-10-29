@@ -68,9 +68,10 @@ export function ReloadPrompt() {
     }
 
     const showPrompt = (reloading: boolean) =>
-      toaster(t('c:refresh_pwa_app.text'), {
+      toaster(<span className="font-normal">{t('c:refresh_pwa_app.text')}</span>, {
         id: reloadToastId,
         timeout: 0,
+        data: { hideClose: true },
         onClose: () => setWaiting(false),
         actionProps: {
           disabled: reloading,

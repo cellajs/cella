@@ -1,10 +1,13 @@
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Activity, type KeyboardEvent, type ReactNode, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import { FocusTrap } from '~/modules/common/focus-trap';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { Spinner } from '~/modules/common/spinner';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { InfoContent, InfoIndicator } from '~/modules/navigation/panels/info-content';
 import { PreferencesContent, PreferencesIndicators } from '~/modules/navigation/panels/preferences-content';
@@ -63,11 +66,54 @@ function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
   );
 }
 
+/** A phone's panel: a row that opens the panel's content in a bottom drawer over the menu, which stays as it was. */
+function NavSheetPanelRow({ id, label, indicator, children }: NavSheetPanelProps) {
+  const { t } = useTranslation();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const openDrawer = () =>
+    sheeter.getState().create(
+      <div className="px-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+        <Suspense fallback={<Spinner />}>{children}</Suspense>
+      </div>,
+      { id: `${id}-panel`, triggerRef, title: t(label), side: 'bottom' },
+    );
+
+  return (
+    <Button ref={triggerRef} onClick={openDrawer} className="w-full justify-between" variant="ghost">
+      <span className="flex items-center gap-2">
+        {t(label)}
+        {indicator}
+      </span>
+      <ChevronRightIcon className="opacity-50" />
+    </Button>
+  );
+}
+
 /** Same length as the panel collapse, so the bar and the panel under it arrive together. */
 const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
 
-/** Sticks to the bottom of its nav sheet and overlays the sheet's content while a panel is expanded. */
+/** The panels at the end of a nav sheet: rows that open bottom drawers on a phone, a bar that expands over the sheet from `sm` up. */
 export function NavSheetPanels() {
+  const isMobile = useBreakpointBelow('sm', false);
+
+  if (isMobile) {
+    return (
+      <div className="mt-auto flex flex-col gap-1 border-t px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+        <NavSheetPanelRow id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
+          <PreferencesContent />
+        </NavSheetPanelRow>
+        <NavSheetPanelRow id="info" label="c:info" indicator={<InfoIndicator />}>
+          <InfoContent />
+        </NavSheetPanelRow>
+      </div>
+    );
+  }
+  return <NavSheetPanelBar />;
+}
+
+/** Sticks to the bottom of its nav sheet and overlays the sheet's content while a panel is expanded. */
+function NavSheetPanelBar() {
   const navSheetPanel = useNavigationStore((state) => state.navSheetPanel);
   const toggleNavSheetPanel = useNavigationStore((state) => state.toggleNavSheetPanel);
 
@@ -126,7 +172,7 @@ export function NavSheetPanels() {
       <FocusTrap active={hasOpenPanel}>
         <div
           className={cn(
-            'flex flex-col gap-1 border-input border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
+            'flex flex-col gap-1 border-t bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
             hasOpenPanel && 'max-h-dvh overflow-y-auto shadow-lg',
           )}
         >

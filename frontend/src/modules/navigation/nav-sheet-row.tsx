@@ -37,7 +37,7 @@ export function NavSheetRow(props: NavSheetRowProps) {
       variant="ghost"
       size="lg"
       id={id}
-      className="w-full select-none justify-start text-left standalone:[-webkit-touch-callout:none] data-[destructive=true]:text-destructive"
+      className="w-full select-none justify-start px-3 text-left standalone:[-webkit-touch-callout:none] data-[destructive=true]:text-destructive"
       data-destructive={destructive}
       onClick={'onClick' in props ? props.onClick : undefined}
       render={'render' in props ? props.render : linkElement}

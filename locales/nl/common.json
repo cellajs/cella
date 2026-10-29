@@ -134,6 +134,7 @@
   "slide_number": "Dia {{number}}",
   "someone": "Iemand",
   "sort": "Sorteren",
+  "source_code": "Broncode",
   "sso_entry": "Inloggen bij {{organization}}",
   "sso_entry.text": "Gebruik je {{institution}}-account. De eerste keer vraagt {{institution}} je te bevestigen dat je naam en e-mailadres met {{appName}} worden gedeeld.",
   "sso_entry_disabled.text": "Inloggen via {{institution}} is uitgeschakeld voor deze organisatie.",

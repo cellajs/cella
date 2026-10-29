@@ -19,7 +19,8 @@ export function CallToAction() {
           variant="ghost"
           size="xl"
           render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
-          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background active:bg-background"
+          // The glow sits behind the button: an opaque fill and no border keep it a 1px ring outside
+          className="glow-button relative rounded-full border-0 bg-background/95 px-10 hover:bg-background active:bg-background dark:hover:bg-background"
           press={false}
         >
           {t('c:start_building')}
