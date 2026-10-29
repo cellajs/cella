@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { isRequestedHere } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteUnopenedLinkToken, findLinkToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -75,11 +75,10 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
 
 /**
  * Gives up the link this browser holds for confirmation, at sign-out: the link goes too, so the next person at a shared
- * computer can neither confirm it here nor reopen it from the history.
+ * computer can neither confirm it here nor reopen it from the history. The `magic-pending` cookie is the caller's to
+ * delete, once every write of the sign-out succeeded.
  */
 export const dropHeldMagicLink = async (ctx: Context<Env>) => {
   const rawToken = getAuthCookie(ctx, 'magic-pending');
-  if (!rawToken) return;
-  deleteAuthCookie(ctx, 'magic-pending');
-  await deleteUnopenedLinkToken(dbCtx, { type: 'magic', rawToken });
+  if (rawToken) await deleteUnopenedLinkToken(dbCtx, { type: 'magic', rawToken });
 };

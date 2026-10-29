@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type CodeTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
@@ -172,6 +172,16 @@ interface DeleteUnopenedLinkTokenOpts {
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
 export const deleteUnopenedLinkToken = async (ctx: DbContext, { type, rawToken }: DeleteUnopenedLinkTokenOpts) => {
   await ctx.var.db.delete(tokensTable).where(and(namedBy(type, rawToken), isNull(tokensTable.invokedAt)));
+};
+
+interface DeleteOpenedLinkTokensOpts {
+  type: LinkTokenType;
+  userId: string;
+}
+
+/** Deletes the user's opened links of `type`, so no browser holding a single-use cookie for one opens it again. */
+export const deleteOpenedLinkTokens = async (ctx: DbContext, { type, userId }: DeleteOpenedLinkTokensOpts) => {
+  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.type, type), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
 };
 
 interface UpdateTokenRedeemedOpts {

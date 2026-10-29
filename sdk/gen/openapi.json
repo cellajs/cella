@@ -6205,7 +6205,7 @@
         "operationId": "revokeMySessions",
         "tags": ["me", "cella"],
         "summary": "Revoke sessions",
-        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
