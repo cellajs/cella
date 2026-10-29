@@ -247,7 +247,8 @@ export const config = {
    */
   maxSessionsPerUser: 10,
 
-  totp: { intervalInSeconds: 30, gracePeriodInSeconds: 60, digits: 6 },
+  // A code verifies one step either side of now (RFC 6238 §5.2): each step more is one more code a guess can hit.
+  totp: { intervalInSeconds: 30, gracePeriodInSeconds: 30, digits: 6 },
 
   // API configuration
 

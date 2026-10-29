@@ -1,7 +1,7 @@
 import { EmailMessage } from '../components';
 import { formatMailTime } from '../frame';
 import { i18n, plainText } from '../i18n';
-import { endingFor } from '../shared-texts';
+import { durationText, endingFor } from '../shared-texts';
 import { defineEmailTemplate } from '../types';
 
 type AccountSecurityType =
@@ -36,14 +36,18 @@ const inboxTypes: AccountSecurityType[] = [
 interface AccountSecurityStatic {
   name: string;
   type: AccountSecurityType;
-  /** Values the type's text names; a `timestamp` is an ISO moment, shown in the reader's language. */
+  /** Values the type's text names; a `timestamp` (an ISO moment) and a `duration` (seconds) show in the reader's language. */
   details?: Record<string, string | number>;
 }
 
 export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
   translate(lng, { name, type, details = {} }) {
     const baseProps = { lng };
-    const values = typeof details.timestamp === 'string' ? { ...details, timestamp: formatMailTime(details.timestamp, lng) } : details;
+    const values = {
+      ...details,
+      ...(typeof details.timestamp === 'string' && { timestamp: formatMailTime(details.timestamp, lng) }),
+      ...(typeof details.duration === 'number' && { duration: durationText(lng, details.duration) }),
+    };
     const forAccountHolder = !inboxTypes.includes(type);
     const title = i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...values, ...plainText });
     return {

@@ -53,9 +53,9 @@ A magic link signs in directly only in the browser that asked for it. Opened any
 
 ## Second factors and MFA
 
-A passkey challenge serves one purpose (registration, sign-in, MFA or step-up) and answers at most once. A TOTP secret is encrypted at rest under `DATA_ENCRYPTION_KEY`, and a lockout after failed codes holds in every process.
+A passkey challenge serves one purpose (registration, sign-in, MFA or step-up) and answers at most once. A TOTP secret is encrypted at rest under `DATA_ENCRYPTION_KEY`. Failed codes lock the account's TOTP in every process; while the database cannot record them each process counts them alone, and a database crash or failover clears the count.
 
-MFA needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in. A sign-in of such an account issues a `confirm-mfa` challenge, and completing it with either factor is the only way in. The session records the sign-in method and the factor, which the tenant's sign-in policy and step-up read.
+MFA needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in. A magic-link, provider or institutional sign-in of such an account issues a `confirm-mfa` challenge, which only a passkey or an authenticator code completes. A passkey sign-in needs none: the passkey must verify its user with a PIN or biometric, at registration and at every sign-in, so it proves both factors itself. The session records the sign-in method and the factor, which the tenant's sign-in policy and step-up read.
 
 Setting up a factor or connecting a provider sends a security mail to the account's address.
 
@@ -82,4 +82,4 @@ On the frontend, wrap the action in `withStepUp(action)`: on a `step_up_required
 
 Routes declare their limiter in `xRateLimiter`, and the OpenAPI docs show it with its budget. An IP or email address enters a limiter's key as a keyed pseudonym, so `rate_limits` holds neither in the clear. Counts are shared across processes, and a refusal is a 429 with `Retry-After`.
 
-Mails are capped per address and per user, address lookups and passkey challenges per IP. Failed proofs count per IP, and failed second factors also per account, so changing IP does not help a guesser. Every failure budget also has a daily ceiling.
+Mails are capped per address and per user, address lookups and passkey challenges per IP. Failed proofs count per IP, and failed second factors also per account, so changing IP does not help a guesser. Every failure budget also has a daily tier, which slows a patient guesser. Failed second factors count over weeks as well, and a correct code does not reset that count, so a guesser runs out of tries long before a code is likely to match.
