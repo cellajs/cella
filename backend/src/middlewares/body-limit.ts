@@ -1,25 +1,16 @@
 import type { MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { createMiddleware } from 'hono/factory';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/** Applies a body size limit chosen from the request's Content-Type. */
-export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>((ctx, next) => {
-  const contentType = ctx.req.header('content-type') ?? '';
-
-  const isJson = contentType.includes('application/json');
-  const isMultipart = contentType.includes('multipart/form-data');
-
-  const maxSize = isJson ? appConfig.jsonBodyLimit : isMultipart ? appConfig.fileUploadLimit : appConfig.defaultBodyLimit;
-
-  const limit = bodyLimit({
-    maxSize,
-    onError: () => {
-      throw new AppError(413, 'body_too_large', 'warn');
-    },
-  });
-
-  return limit(ctx, next);
+/**
+ * Refuses (413) a body past `jsonBodyLimit`, declared or streamed, whatever its Content-Type: the JSON validator parses
+ * any `+json` type, so a cap chosen by type would hand a JSON route the larger one.
+ */
+export const dynamicBodyLimit: MiddlewareHandler<Env> = bodyLimit({
+  maxSize: appConfig.jsonBodyLimit,
+  onError: () => {
+    throw new AppError(413, 'body_too_large', 'warn');
+  },
 });

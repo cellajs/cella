@@ -367,6 +367,22 @@ describe('handleMessage: sync update', () => {
     leaveCollab(collab.scope, peer as never);
   });
 
+  it('must not grow a document past its byte cap: the sender closes with 4400 and the session stays', async () => {
+    const { ctx: c, scope, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    // The fake log keeps no byte count: the append answers as the real one does at the cap.
+    storage.appendUpdate.mockResolvedValueOnce({ status: 'too-large' } as never);
+
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Document too large' });
+    expect(ws.sent).toHaveLength(0);
+    expect(peer.sent).toHaveLength(0);
+    expect(getCollab(scope)).toBe(collab);
+    leaveCollab(collab.scope, peer as never);
+  });
+
   it('must not log an update a socket sent before its session ended under it, into no session or a newer one of its document', async () => {
     // The document was retired while the update waited in the socket's queue: its session ended and it is closing.
     const { ctx: c, scope, key, ws, collab } = session();

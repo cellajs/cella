@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { yjsMaxBufferedBytes } from '../constants';
 import { deferred, mockScope, mockWebSocket, storageMock } from './helpers';
 
 vi.mock('../data/storage', () => storageMock());
@@ -443,5 +444,19 @@ describe('broadcastToCollab', () => {
     expect(sender.sent).toHaveLength(0);
     expect(peer.sent).toEqual([message]);
     expect(closed.sent).toHaveLength(0);
+  });
+
+  it('must not buffer without bound for a socket that never reads: past the ceiling it closes with 1013', () => {
+    const ctx = uniqueCtx();
+    const reader = mockWebSocket();
+    const silent = mockWebSocket({ bufferedAmount: yjsMaxBufferedBytes + 1 });
+    const collab = joinCollab(ctx, reader as never);
+    joinCollab(ctx, silent as never);
+
+    broadcastToCollab(collab, new Uint8Array([1, 2, 3]));
+
+    expect(silent.closed).toEqual({ code: 1013, reason: 'Too slow' });
+    expect(silent.sent).toHaveLength(0);
+    expect(reader.sent).toHaveLength(1);
   });
 });

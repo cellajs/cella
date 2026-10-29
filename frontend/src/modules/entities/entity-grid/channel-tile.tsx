@@ -27,7 +27,7 @@ function useTileEntity(): ChannelTileEntity {
 /** Descriptions can contain HTML: strip to plain text and cap at 200 chars for the preview. */
 const descriptionPreview = (html: string) => {
   const text = html
-    .replace(/<[^>]+>/g, ' ')
+    .replace(/<[^<>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

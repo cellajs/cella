@@ -256,8 +256,6 @@ export const config = {
   },
 
   jsonBodyLimit: 1 * 1024 * 1024,
-  fileUploadLimit: 20 * 1024 * 1024,
-  defaultBodyLimit: 1 * 1024 * 1024,
 
   // Storage & uploads (S3)
 

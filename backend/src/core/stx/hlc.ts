@@ -1,6 +1,13 @@
 import { hashSourceId } from 'shared/utils/hash-source-id';
 
-const hlcPattern = /^(\d+):(\d{4,}):([0-9a-z]{5})$/;
+/**
+ * `millis:counter:sourceHash`: millis of up to 16 digits, a counter of 4 to 10 and a 5-character hash. `BigInt` parses
+ * the digits, so the bound caps what a request stamp costs and what every later server stamp prints.
+ */
+const hlcPattern = /^(\d{1,16}):(\d{4,10}):([0-9a-z]{5})$/;
+
+/** The longest string hlcPattern takes. */
+export const hlcMaxLength = 33;
 
 interface ParsedHLC {
   timestamp: bigint;
@@ -55,9 +62,14 @@ export function compareHLC(a: string, b: string): -1 | 0 | 1 {
   return 0;
 }
 
-/** Keeps server-initiated timestamps causally later than the client writes that trigger them. */
+/**
+ * Keeps server-initiated timestamps causally later than the client writes that trigger them. A stamp outside the HLC
+ * form moves nothing: a row may still store one, and the clock it set would reach every later write on the process.
+ */
 export function advanceClock(receivedHLC: string): void {
-  const { timestamp, counter } = requireHLC(receivedHLC);
+  const parsed = parseHLC(receivedHLC);
+  if (!parsed) return;
+  const { timestamp, counter } = parsed;
   if (timestamp > lastTimestamp) {
     lastTimestamp = timestamp;
     lastCounter = counter;

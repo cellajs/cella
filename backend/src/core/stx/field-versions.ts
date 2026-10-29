@@ -1,4 +1,4 @@
-import { compareHLC } from '#/core/stx/hlc';
+import { compareHLC, isValidHLC } from '#/core/stx/hlc';
 
 function isPrimitive(value: unknown): value is string | number | boolean | null {
   return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
@@ -14,7 +14,10 @@ export function filterNoOpFields<T extends Record<string, unknown>>(entityData: 
   return result as T;
 }
 
-/** Per-field LWW: accept a scalar when its incoming HLC is greater than the HLC stored in the entity's stx. */
+/**
+ * Per-field LWW: accept a scalar when its incoming HLC is greater than the HLC stored in the entity's stx. A stored
+ * stamp outside the HLC form loses, so the write replaces it.
+ */
 export function resolveFieldConflicts<T extends Record<string, unknown>>(
   incomingFields: T,
   incomingTimestamps: Record<string, string>,
@@ -27,7 +30,7 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
     const storedHLC = storedTimestamps[field];
 
     if (!incomingHLC) throw new Error(`Missing HLC timestamp for scalar field "${field}"`);
-    if (!storedHLC || compareHLC(incomingHLC, storedHLC) > 0) {
+    if (!storedHLC || !isValidHLC(storedHLC) || compareHLC(incomingHLC, storedHLC) > 0) {
       acceptedFields[field] = incomingFields[field];
     }
   }

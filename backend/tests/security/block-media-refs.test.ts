@@ -138,6 +138,13 @@ describe('Block media references', async () => {
       }
     });
 
+    // The walkers over a document recurse once per level: 400,000 levels pass the stack.
+    it('must not answer a server error to a description nested past the depth cap', async () => {
+      const { error, response } = await putDescription(`${'['.repeat(400_000)}${']'.repeat(400_000)}`);
+      await expectRefusal({ response, error }, 400, 'invalid_request');
+      expect(await storedDescription()).toBe(original);
+    });
+
     it('must not load media from outside the organization via an organization welcome text', async () => {
       const before = await storedWelcomeText();
       for (const url of ['//evil.example/pixel.png', victimKey()]) {

@@ -11,10 +11,10 @@ import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 
 /** The single place the storage-key variant set is enumerated. `original` is always present. */
 const attachmentKeysSchema = z.object({
-  original: z.string(),
-  preview: z.string().optional(),
-  thumbnail: z.string().optional(),
-  converted: z.string().optional(),
+  original: z.string().max(maxLength.url),
+  preview: z.string().max(maxLength.url).optional(),
+  thumbnail: z.string().max(maxLength.url).optional(),
+  converted: z.string().max(maxLength.url).optional(),
 });
 export type AttachmentKeys = z.infer<typeof attachmentKeysSchema>;
 

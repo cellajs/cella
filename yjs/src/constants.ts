@@ -37,6 +37,8 @@ export const yjsAwarenessRateLimit = 2;
 export const yjsAwarenessMaxEntries = 8;
 /** Awareness clients one socket may hold: its own, plus a few that another socket of its user held or whose socket left. */
 export const yjsAwarenessMaxClients = 4;
+/** Bytes a socket may hold unsent before the relay closes it (1013): one that never reads would buffer every frame. */
+export const yjsMaxBufferedBytes = 8 * 1024 * 1024;
 
 /** A document's key in the relay's maps and log lines: tenant, type and id, so no two tenants share a session. */
 export function docKey({ tenantId, entityType, entityId }: YjsDocKey): string {

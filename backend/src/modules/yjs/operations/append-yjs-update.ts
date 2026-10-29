@@ -1,11 +1,12 @@
 import type { DbContext } from '#/core/context';
-import { type YjsDocScope, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
+import { type YjsDocScope, yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate } from '#/modules/yjs/helpers/yjs-state';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocumentGeneration, insertYjsUpdate } from '#/modules/yjs/yjs-queries';
 
 /**
  * The outcome of an append. `empty`: the update carries nothing, so nothing was logged and nothing is missing.
+ * `too-large`: the update passes yjsMaxUpdateBytes, or would take the document past yjsMaxDocumentBytes.
  * `no-document`: never seeded, or retired. `stale-generation`: reseeded since, with the generation that holds now.
  */
 export type AppendResult =
@@ -49,6 +50,7 @@ export async function appendYjsUpdate(
   const document = await findYjsDocumentGeneration(ctx, { doc });
   if (!document) return { status: 'no-document' };
   if (document.generation !== generation) return { status: 'stale-generation', generation: document.generation };
+  if (document.bytes + update.length > yjsMaxDocumentBytes) return { status: 'too-large' };
 
   const row = await insertYjsUpdate(ctx, { doc, userId, payload: update });
   const { entityType, entityId, tenantId } = doc;
