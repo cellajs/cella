@@ -1,4 +1,4 @@
-import { findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
+import { commandOf, findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
 import { mainJobOutcome } from '../../deploy/main-job';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
@@ -13,9 +13,9 @@ const START_VALUES = new Set(['TARGET_SHA', 'RETRY']);
 
 /**
  * What a run was started with beyond the target and the retry counter (D-b): a value the definition does not set, another value for one it
- * sets, or a command of its own. The runner, a rotation, an apply and Start a deploy set the two values only, so anything else is a key
- * holder's own start, which no check inside the job can stop. A run started before the definition's last change ran the command of that time,
- * so its command is not compared. Empty for a run started as the engine starts one.
+ * sets, or a startup command or arguments of its own. The runner, a rotation, an apply and Start a deploy set the two values only, so anything
+ * else is a key holder's own start, which no check inside the job can stop. A run started before the definition's last change ran the command
+ * of that time, so its command is not compared. Empty for a run started as the engine starts one.
  */
 export function runOverrides(run: JobRun, definition: JobDefinitionFacts): string[] {
   const own: string[] = [];
@@ -25,7 +25,8 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
     else if (definition.env[name] !== value) own.push(`sets ${name} to another value`);
   }
   const sameDefinition = !definition.updatedAt || Date.parse(run.created_at ?? '') >= Date.parse(definition.updatedAt);
-  if (run.command && definition.command && sameDefinition && run.command !== definition.command) own.push('runs its own command');
+  const command = commandOf(run);
+  if (command && definition.command && sameDefinition && command !== definition.command) own.push('runs its own command');
   return own;
 }
 

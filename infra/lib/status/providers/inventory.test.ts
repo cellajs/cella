@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declaredMainJob, MAIN_JOB_SCRIPT } from '../../deploy/main-job';
+import { declaredMainJob } from '../../deploy/main-job';
 import { type InventoryFacts, inventoryFindings, mainJobDifferences } from './inventory';
 
 const expect_ = {
@@ -87,7 +87,7 @@ describe('the inventory', () => {
     const live = {
       running: false,
       imageUri: mainJob.imageUri,
-      command: `bash -c ${MAIN_JOB_SCRIPT}`,
+      command: mainJob.startupCommands.join('\n'),
       env: { ...mainJob.env, REPO: 'https://github.com/mallory/app.git' },
       secretReferences: [
         { env: 'DEPLOY_KEY_JSON', secretId: 's1', name: 'deploy-key', path: engine },

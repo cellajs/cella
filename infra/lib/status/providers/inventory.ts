@@ -1,5 +1,5 @@
-import { findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
-import { declaredMainJob, MAIN_JOB_SCRIPT, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
+import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
+import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
 import { repositoryUrl } from '../../deploy/repository-key';
 import { deriveInfra } from '../../naming';
 import { actionCommand, actionLabel } from '../../operator-actions';
@@ -154,7 +154,8 @@ const folderOf = (path: string | undefined) => (path ?? '').replace(/\/+$/, '');
 export function mainJobDifferences(live: NonNullable<InventoryFacts['mainJob']>, declared: MainJobDeclaration): string[] {
   const differs: string[] = [];
   if (live.imageUri !== declared.imageUri) differs.push(`image ${live.imageUri}`);
-  if (!live.command?.includes(MAIN_JOB_SCRIPT.trim())) differs.push('its command');
+  // Whitespace around the script changes nothing it runs.
+  if (live.command?.trim() !== commandOf({ startup_command: declared.startupCommands })?.trim()) differs.push('its command');
   for (const [name, value] of Object.entries(declared.env)) {
     if (live.env[name] !== value) differs.push(name in live.env ? `env ${name} differs` : `env ${name} is missing`);
   }

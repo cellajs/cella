@@ -75,8 +75,7 @@ describe('the main job', () => {
     expect(mainJobOutcome({ state: 'failed', exit_code: MAIN_JOB_EXIT.blocked })).toBe('blocked');
     expect(mainJobOutcome({ state: 'failed', exit_code: MAIN_JOB_EXIT.failed })).toBe('failed');
     expect(mainJobOutcome({ state: 'failed', exit_code: 137 })).toBe('failed');
-    expect(mainJobOutcome({ state: 'canceled', exit_code: null })).toBe('failed');
-    expect(mainJobOutcome({ state: 'internal_error' })).toBe('failed');
+    expect(mainJobOutcome({ state: 'interrupted', exit_code: null })).toBe('failed');
   });
 
   it('copies the deploy key to the engine folder, both halves only, and disables the earlier copy', async () => {
