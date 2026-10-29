@@ -58,7 +58,7 @@ export interface JobDefinitionFacts {
   /** What it executes, as {@link commandOf} reads it. */
   command?: string;
   env: Record<string, string>;
-  /** When the definition last changed: a run started before it may have run another command. */
+  /** When the definition last changed: a run started before it may have run other values or another command. */
   updatedAt?: string;
 }
 
