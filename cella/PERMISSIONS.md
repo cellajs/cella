@@ -111,6 +111,8 @@ Channel entities have two row kinds: **elevation** rows on an ancestor channel s
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
+A channel declares its roles most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, by an invitation, a direct add or a role change, nor demotes or removes a member who holds one; an invitation is refused as well when its accept would bring along a membership above the channel (`organizationRoles`, a menu `carryRole`) at a role above the inviter's own there, since the accept has no inviter to ask. `update` or `delete` that reaches the channel from an ancestor hands out every role of the channel, the least-privileged role is anyone's to give, and a system admin gives any. Service accounts follow the same rule: nobody creates one, issues or rolls its keys or re-enables it at a role above their own.
+
 ## The permission returned
 
 The **`checkAccess*` family** is what every tier calls:
@@ -185,6 +187,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | Every member knows the tenant id, so the answer only says "not yours" and ids cannot be enumerated |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
+| A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `meta.reason: 'role_exceeds_actor'`, `meta.role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
 | An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename; the slug check answers 409 taken, 204 free | A slug is the organization's public URL path and unique across tenants, and every route gives the same answer, so availability is the policy and no leak |

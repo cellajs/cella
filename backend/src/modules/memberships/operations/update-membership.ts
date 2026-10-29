@@ -10,13 +10,16 @@ import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 
 type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
 
 /**
- * Updates a membership's role, which needs `update` on its channel, or the member's own archive, mute and menu order.
- * User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership.
+ * Updates a membership's role, which needs `update` on its channel and neither the new nor the old role above the
+ * actor's own (`assertRoleGrant`), or the member's own archive, mute and menu order. User-only: `memberships.updatedBy`
+ * references `users`, so a service account never edits a membership.
  */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
   const actorId = ctx.var.user.id;
@@ -51,7 +54,13 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   // A role change is an act on the channel; a member's own view needs no more than reading it. Any other field is a
   // personal-view key, which the refusal above already held to the member's own row.
   const action = role !== undefined ? 'update' : 'read';
-  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
+  const { entity } = await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
+
+  // Nobody raises a member past their own role, nor changes the role of a member who outranks them.
+  if (role !== undefined) {
+    const subject = buildSubjectFromEntity(updatedType, entity);
+    for (const handedOut of [role, membershipToUpdate.role]) assertRoleGrant(ctx, { subject, role: handedOut, action: 'update' });
+  }
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
     orderToUpdate = getArchiveMoveOrder(memberships, updatedType, archived);

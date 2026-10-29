@@ -1,12 +1,7 @@
 import { appConfig, type ChannelEntityType } from 'shared';
-import type { MenuStructureItem } from 'shared/config-builder/types';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
-import {
-  channelIdColumnsOf,
-  resolveAssociatedMembershipRole,
-  resolveOrganizationMembershipRole,
-} from '#/modules/memberships/helpers/membership-helpers';
+import { channelIdColumnsOf, findMenuParent, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
 import { findMaxDisplayOrders, insertMembershipRows, insertMissingMembershipRows } from '#/modules/memberships/memberships-queries';
@@ -66,51 +61,22 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     return { channelIdColumns, baseMembership, entity, extraFields: info.extraFields };
   });
 
-  // Organization membership rows for entities below the organization, inserted when missing.
-  const organizationRows: InsertMembershipModel[] = prepared
-    .filter(({ entity }) => entity.entityType !== 'organization')
-    .map(({ baseMembership, channelIdColumns, entity }) => {
-      return {
-        ...baseMembership,
-        tenantId: entity.tenantId,
-        // Explicit escalation via the source channel organizationRoles map; a missing map throws
-        role: resolveOrganizationMembershipRole(entity.entityType, baseMembership.role),
-        organizationId: channelIdColumns.organizationId,
-        channelType: 'organization',
-        channelId: channelIdColumns.organizationId,
-      } as InsertMembershipModel;
-    });
-
-  const associatedRows = prepared
-    .map(({ baseMembership, channelIdColumns, entity }) => {
-      const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
-      if (!relation) return null;
-
-      const associatedType = relation.entityType;
-      if (!associatedType) return null;
-
-      const associatedField = channelIdColumns[appConfig.entityIdColumnKeys[associatedType]];
-      if (!associatedField) return null;
-
-      // Get the target entity's ID field to exclude it, but always preserve the organization ID
-      const targetEntityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
-      const { [targetEntityIdColumnKey]: _, ...remainingIdColumnKeys } = channelIdColumns;
-
-      return {
-        ...baseMembership,
-        tenantId: entity.tenantId,
-        role: resolveAssociatedMembershipRole(
-          associatedType,
-          baseMembership.role,
-          // Config literals only carry the property when an app sets it
-          'carryRole' in relation ? (relation as MenuStructureItem).carryRole : undefined,
-        ),
-        ...remainingIdColumnKeys,
-        channelType: associatedType,
-        channelId: associatedField,
-      } as InsertMembershipModel;
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
+  // The memberships each new one brings along, inserted when missing. A parent row keeps the target's id columns other
+  // than the target's own; the organization row only the organization's.
+  const broughtAlongRows = prepared.flatMap(({ baseMembership, channelIdColumns, entity }) => {
+    const { [appConfig.entityIdColumnKeys[entity.entityType]]: _, ...parentIdColumns } = channelIdColumns;
+    return membershipsBroughtAlong(entity, baseMembership.role, findMenuParent(entity.entityType)).map(
+      ({ channelType, channelId, role }) =>
+        ({
+          ...baseMembership,
+          tenantId: entity.tenantId,
+          role,
+          ...(channelType === 'organization' ? { organizationId: channelId } : parentIdColumns),
+          channelType,
+          channelId,
+        }) as InsertMembershipModel,
+    );
+  });
 
   const targetRows: InsertMembershipModel[] = prepared.map(({ baseMembership, channelIdColumns, entity, extraFields }) => ({
     ...baseMembership,
@@ -123,8 +89,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
   const [insertedTarget] = await Promise.all([
     insertMembershipRows(ctx, { values: targetRows }),
-    organizationRows.length ? insertMissingMembershipRows(ctx, { values: organizationRows }) : Promise.resolve(),
-    associatedRows.length ? insertMissingMembershipRows(ctx, { values: associatedRows }) : Promise.resolve(),
+    broughtAlongRows.length ? insertMissingMembershipRows(ctx, { values: broughtAlongRows }) : Promise.resolve(),
   ]);
 
   if (insertedTarget.length) {
