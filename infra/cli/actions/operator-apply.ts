@@ -250,34 +250,22 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     }
 
     if (completed && opts.verifyAfter) {
-      console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
-      const result = await verifyAfterApply({
-        appConfig,
-        projectId,
-        organizationId,
-        secretKey: operator.secretKey,
-        log: (msg) => console.info(pc.dim(msg)),
-      });
+      console.info(pc.dim('\n→ Verifying live database privileges against the program…'));
+      const result = await verifyAfterApply({ appConfig, secretKey: operator.secretKey, log: (msg) => console.info(pc.dim(msg)) });
       verified = result.ok;
       if (result.errors.length > 0) {
         console.error(
           `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
         );
-        console.error(
-          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify identity grants step tell.`),
-        );
+        console.error(pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`.`));
       }
       if (result.problems.length > 0) {
         console.error(
           `\n${warningMark} pulumi reported success, but the live infrastructure still differs from the program:\n${result.problems.map((problem) => `  ✗ ${problem}`).join('\n')}`,
         );
-        console.error(
-          pc.dim(
-            `  A machine policy differs from the declared one: \`${actionCommand('identity')}\` writes it with your Owner API key. A database privilege that differs: re-run with --debug-provider to capture the API calls.`,
-          ),
-        );
+        console.error(pc.dim('  Re-run with --debug-provider to capture the API calls.'));
       } else if (result.errors.length === 0) {
-        console.info(`${checkMark} live grants and privileges match the program`);
+        console.info(`${checkMark} live privileges match the program`);
       }
     }
     if (completed && opts.afterUp) {

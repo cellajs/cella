@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { EngineConfig } from '../config/engine-config';
 import { CRON_HOME_DATABASE, expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import type { assertGrants } from './assert-grants';
 import { verifyAfterApply } from './verify-after-apply';
 
 function makeFetch(routes: Array<{ match: string; body: unknown }>): FetchLike {
@@ -20,17 +19,6 @@ const appConfig = {
   s3: { region: 'nl-ams' },
   services: { backend: { enabled: true } },
 } as unknown as EngineConfig;
-
-const okGrants: typeof assertGrants = async () => ({
-  ok: true,
-  granted: [],
-  missing: [],
-  extra: [],
-  unconditionedSecretRules: [],
-  missingSecretConditions: [],
-  dormantKeys: [],
-  misscopedRules: [],
-});
 
 const privileges = (rows: Array<[string, string, string]>) =>
   rows.map(([database_name, user_name, permission]) => ({ database_name, user_name, permission }));
@@ -51,7 +39,7 @@ describe('verifyAfterApply', () => {
     body: { instances: [{ id: 'i-1', name: 'cella-postgres', status: 'ready' }], total_count: 1 },
   };
 
-  it('passes when grants verify and every declared privilege exists live', async () => {
+  it('passes when every declared privilege exists live', async () => {
     const fetchImpl = makeFetch([
       instance,
       {
@@ -69,19 +57,11 @@ describe('verifyAfterApply', () => {
         body: { privileges: privileges([['rdb', 'admin_role', 'all']]), total_count: 1 },
       },
     ]);
-    const result = await verifyAfterApply({
-      appConfig,
-      projectId: 'p',
-      organizationId: 'o',
-      secretKey: 's',
-      fetchImpl,
-      assertGrants: okGrants,
-      log: () => {},
-    });
+    const result = await verifyAfterApply({ appConfig, secretKey: 's', fetchImpl, log: () => {} });
     expect(result).toEqual({ ok: true, problems: [], errors: [] });
   });
 
-  it('reports a missing cron privilege and a failed grant', async () => {
+  it('reports a missing cron privilege', async () => {
     const fetchImpl = makeFetch([
       instance,
       {
@@ -96,76 +76,16 @@ describe('verifyAfterApply', () => {
       },
       { match: 'privileges?database_name=rdb', body: { privileges: [], total_count: 0 } },
     ]);
-    const failingGrants: typeof assertGrants = async (opts) => ({
-      ...(await okGrants(opts)),
-      ok: opts.applicationName !== 'cella-production-vm-backend',
-    });
-    const result = await verifyAfterApply({
-      appConfig,
-      projectId: 'p',
-      organizationId: 'o',
-      secretKey: 's',
-      fetchImpl,
-      assertGrants: failingGrants,
-      log: () => {},
-    });
+    const result = await verifyAfterApply({ appConfig, secretKey: 's', fetchImpl, log: () => {} });
     expect(result.ok).toBe(false);
-    expect(result.problems).toEqual([
-      'cella-production-vm-backend: live grant differs from the declared one (see the lines above)',
-      "database privilege admin_role on rdb: live 'none', expected one of all",
-    ]);
+    expect(result.problems).toEqual(["database privilege admin_role on rdb: live 'none', expected one of all"]);
   });
 
   it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {
     const denied: FetchLike = async () => ({ ok: false, status: 401, text: async () => JSON.stringify({ message: 'authentication is denied' }) });
-    const throwingGrants: typeof assertGrants = async () => {
-      throw new Error('Scaleway GET applications → 401: authentication is denied');
-    };
-    const result = await verifyAfterApply({
-      appConfig,
-      projectId: 'proj-1',
-      organizationId: 'org-1',
-      secretKey: 'revoked',
-      fetchImpl: denied,
-      assertGrants: throwingGrants,
-      log: () => {},
-    });
+    const result = await verifyAfterApply({ appConfig, secretKey: 'revoked', fetchImpl: denied, log: () => {} });
     expect(result.ok).toBe(false);
     expect(result.problems).toEqual([]);
-    expect(result.errors.length).toBeGreaterThan(1);
     expect(result.errors[0]).toMatch(/401/);
-  });
-
-  it('passes the project scope only to conditioned (VM/boot) rows', async () => {
-    const seen: Array<{ app?: string; scope?: string }> = [];
-    const spyGrants: typeof assertGrants = async (opts) => {
-      seen.push({ app: opts.applicationName, scope: opts.requiredProjectId });
-      return okGrants(opts);
-    };
-    const fetchImpl = makeFetch([
-      instance,
-      {
-        match: 'privileges?',
-        body: {
-          privileges: privileges([
-            ['cella', 'admin_role', 'all'],
-            ['cella', 'runtime_role', 'all'],
-            ['rdb', 'admin_role', 'all'],
-          ]),
-          total_count: 3,
-        },
-      },
-    ]);
-    await verifyAfterApply({
-      appConfig,
-      projectId: 'p',
-      organizationId: 'o',
-      secretKey: 's',
-      fetchImpl,
-      assertGrants: spyGrants,
-      log: () => {},
-    });
-    expect(seen.find((row) => row.app === 'cella-production-ci-deploy')?.scope).toBeUndefined();
-    expect(seen.find((row) => row.app === 'cella-production-vm-backend')?.scope).toBe('p');
   });
 });

@@ -1,21 +1,15 @@
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { expectedDbPrivileges } from '../lib/scaleway/db-privileges';
-import { buildGrantRows } from '../lib/scaleway/grant-rows';
 import { createRdbClient } from '../lib/scaleway/scaleway-rdb';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import { assertGrants } from './assert-grants';
 
 export interface VerifyAfterApplyOptions {
   appConfig: EngineConfig;
-  projectId: string;
-  organizationId: string;
-  /** A key with IAM read and RDB read (the Owner API key qualifies). */
+  /** A key with RDB read: the operator's. */
   secretKey: string;
   fetchImpl?: FetchLike;
   log?: (msg: string) => void;
-  /** Injected for tests; defaults to the real grant assertion. */
-  assertGrants?: typeof assertGrants;
 }
 
 export interface VerifyAfterApplyResult {
@@ -27,34 +21,13 @@ export interface VerifyAfterApplyResult {
 }
 
 /**
- * Prove a privileged `pulumi up` took effect where it matters: every VM/boot/CI principal holds exactly the grant the program declares, with the
- * exact secret condition and project scope, and the database privileges the program declares exist live. Pulumi reporting an update is not proof:
- * one provider update was recorded in state while Scaleway kept the old rule, and the next deploy failed on it.
+ * Prove a privileged `pulumi up` took effect where it matters: the database privileges the program declares exist live. Pulumi reporting an
+ * update is not proof: one provider update was recorded in state while Scaleway kept the old value, and the next deploy failed on it.
  */
 export async function verifyAfterApply(opts: VerifyAfterApplyOptions): Promise<VerifyAfterApplyResult> {
   const log = opts.log ?? ((msg) => console.info(msg));
-  const assertOne = opts.assertGrants ?? assertGrants;
   const problems: string[] = [];
   const errors: string[] = [];
-
-  for (const row of buildGrantRows(opts.appConfig)) {
-    try {
-      const result = await assertOne({
-        secretKey: opts.secretKey,
-        applicationName: row.app,
-        projectId: opts.projectId,
-        organizationId: opts.organizationId,
-        required: row.sets,
-        requiredSecretCondition: row.condition || undefined,
-        requiredProjectId: row.condition ? opts.projectId : undefined,
-        fetchImpl: opts.fetchImpl,
-        log: (msg) => log(`  ${row.app}: ${msg}`),
-      });
-      if (!result.ok) problems.push(`${row.app}: live grant differs from the declared one (see the lines above)`);
-    } catch (error) {
-      errors.push(`${row.app}: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
   const { naming, region } = deriveInfra(opts.appConfig);
   const rdb = createRdbClient({ secretKey: opts.secretKey, region, fetchImpl: opts.fetchImpl });

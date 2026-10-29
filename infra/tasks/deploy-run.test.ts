@@ -16,23 +16,6 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
     diag_bucket: 'cella-boot-diag',
-    grant_rows_json: JSON.stringify([
-      {
-        app: 'cella-production-vm-backend',
-        sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-        condition: 'resource.name.startsWith("/backend/")',
-      },
-      {
-        app: 'cella-production-vm-yjs',
-        sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-        condition: 'resource.name.startsWith("/yjs/")',
-      },
-      {
-        app: 'cella-production-builder',
-        sets: ['ContainerRegistryFullAccess', 'ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite'],
-        condition: '',
-      },
-    ]),
     enabled_services_json: JSON.stringify([
       // health_url mirrors deploy-env: set for LB-exposed services
       // (including co-hosted followers), '' for internal-only ones. The
@@ -54,7 +37,6 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
 function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean; leaseLost?: boolean } = {}) {
   const ops: string[] = [];
   const rolloutArgs: string[][] = [];
-  const grantArgs: string[][] = [];
   const taskArgs: Record<string, string[]> = {};
   const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
   const records: Array<{ bucket: string; record: RunRecord; log: string }> = [];
@@ -64,7 +46,6 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
-      if (name === 'assert-grants') grantArgs.push([...argv]);
       taskArgs[name] = [...argv];
     },
     lease: async (_stack, operation) => {
@@ -108,7 +89,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls, records };
+  return { fx, ops, rolloutArgs, taskArgs, execCalls, records };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123' };
@@ -152,24 +133,22 @@ describe('runDeploy sequencing', () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
 
-    // Ordering spine: lock before any stack mutation, machine keys read
-    // before the stack update writes them into cloud-init, per-principal grant
-    // verification after the update, rollout after preflights, publish only
-    // after verification, lock release last.
+    // Ordering spine: identities checked first, lock before any stack mutation,
+    // machine keys read before the stack update writes them into cloud-init,
+    // rollout after preflights, publish only after verification, lock release last.
     const spine = [
+      'task:identity-plan',
       'task:ensure-state-bucket',
       'exec:pulumi:login',
       'lease:acquire:deploy',
       // Leftover pointers are reconciled before anything plans the stack.
       'task:sync-rollout-config',
       'task:preflight-privileged',
-      'task:assert-deploy-policy',
       // A missing secret blocks the run before any machine exists, the builder included.
       'task:assert-secrets-deliverable',
       'task:build-release',
       'task:generation-keys',
       'update:production',
-      'task:assert-grants',
       'rollout',
       'publish-entry',
       'task:smoke',
@@ -268,13 +247,6 @@ describe('runDeploy sequencing', () => {
     expect(build.slice(0, 4)).toEqual(['--sha', 'abc123', '--mode', 'production']);
     const smoke = taskArgs.smoke ?? [];
     expect(smoke[smoke.indexOf('--dist') + 1]).toBe(`${distDir}/index.html`);
-  });
-
-  it('asserts every principal', async () => {
-    const { fx, grantArgs } = makeFake();
-    await runDeploy(baseOpts, fx, fakeDeployEnv);
-    const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
-    expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-builder']);
   });
 
   it('must not change the stack once another run took its lock (C7): the next step stops the run', async () => {

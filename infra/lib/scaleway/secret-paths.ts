@@ -37,7 +37,7 @@ export const ENGINE_FOLDER = '/engine/';
 
 /**
  * Condition for one service application: value reads only under its own folder, leaving other services' secrets and engine keys unreadable.
- * String equality matters: assert-grants compares the live rule condition against this exact output.
+ * String equality matters: the identity plan compares the live rule condition with this exact output.
  */
 export function serviceKeyCondition(service: string): string {
   return `resource.name.startsWith("${serviceSecretPath(service)}")`;
@@ -55,7 +55,7 @@ const MAX_CONDITION_RULES = 9;
 /**
  * The conditions of the rules that together grant one `||` condition. The rules of a policy add up, so terms spread over several rules grant
  * exactly what the terms joined in one rule grant, and each rule stays within what Scaleway accepts. A host that carries several services
- * passes the budget of one rule. The Pulumi program and the grant assertion both split here, so they compare equal as strings.
+ * passes the budget of one rule. The machine policies split here, so the identity plan compares them with the live rules as strings.
  */
 export function ruleConditions(condition: string): string[] {
   const rules: string[] = [];

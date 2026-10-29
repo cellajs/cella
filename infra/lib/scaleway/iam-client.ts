@@ -101,7 +101,7 @@ async function fetchApplicationGroupIds(auth: IamAuth, organizationId: string, a
 }
 
 /** Every rule (permission sets + condition) granted to an application across its policies. */
-export async function fetchGrantedRules(auth: IamAuth, organizationId: string, applicationId: string): Promise<GrantedRule[]> {
+async function fetchGrantedRules(auth: IamAuth, organizationId: string, applicationId: string): Promise<GrantedRule[]> {
   const groupIds = await fetchApplicationGroupIds(auth, organizationId, applicationId);
   const policies = await listOrganizationPolicies(auth, organizationId);
   const bound = policies.filter(
