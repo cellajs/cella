@@ -8,9 +8,10 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
+import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -32,11 +33,11 @@ describe('Attachment storage keys', async () => {
   const bodyFor = (id: string, keys: { original: string; preview?: string }, claims: { bucketName?: string; publicBucket?: boolean } = {}) =>
     attachmentBody(id, attackerPlan, { keys, ...claims });
 
-  const create = (body: Record<string, unknown>) =>
+  const create = (body: Record<string, unknown>, headers: Record<string, string> = { ...defaultHeaders, Cookie: attacker.sessionCookie }) =>
     call(createAttachments, {
       path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id },
       body: [body] as never,
-      headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
+      headers,
     });
 
   const presign = (attachmentId: string) =>
@@ -194,6 +195,22 @@ describe('Attachment storage keys', async () => {
     });
     expect(own.response.status).toBe(200);
     expect((own.data as { sub: string }).sub).toBe(`${attacker.organization.id}/${attacker.user.id}`);
+  });
+
+  it("must not register a member's upload via an API key", async () => {
+    const admin = await createFactorOrgUser(call, attacker.tenantId, attacker.organization.id, 'storage-key-admin', adminRole);
+    const { clientSecret } = await serviceAccountWithKey({ id: attacker.organization.id, tenantId: attacker.tenantId }, admin.sessionCookie);
+
+    // The token needs a session, so nothing is ever stored under the service account's own prefix.
+    const token = await call(getUploadToken, {
+      query: { templateId: 'attachment', organizationId: attacker.organization.id },
+      headers: bearerHeaders(clientSecret),
+    });
+    expect(token.response.status).toBe(401);
+
+    const id = generateId();
+    await expectRefusal(await create(bodyFor(id, { original: keyOf(attacker, 'member.pdf') }), bearerHeaders(clientSecret)), 400, 'invalid_request');
+    expect(await rowExists(id)).toBe(false);
   });
 
   describe('linking the keys of a deferred upload', () => {

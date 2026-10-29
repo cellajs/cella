@@ -14,16 +14,18 @@ interface AvatarFormFieldProps {
   label: string;
   entity: { id?: string; name?: string | null };
   type: EntityAvatarProps['type'];
+  /** Stores a logo under the organization's prefix, so deleting the organization removes it; omitted for a profile picture. */
+  organizationId?: string;
 }
 
-export function AvatarFormField({ form, label, name, entity, type }: AvatarFormFieldProps) {
+export function AvatarFormField({ form, label, name, entity, type, organizationId }: AvatarFormFieldProps) {
   const { t } = useTranslation();
 
   const setUrl = (url: string | null) => form.setValue(name, url, { shouldDirty: true });
 
   const openUploadDialog = () => {
     const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
-    openImageUpload({ templateId: 'avatar', title: t('c:upload_resource', { resource: imageName }), onUploaded: setUrl });
+    openImageUpload({ templateId: 'avatar', organizationId, title: t('c:upload_resource', { resource: imageName }), onUploaded: setUrl });
   };
 
   return (

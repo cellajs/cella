@@ -24,6 +24,8 @@ const attachmentA = {
   organizationId: 'org-1',
   createdBy: 'user-1',
   bucketName: appConfig.s3.privateBucket,
+  contentType: 'image/jpeg',
+  convertedContentType: null,
   keys: { original: 'org-1/user-1/a.jpg', preview: 'org-1/user-1/a-preview.jpg' },
 };
 const attachmentB = {
@@ -31,7 +33,9 @@ const attachmentB = {
   organizationId: 'org-1',
   createdBy: 'user-2',
   bucketName: appConfig.s3.privateBucket,
-  keys: { original: 'org-1/user-2/b.jpg', converted: 'org-1/user-2/b.pdf' },
+  contentType: 'application/msword',
+  convertedContentType: 'application/pdf',
+  keys: { original: 'org-1/user-2/b.doc', converted: 'org-1/user-2/b.pdf' },
 };
 
 /** Allow every subject the engine sees, keyed like the real BatchPermissionResult. */
@@ -87,7 +91,11 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
-    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, { bucketName: appConfig.s3.privateBucket });
+    // A fallback to the original serves the original's declared type.
+    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
+      bucketName: appConfig.s3.privateBucket,
+      contentType: attachmentA.contentType,
+    });
     expect(res.data[0]?.variant).toBe('converted');
   });
 
