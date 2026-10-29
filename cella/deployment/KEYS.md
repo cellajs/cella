@@ -93,7 +93,7 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 **Rotate secrets** (`pnpm infra rotate-secrets`, operator key) sets a fresh password on every database role and a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts), and rewrites every consumer's copy. The running machines keep the old values until the deploy replaces them, and the database refuses the new connections they open meanwhile.
 
-A key that encrypts or hashes stored data (`data-encryption-key`, `pii-hash-secret`) is not rotatable here: a new value would leave that data unreadable or unmatched, so it needs a rotation in the app, with both keys at hand. Third-party keys are pasted anew in **Manage runtime secrets**, the passphrase in **Rotate passphrase**.
+A key that encrypts or hashes stored data (`data-encryption-key`, `pii-hash-secret`) rotates neither here nor in the app, which holds one value of each. A new encryption key leaves every stored TOTP secret and OAuth signing key unreadable; a new hashing secret leaves every stored IP, device and rate-limit hash unmatched, so each browser signs in as a new device. After a leak of either, the recovery is a new value and re-enrolment: users set up their authenticator again and the signing keys are replaced. Data copied before the change stays readable to whoever holds the old value. Third-party keys are pasted anew in **Manage runtime secrets**, the passphrase in **Rotate passphrase**.
 
 ### Rotate keys
 
