@@ -17,7 +17,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | **Owner API key** (your own, as organization Owner) | Everything; the one key that writes IAM | Any address | Nowhere: typed at the prompt | Made per occasion with an expiry of hours, revoked after |
 | **Operator** (`<app>-operator`) | Every product in the app's projects, IAM read; no IAM write | Your dedicated address | Your password manager | **Set up operator key** |
 | **Deploy** (`<slug>-<mode>-ci-deploy`) | One environment's machines, load balancers and private networks; reads the deploy folder, writes hand-over bundles | Any address | `deploy-key` in the engine folder | **Rotate keys** |
-| **Observer** (`<app>-observer`) | Read-only on the app's projects and the state and boot-diag buckets | Your dedicated address | `infra/.env.<mode>` (`SCW_OBSERVER_*`) | **Rotate keys** |
+| **Observer** (`<app>-observer`) | Read-only on the app's projects and the state and boot-diag buckets, no machine or image | Any address | `infra/.env.<mode>` (`SCW_OBSERVER_*`) | **Rotate keys** |
 | **Boot** (`<slug>-<mode>-boot`) | Image pulls, boot accounts, hand-over bundles | Any address | Each machine's disk, and its cloud-init until its first boot reported | **Rotate keys** |
 | **Service** (`<slug>-<mode>-vm-<service>`) | Its own service's secret folder; the backend's buckets | Any address | The deploy folder, handed over read-once | **Rotate keys** |
 | **Builder** (`<slug>-<mode>-builder`) | Image pushes and the release's frontend files | Any address | The deploy folder, handed over read-once | **Rotate keys** |
@@ -25,7 +25,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 
 **Owner moments.** The CLI asks for an Owner API key only where IAM is written: a first setup, **Set up operator key**, **Set up the runner**, **Rotate keys**, **Update identities**, minting a managed key (a scoped key an app service reads, such as an AI key) and the identities part of **Tear down stack**. Each one refuses a key without an expiry or with more than a day left, as such a key writes IAM from every address between the moments. Keep the Owner account for recovery, with MFA.
 
-**The observer** has one key per operator machine, which serves every environment there; the key's description names the machine and the day it was made. **Update identities** on another machine, with your Owner API key, makes that machine its own.
+**The observer** has one key per operator machine, which serves every environment there; the key's description names the machine and the day it was made. **Update identities** on another machine, with your Owner API key, makes that machine its own. The key works from any address, so it reads nothing that holds a key in the clear. It reads no machine: a new machine's user data holds the boot key until the deploy scrubs it, a builder's for the whole build, and the boot key reads the hand-over bundles. It reads no image either, as an image holds the app's code.
 
 **What the deploy path reaches.** The deploy key, the runner and the code a merge or a release puts there reach the environment's runtime secrets: the deploy key hands every new machine its key, and the runner can start the main job with values or a command of its own. The runner key can edit a job definition, as Scaleway has no permission set that only starts runs. The app has one runner, which serves its environments only. The inventory compares the main job's whole definition with the declared one, its env and secret references included, and Show runs flags a run started with values or a command of its own.
 
@@ -52,7 +52,7 @@ On a shared host the services read one env file, so they share their secrets; a 
 | --- | --- | --- |
 | Owner API key | Everything, IAM included, from every address | Revoke it in the console; then **Rotate keys** in each environment |
 | Operator key | Every product and secret of the app's projects, from your dedicated address | **Set up operator key** (Owner API key), then **Rotate keys** and **Rotate secrets** in each environment |
-| Observer key | Read-only views, from your dedicated address | Delete that machine's key in the console ([Someone leaves](#someone-leaves)); **Rotate keys** replaces every one |
+| Observer key | Read-only views, no machine, image or secret value, from any address | Delete that machine's key in the console ([Someone leaves](#someone-leaves)); **Rotate keys** replaces every one |
 | Deploy key | Its environment's runtime secrets, machines, load balancers and private networks, from any address | **Rotate keys**, then **Rotate secrets** |
 | Runner key | Every served environment's deploy key and passphrase, from the runner's address | **Rotate keys**, **Rotate secrets** and **Rotate passphrase** in each environment it serves |
 | Builder key | Image pushes and frontend files of its environment | **Rotate keys**: the next deploy builds again |
@@ -65,14 +65,13 @@ On a shared host the services read one env file, so they share their secrets; a 
 1. Asks for the dedicated IPv4 addresses the key works from; the default is the address this machine reaches the internet with.
 2. Creates the `<app>-operator` application. Its policy keeps every project it reaches today, adds each environment set up on this machine, and holds every rule to those addresses. The name is production's slug, so staging and production share one operator.
 3. Shows the new key once and waits until you confirm it is in your password manager.
-4. Gives the observer the same addresses.
-5. Tries the key from this machine until Scaleway accepts it.
+4. Tries the key from this machine until Scaleway accepts it.
 
 From another address Scaleway refuses the key: IAM, Secret Manager and Object Storage answer with an error, while the database and Instances APIs answer a list with nothing in it. A stack that looks empty from a new address is therefore the address, not the stack.
 
 Running it again replaces the policy and every earlier key, on your Owner API key, as the operator key writes no IAM, its own policy included.
 
-**A new dedicated address** is set the same way, or by editing both policies, the operator's and the observer's, in the console; list the old address beside the new one to keep both. Scaleway applies a policy change within a few minutes, one API after the other, so a removed address can still work for a short while.
+**A new dedicated address** is set the same way, or by editing the operator's policy in the console; list the old address beside the new one to keep both. Scaleway applies a policy change within a few minutes, one API after the other, so a removed address can still work for a short while.
 
 **How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the operator key: access key and secret key. The CLI checks with IAM that the key belongs to the operator application, keeps it in memory until you quit, and runs every action of the run with it. When Scaleway refuses the key, the CLI says why: a secret key Scaleway does not know, or an address off the list.
 

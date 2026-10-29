@@ -343,7 +343,7 @@ export async function runDeploy(
       ]),
     );
     await step('Reap displaced generations', () => fx.update(stack));
-    // Every machine left runs this release; the Instance API serves its user data to every key that reads machines, the observer's included.
+    // Every machine left runs this release; the Instance API serves its user data to every key that reads machines, the deploy key's among them.
     await step('Take the keys out of user data', () =>
       fx.task('scrub-user-data', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '']),
     );

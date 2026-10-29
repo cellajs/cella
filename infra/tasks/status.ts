@@ -47,6 +47,8 @@ export interface StatusContext {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
+  /** The operator key's secret, when the run holds it: the machines are listed with it. */
+  operatorSecretKey?: string;
 }
 
 /** An S3-style NoSuchBucket, distinct from a missing control object (bucket exists). */
@@ -140,6 +142,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     scalewayKeyAvailable,
     accessKey,
     secretKey,
+    operatorSecretKey: ctx.operatorSecretKey,
     hasDomain,
     computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
     dbExposureConfigured: dbExposureConfigured(ctx.mode, ctx.stackYaml),
@@ -190,6 +193,7 @@ export async function runStatus(context: {
   state: StackState;
   stackYaml?: string;
   projectId: string;
+  operatorSecretKey?: string;
 }): Promise<void> {
   const report = await withSpinner('Checking infra status', () =>
     buildReport({
@@ -198,6 +202,7 @@ export async function runStatus(context: {
       stackState: context.state,
       stackYaml: context.stackYaml,
       projectId: context.projectId || undefined,
+      operatorSecretKey: context.operatorSecretKey,
     }),
   );
   printReport(report, { json: false });
@@ -211,6 +216,7 @@ export async function printInventory(context: Parameters<typeof runStatus>[0]): 
     stackState: context.state,
     stackYaml: context.stackYaml,
     projectId: context.projectId || undefined,
+    operatorSecretKey: context.operatorSecretKey,
   });
   const inventory = report.checks.filter((check) => check.id.startsWith('inventory.'));
   console.info(`\n${pc.bold('Inventory')} ${pc.dim('(what exists beside what the environment declares)')}`);

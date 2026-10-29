@@ -39,7 +39,7 @@ function booted(machine: Machine, accounts: ReadonlyArray<{ service: string; key
 /**
  * Take the key files out of the user data of every machine of this environment that booted (D-e, first part), on the deploy key. Cloud-init
  * ran the script at the machine's first boot and the boot unit reads the key from disk at every boot, while the Instance API serves user data
- * to every key that reads machines, the observer's included. A builder is left alone: the deploy deletes it.
+ * to every key that reads machines, the deploy key's among them. A builder is left alone: the deploy deletes it.
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const secretKey = process.env.SCW_SECRET_KEY;

@@ -11,7 +11,6 @@ import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { pollUntil } from '../../lib/utils/retry';
-import { setObserverAddresses } from '../../tasks/setup-observer-app';
 import { extendOperatorReach, operatorPolicyReach, setupOperatorApp } from '../../tasks/setup-operator-app';
 import { forgetOperatorLock } from '../session';
 import { endAction, type InfraContext } from '../shared';
@@ -124,16 +123,6 @@ async function createOperator(
 
   forgetOperatorLock();
   await confirmKeyStored(names.operator, key);
-  const observer = await setObserverAddresses({
-    auth: { secretKey: ownerKey.secretKey },
-    organizationId: ownerKey.organizationId,
-    slug: appConfig.appSlug,
-    cidrs,
-  }).catch((error) => {
-    console.warn(`${warningMark} '${names.observer}' keeps its earlier addresses (${errorMessage(error)}): set them in its policy in the console.`);
-    return undefined;
-  });
-  if (observer === 'set') console.info(`  ${changeMark} '${names.observer}' works from the same addresses; its key is unchanged.`);
 
   const accepted =
     addressInList === false

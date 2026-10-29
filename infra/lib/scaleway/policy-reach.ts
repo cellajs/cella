@@ -10,7 +10,7 @@ export interface LiveRule {
   condition?: string | null;
 }
 
-/** Where an address-locked policy reaches: the projects its `projectSets` rules name, and the addresses all of its rules agree on. */
+/** Where a policy reaches: the projects its `projectSets` rules name, and the addresses all of its rules agree on. */
 export interface PolicyReach {
   projectIds: string[];
   /** Empty when the rules do not carry one and the same address list. */

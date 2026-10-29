@@ -42,7 +42,7 @@ The first setup has two parts. The **Owner moment** writes IAM and nothing else,
 1. Picks or creates the Scaleway project (prerequisite 3).
 2. Creates the machine and deploy identities with their policies and keys.
 3. Lets the app's operator reach this environment. The app's first environment creates the operator for the dedicated address you give, and shows its key once: store it. A later one adds its project, and the key keeps working.
-4. Does the same for the app's observer, and writes its key to `infra/.env.<mode>` on this machine.
+4. Does the same for the app's observer, whose read-only key works from any address, and writes that key to `infra/.env.<mode>` on this machine.
 5. Offers to **revoke the Owner API key you pasted**. Decline when you set up the runner next (step 4): it needs the key again.
 
 The **operator part** runs on the operator key: the one just created, or the one you paste.

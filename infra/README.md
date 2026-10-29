@@ -70,7 +70,7 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so the machines are listed with the operator key once a session holds it, and `inventory.machines` is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
@@ -133,7 +133,7 @@ One name per concept across code and docs:
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not VM boot. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
 | **operator key** | The `<app>-operator` key for privileged work: no IAM write, accepted from your dedicated IP address only. |
-| **observer key** | The read-only `<app>-observer` key, from the same address; kept in `infra/.env.<mode>`. |
+| **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **privileged** | A resource only an apply on the operator key changes. |
 | **boot runner** | The `infra-boot` container run at every boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |

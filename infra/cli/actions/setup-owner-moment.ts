@@ -182,7 +182,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   console.info('\n→ Operator');
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
 
-  // The observer takes the operator's address list, so it follows the operator.
+  // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');
   await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId, { rotate: mode === 'rotate-keys' }).catch((error) =>
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
