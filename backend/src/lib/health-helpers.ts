@@ -108,12 +108,19 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
   const ownReason = stale ? 'worker_report_stale' : health ? null : 'worker_report_unreadable';
   const reasons = [...(ownReason ? [ownReason] : []), ...(health?.reasons ?? [])];
 
+  // The diagnostics are public, and a flush failure's message carries the failed SQL: the worker's log keeps it.
+  const { failure, ...workerDetails } = health?.details ?? {};
+  const publicFailure =
+    typeof failure === 'object' && failure !== null
+      ? { failure: Object.fromEntries(Object.entries(failure).filter(([key]) => key !== 'error')) }
+      : {};
+
   return {
     status: worstStatus(health?.status ?? 'degraded', ownReason ? 'degraded' : 'healthy'),
     checkedVia: 'push',
     ageMs,
     reason: reasons.length ? reasons.join(',') : undefined,
-    details: { wsConnected: true, ...health?.details, ...counts },
+    details: { wsConnected: true, ...workerDetails, ...publicFailure, ...counts },
   };
 }
 

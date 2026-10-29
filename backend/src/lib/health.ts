@@ -48,8 +48,24 @@ function buildMcpSelfComponent(): HealthComponent {
   return { status: 'healthy', checkedVia: 'local' };
 }
 
-/** The job store as read from the database: the api process and the jobs worker report the same component. */
+const jobsCacheTtlMs = 10_000;
+/** Forgets the cached jobs component, so a test reads the store again. */
+export const clearJobsHealthCache = () => {
+  jobsCache = undefined;
+};
+
+let jobsCache: { at: number; component: HealthComponent } | undefined;
+
+/** The job store as read from the database, cached for `jobsCacheTtlMs`: the aggregate scans the whole job table and the answer is public. */
 async function buildJobsComponent(): Promise<HealthComponent> {
+  if (jobsCache && Date.now() - jobsCache.at < jobsCacheTtlMs) return jobsCache.component;
+  const component = await readJobsComponent();
+  jobsCache = { at: Date.now(), component };
+  return component;
+}
+
+/** The api process and the jobs worker report the same component. */
+async function readJobsComponent(): Promise<HealthComponent> {
   try {
     return mapJobsComponent(await readJobsHealth(), getBackendJobs().length > 0);
   } catch (err) {

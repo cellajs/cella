@@ -39,3 +39,28 @@ describe('query logger', () => {
     expect(await printsBoundValue('development', false)).toBe(false);
   });
 });
+
+describe('pool health', () => {
+  it('must not end the process when the database ends an idle connection', async () => {
+    const db = createPgConnection(testDatabaseUrl, { max: 1 });
+    const pool = db.$client as Pool;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const uncaught = vi.fn();
+    process.on('uncaughtException', uncaught);
+    try {
+      const { rows } = await pool.query('select pg_backend_pid() as pid');
+      const killer = createPgConnection(testDatabaseUrl, { max: 1 });
+      await killer.execute(sql`select pg_terminate_backend(${rows[0].pid})`);
+      await (killer.$client as Pool).end();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      expect(uncaught).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+      expect((await pool.query('select 1 as ok')).rows[0].ok).toBe(1);
+    } finally {
+      process.off('uncaughtException', uncaught);
+      warn.mockRestore();
+      await pool.end();
+    }
+  });
+});
