@@ -12,7 +12,7 @@ ones a click from a mail or a provider's callback must carry are Lax.
 
 `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. A browser holds one live session per account. Sessions are cached briefly: a revocation, a membership change or a change to the system role reaches every process within seconds. A session read that fails fails the request, so the database being away never reads as signed out.
 
-An ended session keeps its row for the sessions list, stamped with who ended it and why: a sign-out, an end from another session, turning MFA on, a newer sign-in in the same browser, the session cap, or a stopped impersonation. Its streams end with it.
+An ended session keeps its row for the sessions list, stamped with who ended it and why: a sign-out, an end from another session, turning MFA on, a newer sign-in in the same browser, the session cap, or a stopped impersonation. Its app streams (SSE) close at once. Its collaborative editor sockets, and the editor tokens minted before the end, lapse within five minutes, the lifetime of an editor token.
 
 A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone, since any other 401 refuses a proof while signed in.
 

@@ -1,8 +1,9 @@
 import { execFile, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
+import { parseEnv, promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { modeSecretNames } from '#/env-mode-secrets';
 
@@ -83,7 +84,7 @@ const strong = () => randomBytes(24).toString('base64url');
  * Loads the real env module in a process of its own, as a service boots: Vitest skips its validation.
  * @returns Whether it loaded, and what it printed.
  */
-const boot = async (mode: 'production' | 'development', overrides: Record<string, string>) => {
+const boot = async (mode: 'production' | 'development' | 'tunnel', overrides: Record<string, string>) => {
   // Vitest sets VITEST, and MODE for its own use.
   const { VITEST: _vitest, MODE: _mode, ...inherited } = process.env;
   const env = { ...inherited, NODE_ENV: mode, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
@@ -134,5 +135,45 @@ describe('secret env validation', () => {
     expect(development.loaded, development.output).toBe(true);
     // An empty entry is refused in every mode.
     expect(blankInDevelopment.loaded).toBe(false);
+  });
+});
+
+/** The names tunnel mode refuses at their example value. */
+const secretNames = [
+  'COOKIE_SECRET',
+  'UNSUBSCRIBE_SECRET',
+  'YJS_TOKEN_PRIVATE_KEY',
+  'YJS_TOKEN_PUBLIC_KEY',
+  'CDC_SECRET',
+  'YJS_RELAY_SECRET',
+  'PII_HASH_SECRET',
+  'DATA_ENCRYPTION_KEY',
+] as const;
+
+const example = parseEnv(readFileSync(path.join(backendDir, '.env.example'), 'utf8'));
+const exampleSecrets = Object.fromEntries(secretNames.map((name) => [name, example[name] ?? '']));
+// Every name set, so a developer's backend/.env fills in none of them.
+const freshSecrets = () => Object.fromEntries(secretNames.map((name) => [name, strong()]));
+
+/**
+ * Anyone who read the repo knows the example values. On a tunnel stack that boots with one, a stranger forges what it
+ * signs: an `sso-recovery` cookie, an unsubscribe link, a relay token.
+ */
+describe('published secrets', () => {
+  it.each(secretNames)('must not boot in tunnel mode with a secret equal to its .env.example value: %s', async (name) => {
+    const { loaded, output } = await boot('tunnel', { ...freshSecrets(), [name]: exampleSecrets[name] });
+
+    expect(loaded).toBe(false);
+    expect(output).toContain(`${name} equals its public value in backend/.env.example`);
+  });
+
+  it('boots in development on the example values (positive control)', async () => {
+    const { loaded, output } = await boot('development', exampleSecrets);
+    expect(loaded, output).toBe(true);
+  });
+
+  it('boots in tunnel mode with fresh values (positive control)', async () => {
+    const { loaded, output } = await boot('tunnel', freshSecrets());
+    expect(loaded, output).toBe(true);
   });
 });
