@@ -1,6 +1,6 @@
 import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { type StreamErrorPayload, writeError } from '#/modules/entities/stream/helpers';
+import { endStream, type StreamErrorPayload, writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import { log } from '#/utils/logger';
@@ -26,10 +26,7 @@ const errorWriteTimeoutMs = 1000;
 async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {
   streamSubscriberManager.unregister(subscriber.id);
   await withinTimeout(writeError(subscriber.stream, payload), errorWriteTimeoutMs);
-  // Abort runs the handler's onAbort cleanup, ends the response body and releases a write still waiting for the
-  // client; close lets keepAlive return.
-  subscriber.stream.abort();
-  await subscriber.stream.close();
+  await endStream(subscriber.stream);
 }
 
 /** Whether a registered stream is an app stream, with a session and memberships behind it. */
