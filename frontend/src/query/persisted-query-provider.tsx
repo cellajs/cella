@@ -5,6 +5,7 @@ import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-channel-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
+import { getLocalUserDb, subscribeLocalUserChange } from '~/query/local-user-db';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { startConnectivity } from '~/query/offline/connectivity';
 import { persistOptions } from '~/query/persister';
@@ -40,21 +41,28 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
   useEffect(() => {
     downloadService.start();
 
-    // Waits for idle: nothing can be queued for upload during the first paint, and the import pulls
-    // @uppy/core with it, which on a slow link competes with the chunks the first render needs.
+    // Waits for a user's database, then for idle: a visitor has nothing to upload, nothing can be queued during the first
+    // paint, and the import pulls @uppy/core with it, which on a slow link competes with the chunks the first render needs.
     let service: { stop: () => void } | undefined;
+    let idle: number | undefined;
     let cancelled = false;
-    const idle = scheduleIdle(() => {
-      loadUploadService().then(({ uploadService }) => {
-        if (cancelled) return;
-        service = uploadService;
-        uploadService.start();
-      });
-    }, idleTimeoutMs);
+    const scheduleUploads = () => {
+      if (idle !== undefined || !getLocalUserDb()) return;
+      idle = scheduleIdle(() => {
+        loadUploadService().then(({ uploadService }) => {
+          if (cancelled) return;
+          service = uploadService;
+          uploadService.start();
+        });
+      }, idleTimeoutMs);
+    };
+    scheduleUploads();
+    const unsubscribeLocalUser = subscribeLocalUserChange(scheduleUploads);
 
     return () => {
       cancelled = true;
-      cancelIdle(idle);
+      unsubscribeLocalUser();
+      if (idle !== undefined) cancelIdle(idle);
       downloadService.stop();
       service?.stop();
     };

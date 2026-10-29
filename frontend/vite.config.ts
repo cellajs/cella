@@ -22,6 +22,7 @@ import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { indexHtml } from './vite/index-html.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
+import { precompress } from './vite/precompress.ts';
 import { reactCompilerGuard, reactCompilerLogger } from './vite/react-compiler-guard.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
@@ -317,6 +318,13 @@ const viteConfig = {
               minSize: 0,
             },
             {
+              // The uploader helpers the background upload service reads. Claimed before the on-demand group, whose editor
+              // file panel imports them too and would capture them, so that starting the service would load the editor.
+              name: 'uploader-core',
+              test: /[\\/]common[\\/]uploader[\\/](types|helpers[\\/]fresh-assembly-options)\./,
+              minSize: 0,
+            },
+            {
               // ── On-demand app code, last ──────────────────────────────────────────────────────
               // The blocknote wrappers and the form field that renders them, the uploader, the chat widget, the contact
               // map, the sign-out check for unsaved edits, and the attachment renderers behind `lazyNamed`. Claimed after every group
@@ -428,6 +436,7 @@ const viteConfig = {
       apiUrl: appConfig.backendUrl,
     }),
     ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
+    ...(isStorybook ? [] : [precompress()]),
   ],
   resolve: {
     // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,

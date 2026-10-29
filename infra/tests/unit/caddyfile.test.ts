@@ -86,6 +86,13 @@ describe('frontend Caddyfile', () => {
   it('compresses responses (S3 origin stores objects uncompressed)', () => {
     expect(caddyfile).toMatch(/encode\s+zstd\s+gzip/);
   });
+
+  it("serves the build's brotli copies, and the original when a release before them has none", () => {
+    // Without the fallback, a tab still running an older release could no longer load its lazy chunks.
+    expect(caddyfile).toMatch(/rewrite\s+\*\s+\{path\}\.br/);
+    expect(caddyfile).toMatch(/header_down\s+Content-Encoding\s+br/);
+    expect(caddyfile).toMatch(/handle_response\s+@nocopy\s*\{\s*\n\s*rewrite\s+\*\s+\{http\.request\.orig_uri\.path\}/);
+  });
 });
 
 describe('frontend Caddy Dockerfile', () => {

@@ -17,11 +17,16 @@ export interface ReleaseFile {
   key: string;
   contentType: string;
   cacheControl: string;
+  /** `br` for the build's brotli copy of a file (`<file>.br`), which keeps that file's content type. */
+  contentEncoding?: 'br';
 }
 
 const HASHED_CACHE = 'public, max-age=31536000, immutable';
 const STABLE_CACHE = 'public, max-age=3600';
 const ENTRY_CACHE = 'no-cache, no-store, must-revalidate';
+
+const contentHeaders = (key: string): Pick<ReleaseFile, 'contentType' | 'contentEncoding'> =>
+  key.endsWith('.br') ? { contentType: contentTypeFor(key.slice(0, -'.br'.length)), contentEncoding: 'br' } : { contentType: contentTypeFor(key) };
 
 /**
  * What the builder uploads of a release's frontend. A hashed file goes up when the bucket lacks it; a stable-named one (static/, favicon) when
@@ -39,12 +44,12 @@ export async function releaseFiles(opts: { distDir: string; sha: string; publicB
       const head = await fetchImpl(`${opts.publicBase}/${key}`, { method: 'HEAD' });
       if (isHashedPath(key)) {
         if (head.ok) continue;
-        files.push({ path, key, contentType: contentTypeFor(key), cacheControl: HASHED_CACHE });
+        files.push({ path, key, ...contentHeaders(key), cacheControl: HASHED_CACHE });
         continue;
       }
       const remote = head.ok ? (head.headers?.get('etag') ?? '').replaceAll('"', '') : '';
       if (remote === createHash('md5').update(readFileSync(path)).digest('hex')) continue;
-      files.push({ path, key, contentType: contentTypeFor(key), cacheControl: STABLE_CACHE });
+      files.push({ path, key, ...contentHeaders(key), cacheControl: STABLE_CACHE });
     }
   });
   await Promise.all(workers);
@@ -68,7 +73,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const publicBase = getFlag(argv, '--bucket-url');
   if (!distDir || !sha || !publicBase) throw new Error('Usage: release-files.ts --dist <dir> --sha <git-sha> --bucket-url <public bucket URL>');
   for (const file of await releaseFiles({ distDir, sha, publicBase })) {
-    process.stdout.write(`${file.path}\t${file.key}\t${file.contentType}\t${file.cacheControl}\n`);
+    process.stdout.write(`${file.path}\t${file.key}\t${file.contentType}\t${file.cacheControl}\t${file.contentEncoding ?? ''}\n`);
   }
 }
 
