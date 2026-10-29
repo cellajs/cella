@@ -685,6 +685,11 @@
     /* Touch keeps none for the app's own pull-to-refresh (body as well). A fine pointer gets contain: in Chrome a root
        none on an axis also stops every nested scroller from bouncing on that axis. */
     @apply overscroll-none pointer-fine:overscroll-contain;
+    /* A grid header pinned with fixed cells (use-sticky-header.ts) cannot follow the bounce that moves the rows and sticky
+       bars around it, so the page holds still on that axis while one is pinned. */
+    &:has([data-header-pinned]) {
+      overscroll-behavior-y: none;
+    }
 
     /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
        scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
