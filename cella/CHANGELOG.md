@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.1](https://github.com/cellajs/cella/compare/0.29.0...0.29.1) (2026-10-29)
+
+
+### 🎉 New features
+
+* ui tickets, fizzing marketing marks, opaque sticky bars, org switcher row, panel drawers, zod jitless ([#1611](https://github.com/cellajs/cella/issues/1611)) ([264154a](https://github.com/cellajs/cella/commit/264154a32c12e9f489d1ac5bc90796967dc5d803))
+
+
+### 🐞 Bug fixes
+
+* **infra:** a build reads only its own builder's reports ([#1610](https://github.com/cellajs/cella/issues/1610)) ([48f7da9](https://github.com/cellajs/cella/commit/48f7da93e5e7a0291972272ec16c48b3f0c4b0c4))
+
 ## [0.29.0](https://github.com/cellajs/cella/compare/0.28.0...0.29.0) (2026-10-28)
 
 
