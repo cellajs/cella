@@ -4,12 +4,9 @@ import { machineKeyDescription, machineKeyStep, machinePrincipals, standingAcces
 const principal = { principal: 'cdc', application: 'app-production-vm-cdc' };
 
 describe('machine keys', () => {
-  it('has one identity per registry service, wherever it runs, the boot fetcher and the builder', () => {
+  it('has one identity per registry service, wherever it runs, and the builder', () => {
     const principals = machinePrincipals('app', 'production');
-    expect(principals.slice(-2)).toEqual([
-      { principal: 'boot', application: 'app-production-boot' },
-      { principal: 'builder', application: 'app-production-builder' },
-    ]);
+    expect(principals.at(-1)).toEqual({ principal: 'builder', application: 'app-production-builder' });
     expect(principals.map((entry) => entry.principal)).toContain('backend');
   });
 
@@ -24,7 +21,7 @@ describe('machine keys', () => {
     expect(machineKeyStep(principal, 'SCWGONE', ['SCWOLD'])).toMatchObject({ change: 'make', extra: ['SCWOLD'] });
   });
 
-  it('must not leave a key beside the standing one: nobody hands it over, so nobody watches it', () => {
+  it('must not leave a key beside the standing one: no machine holds it, so nobody watches it', () => {
     expect(machineKeyStep(principal, 'SCWSTAND', ['SCWSTAND', 'SCWPLANTED'])).toMatchObject({ change: 'prune', extra: ['SCWPLANTED'] });
     expect(machineKeyStep(principal, 'SCWSTAND', ['SCWSTAND'])).toMatchObject({ change: 'none', extra: [] });
   });

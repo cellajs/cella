@@ -28,9 +28,9 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
         condition: 'resource.name.startsWith("/yjs/")',
       },
       {
-        app: 'cella-production-boot',
-        sets: ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'],
-        condition: 'resource.name.startsWith("/handoff/")',
+        app: 'cella-production-builder',
+        sets: ['ContainerRegistryFullAccess', 'ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite'],
+        condition: '',
       },
     ]),
     enabled_services_json: JSON.stringify([
@@ -132,7 +132,7 @@ describe('runDeploy sequencing', () => {
     const ok = makeFake();
     await runDeploy(baseOpts, ok.fx, withBucket);
     expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:build-release'));
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:stage-generation-keys'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:generation-keys'));
 
     const failing = makeFake();
     const task = failing.fx.task;
@@ -152,8 +152,8 @@ describe('runDeploy sequencing', () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
 
-    // Ordering spine: lock before any stack mutation, generation keys minted
-    // before the stack update bakes their references, per-principal grant
+    // Ordering spine: lock before any stack mutation, machine keys read
+    // before the stack update writes them into cloud-init, per-principal grant
     // verification after the update, rollout after preflights, publish only
     // after verification, lock release last.
     const spine = [
@@ -167,15 +167,14 @@ describe('runDeploy sequencing', () => {
       // A missing secret blocks the run before any machine exists, the builder included.
       'task:assert-secrets-deliverable',
       'task:build-release',
-      'task:stage-generation-keys',
+      'task:generation-keys',
       'update:production',
       'task:assert-grants',
       'rollout',
       'publish-entry',
       'task:smoke',
-      // The displaced generations are reaped once smoke passed, under the same lock; then the keys leave the user data of every machine left.
+      // The displaced generations are reaped once smoke passed, under the same lock.
       'update:production',
-      'task:scrub-user-data',
       'lease:release',
     ];
     let cursor = -1;
@@ -275,7 +274,7 @@ describe('runDeploy sequencing', () => {
     const { fx, grantArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
-    expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-boot']);
+    expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-builder']);
   });
 
   it('must not change the stack once another run took its lock (C7): the next step stops the run', async () => {

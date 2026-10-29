@@ -80,8 +80,8 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
   return undefined;
 });
 
-// Machine principals: one application per registry service, wherever it runs, plus the boot fetcher. Registry-derived: neither an `enabled`
-// toggle nor a placement changes a principal.
+// Machine principals: one application per registry service, wherever it runs. Registry-derived: neither an `enabled` toggle nor a placement
+// changes a principal.
 
 const vmServices = principalServices();
 
@@ -93,10 +93,7 @@ export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Obje
   ]),
 );
 
-/** Boot fetcher application id. Required. */
-export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`);
-
-/** Builder application id, for the frontend bucket's statement. Required; a preview plans it before the next identity update makes it. */
+/** Builder application id, for the frontend and diagnostics buckets' statements. Required; a preview plans it before the next identity update makes it. */
 export const builderApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.builder), `builder ('${names.builder}')`, {
   pendingOnPreview: true,
 });

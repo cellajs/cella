@@ -14,9 +14,9 @@ const values: BuilderValues = {
   REGISTRY_HOST: 'rg.nl-ams.scw.cloud',
   DIAG_BUCKET: 'app-boot-diag',
   FRONTEND_BUCKET: 'app-frontend',
-  BUNDLE_ID: 'bundle-1',
-  BOOT_AK: 'SCWBOOTACCESSKEY0001',
-  BOOT_SK: 'boot-secret-key-value',
+  BUILDER_AK: 'SCWBUILDERACCESSKEY1',
+  BUILDER_SK: 'builder-secret-key-value',
+  REPO_KEY: 'github_pat_read_only',
   NODE_IMAGE: 'node:26-bookworm-slim',
   EPOCH: '0123456789ab',
 };
@@ -41,8 +41,8 @@ describe('the builder machine', () => {
     const keyed = lines.find((line) => line.includes('http.extraHeader'));
     expect(keyed).toContain('fetch -q --depth 1 origin "$SHA"');
     expect(keyed).not.toContain('remote add');
-    expect(lines.indexOf('rm -f /run/builder.repo')).toBeGreaterThan(lines.indexOf(keyed ?? ''));
-    expect(lines.indexOf('rm -f /run/builder.repo')).toBeLessThan(lines.indexOf('step build'));
+    expect(lines.indexOf('unset REPO_KEY')).toBeGreaterThan(lines.indexOf(keyed ?? ''));
+    expect(lines.indexOf('unset REPO_KEY')).toBeLessThan(lines.indexOf('step build'));
   });
 
   it("must not hand a key to the app's code: its containers get no key and no metadata service", () => {
@@ -93,8 +93,9 @@ describe('the builder machine', () => {
   it('keeps the keys in the one file only root reads', () => {
     const document = builderCloudConfig({ values, frontendEnv: { APP_MODE: 'staging' }, bake: { group: {} }, boot: 'true\n', frontend: 'true\n' });
     const files = document.split('\n  - path: ').slice(1);
-    const holding = files.filter((file) => file.includes(values.BOOT_SK)).map((file) => file.split('\n')[0]);
-    expect(holding).toEqual(['/etc/builder.env']);
+    for (const key of [values.BUILDER_SK, values.REPO_KEY]) {
+      expect(files.filter((file) => file.includes(key)).map((file) => file.split('\n')[0])).toEqual(['/etc/builder.env']);
+    }
     expect(files.find((file) => file.startsWith('/etc/builder.env'))).toContain("permissions: '0600'");
   });
 

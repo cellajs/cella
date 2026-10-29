@@ -36,18 +36,19 @@ describe('identity plan', () => {
           missingApplications: ['app-staging-vm-oauth'],
           policies: [
             { policy: 'app-vm-backend-policy', change: 'update' },
-            { policy: 'app-vm-boot-policy', change: 'none' },
+            { policy: 'app-builder-policy', change: 'none' },
             { policy: 'app-vm-oauth-policy', change: 'missing-application' },
             { policy: 'app-observer-policy', change: 'update' },
           ],
           keys: [
             { principal: 'cdc', application: 'app-staging-vm-cdc', change: 'make', extra: ['SCWOLD'] },
-            { principal: 'boot', application: 'app-staging-boot', change: 'prune', extra: ['SCWX1', 'SCWX2'] },
+            { principal: 'builder', application: 'app-staging-builder', change: 'prune', extra: ['SCWX1', 'SCWX2'] },
             { principal: 'jobs', application: 'app-staging-vm-jobs', change: 'none', extra: [] },
           ],
           extraPolicies: [{ id: 'p1', name: 'app-vm-cdc-policy', application: 'app-staging-vm-cdc' }],
           observer: 'key',
           retiredAdmin: { name: 'app-staging-admin', id: 'a1', removable: true },
+          retiredBoot: { name: 'app-staging-boot', id: 'b1' },
         },
         names,
       ),
@@ -57,10 +58,11 @@ describe('identity plan', () => {
       'policy app-vm-oauth-policy: to create once its application exists',
       'policy app-observer-policy: rules to replace',
       'standing key of app-staging-vm-cdc: to make, its 1 other key(s) deleted',
-      'standing key of app-staging-boot: 2 key(s) beside it to delete',
+      'standing key of app-staging-builder: 2 key(s) beside it to delete',
       'policy app-vm-cdc-policy on app-staging-vm-cdc: beside the declared one, to delete',
       'observer app-observer: a key for this machine',
       'application app-staging-admin: retired, to delete with its keys and its custody secret',
+      'application app-staging-boot: retired, to delete with its key, its standing key and its hand-over folder',
     ]);
   });
 });

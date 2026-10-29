@@ -6,6 +6,7 @@ import { pinnedNodeImage } from '../lib/deploy/node-image';
 import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand } from '../lib/operator-actions';
+import { readStandingKey } from '../lib/scaleway/machine-keys';
 import { removeMachines, type ScwServer } from '../lib/scaleway/machines';
 import { resolveImageDigest } from '../lib/scaleway/registry-digest';
 import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
@@ -20,7 +21,6 @@ import { bakeDefinition, parseBuildRows } from './build-images';
 import { ENTRY_FILE_NAMES } from './frontend-assets';
 import { frontendBuildEnv } from './frontend-build-env';
 import { releaseEntryPrefix } from './release-files';
-import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 
 // 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
 const BUILDER_TYPE = 'POP2-HC-8C-16G';
@@ -35,14 +35,20 @@ export function buildEpoch(builderAccessKey: string): string {
   return createHash('sha256').update(builderAccessKey).digest('hex').slice(0, 12);
 }
 
+export interface BuilderKeys {
+  accessKey: string;
+  secretKey: string;
+  repositoryKey?: string;
+}
+
 /** What building a release does outside this module, so a test passes its own. */
 export interface BuildEffects {
   /** True when the registry holds the image under the release's tag of this epoch. */
   imagePresent(image: string): Promise<boolean>;
   /** A file under the release's entry prefix in the frontend bucket (an entry file, or the `epoch` marker), or undefined when it is not there. */
   entryFile(name: string): Promise<Buffer | undefined>;
-  /** Stage the builder key's read-once bundle; returns its id and the boot key the machine reads it with. */
-  keys(): Promise<{ bundleId: string; boot: { accessKey: string; secretKey: string } }>;
+  /** The builder key and, for a private repository, its read key, which the builder's cloud-init carries. */
+  keys(): Promise<BuilderKeys>;
   /** Delete every builder machine of the environment with its volume, in every zone of the region; returns the names deleted. */
   removeBuilders(): Promise<string[]>;
   /** Make the builder machine in a zone and start it. */
@@ -65,7 +71,7 @@ export interface BuildReleaseOptions {
   withFrontend: boolean;
   /** Where the release's entry files are written for the publish and the smoke test. */
   distDir?: string;
-  cloudConfig(keys: { bundleId: string; boot: { accessKey: string; secretKey: string } }): string;
+  cloudConfig(keys: BuilderKeys): string;
   timeoutMs?: number;
   pollMs?: number;
   log?: (message: string) => void;
@@ -222,19 +228,7 @@ function liveEffects(opts: {
       const res = await fetch(`https://${opts.frontendBucket}.s3.${opts.region}.scw.cloud/${releaseEntryPrefix(opts.sha)}${name}`);
       return res.ok ? Buffer.from(await res.arrayBuffer()) : undefined;
     },
-    keys: async () => {
-      const key = await readStandingKey(secrets, 'builder');
-      const boot = await readStandingKey(secrets, 'boot');
-      const repositoryKey = await readRepositoryKey(secrets);
-      const bundleId = await stageHandoffBundle({
-        ...opts,
-        principal: 'builder',
-        key: { ...key, ...(repositoryKey ? { repositoryKey } : {}) },
-        secrets,
-        log: (message) => console.info(message),
-      });
-      return { bundleId, boot };
-    },
+    keys: async () => ({ ...(await readStandingKey(secrets, 'builder')), repositoryKey: await readRepositoryKey(secrets) }),
     removeBuilders: () =>
       removeBuilderMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zones: opts.zones, prefix: opts.builderPrefix }),
     startBuilder: async (zone, name, cloudConfig) => {
@@ -323,7 +317,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       images: [...rows.map((row) => row.service), BOOT_IMAGE_NAME],
       withFrontend: Boolean(frontendBucket),
       distDir,
-      cloudConfig: ({ bundleId, boot }) =>
+      cloudConfig: (keys) =>
         builderCloudConfig({
           values: {
             SHA: sha,
@@ -333,9 +327,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             REGISTRY_HOST: registry,
             DIAG_BUCKET: naming.bootDiagBucket,
             FRONTEND_BUCKET: frontendBucket,
-            BUNDLE_ID: bundleId,
-            BOOT_AK: boot.accessKey,
-            BOOT_SK: boot.secretKey,
+            BUILDER_AK: keys.accessKey,
+            BUILDER_SK: keys.secretKey,
+            REPO_KEY: keys.repositoryKey ?? '',
             // The boot image's base, at the root `engines.node`, by digest: the builder's keys meet it.
             NODE_IMAGE: pinnedNodeImage(nodeVersion, 'bookworm-slim'),
             EPOCH: epoch,

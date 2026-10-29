@@ -37,15 +37,9 @@ function storeObserverKey(mode: string, pair: KeyPair): void {
 /**
  * Make sure the app's observer reaches this environment as declared and this machine holds its key, at an Owner moment. An app without an
  * observer gets one, with the operator's reach; an observer that exists gets its rules written in place, with this environment's project,
- * so its keys keep working; a machine without its key gets a key of its own, and the keys on other machines keep working. `rotate` replaces
- * every key of the observer with one new key.
+ * so its keys keep working; a machine without its key gets a key of its own, and the keys on other machines keep working.
  */
-export async function ensureObserverForEnvironment(
-  context: InfraContext,
-  ownerKey: OwnerKey,
-  projectId: string,
-  opts: { rotate?: boolean } = {},
-): Promise<void> {
+export async function ensureObserverForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<void> {
   const mode = context.environment;
   const slug = context.appConfig.appSlug;
   const names = appPrincipalNames(slug);
@@ -53,12 +47,11 @@ export async function ensureObserverForEnvironment(
   const { organizationId } = ownerKey;
   const reach = await observerReach(auth, organizationId, slug);
 
-  if (!reach || opts.rotate) {
-    const operator = reach ? undefined : await readPolicy(auth, organizationId, `${names.operator}-policy`);
-    const reached = reach?.projectIds ?? (operator ? operatorPolicyReach(operator.rules).projectIds : []);
-    const projectIds = [...new Set([...reached, projectId])];
+  if (!reach) {
+    const operator = await readPolicy(auth, organizationId, `${names.operator}-policy`);
+    const projectIds = [...new Set([...(operator ? operatorPolicyReach(operator.rules).projectIds : []), projectId])];
     const key = await setupObserverApp({ callerSecretKey: ownerKey.secretKey, organizationId, projectId, projectIds, slug });
-    console.info(`  ${changeMark} '${names.observer}' ${reach ? 'has a new key; its earlier keys are revoked' : 'created'}.`);
+    console.info(`  ${changeMark} '${names.observer}' created.`);
     storeObserverKey(mode, key);
     return;
   }

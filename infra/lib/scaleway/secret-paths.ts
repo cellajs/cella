@@ -29,19 +29,11 @@ export function legacySharedSecretPath(consumers: readonly string[]): string {
   return `/shared/${[...consumers].sort().join('/')}/`;
 }
 
-/** Folder of the values a deploy reads: the standing machine keys it hands over and the telemetry ingest key. Outside every machine's condition. */
+/** Folder of the values a deploy reads: the standing machine keys it writes into each new machine's cloud-init and the telemetry ingest key. Outside every machine's condition. */
 export const DEPLOY_FOLDER = '/deploy/';
 
 /** Folder for engine-internal keys. Outside every machine's condition: a machine never reads the passphrase. */
 export const ENGINE_FOLDER = '/engine/';
-
-/** Folder prefix covering every service's handoff bundles. */
-export const HANDOFF_FOLDER = '/handoff/';
-
-/** Folder for per-generation single-access handoff bundles of one service. */
-export function handoffServicePath(service: string): string {
-  return `${HANDOFF_FOLDER}${service}/`;
-}
 
 /**
  * Condition for one service application: value reads only under its own folder, leaving other services' secrets and engine keys unreadable.
@@ -79,6 +71,3 @@ export function ruleConditions(condition: string): string[] {
   }
   return rules;
 }
-
-/** Condition for the boot application: only the handoff folder. The boot key is baked into cloud-init, so its reach is exactly the single-access bundles, and re-reading a consumed bundle fails as the tamper alarm. */
-export const BOOT_KEY_CONDITION = `resource.name.startsWith("${HANDOFF_FOLDER}")`;

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
 import { vi } from 'vitest';
 import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
+import type { GenerationKeys } from '../../lib/scaleway/machine-keys';
 import { installKeylessMocks, type RenderedResource, settleRender } from '../../lib/stack/keyless-render';
-import type { GenerationKeys } from '../../tasks/stage-generation-keys';
 
 export type CapturedResource = RenderedResource;
 
@@ -81,7 +81,7 @@ export function unwrapSecret(input: unknown): unknown {
   return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
 }
 
-/** Hands the Pulumi program this deploy's minted keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
+/** Hands the Pulumi program this deploy's machine keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
 export function writeGenerationKeys(keys: GenerationKeys): void {
   const file = join(mkdtempSync(join(tmpdir(), 'generation-keys-')), 'keys.json');
   writeFileSync(file, JSON.stringify(keys));

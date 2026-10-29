@@ -42,14 +42,6 @@ export function generatePassphrase(): string {
   return randomBytes(24).toString('base64');
 }
 
-/** True when this `pulumi version` supports non-interactive passphrase rotation (stdin, v3.44.0+); older CLIs fail with "passphrase rotation requires an interactive terminal". Unparseable output is not blocked. */
-export function supportsStdinPassphraseRotation(versionOutput: string): boolean {
-  const match = versionOutput.match(/v?(\d+)\.(\d+)\.\d+/);
-  if (!match) return true;
-  const [major, minor] = [Number(match[1]), Number(match[2])];
-  return major > 3 || (major === 3 && minor >= 44);
-}
-
 /** True when `passphrase` decrypts the stack's `encryptionsalt` check value. Returns false and never throws, so callers can use it as a plain predicate. */
 export function verifyStackPassphrase(yamlText: string, passphrase: string): boolean {
   const salt = yamlText.match(/^encryptionsalt:\s*(\S+)/m)?.[1];

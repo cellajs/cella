@@ -25,16 +25,15 @@ export interface CloudInitParams {
   bootImageName?: string;
   /** Manifest digest the boot runner tag resolved to at plan time. When set the launcher runs by digest, so a later registry push cannot swap the socket-mounted boot runner under a reboot. */
   bootImageDigest?: string;
-  /** Scaleway secret key: registry password + Secret Manager access token. */
-  secretKey: string;
-  /** Scaleway access key for writing boot diagnostics to Object Storage. */
+  /** The machine's own service key: it pulls the images, writes the boot account and reads its service's secret folder. */
   accessKey: string;
+  secretKey: string;
+  /** The secret key of each other service a singleVM host carries, the one key that reads that service's folder. */
+  coHostedSecretKeys?: Readonly<Record<string, string>>;
   /** Scaleway region for the Secret Manager endpoint. */
   region: string;
   /** Dedicated Object Storage bucket for boot diagnostics. */
   bootDiagBucket: string;
-  /** Single-access handoff secret ids of the keys of every service the machine carries, one per service. */
-  handoffs?: ReadonlyArray<{ service: string; secretId: string }>;
   /** v2 + s3Access: export the service key as S3_* env into .env.runtime. */
   exportS3Env?: boolean;
   /** Deploy trace context baked into the boot plan (absent outside a deploy run). */
@@ -57,6 +56,7 @@ const bootPaths = (slug: string) => {
     etcDir,
     accessKey: `${etcDir}/scw-access-key`,
     secretKey: `${etcDir}/scw-secret-key`,
+    serviceSecretKey: (service: string) => `${etcDir}/scw-secret-key-${service}`,
     plan: `${etcDir}/boot-plan.json`,
     launcher: `${etcDir}/run-boot.sh`,
     // systemd EnvironmentFile carrying the registry host + boot-image ref, so the
@@ -128,13 +128,9 @@ function bootPlan(p: CloudInitParams): string {
       registry: p.registry,
       region: p.region,
       credentials: { scwAccessKeyFile: paths.accessKey, scwSecretKeyFile: paths.secretKey },
-      ...(p.handoffs?.length
+      ...(p.coHostedSecretKeys && Object.keys(p.coHostedSecretKeys).length > 0
         ? {
-            serviceKeyHandoffs: p.handoffs.map((handoff) => ({
-              service: handoff.service,
-              secretId: handoff.secretId,
-              cacheFile: `${paths.etcDir}/service-key-${handoff.service}.json`,
-            })),
+            serviceSecretKeyFiles: Object.fromEntries(Object.keys(p.coHostedSecretKeys).map((service) => [service, paths.serviceSecretKey(service)])),
           }
         : {}),
       ...(p.exportS3Env ? { exportS3Env: true } : {}),
@@ -203,21 +199,18 @@ ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a ${bootLo
 [Install]
 WantedBy=multi-user.target`;
 
-/** The heredoc terminators of the two key files, which {@link withoutKeyFiles} finds them by. */
-const KEY_FILE_MARKERS = { accessKey: 'SCW_ACCESS_KEY_EOF', secretKey: 'SCW_SECRET_KEY_EOF' } as const;
-
 const writeBootInputs = (p: CloudInitParams): string => {
   const paths = bootPaths(p.slug);
-  return `mkdir -p ${paths.etcDir} /opt/app /etc/runtime-secrets
-${writeHeredoc(paths.plan, 'BOOT_PLAN_EOF', bootPlan(p))}
-chmod 600 ${paths.plan}
-${writeHeredoc(paths.accessKey, KEY_FILE_MARKERS.accessKey, p.accessKey)}
-chmod 600 ${paths.accessKey}
-${writeHeredoc(paths.secretKey, KEY_FILE_MARKERS.secretKey, p.secretKey)}
-chmod 600 ${paths.secretKey}
-${writeBootEnv(p)}
-${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
-chmod 700 ${paths.launcher}`;
+  const privateFile = (path: string, marker: string, content: string) => `${writeHeredoc(path, marker, content)}\nchmod 600 ${path}`;
+  return [
+    `mkdir -p ${paths.etcDir} /opt/app /etc/runtime-secrets`,
+    privateFile(paths.plan, 'BOOT_PLAN_EOF', bootPlan(p)),
+    privateFile(paths.accessKey, 'SCW_ACCESS_KEY_EOF', p.accessKey),
+    privateFile(paths.secretKey, 'SCW_SECRET_KEY_EOF', p.secretKey),
+    ...Object.entries(p.coHostedSecretKeys ?? {}).map(([service, key]) => privateFile(paths.serviceSecretKey(service), 'SCW_SECRET_KEY_EOF', key)),
+    writeBootEnv(p),
+    `${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}\nchmod 700 ${paths.launcher}`,
+  ].join('\n');
 };
 
 // `enable` binds the unit to multi-user.target so it re-runs on every reboot; `start` runs it on this first boot.
@@ -232,21 +225,4 @@ systemctl start infra-boot.service`;
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return `${[bootHeader(p.slug), installBootReplayService(), writeBootInputs(p), startBootRunner(p), scrubCloudInitLogs()].join('\n\n')}\n`;
-}
-
-/**
- * A booted machine's cloud-init without its key files, each heredoc left as a comment that names the file. Cloud-init runs the script at a
- * machine's first boot only, and the boot unit reads the key from disk at every boot, so the rest of the script stays as it ran. Undefined
- * when the script writes no key file.
- * @throws when a key file's heredoc is still there after the rewrite: user data that keeps a key is never written back.
- */
-export function withoutKeyFiles(cloudInit: string): string | undefined {
-  const markers = Object.values(KEY_FILE_MARKERS);
-  if (!markers.some((marker) => cloudInit.includes(`<<'${marker}'`))) return undefined;
-  const scrubbed = markers.reduce(
-    (text, marker) => text.replace(new RegExp(`^cat > (\\S+) <<'${marker}'\\n[\\s\\S]*?\\n${marker}$`, 'gm'), '# $1: written at the first boot'),
-    cloudInit,
-  );
-  if (markers.some((marker) => scrubbed.includes(marker))) throw new Error('a key file is still in the cloud-init after its rewrite');
-  return scrubbed;
 }

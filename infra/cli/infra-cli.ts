@@ -126,7 +126,6 @@ function menuState(context: InfraContext, liveEndpoints?: string[]): MenuState {
   return {
     stackState: context.state,
     environment: context.environment,
-    encrypted: !!context.stackYaml && /^encryptionsalt:/m.test(context.stackYaml),
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints,
   };

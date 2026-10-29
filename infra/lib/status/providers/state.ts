@@ -35,11 +35,17 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
           .join(' ');
         return services.some((r) => r.pendingSha) ? rollout.warn(`pending rollout: ${summary}`, deployAction(session.mode)) : rollout.ok(summary);
       }),
-      probed(pending, creds, facts?.pendingOperations, 'could not read the stack checkpoint', (operations) => {
-        if (operations.length === 0) return pending.ok('none');
-        const listed = operations.map((op) => `${op.kind} ${op.urn.split('::').pop()}`).join(', ');
-        return pending.warn(`${operations.length} interrupted: ${listed}`, clearPending);
-      }),
+      probed(
+        pending,
+        creds,
+        facts?.pendingOperations,
+        session.operatorKey ? 'could not read the stack checkpoint' : 'not read: the stack checkpoint is read with the operator key',
+        (operations) => {
+          if (operations.length === 0) return pending.ok('none');
+          const listed = operations.map((op) => `${op.kind} ${op.urn.split('::').pop()}`).join(', ');
+          return pending.warn(`${operations.length} interrupted: ${listed}`, clearPending);
+        },
+      ),
     ];
   },
 };

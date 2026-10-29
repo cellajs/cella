@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOOT_KEY_CONDITION, ruleConditions, secretCopies, serviceKeyCondition } from './secret-paths';
+import { ruleConditions, secretCopies, serviceKeyCondition } from './secret-paths';
 
 const folders = (count: number) => Array.from({ length: count }, (_, index) => `resource.name.startsWith("/shared/folder-${index}/")`);
 
@@ -7,7 +7,6 @@ describe('ruleConditions', () => {
   it('keeps a condition that fits one rule whole', () => {
     const condition = serviceKeyCondition('backend');
     expect(ruleConditions(condition)).toEqual([condition]);
-    expect(ruleConditions(BOOT_KEY_CONDITION)).toEqual([BOOT_KEY_CONDITION]);
   });
 
   it('spreads a large condition over rules that each fit, every term once and in order', () => {
@@ -33,9 +32,5 @@ describe('secretCopies', () => {
 
   it('grants a service its own folder and no other', () => {
     expect(serviceKeyCondition('jobs')).toBe('resource.name.startsWith("/jobs/")');
-  });
-
-  it('grants the boot key the hand-over folder and no other', () => {
-    expect(BOOT_KEY_CONDITION).toBe('resource.name.startsWith("/handoff/")');
   });
 });

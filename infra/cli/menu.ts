@@ -18,8 +18,6 @@ import { pc } from '../lib/utils/cli-output';
 export interface MenuState {
   stackState: StackState;
   environment: Environment;
-  /** The stack config carries an encryption salt, so there is a passphrase to rotate. */
-  encrypted: boolean;
   /** The local exposure config says the public DB endpoint is open. */
   dbExposed: boolean;
   /** The instance's live public endpoints, when the observer key read them in time. */
@@ -48,7 +46,6 @@ export function disabledReason(id: OperatorActionId, state: MenuState): string |
   if (NEEDS_BOOTSTRAPPED_STACK.includes(id) && state.stackState !== 'bootstrapped') {
     return `needs a bootstrapped stack: run "${actionLabel('resume')}"`;
   }
-  if (id === 'rotate-passphrase' && !state.encrypted) return 'the stack has no encrypted state yet';
   return undefined;
 }
 

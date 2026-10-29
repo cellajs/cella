@@ -13,7 +13,7 @@ import { getFlag } from './args';
  * containers, DNS records, buckets with their policies, and the load balancer. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
  * A deploy still moves the load balancer's pools: the cutover sets their servers through the API, which the program leaves alone.
  */
-// Secret containers and their versions are privileged: the deploy key writes no app secret, only its hand-over bundles.
+// Secret containers and their versions are privileged: the deploy key writes no secret.
 const PRIVILEGED_URN_TYPES = [
   'scaleway:databases/',
   'scaleway:iam/',

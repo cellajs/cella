@@ -10,9 +10,10 @@ export interface BuilderValues {
   REGISTRY_HOST: string;
   DIAG_BUCKET: string;
   FRONTEND_BUCKET: string;
-  BUNDLE_ID: string;
-  BOOT_AK: string;
-  BOOT_SK: string;
+  BUILDER_AK: string;
+  BUILDER_SK: string;
+  /** A private repository's read key; empty for a repository anyone may read. */
+  REPO_KEY: string;
   NODE_IMAGE: string;
   /** The build epoch (`buildEpoch`): marks this build's images and frontend files as made under the current builder key. */
   EPOCH: string;
@@ -34,7 +35,7 @@ LOG=/var/log/builder.log
 exec >>"$LOG" 2>&1
 # Object Storage writes go through /etc/builder-s3.mjs in the node image: the machine image's curl may not sign them.
 put() {
-  docker run --rm -e REGION -e S3_AK="$BOOT_AK@$PROJECT" -e S3_SK="$BOOT_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /run:/run:ro "$NODE_IMAGE" \
+  docker run --rm -e REGION -e S3_AK="$BUILDER_AK@$PROJECT" -e S3_SK="$BUILDER_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /run:/run:ro "$NODE_IMAGE" \
     node /s3.mjs put "$DIAG_BUCKET" "boot-diag/builder/$SHA/$1" "$2" 'text/plain; charset=utf-8'
 }
 step() {
@@ -55,27 +56,19 @@ trap 'echo "failed at line $LINENO"; finish failed' ERR
 set -eE -o pipefail
 
 docker pull -q "$NODE_IMAGE"
-# No container reaches the metadata service: the machine's user data holds the boot key.
+# No container reaches the metadata service: the machine's user data holds the builder key.
 iptables -I DOCKER-USER -d 169.254.42.42 -j DROP || iptables -I FORWARD -d 169.254.42.42 -j DROP
-step key
-# Read once: a second read fails, as the bundle is disabled after the first.
-curl -sS -m 30 --fail -H "X-Auth-Token: $BOOT_SK" "https://api.scaleway.com/secret-manager/v1beta1/regions/$REGION/secrets/$BUNDLE_ID/versions/latest/access" > /run/builder.bundle
-python3 -c 'import base64,json; b=json.loads(base64.b64decode(json.load(open("/run/builder.bundle"))["data"])); open("/run/builder.ak","w").write(b["accessKey"]); open("/run/builder.sk","w").write(b["secretKey"]); open("/run/builder.repo","w").write(b.get("repositoryKey",""))'
-rm -f /run/builder.bundle
-chmod 600 /run/builder.ak /run/builder.sk /run/builder.repo
-BUILDER_AK=$(cat /run/builder.ak)
-BUILDER_SK=$(cat /run/builder.sk)
 
 step clone
 git init -q /build
 git -C /build remote add origin "$REPO"
 # A private repository's read key (D19) goes with this one fetch as a header: it is in no URL, no remote and no file the build sees.
-if [ -s /run/builder.repo ]; then
-  git -C /build -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/builder.repo)" | base64 -w0)" fetch -q --depth 1 origin "$SHA"
+if [ -n "$REPO_KEY" ]; then
+  git -C /build -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$REPO_KEY" | base64 -w0)" fetch -q --depth 1 origin "$SHA"
 else
   git -C /build fetch -q --depth 1 origin "$SHA"
 fi
-rm -f /run/builder.repo
+unset REPO_KEY
 git -C /build checkout -q FETCH_HEAD
 
 printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
@@ -149,11 +142,10 @@ const UNIT = [
 ].join('\n');
 
 /**
- * The builder machine's cloud-init: the values, the bake file, the commands of its keyless containers, the script, and a unit started once.
- * The script runs on Scaleway's `docker` image: it takes the builder key from its read-once bundle with the boot key, fetches the release's
- * commit (with the repository read key the bundle carries for a private repository), builds the boot bundle and the frontend in `node`
- * containers that hold no key, then pushes the images and uploads the frontend files with the builder key, and reports each step to the
- * boot-diagnostics bucket with the boot key.
+ * The builder machine's cloud-init: the values (the builder key and a private repository's read key among them), the bake file, the commands
+ * of its keyless containers, the script, and a unit started once. The script runs on Scaleway's `docker` image: it fetches the release's
+ * commit, builds the boot bundle and the frontend in `node` containers that hold no key, then pushes the images, uploads the frontend files and
+ * reports each step to the boot-diagnostics bucket with the builder key.
  */
 export function builderCloudConfig(opts: {
   values: BuilderValues;

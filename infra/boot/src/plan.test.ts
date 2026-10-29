@@ -85,34 +85,17 @@ describe('parseBootPlanJson', () => {
     const credentials = (scwAccessKeyFile: string) => ({ credentials: { scwAccessKeyFile, scwSecretKeyFile: '/etc/cella/scw-secret-key' } });
     expect(() => parseBootPlanJson(plan(credentials('/etc/ssh/x')))).toThrow(/outside the allowed/);
     expect(() => parseBootPlanJson(plan(credentials('/etc/runtime-secrets/x')))).toThrow(/outside the allowed/);
-    const handoff = (cacheFile: string) => ({ serviceKeyHandoffs: [{ service: 'backend', secretId: 's', cacheFile }] });
-    expect(() => parseBootPlanJson(plan(handoff('/etc/sudoers.d/x')))).toThrow(/outside the allowed/);
-    expect(() => parseBootPlanJson(plan(handoff('/etc/cella-other/service-key.json')))).toThrow(/outside the allowed/);
+    const coHosted = (file: string) => ({ serviceSecretKeyFiles: { cdc: file } });
+    expect(() => parseBootPlanJson(plan(coHosted('/etc/sudoers.d/x')))).toThrow(/outside the allowed/);
+    expect(() => parseBootPlanJson(plan(coHosted('/etc/cella-other/scw-secret-key-cdc')))).toThrow(/outside the allowed/);
     expect(() => parsePlan(plan(), '/etc/acme/boot-plan.json')).toThrow(/outside the allowed/);
   });
 
-  it('must not take two keys for one service: the second bundle would never be read', () => {
-    const twice = { serviceKeyHandoffs: [0, 1].map((n) => ({ service: 'backend', secretId: `s${n}`, cacheFile: `/etc/cella/k${n}.json` })) };
-    expect(() => parseBootPlanJson(plan(twice))).toThrow(/names a service twice/);
-  });
-
   it('accepts the paths the plan producer writes (positive control)', () => {
-    const parsed = parseBootPlanJson(plan(handoffPlan()));
+    const parsed = parseBootPlanJson(plan({ serviceSecretKeyFiles: { cdc: '/etc/cella/scw-secret-key-cdc' } }));
     expect(parsed.credentials.scwAccessKeyFile).toBe('/etc/cella/scw-access-key');
-    expect(parsed.serviceKeyHandoffs?.map((handoff) => handoff.cacheFile)).toEqual([
-      '/etc/cella/service-key-backend.json',
-      '/etc/cella/service-key-cdc.json',
-    ]);
+    expect(parsed.serviceSecretKeyFiles).toEqual({ cdc: '/etc/cella/scw-secret-key-cdc' });
     expect(parsed.docker.composeFile).toBe('/opt/app/compose.yml');
     expect(parsed.bootDiagnostics.logFile).toBe('/var/log/infra-boot.log');
   });
 });
-
-function handoffPlan() {
-  return {
-    serviceKeyHandoffs: [
-      { service: 'backend', secretId: 'secret-backend', cacheFile: '/etc/cella/service-key-backend.json' },
-      { service: 'cdc', secretId: 'secret-cdc', cacheFile: '/etc/cella/service-key-cdc.json' },
-    ],
-  };
-}

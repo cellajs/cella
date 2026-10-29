@@ -39,9 +39,9 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
     await startTargetAfterRotation(context, operatorKey).catch((error) =>
       console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
     );
-    // After a compromise the rotation is followed by a look at what an intruder may have left: the inventory, on the new observer key and,
-    // for the machines, the operator key.
-    await printInventory({ ...context, operatorSecretKey: operatorKey.secretKey }).catch((error) =>
+    // After a compromise the rotation is followed by a look at what an intruder may have left: the inventory, on the observer key and, for
+    // the machines, the operator key.
+    await printInventory({ ...context, operatorKey }).catch((error) =>
       console.warn(`${warningMark} Could not read the inventory (${errorMessage(error)}): \`${actionCommand('status')}\` shows it.`),
     );
   } else await runOperatorPart(context, operatorKey, moment);

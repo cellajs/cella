@@ -10,10 +10,10 @@ export interface DeclaredIdentities {
   policies: MachinePolicy[];
 }
 
-/** The machine identities' applications: one per registry service, the boot fetcher and the builder. */
+/** The machine identities' applications: one per registry service and the builder. */
 export function machineApplications(slug: string, mode: string): string[] {
   const names = principalNames(slug, mode);
-  return [...principalServices().map((svc) => names.vmService(svc.slug)), names.boot, names.builder];
+  return [...principalServices().map((svc) => names.vmService(svc.slug)), names.builder];
 }
 
 /** Every identity an environment's code declares: the machine identities and the deploy key, with their policies. */

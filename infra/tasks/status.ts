@@ -10,6 +10,7 @@ import {
   formatKeyLine,
   hoursUntilExpiry,
   type KeyDescription,
+  type KeyPair,
   type PrincipalRole,
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
@@ -47,8 +48,8 @@ export interface StatusContext {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
-  /** The operator key's secret, when the run holds it: the machines are listed with it. */
-  operatorSecretKey?: string;
+  /** The operator key, when the run holds it: the machines are listed and the checkpoint read with it. */
+  operatorKey?: KeyPair;
 }
 
 /** An S3-style NoSuchBucket, distinct from a missing control object (bucket exists). */
@@ -119,8 +120,17 @@ export function buildSession(ctx: StatusContext): ProbeSession {
             // Leave lock undefined (reported as unknown).
           }
           try {
-            // One GET of the checkpoint the state backend stores here; no checkpoint stays undefined (reported as unknown).
-            out.pendingOperations = await readPendingOperations(s3, bucket, ctx.mode);
+            // One GET of the checkpoint the state backend stores here, which only the deploy key and the operator read; no checkpoint stays
+            // undefined (reported as unknown).
+            const { operatorKey } = ctx;
+            if (operatorKey) {
+              const operator = await makeControlClient(
+                ctx.appConfig.s3.region,
+                projectId ? projectAccessKey(operatorKey.accessKey, projectId) : operatorKey.accessKey,
+                operatorKey.secretKey,
+              );
+              out.pendingOperations = await readPendingOperations(operator, bucket, ctx.mode);
+            }
           } catch {
             // Leave pendingOperations undefined (reported as unknown).
           }
@@ -142,7 +152,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     scalewayKeyAvailable,
     accessKey,
     secretKey,
-    operatorSecretKey: ctx.operatorSecretKey,
+    operatorKey: ctx.operatorKey,
     hasDomain,
     computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
     dbExposureConfigured: dbExposureConfigured(ctx.mode, ctx.stackYaml),
@@ -193,7 +203,7 @@ export async function runStatus(context: {
   state: StackState;
   stackYaml?: string;
   projectId: string;
-  operatorSecretKey?: string;
+  operatorKey?: KeyPair;
 }): Promise<void> {
   const report = await withSpinner('Checking infra status', () =>
     buildReport({
@@ -202,7 +212,7 @@ export async function runStatus(context: {
       stackState: context.state,
       stackYaml: context.stackYaml,
       projectId: context.projectId || undefined,
-      operatorSecretKey: context.operatorSecretKey,
+      operatorKey: context.operatorKey,
     }),
   );
   printReport(report, { json: false });
@@ -216,7 +226,7 @@ export async function printInventory(context: Parameters<typeof runStatus>[0]): 
     stackState: context.state,
     stackYaml: context.stackYaml,
     projectId: context.projectId || undefined,
-    operatorSecretKey: context.operatorSecretKey,
+    operatorKey: context.operatorKey,
   });
   const inventory = report.checks.filter((check) => check.id.startsWith('inventory.'));
   console.info(`\n${pc.bold('Inventory')} ${pc.dim('(what exists beside what the environment declares)')}`);

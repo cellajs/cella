@@ -8,8 +8,6 @@ export interface PrincipalNames {
   admin: string;
   /** Per-service VM application. */
   vmService: (service: string) => string;
-  /** Boot fetcher application: registry pull and handoff-secret read. */
-  boot: string;
   /** Builder application: pushes a release's images and writes its frontend files, on a builder machine the deploy makes. */
   builder: string;
 }
@@ -30,7 +28,6 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
     ciDeploy: `${prefix}-ci-deploy`,
     admin: `${prefix}-admin`,
     vmService: (service: string) => `${prefix}-vm-${service}`,
-    boot: `${prefix}-boot`,
     builder: `${prefix}-builder`,
   };
 }

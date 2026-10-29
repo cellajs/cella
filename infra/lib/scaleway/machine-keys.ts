@@ -1,31 +1,43 @@
+import { actionCommand } from '../operator-actions';
 import { principalServices } from '../services';
 import { principalNames } from './principals';
+import type { SecretManagerSecret } from './scaleway-secret-manager';
+import { DEPLOY_FOLDER } from './secret-paths';
 
-/** One machine identity: a registry service, the boot fetcher or the builder, and its IAM application. */
+/** One machine identity: a registry service or the builder, and its IAM application. */
 export interface MachinePrincipal {
-  /** The service slug, `boot` or `builder`. */
+  /** The service slug, or `builder`. */
   principal: string;
   application: string;
 }
 
-/** Every machine identity of an environment: one per registry service, wherever it runs, the boot fetcher and the builder. */
+/** Every machine identity of an environment: one per registry service, wherever it runs, and the builder. */
 export function machinePrincipals(slug: string, mode: string): MachinePrincipal[] {
   const names = principalNames(slug, mode);
   return [
     ...principalServices().map((svc) => ({ principal: svc.slug, application: names.vmService(svc.slug) })),
-    { principal: 'boot', application: names.boot },
     { principal: 'builder', application: names.builder },
   ];
-}
-
-/** How a deploy's keys file names one service's hand-over bundle: by service and release, so a machine of another release finds none. */
-export function handoffBundleKey(service: string, releaseSha: string): string {
-  return `${service}@${releaseSha}`;
 }
 
 /** The Secret Manager container, in the deploy folder, that holds a principal's standing key. */
 export function machineKeyName(principal: string): string {
   return `machine-key-${principal}`;
+}
+
+/** Each running service's standing key, by service: what a deploy writes into the cloud-init of the machines it makes. */
+export type GenerationKeys = Record<string, { accessKey: string; secretKey: string }>;
+
+/** A principal's standing key, read from the deploy folder with a key that reads its values: the deploy key's or the operator's. */
+export async function readStandingKey(
+  secrets: { listSecretsUnder(root: string): Promise<SecretManagerSecret[]>; accessLatestValue(secretId: string): Promise<string> },
+  principal: string,
+): Promise<{ accessKey: string; secretKey: string }> {
+  const container = (await secrets.listSecretsUnder(DEPLOY_FOLDER)).find(
+    (secret) => secret.name === machineKeyName(principal) && (secret.version_count ?? 0) > 0,
+  );
+  if (!container) throw new Error(`no standing key for ${principal} in the deploy folder: \`${actionCommand('identity')}\` makes it`);
+  return JSON.parse(await secrets.accessLatestValue(container.id)) as { accessKey: string; secretKey: string };
 }
 
 /**
@@ -52,7 +64,7 @@ export interface MachineKeyStep extends MachinePrincipal {
 
 /**
  * The step of one principal: `make` when no standing key is stored or the stored one is no longer live, `prune` when the application holds
- * keys beside it (a key nobody hands over is a key nobody watches), `none` otherwise.
+ * keys beside it (a key no deploy gives a machine is a key nobody watches), `none` otherwise.
  */
 export function machineKeyStep(principal: MachinePrincipal, stored: string | undefined, live: readonly string[]): MachineKeyStep {
   const extra = live.filter((accessKey) => accessKey !== stored);

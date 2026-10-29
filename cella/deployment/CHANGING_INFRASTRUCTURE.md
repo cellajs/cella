@@ -42,8 +42,8 @@ Every pull request gets the keyless `privileged-changes` check. Its summary name
 
 ## Machine policies
 
-The machines' IAM applications and their policies follow the **service registry** ([config/services.config.ts](../../infra/config/services.config.ts)), not the enabled set: every registry service has an application whose policy reads its own secret folder, wherever it runs. Toggling `enabled` or `singleVM` therefore changes no identity. Neither does a change to a runtime secret's consumers, as each consumer keeps its own copy in its own folder.
+The machines' IAM applications and their policies follow the **service registry** ([config/services.config.ts](../../infra/config/services.config.ts)), not the enabled set: every registry service has an application whose policy reads its own secret folder, pulls the release's images and writes its boot accounts, wherever it runs. Toggling `enabled` or `singleVM` therefore changes no identity. Neither does a change to a runtime secret's consumers, as each consumer keeps its own copy in its own folder.
 
 They are IAM, so only an Owner moment writes them: the setup, then **Update identities** (`pnpm infra identity`) after a change to the registry. It reads what differs with the observer key and asks for an Owner API key only when something has to change. Until then the next deploy stops at "Verify identity grants".
 
-A deploy also stops at "Stage machine keys" when an identity holds a key beside its standing one. **Update identities** deletes such a key; **Rotate keys** replaces every key and deletes the rest.
+A deploy also stops at "Read machine keys" when an identity holds a key beside its standing one. **Update identities** deletes such a key; **Rotate keys** replaces every key and deletes the rest.

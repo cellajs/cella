@@ -2,7 +2,7 @@ import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaredIdentities } from '../../lib/scaleway/declared-identities';
 import { IAM_BASE, type IamAuth, listOrganizationPolicies, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
-import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
+import { type MachineKeyStep, machineKeyName } from '../../lib/scaleway/machine-keys';
 import type { MachinePolicy } from '../../lib/scaleway/machine-policies';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, appPrincipalNames, principalNames } from '../../lib/scaleway/principals';
@@ -10,7 +10,7 @@ import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwSend } from '../../lib/scaleway/scw-fetch';
-import { ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
+import { DEPLOY_FOLDER, ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
@@ -28,6 +28,12 @@ export interface RetiredAdmin {
   name: string;
   id: string;
   removable: boolean;
+}
+
+/** The retired boot application, `<slug>-<mode>-boot`, whose key every machine's cloud-init carried before each service key did. */
+export interface RetiredBoot {
+  name: string;
+  id: string;
 }
 
 /** What an identity update would change for the machines and the deploy: the applications the registry lacks, each policy, each standing key. */
@@ -52,6 +58,7 @@ export interface IdentityPlan extends MachineIdentityPlan {
   extraPolicies: ExtraPolicy[];
   observer: ObserverStep;
   retiredAdmin?: RetiredAdmin;
+  retiredBoot?: RetiredBoot;
 }
 
 /** True when the plan changes nothing. A retired admin application that must stay is no change. */
@@ -62,7 +69,8 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
     plan.keys.every((step) => step.change === 'none') &&
     plan.extraPolicies.length === 0 &&
     plan.observer === 'none' &&
-    !plan.retiredAdmin?.removable
+    !plan.retiredAdmin?.removable &&
+    !plan.retiredBoot
   );
 }
 
@@ -100,6 +108,7 @@ export function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNa
     ...plan.extraPolicies.map((policy) => `policy ${policy.name} on ${policy.application}: beside the declared one, to delete`),
     ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
     ...(plan.retiredAdmin?.removable ? [`application ${plan.retiredAdmin.name}: retired, to delete with its keys and its custody secret`] : []),
+    ...(plan.retiredBoot ? [`application ${plan.retiredBoot.name}: retired, to delete with its key, its standing key and its hand-over folder`] : []),
   ];
 }
 
@@ -124,6 +133,17 @@ async function retiredAdmin(
     () => false,
   );
   return { name, id, removable };
+}
+
+/** The environment's retired boot application, when it still exists. */
+async function retiredBoot(
+  auth: IamAuth,
+  organizationId: string,
+  context: Pick<InfraContext, 'appConfig' | 'environment'>,
+): Promise<RetiredBoot | undefined> {
+  const name = `${context.appConfig.slug}-${context.environment}-boot`;
+  const id = await resolveApplicationIdByName(auth, organizationId, name);
+  return id ? { name, id } : undefined;
 }
 
 /** A Secret Manager client in the environment's project. */
@@ -218,6 +238,7 @@ async function planIdentities(
     extraPolicies: await extraPolicies(auth, organizationId, declaredPolicies(context, organizationId)),
     observer: observerStep(observer.length > 0, context.environment),
     retiredAdmin: await retiredAdmin(auth, organizationId, context),
+    retiredBoot: await retiredBoot(auth, organizationId, context),
   };
 }
 
@@ -232,6 +253,18 @@ async function deleteRetiredAdmin(
   const custody = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, ENGINE_FOLDER);
   if (custody) await secrets.deleteSecret(custody.id);
   console.info(`  ${changeMark} '${admin.name}' deleted, with its custody secret.`);
+}
+
+/** Delete the retired boot application with its key and policy, its standing key in the deploy folder, and every bundle left under `/handoff/`. */
+async function deleteRetiredBoot(ownerKey: OwnerKey, context: Pick<InfraContext, 'appConfig' | 'projectId'>, boot: RetiredBoot): Promise<void> {
+  await deleteApplicationCascade({ callerSecretKey: ownerKey.secretKey, organizationId: ownerKey.organizationId, applicationId: boot.id });
+  const secrets = secretsFor(context, ownerKey.secretKey);
+  const left = [
+    ...(await secrets.listSecretsUnder(DEPLOY_FOLDER)).filter((secret) => secret.name === machineKeyName('boot')),
+    ...(await secrets.listSecretsUnder('/handoff/')),
+  ];
+  for (const secret of left) await secrets.deleteSecret(secret.id);
+  console.info(`  ${changeMark} '${boot.name}' deleted, with ${left.length} secret(s) it read or a deploy wrote for it.`);
 }
 
 /**
@@ -299,6 +332,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
     }
     if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
     if (plan.retiredAdmin?.removable) await deleteRetiredAdmin(ownerKey, context, plan.retiredAdmin);
+    if (plan.retiredBoot) await deleteRetiredBoot(ownerKey, context, plan.retiredBoot);
     console.info(`${checkMark} The identities of ${context.environment} are written.`);
   } finally {
     await ownerKey.release();
