@@ -7,6 +7,7 @@ import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { useChangeEntityRoleMutation } from '~/modules/memberships/query-mutations';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
@@ -51,21 +52,23 @@ export function OrganizationsTable() {
         setColumns={setColumns}
         clearSelection={clearSelection}
       />
-      <DataTable<EnrichedOrganization>
-        {...{
-          ...list,
-          onRowsChange,
-          rowKeyGetter: rowKeyById,
-          columns,
-          enableVirtualization: true,
-          isFiltered: !!q,
-          selectedRows: selectedRowIds,
-          onSelectedRowsChange,
-          sortColumns,
-          onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:organization_other') }} />,
-        }}
-      />
+      <SearchScope q={q}>
+        <DataTable<EnrichedOrganization>
+          {...{
+            ...list,
+            onRowsChange,
+            rowKeyGetter: rowKeyById,
+            columns,
+            enableVirtualization: true,
+            isFiltered: !!q,
+            selectedRows: selectedRowIds,
+            onSelectedRowsChange,
+            sortColumns,
+            onSortColumnsChange,
+            NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:organization_other') }} />,
+          }}
+        />
+      </SearchScope>
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
@@ -46,20 +47,22 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         />
       )}
 
-      <BaseEntityGrid
-        label="c:organization"
-        renderTile={(entity) => <ChannelTile entity={entity} hideOwnRole={ofAnotherUser} />}
-        entities={entities}
-        isLoading={isLoading}
-        isFetching={isFetching}
-        error={error}
-        hasNextPage={hasNextPage}
-        fetchMore={fetchMore}
-        isFiltered={isFiltered}
-        limitedView={limitedView}
-        onExpand={() => setExpanded(true)}
-        queryKey={queryOptions.queryKey}
-      />
+      <SearchScope q={search.q}>
+        <BaseEntityGrid
+          label="c:organization"
+          renderTile={(entity) => <ChannelTile entity={entity} hideOwnRole={ofAnotherUser} />}
+          entities={entities}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          error={error}
+          hasNextPage={hasNextPage}
+          fetchMore={fetchMore}
+          isFiltered={isFiltered}
+          limitedView={limitedView}
+          onExpand={() => setExpanded(true)}
+          queryKey={queryOptions.queryKey}
+        />
+      </SearchScope>
     </div>
   );
 }

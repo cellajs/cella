@@ -16,6 +16,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
@@ -84,26 +85,28 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
         canUpload={allowUpload}
         queryKey={isDefaultView ? canonicalOptions.queryKey : queryOptions.queryKey}
       />
-      <DataTable<Attachment>
-        {...{
-          rows,
-          onRowsChange,
-          rowKeyGetter: rowKeyById,
-          columns,
-          enableVirtualization: true,
-          error,
-          isLoading,
-          isFetching,
-          isFiltered: !!q,
-          hasNextPage: !isDefaultView && filtered.hasNextPage,
-          fetchMore: filtered.fetchMore,
-          selectedRows: selectedRowIds,
-          onSelectedRowsChange,
-          sortColumns,
-          onSortColumnsChange,
-          NoRowsComponent,
-        }}
-      />
+      <SearchScope q={q}>
+        <DataTable<Attachment>
+          {...{
+            rows,
+            onRowsChange,
+            rowKeyGetter: rowKeyById,
+            columns,
+            enableVirtualization: true,
+            error,
+            isLoading,
+            isFetching,
+            isFiltered: !!q,
+            hasNextPage: !isDefaultView && filtered.hasNextPage,
+            fetchMore: filtered.fetchMore,
+            selectedRows: selectedRowIds,
+            onSelectedRowsChange,
+            sortColumns,
+            onSortColumnsChange,
+            NoRowsComponent,
+          }}
+        />
+      </SearchScope>
     </>
   );
 }

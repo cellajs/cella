@@ -6,7 +6,7 @@ import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 /** Tenant columns a response carries. */
 const tenantColumns = pick(tenantsTable, [
@@ -71,7 +71,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   const { db } = ctx.var;
   const { q, status, sort, order, limit, offset } = opts;
 
-  const filter = and(q ? textSearchFilter(tenantsTable.name, q) : undefined, status ? eq(tenantsTable.status, status) : undefined);
+  const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined);
 
   const orderBy = getOrderColumns({
     sort,

@@ -4,6 +4,7 @@ import type { UserBase } from 'sdk';
 import { type ChannelEntityType, isChannel } from 'shared';
 import { CloseButton } from '~/modules/common/close-button';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
@@ -63,7 +64,7 @@ export function SearchResultBlock({
             <div className="flex min-w-0 items-center gap-2">
               <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
               <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
-                {item.name}
+                <HighlightText text={item.name} />
               </span>
             </div>
 

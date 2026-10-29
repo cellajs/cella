@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, getTableName, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, getTableName, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { appConfig, entityIdColumnName } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -15,7 +15,7 @@ import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 // Every attachment read and write below carries the request's tenant + organization predicate, so the result is the
 // same with RLS bypassed; the RLS transaction wrappers stay the backstop.
@@ -105,17 +105,8 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
-  const search = q?.trim();
-  if (search) {
-    filters.push(
-      or(
-        textSearchFilter(attachmentsTable.name, search),
-        textSearchFilter(attachmentsTable.filename, search),
-        textSearchFilter(attachmentsTable.contentType, search),
-        textSearchFilter(attachmentsTable.keywords, search),
-      ) as SQL,
-    );
-  }
+  const search = searchFilter([attachmentsTable.name, attachmentsTable.filename, attachmentsTable.contentType, attachmentsTable.keywords], q);
+  if (search) filters.push(search);
 
   const orderBy =
     rangeRead.orderBy ??

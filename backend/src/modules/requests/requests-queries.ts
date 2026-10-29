@@ -5,7 +5,7 @@ import { type RequestModel, requestsTable } from '#/modules/requests/requests-db
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 /** A request's columns as responses carry them: `invitedAt` travels as `wasInvited`. */
 const { invitedAt, ...requestColumns } = getColumns(requestsTable);
@@ -37,7 +37,7 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   const { db } = ctx.var;
   const { q, sort, order, limit, offset } = opts;
 
-  const filter = q ? textSearchFilter(requestsTable.email, q) : undefined;
+  const filter = searchFilter([requestsTable.email], q);
 
   const orderBy = getOrderColumns({
     sort,

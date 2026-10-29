@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, lte, max, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, lte, max, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext } from '#/core/context';
@@ -13,7 +13,7 @@ import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpe
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 interface CountMembershipsByChannelOpts {
   channelType: ChannelEntityType;
@@ -154,7 +154,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
   const { db } = ctx.var;
   const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
 
-  const searchFilters = q ? [textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q)] : [];
+  const search = searchFilter([usersTable.name, usersTable.email], q);
 
   const membersFilters: SQL[] = [
     eq(membershipsTable.organizationId, organizationId),
@@ -193,7 +193,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .innerJoin(actorsTable, userActorJoin)
-    .where(and(...membersFilters, or(...searchFilters)));
+    .where(and(...membersFilters, search));
 
   const itemsQuery = membersQuery
     .orderBy(...orderBy)
@@ -205,7 +205,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .select({ id: usersTable.id })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
-    .where(and(...membersFilters, or(...searchFilters)));
+    .where(and(...membersFilters, search));
 
   return resolveListTotal(itemsQuery, {
     kind: 'exact',

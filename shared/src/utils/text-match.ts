@@ -29,6 +29,22 @@ export const matchesTerms = (foldedFields: string[], terms: string[], mode: Matc
   return mode === 'all' ? terms.every(hasTerm) : terms.some(hasTerm);
 };
 
+const wordChar = /[\p{L}\p{N}]/u;
+
+/**
+ * Whether a folded field holds `term` with no letter or digit right before or after it: a whole word, or a whole
+ * phrase. Exclusions match this way, so `-api` spares "rapid".
+ */
+export const containsWord = (foldedField: string, term: string): boolean => {
+  if (!term) return false;
+  for (let at = foldedField.indexOf(term); at !== -1; at = foldedField.indexOf(term, at + 1)) {
+    const before = foldedField[at - 1];
+    const after = foldedField[at + term.length];
+    if ((!before || !wordChar.test(before)) && (!after || !wordChar.test(after))) return true;
+  }
+  return false;
+};
+
 /**
  * Folds one code point at a time so each folded code unit knows the original offset it came from.
  * A dropped combining mark adds nothing; an expansion ("İ" folds to two units) repeats its offset.

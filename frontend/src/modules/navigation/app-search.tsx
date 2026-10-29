@@ -11,6 +11,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -191,18 +192,20 @@ export function AppSearch() {
             )}
             {notFound && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
             {!notFound && (
-              <div className="p-1">
-                {searchableEntityTypes.map((entityType) => (
-                  <SearchResultBlock
-                    key={entityType}
-                    results={resultsByType[entityType] ?? []}
-                    entityType={entityType}
-                    hideSeparator={entityType === firstTypeWithResults}
-                    collapsed={!!collapsedTypes[entityType]}
-                    onToggleCollapsed={() => toggleCollapsed(entityType)}
-                  />
-                ))}
-              </div>
+              <SearchScope q={debouncedSearchValue}>
+                <div className="p-1">
+                  {searchableEntityTypes.map((entityType) => (
+                    <SearchResultBlock
+                      key={entityType}
+                      results={resultsByType[entityType] ?? []}
+                      entityType={entityType}
+                      hideSeparator={entityType === firstTypeWithResults}
+                      collapsed={!!collapsedTypes[entityType]}
+                      onToggleCollapsed={() => toggleCollapsed(entityType)}
+                    />
+                  ))}
+                </div>
+              </SearchScope>
             )}
           </ComboboxList>
         </ScrollArea>

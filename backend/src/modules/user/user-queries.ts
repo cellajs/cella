@@ -1,4 +1,4 @@
-import { and, count, eq, exists, inArray, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
@@ -13,7 +13,7 @@ import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/module
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 /** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
 const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
@@ -46,7 +46,8 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
   const filters: SQL[] = [];
   if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
   if (role) filters.push(eq(systemRolesTable.role, role));
-  if (q) filters.push(or(textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q))!);
+  const search = searchFilter([usersTable.name, usersTable.email], q);
+  if (search) filters.push(search);
 
   const usersQuerySelect = { ...memberSelect, role: systemRolesTable.role };
   const baseQuery = db

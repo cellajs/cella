@@ -1,26 +1,30 @@
 import { useMemo } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
+import { matchesSearch, parseSearchQuery } from 'shared/utils/parse-search-query';
+import { foldText } from 'shared/utils/text-match';
 
 /** The filter value for operations exposed as MCP tools; tag filters always hold a colon, so it never collides. */
 export const mcpToolFilter = 'mcp';
 
 interface FilterOptions {
-  /** Free-text query; space-separated terms are AND-combined. */
+  /** Free-text query in the shared search grammar (`parseSearchQuery`). */
   q: string;
   /** `${kind}:${value}` (e.g. `'owner:cella'`) keeps the operations whose `tagsByKind[kind]` holds `value`; `mcpToolFilter` keeps MCP tools. */
   tag?: string;
 }
 
-/** Match a single search term against any text-like field of an operation. */
-const matchesTerm = (op: GenOperationSummary, term: string): boolean =>
-  op.summary.toLowerCase().includes(term) ||
-  op.id.toLowerCase().includes(term) ||
-  op.method.toLowerCase().includes(term) ||
-  op.path.toLowerCase().includes(term) ||
-  op.description.toLowerCase().includes(term) ||
-  op.tags.some((tag) => tag.toLowerCase().includes(term)) ||
-  Object.values(op.tagsByKind).some((values) => values.some((value) => value.toLowerCase().includes(term))) ||
-  Object.values(op.extensions).some((values) => values.some((value) => value.toLowerCase().includes(term)));
+/** An operation's text fields, folded for `matchesSearch`. */
+const searchFields = (op: GenOperationSummary) =>
+  [
+    op.summary,
+    op.id,
+    op.method,
+    op.path,
+    op.description,
+    ...op.tags,
+    ...Object.values(op.tagsByKind).flat(),
+    ...Object.values(op.extensions).flat(),
+  ].map(foldText);
 
 export function useFilteredOperations(operations: GenOperationSummary[], { q, tag }: FilterOptions) {
   return useMemo(() => {
@@ -36,9 +40,9 @@ export function useFilteredOperations(operations: GenOperationSummary[], { q, ta
       }
     }
 
-    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!terms.length) return ops;
+    const search = parseSearchQuery(q);
+    if (!search.effectiveQ) return ops;
 
-    return ops.filter((op) => terms.every((term) => matchesTerm(op, term)));
+    return ops.filter((op) => matchesSearch(searchFields(op), search));
   }, [operations, q, tag]);
 }

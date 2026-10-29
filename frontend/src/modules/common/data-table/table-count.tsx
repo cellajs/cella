@@ -26,14 +26,11 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
           {t('c:clear')}
         </Button>
       )}
-      {typeof count === 'number' && (
-        <>
-          <div className="text-muted-foreground">
-            {t(isFiltered ? 'c:resource_count_found' : 'c:resource_count', { count, resource: t(label, { count }) })}
-          </div>
-          {children}
-        </>
-      )}
+      {/* Mounted while the count loads too: a status region announces changes only once it exists */}
+      <div role="status" className="text-muted-foreground">
+        {typeof count === 'number' && t(isFiltered ? 'c:resource_count_found' : 'c:resource_count', { count, resource: t(label, { count }) })}
+      </div>
+      {typeof count === 'number' && children}
     </div>
   );
 }

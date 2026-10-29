@@ -97,7 +97,13 @@ export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?
 
 /** Search, sort and paging: newest first from offset 0, the configured default `limit` when absent, at most 1000. */
 export const paginationQuerySchema = z.object({
-  q: z.string().max(maxLength.field).optional(),
+  q: z
+    .string()
+    .max(maxLength.field)
+    .optional()
+    .describe(
+      'Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.',
+    ),
   sort: z.enum(['createdAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
   offset: integerQuerySchema({ error: translatedError('error:invalid_offset') }).default(0),

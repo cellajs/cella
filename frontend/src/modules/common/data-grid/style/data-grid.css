@@ -5,6 +5,12 @@
   grid-row: 1;
 }
 
+/* A cell scrolled into view (arrow keys, focus) lands below what pins over the list: the sticky stack (page tabs, a
+   phone's open search) and the grid's own header. */
+.rdg-cell {
+  scroll-margin-top: calc(max(var(--sticky-stack-top, 0px), var(--sticky-stack-nav, 0px)) + var(--rdg-header-row-height, 0px));
+}
+
 /* Show the last frozen cell shadow only when the grid is scrolled horizontally. */
 [data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
   box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);

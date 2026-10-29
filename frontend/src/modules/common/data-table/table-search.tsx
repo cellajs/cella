@@ -1,75 +1,37 @@
 import { useIsFetching } from '@tanstack/react-query';
-import { useContext, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useDebounce } from '~/hooks/use-debounce';
-import { useFocusByRef } from '~/hooks/use-focus-by-ref';
+import { useContext } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
-import { SearchClearButton } from '~/modules/common/search-clear-button';
-import { SearchSpinner } from '~/modules/common/search-spinner';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
-import { cn } from '~/utils/cn';
+import { SearchField } from '~/modules/common/search-field';
 
 interface TableSearchProps {
   name: string;
+  /** Names what the list holds, as "Search organizations": the placeholder and the accessible name. */
+  label: string;
   value?: string;
   allowOfflineSearch?: boolean;
   onSearch: (value: string) => void;
 }
 
-export function TableSearch({ name, value = '', allowOfflineSearch = false, onSearch }: TableSearchProps) {
-  const { t } = useTranslation();
+export function TableSearch({ name, label, value = '', allowOfflineSearch = false, onSearch }: TableSearchProps) {
   const isOnline = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
   const appFetchingCount = useIsFetching();
 
-  const { focusRef: inputRef, setFocus } = useFocusByRef({ trigger: isFilterActive, delay: 50 });
-  const [inputValue, setInputValue] = useState(value);
-
-  const isSearching = appFetchingCount > 0 && !!inputValue.length;
-  const debouncedQuery = useDebounce(inputValue, 250);
-
-  useEffect(() => {
-    if (debouncedQuery !== value) onSearch(debouncedQuery);
-  }, [debouncedQuery]);
-
-  useEffect(() => {
-    if (!inputRef.current || document.activeElement !== inputRef.current) setInputValue(value);
-  }, [value]);
-
   return (
-    // The bar's own edge frames this field
-    <InputGroup className="edgeless">
-      <InputGroupInput
-        className="pl-0!"
-        disabled={!isOnline && !allowOfflineSearch}
-        placeholder={t('c:placeholder.search')}
-        name={name}
-        value={inputValue}
-        onChange={(event) => setInputValue(event.target.value)}
-        // On a phone's open search the search key only lowers the keyboard; the list already follows the typing
-        enterKeyHint="search"
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && isFilterActive) event.currentTarget.blur();
-        }}
-        ref={inputRef}
-        aria-label={t('c:placeholder.search')}
-      />
-
-      <InputGroupAddon className="pl-1.5">
-        <SearchSpinner value={inputValue} isSearching={isSearching} />
-      </InputGroupAddon>
-
-      <InputGroupAddon className="pr-2" align="inline-end">
-        <SearchClearButton
-          className={cn(!inputValue.length && 'invisible')}
-          onClick={() => {
-            setInputValue('');
-            onSearch('');
-            setFocus();
-          }}
-        />
-      </InputGroupAddon>
-    </InputGroup>
+    <SearchField
+      name={name}
+      label={label}
+      value={value}
+      onSearch={onSearch}
+      // The bar's own edge frames this field
+      className="edgeless"
+      disabled={!isOnline && !allowOfflineSearch}
+      isSearching={appFetchingCount > 0 && !!value}
+      // On a phone's open search the search key only lowers the keyboard; the list already follows the typing
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && isFilterActive) event.currentTarget.blur();
+      }}
+    />
   );
 }
