@@ -35,8 +35,8 @@ interface TabRow {
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
 // The top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
 const helpLabelCellClass = tw('justify-start pt-[calc((var(--rdg-row-height)-1.5rem)/2)] pb-3');
-// The other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
-const firstLineCellClass = tw('h-(--rdg-row-height) justify-center self-start');
+// The other cells keep their content on the row's first line, so nothing shifts while a description unfolds, and still fill the row
+const firstLineCellClass = tw('grid grid-rows-(--rdg-row-height) content-start justify-center');
 
 function renderRowDragPreview(row: TabRow) {
   return <RowDragPreview name={row.name} />;
