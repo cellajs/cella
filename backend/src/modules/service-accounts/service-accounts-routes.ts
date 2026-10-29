@@ -87,7 +87,7 @@ const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Revoke API key',
-    description: 'Revokes an API key immediately. The row stays for the audit trail.',
+    description: 'Revokes an API key: it stops working within 10 seconds in every process. The row stays for the audit trail.',
     request: { params: apiKeyParamSchema },
     responses: { 200: json('API key was revoked', apiKeySchema) },
   }),

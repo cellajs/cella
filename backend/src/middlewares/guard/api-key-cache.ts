@@ -8,8 +8,8 @@ export interface ApiKeyCacheEntry {
   account: ServiceAccountModel;
 }
 
-// A minute: keys are used and revoked in the API process, which drops them at the revoke or disable.
-const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({ maxSize: 5000, defaultTtl: 60_000 });
+// 10 seconds, as the session cache: a revoke or disable drops the account's keys in its own process, another holds them that long.
+const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({ maxSize: 5000, defaultTtl: 10_000 });
 
 /**
  * The cached key and account for a key hash, or else what `read` resolves, cached for the key's next uses.
