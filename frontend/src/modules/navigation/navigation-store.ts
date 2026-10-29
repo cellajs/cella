@@ -28,9 +28,6 @@ interface NavigationStoreState {
 
   lastOrganizationId: string | null; // Organization the menu sheet last held alone, where the mobile menu opens outside organization pages
 
-  lastChannelIds: Record<string, string>; // Per organization id, the channel below it that its pages last showed, where its rail button lands
-  setLastChannelId: (organizationId: string, channelId: string) => void;
-
   keepNavOpen: boolean; // Nav sheet stays open beside the content
   setKeepNavOpen: (keepNavOpen: boolean) => void;
 
@@ -61,7 +58,6 @@ interface InitStore
     | 'navSheetOpen'
     | 'navSheetOrganizationId'
     | 'lastOrganizationId'
-    | 'lastChannelIds'
     | 'keepOpenPreference'
     | 'floatingNavActive'
     | 'navSheetPanel'
@@ -76,7 +72,6 @@ const initStore: InitStore = {
   navSheetOpen: null,
   navSheetOrganizationId: null,
   lastOrganizationId: null,
-  lastChannelIds: {},
   keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
   floatingNavActive: false,
@@ -134,13 +129,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
               if (organizationId) state.lastOrganizationId = organizationId;
             });
           },
-          setLastChannelId: (organizationId, channelId) => {
-            // Every resolved navigation reports, a search change too: an unchanged id would still write the persisted store
-            if (get().lastChannelIds[organizationId] === channelId) return;
-            set((state) => {
-              state.lastChannelIds[organizationId] = channelId;
-            });
-          },
           setKeepNavOpen: (keepNavOpen) => {
             set((state) => {
               state.keepNavOpen = keepNavOpen;
@@ -186,7 +174,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
             recentSelections: state.recentSelections,
             searchCollapsedTypes: state.searchCollapsedTypes,
             lastOrganizationId: state.lastOrganizationId,
-            lastChannelIds: state.lastChannelIds,
           }),
           storage: createJSONStorage(() => idbKvStorage('navigation')),
         },
