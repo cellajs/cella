@@ -26,6 +26,8 @@
   "sso_email_exists.text": "Het e-mailadres dat je instelling heeft gedeeld, hoort al bij een account. Is dat van jou, log dan eerst in op dat account en koppel daarna je instellingsaccount via je accountinstellingen.",
   "sso_email_missing": "Geen e-mailadres gedeeld",
   "sso_email_missing.text": "Je instelling heeft geen e-mailadres gedeeld, dat een nieuw account nodig heeft. Vraag de helpdesk van je instelling het vrij te geven, of log op een andere manier in als je bent uitgenodigd.",
+  "sso_email_unproven": "Bevestig je e-mailadres",
+  "sso_email_unproven.text": "Je instelling heeft een e-mailadres buiten haar eigen domeinen gedeeld en bevestigt dus niet dat het adres van jou is. Bevestig het met een inloglink per e-mail en koppel daarna je instellingsaccount via je accountinstellingen.",
   "sso_not_active": "Inloggen via instelling niet actief",
   "sso_not_active.text": "De instelling heeft de toegang tot deze app nog niet geactiveerd, of de koppeling is uitgeschakeld. Vraag het de beheerder van de instelling, of log op een andere manier in als je bent uitgenodigd.",
   "sso_not_configured": "Inloggen via instelling is niet ingesteld",

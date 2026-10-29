@@ -8,8 +8,9 @@ import { usersTable } from '#/modules/user/user-db';
 
 /**
  * The inboxes proven to belong to an account: the sign-up address, plus any address whose verification link was clicked
- * (an OAuth connect on another address). A row is written only by such a proof, never on a provider's word alone, and
- * never deleted as a side effect, so every row is verified: a magic-link sign-in identifier. `users.email` stays the primary.
+ * (an OAuth connect on another address), plus an address an institution proves (`provesAddress`). A row is written only
+ * by such a proof, never on a provider's word alone, and never deleted as a side effect, so every row is verified: a
+ * magic-link sign-in identifier. `users.email` stays the primary.
  */
 export const emailsTable = snakeCase.table(
   'emails',
@@ -32,7 +33,7 @@ export const emailsTable = snakeCase.table(
 
 /**
  * What proved the inbox: a magic-link click, the click on the verification mail sent for a provider address, or a
- * sign-in through a federation that operates the mailbox it asserts (`addressAuthority`).
+ * sign-in through a federation for an address on its connection's domains (`provesAddress`).
  */
 export type EmailProof = 'magic' | EnabledOAuthProvider | FederationKey;
 

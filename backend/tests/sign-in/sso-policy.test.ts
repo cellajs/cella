@@ -92,7 +92,7 @@ describe("the tenant's sign-in policy", async () => {
 
     const viaSso = await call(getOrganization, {
       path,
-      headers: { ...defaultHeaders, Cookie: await createTestSession(student, { authStrategy: 'surfconext' }) },
+      headers: { ...defaultHeaders, Cookie: await createTestSession(student, { authStrategy: 'surfconext', connectionId: connection.id }) },
     });
     expect(viaSso.response.status).toBe(200);
 
@@ -117,6 +117,31 @@ describe("the tenant's sign-in policy", async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(student, { authStrategy: 'magic' }) },
     });
     expect(unpoliced.response.status).toBe(200);
+  });
+
+  it('must refuse a member of an SSO-only tenant who signs in through another connection', async () => {
+    const { organization, connection } = await seed({}, ['surfconext']);
+    const other = await seed({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'], config: { idpEntityIds: ['https://idp.uu.nl'] } });
+    const path = { tenantId: organization.tenantId, id: organization.id };
+
+    // Offboarded at the tenant's institution, the member also holds an account at another connected one.
+    const member = await createOrganizationAdminUser(`member-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
+    await linkIdentity(member, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
+    await linkIdentity(member, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: other.connection.id });
+    const signedIn = async (connectionId?: string) =>
+      call(getOrganization, {
+        path,
+        headers: { ...defaultHeaders, Cookie: await createTestSession(member, { authStrategy: 'surfconext', connectionId }) },
+      });
+
+    const elsewhere = await signedIn(other.connection.id);
+    await expectRefusal(elsewhere, 403, 'sso_required');
+    expect((elsewhere.error as { meta?: Record<string, unknown> })?.meta).toMatchObject({ connectionId: connection.id });
+    // A session that recorded no connection proves none either.
+    await expectRefusal(await signedIn(), 403, 'sso_required');
+
+    // Positive control: through the tenant's own connection.
+    expect((await signedIn(connection.id)).response.status).toBe(200);
   });
 
   it('mails no magic link to an address the institution proved while the tenant excludes magic links', async () => {

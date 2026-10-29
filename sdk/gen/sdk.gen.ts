@@ -1198,7 +1198,7 @@ export const ssoCallback = <ThrowOnError extends boolean = true>(
 /**
  * Send an SSO recovery link
  *
- * For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
+ * For a browser whose institution sign-in was refused because an account already holds the asserted address or the institution does not prove it: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
  *
  * **POST /auth/sso/recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sso/recovery-link) ·· _auth · cella_
  *

@@ -216,6 +216,8 @@ interface TestSessionOpts {
   impersonatorSessionId?: string;
   /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
   steppedUpVia?: StepUpProof;
+  /** The SSO connection a federation sign-in came through. */
+  connectionId?: string;
 }
 
 /**
@@ -231,6 +233,7 @@ export async function insertTestSession(
     expiresInMs = 7 * 24 * 60 * 60 * 1000,
     impersonatorSessionId,
     steppedUpVia,
+    connectionId,
   }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
@@ -246,6 +249,7 @@ export async function insertTestSession(
     createdAt,
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
     impersonatorSessionId,
+    connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
   });

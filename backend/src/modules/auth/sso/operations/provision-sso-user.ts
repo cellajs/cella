@@ -4,6 +4,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { hasPendingInvitation } from '#/modules/auth/invitations/operations/may-sign-up';
 import { insertIdentity } from '#/modules/auth/oauth/identities-queries';
+import { provesAddress } from '#/modules/auth/sso/helpers/address-authority';
 import { newUserFromProfile } from '#/modules/auth/sso/helpers/transform-sso-claims';
 import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
 import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
@@ -18,12 +19,14 @@ import { log } from '#/utils/logger';
 const dbCtx = { var: { db: baseDb } };
 
 /**
- * Creates the account of a first SSO sign-in: the user with its address proven by the institution, the verified
- * identity, and a membership in the tenant's organization with the role `roleFromClaims` gives, unless an invitation to
- * that organization names the role (bound to the account on creation, granted when accepted). The connection admits the
- * institution's members when its `jitProvisioning` is on; off, an invitation to the address is required.
- * @throws AppError 400 `sso_email_missing` without an address, 409 `sso_email_exists` when an account holds it,
- *   403 `sign_up_restricted` when neither the connection nor an invitation admits the address.
+ * Creates the account of a first SSO sign-in: the user with the address the institution proves (`provesAddress`), the
+ * verified identity and, with the connection's `jitProvisioning`, a membership in the tenant's organization with the
+ * role `roleFromClaims` gives, unless an invitation to that organization names the role (bound to the account on
+ * creation, granted when accepted). Without `jitProvisioning` an invitation to the address is required, and the
+ * sign-in grants no membership of its own.
+ * @throws AppError 400 `sso_email_missing` without an address, 409 `sso_email_unproven` for an address the institution
+ *   does not prove, 409 `sso_email_exists` when an account holds it, 403 `sign_up_restricted` when neither the
+ *   connection nor an invitation admits the address.
  */
 export const provisionSsoUser = async (
   ctx: Context<Env>,
@@ -31,6 +34,12 @@ export const provisionSsoUser = async (
 ): Promise<UserWithActivity> => {
   const email = profile.email;
   if (!email) throw new AppError(400, 'sso_email_missing', 'warn', { meta: { strategy: federation.key } });
+
+  // Refused before the lookup, so it tells nothing about who holds the address; the error page offers a magic link.
+  if (!provesAddress(federation, connection, email)) {
+    rememberSsoCollision(ctx, { email, connectionId: connection.id });
+    throw new AppError(409, 'sso_email_unproven', 'warn', { meta: { strategy: federation.key } });
+  }
 
   // The holder signs in with their own method and connects the institution account from the account page. An account
   // whose identifier at the institution changed meets this refusal too. The error page offers a sign-in link to the
@@ -55,7 +64,11 @@ export const provisionSsoUser = async (
       verified: true,
     });
 
-    if (organization && !(await findPendingOrganizationInactiveMembership(txCtx, { email, organizationId: organization.id }))) {
+    if (
+      connection.jitProvisioning &&
+      organization &&
+      !(await findPendingOrganizationInactiveMembership(txCtx, { email, organizationId: organization.id }))
+    ) {
       await insertSsoMembership(txCtx, { userId: user.id, organization, federation, connection, claims });
     }
 

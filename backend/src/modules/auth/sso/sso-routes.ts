@@ -62,7 +62,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Send an SSO recovery link',
     description:
-      'For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.',
+      'For a browser whose institution sign-in was refused because an account already holds the asserted address or the institution does not prove it: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.',
     responses: { 200: json('The address the link was sent to', z.object({ email: z.string() })), ...errors(401, 403) },
   }),
 });

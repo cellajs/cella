@@ -30,7 +30,10 @@ export interface FederationConfig {
   tenantClaim: string;
   /** Claims kept as a snapshot on the identity row; nothing in the template reads them for authorization. */
   snapshotClaims: readonly string[];
-  /** Whether the institution operates the mailbox it asserts, so a sign-in through it proves the address. */
+  /**
+   * Whether the federation's institutions operate the mailboxes of their domains, so a sign-in proves an address on
+   * one of its connection's domains.
+   */
   addressAuthority: boolean;
   /**
    * The `acr` values by which an institution asserts it used multi-factor authentication. A sign-in carrying one starts
