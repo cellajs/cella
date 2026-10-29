@@ -70,7 +70,7 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so the machines are listed with the operator key once a session holds it, and `inventory.machines` is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so the machines are listed with the operator key once a session holds it, and `inventory.machines` is `unknown` without it. **Rotate keys** replaces the environment's keys, the app's own runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
@@ -119,7 +119,7 @@ One name per concept across code and docs:
 | **mode** | `production` or `staging`; also the Pulumi stack name. |
 | **release** | One git SHA baked into images and generations. |
 | **deploy** | One run of the deploy command. |
-| **runner** | The app's small machine that starts a deploy when an environment's target moves. |
+| **runner** | The small machine that starts a deploy when an environment's target moves: one per app, or one for an organization. |
 | **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after. |

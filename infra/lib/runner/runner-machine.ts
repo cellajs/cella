@@ -1,16 +1,16 @@
-import type { RunnerEnvironment } from '../../runner/src/config';
+import { type RunnerEnvironment, repositorySlug } from '../../runner/src/config';
 import { type CloudConfigFile, cloudConfigDocument } from '../utils/cloud-config';
-
-/** The name of the runner's project, application, address, security group and machine: one runner per app, named after it. */
-export function runnerName(appSlug: string): string {
-  return `${appSlug}-runner`;
-}
 
 /** Where the runner key is kept in the runner's project, for the replace to put into the machine's user data (D28). */
 export const RUNNER_KEY = { name: 'runner-key', path: '/runner' } as const;
 
-/** Where a private repository's read key is kept for the runner (D22), beside its key: Set repository read key writes it. */
-export const RUNNER_REPOSITORY_KEY = { name: 'repository-read-key', path: '/runner' } as const;
+/**
+ * Where a private repository's read key is kept for the runner (D22), beside its key: the app's own runner keeps its one repository's, an
+ * organization's runner one per repository it serves (Q6). Set repository read key writes it.
+ */
+export function runnerReadKey(repository: string, organization: boolean): { name: string; path: string } {
+  return { name: organization ? `repository-read-key-${repositorySlug(repository)}` : 'repository-read-key', path: RUNNER_KEY.path };
+}
 
 /** What the runner machine's script reads from `/etc/runner/env`, a file only root reads. */
 export interface RunnerValues {
@@ -22,7 +22,7 @@ export interface RunnerValues {
   REPO: string;
   /** The `node` image at the root `engines.node`, which has git. */
   NODE_IMAGE: string;
-  /** A private repository's read key (D22), sent as a header with each fetch; empty for a repository anyone may read. */
+  /** The read key of the program's repository (D22), sent as a header with each fetch; empty for a repository anyone may read. */
   REPOSITORY_READ_KEY: string;
 }
 
@@ -64,12 +64,17 @@ const UNIT = [
 ].join('\n');
 
 /** The runner machine's cloud-init: its values, its list of environments, its script and a unit that keeps it running. */
-export function runnerCloudConfig(opts: { values: RunnerValues; environments: readonly RunnerEnvironment[] }): string {
+export function runnerCloudConfig(opts: {
+  values: RunnerValues;
+  /** Each served private repository's read key, under its `readKeyVariable`. */
+  readKeys?: Readonly<Record<string, string>>;
+  environments: readonly RunnerEnvironment[];
+}): string {
   const files: CloudConfigFile[] = [
     {
       path: '/etc/runner/env',
       permissions: '0600',
-      content: Object.entries(opts.values)
+      content: Object.entries({ ...opts.values, ...opts.readKeys })
         .map(([key, value]) => `${key}=${value}`)
         .join('\n'),
     },

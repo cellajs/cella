@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, type OperatorActionId } from '../lib/operator-actions';
+import { setRunnerFile } from '../lib/runner/runner-file';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { appPrincipalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
@@ -45,6 +46,8 @@ const droppedFromEnv = dropPromptOnlyEnv();
 installPromptAbortHandler();
 
 const args = parseCliArgs(process.argv.slice(2));
+// pnpm runs the CLI in infra/, so a relative path is read from where the command was typed.
+if (args.runnerFile) setRunnerFile(resolve(process.env.INIT_CWD ?? process.cwd(), args.runnerFile));
 
 /** The commands of the CLI, one line per action. */
 function printHelp(): void {
@@ -55,6 +58,7 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
+  console.info(`  ${pc.dim("--runner-file <path>  the runner actions work on the organization's runner this file names")}`);
   console.info(`\n  ${pc.dim('Releases are deployed by the runner, as runs of the main job; start-deploy starts one now.')}`);
 }
 

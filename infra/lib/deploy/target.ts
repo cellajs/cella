@@ -32,7 +32,7 @@ export interface Target {
 }
 
 const COMMIT = /^[0-9a-f]{40}$/;
-const RELEASE_TAG = /^\d+\.\d+\.\d+$/;
+export const RELEASE_TAG = /^\d+\.\d+\.\d+$/;
 
 function parseRule(word: string): TargetRule {
   if (word === 'releases') return { kind: 'releases' };

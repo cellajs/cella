@@ -16,6 +16,7 @@ import { forgetOperatorLock } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { keyAccepted, publicAddress } from './operator-unlock';
 import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
+import { organizationRunner } from './runner';
 
 /** How long the new key is tried from this machine. Scaleway applies a policy within about a minute, and single APIs follow later still. */
 const ACCEPT_ATTEMPTS = 24;
@@ -47,19 +48,22 @@ export function operatorReach(mode: string, projectId: string, others: ReadonlyM
 }
 
 /**
- * Create the app's operator application and a fresh key for it, with an Owner key the caller holds: ask for the dedicated address, confirm,
- * write the application and its policy, show the key once, and wait until Scaleway accepts it from here. Undefined when the person declines.
+ * Create an operator application and a fresh key for it, with an Owner key the caller holds: ask for the dedicated address, confirm, write
+ * the application and its policy, show the key once, and wait until Scaleway accepts it from here. Undefined when the person declines. The
+ * operator is the app's, or with `runner` an organization's runner's own, over that runner's project alone (Q1).
  */
 async function createOperator(
   context: InfraContext,
   ownerKey: OwnerKey,
   reach: ReadonlyArray<{ mode: string; projectId: string }>,
+  runner?: { name: string; projectId: string },
 ): Promise<ScopedKeyResult | undefined> {
-  const { appConfig, projectId } = context;
-  const mode = context.environment;
-  const names = allPrincipalNames(appConfig, mode);
+  const { appConfig } = context;
+  const slug = runner?.name ?? appConfig.appSlug;
+  const projectId = runner?.projectId ?? context.projectId;
+  const names = { ...allPrincipalNames(appConfig, context.environment), ...appPrincipalNames(slug) };
   console.info(`The key works in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
-  console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).\n'));
+  if (!runner) console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).\n'));
 
   const detected = await publicAddress();
   if (detected) console.info(`This machine reaches the internet as ${pc.cyan(detected)}.`);
@@ -87,7 +91,7 @@ async function createOperator(
   if (addressInList === false)
     console.warn(`  ${warningMark} This machine's address is not in that list: the new key can be neither checked nor used from here.`);
   console.info(pc.dim('  When the address changes, the organization Owner sets the new one: this action again, or the policy in the console.\n'));
-  if (!(await confirm({ message: `Create the operator key of ${appConfig.appSlug}?`, default: false }))) {
+  if (!(await confirm({ message: `Create the operator key of ${slug}?`, default: false }))) {
     console.info('Aborted; nothing changed.');
     return undefined;
   }
@@ -112,8 +116,8 @@ async function createOperator(
       organizationId: ownerKey.organizationId,
       projectId,
       projectIds,
-      slug: appConfig.appSlug,
-      dnsZone: deriveInfra(appConfig).dnsZone,
+      slug,
+      dnsZone: runner ? undefined : deriveInfra(appConfig).dnsZone,
       cidrs,
     });
   } catch (error) {
@@ -150,11 +154,14 @@ async function createOperator(
  * the app. Scaleway accepts the key from the dedicated address only, which an Owner API key can never be held to, and the key writes no IAM.
  * A run replaces the application's policy and every earlier key, so the caller is the organization Owner (or another IAMManager principal),
  * never the operator application itself. A new address takes this action again; a new environment is added by its setup without a new key.
+ * With `--runner-file` of an organization's runner, it makes that runner's own operator, `<runner>-operator`, over its project alone (Q1).
  */
 export async function runOperatorKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const mode = context.environment;
-  const names = allPrincipalNames(appConfig, mode);
+  const organization = organizationRunner(appConfig.appSlug);
+  const runner = organization && { name: organization.name, projectId: organization.file.projectId };
+  const names = { ...allPrincipalNames(appConfig, mode), ...(runner ? appPrincipalNames(runner.name) : {}) };
   console.info(
     pc.dim(
       `\n${actionLabel('operator-key')}: the '${names.operator}' application and a fresh key, which Scaleway accepts from your dedicated IP address only.\n`,
@@ -162,7 +169,8 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
   );
   const ownerKey = await acquireOwnerKey({ names, projectId, slug: appConfig.slug, mode });
   try {
-    const key = await createOperator(context, ownerKey, operatorReach(mode, projectId, projectsOfOtherModes(mode)));
+    const reach = runner ? [{ mode: runner.name, projectId: runner.projectId }] : operatorReach(mode, projectId, projectsOfOtherModes(mode));
+    const key = await createOperator(context, ownerKey, reach, runner);
     if (key) {
       console.info(
         `\n  ${pc.bold('From now on the CLI asks for the operator key, once per session.')} ${pc.dim('From another address Scaleway refuses it.')}`,

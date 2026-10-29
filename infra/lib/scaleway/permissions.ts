@@ -76,9 +76,11 @@ export const OBSERVER_PROJECT_PERMISSION_SETS = [
 export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 /**
- * Project-scoped set for the runner (`<app>-runner`), in each environment it serves: starting and reading the main job's runs. Scaleway has
- * no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference (plan §7). Its one rule carries the
- * condition of its reserved address.
+ * Project-scoped set for the runner (`<app>-runner`, or an organization's), in each environment it serves: starting and reading the main
+ * job's runs. Scaleway has no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference (plan §7).
+ * Its one rule carries the condition of its reserved address. Starting a definition that references secrets works without
+ * `SecretManagerSecretAccess` only while Scaleway leaves unenforced the cross-product check its changelog of 2025-10-15 announces: enforced,
+ * every start fails until this set gains it, which lets the key read those secrets itself.
  */
 export const RUNNER_PROJECT_PERMISSION_SETS = ['ServerlessJobsFullAccess'] as const;
 

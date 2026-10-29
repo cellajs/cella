@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { gitKeyOptions, listRemoteRefs } from '../../lib/deploy/git-remote.ts';
-import { findJobDefinition, listJobRuns, startJobRun } from '../../lib/deploy/job-runs.ts';
+import { findJobDefinition, listJobRuns, readJobDefinition, startJobRun } from '../../lib/deploy/job-runs.ts';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../../lib/deploy/target.ts';
-import { type RunnerEnvironment, readRunnerEnvironments } from './config.ts';
+import { type RunnerEnvironment, readKeyVariable, readRunnerEnvironments } from './config.ts';
 import { decide } from './decide.ts';
 
 /**
@@ -23,20 +23,26 @@ const USAGE = `Usage: node runner/src/main.ts --config <file> [--once] [--dry-ru
   --once       one round, then exit
   --dry-run    decide, start nothing
   --state-dir  where the environments files are fetched (default: the system's temporary folder)
-Env: SCW_SECRET_KEY (the runner key), REPOSITORY_READ_KEY (a private repository's read key, optional)`;
+Env: SCW_SECRET_KEY (the runner key), READ_KEY_<OWNER>_<NAME> (a private repository's read key, optional), REPOSITORY_READ_KEY (the
+     read key of every repository without one of its own, optional)`;
+
+/** The read key a repository is fetched with; undefined for one anyone may read. */
+function readKeyOf(repository: string): string | undefined {
+  return process.env[readKeyVariable(repository)] || process.env.REPOSITORY_READ_KEY || undefined;
+}
 
 /**
  * The environments file at the head of the repository's default branch, or '' when it has none (D22). The head is fetched without its file
  * contents into a folder kept between rounds, and again only when it moved; only this one file's content is then fetched.
  */
-function environmentsFileReader(stateDir: string, key: string | undefined) {
+function environmentsFileReader(stateDir: string) {
   const read = new Map<string, { head: string; text: string }>();
-  const git = (args: string[]) => {
-    const result = spawnSync('git', [...gitKeyOptions(key), ...args], { encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
-    if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${result.stderr.trim()}`);
-    return result.stdout;
-  };
-  return async (repository: string): Promise<string> => {
+  return async (repository: string, key: string | undefined): Promise<string> => {
+    const git = (args: string[]) => {
+      const result = spawnSync('git', [...gitKeyOptions(key), ...args], { encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+      if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${result.stderr.trim()}`);
+      return result.stdout;
+    };
     const head = (await listRemoteRefs(repository, key)(['HEAD'])).find((ref) => ref.ref === 'HEAD')?.sha;
     if (!head) throw new Error(`${repository} names no default branch`);
     const known = read.get(repository);
@@ -56,18 +62,26 @@ function environmentsFileReader(stateDir: string, key: string | undefined) {
   };
 }
 
-/** One round for one environment: its target, its runs, and a start when the target has none. Returns the line that says what it found. */
-async function serve(
+/**
+ * One round for one environment: its target, its runs, and a start when the target has none. Returns the line that says what it found.
+ * The repository is the one the definition fetches, which the app's apply wrote, so a list entry cannot point a definition at another. An
+ * organization's runner serves apps of other template versions, so what it reads of an app (the environments file's grammar, `x.y.z`
+ * release tags, the definition's `REPO`) and the start values it sets (`TARGET_SHA`, `RETRY`) change only as a breaking change.
+ */
+export async function serve(
   entry: RunnerEnvironment,
-  opts: { secretKey: string; readKey: string | undefined; environmentsFile: (repository: string) => Promise<string>; dryRun: boolean },
+  opts: { secretKey: string; environmentsFile: (repository: string, key: string | undefined) => Promise<string>; dryRun: boolean },
 ): Promise<string> {
   const auth = { secretKey: opts.secretKey };
-  const line = parseEnvironmentsFile(await opts.environmentsFile(entry.repository)).get(entry.environment);
-  const target = await resolveTarget({ environment: entry.environment, line, listRemote: listRemoteRefs(entry.repository, opts.readKey) });
+  const definitionId = await findJobDefinition(auth, { region: entry.region, projectId: entry.projectId, name: entry.definition });
+  if (!definitionId) return `no job definition ${entry.definition}; an apply makes it`;
+  const { REPO } = (await readJobDefinition(auth, { region: entry.region, definitionId })).env;
+  if (REPO !== entry.repository) return `the list names ${entry.repository}, the definition fetches ${REPO ?? 'none'}: starts nothing`;
+  const readKey = readKeyOf(REPO);
+  const line = parseEnvironmentsFile(await opts.environmentsFile(REPO, readKey)).get(entry.environment);
+  const target = await resolveTarget({ environment: entry.environment, line, listRemote: listRemoteRefs(REPO, readKey) });
   if (!target) return `no line in ${ENVIRONMENTS_FILE}: starts nothing`;
   const what = `${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry})`;
-  const definitionId = await findJobDefinition(auth, { region: entry.region, projectId: entry.projectId, name: entry.definition });
-  if (!definitionId) return `${what}: no job definition ${entry.definition}; an apply makes it`;
   const runs = await listJobRuns(auth, { region: entry.region, projectId: entry.projectId, definitionId });
   const decision = decide(target, runs);
   if (decision.action === 'wait') return `${what}: waits for run ${decision.run.id} (${decision.run.state})`;
@@ -101,11 +115,9 @@ async function main(argv: string[]): Promise<number> {
     return 1;
   }
   const environments = readRunnerEnvironments((JSON.parse(readFileSync(values.config, 'utf8')) as { environments?: unknown }).environments);
-  const readKey = process.env.REPOSITORY_READ_KEY || undefined;
   const opts = {
     secretKey,
-    readKey,
-    environmentsFile: environmentsFileReader(values['state-dir'] ?? join(tmpdir(), 'infra-runner'), readKey),
+    environmentsFile: environmentsFileReader(values['state-dir'] ?? join(tmpdir(), 'infra-runner')),
     dryRun: values['dry-run'],
   };
   console.info(`[runner] ${environments.length} environment(s): ${environments.map((entry) => entry.definition).join(', ')}`);
@@ -114,7 +126,7 @@ async function main(argv: string[]): Promise<number> {
   for (;;) {
     for (const entry of environments) {
       const line = await serve(entry, opts).catch((error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`);
-      if (said.get(entry.definition) !== line) console.info(`[runner] ${entry.environment}: ${line}`);
+      if (said.get(entry.definition) !== line) console.info(`[runner] ${entry.definition}: ${line}`);
       said.set(entry.definition, line);
     }
     if (values.once) return 0;

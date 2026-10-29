@@ -147,11 +147,12 @@ interface Unlocked {
 /**
  * Unlock the session: the operator key, both halves, typed once per run. It is proven by asking IAM who bears it, with the key itself: that
  * names the application and its organization, and needs no right beyond the IAM read the operator holds. With `optional`, an empty access
- * key returns undefined: the caller then asks for what it needs in another way.
+ * key returns undefined: the caller then asks for what it needs in another way. With `operator`, the key of that application is asked for,
+ * as an organization's runner has an operator of its own (Q1): it reaches none of the app's projects, so the session does not keep it.
  */
-async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
-  const names = appPrincipalNames(stack.appConfig.appSlug);
-  let pair = rememberedOperatorKey();
+async function unlock(stack: StackRef, opts: { optional?: string; operator?: string } = {}): Promise<Unlocked | undefined> {
+  const names = { ...appPrincipalNames(stack.appConfig.appSlug), ...(opts.operator ? { operator: opts.operator } : {}) };
+  let pair = opts.operator ? undefined : rememberedOperatorKey();
   if (!pair) {
     const label = `Operator key of '${names.operator}'`;
     const accessKey = (await input({ message: `${label}, access key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })).trim();
@@ -176,8 +177,10 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
     );
     return endAction(1);
   }
-  rememberOperatorKey(pair);
-  await moveSecretsOutOfPrefix(stack, pair.secretKey);
+  if (!opts.operator) {
+    rememberOperatorKey(pair);
+    await moveSecretsOutOfPrefix(stack, pair.secretKey);
+  }
   return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId, applicationId: desc.bearerId };
 }
 
@@ -223,15 +226,15 @@ export interface OperatorKey extends KeyPair {
 /**
  * The key for a privileged action under the operator application: the operator key itself, pasted once per session and kept in this
  * process's memory. Scaleway accepts it from the dedicated address only, and it holds no IAM write, so nothing is minted from it and nothing
- * is left to revoke when the action ends.
+ * is left to revoke when the action ends. `operator` names another operator application, asked for each time.
  */
-export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
-  const names = appPrincipalNames(stack.appConfig.appSlug);
-  const unlocked = await unlock(stack);
+export async function acquireOperatorKey(stack: StackRef, operator?: string): Promise<OperatorKey> {
+  const name = operator ?? appPrincipalNames(stack.appConfig.appSlug).operator;
+  const unlocked = await unlock(stack, { operator });
   if (!unlocked) return endAction(1);
   if (!operatorNoticeShown) {
     operatorNoticeShown = true;
-    console.info(`${pc.dim('Operator key:')} ${names.operator} ${pc.dim(unlocked.accessKey)}`);
+    console.info(`${pc.dim('Operator key:')} ${name} ${pc.dim(unlocked.accessKey)}`);
   }
   return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
 }

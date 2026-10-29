@@ -96,10 +96,10 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it("leaves six actions without a row: the plan without its question, the key only a private repository needs, the hand start the runner makes rare, the runner's setup and replacement, run when its file changes, and the rare removal from the state", () => {
+  it("leaves seven actions without a row: the plan without its question, the key only a private repository needs, the hand start the runner makes rare, the runner's setup, replacement and key rotation, run when its file changes or its key is suspect, and the rare removal from the state", () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
     const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toEqual(['preview', 'repository-key', 'runner-identity', 'runner-replace', 'start-deploy', 'state-prune']);
+    expect(commandOnly).toEqual(['preview', 'repository-key', 'runner-identity', 'runner-replace', 'runner-rotate', 'start-deploy', 'state-prune']);
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {

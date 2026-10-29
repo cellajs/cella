@@ -8,6 +8,8 @@ export interface CliArgs {
   unknownAction?: string;
   /** `--mode <production|staging>`; validated where the mode is resolved. */
   mode?: string;
+  /** `--runner-file <path>`: the file of an organization's runner, which the runner actions then work on. */
+  runnerFile?: string;
   /** `--once`: leave after the first action chosen in the menu. */
   once: boolean;
   /** `help`, `--help` or `-h`: print the commands and leave. */
@@ -15,7 +17,7 @@ export interface CliArgs {
 }
 
 /** Flags that take the next word as their value, so that word is never read as the action. */
-const VALUE_FLAGS = new Set(['--mode']);
+const VALUE_FLAGS = new Set(['--mode', '--runner-file']);
 
 /**
  * Read the command line (everything after the script). The first word that is no flag and no flag value names the action. Flags the
@@ -28,6 +30,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     const token = argv[index] ?? '';
     if (VALUE_FLAGS.has(token)) {
       if (token === '--mode') args.mode = argv[index + 1];
+      else args.runnerFile = argv[index + 1];
       index++;
     } else if (token === '--once') args.once = true;
     else if (token === '--help' || token === '-h') args.help = true;

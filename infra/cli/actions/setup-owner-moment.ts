@@ -1,6 +1,7 @@
 import { confirm, select } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { RUNNER_FILE, readRunner } from '../../lib/runner/runner-file';
 import { deleteApiKey } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
@@ -23,7 +24,7 @@ import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared'
 import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
 import { acquireOwnerKey } from './owner-key';
-import { rotateRunnerKey, runnerServes } from './runner';
+import { rotateRunnerKey } from './runner';
 
 export type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
@@ -201,13 +202,16 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
 
-  // The runner key starts this environment's deploys, so after a compromise it goes with the rest; the operator part replaces the machine.
+  // The app's own runner key starts this environment's deploys, so after a compromise it goes with the rest; the operator part replaces the
+  // machine. An organization's runner, which an app's file only names, keeps its key (Q4).
   let runnerKeyRotated = false;
   const { naming, region } = deriveInfra(appConfig);
-  if (mode === 'rotate-keys' && runnerServes({ projectId, definition: naming.resource('main') })) {
+  const runner = readRunner(appConfig.appSlug, RUNNER_FILE);
+  const definition = naming.resource('main');
+  if (mode === 'rotate-keys' && runner.file?.environments.some((entry) => entry.projectId === projectId && entry.definition === definition)) {
     console.info('\n→ Runner key');
     try {
-      const replaced = await rotateRunnerKey(ownerKey, { appSlug: appConfig.appSlug, region });
+      const replaced = await rotateRunnerKey(ownerKey, { runner, region });
       console.info(`  ${changeMark} A new runner key replaced ${replaced} key(s); the runner machine is replaced next, on the operator key.`);
       runnerKeyRotated = true;
     } catch (error) {

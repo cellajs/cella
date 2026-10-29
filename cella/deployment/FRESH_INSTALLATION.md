@@ -59,6 +59,8 @@ A second environment of the same app runs the same two parts: its Owner moment a
 1. Commit `infra/Pulumi.<mode>.yaml`, so other checkouts see the stack set up. For staging, also commit the line `staging branch:main` in `infra/environments`: without it the runner deploys nothing there.
 2. **Set up the runner** for this environment (`pnpm infra runner-identity --mode <mode>`, your Owner API key) and commit the `infra/runner.json` it writes.
 3. **Replace the runner** (`pnpm infra runner-replace`, operator key). From then on the runner deploys the environment's target; `pnpm infra runs` shows each run, and `pnpm infra start-deploy` deploys at once.
+
+   An app that an organization's runner serves takes steps 2 and 3 with `--runner-file` ([One runner for an organization](../DEPLOYMENT.md#one-runner-for-an-organization)).
 4. Revoke the Owner API key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys) if the Owner moment did not, and delete a temporary application.
 
 ## 5. Sign in as first admin

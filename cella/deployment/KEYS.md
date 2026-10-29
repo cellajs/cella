@@ -21,13 +21,14 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | **Boot** (`<slug>-<mode>-boot`) | Image pulls, boot accounts, hand-over bundles | Any address | Each machine's disk, and its cloud-init until its first boot reported | **Rotate keys** |
 | **Service** (`<slug>-<mode>-vm-<service>`) | Its own service's secret folder; the backend's buckets | Any address | The deploy folder, handed over read-once | **Rotate keys** |
 | **Builder** (`<slug>-<mode>-builder`) | Image pushes and the release's frontend files | Any address | The deploy folder, handed over read-once | **Rotate keys** |
-| **Runner** (`<app>-runner`) | Starts and reads the main job's runs | The runner's address | The runner's project and user data | **Rotate keys** |
+| **Runner** (`<app>-runner`, or an organization's) | Starts and reads the main job's runs | The runner's address | The runner's project and user data | **Rotate keys**; an organization's: **Rotate the runner key** |
+| **Runner operator** (`<runner>-operator`, an organization's runner only) | Every product in the runner's project, IAM read | Your dedicated address | Your password manager | **Set up operator key** with `--runner-file` |
 
-**Owner moments.** The CLI asks for an Owner API key only where IAM is written: a first setup, **Set up operator key**, **Set up the runner**, **Rotate keys**, **Update identities**, minting a managed key (a scoped key an app service reads, such as an AI key) and the identities part of **Tear down stack**. Each one refuses a key without an expiry or with more than a day left, as such a key writes IAM from every address between the moments. Keep the Owner account for recovery, with MFA.
+**Owner moments.** The CLI asks for an Owner API key only where IAM is written: a first setup, **Set up operator key**, **Set up the runner**, **Rotate keys**, **Rotate the runner key**, **Update identities**, minting a managed key (a scoped key an app service reads, such as an AI key) and the identities part of **Tear down stack**. Each one refuses a key without an expiry or with more than a day left, as such a key writes IAM from every address between the moments. Keep the Owner account for recovery, with MFA.
 
 **The observer** has one key per operator machine, which serves every environment there; the key's description names the machine and the day it was made. **Update identities** on another machine, with your Owner API key, makes that machine its own. The key works from any address, so it reads nothing that holds a key in the clear. It reads no machine: a new machine's user data holds the boot key until the deploy scrubs it, a builder's for the whole build, and the boot key reads the hand-over bundles. It reads no image either, as an image holds the app's code.
 
-**What the deploy path reaches.** The deploy key, the runner and the code a merge or a release puts there reach the environment's runtime secrets: the deploy key hands every new machine its key, and the runner can start the main job with values or a command of its own. The runner key can edit a job definition, as Scaleway has no permission set that only starts runs. The app has one runner, which serves its environments only. The inventory compares the main job's whole definition with the declared one, its env and secret references included, and Show runs flags a run started with values or a command of its own.
+**What the deploy path reaches.** The deploy key, the runner and the code a merge or a release puts there reach the environment's runtime secrets: the deploy key hands every new machine its key, and the runner can start the main job with values or a command of its own. The runner key can edit a job definition, as Scaleway has no permission set that only starts runs. An app's own runner serves its environments only; [an organization's](../DEPLOYMENT.md#one-runner-for-an-organization) serves every app it lists. The inventory compares the main job's whole definition with the declared one, its env and secret references included, and Show runs flags a run started with values or a command of its own.
 
 **What it cannot do.** The deploy key writes no IAM, database instance or backups, VPC, DNS, bucket configuration or policy, job definition or state history: those take the operator key or an Owner moment. It writes load balancers and private networks for a rollout, and only the deploy's preflight stops it from changing more of them. Of the buckets, it never reaches the private uploads bucket, and of the public one only `geoip/`. A deploy whose key policy differs from the declared one stops blocked.
 
@@ -54,7 +55,8 @@ On a shared host the services read one env file, so they share their secrets; a 
 | Operator key | Every product and secret of the app's projects, from your dedicated address | **Set up operator key** (Owner API key), then **Rotate keys** and **Rotate secrets** in each environment |
 | Observer key | Read-only views, no machine, image or secret value, from any address | Delete that machine's key in the console ([Someone leaves](#someone-leaves)); **Rotate keys** replaces every one |
 | Deploy key | Its environment's runtime secrets, machines, load balancers and private networks, from any address | **Rotate keys**, then **Rotate secrets** |
-| Runner key | Every served environment's deploy key and passphrase, from the runner's address | **Rotate keys**, **Rotate secrets** and **Rotate passphrase** in each environment it serves |
+| Runner key | Every served environment's deploy key and passphrase, from the runner's address | **Rotate keys** (an organization's runner: **Rotate the runner key**), then **Rotate secrets** and **Rotate passphrase** in each environment it serves |
+| Runner operator key | The runner's project, and through the runner key what that key reaches, from your dedicated address | **Set up operator key** and **Rotate the runner key** with `--runner-file`, then as for the runner key |
 | Builder key | Image pushes and frontend files of its environment | **Rotate keys**: the next deploy builds again |
 | A machine's key | Its own service's secrets, on a shared host its neighbours' | **Rotate keys** |
 
@@ -80,8 +82,8 @@ Running it again replaces the policy and every earlier key, on your Owner API ke
 The main job, the builder and the runner fetch the target commit from the repository the root `package.json` names. A public repository needs nothing. A private one needs a read-only key in each environment before its first deploy:
 
 1. Make a fine-grained GitHub token for that repository only, with **Contents: read** and nothing else, and an expiry.
-2. Run `pnpm infra repository-key` on your operator key. It checks that the repository answers to the token, then stores it in the environment's deploy folder, and in the runner's project where the runner is set up.
-3. Where the runner is set up, run **Replace the runner**, which gives the token to the runner machine.
+2. Run `pnpm infra repository-key` on your operator key. It checks that the repository answers to the token, then stores it in the environment's deploy folder, and in the runner's project where the app's own runner is set up. An organization's runner keeps a copy per repository: run the action again with `--runner-file`, on the runner operator key.
+3. Where a runner is set up, run **Replace the runner**, which gives the token to the runner machine.
 
 The token goes as a header with each fetch, in no URL and no file the build sees. Run the action again to replace it before it expires; an empty answer removes it.
 
@@ -99,7 +101,9 @@ A key that encrypts or hashes stored data (`data-encryption-key`, `pii-hash-secr
 
 With an Owner API key and your operator key at hand, `pnpm infra` → **Rotate keys & secrets** → **Rotate keys** replaces the deploy key, the observer key, the builder key and every standing machine key, and deletes the old ones. The observer key is rewritten in every `infra/.env.<mode>` on this machine; each other machine that reads takes **Update identities** once.
 
-Where the runner serves the environment, the rotation also replaces the runner key, and then the runner machine on your operator key, as the key reaches the machine only in its user data. The runner key is the app's, so a rotation in each of its environments replaces it again. After a compromise, one **Rotate keys** per environment covers every Scaleway key but the operator's.
+Where the app's own runner serves the environment, the rotation also replaces the runner key, and then the runner machine on your operator key, as the key reaches the machine only in its user data. The runner key is the app's, so a rotation in each of its environments replaces it again. After a compromise, one **Rotate keys** per environment covers every Scaleway key but the operator's.
+
+An organization's runner key lives outside every app, so an app's compromise does not reach it and its **Rotate keys** leaves it. **Rotate the runner key** (`pnpm infra runner-rotate --runner-file <path>`, Owner API key, then the runner operator key) replaces it and the machine, when the runner's machine, project or operator key is suspect.
 
 The running machines booted with the deleted machine keys: until the deploy the rotation starts replaces them, a reboot cannot hydrate and the backend's presigned URLs fail. The rotation ends by printing the inventory: what exists beside what the environment declares. Revoke the Owner API key you pasted afterwards.
 

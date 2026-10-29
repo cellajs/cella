@@ -3,7 +3,7 @@ import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../..
 import { repositoryUrl } from '../../deploy/repository-key';
 import { deriveInfra } from '../../naming';
 import { actionCommand, actionLabel } from '../../operator-actions';
-import { runnerName } from '../../runner/runner-machine';
+import { RUNNER_FILE, readRunner } from '../../runner/runner-file';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
@@ -193,10 +193,13 @@ function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'
   return builder.ok('runs the declared script, image, env and secret references');
 }
 
-/** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
+/**
+ * The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. The runner is
+ * the one the app's runner file names: its own, or the organization's that starts its deploys.
+ */
 function expectationOf(appConfig: { slug: string; appSlug: string }, mode: string, projectId: string): InventoryExpectation {
   const app = appPrincipalNames(appConfig.appSlug);
-  const appLevel = [app.operator, app.observer, runnerName(appConfig.appSlug)];
+  const appLevel = [app.operator, app.observer, readRunner(appConfig.appSlug, RUNNER_FILE).name];
   const declared = Object.fromEntries([
     ...declaredIdentities({ slug: appConfig.slug, mode }, { projectId, organizationId: '' }).policies.map((policy) => [
       policy.applicationName,

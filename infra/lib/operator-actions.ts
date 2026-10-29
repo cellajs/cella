@@ -40,7 +40,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the CI deploy key, the observer key, every standing machine key and, where the runner serves this environment, the runner key and machine (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
+      "Replace the CI deploy key, the observer key, every standing machine key and, where the app's own runner serves this environment, the runner key and machine (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).",
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
@@ -75,12 +75,17 @@ export const OPERATOR_ACTIONS = {
     label: 'Set up the runner',
     key: 'owner',
     description:
-      "Make the app's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json. Rotate keys replaces its key.",
+      "Make the runner (its project, reserved address, application and key), let its operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json, or in the organization's file --runner-file names.",
   },
   'runner-replace': {
     label: 'Replace the runner',
     key: 'operator',
-    description: "Replace the runner's machine with one that runs the release and serves the environments infra/runner.json names.",
+    description: "Replace the runner's machine with one that runs the release and serves the environments its runner file names.",
+  },
+  'runner-rotate': {
+    label: 'Rotate the runner key',
+    key: 'owner',
+    description: "Replace the runner key, then the runner's machine on its operator's key. The only rotation of an organization's runner key.",
   },
   'repository-key': {
     label: 'Set repository read key',
@@ -162,7 +167,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
+ * An action no row lists (`preview`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `runner-rotate`, `state-prune`)
  * runs only by its command.
  */
 export const MENU_ROWS = {

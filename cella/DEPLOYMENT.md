@@ -100,9 +100,29 @@ A run ends in one of three outcomes:
 
 ### The runner
 
-One small machine per app starts its deploys. Once a minute, for every environment it serves, it finds the target and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one is started again by the apply that clears the block.
+A small machine starts the deploys: one per app by default, or [one for an organization](#one-runner-for-an-organization). Once a minute, for every environment it serves, it finds the target in the repository the environment's main job fetches and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one is started again by the apply that clears the block.
 
-`infra/runner.json` is committed: the runner's project, the release its program runs from and the environments it serves. **Set up the runner** adds an environment ([Fresh installation](./deployment/FRESH_INSTALLATION.md)), and **Replace the runner** (`pnpm infra runner-replace`) gives the machine the file's release and environments: run it after the file changes. Nothing reaches the machine from outside; its log is on its serial console.
+`infra/runner.json` is committed: the runner's project, the release its program runs from and the environments it serves. **Set up the runner** adds an environment ([Fresh installation](./deployment/FRESH_INSTALLATION.md)), and **Replace the runner** (`pnpm infra runner-replace`) gives the machine the file's release and environments: run it after the file changes. It starts the new machine before it deletes the old one, so a machine type Scaleway has none of leaves the old one serving. Nothing reaches the machine from outside; its log is on its serial console.
+
+### One runner for an organization
+
+Where one person operates several apps in one Scaleway organization, one runner can serve them all: one machine, address and pin in place of one per app. Its key then reaches every served environment's deploy key and passphrase, so a compromise of it reaches every app it serves.
+
+- **Its list** is a `runner.json` in a repository of the organization's own, with the runner's name (`"name": "org-runner"`). The runner never reads that repository: **Replace the runner** reads the file from a checkout, so a merge changes nothing until someone replaces the machine. The runner's policy caps the projects it may start jobs in, and an entry whose repository is not the one its main job fetches starts nothing.
+- **Its operator** is an application of its own, `<name>-operator`, whose key reaches the runner's project alone. No app's operator reaches the runner.
+- **Its program** runs from a commit some release of the template contains: Replace the runner, run from the template's checkout, refuses any other.
+- **Its key** is replaced by **Rotate the runner key** alone; an app's **Rotate keys** leaves it.
+- **Its apps** share its region, as its actions find the runner in the region of the checkout they run from.
+
+Each runner action takes `--runner-file <path>` to the file. An app the runner serves commits `infra/runner.json` as `{ "name": "org-runner" }`: its inventory then expects that runner, and its runner actions refuse to run without the flag.
+
+1. In the organization's repository, write `runner.json` as `{ "name": "org-runner" }`.
+2. From an app's checkout, **Set up the runner** with `--runner-file` (Owner API key): it makes the runner and lists the app's environment. Run it from each other app's checkout to add that app: it also extends the runner's policy to every project the file lists.
+3. **Set up operator key** with `--runner-file` (Owner API key) makes the runner's operator; store its key.
+4. Merge the file, then **Replace the runner** with `--runner-file` from the template's checkout, on the runner operator key.
+5. Commit each served app's `infra/runner.json` as the name alone.
+
+A private repository's read key reaches the runner through **Set repository read key** with `--runner-file`, on the runner operator key, then **Replace the runner**. To remove an app, drop its entries, replace the runner, and narrow the runner's policy in the console.
 
 ### Run records
 
