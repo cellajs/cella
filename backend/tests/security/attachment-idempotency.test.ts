@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, count, eq, isNull } from 'drizzle-orm';
 import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
@@ -47,16 +47,24 @@ describe('Idempotent attachment creates', async () => {
     body: ReturnType<typeof bodyFor> | ReturnType<typeof bodyFor>[],
     home: { id: string; tenantId: string } = organization,
   ) => {
-    const { data, response } = await call(createAttachments, {
+    const { data, error, response } = await call(createAttachments, {
       path: { tenantId: home.tenantId, organizationId: home.id },
       body: (Array.isArray(body) ? body : [body]) as never,
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
     const created = data as Created | undefined;
-    return { status: response.status, data: created?.data ?? [], rejectedIds: created?.rejectedIds ?? [] };
+    return { status: response.status, body: error, data: created?.data ?? [], rejectedIds: created?.rejectedIds ?? [] };
   };
 
   const storedRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+
+  const liveAttachments = async () => {
+    const [{ total }] = await adminDb
+      .select({ total: count() })
+      .from(attachmentsTable)
+      .where(and(eq(attachmentsTable.tenantId, organization.tenantId), isNull(attachmentsTable.deletedAt)));
+    return total;
+  };
 
   /** Sets the tenant's attachment quota for the rest of the test. */
   const limitAttachments = async (quota: number) => {
@@ -212,6 +220,26 @@ describe('Idempotent attachment creates', async () => {
 
     // Positive control: a replay creates nothing, so the full quota lets it through.
     expect((await create(owner, body)).status).toBe(200);
+  });
+
+  it('must not let concurrent creates exceed the tenant quota', async () => {
+    const held = await liveAttachments();
+    await limitAttachments(held + 1);
+
+    // One member's ten creates race for the one free slot: each counts the rows the others committed.
+    const answers = await Promise.all(Array.from({ length: 10 }, () => create(owner, bodyFor(generateId(), generateId()))));
+    expect(answers.filter(({ status }) => status === 201)).toHaveLength(1);
+    for (const answer of answers.filter(({ status }) => status !== 201)) await expectRefusal(answer, 403, 'restrict_by_app');
+    expect(await liveAttachments()).toBe(held + 1);
+  });
+
+  it('answers two attempts of one create at the last free slot with its row (positive control)', async () => {
+    await limitAttachments((await liveAttachments()) + 1);
+    const id = generateId();
+    const body = bodyFor(id, generateId());
+
+    const answers = await Promise.all([create(owner, body), create(owner, body)]);
+    for (const { data } of answers) expect(data.map((row) => row.id)).toEqual([id]);
   });
 
   it('answers a replay of a batch larger than the tenant quota with its rows', async () => {

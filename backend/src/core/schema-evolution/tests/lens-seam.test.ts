@@ -31,7 +31,7 @@ import type { ProductEntityType } from 'shared';
 import { normalizeCreateItem, widenBodySchema } from '#/core/schema-evolution/lens-seam';
 import { createUpdateSchema } from '#/core/schema-evolution/update-schema';
 import { applyArrayDelta, arrayDeltaSchema } from '#/core/stx/array-delta';
-import { _resetHLC, compareHLC } from '#/core/stx/hlc';
+import { _resetHLC, compareHLC, maxClockSkewMs } from '#/core/stx/hlc';
 import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 
 // Replayed writes keep their client timestamps, which is what the lens expectations below observe.
@@ -170,7 +170,8 @@ describe('resolveUpdateOps lens seam', () => {
 
 describe('resolveServerUpdateOps', () => {
   it('assigns one causally-new HLC to normalized scalar twins', () => {
-    const storedHLC = '9999999999999:0007:aaaaa';
+    // Ahead of the wall clock and inside the skew bound, so the server stamp must follow it.
+    const storedHLC = `${Date.now() + maxClockSkewMs / 2}:0007:aaaaa`;
     const entity = {
       id: 'a1',
       title: 'old',
