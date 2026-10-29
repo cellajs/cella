@@ -11,13 +11,13 @@ import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
-import { seqRangeOf } from '#/utils/seq-range';
+import { projectTombstones, seqRangeOf } from '#/utils/seq-range';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
 /**
  * A page of the attachments the caller may read in the organization; `channelId` narrows it to one channel's subtree.
- * A range read (`afterSeq`, `untilSeq`) includes deleted rows.
+ * A range read (`afterSeq`, `untilSeq`) includes deleted rows, as tombstones.
  */
 export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
@@ -58,6 +58,6 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     }),
   );
 
-  const items = await withActorRefs(ctx, rawItems);
+  const items = projectTombstones('attachment', await withActorRefs(ctx, rawItems));
   return { items, total };
 }

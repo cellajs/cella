@@ -30,7 +30,7 @@ import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { liveItems, offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import type { OrgRoutableItemData } from '~/query/basic/types';
@@ -103,7 +103,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(organizationId, filters),
     ...offsetPaging(limit, (offset, signal) =>
-      getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }),
+      getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }).then(liveItems),
     ),
     meta: { persist: false },
     staleTime: syncStaleTime,
@@ -120,7 +120,10 @@ export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { orga
   return queryOptions({
     queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
     queryFn: async () => {
-      return fetchAllPages(({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }), 1000);
+      return fetchAllPages(
+        ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }).then(liveItems),
+        1000,
+      );
     },
     staleTime: syncStaleTime,
   });

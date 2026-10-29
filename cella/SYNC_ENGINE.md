@@ -60,7 +60,7 @@ Only product rows sync: channels are containers, products are synced content. Th
 | **View** | The subtrees and entity types a client tracks. Catchup authorizes and answers per view. |
 | **Cursor** | Latest sequence position a view has ingested; the **stream cursor** is the last activity a connection received |
 | **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
-| **Tombstone** | Soft-deleted row, fetchable for the deleted-items period so absent clients learn the deletion |
+| **Tombstone** | Soft-deleted row as a range fetch returns it for the deleted-items period: its id, position and place, never its content, so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write: mutation ID, source ID and per-field HLC timestamps |
 
 ## Server

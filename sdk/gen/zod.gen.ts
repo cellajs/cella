@@ -1970,7 +1970,18 @@ export const zGetAttachmentsQuery = z.object({
  * Attachments
  */
 export const zGetAttachmentsResponse = z.object({
-  items: z.array(zAttachment),
+  items: z.array(
+    z.union([
+      zAttachment,
+      z.object({
+        id: z.uuid(),
+        createdAt: z.string(),
+        seq: z.int().gte(-9007199254740991).lte(9007199254740991),
+        organizationId: z.uuid(),
+        deletedAt: z.string(),
+      }),
+    ]),
+  ),
   total: z.number(),
 });
 

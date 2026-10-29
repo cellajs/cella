@@ -95,7 +95,9 @@ and the renderers.
     uses `tenantRead` and hides deleted rows. `resolveCollectionReadFilter` and
     `buildCollectionReadWhere(readFilter, <name>sTable, '<name>', actor)` give the read scope, and a
     `channelId` param narrows it with `buildSubtreeCoverWhere`. The product's own filters stay out of
-    a range read: a row that leaves the filter would never reach the caches.
+    a range read: a row that leaves the filter would never reach the caches. The rows go out through
+    `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and
+    the route declares the page with `productListResponseSchema('<name>', <name>Schema)`.
   - **Delete** (`delete-attachments.ts`) and the single read (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
@@ -130,7 +132,7 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     where `rangeFetch` spreads the `query` it receives (range and chunk limit) into the list request.
     Without the registration the first stream event for the type throws.
   - The canonical options (one list per parent channel, which sync keeps fresh), the list options
-    and the detail options.
+    and the detail options. The list fetches end in `.then(liveItems)`, which types their rows.
   - Create, update and delete mutations: placeholders from `createOptimisticEntity`, variables typed
     `CreateVariables`, `UpdateVariables` and `DeleteVariables` (`~/query/offline/mutation-variables`),
     the stx built when the edit is made (`createStxForCreate`, `createStxForUpdate`,

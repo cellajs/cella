@@ -10694,7 +10694,37 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Attachment"
+                        "anyOf": [
+                          {
+                            "$ref": "#/components/schemas/Attachment"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "seq": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "organizationId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "deletedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "createdAt", "seq", "organizationId", "deletedAt"],
+                            "description": "A soft-deleted row: the fields that place it, without its content."
+                          }
+                        ]
                       }
                     },
                     "total": {

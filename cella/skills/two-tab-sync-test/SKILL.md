@@ -57,7 +57,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | `[handleProductChange] attachment:<action> viewing=<bool>` in tab B console | the change crossed SSE + BroadcastChannel |
 | `Echo: patched stx, skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
-| range response `items` (id, name, `deletedAt`, seq) | payload truth; a range read includes soft-deleted rows |
+| range response `items` (id, name, `deletedAt`, seq) | payload truth; a range read includes soft-deleted rows, as tombstones without a name |
 | `[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched` | the device was away longer than `appConfig.retention.activityDays` (`caughtUpAt` in `syncStore`). To test it, move `caughtUpAt` in the persisted `sync` store back and reload |
 
 Decision rule: **no console change line and the API's `cdc` component is not healthy** (its `reason` says why) → the worker (read its log), not the client; **no console change line otherwise** → SSE/leader/broadcast layer; **change but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).

@@ -153,6 +153,8 @@ A route gate (`requireEntityAction`) asks the same map before the page loads, an
 
 Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
 
+Aggregates run no row condition: member counts, newest-post times and organization totals count every live row of the organization, which matches what a viewer may list only while no read cell is row-conditional, so an app that adds an `own` or `public` read cell must scope them itself.
+
 ### Guards
 
 Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. A guard declares what it reads of an earlier one, so a route that lists them out of order fails when its module loads.
@@ -185,6 +187,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
+| An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename; the slug check answers 409 taken, 204 free | A slug is the organization's public URL path and unique across tenants, and every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<type>_not_found` or `<type>_expired` | The token was the proof, so without it the request is not authenticated |
 | A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
 | An address or provider account another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app |
