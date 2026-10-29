@@ -4,7 +4,7 @@ import type { JWK } from 'jose';
 import { maxLength } from '#/db/utils/constraints';
 import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 
-/** `next` is published before it signs anything; `current` signs; `retired` still verifies until its last token expires. */
+/** `next` is published before it signs anything; `current` signs; `retired` verifies for one access token lifetime after `retiredAt`. */
 const signingKeyStatuses = ['next', 'current', 'retired'] as const;
 
 /**
@@ -22,6 +22,7 @@ export const signingKeysTable = snakeCase.table(
     privateJwk: text().notNull(),
     publicJwk: jsonb().$type<JWK>().notNull(),
     createdAt: timestampColumns.createdAt,
+    /** When the key stopped signing; a `retired` row without it verifies nothing. */
     retiredAt: isoTimestamp(),
   },
   (table) => [

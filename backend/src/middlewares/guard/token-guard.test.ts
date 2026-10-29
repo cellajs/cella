@@ -1,4 +1,4 @@
-import { importJWK, SignJWT } from 'jose';
+import { generateKeyPair, importJWK, SignJWT } from 'jose';
 import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
@@ -55,6 +55,21 @@ const signed = async ({ key, alg = 'RS256', issuer = appConfig.oauthUrl, audienc
     .sign(key ?? (await importJWK(signingJwk, 'RS256')));
 };
 
+/** The same claims under the server's `kid` with `alg: none` and no signature, built by hand: `SignJWT` refuses to. */
+const unsigned = async () => {
+  const [signingJwk] = (await loadSigningJwks()).keys;
+  const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const payload = { ...claims, sub: 'user1', iss: appConfig.oauthUrl, aud: resource, iat: now, exp: now + 3600 };
+  return `${part({ alg: 'none', kid: signingJwk.kid, typ: 'at+jwt' })}.${part(payload)}.`;
+};
+
+/** The server's public key as the JWKS endpoint publishes it, as bytes: an HMAC secret anyone can read. */
+const publicKeyBytes = async () => {
+  const [{ kty, n, e, kid }] = (await loadSigningJwks()).keys;
+  return new TextEncoder().encode(JSON.stringify({ kty, n, e, alg: 'RS256', use: 'sig', kid }));
+};
+
 describe('tokenGuard', () => {
   // A fresh test database holds no signing key until the authorization server boots or this mints one.
   beforeAll(() => ensureSigningKeys());
@@ -85,6 +100,9 @@ describe('tokenGuard', () => {
       () => signed({ audience: resourceUri({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org2' }) }),
       'invalid_token',
     ],
+    ['an unsigned token (`alg: none`)', unsigned, 'invalid_token'],
+    ["an HS256 token keyed with the server's public key", async () => signed({ alg: 'HS256', key: await publicKeyBytes() }), 'invalid_token'],
+    ["an attacker's key under the server's `kid`", async () => signed({ key: (await generateKeyPair('RS256')).privateKey }), 'invalid_token'],
   ];
 
   it.each(forgeries)('must not set an actor via %s', async (_vector, forge, reason) => {

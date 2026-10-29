@@ -7,7 +7,7 @@ import { revokeApiKey } from '#/modules/service-accounts/service-accounts-querie
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-/** The row stays for the audit trail; the key and the tokens minted with it stop in every process with the commit. */
+/** The row stays for the audit trail. The tokens minted with the key stop with the commit; the key itself within 10 seconds in every process. */
 export async function revokeApiKeyOp(ctx: UserContext, serviceAccountId: string, keyId: string) {
   const account = await getManagedServiceAccount(ctx, serviceAccountId);
   const revoked = await revokeApiKey(ctx, { actorId: account.id, id: keyId, revokedAt: getIsoDate(), revokedBy: ctx.var.actor.id });

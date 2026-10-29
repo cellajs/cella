@@ -61,7 +61,7 @@ A change to the rest of what the grant policy reads (the user row, an installed 
 
 ## Keystore
 
-`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live: `current` signs, and `next` is published ahead of use, so verifiers already know it when it takes over. A retired key keeps verifying until its last token expired.
+`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live: `current` signs, and `next` is published ahead of use, so verifiers already know it when it takes over. A retired key keeps verifying for one access token lifetime after it was retired, long enough for its last token to expire; a retired key with no retirement time verifies nothing.
 
 ## Store and sweep
 

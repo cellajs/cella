@@ -3191,7 +3191,7 @@ export const createApiKey = <ThrowOnError extends boolean = true>(
 /**
  * Revoke API key
  *
- * Revokes an API key immediately. The row stays for the audit trail.
+ * Revokes an API key: it stops working within 10 seconds in every process. The row stays for the audit trail.
  *
  * **DELETE /{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}** ·· [revokeApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}) ·· _service-accounts · cella_
  *

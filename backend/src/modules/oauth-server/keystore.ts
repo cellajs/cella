@@ -1,14 +1,18 @@
-import { inArray } from 'drizzle-orm';
+import { gt, inArray, or } from 'drizzle-orm';
 import { calculateJwkThumbprint, createLocalJWKSet, exportJWK, generateKeyPair, type JWK } from 'jose';
 import { baseDb } from '#/db/db';
 import { type SigningKeyModel, signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
+import { isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
+import { TimeSpan } from '#/utils/time-span';
 
 const alg = 'RS256';
 const encryptionPurpose = 'signing-key';
 /** How long a process verifies with the public keys it read before it reads them again. */
 const verifyCacheMs = 5 * 60 * 1000;
+/** How long after `retiredAt` a retired key verifies: the access token lifetime (`provider.ts`), up to `verifyCacheMs` more where cached. */
+const retiredKeyGrace = new TimeSpan(1, 'h');
 
 async function mintKey(status: 'current' | 'next'): Promise<void> {
   const { privateKey, publicKey } = await generateKeyPair(alg, { extractable: true });
@@ -57,10 +61,13 @@ export async function loadSigningJwks(): Promise<{ keys: JWK[] }> {
 
 let verifyCache: { at: number; keySet: ReturnType<typeof createLocalJWKSet> } | null = null;
 
-/** Public keys of every status (retired ones keep verifying), as a local JWKS for in-process verification. */
+/** Public keys of `current`, `next` and keys retired within their grace, as a local JWKS for in-process verification. */
 export async function getPublicJwkSet(): Promise<ReturnType<typeof createLocalJWKSet>> {
   if (verifyCache && Date.now() - verifyCache.at < verifyCacheMs) return verifyCache.keySet;
-  const rows = await baseDb.select({ publicJwk: signingKeysTable.publicJwk }).from(signingKeysTable);
+  const rows = await baseDb
+    .select({ publicJwk: signingKeysTable.publicJwk })
+    .from(signingKeysTable)
+    .where(or(inArray(signingKeysTable.status, ['current', 'next']), gt(signingKeysTable.retiredAt, isoDateAgo(retiredKeyGrace))));
   const keySet = createLocalJWKSet({ keys: rows.map((row) => row.publicJwk) });
   verifyCache = { at: Date.now(), keySet };
   return keySet;
