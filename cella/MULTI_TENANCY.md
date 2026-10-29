@@ -76,7 +76,7 @@ Only the admin connection can write `system_roles`. An application system admini
 
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists at once, and their open streams end, so their apps drop it.
+A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active: at once in the process that changed the status, within seconds in any other. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists, and their open streams end, so their apps drop it.
 
 A system admin restores it by setting the tenant active again. After the archived period a nightly sweep removes the tenant with everything in it, and mails the operator what it removed.
 

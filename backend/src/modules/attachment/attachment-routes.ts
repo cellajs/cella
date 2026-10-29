@@ -71,7 +71,8 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       entity: 'attachment',
     },
     summary: 'Get attachment',
-    description: 'Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.',
+    description:
+      'Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 200: json('Attachment', attachmentSchema) },
   }),

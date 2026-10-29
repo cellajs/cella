@@ -9,7 +9,7 @@ type CacheValue = Record<string, unknown>;
 
 const responseCache = new TTLCache<CacheValue>({
   maxSize: maxEntries,
-  defaultTtl: 10 * 60 * 1000,
+  defaultTtl: 10_000,
   onDispose: (key, _value, reason) => {
     if (reason === 'stale' || reason === 'evict') {
       log.trace('Entity cache disposed', { key, reason });
@@ -33,7 +33,10 @@ const holdOff = (key: string, until: number): void => {
   noStoreBefore.set(key, Math.max(until, noStoreBefore.get(key) ?? 0));
 };
 
-/** Entity-keyed store of enriched detail responses; the API's own writes and CDC messages drop entries by id, the next fetch re-enriches. */
+/**
+ * Entity-keyed store of enriched detail responses; the API's own writes and CDC messages drop entries by id, the next
+ * fetch re-enriches. A process neither reaches serves its entry for up to 10 seconds after the fill.
+ */
 export const productCacheStore = {
   /**
    * Called by the productCache middleware once the handler has fetched and enriched from the DB. The row is stored
