@@ -11,10 +11,10 @@ import {
   preferencesSchema,
   updatePreferencesBodySchema,
 } from '#/modules/notification/notification-schema';
-import { locationSchema, validIdSchema } from '#/schemas';
+import { locationSchema, maxLength, validIdSchema } from '#/schemas';
 
 /** The link token of one email category: the user, the category and an HMAC over both. */
-const unsubscribeQuerySchema = z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string() });
+const unsubscribeQuerySchema = z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string().max(maxLength.field) });
 
 const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   getNotifications: xRoute({

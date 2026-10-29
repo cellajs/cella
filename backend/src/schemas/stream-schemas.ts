@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
+import { maxLength, validIdSchema } from '#/schemas/common-schemas';
 import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
@@ -66,7 +67,7 @@ export type StreamSignal = z.infer<typeof streamSignalSchema>;
 /** One client view: a prefix set + entity types + the org-sequence cursor it has caught up to. */
 const catchupViewSchema = z.object({
   key: z.string().max(512).openapi({ description: 'Client-chosen stable view key, echoed back verbatim to correlate responses' }),
-  organizationId: z.string(),
+  organizationId: validIdSchema,
   prefixes: z.array(z.string().max(512)).min(1).max(64).openapi({ description: 'Id path prefixes this view covers (root-first ids, slash-joined)' }),
   entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1).max(64),
   depth: z.enum(['self', 'subtree']).optional().openapi({
@@ -80,7 +81,7 @@ export type CatchupView = z.infer<typeof catchupViewSchema>;
 
 /** `views` is the sequence-sync contract: prefix views with org-sequence cursors, answered after prefix authorization. */
 export const streamCatchupBodySchema = z.object({
-  cursor: z.string().optional().openapi({
+  cursor: z.string().max(maxLength.id).optional().openapi({
     description: 'Id of the last activity the client received (its commit position and index). Omit on first sync.',
     example: '00000000-016B3748-00000001',
   }),

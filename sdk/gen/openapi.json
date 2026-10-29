@@ -2470,14 +2470,16 @@
                   "order": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "maxItems": 100
                   },
                   "hidden": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "maxItems": 100
                   }
@@ -2489,14 +2491,16 @@
                   "order": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "maxItems": 100
                   },
                   "hidden": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 255
                     },
                     "maxItems": 100
                   }
@@ -3361,7 +3365,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "token",
@@ -3752,7 +3757,8 @@
                     "maxLength": 255
                   },
                   "redirect": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 2048
                   }
                 },
                 "required": ["email"]
@@ -3952,6 +3958,7 @@
                 "properties": {
                   "code": {
                     "type": "string",
+                    "maxLength": 6,
                     "pattern": "^\\d{6}$"
                   }
                 },
@@ -4038,6 +4045,7 @@
                 "properties": {
                   "code": {
                     "type": "string",
+                    "maxLength": 6,
                     "pattern": "^\\d{6}$"
                   }
                 },
@@ -4108,27 +4116,33 @@
                     "type": "object",
                     "properties": {
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "rawId": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "response": {
                         "type": "object",
                         "properties": {
                           "clientDataJSON": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "attestationObject": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 16384
                           },
                           "authenticatorData": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "transports": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "string",
+                              "maxLength": 255
                             },
                             "maxItems": 10
                           },
@@ -4136,7 +4150,8 @@
                             "type": "number"
                           },
                           "publicKey": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 16384
                           }
                         },
                         "required": ["clientDataJSON", "attestationObject"]
@@ -4382,25 +4397,31 @@
                     "type": "object",
                     "properties": {
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "rawId": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "response": {
                         "type": "object",
                         "properties": {
                           "clientDataJSON": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "authenticatorData": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "signature": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "userHandle": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]
@@ -4533,7 +4554,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "redirectAfter",
@@ -4588,7 +4610,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "redirectAfter",
@@ -4643,7 +4666,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "redirectAfter",
@@ -4688,7 +4712,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "code",
@@ -4696,7 +4721,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "state",
@@ -4704,7 +4730,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "error",
@@ -4712,7 +4739,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_description",
@@ -4720,7 +4748,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_uri",
@@ -4777,7 +4806,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "code",
@@ -4785,7 +4815,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "state",
@@ -4793,7 +4824,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "error",
@@ -4801,7 +4833,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_description",
@@ -4809,7 +4842,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_uri",
@@ -4866,7 +4900,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "code",
@@ -4874,7 +4909,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "state",
@@ -4882,7 +4918,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "error",
@@ -4890,7 +4927,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_description",
@@ -4898,7 +4936,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_uri",
@@ -5017,7 +5056,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "redirectAfter",
@@ -5087,7 +5127,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "redirectAfter",
@@ -5134,7 +5175,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "code",
@@ -5142,7 +5184,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "state",
@@ -5150,7 +5193,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "error",
@@ -5158,7 +5202,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_description",
@@ -5166,7 +5211,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "error_uri",
@@ -5337,25 +5383,31 @@
                     "type": "object",
                     "properties": {
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "rawId": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "response": {
                         "type": "object",
                         "properties": {
                           "clientDataJSON": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "authenticatorData": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "signature": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           },
                           "userHandle": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 2048
                           }
                         },
                         "required": ["clientDataJSON", "authenticatorData", "signature"]
@@ -5374,10 +5426,12 @@
                   },
                   "totpCode": {
                     "type": "string",
+                    "maxLength": 6,
                     "pattern": "^\\d{6}$"
                   },
                   "emailCode": {
                     "type": "string",
+                    "maxLength": 6,
                     "pattern": "^\\d{6}$"
                   }
                 }
@@ -5627,6 +5681,7 @@
                 "properties": {
                   "cursor": {
                     "type": "string",
+                    "maxLength": 50,
                     "description": "Id of the last activity the client received (its commit position and index). Omit on first sync.",
                     "example": "00000000-016B3748-00000001"
                   },
@@ -5641,7 +5696,8 @@
                           "description": "Client-chosen stable view key, echoed back verbatim to correlate responses"
                         },
                         "organizationId": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 50
                         },
                         "prefixes": {
                           "type": "array",
@@ -6219,7 +6275,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -7104,7 +7161,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "token",
@@ -7161,7 +7219,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "token",
@@ -7218,7 +7277,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": true,
             "name": "token",
@@ -7612,7 +7672,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -7843,7 +7904,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -9120,7 +9182,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "include",
@@ -9678,7 +9741,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -9846,7 +9910,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "include",
@@ -10079,7 +10144,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "include",
@@ -10181,6 +10247,7 @@
                   },
                   "country": {
                     "type": ["string", "null"],
+                    "maxLength": 2,
                     "pattern": "^[A-Z]{2}$",
                     "description": "ISO 3166-1 alpha-2 country code.",
                     "example": "NL"
@@ -10252,14 +10319,16 @@
                           "order": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "string",
+                              "maxLength": 255
                             },
                             "maxItems": 100
                           },
                           "hidden": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "string",
+                              "maxLength": 255
                             },
                             "maxItems": 100
                           }
@@ -10271,14 +10340,16 @@
                           "order": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "string",
+                              "maxLength": 255
                             },
                             "maxItems": 100
                           },
                           "hidden": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "string",
+                              "maxLength": 255
                             },
                             "maxItems": 100
                           }
@@ -11227,7 +11298,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -11236,10 +11308,12 @@
                     "type": "object",
                     "properties": {
                       "mutationId": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 255
                       },
                       "sourceId": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 255
                       }
                     },
                     "required": ["mutationId", "sourceId"]
@@ -12251,7 +12325,8 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "maxLength": 50
                     },
                     "minItems": 1,
                     "maxItems": 50
@@ -12840,7 +12915,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 255
             },
             "required": false,
             "name": "include",
@@ -12848,7 +12924,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 2048
             },
             "required": false,
             "name": "userIds",
