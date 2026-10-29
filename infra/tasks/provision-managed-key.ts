@@ -14,10 +14,8 @@ export interface ProvisionManagedKeyOptions {
   projectId: string;
   region: string;
   slug: string;
-  /** Deploy mode: per-mode app naming/grouping + per-service container paths. */
+  /** Deploy mode: per-mode app naming and grouping. */
   mode: string;
-  /** Env root folder, e.g. `/cella-production/` (display only; containers live in per-service folders). */
-  path: string;
   log?: (message: string) => void;
 }
 
@@ -58,7 +56,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   // missing so a live key is never leaked.
   const containersBySecretName = new Map<string, SecretManagerSecret[]>();
   for (const { secret } of targets) {
-    const copies = await secretCopyContainers(client, secret, opts.slug, opts.mode);
+    const copies = await secretCopyContainers(client, secret);
     const missing = missingCopies(copies);
     if (missing.length > 0) {
       throw new Error(

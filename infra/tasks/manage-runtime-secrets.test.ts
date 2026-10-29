@@ -4,7 +4,6 @@ import { manageRuntimeSecrets } from './manage-runtime-secrets';
 const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn() };
 
 const listSecrets = vi.fn();
-const listSecretsUnder = vi.fn();
 const getSecretByName = vi.fn();
 const ensureSecret = vi.fn();
 const putSecretValue = vi.fn();
@@ -12,7 +11,7 @@ const deleteSecret = vi.fn();
 const provisionManagedKey = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ listSecrets, listSecretsUnder, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
+  createSecretManagerClient: () => ({ listSecrets, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
 }));
 
 vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
@@ -22,7 +21,6 @@ function resetMocks() {
   prompts.password.mockReset();
   prompts.confirm.mockReset();
   listSecrets.mockReset();
-  listSecretsUnder.mockReset();
   getSecretByName.mockReset();
   ensureSecret.mockReset();
   putSecretValue.mockReset();
@@ -37,7 +35,6 @@ const baseOptions = {
   region: 'nl-ams',
   slug: 'demo',
   mode: 'production',
-  path: '/demo-production/',
   prompts,
   log: vi.fn(),
 };
@@ -48,24 +45,24 @@ describe('manageRuntimeSecrets', () => {
     prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit');
     // Every copy of brevo-api-key has a version → present; github-client-id's copies exist empty (0 versions) → empty, not present.
     // Everything else is missing.
-    listSecretsUnder.mockResolvedValueOnce([
+    listSecrets.mockResolvedValueOnce([
       ...['backend', 'mcp', 'jobs'].map((service) => ({
         name: 'brevo-api-key',
         id: `brevo-${service}`,
-        path: `/demo-production/${service}`,
+        path: `/${service}`,
         version_count: 1,
       })),
       ...['backend', 'mcp'].map((service) => ({
         name: 'github-client-id',
         id: `gh-${service}`,
-        path: `/demo-production/${service}/`,
+        path: `/${service}/`,
         version_count: 0,
       })),
     ]);
 
     await manageRuntimeSecrets(baseOptions);
 
-    expect(listSecretsUnder).toHaveBeenCalledWith('/demo-production/');
+    expect(listSecrets).toHaveBeenCalledWith();
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/));
@@ -83,9 +80,7 @@ describe('manageRuntimeSecrets', () => {
 
     expect(ensureSecret).not.toHaveBeenCalled();
     for (const service of ['backend', 'mcp', 'jobs']) {
-      expect(putSecretValue).toHaveBeenCalledWith(
-        expect.objectContaining({ secretId: `/demo-production/${service}/brevo-api-key`, value: 'new-api-key' }),
-      );
+      expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: `/${service}/brevo-api-key`, value: 'new-api-key' }));
     }
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('3 copies'));
   });
@@ -136,7 +131,7 @@ describe('manageRuntimeSecrets', () => {
     await manageRuntimeSecrets(baseOptions);
 
     expect(provisionManagedKey).toHaveBeenCalledWith(
-      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo', path: '/demo-production/' }),
+      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo' }),
     );
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'));
   });

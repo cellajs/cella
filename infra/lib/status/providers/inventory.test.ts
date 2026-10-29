@@ -75,7 +75,6 @@ describe('the inventory', () => {
 
   it("finds a main job edited to read the database's password and to fetch another repository (D-b): the runner key may edit a definition", () => {
     const mainJob = declaredMainJob({
-      slug: 'app',
       mode: 'staging',
       projectId: 'p-staging',
       organizationId: 'o',

@@ -15,7 +15,7 @@ import type { Environment } from './lib/stack/bootstrap-stack-state';
  * of that identity. Provider lookups, secret reads, and sizing live with their
  * consumers (identities.ts, compute.ts, config/sizing.ts).
  */
-export const stackName = pulumi.getStack().split('/').pop() ?? '';
+const stackName = pulumi.getStack().split('/').pop() ?? '';
 
 // A mismatch means APP_MODE was set explicitly and contradicts the selected
 // stack; fail before any resource is declared against the wrong environment.

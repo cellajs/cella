@@ -10,7 +10,7 @@ import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwSend } from '../../lib/scaleway/scw-fetch';
-import { engineSecretPath } from '../../lib/scaleway/secret-paths';
+import { ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
@@ -229,7 +229,7 @@ async function deleteRetiredAdmin(
 ): Promise<void> {
   await deleteApplicationCascade({ callerSecretKey: ownerKey.secretKey, organizationId: ownerKey.organizationId, applicationId: admin.id });
   const secrets = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: context.appConfig.s3.region, projectId: context.projectId });
-  const custody = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, engineSecretPath(context.appConfig.slug, context.environment));
+  const custody = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, ENGINE_FOLDER);
   if (custody) await secrets.deleteSecret(custody.id);
   console.info(`  ${changeMark} '${admin.name}' deleted, with its custody secret.`);
 }

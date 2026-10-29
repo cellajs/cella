@@ -15,6 +15,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { ensureMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
+import { assertSecretsUnprefixed } from '../../tasks/move-secret-paths';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { forgetOwnerKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
@@ -157,6 +158,18 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
   const projectId =
     context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
+  // The standing keys are planned from the deploy folder: one still under the environment's prefix would have every key made anew.
+  if (context.projectId) {
+    const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
+    const refusal = await assertSecretsUnprefixed(secrets, appConfig.slug, environment).then(
+      () => undefined,
+      (error: unknown) => errorMessage(error),
+    );
+    if (refusal) {
+      console.error(`${warningMark} ${refusal}.`);
+      return undefined;
+    }
+  }
   const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
 

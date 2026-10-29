@@ -84,8 +84,8 @@ describe('buildDeployEnv', () => {
     const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).grant_rows_json) as Row[];
     expect(single).toEqual(split);
     const backend = single.find((row) => row.app === 'cella-production-vm-backend');
-    expect(backend?.condition).toBe(principalSecretCondition('cella', 'production', 'backend'));
-    expect(backend?.condition).not.toContain('/cella-production/yjs/');
+    expect(backend?.condition).toBe(principalSecretCondition('backend'));
+    expect(backend?.condition).not.toContain('/yjs/');
   });
 
   it('toggling enabled never changes a principal row', () => {

@@ -39,7 +39,7 @@ function fakeSecrets() {
   const stored: SecretManagerSecret[] = principals.map(({ principal, application }) => ({
     id: `stored:${principal}`,
     name: machineKeyName(principal),
-    path: `/${slug}-${mode}/deploy/`,
+    path: '/deploy/',
     description: machineKeyDescription(application, accessKeyOf(principal)),
     version_count: 1,
   }));

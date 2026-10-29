@@ -37,12 +37,12 @@ On an operator machine `infra/.env.<mode>` holds the observer key and nothing a 
 
 ### Secret folders
 
-Secret Manager is split into folders per environment, and each key's policy names the folders it reads:
+Each environment has a Scaleway project of its own, so its Secret Manager starts at the project's root. It is split into folders, and each key's policy names the folders it reads in that project:
 
-- `/<slug>-<mode>/<service>/`: a copy of every secret the service consumes, read by that service's key only. A change of consumers adds or removes copies and writes no IAM.
-- `/<slug>-<mode>/deploy/`: what the deploy key reads: the machine keys it hands over, the repository read key and the telemetry ingest key.
-- `/<slug>-<mode>/handoff/`: the read-once bundles a deploy writes for each new machine, read by the boot key only. A bundle already consumed at first boot halts the machine as a sign of interception.
-- `/<slug>-<mode>/engine/`: the deploy key's copy, the passphrase with the stack's salt, and the database passwords, which no machine reads.
+- `/<service>/`: a copy of every secret the service consumes, read by that service's key only. A change of consumers adds or removes copies and writes no IAM.
+- `/deploy/`: what the deploy key reads: the machine keys it hands over, the repository read key and the telemetry ingest key.
+- `/handoff/`: the read-once bundles a deploy writes for each new machine, read by the boot key only. A bundle already consumed at first boot halts the machine as a sign of interception.
+- `/engine/`: the deploy key's copy, the passphrase with the stack's salt, and the database passwords, which no machine reads.
 
 On a shared host the services read one env file, so they share their secrets; a key per service keeps IAM unchanged when placement changes.
 

@@ -4,12 +4,10 @@ import { secretCopies } from '../lib/scaleway/secret-paths';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
-let slug: string;
 
 beforeAll(async () => {
   h = await installPulumiMocks({ deferCompute: true });
   await import('./secrets');
-  ({ slug } = (await import('../pulumi-context')).naming);
   await h.settle();
 });
 
@@ -25,11 +23,11 @@ describe('secrets module', () => {
         .sort();
       // The machine grants are conditioned on these folders (tests/unit/secret-scope.test.ts proves what each covers).
       expect(paths, definition.id).toEqual(
-        secretCopies(definition, slug, 'production')
+        secretCopies(definition)
           .map((copy) => copy.path)
           .sort(),
       );
-      for (const path of paths) expect(path).toMatch(new RegExp(`^/${slug}-production/[^/]+/$`));
+      for (const path of paths) expect(path).toMatch(/^\/[^/]+\/$/);
     }
   });
 

@@ -4,7 +4,7 @@ import { deriveInfra } from '../lib/naming';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { makeS3Client, stateKeyOf } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { engineSecretPath } from '../lib/scaleway/secret-paths';
+import { ENGINE_FOLDER } from '../lib/scaleway/secret-paths';
 import { stateBucket } from '../lib/stack/control-store';
 
 /** Secret Manager container that holds the retired admin application's key pair, under the stack's engine folder. */
@@ -67,15 +67,9 @@ async function operatorShutOut(region: string, operator: KeyPair, buckets: reado
 }
 
 /** The retired admin application's key from its custody secret, read with the operator key; undefined when the secret is gone. */
-async function retiredAdminKey(opts: {
-  operatorSecretKey: string;
-  region: string;
-  projectId: string;
-  slug: string;
-  mode: string;
-}): Promise<KeyPair | undefined> {
+async function retiredAdminKey(opts: { operatorSecretKey: string; region: string; projectId: string }): Promise<KeyPair | undefined> {
   const secrets = createSecretManagerClient({ secretKey: opts.operatorSecretKey, region: opts.region, projectId: opts.projectId });
-  const container = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, engineSecretPath(opts.slug, opts.mode));
+  const container = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, ENGINE_FOLDER);
   if (!container) return undefined;
   const pair = JSON.parse(await secrets.accessLatestValue(container.id)) as Partial<KeyPair>;
   return pair.accessKey && pair.secretKey ? { accessKey: pair.accessKey, secretKey: pair.secretKey } : undefined;
@@ -102,10 +96,10 @@ export async function admitOperatorToBuckets(opts: {
   const operatorState = stateKeyOf(opts.operator, projectId);
   if (!(await operatorShutOut(region, operatorState, buckets, opts.operator.applicationId))) return [];
 
-  const admin = await retiredAdminKey({ operatorSecretKey: opts.operator.secretKey, region, projectId, slug: appConfig.slug, mode: opts.mode });
+  const admin = await retiredAdminKey({ operatorSecretKey: opts.operator.secretKey, region, projectId });
   if (!admin) {
     throw new Error(
-      `bucket policies of ${opts.mode} shut the operator out, and the admin application's key (${ADMIN_KEY_SECRET_NAME} under ${engineSecretPath(appConfig.slug, opts.mode)}) is gone: only a principal they name can rewrite them`,
+      `bucket policies of ${opts.mode} shut the operator out, and the admin application's key (${ADMIN_KEY_SECRET_NAME} under ${ENGINE_FOLDER}) is gone: only a principal they name can rewrite them`,
     );
   }
   const adminKey = stateKeyOf(admin, projectId);

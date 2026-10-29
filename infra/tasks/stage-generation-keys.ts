@@ -10,7 +10,7 @@ import {
   standingAccessKey,
 } from '../lib/scaleway/machine-keys';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { deployFolderPath, handoffServicePath } from '../lib/scaleway/secret-paths';
+import { DEPLOY_FOLDER, handoffServicePath } from '../lib/scaleway/secret-paths';
 import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
@@ -52,8 +52,6 @@ export function standingKeyProblem(principal: MachinePrincipal, stored: string |
  * bundle of an earlier deploy is pruned first, as the machine it was for never booted. Returns the bundle's secret id.
  */
 export async function stageHandoffBundle(opts: {
-  slug: string;
-  mode: string;
   sha: string;
   principal: string;
   /** The principal's key; the builder's carries the repository read key too, for a private repository (D19). */
@@ -61,7 +59,7 @@ export async function stageHandoffBundle(opts: {
   secrets: Pick<StageSecrets, 'listSecretsUnder' | 'ensureSecret' | 'putSecretValue' | 'deleteSecret'>;
   log: (message: string) => void;
 }): Promise<string> {
-  const handoffFolder = handoffServicePath(opts.slug, opts.mode, opts.principal);
+  const handoffFolder = handoffServicePath(opts.principal);
   for (const stale of await opts.secrets.listSecretsUnder(handoffFolder)) {
     await opts.secrets.deleteSecret(stale.id);
     opts.log(`  ~ pruned stale handoff bundle ${stale.name}`);
@@ -80,11 +78,9 @@ export async function stageHandoffBundle(opts: {
 /** A principal's standing key, read from the deploy folder. */
 export async function readStandingKey(
   secrets: Pick<StageSecrets, 'listSecretsUnder' | 'accessLatestValue'>,
-  slug: string,
-  mode: string,
   principal: string,
 ): Promise<{ accessKey: string; secretKey: string }> {
-  const container = (await secrets.listSecretsUnder(deployFolderPath(slug, mode))).find(
+  const container = (await secrets.listSecretsUnder(DEPLOY_FOLDER)).find(
     (secret) => secret.name === machineKeyName(principal) && (secret.version_count ?? 0) > 0,
   );
   if (!container) throw new Error(`no standing key for ${principal} in the deploy folder: \`${actionCommand('identity')}\` makes it`);
@@ -111,9 +107,8 @@ export async function stageGenerationKeys(opts: {
   log?: (message: string) => void;
 }): Promise<GenerationKeys> {
   const log = opts.log ?? ((message: string) => console.info(message));
-  const folder = deployFolderPath(opts.slug, opts.mode);
   const stored = new Map(
-    (await opts.secrets.listSecretsUnder(folder)).filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => [secret.name, secret]),
+    (await opts.secrets.listSecretsUnder(DEPLOY_FOLDER)).filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => [secret.name, secret]),
   );
 
   const problems: string[] = [];

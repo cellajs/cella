@@ -7,10 +7,12 @@ import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
 import { describeKey, type KeyDescription, type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
+import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { moveSecretPaths } from '../../tasks/move-secret-paths';
 import { ensureCustodiedSalt, readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
@@ -175,7 +177,32 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
     return endAction(1);
   }
   rememberOperatorKey(pair);
+  await moveSecretsOutOfPrefix(stack, pair.secretKey);
   return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId, applicationId: desc.bearerId };
+}
+
+/** The projects whose secrets this run has moved out of their environment's prefix. */
+const unprefixedProjects = new Set<string>();
+
+/**
+ * Move a stack's secrets out of its `/<slug>-<mode>/` prefix once per run, before anything of the session reads a folder: the passphrase,
+ * the database passwords, the machine keys and every copy are read at their paths from the project's root (tasks/move-secret-paths.ts). A
+ * move that fails ends the action, as what follows would find those folders empty and make their secrets anew.
+ */
+async function moveSecretsOutOfPrefix(stack: StackRef, secretKey: string): Promise<void> {
+  if (!stack.projectId || unprefixedProjects.has(stack.projectId)) return;
+  const { slug } = stack.appConfig;
+  const client = createSecretManagerClient({ secretKey, region: stack.appConfig.s3.region, projectId: stack.projectId });
+  const left = await moveSecretPaths({ client, slug, mode: stack.environment, log: (message) => console.info(pc.dim(message)) }).catch((error) => {
+    console.error(`${crossMark} Could not move the secrets of ${stack.environment} out of /${slug}-${stack.environment}/: ${errorMessage(error)}`);
+    return endAction(1);
+  });
+  if (left.length > 0) {
+    console.warn(
+      `${warningMark} ${left.length} secret(s) stay under /${slug}-${stack.environment}/ beside a newer one of the same name: delete the stale ones.`,
+    );
+  }
+  unprefixedProjects.add(stack.projectId);
 }
 
 /** One IAM read with a key: true when Scaleway accepts it from this address. */
@@ -258,8 +285,6 @@ export function installPassphraseCustody(stack: StackRef): void {
     secretKey: '',
     region: stack.appConfig.s3.region,
     projectId: stack.projectId,
-    slug: stack.appConfig.slug,
-    mode: stack.environment,
   };
   setPassphraseCustody({
     async read() {

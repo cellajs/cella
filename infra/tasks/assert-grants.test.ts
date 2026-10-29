@@ -94,7 +94,7 @@ describe('assertGrants', () => {
 
   it('must not pass a secret-reading rule whose condition differs from the required path condition', async () => {
     // IAM conditions only narrow an allow: a second secret rule without the condition reads every secret of the project, so the exact string must match on every secret-granting rule.
-    const condition = 'resource.name.startsWith("/cella-production/backend/")';
+    const condition = 'resource.name.startsWith("/backend/")';
     const grants = (rules: Array<Record<string, unknown>>) =>
       assertGrants({
         ...baseOpts,
@@ -136,7 +136,7 @@ describe('assertGrants', () => {
 
   it('must not pass a condition spread over rules when a part is missing or a rule carries something else', async () => {
     // A condition too large for one rule lives in several: each part must be on a rule, or the principal cannot read the secrets under those folders.
-    const terms = Array.from({ length: 12 }, (_, index) => `resource.name.startsWith("/cella-staging-staging/shared/folder-${index}/")`);
+    const terms = Array.from({ length: 12 }, (_, index) => `resource.name.startsWith("/shared/folder-${index}/")`);
     const condition = terms.join(' || ');
     const parts = ruleConditions(condition);
     expect(parts.length).toBeGreaterThan(1);

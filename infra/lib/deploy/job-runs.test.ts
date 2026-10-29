@@ -40,7 +40,6 @@ describe('the Serverless Jobs calls', () => {
 
   it("reads the main job's startup command and each run's, so a run started with its own is flagged (D-b, measured 2026-10-29)", async () => {
     const declared = declaredMainJob({
-      slug: 'app',
       mode: 'staging',
       projectId: 'p',
       organizationId: 'o',

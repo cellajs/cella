@@ -173,6 +173,6 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
  * The secret-read condition of a service principal: its own folder, and nothing else. The machine policies (lib/scaleway/machine-policies.ts)
  * and the deploy's grant assertion both build it here, so they compare equal as strings.
  */
-export function principalSecretCondition(slug: string, mode: string, service: ServiceName): string {
-  return serviceKeyCondition(slug, mode, service);
+export function principalSecretCondition(service: ServiceName): string {
+  return serviceKeyCondition(service);
 }

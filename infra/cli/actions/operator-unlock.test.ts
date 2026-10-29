@@ -46,6 +46,7 @@ async function fakeScaleway(url: string, init?: { headers?: Record<string, strin
   if (application) return answer(200, { name: application, organization_id: 'org-1' });
   const user = path.match(/\/users\/([^/]+)$/)?.[1];
   if (user) return answer(200, { email: user, type: 'owner', organization_id: 'org-1' });
+  if (path.endsWith('/secrets')) return answer(200, { secrets: [], total_count: 0 });
   return { ok: true, status: 200, text: async () => '198.51.100.9' };
 }
 

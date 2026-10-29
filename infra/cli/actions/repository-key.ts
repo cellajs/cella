@@ -5,7 +5,7 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { readRunnerFile } from '../../lib/runner/runner-file';
 import { RUNNER_REPOSITORY_KEY } from '../../lib/runner/runner-machine';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { deployFolderPath } from '../../lib/scaleway/secret-paths';
+import { DEPLOY_FOLDER } from '../../lib/scaleway/secret-paths';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { maskedSecret } from '../prompts/masked-secret';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
@@ -20,16 +20,15 @@ import { acquirePrivilegedKey } from './operator-unlock';
 export async function runRepositoryKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const repository = repositoryUrl();
-  const path = deployFolderPath(appConfig.slug, context.environment);
   console.info(
     pc.dim(
-      `\n${actionLabel('repository-key')}: the key the builder fetches a release's commit of ${repository} with, in ${path} of ${context.environment}.\n` +
+      `\n${actionLabel('repository-key')}: the key the builder fetches a release's commit of ${repository} with, in ${DEPLOY_FOLDER} of ${context.environment}.\n` +
         '  Make a fine-grained GitHub token for this repository only, with "Contents: read" and nothing else, and an expiry.\n',
     ),
   );
   const operator = await acquirePrivilegedKey(context);
   const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-  const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, path);
+  const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, DEPLOY_FOLDER);
   const runnerProject = readRunnerFile()?.projectId;
   const runnerSecrets = runnerProject
     ? createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId: runnerProject })
@@ -57,7 +56,11 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
   }
   const container =
     stored ??
-    (await secrets.ensureSecret({ name: REPOSITORY_KEY_NAME, path, description: "Read-only key of the app's repository, for the builder (D19)" }));
+    (await secrets.ensureSecret({
+      name: REPOSITORY_KEY_NAME,
+      path: DEPLOY_FOLDER,
+      description: "Read-only key of the app's repository, for the builder (D19)",
+    }));
   await secrets.putSecretValue({ secretId: container.id, value: key, description: 'Set by the operator', disablePrevious: true });
   if (runnerSecrets) {
     const runnerContainer =

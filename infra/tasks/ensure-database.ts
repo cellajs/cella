@@ -5,7 +5,7 @@ import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-pr
 import { createRdbClient, type RdbUser } from '../lib/scaleway/scaleway-rdb';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { secretCopyContainers } from '../lib/scaleway/secret-copies';
-import { engineSecretPath } from '../lib/scaleway/secret-paths';
+import { ENGINE_FOLDER } from '../lib/scaleway/secret-paths';
 import { readStoreOutputs } from '../lib/stack/store-outputs';
 import type { DatabaseRole } from '../lib/stores';
 
@@ -76,8 +76,6 @@ export type PasswordSource = 'stored' | 'recovered' | 'generated';
 export async function ensureDatabase(opts: {
   rdb: EnsureDatabaseRdb;
   secrets: EnsureDatabaseSecrets;
-  slug: string;
-  mode: string;
   endpoint: DatabaseEndpoint;
   definitions?: readonly RuntimeSecretDefinition[];
   generate?: () => string;
@@ -88,7 +86,6 @@ export async function ensureDatabase(opts: {
   const log = opts.log ?? ((message) => console.info(message));
   const generate = opts.generate ?? generateRolePassword;
   const definitions = opts.definitions ?? databaseRuntimeSecrets();
-  const engineFolder = engineSecretPath(opts.slug, opts.mode);
   const { databaseName } = opts.endpoint;
   // The store output names the instance as Pulumi does, `<region>/<uuid>`; the database API takes the uuid.
   const instanceId = opts.endpoint.instanceId.split('/').pop() ?? opts.endpoint.instanceId;
@@ -96,7 +93,7 @@ export async function ensureDatabase(opts: {
   const passwords = {} as Record<DatabaseRole, string>;
   const sources = {} as Record<DatabaseRole, PasswordSource>;
   for (const role of ROLES) {
-    const kept = await opts.secrets.getSecretByName(rolePasswordSecretName(role), engineFolder);
+    const kept = await opts.secrets.getSecretByName(rolePasswordSecretName(role), ENGINE_FOLDER);
     if (!opts.rotate && kept && (kept.version_count ?? 0) > 0) {
       passwords[role] = await opts.secrets.accessLatestValue(kept.id);
       sources[role] = 'stored';
@@ -104,7 +101,7 @@ export async function ensureDatabase(opts: {
     }
     let recovered: string | undefined;
     for (const definition of opts.rotate ? [] : definitions.filter((candidate) => candidate.database?.role === role)) {
-      for (const copy of await secretCopyContainers(opts.secrets, definition, opts.slug, opts.mode)) {
+      for (const copy of await secretCopyContainers(opts.secrets, definition)) {
         if (recovered || !copy.container || (copy.container.version_count ?? 0) === 0) continue;
         recovered = passwordOfPostgresUrl(await opts.secrets.accessLatestValue(copy.container.id));
       }
@@ -135,10 +132,10 @@ export async function ensureDatabase(opts: {
   for (const role of ROLES) {
     if (sources[role] === 'stored') continue;
     const container =
-      (await opts.secrets.getSecretByName(rolePasswordSecretName(role), engineFolder)) ??
+      (await opts.secrets.getSecretByName(rolePasswordSecretName(role), ENGINE_FOLDER)) ??
       (await opts.secrets.ensureSecret({
         name: rolePasswordSecretName(role),
-        path: engineFolder,
+        path: ENGINE_FOLDER,
         description: `Password of the ${role} database role`,
       }));
     await opts.secrets.putSecretValue({
@@ -147,7 +144,7 @@ export async function ensureDatabase(opts: {
       description: `Kept by ensure-database (${sources[role]})`,
       disablePrevious: true,
     });
-    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${engineFolder}`);
+    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${ENGINE_FOLDER}`);
   }
 
   const written: string[] = [];
@@ -155,7 +152,7 @@ export async function ensureDatabase(opts: {
     const role = definition.database?.role;
     if (!role) continue;
     const expected = formatPostgresUrl(POSTGRES_ROLE_NAMES[role], passwords[role], opts.endpoint.privateIp, opts.endpoint.port, databaseName);
-    for (const copy of await secretCopyContainers(opts.secrets, definition, opts.slug, opts.mode)) {
+    for (const copy of await secretCopyContainers(opts.secrets, definition)) {
       if (!copy.container) continue;
       const current = (copy.container.version_count ?? 0) > 0 ? await opts.secrets.accessLatestValue(copy.container.id) : undefined;
       if (current === expected) continue;
@@ -179,8 +176,6 @@ export async function ensureDatabase(opts: {
 export async function ensureDatabaseForStack(opts: {
   env: NodeJS.ProcessEnv;
   stack: string;
-  slug: string;
-  mode: string;
   region: string;
   projectId: string;
   secretKey: string;
@@ -199,8 +194,6 @@ export async function ensureDatabaseForStack(opts: {
   await ensureDatabase({
     rdb: createRdbClient({ secretKey: opts.secretKey, region: opts.region }),
     secrets: createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId }),
-    slug: opts.slug,
-    mode: opts.mode,
     endpoint: { instanceId: store.instanceId, privateIp: store.privateIp, port: store.port || '5432', databaseName: store.databaseName },
     rotate: opts.rotate,
     log,

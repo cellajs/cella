@@ -47,11 +47,11 @@ describe('copyStep', () => {
 describe('copySharedSecrets', () => {
   it("moves an operator value into every consumer's copy, then deletes the shared container", async () => {
     const { client, writes, deleted } = fakeClient({
-      '/app-production/shared/backend/jobs/brevo-api-key': { id: 'shared', versions: 1, value: 'brevo-value' },
-      '/app-production/backend/brevo-api-key': { id: 'b', versions: 0 },
-      '/app-production/jobs/brevo-api-key': { id: 'j', versions: 0 },
+      '/shared/backend/jobs/brevo-api-key': { id: 'shared', versions: 1, value: 'brevo-value' },
+      '/backend/brevo-api-key': { id: 'b', versions: 0 },
+      '/jobs/brevo-api-key': { id: 'j', versions: 0 },
     });
-    expect(await copySharedSecrets({ client, slug: 'app', mode: 'production', secrets: [definition], log: () => {} })).toEqual(['brevo-api-key']);
+    expect(await copySharedSecrets({ client, secrets: [definition], log: () => {} })).toEqual(['brevo-api-key']);
     expect(writes).toEqual([
       { secretId: 'b', value: 'brevo-value' },
       { secretId: 'j', value: 'brevo-value' },
@@ -61,11 +61,11 @@ describe('copySharedSecrets', () => {
 
   it('must not overwrite a copy an operator set after the move started', async () => {
     const { client, writes } = fakeClient({
-      '/app-production/shared/backend/jobs/brevo-api-key': { id: 'shared', versions: 1, value: 'old' },
-      '/app-production/backend/brevo-api-key': { id: 'b', versions: 1 },
-      '/app-production/jobs/brevo-api-key': { id: 'j', versions: 0 },
+      '/shared/backend/jobs/brevo-api-key': { id: 'shared', versions: 1, value: 'old' },
+      '/backend/brevo-api-key': { id: 'b', versions: 1 },
+      '/jobs/brevo-api-key': { id: 'j', versions: 0 },
     });
-    await copySharedSecrets({ client, slug: 'app', mode: 'production', secrets: [definition], log: () => {} });
+    await copySharedSecrets({ client, secrets: [definition], log: () => {} });
     expect(writes).toEqual([{ secretId: 'j', value: 'old' }]);
   });
 });

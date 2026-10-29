@@ -34,10 +34,8 @@ export interface ManageRuntimeSecretsOptions {
   region: string;
   /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
   slug: string;
-  /** Deploy mode: paths are per-service under the env root (REQ-8). */
+  /** Deploy mode: per-mode IAM naming of a minted key. */
   mode: string;
-  /** Env root folder (display + mint path), e.g. `/cella-production/`. */
-  path: string;
   prompts: RuntimeSecretPrompts;
   log?: (message: string) => void;
 }
@@ -68,7 +66,6 @@ interface MenuContext {
   client: ReturnType<typeof createSecretManagerClient>;
   secrets: ManagedRuntimeSecret[];
   prompts: RuntimeSecretPrompts;
-  path: string;
   /** The caller key, and the key the mint action writes IAM with. */
   secretKey: string;
   identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
@@ -89,13 +86,13 @@ async function selectSecret(ctx: MenuContext, message: string, choices: ManagedR
 }
 
 async function handleList(ctx: MenuContext): Promise<void> {
-  const existing = await ctx.client.listSecretsUnder(ctx.path);
+  const existing = await ctx.client.listSecrets();
   const trim = (path: string) => `/${path.split('/').filter(Boolean).join('/')}/`;
   const byCopy = new Map(existing.map((secret) => [`${secret.name}@${trim(secret.path)}`, secret]));
-  ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.path)}`);
+  ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.mode)}`);
   for (const secret of ctx.secrets) {
     // One copy per consumer. Treat only versioned copies as present; an empty container has no readable value, and the operator sets it.
-    const copies = secretCopies(secret, ctx.slug, ctx.mode).map((copy) => byCopy.get(`${secret.secretName}@${trim(copy.path)}`));
+    const copies = secretCopies(secret).map((copy) => byCopy.get(`${secret.secretName}@${trim(copy.path)}`));
     const status = copies.some((copy) => !copy)
       ? `${tildeMark} missing`
       : copies.every((copy) => (copy?.version_count ?? 0) > 0)
@@ -116,7 +113,7 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   // Pulumi owns container creation (resources/secrets.ts); refuse to create one
   // out-of-band here, since that would make the next `pulumi up` fail with
   // "secret already exists". Deploy first so the container exists, then rotate.
-  const copies = await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode);
+  const copies = await secretCopyContainers(ctx.client, secret);
   if (missingCopies(copies).length > 0) {
     ctx.log(
       `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. Deploy first so Pulumi creates it, then rotate.`,
@@ -134,9 +131,9 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
 async function handleDelete(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets);
   if (!secret) return;
-  const containers = existingContainers(await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode));
+  const containers = existingContainers(await secretCopyContainers(ctx.client, secret));
   if (containers.length === 0) {
-    ctx.log(`${tildeMark} ${secret.secretName} has no copy in ${ctx.path}`);
+    ctx.log(`${tildeMark} ${secret.secretName} has no copy`);
     return;
   }
   const confirmed = await ctx.prompts.confirm({
@@ -156,7 +153,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   if (!secret) return;
   // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
   // Operators must deploy the empty container before setting its value.
-  const copies = await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode);
+  const copies = await secretCopyContainers(ctx.client, secret);
   if (missingCopies(copies).length > 0) {
     ctx.log(
       `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. ` +
@@ -188,10 +185,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
     `${checkMark} Updated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'}, ${value.length} chars)`)}`,
   );
   // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
-  if (
-    secret.secretName === telemetrySink.keySecretName &&
-    (await syncDeployTelemetryKey({ client: ctx.client, slug: ctx.slug, mode: ctx.mode })) === 'written'
-  ) {
+  if (secret.secretName === telemetrySink.keySecretName && (await syncDeployTelemetryKey({ client: ctx.client })) === 'written') {
     ctx.log(`${checkMark} Copied ${secret.secretName} into the deploy folder, where the deploy reads it`);
   }
 }
@@ -240,7 +234,6 @@ async function handleMint(ctx: MenuContext): Promise<void> {
       region: ctx.region,
       slug: ctx.slug,
       mode: ctx.mode,
-      path: ctx.path,
       log: ctx.log,
     });
     ctx.log(`${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`);
@@ -254,7 +247,6 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     client: createSecretManagerClient({ secretKey: options.secretKey, region: options.region, projectId: options.projectId }),
     secrets: operatorManagedSecrets(),
     prompts: options.prompts,
-    path: options.path,
     secretKey: options.secretKey,
     identityKey: options.identityKey,
     projectId: options.projectId,

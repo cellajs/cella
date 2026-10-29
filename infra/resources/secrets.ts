@@ -2,10 +2,10 @@ import type * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { type RuntimeSecretDefinition, type RuntimeSecretId, runtimeSecrets } from '../lib/runtime-secrets';
 import { secretCopies } from '../lib/scaleway/secret-paths';
-import { mode, naming, region, tags } from '../pulumi-context';
+import { region, tags } from '../pulumi-context';
 import { derivedRuntimeSecretData } from './stores';
 
-// One copy per consumer, in `/<slug>-<mode>/<service>/`. The folder is the security boundary the machine grant is conditioned on, so it is derived
+// One copy per consumer, in `/<service>/`. The folder is the security boundary the machine grant is conditioned on, so it is derived
 // from the consumer list, never hand-assigned, and a grant names its own folder only.
 
 /** Imports of operator secret containers that exist outside the state, as `secretName@service=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
@@ -28,7 +28,8 @@ const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SE
 
 /**
  * The container of one copy. A secret of one consumer keeps the resource name it had before copies (`secret-<name>`), through an alias, as
- * its folder did not move: a new resource at the same name and path would be refused.
+ * its folder did not move: a new resource at the same name and path would be refused. The provider updates a changed `path` in place, so a
+ * container whose folder moves keeps its id and its versions.
  */
 function createSecretContainer(
   name: string,
@@ -70,7 +71,7 @@ function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<st
 
 function secretContainers(definition: RuntimeSecretDefinition): Record<string, pulumi.Output<string>> {
   const isOperator = definition.valueSource === 'operator';
-  const copies = secretCopies(definition, naming.slug, mode);
+  const copies = secretCopies(definition);
   return Object.fromEntries(
     copies.map(({ service, path }) => {
       const copy = { service, path, only: copies.length === 1 };

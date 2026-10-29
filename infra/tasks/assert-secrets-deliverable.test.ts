@@ -89,7 +89,7 @@ describe('a missing required secret', () => {
       secretKey: KEY,
       region: REGION,
       projectId: PROJECT,
-      secrets: [{ envVar: 'ADMIN_EMAIL', secretName: 'admin-email', required: true, path: '/app-staging/backend/' }],
+      secrets: [{ envVar: 'ADMIN_EMAIL', secretName: 'admin-email', required: true, path: '/backend/' }],
       log: silent,
       fetchImpl,
     });
@@ -118,20 +118,20 @@ describe('assertSecretsDeliverable, one copy per consumer', () => {
   it('reads the copy in the given folder, not another copy of the same name', async () => {
     // Only the backend copy has a version: the jobs copy is empty and must be reported.
     const { fetchImpl } = fakeFetch([
-      { name: 'brevo-api-key', path: '/app-production/backend', version_count: 1 },
-      { name: 'brevo-api-key', path: '/app-production/jobs', version_count: 0 },
+      { name: 'brevo-api-key', path: '/backend', version_count: 1 },
+      { name: 'brevo-api-key', path: '/jobs', version_count: 0 },
     ]);
     const res = await assertSecretsDeliverable({
       secretKey: 'k',
       region: 'nl-ams',
       projectId: 'p',
       secrets: [
-        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/backend/' },
-        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/jobs/' },
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/backend/' },
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/jobs/' },
       ],
       fetchImpl,
       log: () => {},
     });
-    expect(res.offenders).toEqual([{ envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', path: '/app-production/jobs/', reason: 'missing' }]);
+    expect(res.offenders).toEqual([{ envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', path: '/jobs/', reason: 'missing' }]);
   });
 });

@@ -4,7 +4,7 @@ import { principalSecretCondition } from '../runtime-secrets';
 import { principalServices } from '../services';
 import { machinePolicies, sameRules } from './machine-policies';
 import { principalNames } from './principals';
-import { bootKeyCondition, ruleConditions } from './secret-paths';
+import { BOOT_KEY_CONDITION, ruleConditions } from './secret-paths';
 
 const readsSecrets = (sets: readonly string[]) => sets.some((set) => set.startsWith('SecretManager'));
 
@@ -22,8 +22,8 @@ describe('machinePolicies', () => {
         }
         const secretConditions = policy.rules.filter((rule) => readsSecrets(rule.permission_set_names)).map((rule) => rule.condition);
         const service = principalServices().find((svc) => names.vmService(svc.slug) === policy.applicationName);
-        if (service) expect(secretConditions, policy.name).toEqual(ruleConditions(principalSecretCondition(config.slug, config.mode, service.slug)));
-        else if (policy.applicationName === names.boot) expect(secretConditions, policy.name).toEqual([bootKeyCondition(config.slug, config.mode)]);
+        if (service) expect(secretConditions, policy.name).toEqual(ruleConditions(principalSecretCondition(service.slug)));
+        else if (policy.applicationName === names.boot) expect(secretConditions, policy.name).toEqual([BOOT_KEY_CONDITION]);
         else expect(secretConditions, policy.name).toEqual([]);
       }
       expect(policies.map((policy) => policy.applicationName)).toEqual([

@@ -4,7 +4,7 @@ import { SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 
 // The deploy key's rights are plan §3.1's: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
-const rules = deployRules({ slug: 'app', mode: 'production', projectId: 'proj', organizationId: 'org' });
+const rules = deployRules({ projectId: 'proj', organizationId: 'org' });
 const setsOf = (rule: (typeof rules)[number]) => rule.permission_set_names;
 
 describe('deploy key rights', () => {
@@ -26,7 +26,7 @@ describe('deploy key rights', () => {
     const valueRules = rules.filter((rule) =>
       rule.permission_set_names.some((set) => set === 'SecretManagerSecretAccess' || set === 'SecretManagerFullAccess'),
     );
-    expect(valueRules.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/app-production/deploy/")']);
+    expect(valueRules.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/deploy/")']);
     expect(rules.flatMap(setsOf)).not.toContain('SecretManagerFullAccess');
   });
 
@@ -38,7 +38,7 @@ describe('deploy key rights', () => {
 
   it("writes secrets in the hand-over folder only: never an app secret, nor the engine's or the deploy folder", () => {
     const writes = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerSecretWrite'));
-    expect(writes.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/app-production/handoff/")']);
+    expect(writes.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/handoff/")']);
   });
 
   it('reads IAM in the organization, and everything else in its own project', () => {

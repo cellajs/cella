@@ -192,8 +192,6 @@ function liveEffects(opts: {
   projectId: string;
   region: string;
   zones: readonly string[];
-  slug: string;
-  mode: string;
   sha: string;
   epoch: string;
   registry: string;
@@ -225,9 +223,9 @@ function liveEffects(opts: {
       return res.ok ? Buffer.from(await res.arrayBuffer()) : undefined;
     },
     keys: async () => {
-      const key = await readStandingKey(secrets, opts.slug, opts.mode, 'builder');
-      const boot = await readStandingKey(secrets, opts.slug, opts.mode, 'boot');
-      const repositoryKey = await readRepositoryKey(secrets, opts.slug, opts.mode);
+      const key = await readStandingKey(secrets, 'builder');
+      const boot = await readStandingKey(secrets, 'boot');
+      const repositoryKey = await readRepositoryKey(secrets);
       const bundleId = await stageHandoffBundle({
         ...opts,
         principal: 'builder',
@@ -310,7 +308,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
   const secrets = createSecretManagerClient({ secretKey, region, projectId });
-  const epoch = buildEpoch((await readStandingKey(secrets, appConfig.slug, mode, 'builder')).accessKey);
+  const epoch = buildEpoch((await readStandingKey(secrets, 'builder')).accessKey);
   // The layer cache is the epoch's too, so a rotation (after a compromise, keys first) starts a clean one (D13).
   const cacheTag = `buildcache-e${epoch}`;
   const frontendBucket = distDir ? naming.frontendBucket : '';
@@ -362,8 +360,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       projectId,
       region,
       zones,
-      slug: appConfig.slug,
-      mode,
       sha,
       epoch,
       registry,

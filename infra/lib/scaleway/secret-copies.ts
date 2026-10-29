@@ -14,11 +14,9 @@ export type CopyContainer = SecretCopy & { container?: SecretManagerSecret };
 export function secretCopyContainers(
   client: Pick<SecretCopyClient, 'getSecretByName'>,
   definition: { secretName: string; services: readonly string[] },
-  slug: string,
-  mode: string,
 ): Promise<CopyContainer[]> {
   return Promise.all(
-    secretCopies(definition, slug, mode).map(async (copy) => ({
+    secretCopies(definition).map(async (copy) => ({
       ...copy,
       container: await client.getSecretByName(definition.secretName, copy.path),
     })),

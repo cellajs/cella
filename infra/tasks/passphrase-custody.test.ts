@@ -8,7 +8,7 @@ vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
 
 const { readCustodiedPassphrase, storeCustodiedPassphrase } = await import('./passphrase-custody');
 
-const opts = { secretKey: 'operator-secret', region: 'nl-ams', projectId: 'project-1', slug: 'cella', mode: 'production' };
+const opts = { secretKey: 'operator-secret', region: 'nl-ams', projectId: 'project-1' };
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -21,7 +21,7 @@ describe('readCustodiedPassphrase', () => {
     client.accessLatestValue.mockResolvedValue('correct horse');
 
     await expect(readCustodiedPassphrase(opts)).resolves.toBe('correct horse');
-    expect(client.getSecretByName).toHaveBeenCalledWith('pulumi-passphrase', '/cella-production/engine/');
+    expect(client.getSecretByName).toHaveBeenCalledWith('pulumi-passphrase', '/engine/');
     expect(createSecretManagerClient).toHaveBeenCalledWith({ secretKey: 'operator-secret', region: 'nl-ams', projectId: 'project-1' });
   });
 
@@ -38,7 +38,7 @@ describe('storeCustodiedPassphrase', () => {
 
     await storeCustodiedPassphrase({ ...opts, passphrase: 'new horse' });
 
-    expect(client.ensureSecret).toHaveBeenCalledWith(expect.objectContaining({ name: 'pulumi-passphrase', path: '/cella-production/engine/' }));
+    expect(client.ensureSecret).toHaveBeenCalledWith(expect.objectContaining({ name: 'pulumi-passphrase', path: '/engine/' }));
     expect(client.putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-1', value: 'new horse', disablePrevious: true }));
   });
 });

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { deployFolderPath } from '../scaleway/secret-paths';
+import { DEPLOY_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 
 /** The repository read key's name in the deploy folder: a read-only key a private repository is fetched with (D19). */
@@ -21,8 +21,8 @@ interface KeySecrets {
 }
 
 /** The deploy folder's repository read key, or undefined for a repository anyone may read. */
-export async function readRepositoryKey(secrets: KeySecrets, slug: string, mode: string): Promise<string | undefined> {
-  const container = await secrets.getSecretByName(REPOSITORY_KEY_NAME, deployFolderPath(slug, mode));
+export async function readRepositoryKey(secrets: KeySecrets): Promise<string | undefined> {
+  const container = await secrets.getSecretByName(REPOSITORY_KEY_NAME, DEPLOY_FOLDER);
   if (!container || (container.version_count ?? 0) === 0) return undefined;
   return (await secrets.accessLatestValue(container.id)).trim() || undefined;
 }

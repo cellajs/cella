@@ -225,29 +225,26 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
     // The `up` made each consumer's copy of a secret; operator values still in a shared folder move into them (ledger L3).
     if (completed) {
       const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-      await copySharedSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
-        (error) =>
-          console.warn(
-            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next apply tries again.`,
-          ),
+      await copySharedSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
+        console.warn(
+          `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next apply tries again.`,
+        ),
       );
       // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any
       // new secret's containers.
       await ensureDatabaseForStack({
         env,
         stack,
-        slug: appConfig.slug,
-        mode: context.environment,
         region: appConfig.s3.region,
         projectId,
         secretKey: operator.secretKey,
         log: (message) => console.info(pc.dim(message)),
       }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
-      await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
-        (error) => console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
+      await ensureSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
+        console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
       );
       // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
-      await syncDeployTelemetryKey({ client, slug: appConfig.slug, mode: context.environment }).catch((error) =>
+      await syncDeployTelemetryKey({ client }).catch((error) =>
         console.warn(`${warningMark} Could not copy the telemetry key into the deploy folder (${errorMessage(error)}).`),
       );
     }

@@ -32,8 +32,6 @@ export function copyStep(
  */
 export async function copySharedSecrets(opts: {
   client: CopySharedClient;
-  slug: string;
-  mode: string;
   secrets?: readonly RuntimeSecretDefinition[];
   log?: (message: string) => void;
 }): Promise<string[]> {
@@ -42,9 +40,9 @@ export async function copySharedSecrets(opts: {
   for (const secret of (opts.secrets ?? [...operatorManagedRuntimeSecrets, ...engineMadeRuntimeSecrets()]).filter(
     (definition) => definition.services.length > 1,
   )) {
-    const legacyPath = legacySharedSecretPath(opts.slug, opts.mode, secret.services);
+    const legacyPath = legacySharedSecretPath(secret.services);
     const legacy = await opts.client.getSecretByName(secret.secretName, legacyPath);
-    const step = copyStep(legacy, legacy ? await secretCopyContainers(opts.client, secret, opts.slug, opts.mode) : []);
+    const step = copyStep(legacy, legacy ? await secretCopyContainers(opts.client, secret) : []);
     if (!legacy || !step) continue;
     if (!step.remove) {
       log(`[copy-shared-secrets] ${secret.secretName}: a copy has no container yet; the shared one stays until the next run`);

@@ -13,7 +13,7 @@ function resetMocks() {
   putSecretValue.mockReset();
 }
 
-const baseOptions = { secretKey: 'caller-secret', projectId: 'proj-1', region: 'nl-ams', slug: 'demo', mode: 'production', log: vi.fn() };
+const baseOptions = { secretKey: 'caller-secret', projectId: 'proj-1', region: 'nl-ams', log: vi.fn() };
 
 describe('seedOperatorSecrets', () => {
   it('seeds operator-managed secrets from prompt values when the secret has no versions', async () => {
