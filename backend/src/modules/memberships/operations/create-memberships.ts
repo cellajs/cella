@@ -16,6 +16,7 @@ import { countMembershipsByChannel } from '#/modules/memberships/memberships-que
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
+import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { getValidChannel } from '#/permissions';
 import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
@@ -33,9 +34,10 @@ interface CreateMembershipsInput {
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
 /**
- * Invites each address as its plan says: a new invitation, the earlier one sent again (a declined one opens again, a
- * higher role replaces a lower one), an organization member added at once, or a member left out. Returns what happened
- * to each address.
+ * Invites each address as its plan says: a new invitation, the earlier one sent again (a declined one opens again once
+ * its decline stops holding, a higher role replaces a lower one), an organization member added at once, or a member
+ * left out. An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done.
+ * Returns what happened to each address.
  */
 export async function createMembershipsOp(ctx: UserContext, input: CreateMembershipsInput) {
   const { db, user, organization, tenantId } = ctx.var;
@@ -77,6 +79,13 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     if (members + pending + newSeats > seatQuota) throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
   }
 
+  // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
+  const mailHeldBack = await takeInvitationMails(ctx, {
+    mailNow: held ? [] : [...invites, ...reminders].map(({ email }) => email),
+    mailAtPublish: held ? invites.length + reopened.length : 0,
+  });
+  const mails = ({ email }: { email: string }) => !mailHeldBack.has(email);
+
   const createdMemberships = adds.length
     ? await insertMemberships(ctx, { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) })
     : [];
@@ -99,7 +108,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     ? await db.transaction(async (tx) => {
         const txCtx = { var: { db: tx } };
         const inserted = await insertInactiveMemberships(txCtx, { memberships: inviteRows });
-        const byLink = inserted.filter(({ userId }) => !userId);
+        const byLink = inserted.filter((row) => !row.userId && mails(row));
         const tokens = await issueTokens(
           txCtx,
           byLink.map(({ id, email }) => ({ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: id })),
@@ -123,7 +132,9 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     const reminderTokens = await issueTokens(
       ctx,
       reminders.flatMap(({ email, invitation }) =>
-        invitation.userId ? [] : [{ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: invitation.id }],
+        invitation.userId || !mails({ email })
+          ? []
+          : [{ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: invitation.id }],
       ),
     );
     const linkByEmail = new Map([...inviteTokens, ...reminderTokens].map(({ token, rawToken }) => [token.email, rawToken]));
@@ -132,9 +143,10 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     // One mail batch per role: a reminder names the role its invitation holds, which may be higher than the one picked.
     const byRole = new Map<EntityRole, InvitedAddress[]>();
     const addTo = (mailRole: EntityRole, address: InvitedAddress) => byRole.set(mailRole, [...(byRole.get(mailRole) ?? []), address]);
-    const insertedEmails = new Set(insertedInvites.map(({ email }) => email));
-    for (const { email, userId } of invites) if (insertedEmails.has(email)) addTo(role, toAddress(email, userId));
-    for (const { email, invitation } of reminders) {
+    const mailedInvites = insertedInvites.filter(mails);
+    const mailedReminders = reminders.filter(mails);
+    for (const { email, userId } of mailedInvites) addTo(role, toAddress(email, userId));
+    for (const { email, invitation } of mailedReminders) {
       const raisedHere = raised.some((item) => item.email === email);
       addTo(raisedHere ? role : invitation.role, toAddress(email, invitation.userId));
     }
@@ -150,7 +162,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       });
     }
 
-    const mailedIds = [...insertedInvites.map(({ id }) => id), ...reminders.map(({ invitation }) => invitation.id)];
+    const mailedIds = [...mailedInvites.map(({ id }) => id), ...mailedReminders.map(({ invitation }) => invitation.id)];
     await stampInactiveMembershipsReminded(ctx, { ids: mailedIds, remindedAt: getIsoDate() });
   }
 

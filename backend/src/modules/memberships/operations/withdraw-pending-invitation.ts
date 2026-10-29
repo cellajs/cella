@@ -8,11 +8,12 @@ import { log } from '#/utils/logger';
 
 /**
  * Withdraws an invitation, named by the pending row's own id: the row and its links go, and it frees its seat. The
- * caller needs `update` on the invited channel. A missing or foreign row is 404.
+ * caller needs `update` on the invited channel. A missing, foreign or declined row is 404: a decline is the invitee's
+ * answer, and its row keeps the address from being invited again while the decline holds.
  */
 export async function withdrawPendingInvitationOp(ctx: UserContext, id: string) {
   const invitation = await findInactiveMembershipInOrg(ctx, { id });
-  if (!invitation) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
+  if (!invitation || invitation.rejectedAt) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 
   await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
 

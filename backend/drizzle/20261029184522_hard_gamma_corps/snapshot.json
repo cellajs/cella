@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "45f4cb43-1e11-471d-9e63-42b01b4cd751",
+  "prevIds": [
+    "f60bd4ed-55e1-41c7-b2e1-ebe8c6173873"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "restrictions"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.restrictions.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.restrictions"
+      ],
+      "sqlHash": "784e99a6f6214af2"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"restrictions\"]",
+      "set": {
+        "default": "'{\"quotas\":{\"user\":1000,\"organization\":1,\"attachment\":100,\"serviceAccount\":20,\"apiKey\":100},\"rateLimits\":{\"apiPointsPerHour\":1000,\"invitationMailsPerDay\":250},\"allowUnregisteredClients\":true}'"
+      }
+    }
+  ]
+}

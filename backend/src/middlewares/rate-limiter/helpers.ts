@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { and, eq, gt, gte, lt, lte, or, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, lte, or, sql } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
@@ -84,43 +84,47 @@ export const openBucket = async (store: LimiterStore, rateLimitKey: string, dura
 };
 
 /**
- * Takes one attempt from a bucket while its budget lasts, in one statement: a new or expired bucket starts at one, a
- * live one below `points` gains one. A spent bucket stays as it is, so a refused request neither counts nor blocks.
- * @returns The bucket with this attempt, or null when its budget is spent.
+ * Takes `cost` points from a bucket while its budget lasts, in one statement: a new or expired bucket starts at `cost`,
+ * a live one gains it while it stays within `points`. A spent bucket stays as it is, so a refused request neither counts
+ * nor blocks.
+ * @returns The bucket with this attempt, or null when its budget cannot hold it.
  */
 const takeAttempt = async (
   store: LimiterStore,
   rateLimitKey: string,
   { points, duration }: { points: number; duration: number },
+  cost: number,
 ): Promise<RateLimiterRes | null> => {
+  if (cost > points) return null;
   if (store instanceof RateLimiterDrizzle) {
     const now = new Date();
     const expired = lte(rateLimitsTable.expire, now);
     const [bucket] = await db
       .insert(rateLimitsTable)
-      .values({ key: store.getKey(rateLimitKey), points: 1, expire: new Date(now.getTime() + duration * 1000) })
+      .values({ key: store.getKey(rateLimitKey), points: cost, expire: new Date(now.getTime() + duration * 1000) })
       .onConflictDoUpdate({
         target: rateLimitsTable.key,
         set: {
-          points: sql`case when ${expired} then 1 else ${rateLimitsTable.points} + 1 end`,
+          points: sql`case when ${expired} then ${cost} else ${rateLimitsTable.points} + ${cost} end`,
           expire: sql`case when ${expired} then excluded.expire else ${rateLimitsTable.expire} end`,
         },
-        setWhere: or(expired, lt(rateLimitsTable.points, points)),
+        setWhere: or(expired, lte(rateLimitsTable.points, points - cost)),
       })
       .returning({ points: rateLimitsTable.points, expire: rateLimitsTable.expire });
     if (!bucket) return null;
     return new RateLimiterRes(Math.max(points - bucket.points, 0), msUntil(bucket.expire), bucket.points);
   }
   // In memory the count this attempt reads back is its own, so a parallel burst takes the budget one by one here too.
-  const taken = await store.penalty(rateLimitKey, 1);
+  const taken = await store.penalty(rateLimitKey, cost);
   if (taken.consumedPoints <= points) return taken;
-  await store.reward(rateLimitKey, 1);
+  await store.reward(rateLimitKey, cost);
   return null;
 };
 
 /**
  * Counts an attempt before the work it bounds runs, so a parallel burst takes the budget one point at a time and at
  * most `points` attempts go through. A spent budget refuses without counting or blocking.
+ * @param cost - Points the attempt takes at once: a batch of mails counts each one.
  * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
  *   or the spent bucket that refused it.
  */
@@ -128,40 +132,42 @@ export const reserveAttempt = async (
   store: LimiterStore,
   rateLimitKey: string,
   limits: { points: number; duration: number },
+  cost = 1,
 ): Promise<{ granted: true; store: LimiterStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }> => {
   let holder = store;
   let taken: RateLimiterRes | null;
   try {
-    taken = await takeAttempt(holder, rateLimitKey, limits);
+    taken = await takeAttempt(holder, rateLimitKey, limits, cost);
   } catch (err) {
     const insurance = insuranceOf(store);
     if (!insurance) throw err;
     log.warn('Rate limit attempt counted in process memory', { rateLimitKey, err });
     holder = insurance;
-    taken = await takeAttempt(holder, rateLimitKey, limits);
+    taken = await takeAttempt(holder, rateLimitKey, limits, cost);
   }
   if (taken) return { granted: true, store: holder, state: taken };
   // Read for Retry-After; a bucket reset, expired or given back since the refusal lets the client retry at once.
   const state = await holder.get(rateLimitKey);
-  const spent = state !== null && state.consumedPoints >= limits.points;
+  const spent = state !== null && state.consumedPoints + cost > limits.points;
   return { granted: false, state: spent ? state : new RateLimiterRes(0, 1000, limits.points) };
 };
 
 /**
  * Gives back an attempt counted before the handler ran whose outcome the bucket does not count. A bucket that expired
  * or was reset since holds no attempt to give back.
+ * @param cost - The points the attempt took.
  */
-export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) => {
+export const refundAttempt = async (store: LimiterStore, rateLimitKey: string, cost = 1) => {
   if (store instanceof RateLimiterDrizzle) {
     await db
       .update(rateLimitsTable)
-      .set({ points: sql`${rateLimitsTable.points} - 1` })
-      .where(and(eq(rateLimitsTable.key, store.getKey(rateLimitKey)), gt(rateLimitsTable.points, 0), gt(rateLimitsTable.expire, new Date())));
+      .set({ points: sql`${rateLimitsTable.points} - ${cost}` })
+      .where(and(eq(rateLimitsTable.key, store.getKey(rateLimitKey)), gte(rateLimitsTable.points, cost), gt(rateLimitsTable.expire, new Date())));
     return;
   }
-  // In memory a bucket reset or expired since reads back below zero: the point goes back where it came from.
-  const refunded = await store.reward(rateLimitKey, 1);
-  if (refunded.consumedPoints < 0) await store.penalty(rateLimitKey, 1);
+  // In memory a bucket reset or expired since reads back below zero: the points go back where they came from.
+  const refunded = await store.reward(rateLimitKey, cost);
+  if (refunded.consumedPoints < 0) await store.penalty(rateLimitKey, cost);
 };
 
 /**
