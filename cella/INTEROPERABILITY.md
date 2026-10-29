@@ -31,7 +31,7 @@ The app is its own authorization server, on the same origin under `/oauth`. A pe
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives and that it should start with the read scopes, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
 
 ## The substrate
 
@@ -49,7 +49,7 @@ The scope vocabulary is derived from the policy matrix, never listed by hand: ev
 
 ### Tokens
 
-Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request.
+Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, which its tools run through, and a tenant's API token works at the MCP endpoint. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request.
 
 ### Quotas and limits
 

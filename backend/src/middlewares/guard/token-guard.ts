@@ -2,7 +2,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { missingRouteParam, routeTarget } from '#/middlewares/guard/route-target';
 import { setActorFromToken, unauthorized } from '#/middlewares/guard/service-guard';
-import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
+import { mcpInitialScope, resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 
 /**
@@ -26,16 +26,18 @@ export const tokenGuard = xMiddleware(
     if (!target.organizationId) throw missingRouteParam('organizationId');
     const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: target.tenantId, organizationId: target.organizationId });
 
+    const scopeAttr = mcpInitialScope ? `, scope="${mcpInitialScope}"` : '';
+
     const jwt = bearerJwtFrom(ctx);
     if (!jwt) {
-      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
+      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${metadata}"${scopeAttr}`);
       throw unauthorized('missing_token');
     }
     try {
       await setActorFromToken(ctx, jwt, target);
     } catch (error) {
       const reason = error instanceof AppError ? String(error.meta?.reason ?? 'invalid_token') : 'invalid_token';
-      ctx.header('WWW-Authenticate', `Bearer error="invalid_token", error_description="${reason}", resource_metadata="${metadata}"`);
+      ctx.header('WWW-Authenticate', `Bearer error="invalid_token", error_description="${reason}", resource_metadata="${metadata}"${scopeAttr}`);
       throw error;
     }
     await next();

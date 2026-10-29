@@ -19,6 +19,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Crossing a boundary:** another tenant's or organization's data, through the API or straight against the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
 - **Reusing what should be dead:** a revoked session, a deleted account, a replayed OAuth code, an expired or out-of-scope token.
+- **Over-asking for scope:** an MCP client that starts with write scopes because the server named none.
 - **Proving with a dead key:** a token signed by a retired signing key, by an attacker's key under the server's key id, or with no signature at all.
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.
 - **Assembling SQL from input:** a table name from a token, a sort key or a search pattern reaching SQL text.

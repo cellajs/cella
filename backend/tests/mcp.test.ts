@@ -7,7 +7,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { resourceUri } from '#/modules/oauth-server/resources';
+import { mcpInitialScope, resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders } from './fixtures';
 import { adminDb, createTestOrganization } from './helpers';
 import { insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
@@ -113,7 +113,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   const toolCall = (ctx: Parameters<typeof rpc>[0], name: string, args: unknown) => rpc(ctx, 'tools/call', { name, arguments: args });
   const toolResult = (reply: { rpc: Rpc }) => reply.rpc.result as ToolResult;
 
-  it('publishes protected resource metadata and challenges a tokenless call with it', async () => {
+  it('publishes protected resource metadata and must name only read scopes in the challenge, so a client starts minimal', async () => {
     const { org } = await orgWithAdmin();
     const metadata = await call(getMcpProtectedResourceMetadata, {
       path: { tenantId: org.tenantId, organizationId: org.id },
@@ -129,7 +129,9 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const anonymous = await rpc({ org }, 'initialize');
     expect(anonymous.response.status).toBe(401);
-    expect(anonymous.response.headers.get('www-authenticate')).toBe(`Bearer resource_metadata="${resource}/.well-known/oauth-protected-resource"`);
+    expect(anonymous.response.headers.get('www-authenticate')).toBe(
+      `Bearer resource_metadata="${resource}/.well-known/oauth-protected-resource", scope="${mcpInitialScope}"`,
+    );
   });
 
   it('showcase 1: a read token lists and reads attachments, and is stepped up on a write', async () => {
