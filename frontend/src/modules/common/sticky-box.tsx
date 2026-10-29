@@ -77,9 +77,10 @@ export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boole
 
     // Read before publishing: the element pins where the stack ended above it, and keeps that value for itself
     const base = Number.parseFloat(getComputedStyle(host).getPropertyValue(stackNavVar)) || 0;
-    const previous = { stack: host.style.getPropertyValue(stackNavVar), minHeight: host.style.minHeight };
+    const previous = { stack: host.style.getPropertyValue(stackNavVar), minHeight: host.style.getPropertyValue('min-height') };
     bar.style.setProperty(stackNavVar, `${base}px`);
-    host.style.minHeight = '100dvh';
+    // Through setProperty: the React Compiler refuses a property assignment on a value read from a hook argument
+    host.style.setProperty('min-height', '100dvh');
 
     const publish = () => host.style.setProperty(stackNavVar, `${base + bar.offsetHeight}px`);
     publish();
@@ -90,7 +91,8 @@ export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boole
       bar.style.removeProperty(stackNavVar);
       if (previous.stack) host.style.setProperty(stackNavVar, previous.stack);
       else host.style.removeProperty(stackNavVar);
-      host.style.minHeight = previous.minHeight;
+      // An empty value removes the property
+      host.style.setProperty('min-height', previous.minHeight);
     };
   }, [enabled]);
 
