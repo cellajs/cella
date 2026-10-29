@@ -24,6 +24,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Assembling SQL from input:** a table name from a token, a sort key or a search pattern reaching SQL text.
 - **Steering the server's own requests:** a client metadata URL or a push endpoint pointed at a private address.
 - **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream.
+- **Passing as another tab:** a write carrying a source id copied from another user's row, which that user's tab would take as its own echo and never fetch.
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
 - **Exhausting the server with shape:** a body, a field, a batch or a document larger than its cap, or input that makes a parser or a regex work out of proportion.

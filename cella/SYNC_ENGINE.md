@@ -99,7 +99,7 @@ The client derives its views from the user's memberships and the policy matrix. 
 
 ### Changes
 
-A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only invalidates (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`.
+A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only invalidates (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`. A change counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 
@@ -150,7 +150,7 @@ An online write is ordered by arrival: the server stamps it with a fresh server 
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a still-queued create of its row, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
 A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed.
 

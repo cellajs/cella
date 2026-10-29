@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
 import { isArrayDelta, mergeArrayDeltas } from '~/query/offline/array-delta';
-import { canCoalesce, isQueued } from '~/query/offline/mutation-queue';
+import { canCoalesce, isQueued, isUnsent } from '~/query/offline/mutation-queue';
 import { createRowsOf, queuedUpdateOf } from '~/query/offline/mutation-variables';
 
 /** Scalar fields take `newer`'s value; an AWSet delta both objects carry merges through mergeArrayDeltas. */
@@ -50,7 +50,7 @@ export function squashPendingMutation<TOps extends object>(
   return { ops, stx };
 }
 
-/** Cancels queued offline creates for rows deleted before reaching the server, so the deletion stays cache-only. Online deletes stay serialized after their possibly delivered create. */
+/** Cancels the unsent creates of deleted rows, so the deletion stays cache-only. A delete of a row whose create was attempted, or of any row online, is sent after that create. */
 export function removePausedCreates(queryClient: QueryClient, createMutationKey: readonly unknown[], ids: string[]): string[] {
   if (!canCoalesce()) return [];
 
@@ -58,7 +58,7 @@ export function removePausedCreates(queryClient: QueryClient, createMutationKey:
   const cancelled: string[] = [];
   const mutationCache = queryClient.getMutationCache();
 
-  for (const mutation of mutationCache.findAll({ mutationKey: createMutationKey, predicate: isQueued })) {
+  for (const mutation of mutationCache.findAll({ mutationKey: createMutationKey, predicate: isUnsent })) {
     const { variables } = mutation.state;
     const rows = createRowsOf(variables);
     const kept = rows.filter((row) => !(typeof row.id === 'string' && idSet.has(row.id)));
@@ -73,7 +73,7 @@ export function removePausedCreates(queryClient: QueryClient, createMutationKey:
 }
 
 /**
- * Folds scalar updates into a matching queued offline create. Online updates stay serialized, and relative array deltas cannot merge into a create's full-array representation.
+ * Folds scalar updates into a matching unsent create. An edit of a row whose create was attempted, any online edit and a relative array delta, which cannot merge into a create's full array, stay updates.
  * @param creatableKeys - The keys a create row takes: the keys of the create body's item schema. An edit that names any other key is not folded, since the server would drop that key from the create and no request would carry the edit: it stays an update, queued behind the create.
  * @returns Whether the edit was folded; false leaves it to the caller to issue the update.
  */
@@ -88,7 +88,7 @@ export function squashIntoPendingCreate<TOps extends object>(
   if (Object.values(ops).some(isArrayDelta)) return false;
   if (Object.keys(ops).some((key) => !creatableKeys.includes(key))) return false;
 
-  for (const mutation of queryClient.getMutationCache().findAll({ mutationKey: createMutationKey, predicate: isQueued })) {
+  for (const mutation of queryClient.getMutationCache().findAll({ mutationKey: createMutationKey, predicate: isUnsent })) {
     const target = createRowsOf(mutation.state.variables).find((row) => row.id === entityId);
     if (!target) continue;
 

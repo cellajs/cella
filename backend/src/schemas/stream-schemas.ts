@@ -26,6 +26,10 @@ export const streamChangeSchema = z
     seq: z.number().int().nullable().describe('Org-sequence position (one order per organization, shared across product entity types)'),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
     stx: nullableStxBaseSchema,
+    actorId: z
+      .string()
+      .nullable()
+      .describe('Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user'),
     batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched change: client should fetch range'),
     count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),
     spreadWindow: z

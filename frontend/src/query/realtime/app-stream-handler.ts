@@ -4,6 +4,7 @@ import { frontendSpanNames } from 'shared/tracing';
 import { withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
+import { userStore } from '~/modules/user/user-store';
 import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/hlc';
 import * as cacheOps from '~/query/realtime/cache-ops';
@@ -52,12 +53,22 @@ function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
   });
 }
 
+/**
+ * The tab's own create or update: its source id and its signed-in user, since every row the tab wrote shows the source
+ * id to its readers. Deletes are never echoes, because row STX names the last writer and not necessarily the deleter.
+ */
+function isOwnEcho({ action, stx, actorId }: StreamChange): boolean {
+  if (action === 'delete' || stx?.sourceId !== sourceId) return false;
+  const userId = userStore.getState().user?.id;
+  return userId !== undefined && actorId === userId;
+}
+
 function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void {
   const { productType: entityType, subjectId: entityId, action, stx, organizationId, tenantId, seq, propagation } = change;
   const channelId = change.channelId ?? null;
 
-  // Own create/update echoes patch STX without fetching; deletes always invalidate, because row STX names the last writer and not necessarily the deleter.
-  if (action !== 'delete' && stx?.sourceId === sourceId) {
+  // Own echoes patch STX without fetching.
+  if (stx && isOwnEcho(change)) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
     console.debug('[handleProductChange] Echo: patched stx, skipped data fetch:', stx.mutationId);
     return;

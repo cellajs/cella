@@ -139,6 +139,10 @@ export type StreamChange = {
   channelId: string | null;
   stx: StxBase | null;
   /**
+   * Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user
+   */
+  actorId: string | null;
+  /**
    * Last sequence position for a batched change: client should fetch range
    */
   batchUntilSeq: number | null;
