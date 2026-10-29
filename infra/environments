@@ -2,4 +2,3 @@
 # deploys only while it has a line here: without one the runner starts nothing for it. Removing such a line pauses deploys, not costs.
 # <environment> <target> [retry <n>], the target being branch:<name>, releases, a release tag or a full commit id.
 # Read by the runner at the head of the default branch.
-staging branch:main
