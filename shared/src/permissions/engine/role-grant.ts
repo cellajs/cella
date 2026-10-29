@@ -1,5 +1,3 @@
-import type { PolicyMatrix } from '../types.ts';
-import { getAllDecisions } from './check.ts';
 import { resolveHierarchy } from './resolve-hierarchy.ts';
 import type { AccessMembership, PermissionCheckOptions, SubjectForPermission } from './types.ts';
 
@@ -14,11 +12,13 @@ export interface RoleGrant {
  * Whether the actor may hand out a role on a channel. A system admin and the channel's least-privileged role always
  * pass. Any other role may not outrank the actor's own role on the channel (`outranks`), unless the action reaches
  * the channel from an ancestor's grant, which hands out every role of the channel.
+ * @param allows - Whether a set of the actor's memberships allows the grant's action on its subject: the engine's
+ * decision, which `checkRoleGrant` computes.
  */
 export const mayGrantRole = <T extends AccessMembership>(
-  policies: PolicyMatrix,
   memberships: T[],
-  { subject, role, action }: RoleGrant,
+  { subject, role }: RoleGrant,
+  allows: (memberships: T[]) => boolean,
   options: PermissionCheckOptions = {},
 ): boolean => {
   if (options.isSystemAdmin === true) return true;
@@ -30,6 +30,5 @@ export const mayGrantRole = <T extends AccessMembership>(
   if (role === hierarchy.getLeastPrivilegedRole(channelType) || !hierarchy.outranks(channelType, role, ownRole)) return true;
 
   // Without the actor's rows on the channel, whatever still allows the action comes from an ancestor.
-  const fromAncestors = memberships.filter((membership) => !onChannel(membership));
-  return getAllDecisions(policies, fromAncestors, subject, options).can[action];
+  return allows(memberships.filter((membership) => !onChannel(membership)));
 };

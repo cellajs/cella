@@ -79,7 +79,9 @@ export const checkAccess = <T extends AccessMembership>(
 /** Whether the actor may hand out a role on a channel under the configured policies: `mayGrantRole`'s rule. */
 export const checkRoleGrant = <T extends AccessMembership>(access: Access<T>, grant: RoleGrant): boolean => {
   const engineAccess = toEngineAccess(access);
-  return mayGrantRole(policyMatrix, engineAccess.memberships, grant, accessOptions(engineAccess));
+  const options = accessOptions(engineAccess);
+  const allows = (memberships: T[]) => getAllDecisions(policyMatrix, memberships, grant.subject, options).can[grant.action];
+  return mayGrantRole(engineAccess.memberships, grant, allows, options);
 };
 
 /** One actor, many rows (bulk splits and list reads), in one engine pass. */

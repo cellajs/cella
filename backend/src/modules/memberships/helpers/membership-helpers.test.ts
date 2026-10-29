@@ -1,4 +1,4 @@
-import { type AccessMembership, hierarchy, mayGrantRole } from 'shared';
+import { type AccessMembership, getAllDecisions, hierarchy, mayGrantRole } from 'shared';
 import { configureWidePermissions, type WideRole, wideHierarchy, wideMembership, wideOverrides, wideSubject } from 'shared/testing/wide-fixture';
 import { describe, expect, it } from 'vitest';
 import { membershipsBroughtAlong, resolveAssociatedMembershipRole, resolveOrganizationMembershipRole } from './membership-helpers';
@@ -61,7 +61,9 @@ describe("must not create an organization or parent-channel role above the invit
       .filter((grant) => {
         const channelIds = grant.channelType === 'organization' ? {} : { organization: project.organizationId };
         const subject = wideSubject({ entityType: grant.channelType, id: grant.channelId, channelIds });
-        return !mayGrantRole(policyMatrix, inviter, { subject, role: grant.role, action: 'update' }, { ...wideOverrides, isSystemAdmin });
+        const options = { ...wideOverrides, isSystemAdmin };
+        const allows = (memberships: AccessMembership[]) => getAllDecisions(policyMatrix, memberships, subject, options).can.update;
+        return !mayGrantRole(inviter, { subject, role: grant.role, action: 'update' }, allows, options);
       })
       .map(({ channelType }) => channelType);
 
