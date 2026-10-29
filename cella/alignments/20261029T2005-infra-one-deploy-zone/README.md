@@ -21,7 +21,7 @@ reports. The observer reads the state bucket's `control/` only, so only the depl
 ## Blast radius
 
 Every app with a deployed stack, for operations only. No database, cache or wire change. Until its sitting an environment's deploys end
-blocked at "Preflight privileged changes", and its machines keep serving. App code or scripts that use a name in `grep` stop compiling or
+blocked before they make a machine, and its machines keep serving. App code or scripts that use a name in `grep` stop compiling or
 find no action.
 
 ## Run
