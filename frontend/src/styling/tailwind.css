@@ -165,14 +165,6 @@
   }
 }
 
-/* A vertical line of 2px dots as a 4px-period background: pieces that start on a multiple of 4px join without a seam,
-   where a dotted border ends every piece on a dot. Takes the text color. */
-@utility dotted-line {
-  width: 2px;
-  background-image: radial-gradient(circle, currentColor 1px, transparent 1.5px);
-  background-size: 2px 4px;
-}
-
 /* The glow gradient of the install command on /about (glow-button.css) and of glow-underline */
 :root {
   --glow-stops: rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%;
@@ -199,22 +191,6 @@
     filter: blur(5px);
     opacity: 0.6;
     clip-path: inset(-16px -12px 2px -12px);
-  }
-}
-
-@utility submenu-section {
-  &:before {
-    @apply dotted-line;
-    color: var(--foreground);
-    content: "";
-    display: block;
-    position: absolute;
-    /* Starts under the parent's avatar (row 3rem, avatar ending 2.5rem down), so that avatar needs no backing to hide it */
-    margin-top: 2.5rem;
-    margin-left: 1.7rem;
-    opacity: 0.5;
-    z-index: 0;
-    height: calc(100% - 3.4rem);
   }
 }
 
