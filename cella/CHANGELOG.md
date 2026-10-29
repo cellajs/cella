@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.30.0](https://github.com/cellajs/cella/compare/0.29.1...0.30.0) (2026-10-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sync:** range reads return soft-deleted rows as tombstones ([#1624](https://github.com/cellajs/cella/issues/1624))
+* one search grammar, marks in every list, one search field, phone panel over the tabs ([#1621](https://github.com/cellajs/cella/issues/1621))
+* **infra:** secret paths start at the project's root ([#1620](https://github.com/cellajs/cella/issues/1620))
+* **frontend:** phone search panel and View menu, confirmations as drawer rows, country and timezone fields ([#1615](https://github.com/cellajs/cella/issues/1615))
+* **infra:** the observer key reads nothing that holds a key, and works from any address ([#1612](https://github.com/cellajs/cella/issues/1612))
+
+### 🎉 New features
+
+* **frontend:** phone search panel and View menu, confirmations as drawer rows, country and timezone fields ([#1615](https://github.com/cellajs/cella/issues/1615)) ([189ca17](https://github.com/cellajs/cella/commit/189ca1794104bd68ffc3e494b067a5e483c0948d))
+* **infra:** the observer key reads nothing that holds a key, and works from any address ([#1612](https://github.com/cellajs/cella/issues/1612)) ([abb3d8c](https://github.com/cellajs/cella/commit/abb3d8cee40af5b91ce2dc9e6d728d2ce654a2bc))
+* one search grammar, marks in every list, one search field, phone panel over the tabs ([#1621](https://github.com/cellajs/cella/issues/1621)) ([5b28037](https://github.com/cellajs/cella/commit/5b28037c4665c63ecb8344b52bf21d11b1406f07))
+
+
+### 🐞 Bug fixes
+
+* **auth:** retired signing keys age out, API key cache lasts 10 s ([#1623](https://github.com/cellajs/cella/issues/1623)) ([35a9dd7](https://github.com/cellajs/cella/commit/35a9dd72ecbf6f179851bf4743678556f9412ed2))
+* grid wrap and tab arrangement cells, email logo tile in the page grey and a one-line footer ([#1619](https://github.com/cellajs/cella/issues/1619)) ([2047b58](https://github.com/cellajs/cella/commit/2047b58174ed329872d39cee9b2a02713882c9d6))
+* **infra:** compare a run only with the definition it was started from ([#1626](https://github.com/cellajs/cella/issues/1626)) ([945fe9e](https://github.com/cellajs/cella/commit/945fe9eb1c3cdb575667fd4f7495a44f696b3cf7))
+* **infra:** read the main job's startup command on Serverless Jobs v1alpha2 ([#1616](https://github.com/cellajs/cella/issues/1616)) ([ffe41f1](https://github.com/cellajs/cella/commit/ffe41f151a5ad50a98e077220381efdc96205ec4))
+* keep the editor and Uppy off a visitor's page load, serve assets as brotli ([#1613](https://github.com/cellajs/cella/issues/1613)) ([d23a447](https://github.com/cellajs/cella/commit/d23a447c0ed73561fc9b4e7d5c47c5a73fe3055e))
+* names stay text in Trans and CSV exports, presence colours are hex ([#1625](https://github.com/cellajs/cella/issues/1625)) ([ec35da6](https://github.com/cellajs/cella/commit/ec35da6a3364f01257dacfcf01d3cb2c26d1b097))
+* **sync:** range reads return soft-deleted rows as tombstones ([#1624](https://github.com/cellajs/cella/issues/1624)) ([3e35945](https://github.com/cellajs/cella/commit/3e35945cbdc695d9f3ab64f81608252a322f28eb))
+
+
+### 🔧 Small improvements
+
+* **infra:** secret paths start at the project's root ([#1620](https://github.com/cellajs/cella/issues/1620)) ([b017cc7](https://github.com/cellajs/cella/commit/b017cc704fa93d4022e9f0a5d11f9fd6ca1ac310))
+
+
+### 🧹 Chores
+
+* **infra:** cella has no staging environment ([#1618](https://github.com/cellajs/cella/issues/1618)) ([ddf0595](https://github.com/cellajs/cella/commit/ddf0595aa696b0277c839767b9f84e66faca6f1a))
+* **infra:** cella's staging stops deploying, ahead of its teardown ([#1617](https://github.com/cellajs/cella/issues/1617)) ([726faee](https://github.com/cellajs/cella/commit/726faee5e8e7aacff638a5471bade6bc2699a2db))
+
+
+### 🧪 Tests
+
+* **security:** pin the SQL assembly and outbound request holds (C3, C5) ([#1622](https://github.com/cellajs/cella/issues/1622)) ([4ddfd5f](https://github.com/cellajs/cella/commit/4ddfd5f3b72181b4b3caab3df08d3af08d8cb8c5))
+
 ## [0.29.1](https://github.com/cellajs/cella/compare/0.29.0...0.29.1) (2026-10-29)
 
 
