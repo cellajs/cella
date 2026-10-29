@@ -58,7 +58,7 @@ A socket lives no longer than its token. The client refreshes its token and reco
 
 Cursors and selections are relayed between the editors of a document. A socket can announce only its own cursors, so nobody can move or remove someone else's, and a socket's cursors leave with it.
 
-Presence is cosmetic. The name and colour next to a cursor are whatever the client sends, so they prove nothing about who edits. Authorship comes from the log: every update is stored under the user its token names, and materialization credits editors from there.
+Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS, so the relay passes on a cursor only when its colour is a hex colour and its name is short text; any other cursor reaches no peer. Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Authorship comes from the log: every update is stored under the user its token names, and materialization credits editors from there.
 
 ## Collab session lifecycle
 
