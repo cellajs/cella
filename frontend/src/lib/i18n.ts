@@ -19,10 +19,14 @@ const initOptions: InitOptions = {
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
   interpolation: {
-    escapeValue: false, // React escapes by default
+    escapeValue: false, // `t()` returns text, which React escapes
     defaultVariables: i18nDefaultVariables,
   },
-  react: { useSuspense: false },
+  react: {
+    useSuspense: false,
+    // `Trans` parses its translation as markup, so it escapes interpolated values and unescapes the text after parsing
+    transDefaultProps: { tOptions: { interpolation: { escapeValue: true } }, shouldUnescape: true },
+  },
   defaultNS: 'c',
   // Locale files are flat, and a dot belongs to the key (`docs` and `docs.openapi_specification` are both keys)
   keySeparator: false,

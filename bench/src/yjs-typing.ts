@@ -571,7 +571,7 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
       return { client, text, cursor: Y.createRelativePositionFromTypeIndex(text, Math.floor(Math.random() * (text.length + 1))) };
     });
   for (const typer of typing)
-    typer.client.provider.awareness.setLocalStateField('user', { name: `bench ${typer.client.doc.clientID}`, color: '#888' });
+    typer.client.provider.awareness.setLocalStateField('user', { name: `bench ${typer.client.doc.clientID}`, color: '#888888' });
 
   // Typing: every typer at its own random pace, until the duration ends.
   const startCounters = await sampler.counters();

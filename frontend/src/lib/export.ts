@@ -64,9 +64,16 @@ const formatRows = <R extends Row>(rows: R[], columns: ColumnOrColumnGroup<R>[])
 /** A column the export shows: the table shows it and it has a name (selection and action columns have none). */
 const isExportedColumn = <R extends Row>(column: ColumnOrColumnGroup<R>) => !column.hidden && column.name !== '';
 
-/** A cell with a comma, quote or line break is quoted with its quotes doubled (RFC 4180); a list is one cell. */
+/** Text a spreadsheet runs as a formula (CWE-1236); one character alone, such as the `-` of a missing value, runs nothing. */
+const formulaStart = /^[=+\-@\t\r]./s;
+
+/**
+ * A cell with a comma, quote or line break is quoted with its quotes doubled (RFC 4180); a list is one cell. Text that
+ * starts like a formula gets a leading `'`, so a spreadsheet opens it as text; a number stays a number.
+ */
 function serializeCell(value: unknown) {
-  const text = Array.isArray(value) ? value.join(', ') : String(value);
+  const joined = Array.isArray(value) ? value.join(', ') : String(value);
+  const text = typeof value !== 'number' && formulaStart.test(joined) ? `'${joined}` : joined;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

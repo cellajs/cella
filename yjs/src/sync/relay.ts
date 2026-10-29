@@ -2,6 +2,8 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
+import { z } from 'zod';
+import { maxLength } from '#/db/utils/constraints';
 import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice, LogRow, YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
@@ -109,6 +111,25 @@ function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] | null {
   return entries;
 }
 
+/**
+ * Presence a peer may receive: a removal, or a state whose `user` (absent until the editor mounts) has a name and a
+ * `#rrggbb` colour. Every peer's editor writes the colour into a `style` attribute and the selection's `cssText`, so any
+ * other value would paint over their page or load an image from it.
+ */
+const presenceStateSchema = z.union([
+  z.null(),
+  z.object({ user: z.object({ name: z.string().max(maxLength.field), color: z.string().regex(/^#[0-9a-f]{6}$/i) }).optional() }),
+]);
+
+/** Whether an entry's JSON state is presence a peer may render. */
+function isRelayablePresence(state: string): boolean {
+  try {
+    return presenceStateSchema.safeParse(JSON.parse(state)).success;
+  } catch {
+    return false;
+  }
+}
+
 function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
   const update = encoding.createEncoder();
   encoding.writeVarUint(update, entries.length);
@@ -125,8 +146,9 @@ function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
 
 /**
  * Relays the entries a socket may announce, to every socket of the session, and starts the socket's rate window when
- * any was relayed. Presence for another user's client would move or remove their cursor, so it is left out, and a
- * frame of such entries alone (y-websocket re-sends every change it applies) relays nothing and starts no window.
+ * any was relayed. Presence for another user's client would move or remove their cursor, so it is left out, as is a
+ * state outside presenceStateSchema, and a frame of such entries alone (y-websocket re-sends every change it applies)
+ * relays nothing and starts no window.
  */
 function relayAwareness(
   ctx: SocketContext,
@@ -138,6 +160,7 @@ function relayAwareness(
 ): void {
   const relayed: AwarenessEntry[] = [];
   for (const entry of entries) {
+    if (!isRelayablePresence(entry.state)) continue;
     const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
     if (verdict === 'refuse') {
       refuseFrame(collab.scope, ctx.userId, ws, 'Too many awareness clients');

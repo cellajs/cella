@@ -103,7 +103,7 @@ export function decodeGeneration(message: Uint8Array): string | null {
 export function awarenessUpdate(...entries: { clientId: number; clock?: number; state?: unknown }[]): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, entries.length);
-  for (const { clientId, clock = 1, state = { user: { name: `client ${clientId}` } } } of entries) {
+  for (const { clientId, clock = 1, state = { user: { name: `client ${clientId}`, color: '#3366CC' } } } of entries) {
     encoding.writeVarUint(encoder, clientId);
     encoding.writeVarUint(encoder, clock);
     encoding.writeVarString(encoder, JSON.stringify(state));
