@@ -1,18 +1,14 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { ChevronsDownUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';
-import { SearchClearButton } from '~/modules/common/search-clear-button';
-import { SearchSpinner } from '~/modules/common/search-spinner';
+import { SearchField } from '~/modules/common/search-field';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { openApiSpecQueryOptions, openApiUrl } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
-import { cn } from '~/utils/cn';
 
 /** The full OpenAPI spec as JSON, in the viewer's `spec` mode, where a `$ref` scrolls to its target on click. */
 export function OpenApiSpecViewer() {
@@ -33,8 +29,6 @@ export function OpenApiSpecViewer() {
     setSearchMatchPath(null);
   };
 
-  const isSearching = searchText.length > 0;
-
   return (
     <>
       <JsonActions
@@ -46,59 +40,7 @@ export function OpenApiSpecViewer() {
       />
 
       <div className="sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 bg-background py-2 max-sm:flex-col">
-        <InputGroup>
-          <InputGroupAddon>
-            <SearchSpinner value={searchText} isSearching={false} />
-          </InputGroupAddon>
-          <InputGroupInput
-            id="openapi-search"
-            type="text"
-            placeholder={`${t('c:search')}...`}
-            value={searchText}
-            onChange={(event) => handleSearchChange(event.target.value)}
-          />
-          <AnimatePresence mode="wait">
-            {isSearching && (
-              <motion.div
-                key="search-nav"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center overflow-hidden"
-              >
-                <span className="whitespace-nowrap px-2 text-muted-foreground text-xs">
-                  {steps.total === 0 && t('c:no_results')}
-                  {steps.total > 0 && (steps.index >= 0 ? t('c:match_position', { current: steps.index + 1, total: steps.total }) : steps.total)}
-                </span>
-                <span className="sr-only" aria-live="polite">
-                  {steps.announcement}
-                </span>
-                <button
-                  type="button"
-                  onClick={steps.previous}
-                  disabled={steps.total === 0}
-                  className="rounded p-1 hover:bg-muted disabled:opacity-30"
-                  title={t('c:previous')}
-                >
-                  <ChevronUpIcon className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={steps.next}
-                  disabled={steps.total === 0}
-                  className="mr-2 rounded p-1 hover:bg-muted disabled:opacity-30"
-                  title={t('c:next')}
-                >
-                  <ChevronDownIcon className="size-3.5" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <InputGroupAddon align="inline-end">
-            <SearchClearButton className={cn(!searchText.length && 'invisible')} onClick={() => handleSearchChange('')} />
-          </InputGroupAddon>
-        </InputGroup>
+        <SearchField id="openapi-search" label={t('c:placeholder.search')} value={searchText} onSearch={handleSearchChange} steps={steps} />
 
         <Button
           variant="outline"

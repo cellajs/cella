@@ -9,6 +9,7 @@ import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/colum
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { NamedText } from '~/modules/common/named-text';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
@@ -72,7 +73,9 @@ export const useColumns = () => {
       modes: { mobile: { minWidth: 120 } },
       renderCell: ({ row, tabIndex }) => (
         <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateTenantSheet(row, { current: event.currentTarget })}>
-          <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name || '-'}</span>
+          <span className={cn(cellLinkTextClass, 'font-medium')}>
+            <HighlightText text={row.name || '-'} />
+          </span>
         </Button>
       ),
     },

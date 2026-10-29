@@ -56,17 +56,18 @@ export function stackOffsetCss(publishVar?: string) {
   return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
 }
 
-/** Scrolls the scroll parent of `node` until `node` meets the stack's pin line, when it sits below that line. */
+/** Scrolls the scroll parent of `node` until `node` meets its top edge, the line `useStackedPin` pins at, when it sits below it. */
 export function scrollToPinLine(node: HTMLElement) {
   const scrollParent = getScrollParent(node);
-  const distance = node.getBoundingClientRect().top - viewportTopOf(scrollParent) - stackOffset(node);
+  const distance = node.getBoundingClientRect().top - viewportTopOf(scrollParent);
   if (distance > 0) scrollParent.scrollBy({ top: distance });
 }
 
 /**
- * Pins the element in `ref` at the stack line while `enabled` and adds its height to `--sticky-stack-nav` on its parent,
- * so bars further down that parent (a grid header, section headers) pin below it. The parent also keeps one viewport of
- * height, so a list that narrows under the pinned element cannot pull it back down the page.
+ * Pins the element in `ref` at the top of its scroll parent while `enabled`, over the sticky stack (it covers the page
+ * tabs), and publishes its height as `--sticky-stack-nav` on its parent, so bars further down that parent (a grid
+ * header, section headers) pin below it. The parent also keeps one viewport of height and leaves scroll anchoring off:
+ * a list that narrows under the pinned element can neither pull it down the page nor move the page.
  * @returns The inline style that pins the element, or undefined while disabled.
  */
 export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boolean): CSSProperties | undefined {
@@ -75,28 +76,31 @@ export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boole
     const host = bar?.parentElement;
     if (!enabled || !bar || !host) return;
 
-    // Read before publishing: the element pins where the stack ended above it, and keeps that value for itself
-    const base = Number.parseFloat(getComputedStyle(host).getPropertyValue(stackNavVar)) || 0;
-    const previous = { stack: host.style.getPropertyValue(stackNavVar), minHeight: host.style.getPropertyValue('min-height') };
-    bar.style.setProperty(stackNavVar, `${base}px`);
+    const previous = {
+      stack: host.style.getPropertyValue(stackNavVar),
+      minHeight: host.style.getPropertyValue('min-height'),
+      overflowAnchor: host.style.getPropertyValue('overflow-anchor'),
+    };
     // Through setProperty: the React Compiler refuses a property assignment on a value read from a hook argument
     host.style.setProperty('min-height', '100dvh');
+    // Chrome otherwise moves the page when rows above the visible one leave, sliding the list under the element
+    host.style.setProperty('overflow-anchor', 'none');
 
-    const publish = () => host.style.setProperty(stackNavVar, `${base + bar.offsetHeight}px`);
+    const publish = () => host.style.setProperty(stackNavVar, `${bar.offsetHeight}px`);
     publish();
     const observer = new ResizeObserver(publish);
     observer.observe(bar);
     return () => {
       observer.disconnect();
-      bar.style.removeProperty(stackNavVar);
       if (previous.stack) host.style.setProperty(stackNavVar, previous.stack);
       else host.style.removeProperty(stackNavVar);
       // An empty value removes the property
       host.style.setProperty('min-height', previous.minHeight);
+      host.style.setProperty('overflow-anchor', previous.overflowAnchor);
     };
   }, [enabled]);
 
-  return enabled ? { position: 'sticky', top: stackOffsetCss() } : undefined;
+  return enabled ? { position: 'sticky', top: 0 } : undefined;
 }
 
 /**

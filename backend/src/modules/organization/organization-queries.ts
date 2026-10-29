@@ -12,7 +12,7 @@ import { type InsertOrganizationModel, organizationsTable } from '#/modules/orga
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 interface FindOrganizationByTenantOpts {
   tenantId: string;
@@ -126,6 +126,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 
+  const search = searchFilter([organizationsTable.name], q);
   // Org-only filters belong in WHERE (safe for both admin + non-admin); an archived tenant's organization lists for system admins only.
   const orgWhere: SQL[] = [
     ...(isSystemAdmin
@@ -133,7 +134,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
       : [
           sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${organizationsTable.tenantId} AND ${tenantsTable.status} = 'archived')`,
         ]),
-    ...(q ? [textSearchFilter(organizationsTable.name, q)] : []),
+    ...(search ? [search] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
   ];
 

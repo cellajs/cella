@@ -33,3 +33,6 @@ export function useMatchSteps<Id>(ids: readonly Id[], onStep: (id: Id) => void, 
     previous: () => step(-1),
   };
 }
+
+/** What a search field shows and drives of `useMatchSteps`. */
+export type MatchSteps = Pick<ReturnType<typeof useMatchSteps<unknown>>, 'index' | 'total' | 'announcement' | 'next' | 'previous'>;

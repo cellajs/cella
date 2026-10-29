@@ -1,4 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -87,6 +88,9 @@ export function TableBarShell<TRow extends object>({
   selection,
   after,
 }: TableBarShellProps<TRow>) {
+  const { t } = useTranslation();
+  const searchLabel = t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) });
+
   return (
     <>
       <TableFilterBar
@@ -110,7 +114,10 @@ export function TableBarShell<TRow extends object>({
             {countExtra}
           </TableCount>
         }
-        search={<TableSearch name={searchName} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />}
+        search={
+          <TableSearch name={searchName} label={searchLabel} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />
+        }
+        searchLabel={searchLabel}
         filters={filters}
         controls={
           <>

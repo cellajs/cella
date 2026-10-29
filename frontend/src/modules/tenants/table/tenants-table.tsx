@@ -7,6 +7,7 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
@@ -36,19 +37,21 @@ export function TenantsTable() {
   return (
     <>
       <TenantsTableBar queryKey={queryOptions.queryKey} columns={columns} setColumns={setColumns} searchVars={search} setSearch={setSearch} />
-      <DataTable<Tenant>
-        {...{
-          ...list,
-          rowKeyGetter: rowKeyById,
-          onRowsChange,
-          columns,
-          enableVirtualization: true,
-          isFiltered: !!q,
-          sortColumns,
-          onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:tenant_other') }} />,
-        }}
-      />
+      <SearchScope q={q}>
+        <DataTable<Tenant>
+          {...{
+            ...list,
+            rowKeyGetter: rowKeyById,
+            onRowsChange,
+            columns,
+            enableVirtualization: true,
+            isFiltered: !!q,
+            sortColumns,
+            onSortColumnsChange,
+            NoRowsComponent: <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:tenant_other') }} />,
+          }}
+        />
+      </SearchScope>
     </>
   );
 }

@@ -7479,9 +7479,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -8126,9 +8128,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -8912,9 +8916,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -9749,9 +9755,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -10501,9 +10509,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -12697,9 +12707,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -13020,9 +13032,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },
@@ -13663,9 +13677,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
             "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
             "name": "q",
             "in": "query"
           },

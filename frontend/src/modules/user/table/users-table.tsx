@@ -3,6 +3,7 @@ import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
@@ -31,19 +32,21 @@ export function UsersTable() {
         setColumns={setColumns}
         clearSelection={clearSelection}
       />
-      <DataTable<BaseUser>
-        {...{
-          ...list,
-          rowKeyGetter: rowKeyById,
-          columns,
-          enableVirtualization: true,
-          isFiltered: role !== undefined || !!q,
-          selectedRows: selectedRowIds,
-          onSelectedRowsChange,
-          sortColumns,
-          onSortColumnsChange,
-        }}
-      />
+      <SearchScope q={q}>
+        <DataTable<BaseUser>
+          {...{
+            ...list,
+            rowKeyGetter: rowKeyById,
+            columns,
+            enableVirtualization: true,
+            isFiltered: role !== undefined || !!q,
+            selectedRows: selectedRowIds,
+            onSelectedRowsChange,
+            sortColumns,
+            onSortColumnsChange,
+          }}
+        />
+      </SearchScope>
     </>
   );
 }

@@ -6,7 +6,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { textSearchFilter } from '#/utils/sql';
+import { searchFilter } from '#/utils/sql';
 
 interface InTenantOpts {
   tenantId: string;
@@ -41,7 +41,8 @@ interface FindServiceAccountsPaginatedOpts extends InTenantOpts {
 /** A page of the tenant's accounts, newest first, and the total. A tenant holds one organization, so tenant scope is organization scope. */
 export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q, offset, limit }: FindServiceAccountsPaginatedOpts) {
   const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId)];
-  if (q) where.push(textSearchFilter(serviceAccountsTable.name, q));
+  const search = searchFilter([serviceAccountsTable.name], q);
+  if (search) where.push(search);
 
   const itemsQuery = ctx.var.db
     .select(serviceAccountSelect)

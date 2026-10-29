@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match';
+import { containsWord, findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match';
 
 describe('foldText', () => {
   it('lowercases and strips accents', () => {
@@ -103,5 +103,15 @@ describe('trimAroundMatch', () => {
 
   it('finds the match through accents', () => {
     expect(trimAroundMatch(`${'x'.repeat(200)} Renée`, ['renee'], 40)).toMatch(/…x+ Renée$/);
+  });
+});
+
+describe('containsWord', () => {
+  it('matches whole words and phrases only', () => {
+    expect(containsWord('a rapid api fix', 'api')).toBe(true);
+    expect(containsWord('a rapid fix', 'api')).toBe(false);
+    expect(containsWord('needs design soon', 'needs design')).toBe(true);
+    expect(containsWord('front-end work', 'front')).toBe(true);
+    expect(containsWord('renee', '')).toBe(false);
   });
 });

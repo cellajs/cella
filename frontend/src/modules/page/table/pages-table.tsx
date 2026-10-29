@@ -1,6 +1,8 @@
 import { BirdIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { matchesSearch, parseSearchQuery } from 'shared/utils/parse-search-query';
+import { foldText } from 'shared/utils/text-match';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid/types';
@@ -10,6 +12,7 @@ import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
 import { siblingPosition, useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
 import { FocusViewContainer } from '~/modules/common/focus-view';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { type DocPage, getDocPages, useDocPages } from '~/modules/page/content';
 import { maxPageDepth, type PageTreeRow, pagesRowHeight } from '~/modules/page/table/page-tree';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
@@ -54,9 +57,14 @@ export function PagesTable() {
 
   const tree = useTreeRows<DocPage>({ defaultExpanded: true, rowHeight: pagesRowHeight, maxDepth: maxPageDepth, mutate: treeMutate });
 
-  const query = q?.trim().toLowerCase();
-  const filtered = query
-    ? pages.filter((page) => [page.name, page.description, page.keywords, page.id].some((value) => value?.toLowerCase().includes(query)))
+  const parsedQuery = parseSearchQuery(q);
+  const filtered = parsedQuery.effectiveQ
+    ? pages.filter((page) =>
+        matchesSearch(
+          [page.name, page.description, page.keywords, page.id].map((value) => foldText(value ?? '')),
+          parsedQuery,
+        ),
+      )
     : pages;
   // `rows` omits collapsed descendants, so the header count uses `filtered.length` to stay the true total.
   const rows = tree.buildRows(filtered);
@@ -97,24 +105,26 @@ export function PagesTable() {
     <FocusViewContainer>
       <PagesTableBar total={filtered.length} searchVars={search} setSearch={setSearch} columns={columns} setColumns={setColumns} />
       <TreeProvider value={tree.context}>
-        <DataTable
-          rows={rows}
-          rowHeight={tree.rowHeight}
-          rowKeyGetter={rowKeyById}
-          columns={columns}
-          enableVirtualization
-          isFiltered={!!q}
-          hasNextPage={false}
-          {...(canEditDocs && {
-            enableDragAutoScroll: true,
-            onRowsChange,
-            onRowReorder: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => tree.onReorder(rows, fromIdx, toIdx, edge),
-            onRowReparent: (fromIdx: number, toIdx: number) => tree.onReparent(rows, fromIdx, toIdx),
-            canDropRow: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => tree.canDrop(rows, args),
-            renderRowDragPreview,
-          })}
-          NoRowsComponent={<ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:page_other') }} />}
-        />
+        <SearchScope q={q}>
+          <DataTable
+            rows={rows}
+            rowHeight={tree.rowHeight}
+            rowKeyGetter={rowKeyById}
+            columns={columns}
+            enableVirtualization
+            isFiltered={!!q}
+            hasNextPage={false}
+            {...(canEditDocs && {
+              enableDragAutoScroll: true,
+              onRowsChange,
+              onRowReorder: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => tree.onReorder(rows, fromIdx, toIdx, edge),
+              onRowReparent: (fromIdx: number, toIdx: number) => tree.onReparent(rows, fromIdx, toIdx),
+              canDropRow: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => tree.canDrop(rows, args),
+              renderRowDragPreview,
+            })}
+            NoRowsComponent={<ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:page_other') }} />}
+          />
+        </SearchScope>
       </TreeProvider>
     </FocusViewContainer>
   );

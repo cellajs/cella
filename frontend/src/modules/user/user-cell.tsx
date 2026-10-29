@@ -1,6 +1,7 @@
 import type { UserMinimalBase } from 'sdk';
 import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { HighlightText, MatchReason } from '~/modules/common/match-highlight/highlight-text';
 import { Button } from '~/modules/ui/button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import { cn } from '~/utils/cn';
@@ -13,12 +14,14 @@ interface UserCellProps {
   className?: string;
   /** Avatar and name without the sheet link, for layouts that mount no user sheet (public pages). */
   readOnly?: boolean;
+  /** Searched with the name: below `md`, where the email column is left out, a match in it shows under the name. */
+  email?: string | null;
 }
 
 // DataGrid sets data-is-compact on its root/merged slots; keep the name accessible while hiding it visually.
 const compactUserNameClass = tw('in-data-[is-compact=true]:sr-only');
 
-export function UserCell({ user, tabIndex, compactable, className, readOnly }: UserCellProps) {
+export function UserCell({ user, tabIndex, compactable, className, readOnly, email }: UserCellProps) {
   const openUserSheet = useOpenUserSheet();
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
@@ -28,7 +31,12 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: U
     return (
       <div className={cn('flex items-center gap-2', className)} {...compactTooltip}>
         <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-        <span className={cn('truncate', compactable && compactUserNameClass)}>{user.name || '-'}</span>
+        <span className={cn('min-w-0 text-start', compactable && compactUserNameClass)}>
+          <span className="block truncate">
+            <HighlightText text={user.name || '-'} />
+          </span>
+          <MatchReason text={email} shownText={user.name} />
+        </span>
       </div>
     );
   }
@@ -44,7 +52,12 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: U
       onClick={() => openUserSheet(user.id)}
     >
       <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-      <span className={cn(cellLinkTextClass, compactable && compactUserNameClass)}>{user.name || '-'}</span>
+      <span className={cn('min-w-0 text-start', compactable && compactUserNameClass)}>
+        <span className={cn(cellLinkTextClass, 'block')}>
+          <HighlightText text={user.name || '-'} />
+        </span>
+        <MatchReason text={email} shownText={user.name} />
+      </span>
     </Button>
   );
 }

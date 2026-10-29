@@ -9,6 +9,7 @@ import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/mo
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { HighlightText, MatchReason } from '~/modules/common/match-highlight/highlight-text';
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { DeleteQuestion } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -61,7 +62,12 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       renderCell: ({ row }) => (
         <>
           <SeenMark productId={row.id} tenantId={row.tenantId} organizationId={row.organizationId} channelId={channel.id} productType="attachment" />
-          <span className="truncate font-medium">{row.name || '-'}</span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">
+              <HighlightText text={row.name || '-'} />
+            </span>
+            <MatchReason text={row.filename} shownText={row.name} />
+          </span>
         </>
       ),
       // For 'own' policies the backend enforces the final owner check on save.

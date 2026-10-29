@@ -5,6 +5,7 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { FocusViewContainer } from '~/modules/common/focus-view';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { OperationsTableBar } from '~/modules/docs/operations/operations-table/operations-bar';
 import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
@@ -67,20 +68,22 @@ export function OperationsTable() {
           tagFilters={tagFilters}
           hasMcpTools={operations.some((op) => op.tool)}
         />
-        <DataTable<GenOperationSummary>
-          columns={columns}
-          rows={sortedOperations}
-          cellSelectionMode="none"
-          hasNextPage={false}
-          rowKeyGetter={(row) => row.hash}
-          rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
-          isFiltered={!!q}
-          rowHeight={42}
-          enableVirtualization
-          resetWidthsKey={focusView ? 'focus' : 'normal'}
-          sortColumns={sortColumns}
-          onSortColumnsChange={setSortColumns}
-        />
+        <SearchScope q={q}>
+          <DataTable<GenOperationSummary>
+            columns={columns}
+            rows={sortedOperations}
+            cellSelectionMode="none"
+            hasNextPage={false}
+            rowKeyGetter={(row) => row.hash}
+            rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
+            isFiltered={!!q}
+            rowHeight={42}
+            enableVirtualization
+            resetWidthsKey={focusView ? 'focus' : 'normal'}
+            sortColumns={sortColumns}
+            onSortColumnsChange={setSortColumns}
+          />
+        </SearchScope>
       </FocusViewContainer>
     </>
   );

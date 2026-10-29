@@ -5,6 +5,7 @@ import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/colum
 import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-toggle-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { docRenderModes } from '~/modules/page/content';
 import { useDocSize } from '~/modules/page/table/doc-sizes';
 import type { PageTreeRow } from '~/modules/page/table/page-tree';
@@ -62,7 +63,9 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
             className="w-auto min-w-0"
             render={<Link to="/docs/page/$" tabIndex={tabIndex} params={{ _splat: row.id }} />}
           >
-            <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name}</span>
+            <span className={cn(cellLinkTextClass, 'font-medium')}>
+              <HighlightText text={row.name} />
+            </span>
           </Button>
           {row.draft && <Badge variant="secondary">{t('c:draft')}</Badge>}
           {row._hasChildren && !row._isExpanded && (

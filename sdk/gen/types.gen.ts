@@ -3380,6 +3380,9 @@ export type GetRequestsData = {
   body?: never;
   path?: never;
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'id' | 'email' | 'type' | 'createdAt';
     order?: 'asc' | 'desc';
@@ -3723,6 +3726,9 @@ export type GetTenantsData = {
   body?: never;
   path?: never;
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'createdAt' | 'name';
     order?: 'asc' | 'desc';
@@ -4095,6 +4101,9 @@ export type GetUsersData = {
   body?: never;
   path?: never;
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
     order?: 'asc' | 'desc';
@@ -4376,6 +4385,9 @@ export type GetOrganizationsData = {
   body?: never;
   path?: never;
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
     order?: 'asc' | 'desc';
@@ -4674,6 +4686,9 @@ export type GetAttachmentsData = {
     organizationId: string;
   };
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'name' | 'createdAt' | 'contentType';
     order?: 'asc' | 'desc';
@@ -5459,6 +5474,9 @@ export type GetMembersData = {
     organizationId: string;
   };
   query: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'lastPostedAt';
     order?: 'asc' | 'desc';
@@ -5544,6 +5562,9 @@ export type GetPendingMembershipsData = {
     organizationId: string;
   };
   query: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     sort?: 'createdAt';
     order?: 'asc' | 'desc';
@@ -5757,6 +5778,9 @@ export type GetServiceAccountsData = {
     organizationId: string;
   };
   query?: {
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
     q?: string;
     offset?: number;
     limit?: number;

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig, type EntityRole, hierarchy, isUnpublishedDraft } from 'shared';
 import { getMemberStatIcon } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import type { ChannelTileEntity, EnrichedChannel } from '~/modules/entities/types';
 import { JoinedButton } from '~/modules/memberships/joined-button';
 import { Badge } from '~/modules/ui/badge';
@@ -129,7 +130,9 @@ export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
       {leading ?? <EntityAvatar className="size-8 sm:size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />}
       <div className="flex grow flex-col gap-0.5 truncate">
         <div className="inline-flex items-center gap-2 truncate font-semibold text-sm leading-5">
-          <span className="truncate">{entity.name}</span>
+          <span className="truncate">
+            <HighlightText text={entity.name} />
+          </span>
           {isUnpublishedDraft(entity) && <Badge variant="secondary">{t('c:draft')}</Badge>}
         </div>
         {meta ?? <ChannelTileStats />}

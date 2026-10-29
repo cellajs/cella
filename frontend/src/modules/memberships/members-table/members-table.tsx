@@ -8,6 +8,7 @@ import { DataTable, rowKeyById } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
@@ -72,21 +73,23 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
         isSheet={isSheet}
         canUpdate={canUpdate}
       />
-      <DataTable<Member>
-        {...{
-          ...list,
-          onRowsChange,
-          rowKeyGetter: rowKeyById,
-          columns,
-          enableVirtualization: true,
-          isFiltered: role !== undefined || !!q,
-          selectedRows: selectedRowIds,
-          onSelectedRowsChange,
-          sortColumns,
-          onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={UsersIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:member_other') }} />,
-        }}
-      />
+      <SearchScope q={q}>
+        <DataTable<Member>
+          {...{
+            ...list,
+            onRowsChange,
+            rowKeyGetter: rowKeyById,
+            columns,
+            enableVirtualization: true,
+            isFiltered: role !== undefined || !!q,
+            selectedRows: selectedRowIds,
+            onSelectedRowsChange,
+            sortColumns,
+            onSortColumnsChange,
+            NoRowsComponent: <ContentPlaceholder icon={UsersIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:member_other') }} />,
+          }}
+        />
+      </SearchScope>
     </>
   );
 }
