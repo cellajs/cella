@@ -1,5 +1,4 @@
 import { createRouter } from '@tanstack/react-router';
-import type { ChannelEntityType } from 'shared';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { uiStore } from '~/modules/ui/ui-store';
@@ -9,9 +8,7 @@ import { createNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
-import { channelRouteConfig } from '~/routes-config';
 import { setSkipPageEnter } from '~/utils/nav-transition';
-import { objectEntries } from '~/utils/object-entries';
 
 /** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
 export const router = createRouter({
@@ -60,20 +57,6 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   const fromLeafId = router.state.matches.at(-1)?.routeId;
   const toLeafId = pendingMatches.at(-1)?.routeId;
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
-});
-
-const subchannelPaths = new Map<string, ChannelEntityType>(
-  objectEntries(channelRouteConfig).flatMap(([entityType, { path }]) => (entityType === 'organization' ? [] : [[path, entityType]])),
-);
-
-// A channel page's beforeLoad puts the channel in context under its entity type, below the organization layout's own
-router.subscribe('onResolved', () => {
-  const match = router.state.matches.findLast((item) => subchannelPaths.has(item.fullPath));
-  if (!match) return;
-
-  const context = match.context as Record<string, { id: string } | undefined>;
-  const channel = context[subchannelPaths.get(match.fullPath)!];
-  if (channel && context.organization) navigationStore.getState().setLastChannelId(context.organization.id, channel.id);
 });
 
 // The router scrolls a hash link only to a target the page renders and skips its scroll to top whenever a hash is set,

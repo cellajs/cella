@@ -5,7 +5,6 @@ import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
@@ -68,16 +67,12 @@ export function EntityGridBar({
       label={label}
       searchName="entitySearch"
       actions={actions}
-      filters={
-        <>
-          <SelectSort
-            value={sort ?? sortOptions[0].value}
-            onChange={(sort) => setSearch({ sort, order: sortOptions.find((option) => option.value === sort)?.order })}
-            sortOptions={sortOptions}
-          />
-          {roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} />}
-        </>
-      }
+      filters={roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} />}
+      sort={{
+        options: sortOptions,
+        value: sort ?? sortOptions[0].value,
+        onChange: (sort) => setSearch({ sort, order: sortOptions.find((option) => option.value === sort)?.order }),
+      }}
       controls={viewToggle}
       focusView={focusView}
     />

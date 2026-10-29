@@ -14,6 +14,7 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
+import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -44,26 +45,16 @@ interface MenuSheetItemEditProps {
   item: UserMenuItem;
   /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
   siblings: UserMenuItem[];
-  /** It is a row of a submenu: a smaller row on the submenu's dotted line. */
+  /** It is a row of a submenu: a smaller row, joined to the row above by two dots. */
   isSubitem: boolean;
   icon?: IconComponent;
-  /** Its submenu shows below it, so the submenu's dotted line starts at its avatar. */
-  hasSubmenuBelow?: boolean;
   /** It mounted by moving here from the other list, so it travels above the rows it passes. */
   isArriving?: boolean;
   /** Runs before it is archived; true when the move has to wait, for the archived list to open or its submenu to fold. */
   onArchive?: () => boolean;
 }
 
-export function MenuSheetItemEdit({
-  item,
-  siblings,
-  isSubitem,
-  icon: Icon,
-  hasSubmenuBelow = false,
-  isArriving = false,
-  onArchive,
-}: MenuSheetItemEditProps) {
+export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArriving = false, onArchive }: MenuSheetItemEditProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
@@ -119,16 +110,9 @@ export function MenuSheetItemEdit({
         isTravelling && 'z-3',
       )}
     >
-      {/* The view mode's dotted submenu line, drawn per row so it travels with the row and stays under its avatar while a move animates */}
-      {(hasSubmenuBelow || (isSubitem && !item.membership.archived)) && (
-        <span
-          aria-hidden
-          className={cn(
-            'dotted-line pointer-events-none absolute bottom-0 left-[27px] text-foreground opacity-50',
-            hasSubmenuBelow ? 'top-10' : 'top-0',
-          )}
-        />
-      )}
+      {/* Drawn per row, so the dots travel with it while a move animates. The gap ends at this avatar 0.625rem down and
+          starts 0.5rem up below the parent's avatar, 0.625rem up below another sub-row's. */}
+      {isSubitem && !item.membership.archived && <SubmenuConnector className={index === 0 ? '-top-2 h-4.5' : '-top-2.5 h-5'} />}
       {status === 'pending' && isOnline && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
@@ -144,8 +128,8 @@ export function MenuSheetItemEdit({
           onMove={move}
           className={cn(
             avatarBoxClass,
-            // Opaque while the avatar fades for the grip, so the subitem line behind it stays hidden. Any focus shows the
-            // outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset clear over the row's fill.
+            // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset
+            // clear over the row's fill.
             'group/drag relative cursor-grab rounded-md outline-hidden focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-(--hover-fill) active:cursor-grabbing group-hover/options-item:bg-(--hover-fill)',
           )}
         >

@@ -2,12 +2,14 @@ import dayjs from 'dayjs';
 import { LogOutIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type FederationKey } from 'shared';
+import { CountryFlag } from '~/modules/common/country-flag';
 import { ExpandableTileDetail, type TileTone } from '~/modules/common/expandable-tile';
 import { DeviceTile } from '~/modules/me/device-tile';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { dateShort } from '~/utils/date-short';
+import { regionName } from '~/utils/region-name';
 
 /** The federation keys the app declares. An app without federations types the record by `string`, which names none. */
 type DeclaredFederation = string extends FederationKey ? never : FederationKey;
@@ -30,15 +32,6 @@ const sessionStatus = (session: Session): keyof typeof statuses => {
   if (session.revokedAt !== null) return 'signed_out';
   if (!isLiveSession(session)) return 'expired';
   return session.isCurrent ? 'current' : 'active';
-};
-
-/** The region's name in `language`, or its code where the browser has no name for it. */
-const regionName = (code: string, language: string) => {
-  try {
-    return new Intl.DisplayNames([language], { type: 'region' }).of(code) ?? code;
-  } catch {
-    return code;
-  }
 };
 
 interface SessionTileProps {
@@ -83,9 +76,8 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       }
       meta={
         <>
+          {session.ipCountry && <CountryFlag countryCode={session.ipCountry} className="mr-1.5 align-[-1px]" />}
           {when}
-          {/* The country is among the details too; on a phone the line has no room for it */}
-          {countryName && <span className="max-sm:hidden"> · {countryName}</span>}
         </>
       }
       details={

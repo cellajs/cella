@@ -57,7 +57,7 @@ pnpm offline
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`. A coding agent with the `add-entity` skill takes a new entity from its hierarchy entry to a page that syncs.
 3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
 4. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
-5. Coding agents read their rules from `cella/AGENTS.md` and their skills from `cella/skills/`. Claude Code finds neither on its own: in the gitignored `.claude/`, run `ln -s ../cella/skills .claude/skills` and add a `CLAUDE.md` holding `@../cella/AGENTS.md`.
+5. Start building!
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
 

@@ -9,6 +9,7 @@ import { LegalContact } from '~/modules/auth/legal/legal-contact';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -82,12 +83,12 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
             icon={<MessageSquareIcon />}
             required
           />
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <FormActions>
             <SubmitButton loading={isPending} icon={<SendIcon />}>
               {t('c:send')}
             </SubmitButton>
             <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
-          </div>
+          </FormActions>
         </form>
       </Form>
       {isLargeScreen ? (

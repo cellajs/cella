@@ -11,6 +11,7 @@ import type { z } from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { NamedText } from '~/modules/common/named-text';
@@ -184,14 +185,14 @@ export function InviteFormFooter({ form, channel, counts, loading, onCancel, chi
         />
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <FormActions>
         <SubmitButton disabled={!invite && !remind} loading={loading}>
           <SendIcon />
           {label}
         </SubmitButton>
         {!children && <CancelButton dirty={form.isDirty} onClick={onCancel} />}
         {children}
-      </div>
+      </FormActions>
     </>
   );
 }

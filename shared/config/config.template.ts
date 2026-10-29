@@ -352,7 +352,7 @@ export const config = {
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
-  c: { countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'], timezones: [] },
+  commonCountries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
 
   // Company details
 

@@ -211,7 +211,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v25-route-errors',
+  clientCacheVersion: 'v26-country-codes',
 
   // Authentication
 
@@ -357,7 +357,7 @@ export const config = {
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
-  c: { countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'], timezones: [] },
+  commonCountries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
 
   // Company details
 

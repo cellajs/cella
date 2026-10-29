@@ -11,6 +11,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
@@ -106,14 +107,14 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           />
         )}
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <FormActions>
           <SubmitButton disabled={!form.isDirty} loading={selfCreateTenantMutation.isPending || createMutation.isPending}>
             {t('c:create')}
           </SubmitButton>
           {children}
 
           {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

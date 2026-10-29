@@ -69,7 +69,7 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the padding forwards focus to the input, which takes the keys
     <div
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
-      className="focus-within-effect flex flex-wrap items-center gap-1 rounded-md border border-input field-hover:border-input-hover bg-background px-3 py-1"
+      className="focus-within-effect flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1"
     >
       {emails.map((email) => {
         const { state, note } = chipState?.(email) ?? { state: 'new' };

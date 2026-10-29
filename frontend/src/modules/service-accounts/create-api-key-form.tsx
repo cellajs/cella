@@ -6,6 +6,7 @@ import { hierarchy } from 'shared';
 import type { z } from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useCreateServiceAccountMutation } from '~/modules/service-accounts/query';
@@ -64,10 +65,10 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
           required
         />
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <FormActions>
           <SubmitButton loading={isPending}>{t('c:create')}</SubmitButton>
           <CancelButton dirty={isDirty} onClick={() => form.reset()} />
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

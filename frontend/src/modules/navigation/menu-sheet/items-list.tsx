@@ -10,7 +10,6 @@ import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { getChannelRoute } from '~/utils/channel-route';
-import { cn } from '~/utils/cn';
 
 /** A channel's page tabs under its menu row while its pages are open. */
 function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
@@ -47,7 +46,7 @@ export function MenuSheetItemsList({ items, entityType, isArchived, options, isS
   return sortAndFilterMenu(items, isArchived).map((item) => {
     const hasSubmenu = isSubmenuShown(item);
     return (
-      <li className={cn(hasSubmenu && 'submenu-section relative')} key={item.id}>
+      <li key={item.id}>
         <MenuSheetItem item={item} isSubitem={isSubmenu} icon={options?.icon} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (

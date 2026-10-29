@@ -9,6 +9,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
+import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
@@ -54,13 +55,9 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
       className="group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-ring active:bg-accent data-[subitem=true]:h-10 sm:hover:bg-accent sm:hover:text-foreground"
     >
       <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
-      {/* The card backing keeps the submenu line from showing through a dimmed avatar; an icon avatar sits above that line, so it goes without */}
-      <span
-        className={cn(
-          'relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6',
-          Icon && 'bg-transparent',
-        )}
-      >
+      {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
+      {isSubitem && <SubmenuConnector className="-top-2 h-4" />}
+      <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(
             'size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',

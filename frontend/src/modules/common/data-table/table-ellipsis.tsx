@@ -1,10 +1,12 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 import { Fragment, type ReactNode, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { EntityType } from 'shared';
 import { DropdownActionItem, DropdownActionSeparator } from '~/modules/common/dropdowner/dropdown-action-item';
 import { DropdownerTriggerIcon } from '~/modules/common/dropdowner/trigger-icon';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { NamedText } from '~/modules/common/named-text';
 import { Button } from '~/modules/ui/button';
 
 export type EllipsisOption<T> = {
@@ -17,6 +19,9 @@ export type EllipsisOption<T> = {
   | { confirm: (row: T) => { title: ReactNode; content: ReactNode } }
 );
 
+/** A row with a `name` and an `entityType` is named above the mobile drawer's rows. */
+export type EllipsisRow = { id: string; name?: string | null; entityType?: EntityType };
+
 interface TableEllipsisProps<T> {
   row: T;
   tabIndex: number;
@@ -24,12 +29,17 @@ interface TableEllipsisProps<T> {
 }
 
 /** Ellipsis cell button opening a dropdown, or a drawer on mobile. */
-export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: TableEllipsisProps<T>) {
+export function TableEllipsis<T extends EllipsisRow>({ row, tabIndex, options }: TableEllipsisProps<T>) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openDropdown = () => {
     if (!triggerRef.current) return;
+
+    const lead =
+      row.name && row.entityType ? (
+        <NamedText i18nKey="c:resource_named" name={row.name} values={{ resource: t(`c:${row.entityType}`) }} />
+      ) : undefined;
 
     dropdowner.getState().create(
       options.map((option, index) => (
@@ -45,7 +55,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
           </DropdownActionItem>
         </Fragment>
       )),
-      { id: 'row-dropdown', triggerId: `ellipsis-${row.id}`, triggerRef, align: 'end', kind: 'menu' },
+      { id: 'row-dropdown', triggerId: `ellipsis-${row.id}`, triggerRef, align: 'end', kind: 'menu', lead },
     );
   };
 

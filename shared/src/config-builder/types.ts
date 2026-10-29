@@ -338,7 +338,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   placeholderColors: readonly string[];
 
   defaultLanguage: string;
-  c: { countries: readonly string[]; timezones: readonly string[] };
+  /** ISO 3166-1 alpha-2 codes a country field suggests after the one the device's timezone points to. */
+  commonCountries: readonly string[];
 
   company: CompanyConfig;
 

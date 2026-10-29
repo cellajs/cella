@@ -97,6 +97,7 @@ export function FieldLabel({
           // The tile's padding is room for a description; an option without one stays no taller than a button
           '[&:not(:has([data-slot=field-description]))>[data-slot=field]]:py-2',
           'has-data-checked:border-primary has-data-checked:bg-primary/5 dark:has-data-checked:bg-primary/10',
+          'has-data-disabled:cursor-not-allowed has-data-disabled:hover:border-input',
         ],
         className,
       )}
@@ -116,7 +117,7 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 export function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  return <p data-slot="field-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
+  return <p data-slot="field-description" className={cn('font-normal text-muted-foreground text-sm', className)} {...props} />;
 }
 
 export function FieldSeparator({ children, className, ...props }: React.ComponentProps<'div'> & { children?: React.ReactNode }) {

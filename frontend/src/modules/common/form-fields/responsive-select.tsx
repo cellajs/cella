@@ -1,9 +1,7 @@
-import { CheckIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
-import { Button } from '~/modules/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerRowGroup, DrawerTitle } from '~/modules/ui/drawer';
+import { SelectDrawer } from '~/modules/common/form-fields/select-drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
@@ -78,30 +76,18 @@ export function ResponsiveSelect({
           {!iconOnly && <span className="truncate">{triggerContent}</span>}
         </InputTriggerButton>
 
-        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <DrawerContent>
-            <DrawerHeader className={cn(!title && 'sr-only')}>
-              <DrawerTitle>{title ?? placeholder}</DrawerTitle>
-            </DrawerHeader>
-            <DrawerRowGroup className="m-4 mt-0 mb-[calc(1rem+var(--bottom-inset))]">
-              {options.map((option) => (
-                <Button
-                  key={option.value}
-                  variant="row"
-                  aria-pressed={option.value === value}
-                  className="justify-between aria-pressed:font-medium"
-                  onClick={() => {
-                    onChange(option.value);
-                    setDrawerOpen(false);
-                  }}
-                >
-                  {optionRow(option)}
-                  {option.value === value && <CheckIcon className="text-success" />}
-                </Button>
-              ))}
-            </DrawerRowGroup>
-          </DrawerContent>
-        </Drawer>
+        <SelectDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          title={title ?? placeholder}
+          titleHidden={!title}
+          options={options.map((option) => ({ value: option.value, label: optionRow(option) }))}
+          value={value}
+          onSelect={(next) => {
+            onChange(next);
+            setDrawerOpen(false);
+          }}
+        />
       </>
     );
   }

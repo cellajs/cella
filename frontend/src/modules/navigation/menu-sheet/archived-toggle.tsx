@@ -1,6 +1,7 @@
 import { ArchiveIcon, ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CountBadge } from '~/modules/common/count-badge';
+import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 
@@ -37,11 +38,8 @@ export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChann
           <ChevronDownIcon className="opacity-50 transition-transform group-data-[has-archived=false]/archived:hidden group-data-[submenu=true]/archived:size-3.5 group-data-[archived-visible=true]/archived:rotate-180" />
         </div>
       </Button>
-      {/* The end of the submenu's dotted line, from the row above to the icon */}
-      <span
-        aria-hidden
-        className="dotted-line pointer-events-none absolute top-0 left-[27px] hidden h-2 text-foreground opacity-50 group-data-[submenu=true]/archived:block"
-      />
+      {/* In a submenu it joins the last row above: 0.625rem below that row's avatar, 0.5625rem above the icon */}
+      <SubmenuConnector className="-top-2.5 hidden h-4.75 group-data-[submenu=true]/archived:flex" />
     </div>
   );
 }

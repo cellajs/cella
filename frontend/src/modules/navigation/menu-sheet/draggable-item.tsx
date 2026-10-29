@@ -131,7 +131,6 @@ export function MenuSheetDraggableItem({
           siblings={siblings}
           isSubitem={isSubitem}
           icon={options?.icon}
-          hasSubmenuBelow={hasSubmenu}
           isArriving={hasArrived}
           onArchive={handleArchive}
         />

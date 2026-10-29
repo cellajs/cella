@@ -4,7 +4,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { useDropdownerSurface } from '~/modules/common/dropdowner/surface';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { NamedText } from '~/modules/common/named-text';
-import { DrawerRowGroup } from '~/modules/ui/drawer';
+import { DrawerLead, DrawerRowGroup } from '~/modules/ui/drawer';
 import { DropdownMenuGroup, DropdownMenuLabel } from '~/modules/ui/dropdown-menu';
 
 interface PopConfirmProps {
@@ -30,8 +30,9 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
 
   if (surface === 'drawer') {
     return (
-      <div className="flex flex-col gap-3">
-        <p className="text-balance py-3 text-center text-sm">{title}</p>
+      // The menu's lead sits in the same place, so the swap changes only its sentence
+      <div className="flex flex-col gap-2">
+        <DrawerLead>{title}</DrawerLead>
         <DrawerRowGroup>{children}</DrawerRowGroup>
       </div>
     );

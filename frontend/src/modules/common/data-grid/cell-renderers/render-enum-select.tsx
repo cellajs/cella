@@ -1,19 +1,18 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { SelectDrawer, type SelectDrawerOption } from '~/modules/common/form-fields/select-drawer';
+import { NamedText } from '~/modules/common/named-text';
 import { Combobox, ComboboxItem, ComboboxItemIndicator, ComboboxList } from '~/modules/ui/combobox';
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import type { RenderEditCellProps } from '../types';
 
 /** Enum-editor defaults: no double commit from the portaled popover, and cell content stays visible. */
 export const enumSelectEditorOptions = { editorType: 'select', commitOnOutsideClick: false, displayCellContent: true } as const;
 
-export type EnumSelectOption<TValue extends string> = { value: TValue; label: ReactNode };
-
-type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRowChange' | 'onClose'> & {
+type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'column' | 'onRowChange' | 'onClose'> & {
   row: TRow;
   /** List of allowed values, or pre-built `{ value, label }` options. */
-  options: readonly TValue[] | readonly EnumSelectOption<TValue>[];
+  options: readonly TValue[] | readonly SelectDrawerOption<TValue>[];
   /** Render the visible label for a value (only used when `options` is a plain string list). */
   renderOption?: (value: TValue) => ReactNode;
   /** Optional fixed width for the popover content (desktop only; drawer fills width on mobile). */
@@ -26,9 +25,10 @@ type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRow
   setValue?: (row: TRow, value: TValue) => TRow;
 };
 
-/** `EditCell` owns the Base UI lifecycle; pair the column with `enumSelectEditorOptions`. */
-export function RenderEnumSelect<TRow extends { id: string }, TValue extends string>({
+/** `EditCell` owns the Base UI lifecycle; pair the column with `enumSelectEditorOptions`. A row's `name` heads the mobile drawer. */
+export function RenderEnumSelect<TRow extends { id: string; name?: string | null }, TValue extends string>({
   row,
+  column,
   options,
   onRowChange,
   onClose,
@@ -67,24 +67,27 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
     if (!open) onClose();
   };
 
-  const menu = <EnumSelectMenu currentValue={currentValue} options={options} renderOption={renderOption} onSelect={handleSelect} />;
+  const normalized: SelectDrawerOption<TValue>[] = options.map((opt) =>
+    typeof opt === 'string' ? { value: opt as TValue, label: renderOption?.(opt as TValue) ?? opt } : opt,
+  );
 
   if (isMobile) {
+    // The sheet covers the row, so it names the row it edits
+    const lead =
+      row.name && typeof column.name === 'string' ? (
+        <NamedText i18nKey="c:change_field.text" name={row.name} values={{ field: column.name }} />
+      ) : undefined;
+
     return (
-      <>
-        <span ref={probeRef} aria-hidden className="hidden" />
-        <Drawer open onOpenChange={handleOpenChange}>
-          <DrawerContent className="max-h-[70dvh]">
-            <DrawerHeader className="p-0">
-              <span className="sr-only">
-                <DrawerTitle>Choose</DrawerTitle>
-                <DrawerDescription>Select an option</DrawerDescription>
-              </span>
-            </DrawerHeader>
-            <div className="p-4">{menu}</div>
-          </DrawerContent>
-        </Drawer>
-      </>
+      <SelectDrawer
+        open
+        onOpenChange={handleOpenChange}
+        title={column.name}
+        lead={lead}
+        options={normalized}
+        value={currentValue}
+        onSelect={handleSelect}
+      />
     );
   }
 
@@ -101,7 +104,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
           finalFocus={false}
           style={{ width }}
         >
-          {menu}
+          <EnumSelectMenu currentValue={currentValue} options={normalized} onSelect={handleSelect} />
         </PopoverContent>
       </Popover>
     </>
@@ -111,19 +114,13 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
 function EnumSelectMenu<TValue extends string>({
   currentValue,
   options,
-  renderOption,
   onSelect,
 }: {
   currentValue: TValue | undefined;
-  options: readonly TValue[] | readonly EnumSelectOption<TValue>[];
-  renderOption?: (value: TValue) => ReactNode;
+  options: SelectDrawerOption<TValue>[];
   onSelect: (value: TValue) => void;
 }) {
-  const normalized: EnumSelectOption<TValue>[] = options.map((opt) =>
-    typeof opt === 'string' ? { value: opt as TValue, label: renderOption?.(opt as TValue) ?? opt } : opt,
-  );
-
-  // The Popover/Drawer does not auto-focus a child, so the listbox is focused for arrow and typeahead keys.
+  // The Popover does not auto-focus a child, so the listbox is focused for arrow and typeahead keys.
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     listRef.current?.focus({ preventScroll: true });
@@ -133,14 +130,14 @@ function EnumSelectMenu<TValue extends string>({
     <Combobox<TValue>
       inline
       openOnInputClick={false}
-      items={normalized.map((o) => o.value)}
+      items={options.map((o) => o.value)}
       value={currentValue ?? null}
       onValueChange={(value) => {
         if (value != null) onSelect(value);
       }}
     >
       <ComboboxList ref={listRef} className="rounded-lg p-1 outline-hidden" tabIndex={-1}>
-        {normalized.map((opt) => (
+        {options.map((opt) => (
           <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2">
             <span className="flex-1 text-foreground">{opt.label}</span>
             <ComboboxItemIndicator />

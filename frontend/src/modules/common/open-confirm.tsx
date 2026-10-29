@@ -22,6 +22,8 @@ type ConfirmOptions = {
   | {
       /** Runs after the confirmation closes. */
       onConfirm: () => void;
+      /** What goes, e.g. `c:connection`: the act reads "Delete connection". */
+      resource?: TKey;
       label?: TKey;
       cancelLabel?: TKey;
       icon?: IconComponent;
@@ -37,6 +39,7 @@ export function openConfirm(trigger: HTMLElement, options: ConfirmOptions) {
       options.content
     ) : (
       <DeleteForm
+        resource={options.resource}
         label={options.label}
         cancelLabel={options.cancelLabel}
         icon={options.icon}

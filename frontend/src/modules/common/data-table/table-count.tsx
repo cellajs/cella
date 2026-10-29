@@ -18,9 +18,10 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
   const { t } = useTranslation();
 
   return (
-    <div className={cn('flex items-center gap-2 text-sm max-sm:hidden', className)}>
-      {isFiltered && (
-        <Button variant="ghost" onClick={onResetFilters}>
+    // A phone stacks the count over its extra, and leaves the reset to the open search's Cancel
+    <div className={cn('flex items-center gap-2 text-sm max-sm:flex-col max-sm:items-start max-sm:gap-0', className)}>
+      {isFiltered && onResetFilters && (
+        <Button variant="ghost" className="max-sm:hidden" onClick={onResetFilters}>
           <FunnelXIcon />
           {t('c:clear')}
         </Button>

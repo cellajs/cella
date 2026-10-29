@@ -1,130 +1,96 @@
-import { FunnelXIcon, SearchIcon, XIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { SearchIcon } from 'lucide-react';
+import { createContext, type ReactNode, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
+import { scrollToPinLine } from '~/modules/common/sticky-box';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 interface TableFilterBarProps {
-  children: ReactNode;
+  /** Buttons before the count, such as a create button. */
+  actions?: ReactNode;
+  count?: ReactNode;
+  /** The search field: in the row from `sm` up, behind a search button on a phone. */
+  search: ReactNode;
+  /** Beside the search from `sm` up, on the open search's second row on a phone. */
+  filters?: ReactNode;
+  /** View controls closing the row, such as a view toggle and the view menu; a phone's open search leaves them out. */
+  controls?: ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
-  /** Shown after the search toggle on a phone and gone while the search is open; the bar shows its own copy from sm up. */
-  controls?: ReactNode;
+  searchVars?: Record<string, unknown>;
 }
 
-interface FilterBarChildProps {
-  children: ReactNode;
-  className?: string;
-}
-
+/** True while a phone's search is open, so its field takes focus. */
 export const TableFilterBarContext = createContext<{ isFilterActive: boolean }>({ isFilterActive: false });
 
-/** Actions section that fades out and slides left on mobile while the filter is active. */
-export function FilterBarActions({ children, className }: FilterBarChildProps) {
-  const { isFilterActive } = useContext(TableFilterBarContext);
-
-  return (
-    <motion.div
-      animate={{ opacity: isFilterActive ? 0 : 1, x: isFilterActive ? -20 : 0 }}
-      transition={{ duration: 0.15 }}
-      className={cn('flex items-center gap-3 max-sm:shrink-0', isFilterActive && 'max-sm:pointer-events-none', className)}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-interface FilterBarPartProps extends FilterBarChildProps {
-  /** Placement and stacking of the phone overlay. */
-  overlayClassName: string;
-  /** Horizontal offset in px the phone overlay slides in from. */
-  slideX?: number;
-}
-
-/** A phone overlay shown while the filter is active, and an always-visible copy from sm up. */
-function FilterBarPart({ overlayClassName, slideX = 0, className, children }: FilterBarPartProps) {
-  const { isFilterActive } = useContext(TableFilterBarContext);
-
-  return (
-    <>
-      <AnimatePresence>
-        {isFilterActive && (
-          <motion.div
-            initial={{ opacity: 0, x: slideX }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: slideX }}
-            transition={{ duration: 0.15 }}
-            className={cn('absolute inset-y-0 right-12 flex items-center gap-2 sm:hidden', overlayClassName, className)}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
-    </>
-  );
-}
-
-/** Search input container: fades in over the actions on mobile; always visible on desktop. */
-export function FilterBarSearch(props: FilterBarChildProps) {
-  return <FilterBarPart {...props} overlayClassName="left-0 z-10" />;
-}
-
-/** Filter controls (non-search): slide in from the right on mobile; always visible on desktop. */
-export function FilterBarFilters(props: FilterBarChildProps) {
-  return <FilterBarPart {...props} overlayClassName="z-20" slideX={20} />;
-}
-
-/** Filter bar; on phones a toggle swaps its actions for the search and filter overlays. */
-export function TableFilterBar({ onResetFilters, isFiltered, controls, children }: TableFilterBarProps) {
+/**
+ * The bar above a list. From `sm` up one row: actions and count, search, filters, controls. On a phone the search is a
+ * button; it opens a panel pinned under the sticky stack, the field with Cancel above the filters and the count, while
+ * the list filters underneath. Cancel resets the filters, so a filtered bar opens with its panel open.
+ */
+export function TableFilterBar({ actions, count, search, filters, controls, isFiltered, onResetFilters, searchVars }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('sm');
+  const barRef = useRef<HTMLDivElement>(null);
 
-  const [isFilterActive, setIsFilterActive] = useState(!!isFiltered);
+  const [isOpen, setIsOpen] = useState(!!isFiltered);
+  const isPanel = !isDesktop && isOpen;
 
-  const toggleFilter = () => {
-    if (isFilterActive && isFiltered) onResetFilters();
-    setIsFilterActive((active) => !active);
+  // Rendered within the tap, so the field takes focus inside the gesture: iOS opens its keyboard for no later focus.
+  // A link that opens the bar filtered skips this and leaves the page where it is.
+  const open = () => {
+    flushSync(() => setIsOpen(true));
+    const bar = barRef.current;
+    if (!bar) return;
+    scrollToPinLine(bar);
+    bar.querySelector('input')?.focus({ preventScroll: true });
+  };
+
+  const cancel = () => {
+    if (isFiltered) onResetFilters();
+    setIsOpen(false);
   };
 
   return (
-    <div className="flex w-full items-center gap-2 max-sm:relative max-sm:flex-1">
-      <TableFilterBarContext.Provider value={{ isFilterActive: !isDesktop && isFilterActive }}>{children}</TableFilterBarContext.Provider>
-
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={toggleFilter}
-        aria-label={isFilterActive ? t('c:cancel') : t('c:search')}
-        className="ml-auto sm:hidden"
-      >
-        <AnimatePresence mode="wait">
-          {isFilterActive ? (
-            <motion.span
-              key="close"
-              initial={{ opacity: 0, rotate: -90 }}
-              animate={{ opacity: 1, rotate: 0 }}
-              exit={{ opacity: 0, rotate: 90 }}
-              transition={{ duration: 0.15 }}
-            >
-              {isFiltered ? <FunnelXIcon /> : <XIcon />}
-            </motion.span>
-          ) : (
-            <motion.span
-              key="search"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 0.8, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.15 }}
-            >
-              <SearchIcon />
-            </motion.span>
+    <TableFilterBarContext.Provider value={{ isFilterActive: isPanel }}>
+      {isPanel ? (
+        <TableBarContainer ref={barRef} searchVars={searchVars} pinned className="flex-col items-stretch gap-1 border-b">
+          <div className="flex items-center gap-1">
+            <div className="min-w-0 grow">{search}</div>
+            <Button variant="ghost" onClick={cancel}>
+              {t('c:cancel')}
+            </Button>
+          </div>
+          {(filters || count) && (
+            <div className="flex items-center gap-2">
+              {filters}
+              <div className="grow" />
+              {count}
+            </div>
           )}
-        </AnimatePresence>
-      </Button>
-      {controls && !isFilterActive && <div className="sm:hidden">{controls}</div>}
-    </div>
+        </TableBarContainer>
+      ) : (
+        <TableBarContainer ref={barRef} searchVars={searchVars}>
+          <div className="flex min-w-0 items-center gap-3">
+            {actions}
+            {count}
+          </div>
+          <div className="grow" />
+          {isDesktop ? (
+            <>
+              <div className="flex items-center gap-2">{search}</div>
+              {filters && <div className="flex items-center gap-2">{filters}</div>}
+            </>
+          ) : (
+            <Button variant="outline" size="icon" aria-label={t('c:search')} onClick={open}>
+              <SearchIcon />
+            </Button>
+          )}
+          {controls}
+        </TableBarContainer>
+      )}
+    </TableFilterBarContext.Provider>
   );
 }

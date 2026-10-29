@@ -18,7 +18,7 @@ interface DropdownerContentProps {
 
 /** Tells dropdowner content where it renders and how to close or step back out of it. */
 export function DropdownerContent({ dropdown, surface, children }: DropdownerContentProps) {
-  const overlay = { close: () => removeIfCurrent(dropdown.key), back: () => backIfCurrent(dropdown.key) };
+  const overlay = { close: () => removeIfCurrent(dropdown.key), back: () => backIfCurrent(dropdown.key), drawer: surface === 'drawer' };
 
   return (
     <DropdownerSurfaceContext.Provider value={surface}>

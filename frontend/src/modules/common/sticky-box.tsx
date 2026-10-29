@@ -1,4 +1,4 @@
-import { type ComponentProps, type CSSProperties, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type CSSProperties, type RefObject, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
 
 /** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
@@ -39,7 +39,8 @@ interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
   publishVar?: string;
 }
 
-const stackVars = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
+const stackNavVar = '--sticky-stack-nav';
+const stackVars = [stackNavVar, '--sticky-stack-top'] as const;
 
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
 export function stackOffset(bar: HTMLElement, publishVar?: string) {
@@ -53,6 +54,49 @@ export function stackOffset(bar: HTMLElement, publishVar?: string) {
 export function stackOffsetCss(publishVar?: string) {
   const consumedVars = stackVars.filter((stackVar) => stackVar !== publishVar).map((stackVar) => `var(${stackVar}, 0px)`);
   return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
+}
+
+/** Scrolls the scroll parent of `node` until `node` meets the stack's pin line, when it sits below that line. */
+export function scrollToPinLine(node: HTMLElement) {
+  const scrollParent = getScrollParent(node);
+  const distance = node.getBoundingClientRect().top - viewportTopOf(scrollParent) - stackOffset(node);
+  if (distance > 0) scrollParent.scrollBy({ top: distance });
+}
+
+/**
+ * Pins the element in `ref` at the stack line while `enabled` and adds its height to `--sticky-stack-nav` on its parent,
+ * so bars further down that parent (a grid header, section headers) pin below it. The parent also keeps one viewport of
+ * height, so a list that narrows under the pinned element cannot pull it back down the page.
+ * @returns The inline style that pins the element, or undefined while disabled.
+ */
+export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boolean): CSSProperties | undefined {
+  useEffect(() => {
+    const bar = ref.current;
+    const host = bar?.parentElement;
+    if (!enabled || !bar || !host) return;
+
+    // Read before publishing: the element pins where the stack ended above it, and keeps that value for itself
+    const base = Number.parseFloat(getComputedStyle(host).getPropertyValue(stackNavVar)) || 0;
+    const previous = { stack: host.style.getPropertyValue(stackNavVar), minHeight: host.style.getPropertyValue('min-height') };
+    bar.style.setProperty(stackNavVar, `${base}px`);
+    // Through setProperty: the React Compiler refuses a property assignment on a value read from a hook argument
+    host.style.setProperty('min-height', '100dvh');
+
+    const publish = () => host.style.setProperty(stackNavVar, `${base + bar.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      bar.style.removeProperty(stackNavVar);
+      if (previous.stack) host.style.setProperty(stackNavVar, previous.stack);
+      else host.style.removeProperty(stackNavVar);
+      // An empty value removes the property
+      host.style.setProperty('min-height', previous.minHeight);
+    };
+  }, [enabled]);
+
+  return enabled ? { position: 'sticky', top: stackOffsetCss() } : undefined;
 }
 
 /**

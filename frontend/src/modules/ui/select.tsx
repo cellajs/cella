@@ -1,7 +1,7 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
-import type { PositionedContentProps } from '~/modules/ui/popover';
+import { type PositionedContentProps, popupSideOffset } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
 // Hands the value to SelectItem for its check: Base UI's ItemIndicator can show a stale selection.
@@ -47,7 +47,7 @@ export function SelectTrigger({ className, size = 'default', children, ...props 
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "focus-effect flex w-fit items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input field-hover:border-input-hover bg-background px-3 py-2 text-sm transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-[size=default]:h-10 data-[size=sm]:h-8 data-placeholder:text-faint-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus-effect flex w-fit items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-[size=default]:h-10 data-[size=sm]:h-8 data-placeholder:text-faint-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -63,7 +63,7 @@ export function SelectContent({
   children,
   align = 'center',
   side = 'bottom',
-  sideOffset = 1,
+  sideOffset = popupSideOffset,
   alignOffset,
   alignItemWithTrigger = false,
   container,

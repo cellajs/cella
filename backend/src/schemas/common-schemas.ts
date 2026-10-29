@@ -3,6 +3,7 @@ import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { maxLength } from '#/db/utils/constraints';
+import countries from '#json/countries.json';
 
 export { maxLength };
 
@@ -39,6 +40,30 @@ export const validTempIdSchema = z
 export const cookieSchema = z.string().max(maxLength.field);
 
 export const languageSchema = z.enum(appConfig.languages);
+
+const countryCodes = new Set(countries.map(({ code }) => code));
+
+/** An ISO 3166-1 alpha-2 code that `json/countries.json` lists, the codes the country field offers. */
+export const countryCodeSchema = z
+  .string()
+  .regex(/^[A-Z]{2}$/, translatedError('error:invalid_country'))
+  .refine((code) => countryCodes.has(code), translatedError('error:invalid_country'))
+  .openapi({ description: 'ISO 3166-1 alpha-2 country code.', example: 'NL' });
+
+const isTimeZone = (zone: string) => {
+  try {
+    return !!new Intl.DateTimeFormat('en-US', { timeZone: zone }).resolvedOptions().timeZone;
+  } catch {
+    return false;
+  }
+};
+
+/** An IANA time zone id the runtime knows, an alias such as Asia/Calcutta included. */
+export const timeZoneSchema = z
+  .string()
+  .max(maxLength.field)
+  .refine(isTimeZone, translatedError('error:invalid_timezone'))
+  .openapi({ description: 'IANA time zone id.', example: 'Europe/Amsterdam' });
 
 export const entityIdParamSchema = z.object({ id: validIdSchema });
 

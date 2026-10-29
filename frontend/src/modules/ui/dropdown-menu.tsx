@@ -1,7 +1,7 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
-import type { PositionedContentProps } from '~/modules/ui/popover';
+import { type PositionedContentProps, popupSideOffset } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
 export function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -18,7 +18,7 @@ export function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
 
 export function DropdownMenuContent({
   className,
-  sideOffset = 4,
+  sideOffset = popupSideOffset,
   side,
   align,
   alignOffset,

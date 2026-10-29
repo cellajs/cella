@@ -159,8 +159,8 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
 
   // Rings thicken inward from a fixed outer edge at radius 20 as the pull grows
   const stroke = isActive ? 6 : 3 + progress * 1.5;
-  // Background extends 2px beyond the foreground on each side for padding.
-  const backgroundStroke = stroke + 4;
+  // Background extends 3px beyond the foreground on each side for padding.
+  const backgroundStroke = stroke + 6;
   const radius = 20 - backgroundStroke / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -206,7 +206,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           fill="none"
           stroke="currentColor"
           strokeWidth={backgroundStroke}
-          className="text-faint-foreground transition-[stroke-width] duration-150 ease-out"
+          className="text-background opacity-70 transition-[stroke-width] duration-150 ease-out"
         />
         <circle
           cx="20"

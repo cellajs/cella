@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
+import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
@@ -38,7 +39,17 @@ type BarArgs = {
   bar: 'users' | 'organizations' | 'tenants' | 'requests' | 'members' | 'attachments' | 'pages';
 };
 
-function Bar({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch, clearSelection }: BarArgs): ReactNode {
+// The view menu opens through the dropdowner, which the story mounts beside the bar
+function Bar(args: BarArgs) {
+  return (
+    <>
+      <Dropdowner />
+      <BarFor {...args} />
+    </>
+  );
+}
+
+function BarFor({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch, clearSelection }: BarArgs): ReactNode {
   // The bars take generated row types; the stand-in rows carry only what the bars read.
   const common = {
     queryKey: listKey,
@@ -59,7 +70,7 @@ function Bar({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch
   return <PagesTableBar total={2} searchVars={{ q }} setSearch={setSearch} columns={[]} setColumns={() => {}} />;
 }
 
-/** The bar above each entity table: count, search, reset, actions, export, focus view and the selection bar. */
+/** The bar above each entity table: count, search, reset, actions, the view menu, focus view and the selection bar. */
 const meta = {
   title: 'common/data-table/TableBarShell',
   component: Bar,
@@ -103,7 +114,7 @@ export const UsersFiltered: Story = {
     const canvas = within(canvasElement);
     await expect(searchInput(canvasElement, 'userSearch')).not.toBeNull();
     await expect(canvas.queryByRole('button', { name: 'invite' })).toBeNull();
-    await expect(hasIcon(canvasElement, 'download')).toBe(false);
+    await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expect(hasIcon(canvasElement, 'expand')).toBe(true);
     await expect(await body().findByRole('button', { name: 'delete' })).toBeInTheDocument();
     // The embedded invite dialog mounts into an empty container right after the bar.
@@ -137,9 +148,9 @@ export const OrganizationsExport: Story = {
     await expect(canvas.getByRole('button', { name: 'create' })).toBeInTheDocument();
     await expect(await body().findByRole('button', { name: 'newsletter' })).toBeInTheDocument();
 
-    await userEvent.click(canvasElement.querySelector('.lucide-download')?.closest('button') as HTMLElement);
+    await userEvent.click(canvasElement.querySelector('.lucide-sliders-horizontal')?.closest('button') as HTMLElement);
     const menu = await body().findByRole('menu');
-    // Full export and selected-rows export.
+    // Full export and selected-rows export; a bar without named columns has no columns section.
     await expect(within(menu).getAllByRole('menuitem')).toHaveLength(4);
     await expect(within(menu).getAllByText('2 selected')).toHaveLength(2);
     await userEvent.keyboard('{Escape}');
@@ -163,7 +174,7 @@ export const RequestsExport: Story = {
     await expect(await body().findByRole('button', { name: /invite/ })).toBeInTheDocument();
     await expect(body().getByRole('button', { name: 'delete' })).toBeInTheDocument();
 
-    await userEvent.click(canvasElement.querySelector('.lucide-download')?.closest('button') as HTMLElement);
+    await userEvent.click(canvasElement.querySelector('.lucide-sliders-horizontal')?.closest('button') as HTMLElement);
     const menu = await body().findByRole('menu');
     await expect(within(menu).getAllByRole('menuitem')).toHaveLength(2);
     await expect(within(menu).queryByText('2 selected')).toBeNull();
@@ -177,7 +188,7 @@ export const MembersPage: Story = {
     const canvas = within(canvasElement);
     await expect(searchInput(canvasElement, 'memberSearch')).not.toBeNull();
     await expect(canvas.getByRole('button', { name: 'invite' })).toBeInTheDocument();
-    await expect(hasIcon(canvasElement, 'download')).toBe(true);
+    await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(true);
     await expect(hasIcon(canvasElement, 'expand')).toBe(true);
     await expect(canvas.getByRole('combobox')).toHaveClass('w-auto');
     await expect(await body().findByRole('button', { name: 'remove' })).toBeInTheDocument();
@@ -188,7 +199,7 @@ export const MembersPage: Story = {
 export const MembersSheet: Story = {
   args: { bar: 'members', isSheet: true },
   play: async ({ canvasElement }) => {
-    await expect(hasIcon(canvasElement, 'download')).toBe(false);
+    await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expect(hasIcon(canvasElement, 'expand')).toBe(false);
   },
 };
@@ -197,7 +208,7 @@ export const MembersReadOnly: Story = {
   args: { bar: 'members', canUpdate: false, q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(within(canvasElement).queryByRole('button', { name: 'invite' })).toBeNull();
-    await expect(hasIcon(canvasElement, 'download')).toBe(false);
+    await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expectReset(canvasElement, args, { q: '', role: undefined });
   },
 };
@@ -208,7 +219,7 @@ export const AttachmentsSheet: Story = {
     await expect(searchInput(canvasElement, 'attachmentSearch')).not.toBeNull();
     await expect(within(canvasElement).getByRole('button', { name: 'upload' })).toBeInTheDocument();
     await expect(hasIcon(canvasElement, 'expand')).toBe(false);
-    await expect(hasIcon(canvasElement, 'download')).toBe(false);
+    await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expect(await body().findByRole('button', { name: 'delete' })).toBeInTheDocument();
     // With rows in the list the edit hint shows below the bar.
     await expect(await within(canvasElement).findByText('edit_attachment.text')).toBeVisible();

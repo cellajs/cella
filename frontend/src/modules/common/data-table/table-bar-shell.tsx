@@ -1,12 +1,10 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
-import { ColumnsView } from '~/modules/common/data-table/columns-view';
-import { Export } from '~/modules/common/data-table/export';
-import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { ViewMenu, type ViewMenuExport, type ViewMenuSort } from '~/modules/common/data-table/view-menu';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 
@@ -47,7 +45,7 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   /** Name of the search input. */
   searchName: string;
   allowOfflineSearch?: boolean;
-  /** The column toggle and the export render only with columns; a grid has none. */
+  /** Columns the view menu lists and an export writes; a grid has none. */
   columns?: ColumnOrColumnGroup<TRow>[];
   setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
   /** Buttons before the count, hidden while filtered. */
@@ -56,17 +54,18 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   countExtra?: ReactNode;
   /** Filter controls next to the search. */
   filters?: ReactNode;
-  export?: { filename: string; fetchRows: (limit: number, offset: number) => Promise<TRow[]>; selectedRows?: TRow[] };
-  /** Controls of the page's own, such as a view toggle, before the focus view toggle. */
+  sort?: ViewMenuSort;
+  export?: ViewMenuExport<TRow>;
+  /** Controls of the page's own, such as a view toggle, before the view menu. */
   controls?: ReactNode;
-  /** Shows the focus view toggle. Defaults to true. */
+  /** Shows the focus view toggle from `lg` up. Defaults to true. */
   focusView?: boolean;
   selection?: { count: number; onClear: () => void; children: ReactNode };
   /** Rendered below the bar. */
   after?: ReactNode;
 }
 
-/** The bar above an entity table: actions and count, search and filters, columns, export and focus view. */
+/** The bar above an entity table: actions and count, search and filters, view controls and focus view. */
 export function TableBarShell<TRow extends object>({
   isFiltered,
   onSearch,
@@ -81,6 +80,7 @@ export function TableBarShell<TRow extends object>({
   actions,
   countExtra,
   filters,
+  sort,
   export: exportOptions,
   controls,
   focusView = true,
@@ -89,35 +89,37 @@ export function TableBarShell<TRow extends object>({
 }: TableBarShellProps<TRow>) {
   return (
     <>
-      <TableBarContainer searchVars={searchVars}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered} controls={controls}>
-          <FilterBarActions>
-            {!isFiltered && actions}
-            {/* TableCount hides on phones to leave the actions room; without actions it stays */}
-            <TableCount
-              count={total}
-              label={label}
-              isFiltered={isFiltered}
-              onResetFilters={onResetFilters}
-              className={actions ? undefined : 'max-sm:flex'}
-            >
-              {countExtra}
-            </TableCount>
-          </FilterBarActions>
-
-          <div className="sm:grow" />
-
-          <FilterBarSearch>
-            <TableSearch name={searchName} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />
-          </FilterBarSearch>
-          {filters && <FilterBarFilters>{filters}</FilterBarFilters>}
-        </TableFilterBar>
-
-        {columns && setColumns && <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />}
-        {columns && exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
-        {controls && <div className="max-sm:hidden">{controls}</div>}
-        {focusView && <FocusView iconOnly />}
-      </TableBarContainer>
+      <TableFilterBar
+        searchVars={searchVars}
+        isFiltered={isFiltered}
+        onResetFilters={onResetFilters}
+        // Beside a view toggle a phone has room for the actions' icons only
+        actions={
+          !isFiltered &&
+          actions &&
+          (controls ? (
+            <div data-compact className="contents">
+              {actions}
+            </div>
+          ) : (
+            actions
+          ))
+        }
+        count={
+          <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+            {countExtra}
+          </TableCount>
+        }
+        search={<TableSearch name={searchName} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />}
+        filters={filters}
+        controls={
+          <>
+            {controls}
+            <ViewMenu sort={sort} columns={columns} setColumns={setColumns} export={exportOptions} />
+            {focusView && <FocusView iconOnly />}
+          </>
+        }
+      />
 
       {selection && <SelectionActionBar {...selection} />}
       {after}

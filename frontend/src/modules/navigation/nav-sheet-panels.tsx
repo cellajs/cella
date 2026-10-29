@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Activity, type KeyboardEvent, type ReactNode, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useEventListener } from '~/hooks/use-event-listener';
 import type { TKey } from '~/lib/i18n-locales';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import { FocusTrap } from '~/modules/common/focus-trap';
@@ -153,6 +154,16 @@ function NavSheetPanelBar() {
     }
   };
 
+  // A press the card did not mark closes the panel; React dispatches a portaled hover card's press through the card first
+  const insidePressRef = useRef<PointerEvent | null>(null);
+  useEventListener(
+    'pointerdown',
+    (event) => {
+      if (hasOpenPanel && event !== insidePressRef.current) toggleNavSheetPanel(navSheetPanel);
+    },
+    { enabled: hasOpenPanel },
+  );
+
   return (
     <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={handleKeyDown}>
       <AnimatePresence>
@@ -164,7 +175,6 @@ function NavSheetPanelBar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute right-0 bottom-full left-0 z-10 h-[200vh] bg-overlay"
-            onClick={() => toggleNavSheetPanel(navSheetPanel)}
           />
         )}
       </AnimatePresence>
@@ -175,6 +185,9 @@ function NavSheetPanelBar() {
             'flex flex-col gap-1 border-t bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
             hasOpenPanel && 'max-h-dvh overflow-y-auto shadow-lg',
           )}
+          onPointerDownCapture={(event) => {
+            insidePressRef.current = event.nativeEvent;
+          }}
         >
           <NavSheetPanel id="preferences" label="c:preferences" indicator={<PreferencesIndicators />}>
             <PreferencesContent />

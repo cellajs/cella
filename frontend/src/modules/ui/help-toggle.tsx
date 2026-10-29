@@ -23,7 +23,7 @@ export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
       aria-expanded={open}
       onClick={onToggle}
       press={false}
-      className={cn('size-6', className)}
+      className={cn('size-6 text-muted-foreground focus-visible:text-foreground', className)}
     >
       <span className="relative size-4">
         <CircleQuestionMarkIcon

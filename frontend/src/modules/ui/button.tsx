@@ -25,9 +25,9 @@ export const buttonVariants = cva(
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
         cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent',
-        input: 'border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive',
-        // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it; only a DrawerRowSeparator between groups draws a line
-        row: 'relative w-full justify-start gap-3 font-normal text-md active:bg-accent',
+        input: 'border-input bg-background aria-invalid:border-destructive',
+        // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it, a selected one reads medium; only a DrawerRowSeparator between groups draws a line
+        row: 'relative w-full justify-start gap-3 font-normal text-md active:bg-accent aria-pressed:font-medium',
       },
       soft: { true: '', false: '' },
       // Feedback while held (the press utility); input-styled buttons stay put like the fields they sit among, rows show a fill

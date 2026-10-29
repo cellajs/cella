@@ -3,6 +3,7 @@ import type { FieldValues } from 'react-hook-form';
 import type { ChannelBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { getQueryItems } from '~/query/basic/mutate-query';
@@ -42,7 +43,13 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
 }: SelectParentFormFieldProps<TFieldValues>) {
   const { items } = useParentChannels(parentType, organizationId, !disabled);
 
-  const options = passedOptions ?? items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
+  const options: ComboboxSelectProps['options'] =
+    passedOptions ??
+    items.map((item) => ({
+      value: item.id,
+      label: item.name,
+      icon: <EntityAvatar className="size-6" id={item.id} name={item.name} url={item.thumbnailUrl} />,
+    }));
 
   return (
     <ComboboxFormField
@@ -57,7 +64,6 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
         if (selectedItem) onSelect?.(selectedItem);
       }}
       clearable={clearable}
-      showAvatar
       placeholders={{ trigger: 'c:select_resource', resource: `c:${parentType}` }}
     />
   );

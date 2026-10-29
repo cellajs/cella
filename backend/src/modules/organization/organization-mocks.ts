@@ -25,7 +25,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
   return {
     ...base,
     shortName: name.split(' ')[0],
-    country: faker.location.country(),
+    country: faker.location.countryCode(),
     timezone: faker.location.timeZone(),
     defaultLanguage: appConfig.defaultLanguage,
     languages: [appConfig.defaultLanguage] as Language[],

@@ -1,6 +1,8 @@
 import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
+import { popupSideOffset } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
 /** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
@@ -28,15 +30,22 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
 export function ComboboxInput({
   className,
   children,
+  detail,
   disabled = false,
   showTrigger = true,
   showClear = false,
   ...props
-}: ComboboxPrimitive.Input.Props & { showTrigger?: boolean; showClear?: boolean }) {
+}: ComboboxPrimitive.Input.Props & {
+  showTrigger?: boolean;
+  showClear?: boolean;
+  /** Muted text ahead of the trigger and clear buttons, such as the picked timezone's offset. */
+  detail?: ReactNode;
+}) {
   return (
     <InputGroup className={cn('w-auto', className)}>
       <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
       <InputGroupAddon align="inline-end">
+        {detail && <span className="font-normal text-faint-foreground tabular-nums">{detail}</span>}
         {showTrigger && (
           <InputGroupButton
             size="icon-xs"
@@ -57,7 +66,7 @@ export function ComboboxInput({
 export function ComboboxContent({
   className,
   side = 'bottom',
-  sideOffset = 4,
+  sideOffset = popupSideOffset,
   align = 'start',
   alignOffset = 0,
   collisionPadding = 5,

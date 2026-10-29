@@ -6,7 +6,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { Button } from '~/modules/ui/button';
 import { DrawerRowSeparator } from '~/modules/ui/drawer';
-import { DropdownMenuItem, DropdownMenuSeparator } from '~/modules/ui/dropdown-menu';
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
 interface DropdownActionItemProps {
@@ -82,6 +82,28 @@ export function DropdownActionItem({
       {icon}
       {children}
     </DropdownMenuItem>
+  );
+}
+
+/** Names a group of dropdowner rows, in the desktop popup and the mobile drawer alike. */
+export function DropdownActionGroup({ label, children }: { label: string; children: ReactNode }) {
+  const inDrawer = useInDropdownerDrawer();
+
+  if (inDrawer) {
+    return (
+      <div className="flex flex-col">
+        {/* Lines up with the rows' text */}
+        <p className="group-label px-4.5 pt-2 pb-1">{label}</p>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <DropdownMenuGroup>
+      <DropdownMenuLabel>{label}</DropdownMenuLabel>
+      {children}
+    </DropdownMenuGroup>
   );
 }
 

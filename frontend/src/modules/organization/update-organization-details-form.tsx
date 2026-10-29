@@ -11,6 +11,7 @@ import { persistAttachments } from '~/modules/attachment/helpers/persist-attachm
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
 import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { openConfirm } from '~/modules/common/open-confirm';
@@ -107,12 +108,12 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
           />
         </Suspense>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <FormActions>
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
           <CancelButton type="button" dirty={form.isDirty} onClick={openDiscardConfirm} />
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

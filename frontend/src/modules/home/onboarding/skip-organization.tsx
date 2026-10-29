@@ -1,6 +1,7 @@
+import { RedoIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { Button } from '~/modules/ui/button';
+import { ConfirmForm } from '~/modules/common/confirm-form';
+import { useOverlayClose } from '~/modules/common/overlay-close';
 
 export const skipOrganizationDialogId = 'skip-org-creation';
 
@@ -10,24 +11,12 @@ interface SkipOrganizationProps {
 
 export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
   const { t } = useTranslation();
-
-  const removeDialog = useDialoger((state) => state.remove);
+  const overlay = useOverlayClose();
 
   const skip = () => {
-    removeDialog(skipOrganizationDialogId);
+    overlay?.close();
     onComplete();
   };
 
-  const cancel = () => removeDialog(skipOrganizationDialogId);
-
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <Button type="submit" variant="destructive" onClick={skip}>
-        {t('c:skip')}
-      </Button>
-      <Button type="reset" variant="secondary" onClick={cancel}>
-        {t('c:cancel')}
-      </Button>
-    </div>
-  );
+  return <ConfirmForm variant="destructive" icon={RedoIcon} label={t('c:skip')} pending={false} allowOffline onConfirm={skip} />;
 }

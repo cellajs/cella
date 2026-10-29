@@ -8,11 +8,13 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganizationResponse } from '#/modules/organization/organization-mocks';
 import {
   booleanTransformSchema,
+  countryCodeSchema,
   includeQuerySchema,
   languageSchema,
   maxLength,
   noDuplicateSlugsRefine,
   paginationQuerySchema,
+  timeZoneSchema,
   translatedError,
   validCDNUrlSchema,
   validNameSchema,
@@ -75,6 +77,8 @@ export const organizationContract = evolutionContract.channel('organization', {
     slug: validSlugSchema,
     name: validNameSchema,
     shortName: validNameSchema.nullable(),
+    country: countryCodeSchema.nullable(),
+    timezone: timeZoneSchema.nullable(),
     languages: z.array(languageSchema).min(1).max(64),
     defaultLanguage: languageSchema.optional(),
     websiteUrl: validUrlSchema.nullable(),

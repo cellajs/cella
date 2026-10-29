@@ -18,6 +18,8 @@ export type DropdownData = {
   programmatic?: boolean;
   /** Extra classes merged onto a 'menu' popup, e.g. to widen its default min-width. */
   popupClassName?: string;
+  /** Names what the dropdown acts on above its rows in the mobile drawer; the desktop popup opens beside its trigger and shows none. */
+  lead?: ReactNode;
   /** Runs once when this dropdown leaves the screen: dismissed, toggled closed by its trigger, or replaced by another. */
   onClose?: () => void;
 };

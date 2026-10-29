@@ -9,6 +9,9 @@ export interface PositionedContentProps {
   positionerClassName?: string;
 }
 
+/** Gap in px between a control and its popover, combobox, menu or select popup: the focus ring takes 4 (2 offset plus 2 ring), leaving 4 clear. */
+export const popupSideOffset = 8;
+
 export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
@@ -20,7 +23,7 @@ export function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
 export function PopoverContent({
   className,
   align = 'center',
-  sideOffset = 4,
+  sideOffset = popupSideOffset,
   side,
   alignOffset,
   anchor,
