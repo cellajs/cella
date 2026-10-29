@@ -38,6 +38,7 @@ describe('identity plan', () => {
             { policy: 'app-vm-backend-policy', change: 'update' },
             { policy: 'app-vm-boot-policy', change: 'none' },
             { policy: 'app-vm-oauth-policy', change: 'missing-application' },
+            { policy: 'app-observer-policy', change: 'update' },
           ],
           keys: [
             { principal: 'cdc', application: 'app-staging-vm-cdc', change: 'make', extra: ['SCWOLD'] },
@@ -45,7 +46,7 @@ describe('identity plan', () => {
             { principal: 'jobs', application: 'app-staging-vm-jobs', change: 'none', extra: [] },
           ],
           extraPolicies: [{ id: 'p1', name: 'app-vm-cdc-policy', application: 'app-staging-vm-cdc' }],
-          observer: 'reach',
+          observer: 'key',
           retiredAdmin: { name: 'app-staging-admin', id: 'a1', removable: true },
         },
         names,
@@ -54,10 +55,11 @@ describe('identity plan', () => {
       'application app-staging-vm-oauth: to create',
       'policy app-vm-backend-policy: rules to replace',
       'policy app-vm-oauth-policy: to create once its application exists',
+      'policy app-observer-policy: rules to replace',
       'standing key of app-staging-vm-cdc: to make, its 1 other key(s) deleted',
       'standing key of app-staging-boot: 2 key(s) beside it to delete',
       'policy app-vm-cdc-policy on app-staging-vm-cdc: beside the declared one, to delete',
-      'observer app-observer: to reach this environment, and its key written to this machine',
+      'observer app-observer: a key for this machine',
       'application app-staging-admin: retired, to delete with its keys and its custody secret',
     ]);
   });

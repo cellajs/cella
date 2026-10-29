@@ -55,26 +55,21 @@ export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 /** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A rule holds sets of one scope type only. */
 export const DEPLOY_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// Observer app (`<app>-observer`): reads, from the office only
+// Observer app (`<app>-observer`): reads, from any address
 
 /**
- * Project-scoped sets for the observer application, the key a person and their agents read with: `status`, the plan of an identity update, a
- * machine's boot account. Read-only sets named one by one, so a set that also reads secret values never comes in by a wider name. Object
- * Storage reads need the bucket policy too: the state and boot-diagnostics buckets name the observer, the others do not.
+ * Project-scoped sets for the observer application, the key a person and their agents read with: what `status`, `runs` and the plan of an
+ * identity update read, each set named one by one, so a set that also reads secret values never comes in by a wider name. The key works from
+ * any address, so it holds no set that reads a key in the clear: no Instances set, as a machine's user data holds the boot key until the
+ * deploy scrubs it (a builder's for its whole build), and no registry set, as an image holds the app's code. Object Storage reads need the
+ * bucket policy too: the state and boot-diagnostics buckets name the observer, the others do not.
  */
 export const OBSERVER_PROJECT_PERMISSION_SETS = [
-  'BlockStorageReadOnly',
-  'ContainerRegistryReadOnly',
-  'DomainsDNSReadOnly',
-  'IPAMReadOnly',
-  'InstancesReadOnly',
   'LoadBalancersReadOnly',
   'ObjectStorageReadOnly',
-  'PrivateNetworksReadOnly',
   'RelationalDatabasesReadOnly',
   'SecretManagerReadOnly',
   'ServerlessJobsReadOnly',
-  'VPCReadOnly',
 ] as const;
 
 /** Org-scoped observer set: IAM reads, so `status` and the identity plan can name what exists. */

@@ -63,7 +63,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs, write the machine policies, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the applications the service registry needs, write the machine policies and the observer policy, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   'start-deploy': {
     label: 'Start a deploy',

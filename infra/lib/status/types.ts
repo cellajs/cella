@@ -83,6 +83,8 @@ export interface ProbeSession {
   scalewayKeyAvailable: boolean;
   accessKey?: string;
   secretKey?: string;
+  /** The operator key the run holds, which lists the machines: the observer key reads none. Absent outside a session unlocked with it. */
+  operatorSecretKey?: string;
   hasDomain: boolean;
   computeDeferredSince?: string;
   /** True when the exposure overlay or stack config turns the public DB endpoint on. */

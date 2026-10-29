@@ -27,8 +27,8 @@ export interface InventoryFacts {
   apiKeys: Array<{ access_key: string; application_id?: string | null; user_id?: string | null; description?: string; expires_at?: string | null }>;
   /** The policies bound to an application or a group, with their rules. */
   policies: InventoryPolicy[];
-  /** The project's machines, in every zone of the region. */
-  machines: string[];
+  /** The project's machines, in every zone of the region; undefined when the run holds no operator key to list them with. */
+  machines?: string[];
   /** Each service's active generation, from the control object. */
   activeGenerations: Record<string, string>;
   /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
@@ -130,7 +130,7 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   const services = Object.keys(facts.activeGenerations);
   // A deploy reaps what it displaced and deletes its builder before it ends, so with no run going on such a machine is a finding too.
   const deploying = facts.mainJob?.running === true;
-  for (const machine of facts.machines) {
+  for (const machine of facts.machines ?? []) {
     if (live.has(machine)) continue;
     const kind = machine.startsWith(`${expect.machinePrefix}builder-`)
       ? 'a builder'
@@ -226,8 +226,8 @@ async function listAll<T>(auth: { secretKey: string }, url: (page: number) => st
 
 /**
  * The inventory (plan §4.2, phase 8b): what can act in the environment and what runs in its project, against what the code declares, read on
- * the observer key. Rotate keys deletes every key beside the declared ones; an application, a policy or a machine the engine did not make is
- * removed in the console once it is known who made it.
+ * the observer key, and the machines on the operator key when the run holds it. Rotate keys deletes every key beside the declared ones; an
+ * application, a policy or a machine the engine did not make is removed in the console once it is known who made it.
  */
 export const inventoryProvider: StatusProvider<InventoryFacts> = {
   domain: 'inventory',
@@ -237,6 +237,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     try {
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
+      const { operatorSecretKey } = session;
       const { naming, region, zones } = deriveInfra(session.appConfig);
       const rollout = (await session.scalewayFacts()).rollout;
       if (!rollout) return undefined;
@@ -256,16 +257,22 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         listAll<InventoryFacts['groups'][number]>(auth, org('groups'), 'groups'),
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
-        // Every zone of the region: a machine an intruder made in another zone of the project is still the project's.
-        Promise.all(
-          zones.map((zone) =>
-            listAll<{ name: string }>(
-              auth,
-              (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
-              'servers',
-            ),
-          ),
-        ).then((perZone) => perZone.flat()),
+        // Every zone of the region: a machine an intruder made in another zone of the project is still the project's. The observer key reads
+        // no machine, as user data holds the boot key; a listing that fails leaves the machines unread and the other checks standing.
+        operatorSecretKey
+          ? Promise.all(
+              zones.map((zone) =>
+                listAll<{ name: string }>(
+                  { secretKey: operatorSecretKey },
+                  (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
+                  'servers',
+                ),
+              ),
+            ).then(
+              (perZone) => perZone.flat(),
+              () => undefined,
+            )
+          : undefined,
         findJobDefinition(auth, { region, projectId: session.projectId, name: naming.resource('main') }).then(async (definitionId) => {
           if (!definitionId) return undefined;
           const [runs, definition, secretReferences] = await Promise.all([
@@ -290,7 +297,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           })),
       );
       const activeGenerations = Object.fromEntries(rollout.flatMap((row) => (row.activeGeneration ? [[row.slug, row.activeGeneration]] : [])));
-      const machines = servers.map((server) => server.name);
+      const machines = servers?.map((server) => server.name);
       return { applications, groups, apiKeys, policies: withRules, machines, activeGenerations, mainJob, organizationId };
     } catch {
       return undefined;
@@ -304,7 +311,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         : undefined;
     const item = (id: string, title: string, verdict: (builder: CheckBuilder, value: NonNullable<typeof read>) => Check): Check => {
       const builder = check(id, title, 'scaleway');
-      return probed(builder, session.scalewayKeyAvailable, read, 'could not read IAM or the machines', (value) => verdict(builder, value));
+      return probed(builder, session.scalewayKeyAvailable, read, 'could not read IAM or the main job', (value) => verdict(builder, value));
     };
     const listed = (builder: CheckBuilder, lines: string[], fine: string, nextAction?: NextAction) =>
       lines.length === 0 ? builder.ok(fine) : builder.error(lines.join('; '), nextAction);
@@ -322,11 +329,13 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       ),
       item('inventory.policies', 'Policies', (b, { found }) => listed(b, found.policies, 'one per identity, as declared')),
       item('inventory.machines', 'Machines', (b, { facts, found }) =>
-        found.machines.length > 0
-          ? b.error(found.machines.join('; '))
-          : found.passing.length > 0
-            ? b.warn(found.passing.join('; '))
-            : b.ok(`${facts.machines.length} machine(s), each an active generation`),
+        !facts.machines
+          ? b.unknown('not read: machines are listed with the operator key, from the dedicated address')
+          : found.machines.length > 0
+            ? b.error(found.machines.join('; '))
+            : found.passing.length > 0
+              ? b.warn(found.passing.join('; '))
+              : b.ok(`${facts.machines.length} machine(s), each an active generation`),
       ),
       item('inventory.mainJob', 'Main job', (b, { facts }) =>
         mainJobVerdict(b, facts.mainJob, () =>

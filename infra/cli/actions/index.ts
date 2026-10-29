@@ -2,6 +2,7 @@ import { actionLabel, type OperatorActionId } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { isPromptAbort } from '../prompts/abort';
+import { rememberedOperatorKey } from '../session';
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
@@ -27,7 +28,7 @@ type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise
 /** The function behind every operator action: the menu and `pnpm infra <action>` both run an action through this table. */
 export const ACTION_RUNNERS: ActionRunners = {
   // The status task reads config while its module loads, so it is imported once the context has loaded the config.
-  status: async (context) => (await import('../../tasks/status')).runStatus(context),
+  status: async (context) => (await import('../../tasks/status')).runStatus({ ...context, operatorSecretKey: rememberedOperatorKey()?.secretKey }),
   runs: runRuns,
   preview: runPreview,
   apply: runApply,

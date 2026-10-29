@@ -17,6 +17,7 @@ import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
 import { ensureMachineIdentities, missingMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { type MachinePolicyStep, planMachinePolicies, writeMachinePolicies } from '../../tasks/machine-policies';
+import { declaredObserverPolicy } from '../../tasks/setup-observer-app';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { ensureObserverForEnvironment, type ObserverStep, observerKeyHere, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
@@ -43,7 +44,10 @@ export interface ExtraPolicy {
   application: string;
 }
 
-/** What an identity update would change: the machine part, the policies beside the declared ones, the observer's step, the retired admin. */
+/**
+ * What an identity update would change: the machine part with the observer's policy among its policies, the policies beside the declared
+ * ones, the observer's step on this machine, the retired admin.
+ */
 export interface IdentityPlan extends MachineIdentityPlan {
   extraPolicies: ExtraPolicy[];
   observer: ObserverStep;
@@ -88,7 +92,6 @@ export function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNa
   const observerWords: Record<ObserverStep, string | undefined> = {
     none: undefined,
     create: 'to create, its key written to this machine',
-    reach: 'to reach this environment, and its key written to this machine',
     key: 'a key for this machine',
   };
   const observer = observerWords[plan.observer];
@@ -189,15 +192,31 @@ async function extraPolicies(auth: IamAuth, organizationId: string, declared: re
   });
 }
 
+/**
+ * The observer's policy as an identity update writes it, beside the environment's: the app's, which no apply depends on, so the machine part
+ * an apply checks leaves it out. Empty while the app has no observer, as its creation writes it.
+ */
+async function observerPolicies(
+  auth: IamAuth,
+  organizationId: string,
+  context: Pick<InfraContext, 'appConfig' | 'projectId'>,
+): Promise<MachinePolicy[]> {
+  const policy = await declaredObserverPolicy(auth, organizationId, context.appConfig.appSlug, context.projectId);
+  return policy ? [policy] : [];
+}
+
 async function planIdentities(
   auth: IamAuth,
   organizationId: string,
   context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
 ): Promise<IdentityPlan> {
+  const machine = await planMachineIdentities(auth, organizationId, context);
+  const observer = await observerPolicies(auth, organizationId, context);
   return {
-    ...(await planMachineIdentities(auth, organizationId, context)),
+    ...machine,
+    policies: [...machine.policies, ...(await planMachinePolicies(auth, organizationId, observer))],
     extraPolicies: await extraPolicies(auth, organizationId, declaredPolicies(context, organizationId)),
-    observer: await observerStep(auth, organizationId, context, context.projectId),
+    observer: observerStep(observer.length > 0, context.environment),
     retiredAdmin: await retiredAdmin(auth, organizationId, context),
   };
 }
@@ -216,9 +235,9 @@ async function deleteRetiredAdmin(
 }
 
 /**
- * Update identities: make the applications the service registry needs and write the machine policies, at an Owner moment. They are IAM, which
- * neither the operator key nor the deploy key writes. The plan is read first with the admin application key when this machine holds it, so an
- * Owner API key is asked for only when something has to change, and nothing but IAM runs on it.
+ * Update identities: make the applications the service registry needs and write the machine policies and the observer's, at an Owner moment.
+ * They are IAM, which neither the operator key nor the deploy key writes. The plan is read first with the observer key when this machine
+ * holds it, so an Owner API key is asked for only when something has to change, and nothing but IAM runs on it.
  */
 export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -262,7 +281,10 @@ export async function runIdentity(context: InfraContext): Promise<void> {
       if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
     }
     await ensureMachineIdentities({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
-    await writeMachinePolicies(auth, ownerKey.organizationId, declaredPolicies(context, ownerKey.organizationId));
+    await writeMachinePolicies(auth, ownerKey.organizationId, [
+      ...declaredPolicies(context, ownerKey.organizationId),
+      ...(await observerPolicies(auth, ownerKey.organizationId, context)),
+    ]);
     await writeMachineKeys({
       auth,
       secrets: secretsFor(context, ownerKey.secretKey),

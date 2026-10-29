@@ -18,7 +18,7 @@ export interface PrincipalNames {
 export interface AppPrincipalNames {
   /** Operator application: the principal a person runs privileged actions as, from a dedicated IP address only. */
   operator: string;
-  /** Observer application: the read-only key on the person's machine, from the office only. */
+  /** Observer application: the read-only key on the person's machine, from any address. */
   observer: string;
 }
 
