@@ -20,11 +20,12 @@ export const organizationsTable = snakeCase.table(
     welcomeText: varchar({ length: maxLength.html }),
     chatSupport: boolean().notNull().default(false),
     /**
-     * Per-org feature flags declared in `appConfig.defaultOrganizationFlags`, stored sparse: reads merge the defaults,
-     * so a new flag needs no backfill.
+     * Per-org switches declared in `appConfig.defaultOrganizationFlags`, stored sparse: reads merge the defaults, so a
+     * new flag needs no backfill. An organization admin or a service account with update rights sets any key, so no
+     * entitlement hangs on it: that belongs in the tenant's `subscriptionPlan` and `restrictions`.
      */
     organizationFlags: jsonb().$type<Partial<OrganizationFlags>>().notNull().default({}),
-    /** Per-org setup config declared in `appConfig.defaultSetupConfig`, stored sparse like organizationFlags. */
+    /** Per-org setup config declared in `appConfig.defaultSetupConfig`, stored sparse and set by the same writers as organizationFlags. */
     setupConfig: jsonb().$type<Partial<OrganizationSetupConfig>>().notNull().default({}),
   },
   (table) => [

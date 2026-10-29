@@ -199,7 +199,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. It is stamped on the user's own GET requests, never while an admin impersonates them. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
 
 ## Behavior
 

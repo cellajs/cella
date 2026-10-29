@@ -1,15 +1,16 @@
 import { eq } from 'drizzle-orm';
-import { updateMe, updateOrganization } from 'sdk';
+import { createServiceAccount, updateMe, updateOrganization, updateServiceAccount } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
-import { adminRole, defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -75,5 +76,28 @@ describe('Columns outside the body pick', async () => {
     const { response } = await send();
     expect(response.status).toBe(200);
     expect(await row()).toMatchObject({ ...changed, ...kept() });
+  });
+
+  it("must not let updateServiceAccount set bindings to another tenant's organization", async () => {
+    const path = { tenantId: organization.tenantId, organizationId: organization.id };
+    // Creating an account asks a step-up, so its admin holds a passkey.
+    const factorAdmin = await createFactorOrgUser(call, organization.tenantId, organization.id, 'mass-assignment-factor', adminRole);
+    const factorHeaders = { ...defaultHeaders, Cookie: factorAdmin.sessionCookie };
+    const created = await call(createServiceAccount, { path, body: { name: 'CI bot', role: memberRole }, headers: factorHeaders });
+    expect(created.response.status).toBe(201);
+    const id = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
+    const select = async () => (await db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, id)))[0];
+    const before = await select();
+
+    const foreign = await createTestOrganization();
+    const binding = { channelType: 'organization', channelId: foreign.id, organizationId: foreign.id, role: adminRole };
+    const { response } = await call(updateServiceAccount, {
+      path: { ...path, id },
+      body: { name: 'Renamed', bindings: [binding] } as never,
+      headers: factorHeaders,
+    });
+
+    expect(response.status).toBe(200);
+    expect(await select()).toMatchObject({ name: 'Renamed', bindings: before.bindings });
   });
 });

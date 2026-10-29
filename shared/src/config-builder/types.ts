@@ -341,14 +341,16 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   company: CompanyConfig;
 
+  /** Defaults of `user.userFlags`, a bag the user sets key by key; it gates no entitlement. */
   defaultUserFlags: Record<string, boolean>;
 
-  /** Per-organization feature flags and their defaults (e.g. `coursesEnabled: true`), read from `organization.organizationFlags`. */
+  /** Defaults of `organization.organizationFlags`, a bag anyone who may update the organization sets key by key. Never gate an entitlement on it: that belongs in the tenant's `subscriptionPlan` and `restrictions`, which only system admins write. */
   defaultOrganizationFlags: Record<string, boolean>;
 
   /**
    * Setup defaults layered under each organization's stored jsonb, read from `organization.setupConfig`. The template
-   * ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their own config.
+   * ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their own config. Anyone who may update the
+   * organization sets it, so it gates no entitlement.
    */
   defaultSetupConfig: Record<string, unknown>;
 }
