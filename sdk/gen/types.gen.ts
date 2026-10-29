@@ -2193,6 +2193,10 @@ export type SendStepUpCodeErrors = {
    */
   403: ForbiddenError;
   /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;

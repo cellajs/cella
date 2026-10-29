@@ -1,6 +1,9 @@
+import { and, eq } from 'drizzle-orm';
 import { getStepUp, getStepUpPasskeyChallenge, sendStepUpCode, stepUp } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { stepUpEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -10,7 +13,9 @@ import {
   createTestUser,
   createTotpUser,
   expectRefusal,
+  sentMails,
   sessionRow,
+  tokenRowOf,
   totpCode,
   wrongTotpCode,
 } from '../helpers';
@@ -123,6 +128,30 @@ describe('step-up', async () => {
 
     // The code opened its step-up and is gone.
     await expectRefusal(await call(stepUp, { body: { emailCode: code }, headers: asking.headers }), 401, 'invalid_credentials');
+  });
+
+  it('must leave one live step-up code after concurrent requests', async () => {
+    const user = await createTestUser('code-burst@security-test.com');
+    const session = await insertStaleSession(user);
+
+    // Ten at once: requests whose deletes all run before the others' inserts each try to store a code.
+    const answers = await Promise.all(Array.from({ length: 10 }, () => call(sendStepUpCode, { headers: session.headers })));
+    const sent = answers.filter(({ response }) => response.status === 204);
+    for (const refused of answers.filter(({ response }) => response.status !== 204)) await expectRefusal(refused, 409, 'resource_already_exists');
+
+    const codes = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.type, 'step-up'), eq(tokensTable.sessionId, session.id)));
+    expect(codes).toHaveLength(1);
+    // A refused request mails nothing, and of the mailed codes only the stored one is live.
+    const mailed = sentMails().map(({ statics }) => String(statics.code));
+    expect(mailed).toHaveLength(sent.length);
+    const stored = await Promise.all(mailed.map((code) => tokenRowOf('step-up', code)));
+    const live = mailed.filter((_, index) => stored[index]);
+    expect(live).toHaveLength(1);
+
+    expect((await call(stepUp, { body: { emailCode: live[0] }, headers: session.headers })).response.status).toBe(204);
   });
 
   it('must not put the code where a lock screen or a mail list shows it', () => {

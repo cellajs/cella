@@ -45,7 +45,7 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Email a step-up code',
     description:
       'For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.',
-    responses: { 204: { description: 'Code sent' }, ...errors(403) },
+    responses: { 204: { description: 'Code sent' }, ...errors(403, 409) },
   }),
 });
 

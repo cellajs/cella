@@ -1291,7 +1291,7 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
  * **POST /auth/step-up/code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/code) ·· _auth · cella_
  *
  * @param {sendStepUpCodeData} options
- * @returns Possible status codes: 204, 400, 401, 403, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 409, 429
  */
 export const sendStepUpCode = <ThrowOnError extends boolean = true>(
   options?: Options<SendStepUpCodeData, ThrowOnError>,

@@ -39,7 +39,7 @@ Bumping `cookieVersion` renames every cookie and so signs everyone out. Outside 
 | `device-id` | The browser's device id | Lax |
 | `magic-requested` | The magic link this browser asked for | Lax |
 | `magic-pending` | A link opened here that waits for confirmation | Strict |
-| `oauth-state-<state>` | The provider round trip | Lax |
+| `oauth-state` | The provider round trip; a new start replaces it | Lax |
 | `sso-recovery` | An institution's refused sign-in | Strict |
 | `passkey-challenge`, `totp-challenge` | The WebAuthn challenge; the TOTP secret being set up | Strict |
 | A token type's own cookie | The token, or a redeemed link's single-use value | Its policy |

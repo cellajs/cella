@@ -17,6 +17,7 @@ import {
   createTestUser,
   createTotpUser,
   type ErrorResponse,
+  expectRefusal,
   mailedLink,
   mailsTo,
   sessionRow,
@@ -100,6 +101,24 @@ describe('brute-force budgets', async () => {
 
       browser.absorb((await call(signOut, { headers: inBrowser() })).response);
     }
+  });
+
+  it('must cap magic links to one address from a recognized browser', async () => {
+    const owner = await createTestUser(`magic-copied-${nanoid(8)}@security-test.com`.toLowerCase());
+    const browser = new CookieJar();
+    const inBrowser = () => ({ ...fromIp(randomIp()), Cookie: browser.header() });
+    browser.absorb((await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() })).response);
+    const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
+    expect(cookieChange(opened.response, 'session')).toBe('set');
+
+    // A copy of the device cookie the sign-in left, sent from ever new client addresses.
+    const copied = setCookiePair(opened.response, 'device-id');
+    const request = () => call(sendMagicLink, { body: { email: owner.email }, headers: { ...fromIp(randomIp()), Cookie: copied } });
+
+    // More than the three an unrecognized browser gets (positive control), up to the recognized browser's own budget.
+    for (let attempt = 0; attempt < 10; attempt++) expect((await request()).response.status).toBe(204);
+    await expectRefusal(await request(), 429, 'magic_link_recently_sent');
+    expect(magicLinkMailsTo(owner.email)).toHaveLength(11);
   });
 
   it('must not keep guessing authenticator codes via /auth/step-up', async () => {

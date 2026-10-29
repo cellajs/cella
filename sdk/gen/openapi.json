@@ -108,6 +108,10 @@
             "name": "magicLink",
             "description": "Magic link emails per address from browsers that never signed in to it: 3 per 30 minutes"
           },
+          "recognizedMagicLinkLimiter": {
+            "name": "recognizedMagicLink",
+            "description": "Magic link emails per address from browsers that signed in to it: 10 per 30 minutes"
+          },
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
             "description": "Passkey challenges per IP: 30 per 5 minutes"
@@ -3736,7 +3740,7 @@
           "strategy": "magic"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["magicLinkLimiter", "spamLimiter"],
+        "x-rate-limiter": ["magicLinkLimiter", "recognizedMagicLinkLimiter", "spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -5491,6 +5495,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

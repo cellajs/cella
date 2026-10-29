@@ -14,10 +14,11 @@ export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default(
 export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
 
 /**
- * The state cookie of one round trip; `provider` is the OAuth provider or SSO federation whose start minted the
- * state, `connectionId` the institution an SSO start was pinned to.
+ * The state cookie of one round trip; `state` is the value the provider hands back to the callback, `provider` the
+ * OAuth provider or SSO federation whose start minted it, `connectionId` the institution an SSO start was pinned to.
  */
 export const oauthCookiePayloadSchema = z.object({
+  state: z.string(),
   provider: z.enum([...oauthProviderIds, ...federationKeys]),
   type: z.enum(oauthFlowTypes).default('auth'),
   redirectAfter: z.string().optional(),

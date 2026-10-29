@@ -70,14 +70,26 @@ export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
 
 /**
  * Bounds the links one inbox receives, whatever IP asks. A browser that signed in to the address's account before (its
- * device cookie outlives sign-out) passes uncounted, so its owner can sign in again and again. The count stays a tally
- * of other browsers' requests, alike for every address: no answer tells an address with an account from one without.
+ * device cookie outlives sign-out) passes into `recognizedMagicLinkLimiter`, so its owner can sign in again and again.
+ * The count stays a tally of other browsers' requests, alike for every address: no answer tells an address with an
+ * account from one without.
  */
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   limits: { points: 3, duration: 60 * 30, blockDuration: 0 },
   refusalType: 'magic_link_recently_sent',
   exempt: (ctx, { email }) => !!email && isRecognizedBrowser(ctx, email),
   description: 'Magic link emails per address from browsers that never signed in to it: 3 per 30 minutes',
+});
+
+/**
+ * The inbox bound for the browsers `magicLinkLimiter` lets through: a copied device cookie is recognized from any IP.
+ * Only a recognized browser counts or is refused here, and it already knows the address has an account.
+ */
+export const recognizedMagicLinkLimiter = rateLimiter('limit', 'recognizedMagicLink', ['email'], {
+  limits: { points: 10, duration: 60 * 30, blockDuration: 0 },
+  refusalType: 'magic_link_recently_sent',
+  exempt: async (ctx, { email }) => !email || !(await isRecognizedBrowser(ctx, email)),
+  description: 'Magic link emails per address from browsers that signed in to it: 10 per 30 minutes',
 });
 
 /**
