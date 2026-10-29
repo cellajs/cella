@@ -47,8 +47,8 @@ export interface BuildEffects {
   removeBuilders(): Promise<string[]>;
   /** Make the builder machine in a zone and start it. */
   startBuilder(zone: string, name: string, cloudConfig: string): Promise<void>;
-  /** One of the builder's reports, or undefined while it has not written it. */
-  report(name: 'step' | 'log' | 'result'): Promise<string | undefined>;
+  /** One of the builder's reports with the time Object Storage stored it, or undefined while none is there. */
+  report(name: 'step' | 'log' | 'result'): Promise<{ body: string; modified: Date } | undefined>;
   sleep(ms: number): Promise<void>;
 }
 
@@ -92,6 +92,7 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
     outcome = 'built';
     log(`[build] missing for ${opts.sha.slice(0, 10)}: ${missing.join(', ')}; building on ${opts.builderName}`);
     const cloudConfig = opts.cloudConfig(await fx.keys());
+    const startedAt = Date.now();
     try {
       for (const [index, zone] of opts.zones.entries()) {
         try {
@@ -105,7 +106,7 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
           log(`  ~ ${zone} has no ${BUILDER_TYPE} in stock: trying ${next}`);
         }
       }
-      await waitForBuilder(opts, fx, log);
+      await waitForBuilder(opts, fx, log, startedAt);
     } finally {
       for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}`);
     }
@@ -129,24 +130,34 @@ function isOutOfStock(error: unknown): boolean {
   return scwErrorStatus(error) === 412 && errorMessage(error).includes('"out_of_stock"');
 }
 
-async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: (message: string) => void): Promise<void> {
+// A report stored up to this long before the start still counts: Last-Modified holds whole seconds, on Object Storage's own clock.
+const REPORT_CLOCK_MARGIN_MS = 5_000;
+
+/**
+ * Wait for the builder's `result`. Its reports go under the commit's prefix, where every earlier build of the commit left its own: a report
+ * stored before `startedAt`, taken before the machine was made, belongs to one of those builds and is not read as this one's.
+ */
+async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: (message: string) => void, startedAt: number): Promise<void> {
   const deadline = Date.now() + (opts.timeoutMs ?? 30 * 60_000);
-  const startedAt = Date.now();
+  const report = async (name: 'step' | 'log' | 'result') => {
+    const found = await fx.report(name);
+    return found && found.modified.getTime() >= startedAt - REPORT_CLOCK_MARGIN_MS ? found.body : undefined;
+  };
   let lastStep: string | undefined;
   while (Date.now() < deadline) {
     await fx.sleep(opts.pollMs ?? 15_000);
-    const step = (await fx.report('step'))?.trim();
+    const step = (await report('step'))?.trim();
     if (step && step !== lastStep) {
       log(`  ${step} (${Math.round((Date.now() - startedAt) / 1000)} s)`);
       lastStep = step;
     }
-    const result = (await fx.report('result'))?.trim();
+    const result = (await report('result'))?.trim();
     if (result === 'ok') {
       log(`✓ built in ${Math.round((Date.now() - startedAt) / 1000)} s`);
       return;
     }
     if (result) {
-      const tail = (await fx.report('log')) ?? '';
+      const tail = (await report('log')) ?? '';
       // A private repository answers a fetch without its key as if the commit were not there.
       const hint = lastStep === 'clone' ? `\nA private repository needs its read key: \`${actionCommand('repository-key')}\`.` : '';
       throw new Error(`the builder failed at '${lastStep ?? 'its start'}'. The end of its log:\n${tail}${hint}`);
@@ -259,7 +270,8 @@ function liveEffects(opts: {
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
       try {
         const object = await (await s3).send(new GetObjectCommand({ Bucket: opts.diagBucket, Key: `${builderReportPrefix(opts.sha)}${name}` }));
-        return await object.Body?.transformToString();
+        const body = await object.Body?.transformToString();
+        return body !== undefined && object.LastModified ? { body, modified: object.LastModified } : undefined;
       } catch {
         return undefined;
       }
