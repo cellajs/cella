@@ -8,7 +8,7 @@ import {
 } from './permissions';
 import { principalNames, principalTags } from './principals';
 import type { PolicyRule } from './scaleway-iam';
-import { deployFolderPath, handoffFolderPath } from './secret-paths';
+import { DEPLOY_FOLDER, HANDOFF_FOLDER } from './secret-paths';
 
 /** Every permission set the deploy key holds, for the deploy's own grant check. */
 export const DEPLOY_PERMISSION_SETS = [
@@ -27,18 +27,18 @@ const startsWith = (path: string) => `resource.name.startsWith("${path}")`;
  * apply makes), no write of an app's secret, no console, no snapshot. It hands each machine its key, so it reaches the environment's runtime
  * secrets through the machines it makes. Update identities writes these rules, and a deploy whose policy differs stops blocked.
  */
-export function deployRules(opts: { slug: string; mode: string; projectId: string; organizationId: string }): PolicyRule[] {
+export function deployRules(opts: { projectId: string; organizationId: string }): PolicyRule[] {
   return [
     { permission_set_names: [...DEPLOY_PROJECT_PERMISSION_SETS, ...DEPLOY_SECRET_METADATA_SETS], project_ids: [opts.projectId] },
     {
       permission_set_names: [...DEPLOY_SECRET_WRITE_SETS],
       project_ids: [opts.projectId],
-      condition: startsWith(handoffFolderPath(opts.slug, opts.mode)),
+      condition: startsWith(HANDOFF_FOLDER),
     },
     {
       permission_set_names: [...DEPLOY_SECRET_VALUE_SETS],
       project_ids: [opts.projectId],
-      condition: startsWith(deployFolderPath(opts.slug, opts.mode)),
+      condition: startsWith(DEPLOY_FOLDER),
     },
     { permission_set_names: [...DEPLOY_ORG_PERMISSION_SETS], organization_id: opts.organizationId },
   ];

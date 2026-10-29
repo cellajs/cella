@@ -45,7 +45,7 @@ describe('ipConditionCidrs', () => {
   it('is empty for no condition and for one of another shape, so a foreign rule never passes for a lock', () => {
     expect(ipConditionCidrs(undefined)).toEqual([]);
     expect(ipConditionCidrs('')).toEqual([]);
-    expect(ipConditionCidrs('resource.name.startsWith("/cella-production/")')).toEqual([]);
+    expect(ipConditionCidrs('resource.name.startsWith("/backend/")')).toEqual([]);
     expect(ipConditionCidrs("request.ip in ['203.0.113.7'] || true")).toEqual([]);
   });
 });

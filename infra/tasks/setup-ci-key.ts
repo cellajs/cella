@@ -14,6 +14,6 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     appDescription: "The deploy key: the environment's main job deploys with it",
     policyDescription: 'Least-privilege policy for deploys (auto-generated)',
     // The rights of plan §3.1 (lib/scaleway/deploy-policy.ts), which Update identities also writes in place.
-    buildRules: ({ projectId, organizationId }) => deployRules({ slug: opts.slug, mode: opts.mode, projectId, organizationId }),
+    buildRules: ({ projectId, organizationId }) => deployRules({ projectId, organizationId }),
   });
 }

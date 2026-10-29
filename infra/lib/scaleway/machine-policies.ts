@@ -9,7 +9,7 @@ import {
 } from './permissions';
 import { principalNames, principalTags } from './principals';
 import type { PolicyRule } from './scaleway-iam';
-import { bootKeyCondition, ruleConditions } from './secret-paths';
+import { BOOT_KEY_CONDITION, ruleConditions } from './secret-paths';
 
 /** One machine policy as it must be: the identity it belongs to, and its rules. */
 export interface MachinePolicy {
@@ -37,7 +37,7 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
     description: `Path-conditioned secret read${svc.s3Access ? ' + S3 object access' : ''} for the ${svc.slug} service machines (written at Owner moments)`,
     rules: [
       // One rule per part of the condition: a condition too large for one rule is spread over several, which grant the same in sum.
-      ...ruleConditions(principalSecretCondition(slug, mode, svc.slug)).map((condition) => ({
+      ...ruleConditions(principalSecretCondition(svc.slug)).map((condition) => ({
         permission_set_names: [...SERVICE_SECRET_PERMISSION_SETS],
         project_ids: [projectId],
         condition,
@@ -52,7 +52,7 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
     description: 'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (written at Owner moments)',
     rules: [
       { permission_set_names: [...BOOT_PROJECT_PERMISSION_SETS], project_ids: [projectId] },
-      { permission_set_names: [...SERVICE_SECRET_PERMISSION_SETS], project_ids: [projectId], condition: bootKeyCondition(slug, mode) },
+      { permission_set_names: [...SERVICE_SECRET_PERMISSION_SETS], project_ids: [projectId], condition: BOOT_KEY_CONDITION },
     ],
     tags,
   };

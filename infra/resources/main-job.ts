@@ -11,7 +11,6 @@ import { mode, naming, organizationId, projectId, region } from '../pulumi-conte
 // The secrets are found with this run's own key, as the provider has no lookup that answers "not there": a stack whose deploy key has no
 // copy yet (one made before the main job) gets the definition after its next rotation of keys, and a warning until then.
 const declared = declaredMainJob({
-  slug: naming.slug,
   mode,
   projectId,
   organizationId,

@@ -37,7 +37,6 @@ const baseOptions = {
   region: 'nl-ams',
   slug: 'demo',
   mode: 'production',
-  path: '/demo-production/',
   log: vi.fn(),
 };
 

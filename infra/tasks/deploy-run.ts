@@ -212,8 +212,6 @@ export async function runDeploy(
         process.env.SCW_DEFAULT_PROJECT_ID ?? '',
         '--services-json',
         env.enabled_services_json,
-        '--mode',
-        opts.mode,
       ]),
     );
 

@@ -73,11 +73,16 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
   const auth: ScwAuth = { secretKey: options.secretKey, fetchImpl: options.fetchImpl };
 
   return {
+    /** Every secret of the project, or of one folder, page by page at the API's page size: a project holds more secrets than one page. */
     async listSecrets(path?: string): Promise<SecretManagerSecret[]> {
-      const query = new URLSearchParams({ project_id: options.projectId, scheduled_for_deletion: 'false' });
-      if (path) query.set('path', normalizeSecretPath(path));
-      const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query));
-      return response.secrets;
+      const secrets: SecretManagerSecret[] = [];
+      for (let page = 1; ; page++) {
+        const query = new URLSearchParams({ project_id: options.projectId, scheduled_for_deletion: 'false', page: String(page) });
+        if (path) query.set('path', normalizeSecretPath(path));
+        const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query));
+        secrets.push(...response.secrets);
+        if (response.secrets.length === 0 || secrets.length >= (response.total_count ?? 0)) return secrets;
+      }
     },
 
     /** Every secret at `root` or below. The API's `path` filter is exact-match only, so subtree listing filters client-side over the project listing. */
@@ -130,6 +135,11 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions/latest/access`,
       );
       return Buffer.from(response.data, 'base64').toString('utf8');
+    },
+
+    /** Move a secret to another folder: its id and versions stay, so every reference by id keeps reading it. */
+    async moveSecret(secretId: string, path: string): Promise<SecretManagerSecret> {
+      return await scwFetch<SecretManagerSecret>(auth, 'PATCH', `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}`, { path });
     },
 
     async deleteSecret(secretId: string): Promise<void> {

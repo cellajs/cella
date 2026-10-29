@@ -341,7 +341,6 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       item('inventory.mainJob', 'Main job', (b, { facts }) =>
         mainJobVerdict(b, facts.mainJob, () =>
           declaredMainJob({
-            slug: session.appConfig.slug,
             mode: session.mode,
             projectId: session.projectId ?? '',
             organizationId: facts.organizationId,

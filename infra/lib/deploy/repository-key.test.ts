@@ -7,15 +7,15 @@ import { readRepositoryKey, repositoryUrl } from './repository-key';
 
 const secrets = (stored?: { value: string; versions?: number }) => ({
   getSecretByName: async (name: string, path: string) =>
-    stored && name === 'repository-read-key' && path === '/cella-staging/deploy/' ? { id: 'key-1', version_count: stored.versions ?? 1 } : undefined,
+    stored && name === 'repository-read-key' && path === '/deploy/' ? { id: 'key-1', version_count: stored.versions ?? 1 } : undefined,
   accessLatestValue: async () => stored?.value ?? '',
 });
 
 describe('the repository read key', () => {
   it('is read from the deploy folder, and is absent for a repository anyone may read', async () => {
-    expect(await readRepositoryKey(secrets({ value: 'github_pat_x\n' }), 'cella', 'staging')).toBe('github_pat_x');
-    expect(await readRepositoryKey(secrets(), 'cella', 'staging')).toBeUndefined();
-    expect(await readRepositoryKey(secrets({ value: 'x', versions: 0 }), 'cella', 'staging')).toBeUndefined();
+    expect(await readRepositoryKey(secrets({ value: 'github_pat_x\n' }))).toBe('github_pat_x');
+    expect(await readRepositoryKey(secrets())).toBeUndefined();
+    expect(await readRepositoryKey(secrets({ value: 'x', versions: 0 }))).toBeUndefined();
   });
 
   it('goes with one git command as a header, never in the URL', () => {

@@ -26,8 +26,6 @@ const hasValue = (copy: CopyContainer) => (copy.container?.version_count ?? 0) >
  */
 export async function ensureSecrets(opts: {
   client: EnsureSecretsClient;
-  slug: string;
-  mode: string;
   secrets?: readonly RuntimeSecretDefinition[];
   generate?: () => string;
   /** Rotate: a fresh value for every rotatable secret in every copy, the ones derived from it recomputed; connection strings are ensure-database's. */
@@ -49,7 +47,7 @@ export async function ensureSecrets(opts: {
   const resolveValue = async (definition: RuntimeSecretDefinition): Promise<string | undefined> => {
     const known = values.get(definition.id);
     if (known !== undefined) return known;
-    const copies = await secretCopyContainers(opts.client, definition, opts.slug, opts.mode);
+    const copies = await secretCopyContainers(opts.client, definition);
     if (opts.rotate && definition.database) return undefined;
     const rotating = Boolean(opts.rotate) && isRotatable(definition);
     const existing = rotating ? undefined : copies.find(hasValue);

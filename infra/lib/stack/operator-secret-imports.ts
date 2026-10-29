@@ -12,11 +12,11 @@ const trimSlashes = (path: string) => `/${path.split('/').filter(Boolean).join('
 export function operatorSecretImports(
   listed: readonly Pick<SecretManagerSecret, 'id' | 'name' | 'path'>[],
   operatorSecrets: readonly Pick<RuntimeSecretDefinition, 'secretName' | 'services'>[],
-  opts: { slug: string; mode: string; region: string },
+  opts: { region: string },
 ): string {
   return operatorSecrets
     .flatMap((definition) =>
-      secretCopies(definition, opts.slug, opts.mode).flatMap(({ service, path }) => {
+      secretCopies(definition).flatMap(({ service, path }) => {
         const found = listed.find((secret) => secret.name === definition.secretName && trimSlashes(secret.path) === trimSlashes(path));
         return found ? [`${definition.secretName}@${service}=${opts.region}/${found.id}`] : [];
       }),

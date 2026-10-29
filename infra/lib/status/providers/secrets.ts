@@ -17,7 +17,7 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
         secretKey: session.secretKey,
         region: session.appConfig.s3.region,
         projectId: session.projectId,
-        secrets: secretsForServices(enabled, session.appConfig.slug, session.mode),
+        secrets: secretsForServices(enabled),
         log: () => {},
       });
       return offenders.map((offender) => `${offender.secretName}${offender.path ? ` in ${offender.path}` : ''}`);

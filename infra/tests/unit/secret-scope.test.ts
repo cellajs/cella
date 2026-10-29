@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { buildGrantRows } from '../../lib/scaleway/grant-rows';
 import { principalNames } from '../../lib/scaleway/principals';
-import { engineSecretPath, handoffFolderPath, secretCopies } from '../../lib/scaleway/secret-paths';
+import { DEPLOY_FOLDER, ENGINE_FOLDER, HANDOFF_FOLDER, secretCopies } from '../../lib/scaleway/secret-paths';
 import { principalServices, serviceNames } from '../../lib/services';
 import { fakeConfig } from '../helpers/fake-config';
 
@@ -25,7 +25,7 @@ const covers = (condition: string, name: string) => grantedPrefixes(condition).s
 
 /** The full Secret Manager name of each copy of a secret, with the consumer it serves. */
 const copyNames = (secret: (typeof runtimeSecrets)[number]) =>
-  secretCopies(secret, slug, mode).map((copy) => ({ service: copy.service, name: `${copy.path}${secret.secretName}` }));
+  secretCopies(secret).map((copy) => ({ service: copy.service, name: `${copy.path}${secret.secretName}` }));
 
 /** The full name of the copy a given consumer reads. */
 const copyFor = (secret: (typeof runtimeSecrets)[number], service: string) => copyNames(secret).find((copy) => copy.service === service)?.name ?? '';
@@ -53,21 +53,22 @@ describe('secret scope per principal', () => {
       }
     });
 
-    it(`must not let the boot key or any VM key read the engine folder (singleVM: ${singleVM})`, () => {
+    it(`must not let the boot key or any VM key read the engine or the deploy folder (singleVM: ${singleVM})`, () => {
       const boot = rows.find((row) => row.app === names.boot);
       if (!boot) throw new Error('no assertion row for the boot principal');
       for (const secret of runtimeSecrets) for (const copy of copyNames(secret)) expect(covers(boot.condition, copy.name)).toBe(false);
       // Positive control: the boot key reads the handoff bundles.
-      expect(covers(boot.condition, `${handoffFolderPath(slug, mode)}backend/bundle`)).toBe(true);
+      expect(covers(boot.condition, `${HANDOFF_FOLDER}backend/bundle`)).toBe(true);
 
-      for (const row of rows.filter((candidate) => candidate.app.includes('-vm-'))) {
-        expect(covers(row.condition, `${engineSecretPath(slug, mode)}pulumi-passphrase`), row.app).toBe(false);
+      for (const row of rows.filter((candidate) => candidate.app.includes('-vm-') || candidate.app === names.boot)) {
+        expect(covers(row.condition, `${ENGINE_FOLDER}pulumi-passphrase`), row.app).toBe(false);
+        expect(covers(row.condition, `${DEPLOY_FOLDER}machine-key-backend`), row.app).toBe(false);
       }
     });
   }
 
   it("must not name a service after a reserved folder, which its own folder's grant would cover", () => {
-    for (const reserved of ['shared', 'engine', 'handoff']) expect(serviceNames).not.toContain(reserved);
+    for (const reserved of ['shared', 'engine', 'handoff', 'deploy']) expect(serviceNames).not.toContain(reserved);
   });
 
   it('must not give the Yjs relay the key that signs editor tokens, under split-VM', () => {

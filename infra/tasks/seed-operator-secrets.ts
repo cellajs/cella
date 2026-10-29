@@ -7,8 +7,6 @@ export interface SeedOperatorSecretsOptions {
   secretKey: string;
   projectId: string;
   region: string;
-  slug: string;
-  mode: string;
   /** Initial values keyed by runtime secret id (e.g. `adminEmail`). Empty/undefined entries are skipped. */
   values: Partial<Record<string, string>>;
   log?: (message: string) => void;
@@ -37,7 +35,7 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
       throw new Error(`${secret.secretName}: one line only; the deploy checks presence, so the form is checked here`);
 
     // One copy per consumer: each is seeded alike, and one that has a value already is left alone.
-    for (const { service, path } of secretCopies(secret, options.slug, options.mode)) {
+    for (const { service, path } of secretCopies(secret)) {
       const existing = await client.getSecretByName(secret.secretName, path);
       if (existing?.version_count && existing.version_count > 0) {
         log(`skip ${secret.secretName} for ${service}: already has ${existing.version_count} version(s)`);

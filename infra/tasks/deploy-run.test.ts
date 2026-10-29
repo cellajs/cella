@@ -20,17 +20,17 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
       {
         app: 'cella-production-vm-backend',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-        condition: 'resource.name.startsWith("/cella-production/backend/")',
+        condition: 'resource.name.startsWith("/backend/")',
       },
       {
         app: 'cella-production-vm-yjs',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
-        condition: 'resource.name.startsWith("/cella-production/yjs/")',
+        condition: 'resource.name.startsWith("/yjs/")',
       },
       {
         app: 'cella-production-boot',
         sets: ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'],
-        condition: 'resource.name.startsWith("/cella-production/handoff/")',
+        condition: 'resource.name.startsWith("/handoff/")',
       },
     ]),
     enabled_services_json: JSON.stringify([

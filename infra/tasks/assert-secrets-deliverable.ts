@@ -97,10 +97,10 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
  * Build the probe list from the runtime-secrets registry: the copy of every enabled consumer, so an optional secret for a disabled service
  * (e.g. ai) never produces a false failure, and a copy left empty fails as the machine reading it would.
  */
-export function secretsForServices(enabled: readonly ServiceName[], slug: string, mode: string): SecretToCheck[] {
+export function secretsForServices(enabled: readonly ServiceName[]): SecretToCheck[] {
   const enabledSet = new Set<string>(enabled);
   return runtimeSecrets.flatMap((secret) =>
-    secretCopies(secret, slug, mode)
+    secretCopies(secret)
       .filter((copy) => enabledSet.has(copy.service))
       .map((copy) => ({ envVar: secret.envVar, secretName: secret.secretName, required: secret.required, path: copy.path })),
   );
@@ -122,14 +122,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const requested = servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames;
   const enabled = requested.map((s) => s.trim()).filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s));
 
-  const mode = getFlag(argv, '--mode');
-  if (!secretKey || !region || !projectId || !mode) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id, --mode');
-  // The copies' folders carry the app's slug, which the engine config of the mode names.
-  process.env.APP_MODE = mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const { slug } = await loadEngineConfig();
+  if (!secretKey || !region || !projectId) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id');
 
-  const secrets = secretsForServices(enabled, slug, mode);
+  const secrets = secretsForServices(enabled);
   blockOnMissing(await assertSecretsDeliverable({ secretKey, region, projectId, secrets }));
 }
 

@@ -13,7 +13,7 @@ import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-rdb';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { engineSecretPath } from '../../lib/scaleway/secret-paths';
+import { ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { readStoreOutputs } from '../../lib/stack/store-outputs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -78,7 +78,7 @@ export async function readPublicDsn(
   const databaseName = readPrimaryStoreOutput(env, stack, 'databaseName');
   if (!host || !port || !databaseName) return '';
   const secrets = createSecretManagerClient({ secretKey: convergeSecretKey(env), region: context.appConfig.s3.region, projectId: context.projectId });
-  const kept = await secrets.getSecretByName(rolePasswordSecretName('admin'), engineSecretPath(context.appConfig.slug, context.environment));
+  const kept = await secrets.getSecretByName(rolePasswordSecretName('admin'), ENGINE_FOLDER);
   if (!kept) return '';
   return formatPostgresUrl(POSTGRES_ROLE_NAMES.admin, await secrets.accessLatestValue(kept.id), host, port, databaseName);
 }

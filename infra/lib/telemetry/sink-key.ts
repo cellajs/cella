@@ -4,7 +4,7 @@ import { actionCommand } from '../operator-actions';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import { createSecretManagerClient } from '../scaleway/scaleway-secret-manager';
 import { secretCopyContainers } from '../scaleway/secret-copies';
-import { deployFolderPath } from '../scaleway/secret-paths';
+import { DEPLOY_FOLDER } from '../scaleway/secret-paths';
 
 /** The ingest key, or why there is none: a deploy that exports nothing says so in its log. */
 export type SinkKeyLookup = { key: string } | { missing: string };
@@ -13,8 +13,6 @@ export type SinkKeyLookup = { key: string } | { missing: string };
 export type SinkKeyClient = Pick<ReturnType<typeof createSecretManagerClient>, 'getSecretByName' | 'accessLatestValue'>;
 
 export interface SinkKeyLookupOptions {
-  slug: string;
-  mode: string;
   client: SinkKeyClient;
   secretName?: string;
 }
@@ -25,12 +23,11 @@ export interface SinkKeyLookupOptions {
  */
 export async function lookupSinkIngestKey(opts: SinkKeyLookupOptions): Promise<SinkKeyLookup> {
   const secretName = opts.secretName ?? telemetrySink.keySecretName;
-  const path = deployFolderPath(opts.slug, opts.mode);
-  const container = await opts.client.getSecretByName(secretName, path);
+  const container = await opts.client.getSecretByName(secretName, DEPLOY_FOLDER);
   if (!container)
-    return { missing: `no copy of '${secretName}' in ${path}; set it with \`${actionCommand('secrets')}\`, then an apply copies it there` };
+    return { missing: `no copy of '${secretName}' in ${DEPLOY_FOLDER}; set it with \`${actionCommand('secrets')}\`, then an apply copies it there` };
   const value = (await opts.client.accessLatestValue(container.id)).trim();
-  return value ? { key: value } : { missing: `the copy of '${secretName}' in ${path} has an empty value` };
+  return value ? { key: value } : { missing: `the copy of '${secretName}' in ${DEPLOY_FOLDER} has an empty value` };
 }
 
 /** The Secret Manager calls the copy into the deploy folder makes. */
@@ -42,21 +39,22 @@ export type SinkKeySyncClient = SinkKeyClient & Pick<ReturnType<typeof createSec
  */
 export async function syncDeployTelemetryKey(opts: {
   client: SinkKeySyncClient;
-  slug: string;
-  mode: string;
   secrets?: readonly RuntimeSecretDefinition[];
 }): Promise<'written' | 'unchanged' | 'absent'> {
   const definition = (opts.secrets ?? runtimeSecrets).find((secret) => secret.secretName === telemetrySink.keySecretName);
   if (!definition) return 'absent';
-  const source = (await secretCopyContainers(opts.client, definition, opts.slug, opts.mode)).find((copy) => (copy.container?.version_count ?? 0) > 0);
+  const source = (await secretCopyContainers(opts.client, definition)).find((copy) => (copy.container?.version_count ?? 0) > 0);
   if (!source?.container) return 'absent';
   const value = await opts.client.accessLatestValue(source.container.id);
-  const path = deployFolderPath(opts.slug, opts.mode);
-  const existing = await opts.client.getSecretByName(definition.secretName, path);
+  const existing = await opts.client.getSecretByName(definition.secretName, DEPLOY_FOLDER);
   if (existing && (existing.version_count ?? 0) > 0 && (await opts.client.accessLatestValue(existing.id)) === value) return 'unchanged';
   const container =
     existing ??
-    (await opts.client.ensureSecret({ name: definition.secretName, path, description: 'Copy of the telemetry ingest key the deploy reads' }));
+    (await opts.client.ensureSecret({
+      name: definition.secretName,
+      path: DEPLOY_FOLDER,
+      description: 'Copy of the telemetry ingest key the deploy reads',
+    }));
   await opts.client.putSecretValue({ secretId: container.id, value, description: 'Copied from a runtime copy', disablePrevious: true });
   return 'written';
 }
@@ -71,5 +69,5 @@ export async function sinkIngestKeyFromSecretManager(): Promise<SinkKeyLookup> {
   if (!secretKey || !projectId) return { missing: 'SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID are needed to read it from Secret Manager' };
   const appConfig = engineConfig();
   const client = createSecretManagerClient({ secretKey, projectId, region: appConfig.s3.region });
-  return lookupSinkIngestKey({ slug: appConfig.slug, mode: appConfig.mode, client });
+  return lookupSinkIngestKey({ client });
 }

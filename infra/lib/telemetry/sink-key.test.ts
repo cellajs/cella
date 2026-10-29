@@ -42,22 +42,22 @@ function fakeClient(secrets: Record<string, Record<string, string>>): SinkKeySyn
   };
 }
 
-const deployPath = '/cella-production/deploy/';
-const backendPath = '/cella-production/backend/';
+const deployPath = '/deploy/';
+const backendPath = '/backend/';
 const KEY_NAME = 'maple-secret-ingest-key';
 
 describe('lookupSinkIngestKey', () => {
   it('reads the copy in the deploy folder, the one folder whose values the deploy key reads', async () => {
     const client = fakeClient({ [deployPath]: { [KEY_NAME]: ' ik-123 \n' }, [backendPath]: { [KEY_NAME]: 'ik-other' } });
-    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-123' });
+    expect(await lookupSinkIngestKey({ client })).toEqual({ key: 'ik-123' });
     expect(client.paths).toEqual([deployPath]);
   });
 
   it('says why when there is no key', async () => {
-    const missing = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({ [backendPath]: { [KEY_NAME]: 'ik' } }) });
+    const missing = await lookupSinkIngestKey({ client: fakeClient({ [backendPath]: { [KEY_NAME]: 'ik' } }) });
     expect(missing).toEqual({ missing: expect.stringContaining(`no copy of '${KEY_NAME}' in ${deployPath}`) });
 
-    const empty = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({ [deployPath]: { [KEY_NAME]: '  ' } }) });
+    const empty = await lookupSinkIngestKey({ client: fakeClient({ [deployPath]: { [KEY_NAME]: '  ' } }) });
     expect(empty).toEqual({ missing: expect.stringContaining('empty value') });
   });
 });
@@ -65,24 +65,24 @@ describe('lookupSinkIngestKey', () => {
 describe('syncDeployTelemetryKey', () => {
   it('copies the runtime value into the deploy folder, then leaves an equal copy alone', async () => {
     const client = fakeClient({ [backendPath]: { [KEY_NAME]: 'ik-1' } });
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('written');
-    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-1' });
+    expect(await syncDeployTelemetryKey({ client })).toBe('written');
+    expect(await lookupSinkIngestKey({ client })).toEqual({ key: 'ik-1' });
 
     client.writes.length = 0;
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('unchanged');
+    expect(await syncDeployTelemetryKey({ client })).toBe('unchanged');
     expect(client.writes).toEqual([]);
   });
 
   it('follows a value the operator set anew', async () => {
     const client = fakeClient({ [backendPath]: { [KEY_NAME]: 'ik-new' }, [deployPath]: { [KEY_NAME]: 'ik-old' } });
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('written');
-    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-new' });
+    expect(await syncDeployTelemetryKey({ client })).toBe('written');
+    expect(await lookupSinkIngestKey({ client })).toEqual({ key: 'ik-new' });
   });
 
   it('writes nothing when no runtime copy holds a value, or the app declares no such secret', async () => {
     const client = fakeClient({});
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production' })).toBe('absent');
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'production', secrets: [] })).toBe('absent');
+    expect(await syncDeployTelemetryKey({ client })).toBe('absent');
+    expect(await syncDeployTelemetryKey({ client, secrets: [] })).toBe('absent');
     expect(client.writes).toEqual([]);
   });
 
@@ -90,8 +90,8 @@ describe('syncDeployTelemetryKey', () => {
     const maple = runtimeSecrets.find((secret) => secret.secretName === KEY_NAME);
     if (!maple) throw new Error(`the registry declares no ${KEY_NAME}`);
     const secrets: RuntimeSecretDefinition[] = [{ ...maple, services: ['jobs'] }];
-    const client = fakeClient({ '/cella-staging/jobs/': { [KEY_NAME]: 'ik-9' } });
-    expect(await syncDeployTelemetryKey({ client, slug: 'cella', mode: 'staging', secrets })).toBe('written');
-    expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'staging', client })).toEqual({ key: 'ik-9' });
+    const client = fakeClient({ '/jobs/': { [KEY_NAME]: 'ik-9' } });
+    expect(await syncDeployTelemetryKey({ client, secrets })).toBe('written');
+    expect(await lookupSinkIngestKey({ client })).toEqual({ key: 'ik-9' });
   });
 });

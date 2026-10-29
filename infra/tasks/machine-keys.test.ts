@@ -32,8 +32,9 @@ function fakeIam(live: string[]) {
 function fakeSecrets() {
   const written: Array<{ description?: string; value?: string }> = [];
   const secrets: MachineKeySecrets = {
+    listSecrets: async () => [],
     listSecretsUnder: async () => [],
-    getSecretByName: async () => ({ id: 'old-container', name: 'machine-key-cdc', path: '/app-production/deploy/' }) as SecretManagerSecret,
+    getSecretByName: async () => ({ id: 'old-container', name: 'machine-key-cdc', path: '/deploy/' }) as SecretManagerSecret,
     ensureSecret: async (input) => {
       written.push({ description: input.description });
       return { id: 'new-container', name: input.name, path: input.path };

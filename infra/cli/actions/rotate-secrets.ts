@@ -51,8 +51,6 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
     await ensureDatabaseForStack({
       env,
       stack,
-      slug: appConfig.slug,
-      mode: context.environment,
       region: appConfig.s3.region,
       projectId,
       secretKey: operator.secretKey,
@@ -60,7 +58,7 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
       log,
     });
     const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-    const rotated = await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, rotate: true, log });
+    const rotated = await ensureSecrets({ client, rotate: true, log });
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
     const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'secrets', by: controlActor() });
     console.info(

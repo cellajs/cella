@@ -157,6 +157,18 @@ describe('createSecretManagerClient', () => {
   });
 });
 
+describe('listSecrets pages', () => {
+  it('must not stop at the first page: the move and every folder listing read the whole project', async () => {
+    const { fn, calls } = makeFetch([
+      { method: 'GET', match: 'page=1', body: { secrets: [{ id: 's-1', name: 'one', path: '/backend' }], total_count: 2 } },
+      { method: 'GET', match: 'page=2', body: { secrets: [{ id: 's-2', name: 'two', path: '/cella-production/jobs' }], total_count: 2 } },
+    ]);
+    const client = createSecretManagerClient({ ...baseOptions, fetchImpl: fn });
+    expect((await client.listSecrets()).map((secret) => secret.id)).toEqual(['s-1', 's-2']);
+    expect(calls).toHaveLength(2);
+  });
+});
+
 describe('listSecretsUnder prefix boundaries', () => {
   it("'/p' matches '/p' and '/p/x' but never the sibling '/p2' (REQ-8 subtree semantics)", async () => {
     const { fn } = makeFetch([

@@ -1,5 +1,5 @@
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { engineSecretPath } from '../lib/scaleway/secret-paths';
+import { ENGINE_FOLDER } from '../lib/scaleway/secret-paths';
 import { verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 
 /** Secret Manager container name for the Pulumi passphrase. */
@@ -22,8 +22,6 @@ export interface PassphraseCustodyOptions {
   secretKey: string;
   region: string;
   projectId: string;
-  slug: string;
-  mode: string;
 }
 
 /**
@@ -32,7 +30,7 @@ export interface PassphraseCustodyOptions {
  */
 export async function readCustodiedPassphrase(opts: PassphraseCustodyOptions): Promise<string | undefined> {
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
-  const container = await secrets.getSecretByName(PASSPHRASE_SECRET_NAME, engineSecretPath(opts.slug, opts.mode));
+  const container = await secrets.getSecretByName(PASSPHRASE_SECRET_NAME, ENGINE_FOLDER);
   if (!container) return undefined;
   return (await secrets.accessLatestValue(container.id)) || undefined;
 }
@@ -45,12 +43,12 @@ export async function storeCustodiedPassphrase(opts: PassphraseCustodyOptions & 
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
   const container = await secrets.ensureSecret({
     name: PASSPHRASE_SECRET_NAME,
-    path: engineSecretPath(opts.slug, opts.mode),
+    path: ENGINE_FOLDER,
     description: 'Pulumi passphrase of this stack: the infra CLI reads it with the operator key, so nobody types it',
   });
   await secrets.putSecretValue({ secretId: container.id, value: opts.passphrase, description: 'Stored by infra cli', disablePrevious: true });
   const salt = verifiedSalt(opts.stackYaml, opts.passphrase);
-  if (salt) await storeSalt(secrets, opts, salt);
+  if (salt) await storeSalt(secrets, salt);
 }
 
 /** Store the stack's salt beside a custodied passphrase when none is stored yet: how a stack set up before the copy existed gets one. */
@@ -58,14 +56,14 @@ export async function ensureCustodiedSalt(opts: PassphraseCustodyOptions & { pas
   const salt = verifiedSalt(opts.stackYaml, opts.passphrase);
   if (!salt) return;
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
-  const stored = await secrets.getSecretByName(ENCRYPTION_SALT_SECRET_NAME, engineSecretPath(opts.slug, opts.mode));
-  if (!stored?.version_count) await storeSalt(secrets, opts, salt);
+  const stored = await secrets.getSecretByName(ENCRYPTION_SALT_SECRET_NAME, ENGINE_FOLDER);
+  if (!stored?.version_count) await storeSalt(secrets, salt);
 }
 
-async function storeSalt(secrets: ReturnType<typeof createSecretManagerClient>, opts: PassphraseCustodyOptions, salt: string): Promise<void> {
+async function storeSalt(secrets: ReturnType<typeof createSecretManagerClient>, salt: string): Promise<void> {
   const container = await secrets.ensureSecret({
     name: ENCRYPTION_SALT_SECRET_NAME,
-    path: engineSecretPath(opts.slug, opts.mode),
+    path: ENGINE_FOLDER,
     description: "The stack's encryptionsalt, beside its passphrase: the main job writes it into the target's stack file",
   });
   await secrets.putSecretValue({ secretId: container.id, value: salt, description: 'Stored by infra cli', disablePrevious: true });

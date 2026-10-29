@@ -90,9 +90,9 @@ describe('the main job', () => {
           calls.push(input);
         },
       },
-      { slug: 'cella-staging', mode: 'staging', key: { accessKey: 'SCWDEPLOY', secretKey: 'deploy-secret', organizationId: 'org' } as never },
+      { accessKey: 'SCWDEPLOY', secretKey: 'deploy-secret', organizationId: 'org' } as never,
     );
-    expect(calls[0]).toMatchObject({ name: 'deploy-key', path: '/cella-staging-staging/engine' });
+    expect(calls[0]).toMatchObject({ name: 'deploy-key', path: '/engine' });
     expect(calls[1]).toMatchObject({ secretId: 'secret-1', disablePrevious: true });
     expect(JSON.parse((calls[1] as { value: string }).value)).toEqual({ accessKey: 'SCWDEPLOY', secretKey: 'deploy-secret' });
   });

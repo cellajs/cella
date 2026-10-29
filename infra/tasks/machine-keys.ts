@@ -8,10 +8,12 @@ import {
   standingAccessKey,
 } from '../lib/scaleway/machine-keys';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { deployFolderPath } from '../lib/scaleway/secret-paths';
+import { DEPLOY_FOLDER } from '../lib/scaleway/secret-paths';
+import { assertSecretsUnprefixed } from './move-secret-paths';
 
 /** The Secret Manager calls the standing keys need, so a test passes its own. */
 export interface MachineKeySecrets {
+  listSecrets(): Promise<SecretManagerSecret[]>;
   listSecretsUnder(root: string): Promise<SecretManagerSecret[]>;
   getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined>;
   ensureSecret(input: { name: string; path: string; description?: string }): Promise<SecretManagerSecret>;
@@ -22,16 +24,17 @@ export interface MachineKeySecrets {
 /**
  * The standing key of every machine identity against what IAM holds, read from metadata only: the container in the deploy folder names its
  * access key, and IAM lists the application's keys. Any key that reads IAM and Secret Manager metadata computes it, the observer's included.
+ * @throws while the environment's secrets sit under its `/<slug>-<mode>/` prefix, where the plan would find no standing key and make each anew
  */
 export async function planMachineKeys(opts: {
   auth: IamAuth;
-  secrets: Pick<MachineKeySecrets, 'listSecretsUnder'>;
+  secrets: Pick<MachineKeySecrets, 'listSecrets' | 'listSecretsUnder'>;
   organizationId: string;
   slug: string;
   mode: string;
 }): Promise<MachineKeyStep[]> {
-  const folder = deployFolderPath(opts.slug, opts.mode);
-  const stored = await opts.secrets.listSecretsUnder(folder);
+  await assertSecretsUnprefixed(opts.secrets, opts.slug, opts.mode);
+  const stored = await opts.secrets.listSecretsUnder(DEPLOY_FOLDER);
   const steps: MachineKeyStep[] = [];
   for (const principal of machinePrincipals(opts.slug, opts.mode)) {
     const container = stored.find((secret) => secret.name === machineKeyName(principal.principal) && (secret.version_count ?? 0) > 0);
@@ -58,7 +61,6 @@ export async function writeMachineKeys(opts: {
   log?: (message: string) => void;
 }): Promise<void> {
   const log = opts.log ?? ((message) => console.info(message));
-  const folder = deployFolderPath(opts.slug, opts.mode);
   for (const step of opts.steps) {
     if (step.change === 'none') continue;
     const applicationId = await resolveApplicationIdByName(opts.auth, opts.organizationId, step.application);
@@ -67,9 +69,13 @@ export async function writeMachineKeys(opts: {
     if (step.change === 'make') {
       const key = await createApiKey(opts.auth, { applicationId, description: 'Standing machine key', defaultProjectId: opts.projectId });
       const name = machineKeyName(step.principal);
-      const old = await opts.secrets.getSecretByName(name, folder);
+      const old = await opts.secrets.getSecretByName(name, DEPLOY_FOLDER);
       if (old) await opts.secrets.deleteSecret(old.id);
-      const container = await opts.secrets.ensureSecret({ name, path: folder, description: machineKeyDescription(step.application, key.access_key) });
+      const container = await opts.secrets.ensureSecret({
+        name,
+        path: DEPLOY_FOLDER,
+        description: machineKeyDescription(step.application, key.access_key),
+      });
       await opts.secrets.putSecretValue({
         secretId: container.id,
         value: JSON.stringify({ accessKey: key.access_key, secretKey: key.secret_key }),
