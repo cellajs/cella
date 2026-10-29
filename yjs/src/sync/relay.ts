@@ -7,7 +7,15 @@ import { maxLength } from '#/db/utils/constraints';
 import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice, LogRow, YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
-import { docKey, yjsAwarenessMaxEntries, yjsAwarenessRateLimit, yjsCompactDebounceMs, yjsCompactMaxWaitMs, yjsMessageTypes } from '../constants';
+import {
+  docKey,
+  yjsAwarenessMaxEntries,
+  yjsAwarenessMaxStateBytes,
+  yjsAwarenessRateLimit,
+  yjsCompactDebounceMs,
+  yjsCompactMaxWaitMs,
+  yjsMessageTypes,
+} from '../constants';
 import { appendUpdate, findDocument, findLog, seedDocument } from '../data/storage';
 import { log } from '../lib/pino';
 import type { SocketContext } from '../server/upgrade';
@@ -121,8 +129,9 @@ const presenceStateSchema = z.union([
   z.object({ user: z.object({ name: z.string().max(maxLength.field), color: z.string().regex(/^#[0-9a-f]{6}$/i) }).optional() }),
 ]);
 
-/** Whether an entry's JSON state is presence a peer may render. */
+/** Whether an entry's JSON state is presence a peer may render; one past yjsAwarenessMaxStateBytes is refused before it is parsed. */
 function isRelayablePresence(state: string): boolean {
+  if (Buffer.byteLength(state) > yjsAwarenessMaxStateBytes) return false;
   try {
     return presenceStateSchema.safeParse(JSON.parse(state)).success;
   } catch {

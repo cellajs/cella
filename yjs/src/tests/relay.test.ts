@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { yjsAwarenessMaxStateBytes } from '../constants';
 import {
   awarenessClientIds,
   awarenessEntries,
@@ -639,6 +640,20 @@ describe('handleMessage: awareness', () => {
       [{ clientId: 1, clock: 1, state: { user: { name: 'client 1', color: '#3366CC' } } }],
       [{ clientId: 1, clock: 2, state: null }],
     ]);
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('must not relay an awareness entry larger than the state cap', async () => {
+    const { ctx: c, scope, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    const bloated = { user: { name: 'client 1', color: '#3366CC' }, cursor: 'x'.repeat(yjsAwarenessMaxStateBytes) };
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, state: bloated })));
+    expect(peer.sent).toEqual([]);
+
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 }, { clientId: 2, state: bloated })));
+    expect(peer.sent.map(awarenessClientIds)).toEqual([[1]]);
     leaveCollab(collab.scope, peer as never);
   });
 

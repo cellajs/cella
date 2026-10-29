@@ -37,6 +37,8 @@ export const yjsAwarenessRateLimit = 2;
 export const yjsAwarenessMaxEntries = 8;
 /** Awareness clients one socket may hold: its own, plus a few that another socket of its user held or whose socket left. */
 export const yjsAwarenessMaxClients = 4;
+/** Bytes of one awareness entry's state: an honest one is a name (at most maxLength.field characters), a `#rrggbb` colour and a cursor, about 0.3 to 1 KiB. */
+export const yjsAwarenessMaxStateBytes = 4096;
 
 /** A document's key in the relay's maps and log lines: tenant, type and id, so no two tenants share a session. */
 export function docKey({ tenantId, entityType, entityId }: YjsDocKey): string {
