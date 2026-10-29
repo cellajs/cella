@@ -261,6 +261,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
     rateLimits: { apiPointsPerHour: number };
   };
+  selfServiceTenantsPerUser: number;
   retention: RetentionConfig;
 
   systemRoles: T['systemRoles'];

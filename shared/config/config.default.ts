@@ -93,6 +93,12 @@ export const config = {
     rateLimits: { apiPointsPerHour: 1000 },
   } as const,
 
+  /**
+   * Tenants one user may create through onboarding (`selfCreateTenant`); a tenant reused while it holds no organization
+   * counts once, and system admins have no cap. `0` turns self-service creation off, where a quota's `0` means unlimited.
+   */
+  selfServiceTenantsPerUser: 10,
+
   /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
   retention: {
     activityDays: 90,

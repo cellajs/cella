@@ -96,6 +96,10 @@
             "name": "uploadToken",
             "description": "Upload tokens per user: 300 per hour"
           },
+          "pushSubscriptionLimiter": {
+            "name": "pushSubscription",
+            "description": "Push subscription registrations per user: 30 per hour"
+          },
           "totpVerificationLimiter": {
             "name": "totpVerification",
             "description": "Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes"
@@ -7291,9 +7295,9 @@
         "operationId": "createPushSubscription",
         "tags": ["push", "cella"],
         "summary": "Register a Web Push subscription",
-        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.",
+        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["pushSubscriptionLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -7360,6 +7364,9 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -8324,7 +8331,7 @@
         "operationId": "selfCreateTenant",
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
-        "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.",
+        "description": "Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -8363,6 +8370,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"

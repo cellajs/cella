@@ -3305,6 +3305,10 @@ export type CreatePushSubscriptionErrors = {
    * Payload too large: the request body exceeds its limit.
    */
   413: PayloadTooLargeError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
 };
 
 export type CreatePushSubscriptionError = CreatePushSubscriptionErrors[keyof CreatePushSubscriptionErrors];
@@ -3789,6 +3793,10 @@ export type SelfCreateTenantErrors = {
    * Unauthorized: authentication required.
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
   /**
    * Payload too large: the request body exceeds its limit.
    */
