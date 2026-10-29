@@ -8,7 +8,7 @@ import type { DbContext } from '#/core/context';
 import { baseDb, type Tx } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { decodeLogNotice, type YjsDocScope, yjsLogChannel, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, type YjsDocScope, yjsLogChannel, yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
@@ -162,6 +162,21 @@ describe('the Yjs log', () => {
     expect(await appendYjsUpdate(untouchable, { ...opts, update: new Uint8Array(yjsMaxUpdateBytes + 1) })).toEqual({ status: 'too-large' });
     expect(await appendYjsUpdate(untouchable, { ...opts, update: new Uint8Array([1, 2, 3]) })).toEqual({ status: 'malformed' });
     expect(await appendYjsUpdate(untouchable, { ...opts, update: Y.encodeStateAsUpdate(new Y.Doc()) })).toEqual({ status: 'empty' });
+  });
+
+  it('must not grow a document past its byte cap, base and log together', async () => {
+    const scope = scopeOf();
+    // Base and log a few bytes short of the cap: any update passes it.
+    const generation = await seed(scope, new Uint8Array(yjsMaxDocumentBytes / 2));
+    await adminDb.insert(yjsUpdatesTable).values({ ...scope, userId: null, payload: Buffer.alloc(yjsMaxDocumentBytes / 2 - 8) });
+    const append = () => asSystem((tx) => appendYjsUpdate(ctxOf(tx), { doc: scope, update: textUpdate('typed'), userId: null, generation }));
+
+    expect(await append()).toEqual({ status: 'too-large' });
+    expect(await rowsOf(scope)).toEqual({ docs: 1, log: 1 });
+
+    // Positive control: with the log folded away, the same update is logged.
+    await adminDb.delete(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, scope.entityId));
+    expect(await append()).toMatchObject({ status: 'appended' });
   });
 
   it('must not log an update for a document with no row (16)', async () => {

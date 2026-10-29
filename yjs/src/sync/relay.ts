@@ -407,8 +407,13 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
   const generation = collab.generation ?? (await withDocumentLock(collab, () => loadDocumentState(collab)))?.generation;
   if (!generation) return false;
   const appended = await appendUpdate(collab.scope, userId, update, generation, (id) => collab.seen.add(id));
-  // The update was classified above and fits in one frame, so the append logged it, or found the document retired or
-  // reseeded under the session: `no-document` or `stale-generation`.
+  // A document at its byte cap takes nothing more from the sender; its peers stay.
+  if (appended.status === 'too-large') {
+    refuseFrame(collab.scope, userId, ws, 'Document too large');
+    return false;
+  }
+  // The update was classified above, so the append logged it, or found the document retired or reseeded under the
+  // session: `no-document` or `stale-generation`.
   if (appended.status !== 'appended') {
     endCollab(collab);
     return false;

@@ -177,7 +177,10 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
   const counts = attempt(() => countDescriptionBlocks(blocks), emptyDescriptionCounts);
 
   const mentions = new Set<string>();
-  collectMentionNodes(parsed, mentions);
+  attempt(
+    () => collectMentionNodes(parsed, mentions),
+    () => mentions.clear(),
+  );
   if (description) {
     for (const match of description.matchAll(htmlMentionPattern)) {
       const id = match[1];

@@ -794,7 +794,8 @@
           "fieldTimestamps": {
             "type": "object",
             "additionalProperties": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 33
             },
             "maxProperties": 100,
             "description": "Per-field HLC timestamps for scalar fields being changed"
@@ -2845,16 +2846,20 @@
             "type": "object",
             "properties": {
               "original": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               "preview": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               "thumbnail": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               },
               "converted": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2048
               }
             },
             "required": ["original"],
@@ -10843,16 +10848,20 @@
                       "type": "object",
                       "properties": {
                         "original": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 2048
                         },
                         "preview": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 2048
                         },
                         "thumbnail": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 2048
                         },
                         "converted": {
-                          "type": "string"
+                          "type": "string",
+                          "maxLength": 2048
                         }
                       },
                       "required": ["original"]
@@ -11737,16 +11746,20 @@
                     "type": "object",
                     "properties": {
                       "original": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "preview": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "thumbnail": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       },
                       "converted": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 2048
                       }
                     },
                     "required": ["original"]
@@ -11897,7 +11910,19 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {}
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {},
+                    "maxItems": 20
+                  },
+                  {},
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
             }
           }
         },

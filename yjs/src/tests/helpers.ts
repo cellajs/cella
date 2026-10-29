@@ -153,10 +153,11 @@ export async function flushMicrotasks(rounds = 50): Promise<void> {
 }
 
 /** Minimal fake WebSocket for unit tests; `closed` records the close the relay sent, if any. */
-export function mockWebSocket(overrides?: { readyState?: number }): MockWebSocket {
+export function mockWebSocket(overrides?: { readyState?: number; bufferedAmount?: number }): MockWebSocket {
   return {
     readyState: overrides?.readyState ?? 1,
     OPEN: 1,
+    bufferedAmount: overrides?.bufferedAmount ?? 0,
     sent: [] as Uint8Array[],
     closed: null,
     send(data: Uint8Array) {
@@ -172,6 +173,8 @@ export function mockWebSocket(overrides?: { readyState?: number }): MockWebSocke
 export interface MockWebSocket {
   readyState: number;
   OPEN: number;
+  /** Bytes sent and not yet written to the network. */
+  bufferedAmount: number;
   sent: Uint8Array[];
   closed: { code?: number; reason?: string } | null;
   send(data: Uint8Array): void;

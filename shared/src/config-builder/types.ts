@@ -315,10 +315,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   apiDescription: string;
 
   requestLimits: RequestLimitsConfig;
-  // Request body limits, in bytes.
+  /** The largest request body the API reads, in bytes, whatever its content type. */
   jsonBodyLimit: number;
-  fileUploadLimit: number;
-  defaultBodyLimit: number;
 
   s3: S3ConfigInput;
   /** Origin of the media asset CDN; empty while none is configured. */

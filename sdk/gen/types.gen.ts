@@ -5109,7 +5109,7 @@ export type GetMcpProtectedResourceMetadataResponses = {
 export type GetMcpProtectedResourceMetadataResponse = GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
 
 export type HandleMcpData = {
-  body: unknown;
+  body: Array<unknown> | unknown | null;
   path: {
     tenantId: string;
     organizationId: string;

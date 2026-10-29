@@ -90,7 +90,7 @@ export const zMembershipBase = z.object({
 export const zStxBase = z.object({
   mutationId: z.string().max(36),
   sourceId: z.string().max(64),
-  fieldTimestamps: z.record(z.string(), z.string()),
+  fieldTimestamps: z.record(z.string(), z.string().max(33)),
   replayed: z.boolean().optional(),
 });
 
@@ -579,10 +579,10 @@ export const zAttachment = z.object({
   convertedContentType: z.string().max(255).nullable(),
   size: z.string().max(255),
   keys: z.object({
-    original: z.string(),
-    preview: z.string().optional(),
-    thumbnail: z.string().optional(),
-    converted: z.string().optional(),
+    original: z.string().max(2048),
+    preview: z.string().max(2048).optional(),
+    thumbnail: z.string().max(2048).optional(),
+    converted: z.string().max(2048).optional(),
   }),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
@@ -1994,10 +1994,10 @@ export const zCreateAttachmentsBody = z
       contentType: z.string().max(255),
       size: z.string().max(255),
       keys: z.object({
-        original: z.string(),
-        preview: z.string().optional(),
-        thumbnail: z.string().optional(),
-        converted: z.string().optional(),
+        original: z.string().max(2048),
+        preview: z.string().max(2048).optional(),
+        thumbnail: z.string().max(2048).optional(),
+        converted: z.string().max(2048).optional(),
       }),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
@@ -2089,10 +2089,10 @@ export const zUpdateAttachmentResponse = zAttachment;
 
 export const zLinkAttachmentKeysBody = z.object({
   keys: z.object({
-    original: z.string(),
-    preview: z.string().optional(),
-    thumbnail: z.string().optional(),
-    converted: z.string().optional(),
+    original: z.string().max(2048),
+    preview: z.string().max(2048).optional(),
+    thumbnail: z.string().max(2048).optional(),
+    converted: z.string().max(2048).optional(),
   }),
   convertedContentType: z.string().max(255).nullish(),
 });
@@ -2118,7 +2118,7 @@ export const zGetMcpProtectedResourceMetadataPath = z.object({
  */
 export const zGetMcpProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
-export const zHandleMcpBody = z.unknown();
+export const zHandleMcpBody = z.union([z.array(z.unknown()).max(20), z.unknown()]).nullable();
 
 export const zHandleMcpPath = z.object({
   tenantId: z.string().max(50),

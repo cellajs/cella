@@ -74,12 +74,15 @@ interface FindYjsDocumentGenerationOpts {
 }
 
 /**
- * The document row's generation, the row held FOR KEY SHARE until the caller's transaction ends: a retirement, which
- * deletes the row, waits for it, and a read's FOR SHARE lets it through. Undefined when no row exists.
+ * The document row's generation and `bytes`, its base and log together, the row held FOR KEY SHARE until the caller's
+ * transaction ends: a retirement, which deletes the row, waits for it, and a read's FOR SHARE lets it through. Undefined
+ * when no row exists.
  */
 export const findYjsDocumentGeneration = async (ctx: DbContext, { doc }: FindYjsDocumentGenerationOpts) => {
+  // `octet_length` reads a stored size without loading the value; the subquery's bare columns name the log's own.
+  const logBytes = sql`(SELECT coalesce(sum(octet_length(${yjsUpdatesTable.payload})), 0) FROM ${yjsUpdatesTable} WHERE ${logWhere(doc)})`;
   const [document] = await ctx.var.db
-    .select({ generation: yjsDocumentsTable.generation })
+    .select({ generation: yjsDocumentsTable.generation, bytes: sql<number>`octet_length(${yjsDocumentsTable.state}) + ${logBytes}`.mapWith(Number) })
     .from(yjsDocumentsTable)
     .where(docWhere(doc))
     .for('key share');

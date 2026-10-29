@@ -11,7 +11,8 @@ export interface DigestSection {
 
 // A body reaches here as plain text or older HTML. Markup is reduced to plain text, since it would fight the template's
 // styling. The text is escaped once, where it is placed: Brevo escapes a param it fills, the renderer escapes JSX text.
-const tag = /<[^>]*>/g;
+// A tag holds no `<`, so a run of them fails each start at the next one: linear in the body, which is the whole description.
+const tag = /<[^<>]*>/g;
 const namedEntities: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 
 /** Strip markup, decode the entities a stored body carries, and collapse whitespace. */

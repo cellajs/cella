@@ -7,6 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
+import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
@@ -43,6 +44,8 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
   // Consent resolves the client again, which may fetch its metadata document: that fetch draws on the budget the
   // provider's own routes charge (`server.ts`).
   app.use(limiterScope);
+  // The provider caps the bodies of its own routes only, and the decision below is parsed whatever its Content-Type.
+  app.use(dynamicBodyLimit);
 
   /** The provider sends the browser here; the React consent page takes over and calls the JSON routes below. */
   app.get('/oauth/interaction/:uid', (c) => c.redirect(`${appConfig.frontendUrl}/auth/consent?uid=${c.req.param('uid')}`));

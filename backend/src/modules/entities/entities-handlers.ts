@@ -28,18 +28,44 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
 const maxStreamsPerUser = 10;
 const maxStreamSubscribers = 5000;
 
+/**
+ * Streams per user id that passed the caps and are not registered yet: two awaits lie between the check and the
+ * registration, so the per-user cap counts them too, and parallel connects cannot all pass it.
+ */
+const admittedStreams = new Map<string, number>();
+
+/** Gives back one admitted stream of `userId`, at its registration or when it fails before one. */
+function releaseAdmission(userId: string): void {
+  const left = (admittedStreams.get(userId) ?? 1) - 1;
+  if (left > 0) admittedStreams.set(userId, left);
+  else admittedStreams.delete(userId);
+}
+
 app.openapi(entityRoutes.appStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
 
-  if (streamSubscriberManager.size >= maxStreamSubscribers || streamSubscriberManager.getByTopic(userTopic(user.id)).length >= maxStreamsPerUser) {
+  const admitted = admittedStreams.get(user.id) ?? 0;
+  if (
+    streamSubscriberManager.size >= maxStreamSubscribers ||
+    streamSubscriberManager.getByTopic(userTopic(user.id)).length + admitted >= maxStreamsPerUser
+  ) {
     throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
   }
+  admittedStreams.set(user.id, admitted + 1);
 
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
-  const cursor = await getLatestActivityId(ctx, organizationIds);
+  const cursor = await getLatestActivityId(ctx, organizationIds).catch((error) => {
+    releaseAdmission(user.id);
+    throw error;
+  });
 
   return streamSSE(ctx, async (stream) => {
-    await writeOffset(stream, cursor);
+    // The registration below follows in the same tick, so the stream is counted throughout.
+    try {
+      await writeOffset(stream, cursor);
+    } finally {
+      releaseAdmission(user.id);
+    }
 
     const subscriber: AppStreamSubscriber = {
       id: crypto.randomUUID(),

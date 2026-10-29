@@ -1,6 +1,14 @@
 import type { WebSocket } from 'ws';
 import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
-import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsCleanupMaxAttempts, yjsLiveStampMs, yjsMessageTypes } from '../constants';
+import {
+  docKey,
+  yjsAwarenessMaxClients,
+  yjsCleanupDelayMs,
+  yjsCleanupMaxAttempts,
+  yjsLiveStampMs,
+  yjsMaxBufferedBytes,
+  yjsMessageTypes,
+} from '../constants';
 import { deleteDocument, stampDocumentLive } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
@@ -322,11 +330,16 @@ export function claimAwarenessClient(
 
 /**
  * Sends a frame to every open socket of the session but `exclude`: a sync update skips its sender, awareness reaches it
- * too. A socket whose handshake answer is in flight gets the frame right after the answer (`handshakes`).
+ * too. A socket whose handshake answer is in flight gets the frame right after the answer (`handshakes`). A socket past
+ * yjsMaxBufferedBytes is closed and gets nothing more; its client reconnects and loads the document again.
  */
 export function broadcastToCollab(collab: CollabSession, message: Uint8Array, exclude?: WebSocket): void {
   for (const client of collab.clients) {
     if (client === exclude || client.readyState !== client.OPEN) continue;
+    if (client.bufferedAmount > yjsMaxBufferedBytes) {
+      client.close(1013, 'Too slow');
+      continue;
+    }
     // Only sync frames wait for the handshake answer: awareness keeps a joining client from timing out a slow load.
     const held = message[0] === yjsMessageTypes.Sync ? collab.handshakes.get(client) : undefined;
     if (held) held.push(message);

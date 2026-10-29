@@ -12,6 +12,12 @@ export const yjsLogNoticeMaxIds = 200;
 /** The largest update the log takes: the cap the relay's socket puts on one frame. */
 export const yjsMaxUpdateBytes = 2 * 1024 * 1024;
 
+/**
+ * The most a document may hold, base and log together, after an append: four full frames. Every handshake, compaction
+ * and outside write reads and merges all of it, and a description past the materialize cap never folds its log.
+ */
+export const yjsMaxDocumentBytes = 8 * 1024 * 1024;
+
 /** Server-origin rows one materialize request may name: the route refuses more with 400, which no retry overcomes. */
 export const yjsMaxServerRowIds = 10_000;
 

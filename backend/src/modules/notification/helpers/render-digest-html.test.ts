@@ -25,6 +25,14 @@ describe('htmlToExcerpt', () => {
   it('leaves a short body untouched', () => {
     expect(htmlToExcerpt('short', 100)).toBe('short');
   });
+
+  // The excerpt runs on the API event loop, once per mentioned member, over the whole description.
+  it('must not stall the event loop via a description of a million `<`', () => {
+    const started = performance.now();
+    const excerpt = htmlToExcerpt('<'.repeat(1_000_000), 250);
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(excerpt).toBe(`${'<'.repeat(250)}…`);
+  });
 });
 
 const section: DigestSection = { channelId: 'c1', channelName: 'Ontwerp', lines: ['Nieuwe reactie op <strong>Roadmap</strong>'], overflow: 3 };
