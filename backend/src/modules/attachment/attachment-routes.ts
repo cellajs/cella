@@ -22,7 +22,7 @@ import {
   attachmentSchema,
   attachmentUpdateStxBodySchema,
 } from '#/modules/attachment/attachment-schema';
-import { batchResponseSchema, idInTenantOrgParamSchema, idsWithStxBodySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import { batchResponseSchema, idInTenantOrgParamSchema, idsWithStxBodySchema, productListResponseSchema, tenantOrgParamSchema } from '#/schemas';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   getAttachments: xRoute({
@@ -39,7 +39,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     summary: 'Get attachments',
     description: 'Returns a paginated list of attachments for the organization.',
     request: { params: tenantOrgParamSchema, query: attachmentListQuerySchema },
-    responses: { 200: json('Attachments', paginationSchema(attachmentSchema), mockPaginatedAttachmentsResponse()) },
+    responses: { 200: json('Attachments', productListResponseSchema('attachment', attachmentSchema), mockPaginatedAttachmentsResponse()) },
   }),
   createAttachments: xRoute({
     method: 'post',

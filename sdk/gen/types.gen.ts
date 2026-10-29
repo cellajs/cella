@@ -4722,7 +4722,16 @@ export type GetAttachmentsResponses = {
    * Attachments
    */
   200: {
-    items: Array<Attachment>;
+    items: Array<
+      | Attachment
+      | {
+          id: string;
+          createdAt: string;
+          seq: number;
+          organizationId: string;
+          deletedAt: string;
+        }
+    >;
     total: number;
   };
 };

@@ -58,5 +58,6 @@ export {
   type BatchResponseEmpty,
   batchResponseSchema,
   paginationSchema,
+  productListResponseSchema,
 } from '#/schemas/success-response-schemas';
 export { type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';

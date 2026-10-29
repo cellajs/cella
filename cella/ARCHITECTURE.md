@@ -73,7 +73,7 @@ The permission engine lives in `shared/`, so the API and the optional Yjs relay 
 
 What a delete does depends on what is deleted:
 
-- **Product**: becomes a tombstone, hidden everywhere and dropped by every device through sync, and is removed after the deleted-items period. Until then a system admin can restore it; the app has no restore.
+- **Product**: becomes a tombstone, hidden everywhere: sync hands a device only its id and place, so the device drops it. It is removed after the deleted-items period; until then a system admin can restore it, and the app has no restore.
 - **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, and after the archived period it goes with everything in it.
 - **Channel below the organization**: removed at once, with the channels and products in it.
 - **Resource** (session, token, device, invitation): swept nightly after its own period.

@@ -26,6 +26,14 @@ export function offsetPaging<TPage extends QueryData<unknown>>(limit: number, fe
   };
 }
 
+type Live<T> = Exclude<T, { deletedAt: string }>;
+
+/** A product list page outside a range read, which returns no tombstones: the filter drops none and narrows the row type. */
+export const liveItems = <T extends { deletedAt: string | null }>({ items, total }: QueryData<T>): QueryData<Live<T>> => ({
+  items: items.filter((item): item is Live<T> => item.deletedAt === null),
+  total,
+});
+
 /** `included` parts whose absence on a row means the list was fetched without asking for them. */
 const listIncludes = ['counts', 'members'] as const;
 
