@@ -136,4 +136,12 @@ describe('Local entity authorization (authorizeDocument)', () => {
   it('tells a missing entity deleted: the token proves its holder could update it within the last five minutes', async () => {
     await expect(authorizeDocument(userA, requested({ entityId: randomUUID() }))).resolves.toBe('deleted');
   });
+
+  // Past the type check the lookup finds no row and answers `deleted`, so `denied` shows that no table was read.
+  it.each(['organization', '__proto__', 'undeclaredType', 'attachments"; select 1; --'])(
+    "must not run a query naming a table from a signed token's non-product entityType (%s)",
+    async (entityType) => {
+      await expect(authorizeDocument(userA, requested({ entityType, entityId: randomUUID() }))).resolves.toBe('denied');
+    },
+  );
 });
