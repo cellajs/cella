@@ -107,6 +107,7 @@ export const zStreamChange = z.object({
   seq: z.int().nullable(),
   channelId: z.string().nullable(),
   stx: zStxBase.nullable(),
+  actorId: z.string().nullable(),
   batchUntilSeq: z.int().nullable(),
   count: z.int().nullable(),
   spreadWindow: z.int().nullable(),

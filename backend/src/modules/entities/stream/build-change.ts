@@ -71,6 +71,7 @@ export function buildStreamChange(event: AppStreamProductEvent): StreamChange {
     // Sequence values of one audience need not be contiguous: the range brackets them and `count` says how many rows it holds.
     seq: seqs.length > 0 ? Math.min(...seqs) : null,
     stx: event.stx ?? null,
+    actorId: event.userId ?? null,
     batchUntilSeq: several && seqs.length > 0 ? Math.max(...seqs) : null,
     count: several ? rows.length : null,
     spreadWindow: computeSpreadWindow(event.organizationId),
@@ -95,6 +96,7 @@ export function buildMoveOut(event: AppStreamProductEvent, movedFrom: Record<str
     batchUntilSeq: null,
     count: 1,
     stx: null,
+    actorId: null,
     propagation: null,
   };
 }

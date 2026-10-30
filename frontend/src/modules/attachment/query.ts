@@ -168,10 +168,10 @@ export const attachmentCreateOptions = (
   scope: { id: 'attachment' },
   mutationFn: createAttachmentsMutationFn,
   meta: { suppressGlobalErrorToast: true },
-  onMutate: async ({ organizationId, data }) => {
+  onMutate: async ({ tenantId, organizationId, data }) => {
     const orgKey = keys.list.org(organizationId);
     await queryClient.cancelQueries({ queryKey: orgKey });
-    const optimisticAttachments = data.map((attachment) => createOptimisticEntity(zAttachment, { ...attachment, organizationId }));
+    const optimisticAttachments = data.map((attachment) => createOptimisticEntity(zAttachment, { ...attachment, tenantId, organizationId }));
     insertEntitiesIntoHome(queryClient, optimisticAttachments);
     return { optimisticAttachments };
   },
@@ -257,8 +257,16 @@ const attachmentDeleteOptions = (
   },
   onSuccess: (result, variables) => {
     const rejectedIds = result?.rejectedIds ?? [];
-    if (rejectedIds.length === 0) return;
     const rejectedSet = new Set(rejectedIds);
+    // A replayed create or a list read may have put a row back while the delete waited, and its own echo fetches nothing.
+    const deleted = variables.rows.filter((row) => !rejectedSet.has(row.id));
+    cacheRemove(keys.list.org(variables.organizationId), deleted);
+    removeDetailQueriesById(
+      queryClient,
+      keys.detail.base,
+      deleted.map(({ id }) => id),
+    );
+    if (rejectedIds.length === 0) return;
     const rejectedAttachments = variables.rows.filter((row) => rejectedSet.has(row.id));
     insertEntitiesIntoHome(queryClient, rejectedAttachments);
     toaster.info(i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.rows.length }));
@@ -300,7 +308,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
-/** A row whose create is still queued offline leaves the cache without a request (`prepareProductDelete`). */
+/** A row whose create never left the device leaves the cache without a request (`prepareProductDelete`). */
 export const useAttachmentDeleteMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const mutation = useMutation(attachmentDeleteOptions(queryClient));

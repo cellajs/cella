@@ -861,6 +861,10 @@
               }
             ]
           },
+          "actorId": {
+            "type": ["string", "null"],
+            "description": "Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user"
+          },
           "batchUntilSeq": {
             "type": ["integer", "null"],
             "description": "Last sequence position for a batched change: client should fetch range"
@@ -919,6 +923,7 @@
           "seq",
           "channelId",
           "stx",
+          "actorId",
           "batchUntilSeq",
           "count",
           "spreadWindow",
@@ -939,6 +944,7 @@
             "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
             "fieldTimestamps": {}
           },
+          "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df",
           "batchUntilSeq": null,
           "count": null,
           "spreadWindow": null,

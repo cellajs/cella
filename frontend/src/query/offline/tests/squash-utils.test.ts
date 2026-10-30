@@ -1,6 +1,6 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 
 /** Build a minimal stx carrying the given field timestamps. */
@@ -28,6 +28,26 @@ function queueInFlightMutation(queryClient: QueryClient, mutationKey: readonly u
   });
   observer.mutate(variables).catch(() => {});
   return () => resolve();
+}
+
+/**
+ * Creates a mutation whose request left and whose response never came: it fails as a dropped fetch does and parks for
+ * its retry, as the app's `offlineFirst` mutations do. A create after it in `scope` waits unsent.
+ */
+async function queueAttemptedMutation(queryClient: QueryClient, mutationKey: readonly unknown[], variables: Record<string, unknown>, scope: string) {
+  onlineManager.setOnline(false);
+  const observer = new MutationObserver(queryClient, {
+    mutationKey,
+    scope: { id: scope },
+    networkMode: 'offlineFirst',
+    retry: 1,
+    retryDelay: 0,
+    mutationFn: async (_vars: Record<string, unknown>): Promise<Record<string, unknown>> => {
+      throw new TypeError('Failed to fetch');
+    },
+  });
+  observer.mutate(variables).catch(() => {});
+  await vi.waitFor(() => expect(observer.getCurrentResult().isPaused).toBe(true));
 }
 
 // Only paused mutations participate in squashing and pending-create coalescing: in-flight requests are on the wire and must be left alone.
@@ -159,6 +179,31 @@ describe('offline coalescing', () => {
     expect(removePausedCreates(queryClient, createKey, ['entity-1'])).toEqual([]);
     expect(create).toEqual({ id: 'entity-1', name: 'Original' });
     expect(queryClient.getMutationCache().getAll()).toHaveLength(2);
+  });
+
+  it('must not fold an edit into a create that may have committed', async () => {
+    const sent = { id: 'entity-1', name: 'Original' };
+    await queueAttemptedMutation(queryClient, createKey, sent, 'task');
+    // Queued behind the attempted create in its scope, this one never ran.
+    const unsent = { id: 'entity-2', name: 'Waiting' };
+    new MutationObserver(queryClient, { mutationKey: createKey, scope: { id: 'task' }, mutationFn: async (_vars: Record<string, unknown>) => ({}) })
+      .mutate(unsent)
+      .catch(() => {});
+
+    // The replay of a committed create is answered with the stored row: an edit folded into it would be lost, and a cancelled create leaves the row on the server.
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' }, creatable)).toBe(false);
+    expect(removePausedCreates(queryClient, createKey, ['entity-1'])).toEqual([]);
+    expect(sent).toEqual({ id: 'entity-1', name: 'Original' });
+
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Renamed' }, creatable)).toBe(true);
+    expect(unsent).toEqual({ id: 'entity-2', name: 'Renamed' });
+    expect(removePausedCreates(queryClient, createKey, ['entity-2'])).toEqual(['entity-2']);
+    expect(
+      queryClient
+        .getMutationCache()
+        .findAll({ mutationKey: createKey })
+        .map(({ state }) => state.variables),
+    ).toEqual([sent]);
   });
 
   it('never merges into or cancels a mutation already on the wire', () => {

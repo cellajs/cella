@@ -32,6 +32,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream, and a provider's tokens or claims carried into a log line by an error's cause.
 - **Booting with published secrets:** a tunnel reachable from the internet that signs cookies and relay tokens with the values in `.env.example`.
 - **Probing for accounts:** a provider callback, a sign-in form or a waitlist that answers differently, or slower, when an account holds the address.
+- **Passing as another tab:** a write carrying a source id copied from another user's row, which that user's tab would take as its own echo and never fetch.
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
 - **Bending the shared clock:** a stamp far in the future, or at the counter's maximum, sent to make other tenants' writes lose or fail.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
