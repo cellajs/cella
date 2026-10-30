@@ -18,7 +18,7 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
       session.stackState === 'fresh'
         ? stack.missing(`no Pulumi.${session.mode}.yaml; this stack has not been set up`, runSetup)
         : session.stackState === 'partial'
-          ? stack.warn('stack file exists but bootstrap is incomplete (no CI deploy key)', runSetup)
+          ? stack.warn('stack file exists but bootstrap is incomplete (no deploy key)', runSetup)
           : stack.ok(`bootstrapped (${session.mode})`),
     ];
   },

@@ -61,7 +61,6 @@ export interface CutoverResult {
 /**
  * Health-gate a provisioned service generation and move traffic according to its cutover plan.
  * Injected probes and load-balancer writes keep the sequencing deterministic and testable.
- * @see infra/tasks/README.md
  */
 export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult> {
   const sleep = plan.sleep ?? defaultSleep;

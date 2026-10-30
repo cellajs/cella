@@ -42,7 +42,7 @@ export interface OperatorApplyOptions {
    * question for as long as the state it was computed from stands; a state that changed since is planned and confirmed again under the lock.
    */
   reviewed?: ReviewedPlan;
-  /** After a completed `up`, prove the live IAM grants and database privileges match what the program declares; the outcome lands in `verified`. */
+  /** After a completed `up`, prove the live database privileges match what the program declares; the outcome lands in `verified`. */
   verifyAfter?: boolean;
   /** Capture the engine and provider log of the `up` under infra/.debug/, for an update Pulumi reports but the provider never sent. */
   debugProvider?: boolean;
@@ -53,10 +53,9 @@ export interface OperatorApplyOptions {
 export interface OperatorApplyResult {
   env: NodeJS.ProcessEnv;
   stack: string;
-  /** True when the Owner API key was typed at the prompt, so a revoke reminder is due once the run's output is complete. */
   /** False when the operator declined the retry loop before `up` converged. */
   completed: boolean;
-  /** Set only with `verifyAfter`: false when the live grants or privileges still differ from the program after a completed `up`. */
+  /** Set only with `verifyAfter`: false when the live database privileges still differ from the program after a completed `up`. */
   verified?: boolean;
 }
 

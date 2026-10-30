@@ -5,6 +5,7 @@ import { isMain } from '../utils/is-main';
 import { resolveProjectId } from './provider-env';
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1';
+// The TXT record Scaleway's email names: a registration whose challenge has not resolved within 48 hours is dropped.
 const CHALLENGE_NAME = '_scaleway-challenge';
 
 interface DnsZone {

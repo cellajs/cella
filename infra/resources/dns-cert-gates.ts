@@ -10,7 +10,7 @@ export function certVerdict(status: string, statusDetails?: string): 'ready' | '
   if (status === 'ready') return 'ready';
   if (status === 'error') {
     throw new Error(
-      `certificate issuance failed${statusDetails ? `: ${statusDetails}` : ''}, fix the cause (usually DNS), then redeploy; tasks/repair-certs.ts removes the errored cert first.`,
+      `certificate issuance failed${statusDetails ? `: ${statusDetails}` : ''}, fix the cause (usually DNS), then apply again: the apply removes the errored cert first (tasks/repair-certs.ts).`,
     );
   }
   return 'wait';

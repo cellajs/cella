@@ -16,8 +16,8 @@ const POLL_MS = 10_000;
 
 /**
  * Start one run of the environment's main job by hand, on the operator key, for the environment's target as the environments file of this
- * checkout says it, and follow the run until it ends: deployed, blocked (an apply is owed) or failed. The runner does the same by itself; this
- * is the operator's way when it is not there or must not wait.
+ * checkout says it, and follow the run until it ends: deployed, blocked (the operator owes something first) or failed. The runner does the
+ * same by itself; this is the operator's way when it is not there or must not wait.
  */
 export async function runStartDeploy(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -59,7 +59,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
     console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either starts this target again.`,
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either starts this target again. Identities are written with \`${actionCommand('identity')}\`, and this action starts the target after it.`,
     );
   else
     console.error(

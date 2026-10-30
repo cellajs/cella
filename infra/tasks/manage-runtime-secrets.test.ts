@@ -85,7 +85,7 @@ describe('manageRuntimeSecrets', () => {
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('3 copies'));
   });
 
-  it('refuses to create a missing container and tells the operator to deploy first', async () => {
+  it('refuses to create a missing container and tells the operator to apply first', async () => {
     resetMocks();
     prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
     getSecretByName.mockResolvedValueOnce(undefined);
@@ -96,7 +96,7 @@ describe('manageRuntimeSecrets', () => {
     expect(ensureSecret).not.toHaveBeenCalled();
     expect(putSecretValue).not.toHaveBeenCalled();
     expect(prompts.password).not.toHaveBeenCalled();
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deploy first'));
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Apply first'));
   });
 
   it('deletes an entire secret object only after confirmation', async () => {

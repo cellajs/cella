@@ -3,7 +3,7 @@ import { createRdbClient, type RdbClient, waitForBackupReady } from './scaleway-
 
 type Call = { url: string; method: string; body: unknown };
 
-/** Record requests so destructive endpoint methods and paths remain pinned to live API observations. */
+/** Record requests so destructive endpoint methods and paths remain pinned to the live API, as `scw --debug` showed it. */
 function makeFetch(routes: Array<{ method: string; match: string; body?: unknown; status?: number }>) {
   const calls: Call[] = [];
   const fn = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {

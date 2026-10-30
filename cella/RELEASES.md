@@ -20,5 +20,6 @@ Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflo
 ## Setup
 
 1. Create a GitHub App with `Contents` and `Pull requests` read and write, and install it on the repo.
-2. Store its Client ID and private key as the `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` secrets. [release.yml](../.github/workflows/release.yml) opens the release PR with it, so the PR runs the required checks.
+2. Store its Client ID and private key as the `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` secrets. [release.yml](../.github/workflows/release.yml) opens the release PR and tags each release with it, so the PR runs the required checks.
 3. In the `main` ruleset, require squash merges, linear history and the `ci-passed` check.
+4. Add a tag ruleset on every tag that restricts creations, updates and deletions, with the release App as its only bypass: production deploys the newest tag, so whoever may push one chooses what runs.

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { menuPath } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { forceUnlock, type LockInfo, lockKey, makeControlClient, peekLock, type S3Like, stateBucket } from '../../lib/stack/control-store';
 import {
@@ -119,7 +119,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
     console.info(
       '\n  An interrupted update or delete is resolved by a refresh: it reads each resource from Scaleway into the state and clears these records.\n' +
         `  Run "${menuPath('preview')}" first to see the drift a refresh records, then: ${pc.cyan(`pulumi refresh --stack ${opts.stack}`)}\n` +
-        `  ${pc.dim(`(logged in to the state backend with the key of '${principalNames(context.appConfig.slug, context.environment).admin}', PULUMI_CONFIG_PASSPHRASE set, and no run in progress)`)}\n` +
+        `  ${pc.dim(`(logged in to the state backend with the key of '${appPrincipalNames(context.appConfig.appSlug).operator}', PULUMI_CONFIG_PASSPHRASE set to the passphrase in the engine folder, and no run in progress)`)}\n` +
         `  ${pc.dim('Nothing is cleared here: dropping the records through an import would drop the interrupted updates and deletes unread.')}`,
     );
     return;

@@ -45,7 +45,7 @@ describe('mainMenuItems', () => {
       'Recover',
       '  Repair stack ›           stack lock, setup',
       'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '  Tear down stack          operator key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -67,7 +67,7 @@ describe('mainMenuItems', () => {
       'Recover',
       '  Repair stack ›           stack lock, setup',
       'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '  Tear down stack          operator key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);

@@ -10,7 +10,7 @@ export interface RunStep {
   outcome: 'ok' | 'error';
 }
 
-/** How a run ended; `running` while it runs. Blocked: a privileged change is owed, and an apply comes first. */
+/** How a run ended; `running` while it runs. Blocked: identities, a privileged change or a required secret is owed, which the operator settles. */
 export type RunOutcome = 'running' | 'deployed' | 'blocked' | 'failed';
 
 /** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */

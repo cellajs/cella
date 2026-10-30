@@ -325,7 +325,8 @@ export async function runDeploy(
     throw err;
   } finally {
     await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
-    // A step that found a privileged change or a required secret owed ends the run blocked, not failed: the operator settles it, then the same target.
+    // A step that found identities, a privileged change or a required secret owed ends the run blocked, not failed: the operator settles it,
+    // then the same target.
     const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
     recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
     const run = recorder.record().run;

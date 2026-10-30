@@ -97,7 +97,7 @@ What a delete does depends on what is deleted:
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 
-Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. A nightly pg_cron job in the database removes the rows past their period, archived tenants aside. Backups and bucket object versions expire on their own schedule.
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Where the database provider allows pg_cron, a nightly job in the database removes the rows past their period, archived tenants aside; on Scaleway it stays unscheduled ([Deployment](./DEPLOYMENT.md#overview)). Backups and bucket object versions expire on their own schedule.
 
 ## Contracts
 

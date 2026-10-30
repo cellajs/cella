@@ -108,7 +108,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     }
   }
 
-  // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
+  // Lock provisioning against concurrent operators and deploys; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
     accessKey: ctx.stateKey.accessKey,
@@ -140,7 +140,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     console.info(
       `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
     );
-    // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
+    // Fresh provision: no images exist yet, so compute is deferred until a deploy builds them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
       cwd: infraDir,
@@ -169,7 +169,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       stdio: 'ignore',
     });
   }
-  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`);
+  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The first deploy brings the VMs up.`);
 
   // The database roles and connection strings, and the generated values, are made outside the state once the `up` made their containers.
   await ensureDatabaseForStack({

@@ -1,6 +1,6 @@
 # Runbooks
 
-This document collects the procedures for a running deployment: a failed deploy, a stale stack lock, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
+This document collects the procedures for a running deployment: a failed or blocked deploy, a stale stack lock, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
 
 ### TL;DR
 
@@ -22,13 +22,23 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
    - a service key without `SecretManagerSecretAccess` on its folder: a 403 while hydrating
    - an instance-type quota too low for a new machine beside the old one
 
+## A blocked deploy
+
+A blocked run made no machine, and the running release stays. `pnpm infra runs` names what it owes:
+
+- **Identities differ:** **Update identities** (`pnpm infra identity`, Owner API key), then `pnpm infra start-deploy`, as the update starts no deploy.
+- **A privileged change:** **Review & apply changes** (`pnpm infra apply`), which starts the target again at its end. A change to the database's ACL means its public endpoint is open: [close it](#open-the-database), then `pnpm infra start-deploy`.
+- **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again.
+
+The runner never starts a blocked target again.
+
 ## A stale stack lock
 
-A deploy or an operator action that dies holds its stack lock until the lock's lease lapses, within minutes, and the next run waits for it. `pnpm infra status` reports the lock and any operation the interrupted Pulumi run left in the state.
+A deploy or an operator action that dies holds its stack lock until the lock's lease lapses, within minutes, and the next run waits for it. `pnpm infra status` reports the lock and, once the session holds the operator key, any operation the interrupted Pulumi run left in the state.
 
 1. `pnpm infra` → **Repair stack** → **Unlock stack** (`pnpm infra unlock`) removes an expired lock at once, and a live one only after you confirm. A live lock most likely belongs to a run that is still going: check `pnpm infra runs` first.
 2. It then lists the interrupted operations. When all of them are creates, it offers to drop them and keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first: a create that went through left a resource the state does not track.
-3. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints.
+3. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints, logged in with the operator key and with the passphrase from the environment's `/engine/` secret folder.
 
 ## GeoIP data
 
@@ -47,7 +57,7 @@ Break-glass access from your laptop, for any operator task against the live data
    ```
 
 2. Run your task with that connection string.
-3. **Close it again**: a deploy does not. The menu offers the close while the endpoint is open, and `pnpm infra status` warns about it.
+3. **Close it again**: a deploy does not, and while it is open every deploy ends blocked at the preflight. The menu offers the close while the endpoint is open, and `pnpm infra status` warns about it.
 
    ```bash
    pnpm infra db-close
@@ -69,9 +79,10 @@ The worker makes a new slot when it starts again, and every client refetches onc
 
 A wrong admin email is fixed in **Manage runtime secrets**, then by rebooting the backend machine ([Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**): its boot seeds the admin while the users table is empty.
 
-On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database) and seed with the printed connection string:
+On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and seed with the printed connection string:
 
 ```bash
+pnpm --filter backend build
 ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' pnpm --filter backend seed:production init
 ```
 
@@ -112,14 +123,14 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values.
+`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values. Then drop the environment from `infra/runner.json`, **Replace the runner**, and remove `infra/.env.<mode>`.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 
 ## Clean slate
 
-1. `rm infra/Pulumi.<stack>.yaml`
+1. `rm infra/Pulumi.<mode>.yaml`
 2. (optional) Scaleway console → Object Storage → delete bucket `<slug>-pulumi-state` (names stay reserved for several hours).
-3. (optional) Revoke a pasted setup key in the Scaleway console.
+3. (optional) Revoke the Owner API key you pasted, in the Scaleway console.
 4. (optional) Delete IAM application `<slug>-<mode>-ci-deploy` and its policy.
 5. Re-run: `pnpm infra`

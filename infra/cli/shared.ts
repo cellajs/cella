@@ -121,11 +121,13 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   }
 }
 
-/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state and is unrecoverable if lost. */
+/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, and that copy restores Secret Manager's. */
 async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
   console.info(`\n→ ${heading}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
-  console.info(`  ${pc.bold('Store it in your password manager now.')} It cannot be recovered if lost.${note ? `\n  ${pc.dim(note)}` : ''}`);
+  console.info(
+    `  ${pc.bold('Store it in your password manager now.')} Later runs fetch it from Secret Manager; your copy restores that one if it is lost.${note ? `\n  ${pc.dim(note)}` : ''}`,
+  );
   while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
     console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
   }

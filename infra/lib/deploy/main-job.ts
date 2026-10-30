@@ -17,15 +17,16 @@ const DEPLOY_KEY_SECRET_NAME = 'deploy-key';
 /** The folder of the secrets the definition references: the engine's, which only the operator reads. */
 const MAIN_JOB_SECRET_FOLDER = ENGINE_FOLDER.replace(/\/$/, '');
 
-/** How a run ends, as its exit code. The runner starts a target once; a blocked one is started again by the action that clears the block (D21). */
+/** How a run ends, as its exit code. The runner starts a target once; a blocked one waits for the operator (D21). */
 export const MAIN_JOB_EXIT = {
   /** The target is live. */
   deployed: 0,
   /** The deploy failed; the running release is untouched or rolled back. A failed target is not started again by itself. */
   failed: 1,
   /**
-   * Something only the operator makes is owed, and the run's record names it: a privileged change, which the apply makes, or a required secret,
-   * which Manage runtime secrets stores. Either action starts the target again at its end.
+   * Something only the operator makes is owed, and the run's record names it: identities, which Update identities writes, a privileged change,
+   * which the apply makes, or a required secret, which Manage runtime secrets stores. The apply and Manage runtime secrets start the target
+   * again at their end; after Update identities, Start deploy does.
    */
   blocked: 2,
 } as const;
