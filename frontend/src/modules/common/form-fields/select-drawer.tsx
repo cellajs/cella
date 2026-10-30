@@ -1,10 +1,22 @@
 import { CheckIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerLead, DrawerRowGroup, DrawerTitle } from '~/modules/ui/drawer';
 import { cn } from '~/utils/cn';
 
-export type SelectDrawerOption<TValue extends string> = { value: TValue; label: ReactNode };
+/** `group` heads the option's group; consecutive options with one heading form a group. */
+export type SelectDrawerOption<TValue extends string> = { value: TValue; label: ReactNode; group?: string };
+
+/** Consecutive options under one heading, in their given order. */
+export function groupRuns<TOption extends { group?: string }>(options: readonly TOption[]) {
+  const runs: { group?: string; options: TOption[] }[] = [];
+  for (const option of options) {
+    const run = runs.at(-1);
+    if (run && run.group === option.group) run.options.push(option);
+    else runs.push({ group: option.group, options: [option] });
+  }
+  return runs;
+}
 
 interface SelectDrawerRowsProps<TValue extends string> {
   options: readonly SelectDrawerOption<TValue>[];
@@ -14,17 +26,29 @@ interface SelectDrawerRowsProps<TValue extends string> {
 
 /** Option rows on a bottom sheet, a check on each selected one: the rows of a single or multiple select below `sm`. */
 export function SelectDrawerRows<TValue extends string>({ options, selected, onSelect }: SelectDrawerRowsProps<TValue>) {
+  const rows = (runOptions: readonly SelectDrawerOption<TValue>[]) =>
+    runOptions.map((option) => {
+      const isSelected = selected.includes(option.value);
+      return (
+        <Button key={option.value} variant="row" aria-pressed={isSelected} className="justify-between" onClick={() => onSelect(option.value)}>
+          {option.label}
+          {isSelected && <CheckIcon className="text-success" />}
+        </Button>
+      );
+    });
+
   return (
     <DrawerRowGroup>
-      {options.map((option) => {
-        const isSelected = selected.includes(option.value);
-        return (
-          <Button key={option.value} variant="row" aria-pressed={isSelected} className="justify-between" onClick={() => onSelect(option.value)}>
-            {option.label}
-            {isSelected && <CheckIcon className="text-success" />}
-          </Button>
-        );
-      })}
+      {groupRuns(options).map((run) =>
+        run.group === undefined ? (
+          <Fragment key={run.options[0].value}>{rows(run.options)}</Fragment>
+        ) : (
+          <Fragment key={run.group}>
+            <p className="group-label px-4 pt-3 pb-1">{run.group}</p>
+            {rows(run.options)}
+          </Fragment>
+        ),
+      )}
     </DrawerRowGroup>
   );
 }
@@ -38,6 +62,8 @@ interface SelectDrawerProps<TValue extends string> extends Pick<SelectDrawerRows
   /** Names what the choice applies to, such as a table row, in place of the visible title. */
   lead?: ReactNode;
   value: TValue | undefined;
+  /** Rendered below the rows, such as a filter's clear button. */
+  footer?: ReactNode;
 }
 
 /** A single select as a bottom sheet; the caller closes it on select. */
@@ -50,6 +76,7 @@ export function SelectDrawer<TValue extends string>({
   options,
   value,
   onSelect,
+  footer,
 }: SelectDrawerProps<TValue>) {
   const headerShown = !titleHidden && !lead;
 
@@ -63,6 +90,7 @@ export function SelectDrawer<TValue extends string>({
         <div className={cn('flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]', headerShown && 'pt-0')}>
           {lead && <DrawerLead>{lead}</DrawerLead>}
           <SelectDrawerRows options={options} selected={value === undefined ? [] : [value]} onSelect={onSelect} />
+          {footer}
         </div>
       </DrawerContent>
     </Drawer>

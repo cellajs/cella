@@ -35,7 +35,7 @@ export function DraftBanner({ channel, publishForm }: DraftBannerProps) {
   return (
     <Alert variant="plain" className="rounded-none border-0 border-b px-3 py-2">
       <AlertDescription className="flex w-full flex-wrap items-center justify-between gap-2">
-        <span className="max-w-2xl text-muted-foreground">
+        <span className="max-w-measure text-muted-foreground">
           <NamedText i18nKey="c:draft_banner.text" name={channel.name} values={{ prepareRoles: prepareRolesText(channel.entityType) }} />
         </span>
         <Button ref={buttonRef} size="sm" className="max-sm:w-full" onClick={openPublishDialog}>

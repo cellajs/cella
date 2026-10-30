@@ -198,7 +198,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
           </div>
           {descriptionText && (
             <HelpCollapse open={descriptionOpen}>
-              <p className="mt-2 ml-1 max-w-3xl">{descriptionText}</p>
+              <p className="mt-2 ml-1 max-w-measure">{descriptionText}</p>
             </HelpCollapse>
           )}
         </div>

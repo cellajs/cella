@@ -25,7 +25,7 @@ function SchemaDetail({ schema, className }: SchemaDetailProps) {
           {schema.name}
           <HashUrlButton hash={anchor} />
         </CardTitle>
-        {schema.description && <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>}
+        {schema.description && <CardDescription className="my-2 max-w-measure text-base">{schema.description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <div className="mt-2">
@@ -52,9 +52,9 @@ export function TagSchemasList({ schemas }: TagSchemasListProps) {
   useScrollSpy(sectionIds);
 
   return (
-    <div className="border-t border-dashed">
+    <div>
       {schemas.map((schema) => (
-        <SchemaDetail key={schema.name} schema={schema} className="rounded-none last:rounded-b-lg" />
+        <SchemaDetail key={schema.name} schema={schema} className="rounded-none border-input border-t border-dashed last:rounded-b-lg" />
       ))}
     </div>
   );

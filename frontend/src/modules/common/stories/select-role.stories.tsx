@@ -33,11 +33,11 @@ export const Default: Story = {
 export const EntityRoles: Story = {
   args: {
     entityType: 'organization',
-    value: 'all',
+    value: undefined,
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<string | undefined>('all');
+    const [value, setValue] = useState<string | undefined>(undefined);
 
     return (
       <div className="w-80">

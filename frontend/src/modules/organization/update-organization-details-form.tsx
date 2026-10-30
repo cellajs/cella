@@ -84,7 +84,14 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-        <Suspense fallback={<Spinner className="my-16" noDelay />}>
+        {/* The loaded field's height with one paragraph: a taller fallback would shrink and pull a section a hash jumped to under the page tabs */}
+        <Suspense
+          fallback={
+            <div className="flex h-27 flex-col justify-center">
+              <Spinner noDelay />
+            </div>
+          }
+        >
           <LazyBlockNoteContentFormField
             key={editorKey}
             control={form.control}
@@ -93,6 +100,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
+              excludeBlockTypes: ['checklistItem', 'notify'],
               className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background'),
               baseFilePanelProps: canUploadAttachments(organization)
                 ? {

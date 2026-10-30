@@ -37,38 +37,6 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {};
 
-/**
- * The underline form of the tabs list.
- */
-export const Underline: Story = {
-  render: (args) => (
-    <Tabs {...args} className="w-96">
-      <TabsList variant="underline">
-        <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="password">Password</TabsTrigger>
-      </TabsList>
-      <TabsContent value="account">Make changes to your account here.</TabsContent>
-      <TabsContent value="password">Change your password here.</TabsContent>
-    </Tabs>
-  ),
-};
-
-/**
- * The side form of the tabs list.
- */
-export const Side: Story = {
-  render: (args) => (
-    <Tabs {...args} className="flex w-96 flex-row">
-      <TabsList variant="side">
-        <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="password">Password</TabsTrigger>
-      </TabsList>
-      <TabsContent value="account">Make changes to your account here.</TabsContent>
-      <TabsContent value="password">Change your password here.</TabsContent>
-    </Tabs>
-  ),
-};
-
 export const ShouldChangeTabs: Story = {
   name: 'when clicking a tab, should change the content',
   tags: ['!dev', '!autodocs'],

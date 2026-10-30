@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { Toaster } from '~/modules/ui/toast';
 
 /**
- * A stack of toasts built on Base UI Toast. Repeating a message refreshes the open toast.
+ * A stack of toasts built on Base UI Toast. Repeating a message brings the open toast to the front.
  */
 const meta: Meta<typeof Toaster> = {
   title: 'ui/Toast',

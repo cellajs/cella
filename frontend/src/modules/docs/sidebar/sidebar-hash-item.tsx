@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { clearedOperationSearch } from '~/modules/docs/operations/operations-filter';
 import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { Button } from '~/modules/ui/button';
 import { isModifiedClick } from '~/utils/is-modified-click';
@@ -11,6 +12,8 @@ interface SidebarHashItemProps {
   to: '/docs/operations' | '/docs/schemas';
   hash: string;
   isActive: boolean;
+  /** The page's search hides this section: the link clears the search, and the queued scroll finds it once it renders. */
+  isHidden?: boolean;
   children: ReactNode;
 }
 
@@ -20,7 +23,7 @@ export const sidebarLeafClass = tw(
 );
 
 /** Sidebar row for a section of an API reference page: scrolls to it and closes the mobile sidebar sheet. */
-export function SidebarHashItem({ to, hash, isActive, children }: SidebarHashItemProps) {
+export function SidebarHashItem({ to, hash, isActive, isHidden, children }: SidebarHashItemProps) {
   return (
     <Button
       variant="ghost"
@@ -30,11 +33,13 @@ export function SidebarHashItem({ to, hash, isActive, children }: SidebarHashIte
         <Link
           to={to}
           hash={hash}
+          search={isHidden ? (prev) => ({ ...prev, ...clearedOperationSearch }) : undefined}
           replace
+          resetScroll={false}
           data-active={isActive}
           onClick={(event) => {
             if (isModifiedClick(event)) return;
-            event.preventDefault();
+            if (!isHidden) event.preventDefault();
             scrollToSectionById(hash);
             sheeter.getState().remove(docsSidebarSheetId);
           }}

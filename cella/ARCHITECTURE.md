@@ -42,12 +42,29 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 
 ## Entity hierarchy model
 
-| Concept | Meaning | Template example |
+```
+ ┌─ system ───────────────────────────────────────────────────────────────────────────────┐
+ │                                                                                        │
+ │                                      ┌─ tenant · resource ───────────────────────────┐ │
+ │                                      │                                               │ │
+ │ ┌──────────────────┐                 │  ┌─ organization · channel ────────────────┐  │ │
+ │ │ user · entity    │── membership ───┼─▶│                                         │  │ │
+ │ └──────────────────┘                 │  │  ┌───────────────────────────────────┐  │  │ │
+ │                                      │  │  │ attachment · product              │  │  │ │
+ │                                      │  │  └───────────────────────────────────┘  │  │ │
+ │                                      │  └─────────────────────────────────────────┘  │ │
+ │ other resources:                     │                                               │ │
+ │ system role · request                │  other resources: api key · service account   │ │
+ │                                      └───────────────────────────────────────────────┘ │
+ └────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+| In the map | Kind | Key characteristics |
 | --- | --- | --- |
-| **Tenant** | Top-level isolation and billing boundary. A resource, not an entity | tenant |
-| **Channel entity** | A place that owns memberships and roles | organization |
-| **Product entity** | User-facing content that inherits access from a channel | attachment |
-| **Resource** | Tracked data outside the entity hierarchy | session, token |
+| user | user entity | A person, outside any tenant. Joins channels through memberships. |
+| organization | channel entity | A place with roles and members. Other channels nest under the organization. |
+| attachment | product entity | Content that always belongs to a channel and inherits its access. Syncs live and works offline. |
+| tenant & more | resource | A tracked row outside the hierarchy. The tenant is the isolation and billing boundary. |
 
 The hierarchy is declared once, in [hierarchy-config.ts](../shared/config/hierarchy-config.ts); the template starts with `organization -> attachment`. From it the template derives the id columns, permission checks up the ancestor chain, row-level security, the CDC publication, counters, which streams hear a change, and navigation. Frontend and backend features live in matching modules.
 
@@ -76,7 +93,7 @@ What a delete does depends on what is deleted:
 - **Product**: becomes a tombstone, hidden everywhere: sync hands a device only its id and place, so the device drops it. It is removed after the deleted-items period; until then a system admin can restore it, and the app has no restore.
 - **Organization**: its tenant is archived, as at the end of a contract. Everyone loses access at once, apart from a file link already handed out, which works for up to two hours. After the archived period it goes with everything in it.
 - **Channel below the organization**: removed at once, with the channels and products in it.
-- **Resource** (session, token, device, invitation): swept nightly after its own period.
+- **Rows with a period** (session, token, device, invitation): swept nightly after it.
 
 Whichever way a row leaves, the files and collaborative document it stored go after it.
 

@@ -3,6 +3,7 @@ import { useId } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
+import { filterOperations, useOperationSearch } from '~/modules/docs/operations/operations-filter';
 import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
@@ -13,15 +14,18 @@ const renderItem = (op: GenOperationSummary, isActive: boolean) => <OperationIte
 
 interface OperationsSidebarProps {
   activeTag?: string;
+  /** The operations page is open: off it, a tag only links there. */
+  isOnRoute: boolean;
 }
 
-export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
+export function OperationsSidebar({ activeTag, isOnRoute }: OperationsSidebarProps) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
   const { data: tags } = useSuspenseQuery(nonEmptyTagsQueryOptions);
   const hash = useCurrentSection();
+  const search = useOperationSearch();
 
   return (
     <SidebarMenu className="gap-1 p-0 pt-1 pb-4">
@@ -43,6 +47,8 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
             layoutId={layoutId}
             isActive={isActive}
             isAtTag={isAtTag}
+            isOnRoute={isOnRoute}
+            isHidden={!filterOperations(operationsByTag[tag.name] ?? [], search).length}
             activeItemIndex={activeOperationIndex}
             renderItem={renderItem}
             itemKey={itemKey}

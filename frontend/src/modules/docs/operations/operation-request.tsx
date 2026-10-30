@@ -13,18 +13,19 @@ export function OperationRequest({ detail }: OperationRequestProps) {
   const { t } = useTranslation();
   const { zodIndex, typesIndex } = useDefinitionIndexes();
 
-  const request = detail?.request;
+  if (!detail?.request) return null;
 
-  if (!request) return null;
+  const { example, ...format } = detail.request;
 
   return (
     <OperationSection title={t('c:docs.request')}>
-      <div className="mt-4">
+      <div className="mt-2">
         <ViewerGroup
-          schema={request}
+          schema={format}
           zodCode={getZodCodeForRequest(zodIndex, detail.operationId)}
           typeCode={getTypeCodeForRequest(typesIndex, detail.operationId)}
-          example={request.example}
+          example={example}
+          descriptionToggle
         />
       </div>
     </OperationSection>

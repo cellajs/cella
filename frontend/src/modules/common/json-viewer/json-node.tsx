@@ -25,8 +25,17 @@ interface JsonNodeProps {
 function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProps) {
   const effectiveVisualDepth = visualDepth ?? depth;
 
-  const { indentWidth, defaultInspectDepth, enableClipboard, valueTypes, collapseStringsAfterLength, searchText, showKeyQuotes, openapiMode } =
-    useJsonViewerContext();
+  const {
+    indentWidth,
+    defaultInspectDepth,
+    enableClipboard,
+    valueTypes,
+    collapseStringsAfterLength,
+    searchText,
+    showKeyQuotes,
+    hideDescriptions,
+    openapiMode,
+  } = useJsonViewerContext();
 
   // Flattened nodes render always expanded and without a key.
   const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
@@ -63,14 +72,19 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   if (!isRecord(value) && !Array.isArray(value)) {
     return (
-      <div {...rowProps} className="whitespace-nowrap">
+      <div {...rowProps} className="flex max-w-measure items-baseline whitespace-nowrap">
         <NodeKey {...keyProps} />
         <PrimitiveValue value={value} type={valueType} collapseStringsAfterLength={collapseStringsAfterLength} openapiMode={openapiMode} />
       </div>
     );
   }
 
-  const { labels, entries, schemaPropertiesCount, isExpandable, isPrimitiveArray } = describeNode(value, openapiMode, isPropertiesNode);
+  const { labels, entries, schemaPropertiesCount, isExpandable, isPrimitiveArray } = describeNode(
+    value,
+    openapiMode,
+    isPropertiesNode,
+    hideDescriptions,
+  );
   const isArray = Array.isArray(value);
   const openBracket = isArray ? '[' : '{';
   const closeBracket = isArray ? ']' : '}';

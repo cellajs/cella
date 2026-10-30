@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import type { SortColumn } from '~/modules/common/data-grid';
 
@@ -16,19 +15,17 @@ const getSortValue = (row: GenOperationSummary, columnKey: string): string => {
 };
 
 /** Client-side sort by the first active sort column, with a locale-aware string compare. */
-export function useSortedOperations(operations: GenOperationSummary[], sortColumns: SortColumn[]) {
-  return useMemo(() => {
-    if (!sortColumns.length) return operations;
-    const { columnKey, direction } = sortColumns[0];
-    const modifier = direction === 'ASC' ? 1 : -1;
-    return [...operations].sort((a, b) => {
-      const aValue = getSortValue(a, columnKey);
-      const bValue = getSortValue(b, columnKey);
-      // Push empties to the bottom in both ASC and DESC.
-      if (!aValue && !bValue) return 0;
-      if (!aValue) return 1;
-      if (!bValue) return -1;
-      return aValue.localeCompare(bValue) * modifier;
-    });
-  }, [operations, sortColumns]);
+export function sortOperations(operations: GenOperationSummary[], sortColumns: SortColumn[]) {
+  if (!sortColumns.length) return operations;
+  const { columnKey, direction } = sortColumns[0];
+  const modifier = direction === 'ASC' ? 1 : -1;
+  return [...operations].sort((a, b) => {
+    const aValue = getSortValue(a, columnKey);
+    const bValue = getSortValue(b, columnKey);
+    // Push empties to the bottom in both ASC and DESC.
+    if (!aValue && !bValue) return 0;
+    if (!aValue) return 1;
+    if (!bValue) return -1;
+    return aValue.localeCompare(bValue) * modifier;
+  });
 }

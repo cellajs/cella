@@ -178,7 +178,7 @@ describe('TabsTrigger', () => {
 
     expect(upload.hasAttribute('data-active')).toBe(true);
     expect(embed.hasAttribute('data-active')).toBe(false);
-    expect(upload.className).toContain('data-active:bg-secondary');
+    expect(upload.className).toContain('data-active:bg-background');
     expect(upload.className).toContain('caller-class');
   });
 });

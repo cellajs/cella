@@ -106,6 +106,15 @@
 		}
 	}
 
+	# Probes read /.well-known/* (security.txt, agent catalogs, app links) as data, so a missing
+	# file answers the origin's 404, never the index.html fallback with a 200.
+	@wellKnown path /.well-known/*
+	handle @wellKnown {
+		reverse_proxy https://{$ORIGIN_HOST} {
+			header_up Host {$ORIGIN_HOST}
+		}
+	}
+
 	# Root path maps to an empty S3 object key, which the REST endpoint answers
 	# with 403 (not 404), so the deep-link fallback below never triggers. Serve
 	# index.html directly for "/".

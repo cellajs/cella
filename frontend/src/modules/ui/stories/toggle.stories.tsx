@@ -28,18 +28,6 @@ type Story = StoryObj<typeof Toggle>;
 export const Default: Story = {};
 
 /**
- * Use the `outline` variant for a distinct outline, emphasizing the boundary
- * of the selection circle for clearer visibility
- */
-export const Outline: Story = {
-  args: {
-    variant: 'outline',
-    children: <ItalicIcon className="size-4" />,
-    'aria-label': 'Toggle italic',
-  },
-};
-
-/**
  * Use the text element to add a label to the toggle.
  */
 export const WithText: Story = {
@@ -49,7 +37,7 @@ export const WithText: Story = {
       Italic
     </Toggle>
   ),
-  args: { ...Outline.args },
+  args: { 'aria-label': 'Toggle italic' },
 };
 
 /**
@@ -57,12 +45,6 @@ export const WithText: Story = {
  * compact elements without sacrificing usability.
  */
 export const Small: Story = { args: { size: 'sm' } };
-
-/**
- * Use the `lg` size for a larger toggle, offering better visibility and
- * easier interaction for users.
- */
-export const Large: Story = { args: { size: 'lg' } };
 
 /**
  * Add the `disabled` prop to prevent interactions with the toggle.

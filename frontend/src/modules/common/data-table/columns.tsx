@@ -102,7 +102,7 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
         draggable={false}
-        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 hover:underline hover:opacity-100"
+        className="active:press link-decoration active:link-decoration-strong truncate outline-0 hover:underline"
       >
         <MiddleCut text={row.email} />
       </a>

@@ -80,8 +80,9 @@ export function FloatingNavButton({
       onTouchCancel={handleTouchCancel}
       className={cn(
         'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 select-none rounded-full transition-[translate,scale,opacity] duration-300 ease-in-out [-webkit-touch-callout:none] active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
-        // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included
-        'shadow-floating',
+        // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included.
+        // No border: the base button's transparent one would leave a 1px band between the ring and the fill
+        'border-0 shadow-floating',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
         label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
         // Hiding moves by translate, which skips layout

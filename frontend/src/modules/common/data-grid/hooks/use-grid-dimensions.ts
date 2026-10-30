@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { getScrollParent, viewportTopOf } from '~/utils/scroll-parent';
 
 interface GridDimensions {
   viewportHeight: number;
@@ -20,20 +21,6 @@ const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, mea
  * most half a step (16px), well inside the four-row overscan of useViewportRows (140px at the 35px default row height).
  */
 const scrollStep = 32;
-
-/** Nearest scrollable ancestor, or null when the window or document is the scroll container. */
-function getScrollParent(node: HTMLElement): HTMLElement | null {
-  let parent: HTMLElement | null = node;
-  // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
-  while ((parent = parent.parentElement)) {
-    if (parent === document.body || parent === document.documentElement) return null;
-    const { overflowY } = getComputedStyle(parent);
-    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-      return parent;
-    }
-  }
-  return null;
-}
 
 /** Row-virtualization dimensions from an explicit or nearest scroll container; CSS owns column sizing. */
 export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | null>, enableRowVirtualization = true): GridDimensionsResult {
@@ -62,7 +49,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     if (ResizeObserver == null || grid == null) return;
 
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
-    const isWindowScroll = scrollContainer === null;
+    const isWindowScroll = scrollContainer instanceof Window;
 
     // useSyncExternalStore re-reads getSnapshot after notify and bails out on an identical reference.
     const commit = (next: GridDimensions) => {
@@ -82,7 +69,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     const measureScroll = (prev: GridDimensions): GridDimensions => {
       const rect = grid.getBoundingClientRect();
       const viewportHeight = isWindowScroll ? window.innerHeight : scrollContainer.clientHeight;
-      const viewportTop = isWindowScroll ? 0 : scrollContainer.getBoundingClientRect().top;
+      const viewportTop = viewportTopOf(scrollContainer);
 
       // Clamped to the grid's own range, so scrolling while the grid is out of view leaves the snapshot unchanged.
       const offset = Math.min(Math.max(0, viewportTop - rect.top), rect.height);

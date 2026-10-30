@@ -57,6 +57,8 @@ export interface GenOperationSummary {
   enabledBy?: ConfigSwitch;
   /** The MCP tool the operation is exposed as (`x-tool`). */
   tool?: GenOperationTool;
+  /** Security requirement alternatives with the scopes each needs, e.g. `[{ cookieAuth: [] }, { apiKey: ['attachment:write'] }]`; empty on a public operation. */
+  security?: Record<string, string[]>[];
 }
 
 export interface GenTagSummary {

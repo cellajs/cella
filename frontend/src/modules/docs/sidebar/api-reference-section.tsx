@@ -1,14 +1,13 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { ChevronDownIcon } from 'lucide-react';
-import { type MouseEvent, type ReactNode, Suspense, useState } from 'react';
+import { type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebarSection, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
-import { buttonVariants } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
@@ -19,7 +18,7 @@ interface ApiReferenceSectionProps {
   label: string;
 }
 
-/** Expansion is derived from the route, mutually exclusive, with a per-section forced-collapse override. */
+/** A group is open on its own route; its chevron, or its label on that route, overrides that per group until the pathname changes. */
 export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
@@ -30,23 +29,25 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const activeOperationTag = useRouterState({ select: (state) => state.location.search.operationTag });
   const activeSchemaTag = useRouterState({ select: (state) => state.location.search.schemaTag });
-  const hasQuery = useRouterState({ select: (state) => !!state.location.search.q });
+  const hasQuery = useRouterState({ select: ({ location: { search } }) => !!search.q || !!search.filter });
   const isOperationsRoute = pathname === '/docs/operations';
   const isOperationsTableRoute = pathname === '/docs/operations/table';
   const isSchemasRoute = pathname === '/docs/schemas';
 
   // Start collapsed when landing directly via URL without search params
-  const hasOperationSearchParams = !!activeOperationTag || hasQuery;
-  const hasSchemasSearchParams = !!activeSchemaTag;
-  const initialForcedCollapsed =
-    isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null;
-  const [forcedCollapsed, setForcedCollapsed] = useState<ApiSection | null>(initialForcedCollapsed);
+  const [overrides, setOverrides] = useState<Partial<Record<ApiSection, boolean>>>(() => {
+    if (isOperationsRoute && !activeOperationTag && !hasQuery) return { operations: false };
+    if (isSchemasRoute && !activeSchemaTag) return { schemas: false };
+    return {};
+  });
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setOverrides({});
+  }
 
-  // On its own route a section's link toggles it; elsewhere it navigates and clears only that section's forced collapse
-  const handleSectionClick = (event: MouseEvent, section: ApiSection, isRoute: boolean) => {
-    if (isRoute) event.preventDefault();
-    setForcedCollapsed((prev) => (prev === section ? null : isRoute ? section : prev));
-  };
+  const isOperationsOpen = overrides.operations ?? isOperationsRoute;
+  const isSchemasOpen = overrides.schemas ?? isSchemasRoute;
 
   const prefetchOperations = () => {
     void queryClient.query(operationsQueryOptions).catch(() => {});
@@ -60,21 +61,23 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
         label={t('c:operation', { count: 2 })}
         count={tags.reduce((sum, tag) => sum + tag.count, 0)}
         isActive={isOperationsRoute || isOperationsTableRoute}
-        isOpen={isOperationsRoute && forcedCollapsed !== 'operations'}
-        onClick={(event) => handleSectionClick(event, 'operations', isOperationsRoute)}
+        isOpen={isOperationsOpen}
+        isRoute={isOperationsRoute}
+        onToggle={() => setOverrides((prev) => ({ ...prev, operations: !isOperationsOpen }))}
         onPrefetch={prefetchOperations}
       >
-        <OperationsSidebar activeTag={activeOperationTag} />
+        <OperationsSidebar activeTag={activeOperationTag} isOnRoute={isOperationsRoute} />
       </ApiReferenceGroup>
       <ApiReferenceGroup
         to="/docs/schemas"
         label={t('c:schema', { count: 2 })}
         count={schemas.length}
         isActive={isSchemasRoute}
-        isOpen={isSchemasRoute && forcedCollapsed !== 'schemas'}
-        onClick={(event) => handleSectionClick(event, 'schemas', isSchemasRoute)}
+        isOpen={isSchemasOpen}
+        isRoute={isSchemasRoute}
+        onToggle={() => setOverrides((prev) => ({ ...prev, schemas: !isSchemasOpen }))}
       >
-        <SchemasSidebar activeTag={activeSchemaTag} />
+        <SchemasSidebar activeTag={activeSchemaTag} isOnRoute={isSchemasRoute} />
       </ApiReferenceGroup>
     </DocsSidebarSection>
   );
@@ -87,37 +90,36 @@ interface ApiReferenceGroupProps {
   count: number;
   isActive: boolean;
   isOpen: boolean;
-  onClick: (event: MouseEvent) => void;
+  /** The group's own route is open: its label toggles it there, elsewhere it navigates. */
+  isRoute: boolean;
+  onToggle: () => void;
   onPrefetch?: () => void;
   children: ReactNode;
 }
 
 /** A tier-1 row of the API reference, with its tag list below. */
-function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPrefetch, children }: ApiReferenceGroupProps) {
+function ApiReferenceGroup({ to, label, count, isActive, isOpen, isRoute, onToggle, onPrefetch, children }: ApiReferenceGroupProps) {
   return (
     <Collapsible open={isOpen}>
-      <div className={sidebarStickyRowClass}>
-        <CollapsibleTrigger
-          render={
-            <Link
-              to={to}
-              search={(prev) => prev}
-              onMouseEnter={onPrefetch}
-              onFocus={onPrefetch}
-              draggable={false}
-              onClick={onClick}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                'group/api-reference-group w-full justify-start',
-                isActive && 'bg-accent font-semibold',
-              )}
-            />
-          }
+      <div className={cn(sidebarStickyRowClass, 'group/expand-row')} onMouseEnter={onPrefetch}>
+        <Link
+          to={to}
+          search={(prev) => prev}
+          onFocus={onPrefetch}
+          draggable={false}
+          aria-expanded={isOpen}
+          onClick={(event) => {
+            if (!isRoute) return;
+            event.preventDefault();
+            onToggle();
+          }}
+          onKeyDown={(event) => handleExpandKeys(event, isOpen, onToggle)}
+          className={cn(expandRowLinkClass, 'w-full justify-start pr-9', isActive && 'bg-accent font-semibold')}
         >
           <span>{label}</span>
           {!isOpen && <span className="text-faint-foreground text-xs">{count}</span>}
-          <ChevronDownIcon className="ml-auto opacity-40 transition-transform duration-200 group-data-panel-open/api-reference-group:rotate-180" />
-        </CollapsibleTrigger>
+        </Link>
+        <RowExpandToggle isExpanded={isOpen} onToggle={onToggle} />
       </div>
       <CollapsibleContent className={collapsiblePanelClass}>
         <SidebarGroupContent>

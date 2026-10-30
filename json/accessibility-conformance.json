@@ -602,13 +602,6 @@
       "open": [],
       "evidence": [
         {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "The two remaining gaps are closed and were driven by keyboard in the live page. org-settings Tabs: each row has 'Move up: <tab>' and 'Move down: <tab>' buttons; Enter on 'Move down: Attachments' twice moves it from first to last, focus stays on the button, a status message reads 'Attachments is now 3 of 3.', and the order survives a reload (entities/tabs-arrangement-card.tsx). menu-sheet 'Manage content': each item has Move up and Move down buttons beside Archive and Mute; Enter on 'Move down: <organization>' reorders the list at once and keeps focus (navigation/menu-sheet/item-edit.tsx). Unchanged from the Batch F check: JSON viewer expanders, truncated strings, the docs sidebar width by arrow keys, and the flows of the first pass (menu, search and account sheets, members grid, invite dialog, attachment viewer, docs search). For a person to weigh: opening txt and pdf attachments and Download could not run here (seed files are CORS-blocked), and the collaborative description editor stayed at 'Connecting...' (no relay in the audit stack); the plain editor on org-settings takes typing, selection and its block shortcuts.",
-          "where": [],
-          "date": "2026-10-03"
-        },
-        {
           "check": "axe",
           "result": "pass",
           "summary": "axe scrollable-region-focusable passed on 2 states.",
@@ -663,6 +656,13 @@
             "frontend/src/modules/marketing/about/sync-diagram.tsx",
             "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
           ]
+        },
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "The two remaining gaps are closed and were driven by keyboard in the live page. org-settings Tabs: each row has 'Move up: <tab>' and 'Move down: <tab>' buttons; Enter on 'Move down: Attachments' twice moves it from first to last, focus stays on the button, a status message reads 'Attachments is now 3 of 3.', and the order survives a reload (entities/tabs-arrangement-card.tsx). menu-sheet 'Manage content': each item has Move up and Move down buttons beside Archive and Mute; Enter on 'Move down: <organization>' reorders the list at once and keeps focus (navigation/menu-sheet/item-edit.tsx). Unchanged from the Batch F check: JSON viewer expanders, truncated strings, the docs sidebar width by arrow keys, and the flows of the first pass (menu, search and account sheets, members grid, invite dialog, attachment viewer, docs search). For a person to weigh: opening txt and pdf attachments and Download could not run here (seed files are CORS-blocked), and the collaborative description editor stayed at 'Connecting...' (no relay in the audit stack); the plain editor on org-settings takes typing, selection and its block shortcuts. Docs sidebar and legal aside rows with a chevron (common/row-expand-toggle.tsx), driven at 1280 wide on 2026-10-30: a Tab walk stops on each row's link once and never on a chevron; ArrowRight and ArrowLeft on the focused link open and close the row without changing the URL on page rows, API reference groups and tag rows; the legal subject rows share the handler. A collapsed tag row off its own page has no toggle, since its items exist only on that page, and its link goes there.",
+          "where": [],
+          "date": "2026-10-30"
         }
       ]
     },
@@ -1590,9 +1590,9 @@
         {
           "check": "review:agent",
           "result": "review",
-          "summary": "axe finds no failing element; what it leaves for a person on the overlay states was looked at in the page. (1) Content behind an open sheet or dialog is aria-hidden and inert (docs-search, menu-sheet, search-sheet, account-sheet, invite-dialog, member-sheet); the keyboard probe confirms focus stays inside the overlay on each. (2) The focus guards of those overlays are aria-hidden with tabindex 0 by design: they pass focus on and never hold it. (3) docs-search and search-sheet: the search input's aria-controls names the result list, which is in the page but hidden while there are no results. (4) sign-in-email: the toast's Close button is aria-hidden while the toast is idle and still in the Tab order; check with a screen reader that it is announced once focused. Fixed earlier and worth hearing: the settings side navigation marks only the current section as current. What a screen reader announces for the custom controls (menus, tabs, toggles, the grid, the editor) still needs the pass in a11y/results/manual-pass.md.",
+          "summary": "axe finds no failing element; what it leaves for a person on the overlay states was looked at in the page. (1) Content behind an open sheet or dialog is aria-hidden and inert (docs-search, menu-sheet, search-sheet, account-sheet, invite-dialog, member-sheet); the keyboard probe confirms focus stays inside the overlay on each. (2) The focus guards of those overlays are aria-hidden with tabindex 0 by design: they pass focus on and never hold it. (3) docs-search and search-sheet: the search input's aria-controls names the result list, which is in the page but hidden while there are no results. (4) sign-in-email: the toast's Close button is aria-hidden while the toast is idle and still in the Tab order; check with a screen reader that it is announced once focused. Fixed earlier and worth hearing: the settings side navigation marks only the current section as current. What a screen reader announces for the custom controls (menus, tabs, toggles, the grid, the editor) still needs the pass in a11y/results/manual-pass.md. Docs sidebar and legal aside, 2026-10-30: tag, API reference group and legal subject rows no longer render a collapsible trigger as a link, so they expose role link with aria-expanded where they exposed role button on an anchor. The chevron is aria-hidden with tabindex -1; axe aria-hidden-focus, nested-interactive and aria-allowed-attr pass on those pages. Needs a screen reader: how a link with aria-expanded is announced, and whether the arrow keys are discoverable.",
           "where": [],
-          "date": "2026-10-03"
+          "date": "2026-10-30"
         }
       ]
     },

@@ -22,7 +22,7 @@ Clean seeded data, or a branch with migrations, beside the stack you already run
 # The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml
 docker run -d --name scratch_db -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:5440:5432 <image> -c wal_level=logical -c shared_preload_libraries=pg_cron -c cron.database_name=postgres
 
-export DEV_PORT_OFFSET=40 ADMIN_EMAIL=admin-test@cellajs.com
+export DEV_PORT_OFFSET=40 ADMIN_EMAIL=admin-test@cellajs.com SYSTEM_ADMIN_IP_ALLOWLIST='*'
 export DATABASE_URL=postgres://runtime_role:dev_password@0.0.0.0:5440/postgres
 export DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5440/postgres
 export DATABASE_CDC_URL=postgres://admin_role:dev_password@0.0.0.0:5440/postgres
@@ -40,7 +40,7 @@ pnpm seed                                                                  # mig
 ## Drive (browser)
 
 - Playwright is a `frontend` devDependency, and Node resolves a bare `import 'playwright'` from the script file's own folder, so a scratch script elsewhere fails with `ERR_MODULE_NOT_FOUND`. Pipe it in from `frontend/`: `cd frontend && node --input-type=module < <script.mjs>`. The drivers under `cella/skills/` load it through `two-tab-sync-test/driver-lib.mjs`. Chromium cache: `~/Library/Caches/ms-playwright`.
-- Signed-in pages: mint a session, with no UI login and no cookie built by hand (the app signs every cookie). `pnpm --filter backend session:mint <email>` ([backend scripts](../../../backend/scripts/README.md)) prints `<cookie name>=<signed value>` and a curl line with the API URL; the seeded admin is `ADMIN_EMAIL` in `backend/.env`. Set it with `context.addCookies([{ name, value, url: <appConfig.frontendUrl> }])`; the API is same-origin, under `<frontendUrl>/api`.
+- Signed-in pages: mint a session, with no UI login and no cookie built by hand (the app signs every cookie). `pnpm --filter backend session:mint <email>` ([backend scripts](../../../backend/scripts/README.md)) prints `<cookie name>=<signed value>` and a curl line with the API URL; the seeded admin is `ADMIN_EMAIL` in `backend/.env`, and acts as one only with `SYSTEM_ADMIN_IP_ALLOWLIST='*'` there: a `.env` copied from `.env.example` allows no address, so `/system` sends the admin to `/home`. Set the cookie with `context.addCookies([{ name, value, url: <appConfig.frontendUrl> }])`; the API is same-origin, under `<frontendUrl>/api`.
 - When the script is done, sign the session out (`POST <api>/auth/sign-out` with the cookie and a JSON content type), or it stays listed as live in the user's sessions until it expires. In a driver: `mintSession` and `endSession` in `two-tab-sync-test/driver-lib.mjs`, or `startSession` and `endSession` in `a11y/src/session.ts`.
 - A freshly seeded admin opens on the onboarding dialog: `PUT <api>/me` with `{ userFlags: { finishedOnboarding: true } }` skips it, as the drivers do.
 - Boot smoke of a checkout or a new app: `node cella/skills/verify/smoke-driver.mjs` from the repo root starts `pnpm dev`, waits for a healthy stack with an active CDC replication, signs in as `ADMIN_EMAIL`, opens `/home` and an organization's attachments (seeded rows expected), then stops the stack. `START=` attaches to a stack that already runs; `OUT_DIR` holds the stack log, screenshots and `evidence.json`. The nightly `create-flow.yml` workflow in [create-cella](https://github.com/cellajs/create-cella/blob/main/.github/workflows/create-flow.yml) runs it on a new app: keep its interface stable.

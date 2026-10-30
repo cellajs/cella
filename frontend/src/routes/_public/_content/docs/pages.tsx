@@ -10,7 +10,7 @@ const PagesTable = lazyNamed(() => import('~/modules/page/table/pages-table'), '
 
 export const Route = createFileRoute('/_public/_content/docs/pages')({
   validateSearch: pagesRouteSearchParamsSchema,
-  search: { middlewares: [stripForeignParams('operationTag', 'schemaTag')] },
+  search: { middlewares: [stripForeignParams('operationTag', 'schemaTag', 'filter', 'sort', 'order')] },
   staticData: { isAuth: true },
   head: () => pageHead(i18n.t('c:page_other')),
   component: withSuspense(PagesTable),

@@ -15,6 +15,8 @@
 @source not "../../../shared/scripts";
 
 @theme {
+  /* Where running text breaks, read by `max-w-measure`: one right edge across descriptions, help text and long values. */
+  --container-measure: 48rem;
   --font-sans:
     "Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Noto Color Emoji";
@@ -696,6 +698,11 @@
     stroke-width: 2.5;
   }
 
+  /* Where a scroll-spy section comes to rest below its scroller's top, by a link (scroll-spy-store.ts) or a hash on load */
+  :where([id^="spy-"]) {
+    @apply scroll-mt-4;
+  }
+
   *,
   ::after,
   ::before,
@@ -705,7 +712,13 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none pointer-fine:overscroll-contain overflow-x-clip antialiased font-normal;
+    @apply bg-background text-foreground min-h-full overscroll-none pointer-fine:overscroll-contain overflow-x-clip antialiased font-normal text-pretty;
+  }
+
+  /* Typed text wraps plainly: `pretty` can move earlier lines while the caret is on the last one. */
+  [contenteditable],
+  textarea {
+    @apply text-wrap;
   }
 
   .container {

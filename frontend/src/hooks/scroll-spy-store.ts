@@ -1,3 +1,5 @@
+import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-parent';
+
 /**
  * DOM id prefix (e.g. id="spy-intro") prevents auto-scroll on hash change. No element may carry the bare section id:
  * TanStack history patches replaceState, so each hash write runs the router's hash scroll, which jumps to that element.
@@ -53,8 +55,6 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
-const scrollTopOf = (target: HTMLElement | Window) => (target instanceof Window ? target.scrollY : target.scrollTop);
-
 const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= topThreshold;
 
 const clearHash = () => {
@@ -80,11 +80,10 @@ const handleScroll = () => {
   });
 };
 
-/** Point the top watcher at the sections' scroller (window when that is the document scroller). */
+/** Point the top watcher at the sections' scroller. */
 const watchScroller = () => {
   const anchor = [...sections.keys()].map((id) => document.getElementById(`${spyPrefix}${id}`)).find((element) => element !== null);
-  const scroller = anchor ? findScrollParent(anchor) : null;
-  const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
+  const next = anchor ? getScrollParent(anchor) : window;
   if (next === topWatchTarget) return;
 
   topWatchTarget?.removeEventListener('scroll', handleScroll);
@@ -245,27 +244,11 @@ export const unregisterSections = (ids: readonly string[]) => {
   }
 };
 
-/** The document owns the scroller, so scroll events fire on window. */
-const isRootScroller = (element: HTMLElement) =>
-  element === document.scrollingElement || element === document.documentElement || element === document.body;
-
-/** Find the nearest scrollable ancestor (overflow-y auto/scroll with actual overflow), else the document scroller. */
-const findScrollParent = (element: HTMLElement): HTMLElement => {
-  let node = element.parentElement;
-  while (node) {
-    const style = getComputedStyle(node);
-    if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
-    node = node.parentElement;
-  }
-  return (document.scrollingElement as HTMLElement) ?? document.documentElement;
-};
-
+/** Scrolls the target to its scroll margin below the scroller's top, the line a hash on load brings it to. */
 const performScroll = (element: HTMLElement, id: string) => {
-  // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
-  const scroller = findScrollParent(element);
-  const scrollerTop = isRootScroller(scroller) ? 0 : scroller.getBoundingClientRect().top;
-  const delta = element.getBoundingClientRect().top - scrollerTop;
-  const targetTop = scroller.scrollTop + delta - 16;
+  const scroller = getScrollParent(element);
+  const delta = element.getBoundingClientRect().top - viewportTopOf(scroller);
+  const targetTop = scrollTopOf(scroller) + delta - Number.parseFloat(getComputedStyle(element).scrollMarginTop);
   const smooth = Math.abs(delta) < window.innerHeight * 2;
 
   blockHashWrites(smooth ? 1200 : 500);

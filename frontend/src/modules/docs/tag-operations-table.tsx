@@ -1,5 +1,6 @@
 import type { GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 
@@ -23,7 +24,8 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       minWidth: 200,
       renderCell: ({ row, tabIndex }) => (
         <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
-          &lrm;{row.path}
+          &lrm;
+          <HighlightText text={row.path} />
         </TagHashLink>
       ),
     },
@@ -32,7 +34,11 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       name: '',
       minBreakpoint: 'md',
       width: 200,
-      renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
+      renderCell: ({ row }) => (
+        <code className="truncate text-muted-foreground text-xs">
+          <HighlightText text={row.id} />
+        </code>
+      ),
     },
   ];
 }

@@ -36,7 +36,8 @@ describe('toaster', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-contrast: more)' }));
     toaster.success('Copied');
 
-    const [closesItself, ...kept] = events.map((event) => event.options.timeout);
+    const adds = events.filter(({ action }) => action === 'add');
+    const [closesItself, ...kept] = adds.map((event) => event.options.timeout);
     expect(closesItself).toBeGreaterThan(0);
     expect(kept).toEqual([0, 0, 0]);
   });
@@ -49,6 +50,37 @@ describe('toaster', () => {
 
     expect(id).not.toMatch(/^toast:/);
     expect(events[1].options).toMatchObject({ id, title: null });
+  });
+
+  // Fast toggling left the first message on top: Base UI updates a known id where it stands
+  it('closes a repeated message that another toast covers, so its add lands on top', () => {
+    subscribe();
+
+    toaster.success('Entered');
+    toaster.success('Left');
+    events = [];
+
+    toaster.success('Left');
+    expect(events.map(({ action }) => action)).toEqual(['add']);
+
+    events = [];
+    toaster.success('Entered');
+    expect(events.map(({ action, options }) => [action, options.id])).toEqual([
+      ['close', 'toast:Entered'],
+      ['add', 'toast:Entered'],
+    ]);
+  });
+
+  // The reload prompt re-shows itself under its id, and closing it would fire its onClose
+  it('leaves a covered toast with an explicit id in place', () => {
+    subscribe();
+
+    toaster('Reload', { id: 'reload' });
+    toaster.success('Saved');
+    events = [];
+
+    toaster('Reloading', { id: 'reload' });
+    expect(events.map(({ action }) => action)).toEqual(['add']);
   });
 
   it('holds toasts shown before a toaster subscribes and replays them on subscribe', () => {

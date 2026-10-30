@@ -25,7 +25,7 @@ export function AboutSectionHeader({ title, text, textComponents, className }: A
   if (!title && !text) return null;
 
   return (
-    <div className={cn('mx-auto flex max-w-3xl flex-col gap-4', className)}>
+    <div className={cn('mx-auto flex max-w-measure flex-col gap-4', className)}>
       {title && <h2 className="font-heading font-semibold text-2xl leading-[1.1] sm:text-center sm:text-3xl md:text-4xl">{t(title)}</h2>}
       {text && (
         <p className="text-muted-foreground sm:text-center sm:text-lg sm:leading-7">

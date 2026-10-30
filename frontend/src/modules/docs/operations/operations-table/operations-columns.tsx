@@ -6,6 +6,7 @@ import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+import { extensionLabel } from '~/modules/docs/helpers/extension-label';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
@@ -55,7 +56,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
 
   const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
     key: ext.id,
-    name: upperFirst(ext.key.replace('x-', '').replace(/-/g, ' ')),
+    name: extensionLabel(ext),
     minBreakpoint: 'md',
     resizable: true,
     width: 150,
@@ -131,7 +132,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
           size="cell"
           tabIndex={tabIndex}
           title={row.path}
-          className="min-w-0 font-mono text-xs"
+          className="min-w-0 font-mono text-foreground text-xs"
           onClick={(event) => openOperationSheet(row, event.currentTarget)}
         >
           {/* The underline sits on the path alone: on the button it would reach the badge too */}
@@ -176,7 +177,11 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       resizable: true,
       width: 200,
       minWidth: 120,
-      renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
+      renderCell: ({ row }) => (
+        <code className="truncate text-muted-foreground text-xs">
+          <HighlightText text={row.id} />
+        </code>
+      ),
     },
     {
       key: 'summary',

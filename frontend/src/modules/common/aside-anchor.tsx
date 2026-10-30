@@ -5,13 +5,12 @@ interface AsideAnchorProps {
   id: string;
   className?: string;
   children?: ReactNode;
-  extraOffset?: boolean;
 }
 
-export function AsideAnchor({ id, className, children, extraOffset }: AsideAnchorProps) {
+export function AsideAnchor({ id, className, children }: AsideAnchorProps) {
   return (
     <div id={`spy-${id}-anchor-wrap`} className={cn('last:mb-12 md:last:mb-[70vh]', className)}>
-      <div id={`spy-${id}`} className={cn('absolute w-[.05rem]', extraOffset ? '-mt-16 h-16' : '-mt-8 h-8')} />
+      <div id={`spy-${id}`} className="absolute -mt-16 h-16 w-[.05rem]" />
       {children}
     </div>
   );

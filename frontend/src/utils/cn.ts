@@ -9,6 +9,7 @@ import { createCn } from 'cnfast';
  */
 export const cn = createCn({
   extend: {
+    theme: { container: ['measure'] },
     classGroups: {
       'text-color': ['soft-text', 'soft-text-strong', 'soft-text-stronger'],
       'bg-color': ['soft-bg', 'soft-bg-hover', 'soft-bg-strong', 'soft-bg-stronger'],

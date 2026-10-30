@@ -26,7 +26,7 @@ export function SyncEnginePage() {
       <AboutSection>
         <AboutStatement text="about:selective_sync.text" className="glow-underline mb-12 leading-relaxed md:mb-20" />
 
-        <p className="mx-auto max-w-3xl">
+        <p className="mx-auto max-w-measure">
           <Trans
             t={t}
             i18nKey="about:cella_approach_intro"
@@ -35,7 +35,7 @@ export function SyncEnginePage() {
             }}
           />
         </p>
-        <p className="mx-auto mt-4 mb-6 max-w-3xl">{t('about:cella_approach_fit')}</p>
+        <p className="mx-auto mt-4 mb-6 max-w-measure">{t('about:cella_approach_fit')}</p>
 
         {/* Any one point is enough, so the rows after the first start with "or" */}
         <ul className="mx-auto max-w-3xl border-b">

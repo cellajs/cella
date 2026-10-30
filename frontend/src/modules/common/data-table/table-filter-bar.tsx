@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import { scrollToPinLine } from '~/modules/common/sticky-box';
+import { StickyBox, scrollToPinLine } from '~/modules/common/sticky-box';
 import { Button } from '~/modules/ui/button';
 
 interface TableFilterBarProps {
@@ -15,20 +15,22 @@ interface TableFilterBarProps {
   search: ReactNode;
   /** Names the phone's search button, as the field's own label does: "Search organizations". */
   searchLabel: string;
-  /** Beside the search from `sm` up, on a second row of the open search on a phone. */
+  /** First in the row from `sm` up, on a second row of the open search on a phone. */
   filters?: ReactNode;
   /** View controls closing the row, such as a view toggle and the view menu; a phone's open search leaves them out. */
   controls?: ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
   searchVars?: Record<string, unknown>;
+  /** Slides the closed bar back in on a scroll up, for a long page. */
+  sticky?: boolean;
 }
 
 /** True while a phone's search is open, so its field takes focus. */
 export const TableFilterBarContext = createContext<{ isFilterActive: boolean }>({ isFilterActive: false });
 
 /**
- * The bar above a list. From `sm` up one row: actions and count, search, filters, controls. On a phone the search is a
+ * The bar above a list. From `sm` up one row: filters, actions and count, search, controls. On a phone the search is a
  * button; it opens a panel pinned at the top of the screen over the page tabs, the field with Cancel above any filters,
  * while the list filters underneath and the count opens it. Cancel resets the filters, so a filtered bar opens with its
  * panel open.
@@ -43,6 +45,7 @@ export function TableFilterBar({
   isFiltered,
   onResetFilters,
   searchVars,
+  sticky,
 }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('sm');
@@ -66,6 +69,26 @@ export function TableFilterBar({
     setIsOpen(false);
   };
 
+  const closedBar = (
+    <TableBarContainer ref={barRef} searchVars={searchVars}>
+      {/* Filters first, so a choice leaves its trigger in place: the actions give way to the count's Clear */}
+      <div className="flex min-w-0 items-center gap-3">
+        {isDesktop && filters && <div className="flex items-center gap-2">{filters}</div>}
+        {actions}
+        {count}
+      </div>
+      <div className="grow" />
+      {isDesktop ? (
+        <div className="flex items-center gap-2">{search}</div>
+      ) : (
+        <Button variant="outline" size="icon" aria-label={searchLabel} onClick={open}>
+          <SearchIcon />
+        </Button>
+      )}
+      {controls}
+    </TableBarContainer>
+  );
+
   return (
     <TableFilterBarContext.Provider value={{ isFilterActive: isPanel }}>
       {isPanel ? (
@@ -82,25 +105,13 @@ export function TableFilterBar({
           {/* The first line of the list it counts, read while typing and scrolled away with the rows */}
           {count && <div className="pt-2">{count}</div>}
         </>
+      ) : sticky ? (
+        // Around the closed row alone: the open panel pins to its parent, and would stretch this box to a full screen
+        <StickyBox hideWhenOutOfView className="z-10 bg-background">
+          {closedBar}
+        </StickyBox>
       ) : (
-        <TableBarContainer ref={barRef} searchVars={searchVars}>
-          <div className="flex min-w-0 items-center gap-3">
-            {actions}
-            {count}
-          </div>
-          <div className="grow" />
-          {isDesktop ? (
-            <>
-              <div className="flex items-center gap-2">{search}</div>
-              {filters && <div className="flex items-center gap-2">{filters}</div>}
-            </>
-          ) : (
-            <Button variant="outline" size="icon" aria-label={searchLabel} onClick={open}>
-              <SearchIcon />
-            </Button>
-          )}
-          {controls}
-        </TableBarContainer>
+        closedBar
       )}
     </TableFilterBarContext.Provider>
   );

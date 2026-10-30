@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { cn } from '~/utils/cn';
 import { objectEntries } from '~/utils/object-entries';
 
@@ -409,21 +409,13 @@ export function SyncDiagram() {
             </motion.span>
           </div>
         )}
-        <ToggleGroup
-          type="single"
-          value={mode}
-          onValueChange={(value) => {
-            const target = modeOrder.find((syncMode) => syncMode === value);
-            if (target) switchMode(target);
-          }}
-          variant="merged"
-        >
+        <SegmentedControl value={mode} onValueChange={switchMode}>
           {modeOrder.map((syncMode) => (
-            <ToggleGroupItem key={syncMode} value={syncMode}>
+            <SegmentedControlItem key={syncMode} value={syncMode}>
               {t(modeText[syncMode].label)}
-            </ToggleGroupItem>
+            </SegmentedControlItem>
           ))}
-        </ToggleGroup>
+        </SegmentedControl>
       </div>
 
       <AnimatePresence mode="wait">
@@ -433,7 +425,7 @@ export function SyncDiagram() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeInOut' }}
-          className="mx-auto mb-4 max-w-2xl font-light text-muted-foreground text-sm sm:text-center"
+          className="mx-auto mb-4 max-w-measure font-light text-muted-foreground text-sm sm:text-center"
         >
           <Trans t={t} i18nKey={modeText[mode].text as never} components={{ strong: <strong className="font-normal text-foreground" /> }} />
         </motion.p>

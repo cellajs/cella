@@ -13,7 +13,7 @@ const OperationsPage = lazyNamed(() => import('~/modules/docs/operations/operati
 export const Route = createFileRoute('/_public/_content/docs/operations')({
   staticData: { isAuth: false },
   validateSearch: operationsRouteSearchParamsSchema,
-  search: { middlewares: [stripForeignParams('schemaTag')] },
+  search: { middlewares: [stripForeignParams('schemaTag', 'sort', 'order')] },
   head: () => pageHead(i18n.t('c:operation_other')),
   loader: async () => {
     await queryClient.query(operationsQueryOptions);
