@@ -30,6 +30,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Booting with published secrets:** a tunnel reachable from the internet that signs cookies and relay tokens with the values in `.env.example`.
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
+- **Guessing a second factor slowly:** TOTP codes tried at the pace the lockout allows, for as long as it takes.
 - **Exhausting the server with shape:** a body, a field, a batch or a document larger than its cap, or input that makes a parser or a regex work out of proportion.
 - **Holding the stream open:** a stream that never reads, or one that connects across its user's removal, keeping the server's memory or the left organization's frames.
 

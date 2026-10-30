@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
-import { afterEach, describe, expect, it } from 'vitest';
+import { appConfig } from 'shared';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -28,7 +29,8 @@ afterEach(async () => await clearSecurityTestData());
 
 /**
  * A TOTP code counts once. Whoever sees a code go by (over a shoulder, in a phishing proxy, in a log) must not use it
- * again within its step, on any route that checks codes.
+ * again within its step, on any route that checks codes. A code verifies only within one step of now, so a guess
+ * matches at most three codes.
  */
 describe('TOTP replay', async () => {
   const call = await createAppClient();
@@ -107,5 +109,23 @@ describe('TOTP replay', async () => {
     const statuses = results.map(({ response }) => response.status).sort();
     expect(statuses).toEqual([204, 401]);
     expect(await sessionsOf(user.id)).toHaveLength(1);
+  });
+
+  it('must not verify a code two steps from now via the clock-drift window', async () => {
+    const user = await createTotpUser(`window-${nanoid(8)}@security-test.com`);
+    const stepMs = appConfig.totp.intervalInSeconds * 1000;
+
+    // The clock stands mid-step, so each code is checked in the step it was computed in.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(Math.floor(Date.now() / stepMs) * stepMs + stepMs / 2);
+      for (const steps of [2, -2]) await expectRefusal(await answerChallenge(user, totpCode(testTotpSecret, steps)), 401, 'invalid_token');
+
+      // Positive control: one step either side verifies, the earlier one first, since a code spends the steps before it.
+      expect((await answerChallenge(user, totpCode(testTotpSecret, -1))).response.status).toBe(204);
+      expect((await answerChallenge(user, totpCode(testTotpSecret, 1))).response.status).toBe(204);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,16 +1,23 @@
 import { appConfig } from 'shared';
 import { type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import type { TimeSpan } from '#/utils/time-span';
+import { TimeSpan } from '#/utils/time-span';
 import { i18n, plainText } from './i18n';
 
 const unitNames: Record<TimeSpan['unit'], string> = { ms: 'millisecond', s: 'second', m: 'minute', h: 'hour', d: 'day', w: 'week' };
 
-/** "This link expires in 15 minutes.", from the link type's own lifetime, so the mail and the token cannot disagree. */
-export const linkExpiresText = (lng: string, type: LinkTokenType) => {
-  const { ttl } = tokenPolicies[type];
-  const duration = new Intl.NumberFormat(lng, { style: 'unit', unit: unitNames[ttl.unit], unitDisplay: 'long' }).format(ttl.value);
-  return i18n.t('backend:email.link_expires', { lng, duration, ...plainText });
+/** "15 minutes", in `lng`. */
+const spanText = (lng: string, { value, unit }: TimeSpan) =>
+  new Intl.NumberFormat(lng, { style: 'unit', unit: unitNames[unit], unitDisplay: 'long' }).format(value);
+
+/** A number of seconds in words in `lng`, in the longest unit that holds it whole: "30 minutes", "3 weeks". */
+export const durationText = (lng: string, seconds: number) => {
+  const spans = (['w', 'd', 'h', 'm'] as const).map((unit) => new TimeSpan(seconds / new TimeSpan(1, unit).seconds(), unit));
+  return spanText(lng, spans.find(({ value }) => Number.isInteger(value)) ?? new TimeSpan(seconds, 's'));
 };
+
+/** "This link expires in 15 minutes.", from the link type's own lifetime, so the mail and the token cannot disagree. */
+export const linkExpiresText = (lng: string, type: LinkTokenType) =>
+  i18n.t('backend:email.link_expires', { lng, duration: spanText(lng, tokenPolicies[type].ttl), ...plainText });
 
 /**
  * What a reader does when the mail was not their doing: `ignore` a link nothing happens without, `no_change` a request
