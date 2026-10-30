@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { usePanelDragHandle } from '~/modules/common/board/board-drag';
-import { useBoardStore } from '~/modules/common/board/board-store';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -34,7 +33,6 @@ interface PanelDragHandleButtonProps {
 export function PanelDragHandleButton({ name, fallbackLabel, className, icon, preview, children }: PanelDragHandleButtonProps) {
   const { t } = useTranslation();
   const panelDrag = usePanelDragHandle();
-  const isCollapsed = useBoardStore((state) => !!panelDrag && !!state.panelCollapseState[panelDrag.panelId]);
 
   const content = (
     <>
@@ -66,7 +64,7 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
     );
   }
 
-  const { registerHandle } = panelDrag;
+  const { registerHandle, isCollapsed } = panelDrag;
   const CollapseIcon = isCollapsed ? ChevronsLeftRightIcon : ChevronsRightLeftIcon;
 
   return (

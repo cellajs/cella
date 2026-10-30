@@ -6,10 +6,10 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
-import { useBoardStore } from '~/modules/common/board/board-store';
+import { isPanelReorderDragData, PanelDragHandleContext, PanelToggleContext, reorderPanels } from '~/modules/common/board/board-drag';
+import { boardStore, useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
@@ -25,7 +25,28 @@ export interface BoardLayoutPanel {
   panelId: string;
   /** Accessible name of the panel's region. */
   label?: string;
+  /** Consecutive panels of one group move as one under `groupHeader`, and still resize and collapse apart. */
+  group?: { id: string; label: string };
 }
+
+/** What a drag moves: one panel, or the panels of a group. */
+interface ReorderItem {
+  id: string;
+  group?: BoardLayoutPanel['group'];
+  panels: BoardLayoutPanel[];
+  /** Index of its first panel among all panels: separators and panels are counted flat. */
+  start: number;
+}
+
+const toReorderItems = (panels: BoardLayoutPanel[]) => {
+  const items: ReorderItem[] = [];
+  panels.forEach((panel, index) => {
+    const last = items.at(-1);
+    if (panel.group && last?.group?.id === panel.group.id) last.panels.push(panel);
+    else items.push({ id: panel.group?.id ?? panel.panelId, group: panel.group, panels: [panel], start: index });
+  });
+  return items;
+};
 
 export interface BoardLayoutHandle {
   expandAndScrollToPanel: (panelId: string) => void;
@@ -43,6 +64,8 @@ interface BoardLayoutProps {
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   /** `marked` when panel content carries `hintFadeOut`, so frames and avatars stay solid through a collapse hint */
   panelFade?: 'all' | 'marked';
+  /** The header of a group, spanning its panels. */
+  groupHeader?: (groupId: string) => ReactNode;
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
@@ -57,6 +80,7 @@ export function BoardLayout({
   reorderable,
   onPanelReorder,
   panelFade,
+  groupHeader,
   ref,
 }: BoardLayoutProps) {
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
@@ -69,6 +93,33 @@ export function BoardLayout({
   const handlePanelToggle = useCallback((panelId: string) => {
     panelGroupApiRef.current?.togglePanel(panelId);
   }, []);
+
+  const items = toReorderItems(panels);
+  const itemsRef = useLatestRef(items);
+
+  const handleItemToggle = useCallback(
+    (itemId: string) => {
+      const panelIds = itemsRef.current.find((item) => item.id === itemId)?.panels.map((panel) => panel.panelId) ?? [];
+      const { panelCollapseState } = boardStore.getState();
+      const collapse = !panelIds.every((panelId) => panelCollapseState[panelId]);
+      for (const panelId of panelIds) {
+        if (!!panelCollapseState[panelId] !== collapse) panelGroupApiRef.current?.togglePanel(panelId);
+      }
+    },
+    [itemsRef],
+  );
+
+  // The store only holds the state, so a panel marked open from outside, to reveal a form in it, gets its width here
+  useEffect(
+    () =>
+      useBoardStore.subscribe((state, prev) => {
+        if (state.panelCollapseState === prev.panelCollapseState) return;
+        for (const [panelId, collapsed] of Object.entries(prev.panelCollapseState)) {
+          if (collapsed && !state.panelCollapseState[panelId]) panelGroupApiRef.current?.expandPanel(panelId);
+        }
+      }),
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
     expandAndScrollToPanel(panelId: string) {
@@ -90,8 +141,8 @@ export function BoardLayout({
     [onLayoutChanged],
   );
 
-  // Keep a ref to current panel IDs so drag wrappers can read it without needing deps
-  const panelIdsRef = useLatestRef(panels.map((p) => p.panelId));
+  // Keep a ref to the current order so drag wrappers can read it without needing deps
+  const itemIdsRef = useLatestRef(items.map((item) => item.id));
 
   const [dropIndicator, setDropIndicator] = useState<{ panelId: string; edge: Edge } | null>(null);
 
@@ -111,57 +162,87 @@ export function BoardLayout({
         if (!isPanelReorderDragData(source.data) || !isPanelReorderDragData(target.data)) return;
 
         const edge = extractClosestEdge(target.data);
-        const currentOrder = panelIdsRef.current;
+        const currentOrder = itemIdsRef.current;
         const newOrder = reorderPanels(currentOrder, source.data.panelId, target.data.panelId, edge);
         if (!newOrder) return;
 
         onPanelReorder?.(newOrder, source.data.panelId);
       },
     });
-  }, [reorderable, onPanelReorder]);
+  }, [reorderable, onPanelReorder, itemIdsRef]);
+
+  const renderPanel = ({ panelId, label }: BoardLayoutPanel, index: number) => (
+    <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade} label={label}>
+      {children(panelId, index)}
+    </ResizablePanel>
+  );
+
+  const renderSeparator = (index: number) =>
+    index < panels.length - 1 && (
+      <ResizableSeparator
+        index={index}
+        className="mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary"
+      />
+    );
+
+  const renderItemContent = ({ id, group, panels: itemPanels, start }: ReorderItem) => {
+    if (!group) return renderPanel(itemPanels[0], start);
+
+    return (
+      // biome-ignore lint/a11y/useSemanticElements: a fieldset would bring its own frame and legend layout around the panels
+      <div role="group" aria-label={group.label} data-panel-group={id} className="flex flex-col">
+        {/* Zero intrinsic width: a long header cannot widen the group past its panels */}
+        <div className="w-0 min-w-full">{groupHeader?.(id)}</div>
+        <div className="flex min-h-0 flex-1">
+          {itemPanels.map((panel, offset) => (
+            <Fragment key={panel.panelId}>
+              {renderPanel(panel, start + offset)}
+              {offset < itemPanels.length - 1 && renderSeparator(start + offset)}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const panelGroup = (
-    <ResizablePanelGroup
-      id={`panels-${boardId}`}
-      defaultLayout={defaultLayout}
-      onLayoutChanged={handleLayoutChanged}
-      onCollapseChange={setPanelCollapsed}
-      onReady={handleReady}
-      className={cn('group/board', !autoHeight && 'h-[inherit]')}
-    >
-      {panels.map(({ panelId, label }, i) => (
-        <motion.div key={panelId} layout="position" layoutId={`${boardId}-${panelId}`} className="relative flex shrink-0">
-          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
-            <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
-          )}
-          <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade} label={label}>
+    <PanelToggleContext.Provider value={reorderable ? handlePanelToggle : null}>
+      <ResizablePanelGroup
+        id={`panels-${boardId}`}
+        defaultLayout={defaultLayout}
+        onLayoutChanged={handleLayoutChanged}
+        onCollapseChange={setPanelCollapsed}
+        onReady={handleReady}
+        className={cn('group/board', !autoHeight && 'h-[inherit]')}
+      >
+        {items.map((item, i) => (
+          <motion.div key={item.id} layout="position" layoutId={`${boardId}-${item.id}`} className="relative flex shrink-0">
+            {reorderable && dropIndicator?.panelId === item.id && dropIndicator.edge === 'left' && (
+              <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
+            )}
             {reorderable ? (
               <PanelDragWrapper
-                panelId={panelId}
+                panelId={item.id}
+                panelIds={item.panels.map((panel) => panel.panelId)}
                 index={i}
-                total={panels.length}
-                panelIdsRef={panelIdsRef}
+                total={items.length}
+                itemIdsRef={itemIdsRef}
                 onEdgeChange={updateDropIndicator}
-                onPanelToggle={handlePanelToggle}
+                onItemToggle={handleItemToggle}
                 onPanelReorder={onPanelReorder}
               >
-                {children(panelId, i)}
+                {renderItemContent(item)}
               </PanelDragWrapper>
             ) : (
-              children(panelId, i)
+              renderItemContent(item)
             )}
-          </ResizablePanel>
-          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
+            {reorderable && dropIndicator?.panelId === item.id && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
 
-          {i < panels.length - 1 && (
-            <ResizableSeparator
-              index={i}
-              className="mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary"
-            />
-          )}
-        </motion.div>
-      ))}
-    </ResizablePanelGroup>
+            {renderSeparator(item.start + item.panels.length - 1)}
+          </motion.div>
+        ))}
+      </ResizablePanelGroup>
+    </PanelToggleContext.Provider>
   );
 
   // Window-scroll mode clips horizontal overflow without creating a scroll container, so section
@@ -183,35 +264,39 @@ export function BoardLayout({
   );
 }
 
-/** Wraps a panel with drag-and-drop reorder support. Provides drag handle ref via context. */
+/** Wraps a panel or a group with drag-and-drop reorder support. Provides drag handle ref via context. */
 function PanelDragWrapper({
   panelId,
+  panelIds,
   index,
   total,
-  panelIdsRef,
+  itemIdsRef,
   onEdgeChange,
-  onPanelToggle,
+  onItemToggle,
   onPanelReorder,
   children,
 }: {
   panelId: string;
+  /** The panels it moves. */
+  panelIds: string[];
   index: number;
   total: number;
-  panelIdsRef: React.RefObject<string[]>;
+  itemIdsRef: React.RefObject<string[]>;
   onEdgeChange: (indicator: { panelId: string; edge: Edge } | null) => void;
-  onPanelToggle: (panelId: string) => void;
+  onItemToggle: (itemId: string) => void;
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   children: ReactNode;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [handleEl, setHandleEl] = useState<HTMLElement | null>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
+  const isCollapsed = useBoardStore((state) => panelIds.every((id) => !!state.panelCollapseState[id]));
 
   const registerHandle = useCallback((el: HTMLElement | null) => setHandleEl(el), []);
 
   const handleMove = useCallback(
     (step: -1 | 1) => {
-      const currentOrder = panelIdsRef.current;
+      const currentOrder = itemIdsRef.current;
       const currentIdx = currentOrder.indexOf(panelId);
       const targetIdx = currentIdx + step;
       if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
@@ -220,16 +305,16 @@ function PanelDragWrapper({
       [newOrder[currentIdx], newOrder[targetIdx]] = [newOrder[targetIdx], newOrder[currentIdx]];
       onPanelReorder?.(newOrder, panelId);
     },
-    [panelId, panelIdsRef, onPanelReorder],
+    [panelId, itemIdsRef, onPanelReorder],
   );
 
   const handleToggleCollapsed = useCallback(() => {
-    onPanelToggle(panelId);
-  }, [onPanelToggle, panelId]);
+    onItemToggle(panelId);
+  }, [onItemToggle, panelId]);
 
   const ctxValue = useMemo(
-    () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, previewContainer, index, total }),
-    [panelId, registerHandle, handleMove, handleToggleCollapsed, previewContainer, index, total],
+    () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, isCollapsed, previewContainer, index, total }),
+    [panelId, registerHandle, handleMove, handleToggleCollapsed, isCollapsed, previewContainer, index, total],
   );
 
   useEffect(() => {
@@ -247,9 +332,9 @@ function PanelDragWrapper({
           const edge = extractClosestEdge(self.data);
           if (!edge || !isPanelReorderDragData(source.data)) return onEdgeChange(null);
 
-          const panelIds = panelIdsRef.current;
-          const targetIdx = panelIds.indexOf(panelId);
-          const sourceIdx = panelIds.indexOf(source.data.panelId);
+          const itemIds = itemIdsRef.current;
+          const targetIdx = itemIds.indexOf(panelId);
+          const sourceIdx = itemIds.indexOf(source.data.panelId);
           const neighborIdx = edge === 'left' ? targetIdx - 1 : targetIdx + 1;
           if (sourceIdx === neighborIdx) return onEdgeChange(null);
 
@@ -282,11 +367,11 @@ function PanelDragWrapper({
     }
 
     return combine(...cleanups);
-  }, [panelId, panelIdsRef, handleEl, onEdgeChange]);
+  }, [panelId, itemIdsRef, handleEl, onEdgeChange]);
 
   return (
     <PanelDragHandleContext.Provider value={ctxValue}>
-      <div ref={wrapperRef} className="h-full">
+      <div ref={wrapperRef} className="flex">
         {children}
       </div>
     </PanelDragHandleContext.Provider>
