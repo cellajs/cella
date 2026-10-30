@@ -14,15 +14,15 @@ const recoveryWindow = new TimeSpan(10, 'm');
 const recoverySchema = z.object({ email: z.email(), connectionId: z.uuid() });
 
 interface SsoCollision {
-  /** The address the institution asserted, which an account already holds. */
+  /** The address the institution asserted, which an account already holds or the institution does not prove. */
   email: string;
   connectionId: string;
 }
 
 /**
- * Remembers, in this browser only, that an institution just asserted an address an existing account holds. The error
- * page offers a sign-in link to that address on the strength of it, so the address never travels in a URL and no one
- * can ask for the link without having signed in at the institution first.
+ * Remembers, in this browser only, that an institution just asserted an address an existing account holds or that it
+ * does not prove. The error page offers a sign-in link to that address on the strength of it, so the address never
+ * travels in a URL and no one can ask for the link without having signed in at the institution first.
  */
 export const rememberSsoCollision = (ctx: Context<Env>, collision: SsoCollision) =>
   setAuthCookie(ctx, 'sso-recovery', JSON.stringify(collision), recoveryWindow);

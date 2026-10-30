@@ -134,6 +134,15 @@ describe('SSO sign-in through an institution', async () => {
   const signInThrough = async (connectionId: string, claims: Record<string, unknown> = claimsOf()) =>
     finish(stateOf((await start(connectionId)).response), claims);
   const lastSessionCall = () => vi.mocked(setUserSession).mock.calls.at(-1)?.slice(2);
+  /** The pin startOAuthConnect leaves: a token for the user and the session that asked, its raw value in this browser's cookie. */
+  const pinConnect = async (user: { id: string; email: string }) => {
+    const { id: sessionId } = await insertTestSession(user, { expiresInMs: 60 * 60 * 1000 });
+    const pin = await insertTestToken('oauth-connect', user, { sessionId, expiresInMs: 10 * 60 * 1000 });
+    mockCookieStore.set('oauth-connect', pin.raw);
+    vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id: user.id }, session: { id: sessionId } } as never);
+  };
+  const connectThrough = async (connectionId: string, claims: Record<string, unknown>) =>
+    finish(stateOf((await start(connectionId, { type: 'connect' })).response), claims);
 
   it('tells the entry page what to show, by the connection id alone', async () => {
     const { organization, connection } = await seedConnection();
@@ -259,6 +268,51 @@ describe('SSO sign-in through an institution', async () => {
     expect(await identitiesOf((await getUserByEmail(studentEmail))[0].id)).toHaveLength(0);
   });
 
+  it("must not count a federated address outside the connection's domains as proven", async () => {
+    const { connection } = await seedConnection();
+    const victim = await createTestOrganization();
+    const inviter = await createUser('admin@victim.example');
+    const foreign = 'ceo@victim.example';
+    const { inactiveMembership } = await createInvitation({ organization: victim, email: foreign, createdBy: inviter.id });
+    const invitee = async (id: string) => (await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0].userId;
+    const ledgerOf = (email: string) => db.select().from(emailsTable).where(eq(emailsTable.email, email));
+
+    // A first sign-in is refused before any account holds the address, with the offer to prove the inbox by mail.
+    await expectRefusal(await signInThrough(connection.id, claimsOf({ email: foreign, sub: 'attacker' })), 409, 'sso_email_unproven');
+    expect(await getUserByEmail(foreign)).toHaveLength(0);
+    expect(JSON.parse(mockCookieStore.get('sso-recovery') ?? '{}')).toEqual({ email: foreign, connectionId: connection.id });
+
+    // A returning identity and a connect assert it later: still not stored.
+    await signInThrough(connection.id);
+    const [student] = await getUserByEmail(studentEmail);
+    expect((await signInThrough(connection.id, claimsOf({ email: foreign }))).response.status).toBe(302);
+    const member = await createUser('l.jansen@hu.nl');
+    await pinConnect(member);
+    expect((await connectThrough(connection.id, claimsOf({ email: foreign, sub: 'lars-subject' }))).response.status).toBe(302);
+
+    expect(await ledgerOf(foreign)).toHaveLength(0);
+    expect(await invitee(inactiveMembership.id)).toBeNull();
+
+    // Positive control: an address on the connection's domains is proven and claims its invitation.
+    const own = 'sanne@hu.nl';
+    const { inactiveMembership: ownInvitation } = await createInvitation({ organization: victim, email: own, createdBy: inviter.id });
+    expect((await signInThrough(connection.id, claimsOf({ email: own }))).response.status).toBe(302);
+    expect(await ledgerOf(own)).toMatchObject([{ userId: student.id, lastVerifiedVia: 'surfconext' }]);
+    expect(await invitee(ownInvitation.id)).toBe(student.id);
+  });
+
+  it('must not provision a membership through an invitation elsewhere when the connection does not provision just in time', async () => {
+    const { connection } = await seedConnection({ jitProvisioning: false });
+    const elsewhere = await createTestOrganization();
+    const inviter = await createUser('admin@elsewhere.example');
+    await createInvitation({ organization: elsewhere, email: studentEmail, createdBy: inviter.id });
+
+    // The invitation admits the account; it is no invitation to this tenant's organization.
+    expect((await signInThrough(connection.id)).response.status).toBe(302);
+    const [user] = await getUserByEmail(studentEmail);
+    expect(await membershipsOf(user.id)).toHaveLength(0);
+  });
+
   it('the role of a granted membership comes from the role seam, which reads every claim of the sign-in', async () => {
     const { organization, connection } = await seedConnection();
     const claims = claimsOf({ eduperson_affiliation: ['employee', 'member'] });
@@ -325,14 +379,6 @@ describe('SSO sign-in through an institution', async () => {
   });
 
   describe('connect: the institution account of a signed-in user', () => {
-    /** The pin startOAuthConnect leaves: a token for the user and the session that asked, its raw value in this browser's cookie. */
-    const pinConnect = async (user: { id: string; email: string }) => {
-      const { id: sessionId } = await insertTestSession(user, { expiresInMs: 60 * 60 * 1000 });
-      const pin = await insertTestToken('oauth-connect', user, { sessionId, expiresInMs: 10 * 60 * 1000 });
-      mockCookieStore.set('oauth-connect', pin.raw);
-      vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id: user.id }, session: { id: sessionId } } as never);
-    };
-
     it('links the identity, proves the asserted address and grants membership in the institution’s organization', async () => {
       const { organization, connection } = await seedConnection();
       const user = await createUser('l.jansen@hu.nl');
@@ -353,6 +399,16 @@ describe('SSO sign-in through an institution', async () => {
       ]);
       expect(await membershipsOf(user.id)).toMatchObject([{ channelId: organization.id, role: memberRole }]);
       expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id }]);
+    });
+
+    it('must not provision a membership through connect when the connection does not provision just in time', async () => {
+      const { connection } = await seedConnection({ jitProvisioning: false });
+      const user = await createUser('l.jansen@hu.nl');
+      await pinConnect(user);
+
+      expect((await connectThrough(connection.id, claimsOf({ email: 'l.jansen@hu.nl', sub: 'lars-subject' }))).response.status).toBe(302);
+      expect(await identitiesOf(user.id)).toMatchObject([{ kind: 'sso', subject: 'lars-subject', connectionId: connection.id }]);
+      expect(await membershipsOf(user.id)).toHaveLength(0);
     });
 
     it('grants the membership of a connect with the role the seam gives', async () => {
@@ -452,9 +508,9 @@ describe('SSO sign-in through an institution', async () => {
       await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
       await requireSso(organization.tenantId);
 
-      // An account at another connected institution that asserts the same address.
+      // An account at another connected institution that asserts the same address, outside that institution's domains.
       const refused = await signInThrough(other.connection.id, claimsOf({ sub: 'someone-at-uu', schac_home_organization: 'uu.nl' }));
-      await expectRefusal(refused, 409, 'sso_email_exists');
+      await expectRefusal(refused, 409, 'sso_email_unproven');
 
       await expectRefusal(await recover(), 403, 'sso_required');
       expect(await magicTokensOf(user.id)).toHaveLength(0);

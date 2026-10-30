@@ -6,6 +6,7 @@ import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { findIdentityBySubject } from '#/modules/auth/oauth/identities-queries';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
+import { provesAddress } from '#/modules/auth/sso/helpers/address-authority';
 import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';
 import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { assertedInstitution, type SsoProfile, snapshotOf, transformSsoClaims } from '#/modules/auth/sso/helpers/transform-sso-claims';
@@ -89,13 +90,13 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
   });
 };
 
-/** The account of a returning identity: the use recorded, and a changed address proven under address authority. */
+/** The account of a returning identity: the use recorded, and a changed address added when the institution proves it. */
 const signInSsoIdentity = async (identity: IdentityModel, { federation, connection, profile, snapshot }: SsoSignInFacts) => {
   const user = await findUserById(dbCtx, { id: identity.userId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   await touchSsoIdentity(identity, { profile, snapshot, connection });
-  if (federation.addressAuthority && profile.email && profile.email !== user.email) {
+  if (profile.email && profile.email !== user.email && provesAddress(federation, connection, profile.email)) {
     await proveAssertedAddress(user.id, profile.email, federation.key);
   }
   return user;

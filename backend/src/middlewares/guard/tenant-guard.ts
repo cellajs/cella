@@ -4,6 +4,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { routeTarget } from '#/middlewares/guard/route-target';
+import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findUserSsoConnection } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
@@ -58,14 +59,16 @@ export const tenantGuard = xMiddleware(
     }
 
     // The tenant's sign-in policy: a person who holds an identity through this tenant's connection must have
-    // signed in with an allowed method, whether by session or by a token their session authorized. Externals without
-    // such an identity are untouched. System admins are exempt, acting as a user too: an impersonation's method is its
-    // admin's. A session's method is in the cached facts, so only the mismatch pays for the lookup.
+    // signed in with an allowed method, whether by session or by a token their session authorized, and with a
+    // federation only through that connection. Externals without such an identity are untouched. System admins are
+    // exempt, acting as a user too: an impersonation's method is its admin's. A session's method and connection are in
+    // the cached facts, so only a mismatch or a federation sign-in pays for the lookup.
     if (actor.kind === 'user' && !ctx.var.isSystemAdmin && !ctx.var.impersonator && tenant.authStrategies.length > 0) {
       const strategy = actor.authStrategy ?? null;
-      if (!strategy || !tenant.authStrategies.includes(strategy)) {
+      const allowed = !!strategy && tenant.authStrategies.includes(strategy);
+      if (!allowed || (strategy && isFederationKey(strategy))) {
         const connection = await findUserSsoConnection(ctx, { userId: actor.id, tenantId: tenant.id });
-        if (connection) {
+        if (connection && (!allowed || actor.connectionId !== connection.id)) {
           throw new AppError(403, 'sso_required', 'warn', {
             meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },
           });

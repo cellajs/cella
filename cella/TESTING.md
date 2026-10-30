@@ -23,6 +23,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Acting through a stale tab:** an idle tab of one user replaying its queued writes after another user signs in on the same browser.
 - **Over-asking for scope:** an MCP client that starts with write scopes because the server named none.
 - **Proving with a dead key:** a token signed by a retired signing key, by an attacker's key under the server's key id, or with no signature at all.
+- **Claiming an address through a federation:** an institution's identity provider releasing an address outside its domains, collecting that address's invitations.
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.
 - **Assembling SQL from input:** a table name from a token, a sort key or a search pattern reaching SQL text.
 - **Steering the server's own requests:** a client metadata URL or a push endpoint pointed at a private address.

@@ -74,7 +74,7 @@
   "child_page_count_one": "{{count, number}} child page",
   "child_page_count_other": "{{count, number}} child pages",
   "claim_values": "Institution domains",
-  "claim_values.text": "The domains the federation asserts for this institution, comma-separated. A sign-in must assert one of them.",
+  "claim_values.text": "The domains the federation asserts for this institution, comma-separated. A sign-in must assert one of them, and confirms only an email address on them or their subdomains.",
   "clear": "Clear",
   "clear_search": "Clear search",
   "clear_selection": "Clear selection",
