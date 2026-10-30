@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
@@ -62,6 +62,8 @@ export const tokensTable = snakeCase.table(
     index('tokens_single_use_token_idx').on(table.type, table.singleUseToken),
     // Tokens are found by session when it is deleted or a session-bound token is replaced; most hold null.
     index('tokens_session_id_idx').on(table.sessionId).where(sql`${table.sessionId} is not null`),
+    // One live step-up code per session: of two concurrent requests that both cleared the session's code, the later insert is refused.
+    uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.type} = 'step-up'`),
   ],
 );
 

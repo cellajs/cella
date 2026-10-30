@@ -1,0 +1,57 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0de2f505-1ee4-46c6-b147-379e6b86ff15",
+  "prevIds": [
+    "f60bd4ed-55e1-41c7-b2e1-ebe8c6173873"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_step_up_session_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_step_up_session_id_idx",
+        "n|idx|public.tokens_step_up_session_id_idx",
+        "e|idx|public.tokens_step_up_session_id_idx",
+        "n|rel|public.tokens_step_up_session_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.session_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_step_up_session_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "session_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"type\" = 'step-up'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    }
+  ]
+}

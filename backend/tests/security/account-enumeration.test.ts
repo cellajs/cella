@@ -243,7 +243,7 @@ describe('Account enumeration', async () => {
       lastName: 'Ber',
     });
     const state = nanoid();
-    const stateCookie = authCookie(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type }));
+    const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', type }));
     const res = await app.request(`/auth/github/callback?code=provider-code&state=${state}`, {
       headers: { ...defaultHeaders, Cookie: [stateCookie, cookie].filter(Boolean).join('; ') },
     });

@@ -43,6 +43,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Mailing from the app's sender:** invitations, reminders, form confirmations or security alerts sent faster than their caps allow.
 - **Waiting out a failure:** a database blip that ends a process, or a health page that does costly work or leaks error text for anyone.
 - **Creating without bounds:** tenants or push subscriptions created by one account faster than any person would.
+- **Racing and flooding the sign-in plumbing:** concurrent code requests, sign-in starts that grow the cookie header, and mail caps sidestepped by a known browser.
 
 Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
 

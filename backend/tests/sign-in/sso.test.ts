@@ -124,7 +124,12 @@ describe('SSO sign-in through an institution', async () => {
   const call = await createAppClient();
 
   const stateOf = (response: Response) => new URL(response.headers.get('location') ?? 'http://x').searchParams.get('state') ?? '';
-  const statePayload = (state: string) => JSON.parse(mockCookieStore.get(`oauth-state-${state}`) ?? '{}');
+  /** The browser's state cookie, which must hold the round trip `state` names. */
+  const statePayload = (state: string) => {
+    const payload = JSON.parse(mockCookieStore.get('oauth-state') ?? '{}');
+    expect(payload.state).toBe(state);
+    return payload;
+  };
   const start = (connectionId: string, query: Record<string, string> = {}) =>
     call(startSso, { path: { connectionId }, query, headers: defaultHeaders });
   const finish = async (state: string, claims: Record<string, unknown>) => {
