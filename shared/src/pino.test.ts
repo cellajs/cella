@@ -143,7 +143,7 @@ describe('failed queries in log lines', () => {
     const { logger, lines, parsed } = collectingLogger([]);
     const { secret, reason, error } = failedLookup();
     // An AppError built from `originalError` keeps that error's stack and the database error as its cause.
-    const wrapper = Object.assign(new Error('Could not sign in'), { stack: error.stack, cause: error.cause });
+    const wrapper = Object.assign(new Error('Could not sign in', { cause: error.cause }), { stack: error.stack });
 
     createLog(logger).error('OAuth callback failed', { err: wrapper });
 
