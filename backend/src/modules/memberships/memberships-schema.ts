@@ -13,6 +13,7 @@ import {
 import {
   channelEntityTypeSchema,
   includeQuerySchema,
+  maxLength,
   paginationQuerySchema,
   refineWithType,
   validEmailSchema,
@@ -129,6 +130,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   include: includeQuerySchema,
   userIds: z
     .string()
+    .max(maxLength.url)
     .transform((value) => value.split(',').map((id) => id.trim()))
     .pipe(validUuidSchema.array().min(1).max(50))
     .optional(),

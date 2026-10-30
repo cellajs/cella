@@ -46,6 +46,7 @@ const countryCodes = new Set(countries.map(({ code }) => code));
 /** An ISO 3166-1 alpha-2 code that `json/countries.json` lists, the codes the country field offers. */
 export const countryCodeSchema = z
   .string()
+  .max(2)
   .regex(/^[A-Z]{2}$/, translatedError('error:invalid_country'))
   .refine((code) => countryCodes.has(code), translatedError('error:invalid_country'))
   .openapi({ description: 'ISO 3166-1 alpha-2 country code.', example: 'NL' });
@@ -160,6 +161,7 @@ export type IncludeOption = (typeof includeOptions)[number];
 /** Comma-separated, e.g. `?include=counts,membership`. */
 export const includeQuerySchema = z
   .string()
+  .max(maxLength.field)
   .optional()
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
@@ -170,14 +172,16 @@ export const slugIncludeQuerySchema = z.object({ slug: booleanTransformSchema.op
 export const idsBodySchema = (maxItems = 50) =>
   z.object({
     ids: z
-      .array(z.string())
+      .array(validIdSchema)
       .min(1, translatedError('error:invalid_min_items', { min: 'one', name: 'ID' }))
       .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
 /** The optional stx is what prevents echoing the change back to its source. */
 export const idsWithStxBodySchema = (maxItems = 50) =>
-  idsBodySchema(maxItems).extend({ stx: z.object({ mutationId: z.string(), sourceId: z.string() }).optional() });
+  idsBodySchema(maxItems).extend({
+    stx: z.object({ mutationId: z.string().max(maxLength.field), sourceId: z.string().max(maxLength.field) }).optional(),
+  });
 
 /** The `Location` header of a redirect. */
 export const locationSchema = z.object({ Location: z.string() });

@@ -4,11 +4,18 @@ import { auditColumns, tombstoneColumns } from '#/db/utils/audit-columns';
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
+/** String formats whose length is fixed by the format itself. */
+const fixedLengthFormats = ['uuid', 'date-time', 'date', 'time', 'ipv4', 'ipv6'];
+
 type SchemaNode = {
   $ref?: string;
   type?: string | string[];
   maxItems?: number;
   maxProperties?: number;
+  maxLength?: number;
+  format?: string;
+  enum?: unknown[];
+  const?: unknown;
   items?: SchemaNode;
   properties?: Record<string, SchemaNode>;
   additionalProperties?: boolean | SchemaNode;
@@ -118,5 +125,44 @@ describe('request bodies', () => {
       }),
     );
     expect(found).toEqual([]);
+  });
+
+  // A string without a cap costs whatever `jsonBodyLimit` allows, per field, in the parser, an index, a regex or a mail.
+  // A `.max()` before any refinement refuses it first; a `maxLength` constant or the column's length names the cap.
+  it('must not accept a string without a length limit', async () => {
+    const { paths = {}, components } = await loadDocument();
+    const schemas: Record<string, SchemaNode> = components?.schemas ?? {};
+
+    const unbounded = (node: SchemaNode | undefined, at: string, seen: string[]): string[] => {
+      if (!node) return [];
+      if (node.$ref) {
+        const name = node.$ref.split('/').pop() ?? '';
+        return seen.includes(name) ? [] : unbounded(schemas[name], at, [...seen, name]);
+      }
+      const isString = node.type === 'string' || (Array.isArray(node.type) && node.type.includes('string'));
+      const fixed = node.enum !== undefined || node.const !== undefined || fixedLengthFormats.includes(node.format ?? '');
+      const record = typeof node.additionalProperties === 'object' ? node.additionalProperties : undefined;
+      return [
+        ...(isString && node.maxLength === undefined && !fixed ? [at] : []),
+        ...unbounded(node.items, `${at}[]`, seen),
+        ...unbounded(record, `${at}.*`, seen),
+        ...Object.entries(node.properties ?? {}).flatMap(([key, child]) => unbounded(child, `${at}.${key}`, seen)),
+        ...[...(node.allOf ?? []), ...(node.anyOf ?? []), ...(node.oneOf ?? [])].flatMap((child) => unbounded(child, at, seen)),
+      ];
+    };
+
+    const found = Object.values(paths).flatMap((item) =>
+      httpMethods.flatMap((method) => {
+        const operation = item[method];
+        if (!operation) return [];
+        const parameters = (operation.parameters ?? []).flatMap((parameter) =>
+          '$ref' in parameter ? [] : unbounded(parameter.schema, `${operation.operationId} ${parameter.in}.${parameter.name}`, []),
+        );
+        const body = operation.requestBody;
+        const media = body && !('$ref' in body) ? Object.values(body.content) : [];
+        return [...parameters, ...media.flatMap((content) => unbounded(content.schema, `${operation.operationId} body`, []))];
+      }),
+    );
+    expect([...new Set(found)]).toEqual([]);
   });
 });

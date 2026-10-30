@@ -3,12 +3,13 @@ import type { Context } from 'hono';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
 import type { Env } from '#/core/context';
 import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
+import { maxLength } from '#/schemas';
 
 const oauthProviderIds = ['github', 'google', 'microsoft'] as const satisfies readonly BaseOAuthProviders[];
 
 const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
 
-export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().optional() });
+export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().max(maxLength.url).optional() });
 
 /** The request of a route that starts a round trip, its query validated by `oauthQuerySchema`. */
 export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
@@ -31,11 +32,11 @@ export type OAuthCookiePayload = z.infer<typeof oauthCookiePayloadSchema>;
 
 /** A provider denial returns `error` and `state` without a `code` (RFC 6749 §4.1.2.1). */
 export const oauthCallbackQuerySchema = z.object({
-  code: z.string().optional(),
-  state: z.string(),
-  error: z.string().optional(),
-  error_description: z.string().optional(),
-  error_uri: z.string().optional(),
+  code: z.string().max(maxLength.url).optional(),
+  state: z.string().max(maxLength.field),
+  error: z.string().max(maxLength.field).optional(),
+  error_description: z.string().max(maxLength.url).optional(),
+  error_uri: z.string().max(maxLength.url).optional(),
 });
 
 /** The request of a provider or federation callback, its query validated by `oauthCallbackQuerySchema`. */

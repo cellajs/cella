@@ -6,7 +6,7 @@ import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
-import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
+import { cookieSchema, locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
@@ -69,7 +69,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Invoke token session',
     description:
       'Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.',
-    request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string() }) },
+    request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string().max(maxLength.field) }) },
     responses: { 302: { description: 'Redirect with token session', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
   getTokenData: xRoute({
