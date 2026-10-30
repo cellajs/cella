@@ -15,7 +15,7 @@ keys**. Each environment owes one sitting once its target carries this change: *
 
 Whoever chooses the code that runs with an environment's secrets reads them, so walls inside that deploy path stopped nobody. The deploy
 reads each running service's standing key (`tasks/generation-keys.ts`) into the cloud-init of the machines it makes; service policies gain
-`ContainerRegistryReadOnly` and `ObjectStorageObjectsWrite`, and the diagnostics bucket admits each service key and the builder to their own
+`ContainerRegistryReadOnly` and `ObjectStorageObjectsWrite`, and the diagnostics bucket admits the service keys and the builder to write their
 reports. The observer reads the state bucket's `control/` only, so only the deploy key and the operator read a checkpoint.
 
 ## Blast radius
