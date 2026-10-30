@@ -455,6 +455,32 @@
   @apply link-inline;
 }
 
+/* A docs intro is a scope sentence, then `### TL;DR` and one paragraph up to the first h2. Markdown stays plain, so the
+   rules key on the heading's slug. A margin inside the block would break the line, and `--border` is too faint to read
+   as a line in dark mode. */
+.prose > p:has(+ #spy-tldr) {
+  color: var(--muted-foreground);
+}
+
+.prose > #spy-tldr,
+.prose > #spy-tldr ~ :not(h2, h2 ~ *) {
+  margin-block: 0;
+  border-inline-start: 2px solid var(--input);
+  padding-inline-start: 1rem;
+}
+
+.prose > #spy-tldr {
+  margin-block-start: 1.75em;
+  padding-block-end: 0.25em;
+  color: var(--muted-foreground);
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+.prose > #spy-tldr ~ :not(h2, h2 ~ *) {
+  color: var(--foreground);
+}
+
 /* Keep docs code unlayered so it outranks typography's utilities-layer theme. */
 
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a filled chip. */

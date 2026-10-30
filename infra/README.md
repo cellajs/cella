@@ -4,9 +4,7 @@
 
 ### TL;DR
 
-The EU has great cloud providers; what it lacks is an easy way to deploy within them.
-
-Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https://www.scaleway.com/), then deploys every release with zero downtime from a runner in that same account.
+The EU has great cloud providers; what it lacks is an easy way to deploy within them. Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https://www.scaleway.com/), then deploys every release with zero downtime from a runner in that same account.
 
 ## Key features
 
