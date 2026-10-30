@@ -21,9 +21,8 @@ for (const entityType of appConfig.productEntityTypes) {
       try {
         // The bus carries product events with their rows, so the narrowing holds for every event of a product type.
         const productEvent = event as AppStreamProductEvent;
-        await dispatchChange(productEvent);
-        // Reparented rows also tell old-path readers who lost visibility.
-        if (action === 'updated') await dispatchMoveOuts(productEvent);
+        // Reparented rows also tell old-path readers who lost visibility, side by side so a stalled reader delays neither.
+        await Promise.all([dispatchChange(productEvent), action === 'updated' && dispatchMoveOuts(productEvent)]);
       } catch (error) {
         log.error('Failed to dispatch entity change event', { error, activityId: event.id });
       }

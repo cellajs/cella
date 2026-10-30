@@ -107,7 +107,7 @@ Catchup runs on every connection before the stream goes live. The client posts i
 
 ### SSE wire
 
-Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute, and a new stream's memberships once it registers: one that changed while the stream connected closes it, and the client reconnects with current access. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 
@@ -172,7 +172,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | --- | --- | --- | --- |
 | A client's stream is down | The app works as a REST app; lists refetch when opened | Reconnect and catchup | Nothing |
 | The worker is down or reading again | Other users' changes arrive late and in order; in a longer outage lists refetch when opened | The worker reads on from the slot | Nothing |
-| The API restarts or loses a frame | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
+| The API restarts, loses a frame or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot; then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile; with a restore, everything after the backup |
 | One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |

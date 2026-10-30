@@ -28,14 +28,22 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
   if (cached?.version === bindingsVersion) return cached.memberships;
 
   return coalesce(`memberships:${userId}:${bindingsVersion}`, async () => {
-    const rows = await baseDb
-      .select({ version: actorsTable.bindingsVersion, membership: getColumns(membershipsTable) })
-      .from(actorsTable)
-      .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
-      .where(eq(actorsTable.id, userId));
-
-    const memberships = rows.flatMap(({ membership }) => (membership ? [membership] : []));
-    if (rows[0]) membershipCache.set(userId, { version: rows[0].version, memberships });
+    const { version, memberships } = await readMemberships(userId);
+    if (version !== undefined) membershipCache.set(userId, { version, memberships });
     return memberships;
   });
 };
+
+/**
+ * The user's memberships in unarchived tenants, read past the cache in one statement with the bindings version they
+ * hold at; the version is undefined when no actor row has the id.
+ */
+export async function readMemberships(userId: string): Promise<{ version?: string; memberships: Env['Variables']['memberships'] }> {
+  const rows = await baseDb
+    .select({ version: actorsTable.bindingsVersion, membership: getColumns(membershipsTable) })
+    .from(actorsTable)
+    .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
+    .where(eq(actorsTable.id, userId));
+
+  return { version: rows[0]?.version, memberships: rows.flatMap(({ membership }) => (membership ? [membership] : [])) };
+}

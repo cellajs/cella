@@ -1,4 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
+import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { StreamChange, StreamSignal } from '#/schemas';
 import { log } from '#/utils/logger';
@@ -22,21 +23,50 @@ export interface StreamErrorPayload {
  */
 export type StreamFrame = { event: 'change'; id: string; data: StreamChange } | { event: 'signal'; data: StreamSignal };
 
+/** Frame bytes a stream may hold unsent: the next frame closes it, and its client's reconnect catches up from its cursor. */
+export const maxPendingStreamBytes = 64 * 1024;
+
+/** The bytes of each stream's frames written and not yet taken by its client. */
+const pendingStreamBytes = new WeakMap<SSEStreamingApi, number>();
+
+/**
+ * Ends a stream its caller unregistered. Abort runs the handler's onAbort cleanup, ends the response body and releases
+ * every write still waiting for the client; close lets keepAlive return.
+ */
+export async function endStream(stream: SSEStreamingApi): Promise<void> {
+  stream.abort();
+  await stream.close();
+}
+
+/** Unregisters and ends a stream whose client stopped reading; one already ended stays as it is. */
+async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi, pendingBytes: number): Promise<void> {
+  if (stream.aborted) return;
+  log.warn('Closed a stream whose client stopped reading', { subscriberId, pendingBytes });
+  streamSubscriberManager.unregister(subscriberId);
+  await endStream(stream);
+}
+
 /**
  * Writes one frame to each subscriber, serialized once and side by side: a client that stopped reading holds up no
- * other, and a write that fails is logged for its subscriber alone.
+ * other and is closed at `maxPendingStreamBytes`, and a write that fails is logged for its subscriber alone.
  * @param failure - The log message of a failed write.
  */
 export async function sendToSubscribers(subscribers: readonly BaseStreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
   const data = JSON.stringify(frame.data);
+  const bytes = Buffer.byteLength(data);
   const id = frame.event === 'change' ? frame.id : undefined;
   await Promise.all(
-    subscribers.map(async (subscriber) => {
+    subscribers.map(async ({ id: subscriberId, stream }) => {
+      const pending = pendingStreamBytes.get(stream) ?? 0;
+      if (pending >= maxPendingStreamBytes) return closeStalledStream(subscriberId, stream, pending);
+      pendingStreamBytes.set(stream, pending + bytes);
       try {
-        await subscriber.stream.writeSSE({ event: frame.event, id, data });
-        log.debug('SSE frame sent', { subscriberId: subscriber.id, event: frame.event, activityId: id });
+        await stream.writeSSE({ event: frame.event, id, data });
+        log.debug('SSE frame sent', { subscriberId, event: frame.event, activityId: id });
       } catch (error) {
-        log.error(failure, { subscriberId: subscriber.id, event: frame.event, activityId: id, error });
+        log.error(failure, { subscriberId, event: frame.event, activityId: id, error });
+      } finally {
+        pendingStreamBytes.set(stream, (pendingStreamBytes.get(stream) ?? 0) - bytes);
       }
     }),
   );

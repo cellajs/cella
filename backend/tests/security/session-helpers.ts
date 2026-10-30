@@ -108,12 +108,8 @@ const openStreams: OpenStream[] = [];
 
 const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic<AppStreamSubscriber>(`user:${userId}`);
 
-/** Opens the app stream with a session, as the browser's EventSource does, and waits until the server registered it. */
-export async function openStream(userId: string, session: TestSession): Promise<OpenStream> {
-  const { baseApp } = await import('#/routes');
-  const response = await baseApp.request('http://localhost/entities/app/stream', { headers: session.headers });
-  expect(response.status).toBe(200);
-
+/** Reads an app stream response as the browser's EventSource does; `cancelOpenStreams` ends it. */
+export function readStream(response: Response, sessionId: string): OpenStream {
   const reader = (response.body as ReadableStream<Uint8Array>).getReader();
   const decoder = new TextDecoder();
   const events: OpenStream['events'] = [];
@@ -136,9 +132,18 @@ export async function openStream(userId: string, session: TestSession): Promise<
     ended = true;
   })();
 
-  const stream = { sessionId: session.id, events, ended: () => ended, cancel: () => reader.cancel().catch(() => {}) };
+  const stream = { sessionId, events, ended: () => ended, cancel: () => reader.cancel().catch(() => {}) };
   openStreams.push(stream);
+  return stream;
+}
 
+/** Opens the app stream with a session, as the browser's EventSource does, and waits until the server registered it. */
+export async function openStream(userId: string, session: TestSession): Promise<OpenStream> {
+  const { baseApp } = await import('#/routes');
+  const response = await baseApp.request('http://localhost/entities/app/stream', { headers: session.headers });
+  expect(response.status).toBe(200);
+
+  const stream = readStream(response, session.id);
   await vi.waitFor(() => expect(subscribersOf(userId).some((s) => s.sessionId === session.id)).toBe(true));
   return stream;
 }
