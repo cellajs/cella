@@ -46,7 +46,8 @@ decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `
 
 1. `shared/config/hierarchy-config.ts`: `.product('<name>', { parent: '<channel>' })` or
    `.channel('<name>', { parent, roles, organizationRoles })`, after its parent. Roles come from the
-   `roles` registry at the top of the file.
+   `roles` registry at the top of the file, listed most privileged first: that order decides who may grant
+   what, since nobody hands out a role above their own, directly or through `organizationRoles` and `carryRole`.
 2. `shared/config/permissions-config.ts`: a `case '<name>'` with one line per channel and role (`1`
    allow, `0` deny, `'own'` creator only). A type without a case is denied to every role, and nothing
    reports it. The model: [Permissions](../../PERMISSIONS.md).

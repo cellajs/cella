@@ -197,7 +197,8 @@ export interface MenuStructureItem<C extends string = string> {
   /**
    * A subentity membership auto-creates one on the parent, by default with the least-privileged
    * fitting role (`member` where the parent vocabulary has it). `carryRole` keeps the invited
-   * role when the parent vocabulary also has it (courseSection `student` to course `student`).
+   * role when the parent vocabulary also has it (courseSection `student` to course `student`), and
+   * refuses an invitation whose carried role outranks the inviter's own on the parent.
    */
   carryRole?: boolean;
 }

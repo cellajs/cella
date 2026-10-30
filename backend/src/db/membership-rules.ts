@@ -13,7 +13,7 @@ export const membershipRuleTriggers = [
 ];
 
 /**
- * Every organization keeps at least one admin: the only role that can invite, change roles and manage settings. One
+ * Every organization keeps at least one admin: its most privileged role, the only one that hands out every role. One
  * deferred constraint trigger enforces it for every path at once (demoting, removing, leaving, and deleting an account,
  * whose memberships go by cascade), checked at commit so a role swap inside one transaction passes. An organization
  * that is itself being deleted is exempt. The check holds a transaction lock per organization, so two transactions

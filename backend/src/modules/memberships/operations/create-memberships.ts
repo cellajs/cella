@@ -4,7 +4,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
-import { channelIdColumnsOf, isHeldInvitation } from '#/modules/memberships/helpers/membership-helpers';
+import { channelIdColumnsOf, findMenuParent, isHeldInvitation, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countPendingInactiveMembershipSeats,
@@ -18,6 +18,8 @@ import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/mem
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { getValidChannel } from '#/permissions';
+import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
+import { assertRoleGrant } from '#/permissions/role-grant';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -43,6 +45,13 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType });
 
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
+
+  // The memberships an accept brings along above the channel are checked here too: the accept has no inviter to ask.
+  assertRoleGrant(ctx, { subject: buildSubjectFromEntity(entityType, entity), role, action: 'update' });
+  for (const along of membershipsBroughtAlong(entity, role, findMenuParent(entityType))) {
+    const subject = buildSubject(along.channelType, channelIdColumnsOf(entity), { id: along.channelId });
+    assertRoleGrant(ctx, { subject, role: along.role, action: 'update' });
+  }
 
   // Held: invites are recorded but emails are held and existing users are not added, all released at publish.
   const held = isHeldInvitation(entityType, entity, role);

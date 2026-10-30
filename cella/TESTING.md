@@ -18,6 +18,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 
 - **Crossing a boundary:** another tenant's or organization's data, through the API or straight against the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
+- **Granting above yourself:** a role, an invitation or a membership an accept brings along that outranks the role of whoever grants it.
 - **Reusing what should be dead:** a revoked session, a deleted account, a replayed OAuth code, an expired or out-of-scope token.
 - **Planting a sign-in address:** an invitation for an attacker's address, accepted by a signed-in victim, becoming a way to sign in to the victim's account.
 - **Acting through a stale tab:** an idle tab of one user replaying its queued writes after another user signs in on the same browser.
