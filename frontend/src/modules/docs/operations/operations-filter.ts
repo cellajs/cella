@@ -56,8 +56,9 @@ export function useOperationFilterOptions(operations: GenOperationSummary[]) {
   for (const op of operations) {
     for (const [kind, values] of Object.entries(op.tagsByKind)) {
       if (unfilteredKinds.includes(kind)) continue;
-      countsByKind[kind] ??= {};
-      for (const value of values) countsByKind[kind][value] = (countsByKind[kind][value] ?? 0) + 1;
+      const counts = countsByKind[kind] ?? {};
+      for (const value of values) counts[value] = (counts[value] ?? 0) + 1;
+      countsByKind[kind] = counts;
     }
   }
   const orderedKinds = [...kindOrder.filter((kind) => countsByKind[kind]), ...Object.keys(countsByKind).filter((kind) => !kindOrder.includes(kind))];
