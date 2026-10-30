@@ -41,7 +41,9 @@ describe('storage module', () => {
           expect(statement.Resource, `${policy.name} ${statement.Sid}`).toEqual([`${bucket}/*`]);
           publicReads.push(policy.name);
         } else {
-          expect(statement.Principal, `${policy.name} ${statement.Sid}`).toEqual({ SCW: expect.stringMatching(/^application_id:.+/) });
+          const { SCW } = statement.Principal as { SCW: string | string[] };
+          expect(SCW, `${policy.name} ${statement.Sid}`).toBeDefined();
+          for (const id of [SCW].flat()) expect(id, `${policy.name} ${statement.Sid}`).toEqual(expect.stringMatching(/^application_id:.+/));
         }
       }
     }
@@ -99,21 +101,22 @@ describe('storage module', () => {
     }
   });
 
-  it("lets each machine key write its own reports only: a service's boot accounts, the builder's reports", () => {
-    type Statement = { Sid: string; Principal: { SCW: string }; Action: string[]; Resource: string[] };
+  it('keeps the builder reports from service keys, within the 10 statements Scaleway allows a bucket policy', () => {
+    type Statement = { Sid: string; Principal: { SCW: string | string[] }; Action: string[]; Resource: string[] };
     const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);
     const { Statement } = JSON.parse(String(h.resources.find((r) => r.name === 'boot-diag-policy')?.inputs.policy)) as { Statement: Statement[] };
     const names = principalNames(engineConfig().slug, 'production');
     // Beside the deploy key, which writes the run records, and the operator's `s3:*`.
     const writes = Statement.filter((statement) => statement.Action.includes('s3:PutObject') && statement.Sid !== 'DeployAccess');
     expect(writes.map((statement) => [statement.Principal.SCW, statement.Action, statement.Resource])).toEqual([
-      ...principalServices().map((svc) => [
-        `application_id:${names.vmService(svc.slug)}-id`,
+      [
+        principalServices().map((svc) => `application_id:${names.vmService(svc.slug)}-id`),
         ['s3:PutObject'],
-        [`${bucket}/boot-diag/${svc.slug}-*`],
-      ]),
+        principalServices().map((svc) => `${bucket}/boot-diag/${svc.slug}-*`),
+      ],
       [`application_id:${names.builder}-id`, ['s3:PutObject'], [`${bucket}/boot-diag/builder/*`]],
     ]);
+    expect(Statement.length).toBeLessThanOrEqual(10);
   });
 
   it('upload buckets restrict CORS allowedOrigins (no wildcard)', () => {
