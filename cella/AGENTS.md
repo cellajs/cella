@@ -83,7 +83,7 @@ Relationships between products are data, never permission indirection: permissio
 - **Dependencies**: a library for encryption, signatures, an auth protocol or a parser at a security boundary stays even when own code would save packages; fix how it is called. Own code replaces a package only for plumbing a reviewer reads in one pass.
 - **Reorder**: every reorderable list, table or board moves its items through `ReorderHandle` (in a table, `reorderColumn`), with no separate move buttons.
 - **Accessibility**: `pnpm a11y` audits against WCAG 2.2 AA ([a11y](../a11y/README.md)); an agent's decision on a criterion stays provisional until a person confirms it.
-- **Skills**: `cella/skills/` is the single home for agent skills, merged into apps on upgrade: `add-entity`, `verify`, `two-tab-sync-test`, `cella-upgrade`, `align`, `a11y-review`, `consistency-sweep`, `security-review`, `screenshots`. `verify` owns stack setup and scratch Playwright scripts for the others. A change to a command, file or log line a skill names updates that skill in the same PR.
+- **Skills**: `cella/skills/` is the single home for agent skills, merged into apps on upgrade: `add-entity`, `verify`, `two-tab-sync-test`, `cella-upgrade`, `align`, `a11y-review`, `consistency-sweep`, `css-review`, `security-review`, `screenshots`. `verify` owns stack setup and scratch Playwright scripts for the others. A change to a command, file or log line a skill names updates that skill in the same PR.
 
 ## Style & naming
 
