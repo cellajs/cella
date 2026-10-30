@@ -258,27 +258,29 @@ const bootDiagBucket = new scaleway.object.Bucket(
   { protect: isProduction },
 );
 
-// Each machine key writes its own reports only: a service's boot accounts (`boot-diag/<service>-…`), the builder's under `boot-diag/builder/`.
-const reportWriters = [
-  ...Object.entries(serviceApplicationIds).map(([service, id]) => ({ id, prefix: `boot-diag/${service}-` })),
-  { id: builderApplicationId, prefix: 'boot-diag/builder/' },
-];
-
 new scaleway.object.BucketPolicy('boot-diag-policy', {
   bucket: bootDiagBucket.name,
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
     Statement: pulumi
-      .all([humanAccess(bootDiagBucket.name), observerApplicationId, pulumi.all(reportWriters.map((writer) => writer.id))])
-      .apply(([admin, observerId, writerIds]) => [
-        ...reportWriters.map((writer, index) => ({
-          Sid: `MachineReports${index}`,
+      .all([humanAccess(bootDiagBucket.name), observerApplicationId, pulumi.all(Object.values(serviceApplicationIds)), builderApplicationId])
+      .apply(([admin, observerId, serviceIds, builderId]) => [
+        // One statement for every service, as Scaleway refuses a bucket policy of over 10: a service key may write any service's boot accounts, never the builder's reports.
+        {
+          Sid: 'ServiceReports',
           Effect: 'Allow',
-          Principal: { SCW: `application_id:${writerIds[index]}` },
+          Principal: { SCW: serviceIds.map((id) => `application_id:${id}`) },
           Action: ['s3:PutObject'],
-          Resource: [pulumi.interpolate`${bootDiagBucket.name}/${writer.prefix}*`],
-        })),
+          Resource: Object.keys(serviceApplicationIds).map((service) => pulumi.interpolate`${bootDiagBucket.name}/boot-diag/${service}-*`),
+        },
+        {
+          Sid: 'BuilderReports',
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${builderId}` },
+          Action: ['s3:PutObject'],
+          Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/builder/*`],
+        },
         // The observer reads what machines wrote about their boot.
         ...(observerId
           ? [
