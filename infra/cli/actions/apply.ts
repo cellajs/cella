@@ -1,7 +1,8 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { pc, warningMark } from '../../lib/utils/cli-output';
+import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { endAction, type InfraContext } from '../shared';
+import { openDbEndpoints } from './db-exposure';
 import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
@@ -21,6 +22,14 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
   const operator = await acquirePrivilegedKey(context);
+  // The committed stack config never records an open endpoint, so its plan keeps the endpoint and deletes the ACL.
+  const open = await openDbEndpoints(context, operator.secretKey);
+  if (open.length > 0) {
+    console.error(
+      `${crossMark} Public DB endpoint ${open.join(', ')} is open, and an apply would remove its ACL. Close it with \`${actionCommand('db-close')}\`, then apply.`,
+    );
+    endAction(1);
+  }
   await admitOperatorOrExit(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);

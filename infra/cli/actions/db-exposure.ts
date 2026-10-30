@@ -120,6 +120,15 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };
 }
 
+/** The live public endpoints as `host:port`: none without a managed PostgreSQL store or before its instance exists. */
+export async function openDbEndpoints(context: InfraContext, secretKey: string): Promise<string[]> {
+  if (!Object.values(appStores).some((store) => store.kind === 'postgres-managed')) return [];
+  const { naming, region } = deriveInfra(context.appConfig);
+  const client = createRdbClient({ secretKey, region });
+  const instance = await client.findInstance(naming.resource('postgres'));
+  return instance ? publicEndpoints(await client.getInstance(instance.id)).map(endpointAddress) : [];
+}
+
 /** The live public endpoints, read with the observer key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
 export async function liveDbEndpoints(context: InfraContext, budgetMs = 4_000): Promise<string[] | undefined> {
   const { observer } = resolveOperatorIdentity();

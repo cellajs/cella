@@ -6,6 +6,7 @@ const admitOperatorOrExit = vi.fn();
 const reviewPlan = vi.fn();
 const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
+const openDbEndpoints = vi.fn();
 
 vi.mock('./operator-unlock', () => ({ acquirePrivilegedKey: (...args: unknown[]) => acquirePrivilegedKey(...args) }));
 vi.mock('../shared', () => ({
@@ -20,6 +21,7 @@ vi.mock('./operator-apply', () => ({
   admitOperatorOrExit: (...args: unknown[]) => admitOperatorOrExit(...args),
   runOperatorApply: (...args: unknown[]) => runOperatorApply(...args),
 }));
+vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 
@@ -33,6 +35,7 @@ beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   acquirePrivilegedKey.mockResolvedValue(operator);
+  openDbEndpoints.mockResolvedValue([]);
   reviewPlan.mockResolvedValue(reviewed);
   runOperatorApply.mockResolvedValue({ completed: true, verified: true });
 });
@@ -43,6 +46,16 @@ afterEach(() => {
 });
 
 describe('runApply', () => {
+  it('refuses while the database has a public endpoint: the plan would delete its ACL and keep it open', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    openDbEndpoints.mockResolvedValue(['db.example:6317']);
+
+    await expect(runApply(context)).rejects.toMatchObject({ name: 'ActionEnded', exitCode: 1 });
+
+    expect(reviewPlan).not.toHaveBeenCalled();
+    expect(runOperatorApply).not.toHaveBeenCalled();
+  });
+
   it('must not apply a plan the operator declined', async () => {
     askToApply.mockResolvedValue(false);
 
