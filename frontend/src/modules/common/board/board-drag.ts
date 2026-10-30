@@ -28,7 +28,7 @@ interface PanelDragContext {
   registerHandle: (el: HTMLElement | null) => void;
   /** Moves the panel one place, from the handle's arrow keys or its menu. */
   onMove: (step: -1 | 1) => void;
-  /** Collapses what the handle moves, or expands it when all of it is collapsed. */
+  /** Collapses what the handle moves, or expands it. */
   onToggleCollapsed: () => void;
   isCollapsed: boolean;
   /** Set while the browser draws the drag preview; the mounted handle portals its chip into it. */
@@ -48,7 +48,7 @@ export const usePanelDragHandle = () => useContext(PanelDragHandleContext);
 export const PanelToggleContext = createContext<((panelId: string) => void) | null>(null);
 
 /**
- * Collapses or expands one panel, also a panel in a group. Returns null if the panels are not reorderable.
+ * Collapses or expands one panel. Returns null if the panels are not reorderable.
  * @public
  */
 export const usePanelToggle = () => useContext(PanelToggleContext);
