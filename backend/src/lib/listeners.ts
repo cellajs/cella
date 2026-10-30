@@ -42,9 +42,9 @@ export function serveApi(
 
 /**
  * Why a peer may not use the internal listener, or undefined. Its routes serve the app's own workers, which reach it
- * over the private network or loopback, so a public address is refused before any route reads its secret: a port a
- * deploy exposes by mistake still answers only its own network. Forwarding headers are not read; a proxy in front of
- * the listener is a peer like any other.
+ * over the private network or loopback, so a public address is refused before any route reads its secret: a VM port a
+ * deploy exposes by mistake still answers only its own network. Forwarding headers are not read, so behind the
+ * internal load balancer every peer is the balancer, and its ACL decides who reaches the listener.
  * @param remoteAddress - The peer's address as its socket reports it.
  * @returns The reason, or undefined for an admitted peer.
  */
