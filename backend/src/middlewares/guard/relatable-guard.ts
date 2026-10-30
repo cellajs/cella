@@ -11,8 +11,8 @@ export const relatableGuard = xMiddleware(
     type: 'x-guard',
     errors: [403],
     requires: ['session'],
-    name: 'relatable',
-    description: 'Requires sharing an organization with the user the request names, or being a system admin',
+    name: 'Shared organization',
+    description: 'Requires sharing an organization with the user named in the request. System admins also pass.',
   },
   async (ctx, next) => {
     const targetUserId = ctx.req.param('relatableUserId') ?? ctx.req.query('relatableUserId');

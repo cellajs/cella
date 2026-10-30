@@ -40,7 +40,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Token spans BlockNote's highlighter adds inside the code block of `language`. */
 const tokens = (canvasElement: HTMLElement, language: string) =>
-  canvasElement.querySelectorAll(`[data-id="code-${language}"] [data-content-type="codeBlock"] code span[style*="--shiki-dark"]`);
+  canvasElement.querySelectorAll(`[data-id="code-${language}"] [data-content-type="codeBlock"] code span[style*="color"]`);
 
 /** Waits until every language but plain text is highlighted. */
 const expectHighlighted = async (canvasElement: HTMLElement) => {

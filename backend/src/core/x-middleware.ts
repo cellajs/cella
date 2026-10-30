@@ -11,7 +11,7 @@ type XMiddlewareOptions = {
   functionName: string;
   /** A configured OpenAPI extension type (e.g., 'x-guard', 'x-rate-limiter') */
   type: ExtensionType;
-  /** Short human-readable label (e.g., 'relatable', 'tenant') */
+  /** The label the docs show (e.g. 'Shared organization'); `description` is the text behind it, in plain sentences. */
   name?: string;
   description?: string;
   /** The error statuses this middleware refuses a request with; every route that lists it documents them. */

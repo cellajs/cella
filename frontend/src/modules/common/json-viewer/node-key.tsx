@@ -34,7 +34,7 @@ export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired
 
   return (
     <>
-      <span ref={ref} className={cn('font-medium', isMuted ? 'text-muted-foreground' : jsonViewerTheme.key, isDictionaryKey && 'italic')}>
+      <span ref={ref} className={cn(isMuted ? 'text-muted-foreground' : jsonViewerTheme.key, isDictionaryKey && 'italic')}>
         <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />
       </span>
       {hasSelfRequired && <span className={cn(jsonViewerTheme.badge, jsonViewerTheme.required, 'ml-1.5')}>required</span>}

@@ -109,6 +109,8 @@ export function AppNav() {
   const isMenuAlwaysOpen = !navBar && !isMobile;
 
   useEffect(() => {
+    // A screen too narrow to pin closes the pinned sheet, which would otherwise cover the page
+    if (!(isMenuAlwaysOpen || isDesktop) && navigationStore.getState().keepNavOpen) closeNavSheet();
     const shouldPin = (isMenuAlwaysOpen || (isDesktop && keepOpenPreference)) && !!navSheetOpen;
     if (navigationStore.getState().keepNavOpen !== shouldPin) setKeepNavOpen(shouldPin);
   }, [isMenuAlwaysOpen, isDesktop, keepOpenPreference, navSheetOpen, setKeepNavOpen]);

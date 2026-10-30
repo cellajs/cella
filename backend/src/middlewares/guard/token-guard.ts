@@ -18,8 +18,8 @@ export const tokenGuard = xMiddleware(
     errors: [401],
     security: [{ oauth2: [] }],
     provides: ['actor'],
-    name: 'token',
-    description: 'Requires an access token, no session or API key; acts as its service account or consenting user, limited to its scopes',
+    name: 'Access token',
+    description: 'Works only with an access token. The request acts as the service account, or the user who gave consent, within the scopes granted.',
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);

@@ -13,8 +13,8 @@ export const insertEntityLock = xMiddleware(
     functionName: 'insertEntityLock',
     type: 'x-rate-limiter',
     errors: [409],
-    name: 'insertEntityLock',
-    description: 'Creates per tenant: 1 at a time',
+    name: 'Create lock',
+    description: 'One create at a time for each tenant. A second one during that time gets a 409.',
   },
   async (ctx, next) => {
     const tenantId = ctx.var.tenantId;

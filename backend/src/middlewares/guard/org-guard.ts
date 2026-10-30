@@ -17,8 +17,8 @@ export const orgGuard = xMiddleware(
     type: 'x-guard',
     errors: [404],
     requires: ['actor', 'tenant'],
-    name: 'org',
-    description: 'Requires being in the organization: a member of it or of a channel below it, or a system admin',
+    name: 'Organization',
+    description: 'Requires membership in this organization or in a channel inside it. System admins also pass.',
   },
   async (ctx, next) => {
     // Lowercased as the stored id is: the row is cached under the id `invalidateCache.org` drops.

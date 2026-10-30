@@ -48,6 +48,6 @@ export const sysAdminGuard = setMiddlewareExtension(every(sysAdminCheck, allowed
   type: 'x-guard',
   errors: [403],
   requires: ['session'],
-  name: 'sysAdmin',
-  description: 'Requires the system admin role and an allowed IP address; refuses impersonation',
+  name: 'System admin',
+  description: 'Requires the system admin role and a request from an allowed IP address. Refused during impersonation.',
 });

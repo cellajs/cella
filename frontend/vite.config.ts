@@ -17,6 +17,7 @@ import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig, urlEnvNames } from '../shared/index.ts';
+import { codeTheme } from './src/utils/code-theme.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { indexHtml } from './vite/index-html.ts';
@@ -200,14 +201,14 @@ const viteConfig = {
             // The app groups after them follow the same rule in the direction dependencies point:
             // foundational first, on-demand last, because the editor imports the UI primitives.
 
-            // One chunk per grammar and theme module, so a code block loads only its own language. Dependencies are
+            // One chunk per grammar module, so a code block loads only its own language. Dependencies are
             // not captured: html embeds the javascript and css grammars and imports them from their own chunks, and
             // the regex helper every grammar imports (oniguruma-to-es) is left for the per-package backstop below.
             {
               name: (id: string) => {
-                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
-                if (!m || m[2] === 'index') return null;
-                return `grammars-${m[1] === 'themes' ? 'theme-' : ''}${m[2].replace(/[^\w-]/g, '-')}`;
+                const m = id.match(/node_modules[\\/]@shikijs[\\/]langs-precompiled[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
+                if (!m || m[1] === 'index') return null;
+                return `grammars-${m[1].replace(/[^\w-]/g, '-')}`;
               },
               includeDependenciesRecursively: false,
               // The top-level minSize is inherited as the group default and would drop the small grammars and the
@@ -395,8 +396,7 @@ const viteConfig = {
           [
             rehypeShiki,
             {
-              themes: { light: 'github-light-default', dark: 'github-dark-default' },
-              defaultColor: false,
+              theme: codeTheme,
               langs: ['typescript', 'bash', 'text'],
               defaultLanguage: 'text',
               fallbackLanguage: 'text',

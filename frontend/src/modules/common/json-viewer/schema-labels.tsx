@@ -1,4 +1,4 @@
-import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
+import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { cn } from '~/utils/cn';
 
 export interface SchemaConstraints {
@@ -29,13 +29,11 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
-          <span className={cn(jsonViewerTheme.schemaType, getTypeColorClass(type), 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
+          <span className={cn(jsonViewerTheme.schemaType, 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
           {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
         </span>
       ))}
-      {compositionLabel && (
-        <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400')}>{compositionLabel}</span>
-      )}
+      {compositionLabel && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-muted text-code-type')}>{compositionLabel}</span>}
       {refValue && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>{refValue}</span>}
       {contentTypeValue && <span className="ml-1 text-muted-foreground text-xs italic">{contentTypeValue}</span>}
       {constraints && (

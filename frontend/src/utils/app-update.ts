@@ -20,6 +20,23 @@ export async function reloadApp() {
   waiting.postMessage({ type: 'SKIP_WAITING' });
 }
 
+/** At boot of a reloaded tab, moves on to a waiting service worker's release. Resolves true when the page is reloading and should not render. */
+export async function reloadOntoWaitingWorker() {
+  const [navigation] = performance.getEntriesByType('navigation');
+  if (!(navigation instanceof PerformanceNavigationTiming) || navigation.type !== 'reload') return false;
+  const waiting = (await getRegistration())?.waiting;
+  if (!waiting) return false;
+
+  // No reload without the takeover: a worker that stays waiting would otherwise repeat this on every boot.
+  const tookOver = await new Promise<boolean>((resolve) => {
+    navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true), { once: true });
+    setTimeout(() => resolve(false), activateTimeout);
+    waiting.postMessage({ type: 'SKIP_WAITING' });
+  });
+  if (tookOver) window.location.reload();
+  return tookOver;
+}
+
 /** Asks the browser for a newer service worker now; one it finds installs and waits, which raises the reload prompt. */
 export async function checkForUpdate() {
   if (Date.now() - lastUpdateCheck < updateCheckThrottle) return;
