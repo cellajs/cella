@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
 import { ensureSigningKeys, loadSigningJwks } from '#/modules/oauth-server/keystore';
-import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
+import { mcpInitialScope, resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { tokenGuard } from './token-guard';
 
 // Verification runs against the keystore. The end-to-end positive control is tests/mcp.test.ts: its showcases carry
@@ -74,17 +74,18 @@ describe('tokenGuard', () => {
   // A fresh test database holds no signing key until the authorization server boots or this mints one.
   beforeAll(() => ensureSigningKeys());
 
-  it('challenges a tokenless call with the resource metadata URL (RFC 9728)', async () => {
+  it('must name only read scopes in the challenge, so a client starts minimal (RFC 9728)', async () => {
     const ctx = mockCtx();
     const error = await runExpectingError(ctx);
     expect(error.status).toBe(401);
-    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
+    expect(mcpInitialScope).not.toMatch(/:write|:delete/);
+    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
   });
 
   it('treats an opaque API key as no token: the MCP face takes only access tokens', async () => {
     const ctx = mockCtx('Bearer cella_sk_test_notajwt');
     expect((await runExpectingError(ctx)).status).toBe(401);
-    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
+    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
   });
 
   /**
@@ -111,7 +112,7 @@ describe('tokenGuard', () => {
     expect(ctx.set).not.toHaveBeenCalled();
     expect(ctx.header).toHaveBeenCalledWith(
       'WWW-Authenticate',
-      `Bearer error="invalid_token", error_description="${reason}", resource_metadata="${metadata}"`,
+      `Bearer error="invalid_token", error_description="${reason}", resource_metadata="${metadata}", scope="${mcpInitialScope}"`,
     );
   });
 
@@ -121,7 +122,7 @@ describe('tokenGuard', () => {
     // The verifier accepted it: the refusal is the policy's, about the grant the token names.
     expect(ctx.header).toHaveBeenCalledWith(
       'WWW-Authenticate',
-      `Bearer error="invalid_token", error_description="grant_revoked", resource_metadata="${metadata}"`,
+      `Bearer error="invalid_token", error_description="grant_revoked", resource_metadata="${metadata}", scope="${mcpInitialScope}"`,
     );
   });
 });

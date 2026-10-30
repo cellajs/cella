@@ -62,7 +62,7 @@ type ExtensionEntry = { key: string; id: string; description: string; values?: R
 export type XTool = {
   /** What the tool does, written for a model */
   description: string;
-  /** Whether the client asks its user before running the tool */
+  /** A hint in `_meta`; the standard annotations follow from the method. */
   approvalRequired: boolean;
   /** The entity the route acts on: with the method it names the scope a token needs (`<entity>:read` | `:write`). */
   entity: AccessScopedEntityType;

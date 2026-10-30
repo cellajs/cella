@@ -48,7 +48,7 @@ describe('mcp-server', () => {
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
     const properties = (name: string) => Object.keys((byName[name].inputSchema as { properties: object }).properties);
     expect(byName.updateAttachment._meta.scope).toBe('attachment:write');
-    expect(byName.updateAttachment.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: true });
+    expect(byName.updateAttachment.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: true, idempotentHint: true });
     // Path params minus the route's own, plus the body without its sync transaction.
     expect(byName.updateAttachment.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
     expect(properties('updateAttachment')).toEqual(expect.arrayContaining(['id', 'ops']));
