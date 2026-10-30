@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { acceptInvitationToken, confirmInvitationAddress, getMe, invokeToken, sendMagicLink } from 'sdk';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -54,8 +54,9 @@ describe('invitation address handover', async () => {
     const asked = await call(sendMagicLink, { body: { email: planted }, headers: defaultHeaders });
     expect(asked.response.status).toBe(204);
     attackerBrowser.absorb(asked.response);
+    const { token } = await vi.waitFor(() => mailedLink('magicLinkUrl'));
     const opened = await call(invokeToken, {
-      path: { type: 'magic', token: mailedLink('magicLinkUrl').token },
+      path: { type: 'magic', token },
       headers: { ...defaultHeaders, Cookie: attackerBrowser.header() },
     });
     attackerBrowser.absorb(opened.response);

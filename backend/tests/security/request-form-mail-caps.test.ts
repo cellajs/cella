@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { defaultHeaders } from '../fixtures';
@@ -24,11 +24,14 @@ describe('Request form mail caps', async () => {
     expect([await submit(victim, 'contact', 'Hi'), await submit(victim, 'contact', 'Hi'), await submit(victim, 'waitlist', null)]).toEqual([
       204, 204, 204,
     ]);
-    expect(await db.select({ type: requestsTable.type }).from(requestsTable).where(eq(requestsTable.email, victim))).toHaveLength(3);
+    // A waitlist request is answered before it is stored.
+    await vi.waitFor(async () =>
+      expect(await db.select({ type: requestsTable.type }).from(requestsTable).where(eq(requestsTable.email, victim))).toHaveLength(3),
+    );
     expect(mailsTo(victim)).toHaveLength(1);
 
     // The waitlist naming an account's address tells it of its account once.
     expect([await submit(account.email, 'waitlist', null), await submit(account.email, 'waitlist', null)]).toEqual([204, 204]);
-    expect(mailsTo(account.email)).toHaveLength(1);
+    await vi.waitFor(() => expect(mailsTo(account.email)).toHaveLength(1));
   });
 });

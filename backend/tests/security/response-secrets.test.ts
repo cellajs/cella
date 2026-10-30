@@ -102,7 +102,8 @@ describe('Secret columns in responses', async () => {
       token: 'invoked',
     });
     invitee = {
-      sessionCookie: await createTestSession(inviteeUser),
+      // Stepped up by that TOTP, as ending another of its sessions asks.
+      sessionCookie: await createTestSession(inviteeUser, { steppedUpVia: 'totp' }),
       otherSessionId: (await insertTestSession(inviteeUser)).id,
       inactiveMembershipId: invitation.inactiveMembership.id,
       tokenId: invitation.token.id,

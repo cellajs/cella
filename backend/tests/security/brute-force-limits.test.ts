@@ -111,6 +111,7 @@ describe('brute-force budgets', async () => {
     const browser = new CookieJar();
     const inBrowser = () => ({ ...fromIp(randomIp()), Cookie: browser.header() });
     browser.absorb((await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() })).response);
+    await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(1));
     const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
     expect(cookieChange(opened.response, 'session')).toBe('set');
 
