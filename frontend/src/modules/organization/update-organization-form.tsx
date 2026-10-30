@@ -85,6 +85,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           type="organization"
           name="thumbnailUrl"
           entity={organization}
+          organizationId={organization.id}
         />
         <InputFormField
           control={form.control}

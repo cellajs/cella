@@ -91,7 +91,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xRateLimiter: [uploadTokenLimiter],
     summary: 'Get upload token',
     description:
-      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',
+      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in. Only a system admin gets a newsletter image token.',
     request: { query: uploadTokenQuerySchema },
     responses: { 200: json('Upload token with a scope for a user or organization', uploadTokenSchema), ...errors(403, 404) },
   }),

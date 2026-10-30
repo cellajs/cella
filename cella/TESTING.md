@@ -35,6 +35,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
 - **Guessing a second factor slowly:** TOTP codes tried at the pace the lockout allows, for as long as it takes.
+- **Serving a page from storage:** an uploaded HTML file opened from a presigned link, or uploads that no row can ever name.
 - **Exhausting the server with shape:** a body, a field, a batch or a document larger than its cap, or input that makes a parser or a regex work out of proportion.
 - **Holding the stream open:** a stream that never reads, or one that connects across its user's removal, keeping the server's memory or the left organization's frames.
 - **Mailing from the app's sender:** invitations, reminders, form confirmations or security alerts sent faster than their caps allow.

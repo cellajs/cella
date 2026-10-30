@@ -1564,7 +1564,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.
+ * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in. Only a system admin gets a newsletter image token.
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· _me · cella_
  *

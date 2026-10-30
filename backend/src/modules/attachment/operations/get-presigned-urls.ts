@@ -27,6 +27,17 @@ interface PresignedUrlsResult {
 const variantKeyOf = (attachment: AttachmentModel, variant: AttachmentVariant): string => attachment.keys[variant] ?? attachment.keys.original;
 
 /**
+ * The declared type of the object a variant resolves to: the row's for an original or a converted file; a preview or
+ * thumbnail is an image the pipeline wrote, typed by its key's extension.
+ */
+const declaredTypeOf = (attachment: AttachmentModel, variant: AttachmentVariant): string | null => {
+  const key = attachment.keys[variant];
+  if (key === undefined || variant === 'original') return attachment.contentType;
+  if (variant === 'converted') return attachment.convertedContentType;
+  return `image/${key.slice(key.lastIndexOf('.') + 1)}`;
+};
+
+/**
  * Signs private-bucket download URLs for up to 50 attachments the caller may read.
  * Fails closed: rows resolve under tenant RLS and are permission-checked in one batch before
  * anything is signed. Missing and denied ids merge into one `rejectedIds` list, so the response
@@ -67,7 +78,7 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
   const data = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {
       const key = variantKeyOf(row, variant);
-      const url = await getSignedUrlFromKey(key, { bucketName: row.bucketName });
+      const url = await getSignedUrlFromKey(key, { bucketName: row.bucketName, contentType: declaredTypeOf(row, variant) });
       return { attachmentId, variant, url };
     }),
   );
