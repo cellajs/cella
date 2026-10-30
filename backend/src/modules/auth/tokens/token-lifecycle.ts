@@ -39,11 +39,12 @@ const newHashedCode = () => {
   return { raw, hash: hashToken(raw) };
 };
 
-/** What a new token records besides its secret and expiry, which issuing sets. */
+/** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
   Partial<
     Pick<
       InsertTokenModel,
+      | 'id'
       | 'userId'
       | 'createdBy'
       | 'identityId'
@@ -70,7 +71,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
 
   const issued = tokens.map((token) => ({
     token,
-    id: generateId(),
+    id: token.id ?? generateId(),
     ...(tokenPolicies[token.type].carrier === 'code' ? newHashedCode() : newHashedToken()),
   }));
   const rows = await insertTokens(ctx, {

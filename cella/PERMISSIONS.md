@@ -184,7 +184,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 
 | Situation | Answer | Why |
 | --- | --- | --- |
-| The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | Every member knows the tenant id, so the answer only says "not yours" and ids cannot be enumerated |
+| The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `meta.reason: 'role_exceeds_actor'`, `meta.role` | The caller may act on the channel, so the answer names the role it may not hand out |
@@ -192,8 +192,9 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
 | An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename; the slug check answers 409 taken, 204 free | A slug is the organization's public URL path and unique across tenants, and every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<type>_not_found` or `<type>_expired` | The token was the proof, so without it the request is not authenticated |
+| A passkey the server does not hold for the account | 404 `passkey_not_found` | The credential id comes from the caller's own authenticator, so the answer reveals no account |
 | A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
-| An address or provider account another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app |
+| An address the provider verified, or a provider account, that another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app. An unverified address answers as a free one, so the answer tells nobody whether an account holds it |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend sends a person to sign-in on these four alone |
 | A tenant quota that is full | 403 `restrict_by_app` with `meta.resource` and `meta.quota`; `restrict_by_org` for member seats | The tenant's policy, not a rate: waiting does not lift it, so never a 429 |
 | A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `meta.retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationMailsPerDay` |

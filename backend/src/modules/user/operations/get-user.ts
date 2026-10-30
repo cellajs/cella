@@ -13,8 +13,8 @@ interface GetUserOpts {
  * A user the caller relates to, by id or slug: themselves, anyone for a system admin, else a member of an organization
  * the caller shares. With include=mfa it adds `mfaRequired` for the user themselves, system admins and the admins of
  * an organization the user is a member of.
- * @throws AppError 403 `forbidden` for a caller in no organization asking for another user, 404 `not_found` for a
- * missing user or one the caller does not relate to.
+ * @throws AppError 403 `forbidden` for a caller in no organization asking for another user, 404 `not_found` when no
+ * user matches; `relatableGuard` answers 403 first for any other user the caller does not relate to.
  */
 export async function getUserOp(ctx: UserContext, relatableUserId: string, opts: GetUserOpts = {}) {
   const { user: requestingUser, isSystemAdmin, memberships } = ctx.var;

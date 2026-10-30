@@ -2,13 +2,14 @@ import { and, eq } from 'drizzle-orm';
 import { getPendingMfa, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { usersTable } from '#/modules/user/user-db';
+import { log } from '#/utils/logger';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken, setCookiePair } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -33,14 +34,16 @@ async function createMagicToken(user: { id: string; email: string }, redirectPat
   return { rawToken: raw, requestedHere: authCookie('magic-requested', row.id) };
 }
 
-/** Fetch the single magic token row for a user. */
-async function getMagicToken(userId: string) {
-  const [token] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(eq(tokensTable.userId, userId), eq(tokensTable.type, 'magic')));
-  return token;
-}
+/** The single magic token row for a user, once the request that issues it has stored it after its answer. */
+const getMagicToken = (userId: string) =>
+  vi.waitFor(async () => {
+    const [token] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.userId, userId), eq(tokensTable.type, 'magic')));
+    expect(token).toBeDefined();
+    return token;
+  });
 
 describe('Magic link authentication', async () => {
   const call = await createAppClient();
@@ -212,6 +215,13 @@ describe('Magic link authentication', async () => {
         .select()
         .from(tokensTable)
         .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'magic')));
+    /** Sends a link request for an address that gets none, and waits for its work after the answer to end. */
+    const requestNoLink = async (email: string) => {
+      const logged = vi.spyOn(log, 'info');
+      const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
+      await vi.waitFor(() => expect(logged).toHaveBeenCalledWith('Magic link requested for unknown email'));
+      return response;
+    };
 
     it('still lets an invited address sign up', async () => {
       closeRegistration();
@@ -223,14 +233,14 @@ describe('Magic link authentication', async () => {
 
       expect(res.status).toBe(204);
       // The link goes out without an account: the account is created when the link is clicked.
-      expect(await magicLinksFor('invited@example.com')).toEqual([expect.objectContaining({ userId: null })]);
+      await vi.waitFor(async () => expect(await magicLinksFor('invited@example.com')).toEqual([expect.objectContaining({ userId: null })]));
       expect(await userFor('invited@example.com')).toHaveLength(0);
     });
 
     it('creates nothing for an address that was not invited, with the same response', async () => {
       closeRegistration();
 
-      const { response: res } = await call(sendMagicLink, { body: { email: 'stranger@example.com' }, headers: defaultHeaders });
+      const res = await requestNoLink('stranger@example.com');
 
       expect(res.status).toBe(204);
       expect(await magicLinksFor('stranger@example.com')).toHaveLength(0);
@@ -248,7 +258,7 @@ describe('Magic link authentication', async () => {
         .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
       await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-      await call(sendMagicLink, { body: { email: 'declined@example.com' }, headers: defaultHeaders });
+      await requestNoLink('declined@example.com');
 
       expect(await magicLinksFor('declined@example.com')).toHaveLength(0);
       expect(await userFor('declined@example.com')).toHaveLength(0);
