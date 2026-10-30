@@ -41,6 +41,8 @@ interface CreatePgConnectionOptions {
   connectionTimeoutMillis?: number;
   /** Absent = the server defaults (no limit). */
   sessionTimeouts?: SessionTimeouts;
+  /** Names the pool in the warning an idle connection's error logs. */
+  name?: string;
 }
 
 /** A connection quiet this long gets TCP keepalive probes, so a dead peer or a middlebox idle timeout ends it. */
@@ -56,12 +58,12 @@ const queryLoggers = new WeakMap<DB, Logger>();
  * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
  * the values it bound (tokens, email addresses) to stdout, so `debug` turns it on in development only.
  * @param url - The connection string; its libpq TLS parameters are dropped, so `sslCa` alone decides TLS.
- * @param options - Pool size, TLS CA, the `DEBUG` flag, the connect timeout and the server-side session timeouts.
+ * @param options - Pool size, TLS CA, the `DEBUG` flag, the connect timeout, the server-side session timeouts and the pool's name.
  * @returns The client; its pool opens a connection on the first query.
  */
 export const createPgConnection = (
   url: string,
-  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts }: CreatePgConnectionOptions,
+  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts, name = 'database' }: CreatePgConnectionOptions,
 ): DB => {
   const logger = debug && appConfig.mode === 'development' ? new DefaultLogger() : undefined;
   const db = pgDrizzle({
@@ -81,6 +83,8 @@ export const createPgConnection = (
     logger,
   });
   if (logger) queryLoggers.set(db, logger);
+  // An idle connection the server ends (restart, failover) emits here; unhandled it ends the process. The next query connects afresh.
+  db.$client.on('error', (error: Error) => console.warn(`Pool ${name} dropped an idle connection: ${error.message}`));
   return db;
 };
 

@@ -13,6 +13,7 @@ import {
 import {
   channelEntityTypeSchema,
   includeQuerySchema,
+  maxLength,
   paginationQuerySchema,
   refineWithType,
   validEmailSchema,
@@ -88,11 +89,11 @@ export const inviteOutcomeSchema = z
     email: userBaseSchema.shape.email,
     outcome: z.enum(inviteOutcomes).openapi({
       description:
-        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.',
+        '`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.',
     }),
     /** remind: when the channel first invited the address. */
     invitedAt: z.string().optional(),
-    /** remind: when the invitee declined; the invitation opens again. */
+    /** remind: when the invitee declined; the invitation opens again once `retention.declinedInvitationHoldDays` have passed. */
     declinedAt: z.string().optional(),
     /** member: the role the member holds, which an invite never changes. */
     role: entityRoleSchema.optional(),
@@ -129,6 +130,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   include: includeQuerySchema,
   userIds: z
     .string()
+    .max(maxLength.url)
     .transform((value) => value.split(',').map((id) => id.trim()))
     .pipe(validUuidSchema.array().min(1).max(50))
     .optional(),

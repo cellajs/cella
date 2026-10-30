@@ -4,6 +4,7 @@ import type { EntityActionType, EntityType } from '../../types.ts';
 import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access.ts';
+import { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
 import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './engine/types.ts';
 
 /**
@@ -73,6 +74,14 @@ export const checkAccess = <T extends AccessMembership>(
   const engineAccess = toEngineAccess(access);
   const { can, membership } = getAllDecisions(policyMatrix, engineAccess.memberships, subject, accessOptions(engineAccess));
   return { allowed: can[action] && scopeAllows(access, subject.entityType, action), membership };
+};
+
+/** Whether the actor may hand out a role on a channel under the configured policies: `mayGrantRole`'s rule. */
+export const checkRoleGrant = <T extends AccessMembership>(access: Access<T>, grant: RoleGrant): boolean => {
+  const engineAccess = toEngineAccess(access);
+  const options = accessOptions(engineAccess);
+  const allows = (memberships: T[]) => getAllDecisions(policyMatrix, memberships, grant.subject, options).can[grant.action];
+  return mayGrantRole(engineAccess.memberships, grant, allows, options);
 };
 
 /** One actor, many rows (bulk splits and list reads), in one engine pass. */

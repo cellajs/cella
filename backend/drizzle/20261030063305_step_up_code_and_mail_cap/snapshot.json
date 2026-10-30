@@ -1,0 +1,82 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "c965b2e1-c9a0-406c-9783-1575cac82168",
+  "prevIds": [
+    "f60bd4ed-55e1-41c7-b2e1-ebe8c6173873"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tenants",
+        "restrictions"
+      ],
+      "writes": [
+        "s|colprop|public.tenants.restrictions.default"
+      ],
+      "reads": [
+        "n|tbl|public.tenants",
+        "n|sch|public",
+        "n|col|public.tenants.restrictions"
+      ],
+      "sqlHash": "784e99a6f6214af2"
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_step_up_session_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_step_up_session_id_idx",
+        "n|idx|public.tokens_step_up_session_id_idx",
+        "e|idx|public.tokens_step_up_session_id_idx",
+        "n|rel|public.tokens_step_up_session_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.session_id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_step_up_session_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "session_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": true,
+        "where": "\"type\" = 'step-up'",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"tenants\",\"restrictions\"]",
+      "set": {
+        "default": "'{\"quotas\":{\"user\":1000,\"organization\":1,\"attachment\":100,\"serviceAccount\":20,\"apiKey\":100},\"rateLimits\":{\"apiPointsPerHour\":1000,\"invitationMailsPerDay\":250},\"allowUnregisteredClients\":true}'"
+      }
+    }
+  ]
+}

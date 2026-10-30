@@ -79,11 +79,11 @@ When an update moves a product to a path a subscriber can no longer read, that s
 
 ### Detail cache
 
-The server caches enriched product detail responses briefly. Every write of the row drops its entry, and every hit rechecks access. Lists bypass it.
+The server caches enriched product detail responses briefly. A write of the row drops its entry in the process that wrote and in the one the CDC worker reaches; another process serves the cached row until it expires, a deleted one included. Every hit rechecks the caller's access against the cached row. Lists bypass it.
 
 ## Access
 
-**Row readability** decides whether a user may fetch a row. List reads, range fetches, change frames and detail-cache hits all ask the permission engine about full rows. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
+**Row readability** decides whether a user may fetch a row. List reads, range fetches and change frames ask the permission engine about full rows, and a detail-cache hit about the row as it was cached. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
 **Summary answerability** decides whether a user may see a view's frontiers and counts. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
 
@@ -99,7 +99,7 @@ The client derives its views from the user's memberships and the policy matrix. 
 
 ### Changes
 
-A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only invalidates (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`.
+A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only invalidates (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`. A change counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 
@@ -107,7 +107,7 @@ Catchup runs on every connection before the stream goes live. The client posts i
 
 ### SSE wire
 
-Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute, and a new stream's memberships once it registers: one that changed while the stream connected closes it, and the client reconnects with current access. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 
@@ -144,13 +144,13 @@ A product mutation patches the cache optimistically and reconciles with the stor
 
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field: deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
-An online write is ordered by arrival: the server stamps it with a fresh server HLC, so a device clock that runs behind cannot lose an edit. A replayed offline write keeps its client timestamps, its intent time, so it loses to an edit made elsewhere while it was queued. Its losing fields are skipped and the server returns the stored row, never a conflict response.
+An online write is ordered by arrival: the server stamps it with a fresh server HLC, so a device clock that runs behind cannot lose an edit. A replayed offline write keeps its client timestamps, its intent time, so it loses to an edit made elsewhere while it was queued. Its losing fields are skipped and the server returns the stored row, never a conflict response. A timestamp further ahead of the server's clock than a short bound moves no clock and loses to the next write of its field, so one request cannot outrank every later edit.
 
 ### Paused writes
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a still-queued create of its row, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
 A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed.
 
@@ -172,7 +172,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | --- | --- | --- | --- |
 | A client's stream is down | The app works as a REST app; lists refetch when opened | Reconnect and catchup | Nothing |
 | The worker is down or reading again | Other users' changes arrive late and in order; in a longer outage lists refetch when opened | The worker reads on from the slot | Nothing |
-| The API restarts or loses a frame | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
+| The API restarts, loses a frame or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot; then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile; with a restore, everything after the backup |
 | One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |

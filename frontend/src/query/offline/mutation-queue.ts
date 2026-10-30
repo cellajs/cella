@@ -1,11 +1,20 @@
 import { onlineManager } from '@tanstack/react-query';
 
 /** Minimal shape of a mutation's observable state; avoids depending on the generic Mutation type. */
-type MutationLike = { state: { status: string; isPaused: boolean } };
+type MutationLike = { state: { status: string; isPaused: boolean; failureCount: number } };
 
-/** Parked offline awaiting reconnect. The only state coalescing may merge into or cancel, since it cannot have completed a server round trip. */
+/** Parked offline awaiting reconnect. A parked mutation whose attempt failed may have committed before its response was lost. */
 export function isQueued(mutation: MutationLike): boolean {
   return mutation.state.status === 'pending' && mutation.state.isPaused;
+}
+
+/**
+ * Parked before its first attempt, so its request never left the device: the only create an edit may fold into or a
+ * delete may cancel. Under `offlineFirst` the first attempt runs even offline, so this is a mutation waiting behind
+ * another of its scope.
+ */
+export function isUnsent(mutation: MutationLike): boolean {
+  return isQueued(mutation) && mutation.state.failureCount === 0;
 }
 
 /** Any pending mutation (active or queued). True while a remote cache write should defer to optimistic state. */

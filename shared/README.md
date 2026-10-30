@@ -18,6 +18,8 @@ A second checkout of the same app gets a further offset. `src/config-builder/app
 
 `pnpm stop` ends the Vite dev server on this checkout's port only. In a checkout with an offset it leaves the database container running, because the main checkout shares it.
 
+Every dev server and database container listens on `127.0.0.1` only, so no other machine on the network reaches the stack; production and staging listen on every interface. `DEV_HOST=0.0.0.0 pnpm dev` opens the Vite dev server to other devices, such as a phone, while the services it proxies stay on loopback.
+
 ## File structure
 
 ```

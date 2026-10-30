@@ -92,25 +92,37 @@ describe('an edit of a row whose create is queued offline', () => {
 });
 
 describe('a delete of a row whose create is queued offline', () => {
-  it('cancels the create and sends only the rows the server holds', async () => {
+  it('cancels a create that never left the device, and sends the delete after a create that may have committed', async () => {
     seedHomeList([attachment('att-1')]);
     goOffline(createAttachments, deleteAttachments);
     const { create, remove } = hooks();
+    // The first create runs and parks; the second waits behind it in the scope, unsent.
     create.mutate([attachment('att-2')] as never);
-    await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
-    const createCalls = createAttachments.mock.calls.length;
+    hooks().create.mutate([attachment('att-3')] as never);
+    await vi.waitFor(() => expect(queued('create')).toHaveLength(2));
 
-    remove.mutate([attachment('att-1'), attachment('att-2')]);
+    remove.mutate([attachment('att-1'), attachment('att-2'), attachment('att-3')]);
     await vi.waitFor(() => expect(queued('delete')).toHaveLength(1));
-    expect(mutationsOf('attachment', 'create')).toHaveLength(0);
-    expect(homeList()).toEqual([]);
+    expect(mutationsOf('attachment', 'create').map(({ state }) => state.variables)).toMatchObject([{ data: [{ id: 'att-2' }] }]);
+    // The delete waits behind the create in the scope, after its optimistic removal.
+    await vi.waitFor(() => expect(homeList()).toEqual([]));
 
-    deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
+    const order: string[] = [];
+    createAttachments.mockImplementation(async ({ body }) => {
+      order.push('create');
+      return { data: (body as Attachment[]).map((row) => attachment(row.id, row)), rejectedIds: [] };
+    });
+    deleteAttachments.mockImplementation(async () => {
+      order.push('delete');
+      return { data: [], rejectedIds: [] };
+    });
     await goOnline();
     await settled('delete');
 
-    expect(createAttachments).toHaveBeenCalledTimes(createCalls);
-    expect(deleteAttachments.mock.lastCall?.[0]).toMatchObject({ body: { ids: ['att-1'] } });
+    expect(order).toEqual(['create', 'delete']);
+    expect(createAttachments.mock.calls.flatMap(([{ body }]) => (body as Attachment[]).map(({ id }) => id))).not.toContain('att-3');
+    expect(deleteAttachments.mock.lastCall?.[0]).toMatchObject({ body: { ids: ['att-1', 'att-2'] } });
+    expect(homeList()).toEqual([]);
   });
 });
 

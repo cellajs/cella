@@ -3,16 +3,22 @@ import { deleteOrganizations, getAttachments, getMyMemberships, getOrganization,
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb } from '#/db/db';
+import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
+import { cancelOpenStreams, expectClosedWith, expectStillOpen, insertSession, openStream } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-afterEach(async () => await clearSecurityTestData());
+afterEach(async () => {
+  await cancelOpenStreams();
+  await clearSecurityTestData();
+});
 
 /**
  * Deleting an organization archives its tenant: from that moment the organization belongs to no one. A member reads
@@ -53,6 +59,28 @@ describe('Archived organizations', async () => {
     });
     expect(restored.response.status).toBe(200);
     expect(await organizationIds()).toContain(tenant.organization.id);
+  });
+
+  it("must not keep an archived tenant's stream open", async () => {
+    const [tenant, other] = [await createTestTenant(call, 'archived-stream'), await createTestTenant(call, 'archived-stream-other')];
+    const member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'archived-stream-member');
+    const session = await insertSession(member);
+    const memberStream = await openStream(member.id, session);
+    const otherStream = await openStream(other.user.id, await insertSession(other.user));
+
+    const deleted = await call(deleteOrganizations, {
+      path: { tenantId: tenant.tenantId },
+      body: { ids: [tenant.organization.id] },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+    expect(deleted.response.status).toBe(200);
+
+    // The close is how an open app learns the organization went away; its reconnect registers without it.
+    await expectClosedWith(memberStream, 'access_changed');
+    await openStream(member.id, session);
+    const [reconnected] = streamSubscriberManager.getByTopic<AppStreamSubscriber>(userTopic(member.id));
+    expect([...reconnected.organizationIds]).toEqual([]);
+    expectStillOpen(other.user.id, otherStream);
   });
 
   it('archives the tenant also when the URL spells its id in capitals', async () => {

@@ -3,14 +3,17 @@ import { streamSSE } from 'hono/streaming';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
+import { readMemberships } from '#/middlewares/guard/membership-cache';
 import '#/modules/entities/entities-listeners';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
+import { closeAppStreams } from '#/modules/entities/helpers/session-streams';
 import { appCatchupOp, getLatestActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
 import { keepAlive, workerAwayPing, writeOffset } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
@@ -26,6 +29,7 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
 // Caps bound memory and dispatch CPU for the single-process stream; both reject with 429 so
 // clients use their normal reconnect backoff.
 const maxStreamsPerUser = 10;
+// One actor's accounts can fill this cap for every tenant: a stream belongs to a user, memberless or not, so no per-tenant share binds.
 const maxStreamSubscribers = 5000;
 
 /**
@@ -39,6 +43,28 @@ function releaseAdmission(userId: string): void {
   const left = (admittedStreams.get(userId) ?? 1) - 1;
   if (left > 0) admittedStreams.set(userId, left);
   else admittedStreams.delete(userId);
+}
+
+/** The grants a stream decides with: a membership's id and role. */
+const grantsOf = (memberships: readonly Pick<MembershipBaseModel, 'id' | 'role'>[]) =>
+  memberships
+    .map(({ id, role }) => `${id}:${role}`)
+    .sort()
+    .join();
+
+/**
+ * Whether the user's memberships differ from those a stream registered with: a membership event of the moment the
+ * stream connected reached no subscriber of it. Read after the registration and past the cache, so any later event
+ * reaches the stream through the listener; a read that fails counts as a difference.
+ */
+async function membershipsChangedSince(userId: string, registered: readonly MembershipBaseModel[]): Promise<boolean> {
+  try {
+    const { memberships } = await readMemberships(userId);
+    return grantsOf(memberships) !== grantsOf(registered);
+  } catch (error) {
+    log.error('Failed to read the memberships of a stream that connected', { error, userId });
+    return true;
+  }
 }
 
 app.openapi(entityRoutes.appStream, async (ctx) => {
@@ -89,6 +115,11 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       streamSubscriberManager.unregister(subscriber.id);
       log.debug('App stream subscriber disconnected', { subscriberId: subscriber.id });
     });
+
+    if (await membershipsChangedSince(user.id, memberships)) {
+      const payload = { code: 'access_changed', message: 'Memberships changed while the stream connected' } as const;
+      return closeAppStreams([{ subscriber, payload }], 'Failed to close a stream that connected across a membership change');
+    }
 
     // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
     await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? workerAwayPing : ''));

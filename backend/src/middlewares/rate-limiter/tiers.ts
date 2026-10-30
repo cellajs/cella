@@ -11,8 +11,8 @@ const blockSecondsOf = ({ duration, blockDuration }: BucketLimits) => (blockDura
 const slowLimits: BucketLimits = { points: 100, duration: 60 * 60 * 24, blockDuration: 60 * 60 * 3 };
 
 /**
- * The 24-hour bucket behind a failure budget, catching slow brute force: 100 failures within a day block the key for
- * three hours, whatever the hourly series did in between; a success gives its attempt back.
+ * The 24-hour bucket behind a failure budget, slowing brute force: 100 failures within a day block the key for three
+ * hours, whatever the hourly series did in between, then the count starts again; a success gives its attempt back.
  * @param keyPrefix - The budget's prefix; this bucket lives under `<keyPrefix>:slow`.
  */
 export const slowTier = (keyPrefix: string): Tier => ({

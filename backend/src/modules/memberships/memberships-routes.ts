@@ -41,7 +41,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     summary: 'Create memberships',
     description:
-      "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
+      "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.",
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCreateBodySchema) },
     responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()), ...errors(409) },
   }),
@@ -116,7 +116,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, singlePointsLimiter],
     summary: 'Resend pending invitation',
     description:
-      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
+      "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
     request: { params: idInTenantOrgParamSchema },
     responses: { 204: { description: 'Invitation resent' } },
   }),
@@ -127,7 +127,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Withdraw pending invitation',
     description:
-      'Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.',
+      "Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.",
     request: { params: idInTenantOrgParamSchema },
     responses: { 204: { description: 'Invitation withdrawn' } },
   }),

@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { listenHost } from 'shared/utils/listen-host';
 import type { Env } from '#/core/context';
 import { cdcSecretRefusal, cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { appErrorHandler } from '#/lib/error';
@@ -16,7 +17,6 @@ type FetchHandler = (request: Request) => Response | Promise<Response>;
 
 interface ListenOptions {
   port: number;
-  /** Defaults to every interface; tests bind loopback. */
   hostname?: string;
 }
 
@@ -29,7 +29,7 @@ interface ListenOptions {
  * @returns The HTTP server.
  */
 export function serveApi(
-  { fetch, port, hostname = '0.0.0.0' }: ListenOptions & { fetch: FetchHandler },
+  { fetch, port, hostname = listenHost() }: ListenOptions & { fetch: FetchHandler },
   onListening?: (info: AddressInfo) => void,
 ): ServerType {
   const server = serve({ fetch, hostname, port, serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 } }, onListening);
@@ -42,9 +42,9 @@ export function serveApi(
 
 /**
  * Why a peer may not use the internal listener, or undefined. Its routes serve the app's own workers, which reach it
- * over the private network or loopback, so a public address is refused before any route reads its secret: a port a
- * deploy exposes by mistake still answers only its own network. Forwarding headers are not read; a proxy in front of
- * the listener is a peer like any other.
+ * over the private network or loopback, so a public address is refused before any route reads its secret: a VM port a
+ * deploy exposes by mistake still answers only its own network. Forwarding headers are not read, so behind the
+ * internal load balancer every peer is the balancer, and its ACL decides who reaches the listener.
  * @param remoteAddress - The peer's address as its socket reports it.
  * @returns The reason, or undefined for an admitted peer.
  */
@@ -102,7 +102,7 @@ function refuseUpgrade(socket: Duplex, status: 401 | 403 | 404): void {
  * @returns The HTTP server and a close that also ends the CDC socket.
  */
 export function serveInternal(
-  { port, hostname = '0.0.0.0' }: ListenOptions,
+  { port, hostname = listenHost() }: ListenOptions,
   onListening?: (info: AddressInfo) => void,
 ): { server: ServerType; close: () => void } {
   const server = serve({ fetch: internalApp.fetch, hostname, port }, onListening);

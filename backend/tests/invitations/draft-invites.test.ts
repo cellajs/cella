@@ -13,7 +13,15 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser, mailedLink, mailsTo } from '../helpers';
+import {
+  createOrganizationAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  endRateLimitWindows,
+  mailedLink,
+  mailsTo,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -241,23 +249,24 @@ describe('Draft context invite deferral', async () => {
     expect(listed.filter((item) => item.id === held.id)).toEqual([expect.objectContaining({ email: 'deferred@example.com' })]);
   });
 
-  it('sends a pending invitation again whenever its address is added again', async () => {
+  it('sends a pending invitation again when its address is added again a day later', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [initial] = await getInactiveRows(organization.id);
-    await db.update(inactiveMembershipsTable).set({ remindedAt: hourAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
+    await db.update(inactiveMembershipsTable).set({ remindedAt: dayAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
+    await endRateLimitWindows('invitationMailAddress');
 
-    // Re-adding the address is as deliberate as the resend button, so the email goes out again at once.
+    // Re-adding the address is as deliberate as the resend button, so the email goes out again.
     const { data } = await invite(organization, [invitee.email], memberRole, sessionCookie);
     expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
     expect(mailsTo(invitee.email)).toHaveLength(2);
     const [reminded] = await getInactiveRows(organization.id);
-    expect(reminded.remindedAt).not.toBe(hourAgo);
+    expect(reminded.remindedAt).not.toBe(dayAgo);
   });
 
   it('reminds a pending invitation to a new address with a fresh link that retires the one mailed before', async () => {
@@ -270,6 +279,7 @@ describe('Draft context invite deferral', async () => {
     const [initial] = await getInactiveRows(organization.id);
     const [initialLink] = await linksOf(initial.id);
 
+    await endRateLimitWindows('invitationMailAddress');
     await invite(organization, [newcomer], memberRole, sessionCookie);
     const links = await linksOf(initial.id);
     expect(links).toHaveLength(1);

@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { magicLinkLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { magicLinkLimiter, recognizedMagicLinkLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { magicLinkBodySchema } from '#/modules/auth/magic/magic-schema';
 import { locationSchema } from '#/schemas';
 
@@ -12,7 +12,7 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     path: '/magic/send',
     xEnabledBy: { strategy: 'magic' },
     xGuard: [publicGuard],
-    xRateLimiter: [magicLinkLimiter, spamLimiter],
+    xRateLimiter: [magicLinkLimiter, recognizedMagicLinkLimiter, spamLimiter],
     middleware: isNoBot,
     summary: 'Send magic link',
     description:

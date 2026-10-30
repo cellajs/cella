@@ -116,7 +116,7 @@ Records, boot accounts and Scaleway's job runs are kept for 60 days, and the buc
 
 ### The builder
 
-When the registry lacks one of the release's images, or the frontend bucket its files, the deploy makes a builder machine that fetches the commit, builds them and is deleted when the build ends. The app's code runs there only in containers that hold no key and reach no machine metadata, and the engine's own code uploads the frontend files from their read-only output. Images and files carry a build epoch derived from the builder key, so after **Rotate keys** nothing pushed before counts as built and the release is built again.
+When the registry lacks one of the release's images, or the frontend bucket its files, the deploy makes a builder machine that fetches the commit, builds them and is deleted when the build ends. The app's code runs there only in containers that hold no key and reach no machine metadata, and the engine's own code uploads the frontend files from their read-only output. Images and files carry a build epoch derived from the builder key, so after **Rotate keys** nothing pushed before counts as built and the release is built again. Every base image, and BuildKit itself, is pinned by digest, so a tag moved on Docker Hub changes no build; a Node, Caddy or BuildKit bump refreshes its digest.
 
 ## Deploy flow
 

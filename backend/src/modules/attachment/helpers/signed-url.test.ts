@@ -7,20 +7,40 @@ vi.unmock('#/lib/object-storage');
 
 const { getSignedUrlFromKey } = await import('./signed-url');
 
+const bucket = { bucketName: 'private-bucket' };
+
 describe('getSignedUrlFromKey', () => {
-  it('signs private keys with the default 24h expiry', async () => {
-    const url = await getSignedUrlFromKey('org/attachments/original/a.jpg', { bucketName: 'private-bucket' });
+  it('signs private keys with the default 2h expiry', async () => {
+    const url = await getSignedUrlFromKey('org/attachments/original/a.jpg', { ...bucket, contentType: 'image/jpeg' });
 
     const parsed = new URL(url);
     expect(parsed.pathname).toContain('org/attachments/original/a.jpg');
     expect(parsed.searchParams.get('X-Amz-Signature')).toBeTruthy();
     // Pin the default so a regression to an enormous expiry fails here.
-    expect(parsed.searchParams.get('X-Amz-Expires')).toBe('86400');
+    expect(parsed.searchParams.get('X-Amz-Expires')).toBe('7200');
+  });
+
+  it('must force a download for a non-media attachment and pin the served type', async () => {
+    const served = async (contentType: string | null) => {
+      const { searchParams } = new URL(await getSignedUrlFromKey('org/user/a.html', { ...bucket, contentType }));
+      return { disposition: searchParams.get('response-content-disposition'), type: searchParams.get('response-content-type') };
+    };
+    const download = { disposition: 'attachment', type: 'application/octet-stream' };
+
+    // An uploaded page, an SVG and an XML type in a media family open nowhere as a document.
+    for (const contentType of ['text/html', 'application/xhtml+xml', 'image/svg+xml', 'video/x+xml', 'text/html; charset=utf-8', null]) {
+      expect(await served(contentType), String(contentType)).toEqual(download);
+    }
+    // HTML bytes under a declared `image/png` are served as an image, never with the type stored at upload.
+    expect(await served('image/png')).toEqual({ disposition: 'inline', type: 'image/png' });
+    for (const contentType of ['image/webp', 'video/mp4', 'audio/mpeg', 'application/pdf']) {
+      expect(await served(contentType), contentType).toEqual({ disposition: 'inline', type: contentType });
+    }
   });
 
   it('must not sign a blob: key, a local blob URL included', async () => {
     for (const key of ['blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c', 'blob:/../org/contract.pdf']) {
-      await expect(getSignedUrlFromKey(key, { bucketName: 'private-bucket' }), key).rejects.toMatchObject({
+      await expect(getSignedUrlFromKey(key, { ...bucket, contentType: 'application/pdf' }), key).rejects.toMatchObject({
         status: 500,
         type: 'server_error',
       });
@@ -33,7 +53,7 @@ describe('getSignedUrlFromKey', () => {
     vi.doMock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: '', S3_ACCESS_KEY_SECRET: '' } }));
     const { getSignedUrlFromKey: signUnconfigured } = await import('./signed-url');
 
-    await expect(signUnconfigured('key.png', { bucketName: 'private-bucket' })).rejects.toMatchObject({
+    await expect(signUnconfigured('key.png', { ...bucket, contentType: 'image/png' })).rejects.toMatchObject({
       status: 503,
       type: 'server_error',
     });

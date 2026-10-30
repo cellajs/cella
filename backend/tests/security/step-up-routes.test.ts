@@ -8,6 +8,7 @@ import {
   deletePasskey,
   deleteTotp,
   generateTotpKey,
+  revokeMySessions,
   startOAuthConnect,
   stepUp,
   toggleMfa,
@@ -205,6 +206,23 @@ describe('account-security routes need a step-up', async () => {
     await stepUpByEmail(session);
     expect((await call(deleteMe, { headers: session.headers })).response.status).toBe(204);
     expect(await accounts()).toHaveLength(0);
+  });
+
+  it('must not let a session end another session of its user without step-up', async () => {
+    const user = await createTestUser('copied-cookie@security-test.com');
+    // A cookie copied an hour ago, and the owner's new sign-in on another device.
+    const [copied, signedIn] = [await insertStaleSession(user), await insertSession(user)];
+    const revoke = (session: TestSession, ids: string[]) => call(revokeMySessions, { body: { ids }, headers: session.headers });
+
+    await expectStepUpRequired(await revoke(copied, [signedIn.id]));
+    expect((await sessionRow(signedIn.id)).revokedAt).toBeNull();
+
+    // The owner's recent sign-in passes and ends the copy; a session ends itself without a step-up.
+    expect((await revoke(signedIn, [copied.id])).response.status).toBe(200);
+    expect(await sessionRow(copied.id)).toMatchObject({ revocationReason: 'other_session' });
+    const signingOut = await insertStaleSession(user);
+    expect((await revoke(signingOut, [signingOut.id])).response.status).toBe(200);
+    expect(await sessionRow(signingOut.id)).toMatchObject({ revocationReason: 'sign_out' });
   });
 
   it('must not change account security via an impersonation session, however fresh', async () => {

@@ -19,6 +19,7 @@ export const mockStreamChange = (key = 'stream-change:default') =>
       channelId: mockUuid(),
       seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStxBase(`${key}:stx`),
+      actorId: mockUuid(),
       batchUntilSeq: null,
       count: null,
       spreadWindow: null,

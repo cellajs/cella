@@ -11,9 +11,9 @@ import { getIp } from '#/utils/get-ip';
 import { systemAdminAllowList } from '#/utils/system-access';
 
 /**
- * Only users holding the 'admin' system role proceed; anyone else triggers a security notification. An impersonation
- * is refused first: system administration is done as oneself, and the role check would judge the impersonated user
- * and raise an alert about the admin's own request.
+ * Only users holding the 'admin' system role proceed. Anyone else is refused and logged every time, and raises a
+ * security notification at most once an hour. An impersonation is refused first: system administration is done as
+ * oneself, and the role check would judge the impersonated user and raise an alert about the admin's own request.
  */
 const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
   const { user, isSystemAdmin, session } = ctx.var;
@@ -22,7 +22,7 @@ const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) });
+    await sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) }, user.id);
     throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
   }
 
@@ -35,9 +35,9 @@ const allowedIpCheck = ipRestriction(
   // its own 403 before the allow-list and the refusal below run.
   (c) => getIp(c) ?? '',
   { allowList: systemAdminAllowList() },
-  async (remote) => {
+  async (remote, c) => {
     const ip = remote.addr ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted' });
+    await sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted' }, c.var.user?.id);
     throw new AppError(403, 'forbidden', 'warn');
   },
 );

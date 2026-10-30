@@ -43,7 +43,7 @@ describe('the account budget behind TOTP checks', () => {
     // A whole hourly budget again, and the failure that spends it locks the account and mails the owner once.
     for (let failure = 0; failure < 5; failure++) expect(await check(wrongTotpCode())).toBe(401);
     expect(await check(totpCode())).toBe(429);
-    expect(lockoutMails()).toEqual([['totp-lockout', { attempts: 5, duration: 30 }]]);
+    expect(lockoutMails()).toEqual([['totp-lockout', { attempts: 5, duration: 60 * 30 }]]);
     expect((await memoryStores.get('totpAccount:slow')?.get(`userId:${user.id}`))?.consumedPoints).toBe(9);
   });
 
@@ -55,7 +55,39 @@ describe('the account budget behind TOTP checks', () => {
     await daily?.set(`userId:${user.id}`, 99, 60 * 60 * 24);
 
     expect(await check(wrongTotpCode())).toBe(401);
-    expect(lockoutMails()).toEqual([['totp-lockout', { attempts: 100, duration: 180 }]]);
+    expect(lockoutMails()).toEqual([['totp-lockout', { attempts: 100, duration: 60 * 60 * 3 }]]);
     expect(await check(totpCode())).toBe(429);
+  });
+
+  it("must not let an account's codes be guessed past the long budget via daily blocks that end", async () => {
+    const { check } = accountChecks();
+    const minutes = (count: number) => count * 60 * 1000;
+    const days = (count: number) => count * minutes(60 * 24);
+
+    // Only the clock moves: codes and blocks read the same frozen time.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const start = Date.now();
+      // A guesser who waits out every hourly block: 5 wrong codes per half hour, 100 in under ten hours.
+      for (let batch = 0; batch < 20; batch++) {
+        vi.setSystemTime(start + batch * minutes(31));
+        for (let failure = 0; failure < 5; failure++) expect(await check(wrongTotpCode())).toBe(401);
+      }
+      // The 100th failure spends the hour, the day and the long budget at once: one mail names the longest block.
+      expect(lockoutMails()).toHaveLength(20);
+      expect(lockoutMails().at(-1)).toEqual(['totp-lockout', { attempts: 100, duration: 60 * 60 * 24 * 21 }]);
+
+      // The day's block ends and its count starts again; the long block refuses even the right code.
+      vi.setSystemTime(start + days(2));
+      expect(await check(totpCode())).toBe(429);
+      vi.setSystemTime(start + days(21));
+      expect(await check(totpCode())).toBe(429);
+
+      // Positive control: once the long block ends, the right code verifies.
+      vi.setSystemTime(start + days(22));
+      expect(await check(totpCode())).toBe(204);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

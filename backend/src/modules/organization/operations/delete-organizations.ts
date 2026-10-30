@@ -8,9 +8,9 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /**
- * Deletes organizations by archiving their tenant (one organization per tenant): every member loses access at once,
- * and the archived-tenant sweep removes the organization with everything in it `archivedTenantDays` later. Until then a
- * system admin restores it by setting the tenant active.
+ * Deletes organizations by archiving their tenant (one organization per tenant): every member loses access (in another
+ * process once its guard caches expire), and the archived-tenant sweep removes the organization with everything in it
+ * `archivedTenantDays` later. Until then a system admin restores it by setting the tenant active.
  */
 export async function deleteOrganizationsOp(ctx: ActorContext, ids: string[]) {
   const { actor, tenantId } = ctx.var;

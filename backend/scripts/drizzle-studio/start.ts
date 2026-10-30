@@ -50,6 +50,7 @@ const startDrizzleStudio = async () => {
 
   console.info(' ');
   console.info(`${checkMark} Drizzle Studio starting on https://local.drizzle.studio?port=${STUDIO_PORT}`);
+  console.info('  It connects with DATABASE_ADMIN_URL and answers any website open in this browser: stop it when you are done.');
   console.info(' ');
 
   const cleanup = (code: number | null) => {

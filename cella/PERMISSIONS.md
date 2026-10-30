@@ -111,6 +111,8 @@ Channel entities have two row kinds: **elevation** rows on an ancestor channel s
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
+A channel declares its roles most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, by an invitation, a direct add or a role change, nor demotes or removes a member who holds one; an invitation is refused as well when its accept would bring along a membership above the channel (`organizationRoles`, a menu `carryRole`) at a role above the inviter's own there, since the accept has no inviter to ask. `update` or `delete` that reaches the channel from an ancestor hands out every role of the channel, the least-privileged role is anyone's to give, and a system admin gives any. Service accounts follow the same rule: nobody creates one, issues or rolls its keys or re-enables it at a role above their own.
+
 ## The permission returned
 
 The **`checkAccess*` family** is what every tier calls:
@@ -182,24 +184,27 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 
 | Situation | Answer | Why |
 | --- | --- | --- |
-| The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | Every member knows the tenant id, so the answer only says "not yours" and ids cannot be enumerated |
+| The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
+| A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `meta.reason: 'role_exceeds_actor'`, `meta.role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |
 | An organization slug another organization holds, in any tenant | 409 `slug_exists` from create and rename; the slug check answers 409 taken, 204 free | A slug is the organization's public URL path and unique across tenants, and every route gives the same answer, so availability is the policy and no leak |
 | A token this browser does not hold, or one that expired | 401 `<type>_not_found` or `<type>_expired` | The token was the proof, so without it the request is not authenticated |
+| A passkey the server does not hold for the account | 404 `passkey_not_found` | The credential id comes from the caller's own authenticator, so the answer reveals no account |
 | A link or invitation of another account than the signed-in one | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
-| An address or provider account another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app |
+| An address the provider verified, or a provider account, that another account holds | 409 `oauth_email_exists`, `oauth_conflict` or `oauth_wrong_email` | The caller's state, not a fault of the app. An unverified address answers as a free one, so the answer tells nobody whether an account holds it |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend sends a person to sign-in on these four alone |
 | A tenant quota that is full | 403 `restrict_by_app` with `meta.resource` and `meta.quota`; `restrict_by_org` for member seats | The tenant's policy, not a rate: waiting does not lift it, so never a 429 |
+| A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `meta.retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationMailsPerDay` |
 | An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | `withStepUp` opens the proof dialog on it and runs the action again |
 | An action on the account itself while impersonating | 403 `impersonation_forbidden` | The admin acts as the user, never on the account |
 | A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | The tenant decides how the people it knows through a connection sign in |
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. It is stamped on the user's own GET requests, never while an admin impersonates them. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
 
 ## Behavior
 

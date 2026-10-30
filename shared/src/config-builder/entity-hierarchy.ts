@@ -511,6 +511,16 @@ export class EntityHierarchy<
     return role;
   };
 
+  /**
+   * Whether `role` ranks above `other` in the channel's declaration order, the order that decides who may grant what
+   * (`mayGrantRole`). A role the channel does not declare, and no role at all, rank below every declared one.
+   */
+  readonly outranks = (channelType: string, role: string, other: string | null): boolean => {
+    const roles: readonly string[] = this.getRoles(channelType);
+    const rank = (value: string | null) => (value !== null && roles.includes(value) ? roles.indexOf(value) : roles.length);
+    return rank(role) < rank(other);
+  };
+
   /** True when the channel declares `drafts`, so it can be created unpublished. */
   readonly canDraft = (channelType: string): boolean => {
     const entry = this.entities.get(channelType);

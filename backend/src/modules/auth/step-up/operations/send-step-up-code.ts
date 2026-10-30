@@ -13,7 +13,8 @@ import { stepUpEmail } from '../../../../../emails';
  * Mails the signed-in user a code that steps up this session, and only this one, when entered within ten minutes. For
  * a user without a second factor, or one who replaces a lost factor while MFA is off. The mail's request details name
  * the browser that asked, so a user talked into reading the code out can see it is not theirs.
- * @throws AppError 403 `impersonation_forbidden`, 400 `invalid_request` when the user may not step up by mail.
+ * @throws AppError 403 `impersonation_forbidden`, 400 `invalid_request` when the user may not step up by mail, 409
+ *   `resource_already_exists` with no mail when a concurrent request issued the session's code first.
  */
 export const sendStepUpCodeOp = async (ctx: Context<Env>) => {
   const { user, session } = ctx.var;

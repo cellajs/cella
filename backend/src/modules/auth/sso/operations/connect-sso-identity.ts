@@ -7,6 +7,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
 import { insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import { spendConnectPin } from '#/modules/auth/oauth/operations/spend-connect-pin';
+import { provesAddress } from '#/modules/auth/sso/helpers/address-authority';
 import type { SsoSignInFacts } from '#/modules/auth/sso/operations/complete-sso-sign-in';
 import { insertSsoMembership } from '#/modules/auth/sso/operations/insert-sso-membership';
 import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
@@ -35,8 +36,9 @@ export const touchSsoIdentity = async (
 /**
  * Connects an institution account to the user the `oauth-connect` pin names, issued signed in right before leaving
  * for the federation. The identity is verified at once (the institution's assertion is the proof), the asserted address
- * joins the account under address authority, and the user becomes a member of the institution's organization, with the
- * role `roleFromClaims` gives, when they hold no membership there yet.
+ * joins the account when the institution proves it (`provesAddress`), and with the connection's `jitProvisioning` the
+ * user becomes a member of the institution's organization, with the role `roleFromClaims` gives, when they hold no
+ * membership there yet.
  * @throws AppError 401 `oauth-connect_not_found` without a live pin, 409 `oauth_conflict` when the institution account
  *   belongs to another user, and `addProvenEmail`'s 409 when another account holds the asserted address.
  */
@@ -69,11 +71,11 @@ export const connectSsoIdentity = async (
       verified: true,
     });
 
-    if (federation.addressAuthority && profile.email && profile.email !== user.email) {
+    if (profile.email && profile.email !== user.email && provesAddress(federation, connection, profile.email)) {
       await addProvenEmail(txCtx, { userId: user.id, email: profile.email, via: federation.key });
     }
 
-    if (organization) {
+    if (connection.jitProvisioning && organization) {
       const [existing] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [user.id], channelId: organization.id });
       if (!existing) await insertSsoMembership(txCtx, { userId: user.id, organization, federation, connection, claims });
     }

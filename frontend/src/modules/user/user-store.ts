@@ -12,6 +12,9 @@ type LastUser = Pick<MeUser, 'id' | 'email'>;
 
 export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => `${entityType}:${entityId}`;
 
+/** The `localStorage` key the store persists to, which every tab of the browser shares. */
+export const userStorageKey = `${appConfig.slug}-user`;
+
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
 const mirrorLanguage = (language?: User['language']) => {
   const lng = language || appConfig.defaultLanguage;
@@ -88,7 +91,7 @@ export const useUserStore = create<UserStoreState>()(
       })),
       {
         version: 1,
-        name: `${appConfig.slug}-user`,
+        name: userStorageKey,
         partialize: (state) => ({
           user: state.user,
           isSystemAdmin: state.isSystemAdmin,

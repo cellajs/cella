@@ -12,9 +12,9 @@ interface ProductKeys {
 }
 
 /**
- * The prepare step of a product's delete mutation. A row whose create is still queued offline never reached the
- * server: its create and queued updates are cancelled, and it leaves the list under `listKey` and the detail cache
- * here, without a request. The other rows become the mutation's variables through `toVars`; `noop` when none is left.
+ * The prepare step of a product's delete mutation. A row whose create never left the device (`isUnsent`) has its create
+ * and queued updates cancelled, and leaves the list under `listKey` and the detail cache here without a request. The
+ * other rows become the mutation's variables through `toVars`; `noop` when none is left.
  */
 export function prepareProductDelete<TRow extends { id: string }, TVars>(
   queryClient: QueryClient,

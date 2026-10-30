@@ -1,5 +1,6 @@
 import { type ServerType, serve } from '@hono/node-server';
 import { appConfig } from 'shared';
+import { listenHost } from 'shared/utils/listen-host';
 import { sleep } from 'shared/utils/sleep';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
@@ -76,7 +77,7 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
 
   let server: ServerType | undefined;
   if (!options.inProcess) {
-    server = serve({ fetch: healthApp.fetch, hostname: '0.0.0.0', port }, () => {
+    server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => {
       baseLog.info(`Jobs worker listening on port ${port}`);
     });
     setupGracefulShutdown({

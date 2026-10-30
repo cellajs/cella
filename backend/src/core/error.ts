@@ -42,7 +42,8 @@ export class AppError extends Error {
 
   constructor(status: AppErrorStatus, type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
-    super(opts?.message ?? i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: i18n.t(type, i18nOpts) }));
+    // Passed to `super`, the cause stays non-enumerable as on a native error, so a log line never copies a library's plain-object cause.
+    super(opts?.message ?? i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: i18n.t(type, i18nOpts) }), { cause: opts?.originalError?.cause });
 
     this.name = opts?.name ?? i18n.t(type, { ...i18nOpts, defaultValue: 'ApiError' });
     this.status = status;
@@ -52,6 +53,5 @@ export class AppError extends Error {
     this.willRedirect = opts?.willRedirect ?? false;
     this.meta = opts?.meta;
     this.stack = opts?.originalError?.stack ?? this.stack;
-    this.cause = opts?.originalError?.cause;
   }
 }

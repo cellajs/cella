@@ -139,6 +139,10 @@ export type StreamChange = {
   channelId: string | null;
   stx: StxBase | null;
   /**
+   * Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user
+   */
+  actorId: string | null;
+  /**
    * Last sequence position for a batched change: client should fetch range
    */
   batchUntilSeq: number | null;
@@ -491,6 +495,10 @@ export type Tenant = {
        * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
        */
       apiPointsPerHour: number;
+      /**
+       * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+       */
+      invitationMailsPerDay: number;
     };
     /**
      * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -684,7 +692,7 @@ export type InviteOutcome = {
    */
   email: string;
   /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
    */
   outcome: 'invite' | 'remind' | 'add' | 'member';
   invitedAt?: string;
@@ -2193,6 +2201,10 @@ export type SendStepUpCodeErrors = {
    */
   403: ForbiddenError;
   /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
    * Rate limit: too many requests.
    */
   429: TooManyRequestsError;
@@ -3305,6 +3317,10 @@ export type CreatePushSubscriptionErrors = {
    * Payload too large: the request body exceeds its limit.
    */
   413: PayloadTooLargeError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
 };
 
 export type CreatePushSubscriptionError = CreatePushSubscriptionErrors[keyof CreatePushSubscriptionErrors];
@@ -3790,6 +3806,10 @@ export type SelfCreateTenantErrors = {
    */
   401: UnauthorizedError;
   /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
    * Payload too large: the request body exceeds its limit.
    */
   413: PayloadTooLargeError;
@@ -3834,7 +3854,14 @@ export type UpdateTenantData = {
       };
       allowUnregisteredClients?: boolean;
       rateLimits?: {
+        /**
+         * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
+         */
         apiPointsPerHour?: number;
+        /**
+         * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+         */
+        invitationMailsPerDay?: number;
       };
     };
   };

@@ -27,6 +27,9 @@ export function parseResource(uri: string): ResourceRef | null {
   return null;
 }
 
+/** Every read scope of the catalog, space-separated: the 401 challenge names it so a client's first consent grants no write. */
+export const mcpInitialScope = accessScopes.all.filter((scope) => scope.endsWith(':read')).join(' ');
+
 /** RFC 9728: where a protected resource publishes its metadata; the `WWW-Authenticate` challenge points here. */
 export function resourceMetadataUrl(ref: ResourceRef): string {
   return `${resourceUri(ref)}/.well-known/oauth-protected-resource`;

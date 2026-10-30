@@ -74,16 +74,17 @@ describe('Passkey Authentication', async () => {
       await expectRefusal(unknown, 404, 'passkey_not_found');
     });
 
+    // Client data past its string cap is refused by the body schema, before verification runs.
     it.each([
-      ['invalid JSON', 'invalid-json'],
-      ['very long client data', 'a'.repeat(10000)],
-    ])('should reject verification with %s', async (_label, clientDataJSON) => {
+      ['invalid JSON', 'invalid-json', 401, 'passkey_verification_failed'],
+      ['very long client data', 'a'.repeat(10000), 400, 'form.too_big'],
+    ])('should reject verification with %s', async (_label, clientDataJSON, status, type) => {
       const { passkey } = await userWithPasskey();
       const { challenge: value, cookie } = await passkeyChallenge('authentication');
       const assertion = passkey.assert(value);
       assertion.response.clientDataJSON = clientDataJSON;
 
-      await expectRefusal(await passkeySignIn(assertion, cookie), 401, 'passkey_verification_failed');
+      await expectRefusal(await passkeySignIn(assertion, cookie), status, type);
     });
   });
 

@@ -15,6 +15,7 @@ export type Executor = Pick<DB, 'execute'>;
  * comes from the immutability triggers, not from role privileges.
  */
 export const cdcDb: DB = createPgConnection(env.DATABASE_CDC_URL, {
+  name: 'cdc',
   max: 10,
   sslCa,
   debug: env.DEBUG,

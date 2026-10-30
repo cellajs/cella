@@ -23,6 +23,7 @@ import {
   insertTestSession,
   insertTestToken,
   mailedLink,
+  mailsTo,
   setCookiePair,
   tokenRow,
 } from '../helpers';
@@ -278,8 +279,11 @@ describe('magic-link sign-up', async () => {
 
   /** Requests a link for `email`: the raw token from the mailed link, and the marker cookie of the browser that asked. */
   const requestLink = async (email: string) => {
+    const mailed = mailsTo(email).length;
     const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
     expect(response.status).toBe(204);
+    // The link goes out after the answer.
+    await vi.waitFor(() => expect(mailsTo(email)).toHaveLength(mailed + 1));
     const { url, token: rawToken } = mailedLink('magicLinkUrl');
     expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/magic/${rawToken}`);
     return { rawToken, requestedHere: setCookiePair(response, 'magic-requested') };

@@ -13,8 +13,12 @@ type Quotas = Record<QuotaKey, number>;
 /** Every key a tenant quota can name: the entity types, then the machine keys. */
 export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
 
-/** API points per hour per actor in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
-type RateLimits = { apiPointsPerHour: number };
+type RateLimits = {
+  /** API points per hour per actor in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
+  apiPointsPerHour: number;
+  /** Invitation mails per day to addresses outside the tenant, new, reminded and reopened alike. 0 = no cap. */
+  invitationMailsPerDay: number;
+};
 
 /** What a tenant may hold and spend, stored on its row (`tenants.restrictions`). */
 export type Restrictions = {
@@ -35,7 +39,7 @@ export const defaultRestrictions = (): Restrictions => {
 
   return {
     quotas,
-    rateLimits: { apiPointsPerHour: appConfig.defaultRestrictions.rateLimits.apiPointsPerHour },
+    rateLimits: { ...appConfig.defaultRestrictions.rateLimits },
     allowUnregisteredClients: true,
   };
 };

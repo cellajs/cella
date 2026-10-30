@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { _resetHLC, advanceClock, compareHLC, generateServerHLC, isValidHLC, parseHLC } from '#/core/stx/hlc';
+import { _resetHLC, advanceClock, compareHLC, generateServerHLC, isValidHLC, maxClockSkewMs, parseHLC } from '#/core/stx/hlc';
 
 describe('HLC wire format', () => {
   beforeEach(() => _resetHLC());
@@ -21,10 +21,27 @@ describe('HLC wire format', () => {
     expect(compareHLC('1700000000000:0001:0abcd', '1700000000000:0001:0abce')).toBe(-1);
   });
 
-  it('generates a server timestamp after an observed future timestamp', () => {
-    const observed = '9999999999999:0007:0abcd';
+  it('generates a server timestamp after an observed timestamp inside the skew bound', () => {
+    const observed = `${Date.now() + maxClockSkewMs / 2}:0007:0abcd`;
     advanceClock(observed);
 
     expect(compareHLC(generateServerHLC(), observed)).toBe(1);
+  });
+
+  it("must not let one request's stamp move the server clock past the skew bound", () => {
+    const bound = BigInt(Date.now() + maxClockSkewMs);
+    for (const observed of ['9999999999999999:0000:abcde', `${Date.now() + maxClockSkewMs + 1000}:0000:abcde`]) {
+      advanceClock(observed);
+      expect(parseHLC(generateServerHLC())?.timestamp).toBeLessThanOrEqual(bound);
+    }
+  });
+
+  it('must keep server stamps inside the pattern when the counter is at its maximum', () => {
+    const observed = `${Date.now() + maxClockSkewMs / 2}:9999999999:abcde`;
+    advanceClock(observed);
+
+    const next = generateServerHLC();
+    expect(isValidHLC(next)).toBe(true);
+    expect(compareHLC(next, observed)).toBe(1);
   });
 });

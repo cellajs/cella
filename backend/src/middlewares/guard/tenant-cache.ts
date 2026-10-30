@@ -1,10 +1,10 @@
 import { TTLCache } from '#/lib/ttl-cache';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 
-const tenantCache = new TTLCache<TenantModel>({ maxSize: 1000, defaultTtl: 60_000 });
+const tenantCache = new TTLCache<TenantModel>({ maxSize: 1000, defaultTtl: 10_000 });
 
 /**
- * The cached tenant row, or else the one `read` resolves, cached for a minute.
+ * The cached tenant row, or else the one `read` resolves, cached for 10 seconds.
  * @param tenantId - The tenant's id.
  * @param read - Reads the row; undefined for an unknown tenant.
  * @returns The row, or undefined for an unknown tenant, which is never cached.

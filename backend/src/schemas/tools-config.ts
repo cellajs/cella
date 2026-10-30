@@ -1,11 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { type ChannelSlot, channelSlots } from 'shared/placements';
 import type { ToolsConfig } from 'shared/tools-config';
+import { maxLength } from '#/db/utils/constraints';
 
 const slots = channelSlots();
 
 // More than any slot holds tools.
-const toolIdsSchema = z.array(z.string()).max(100);
+const toolIdsSchema = z.array(z.string().max(maxLength.field)).max(100);
 
 /**
  * Wire schema for a channel's per-slot tool arrangement (see `shared/tools-config` for the

@@ -33,7 +33,7 @@ export type CookieName =
   | 'magic-requested'
   | 'magic-pending'
   | 'sso-recovery'
-  | `oauth-state-${string}`;
+  | 'oauth-state';
 
 /**
  * Cookies read on a navigation another site started stay SameSite Lax: the OAuth state, plus the device id and the
@@ -41,9 +41,9 @@ export type CookieName =
  * type's own cookie follows its policy. All others, sessions included, are same-origin only.
  * @see handle-oauth-initiation.ts
  */
-const laxCookies = new Set<CookieName>(['device-id', 'magic-requested']);
+const laxCookies = new Set<CookieName>(['oauth-state', 'device-id', 'magic-requested']);
 const isLaxCookie = (name: CookieName) => {
-  if (!isTokenType(name)) return laxCookies.has(name) || name.startsWith('oauth-state-');
+  if (!isTokenType(name)) return laxCookies.has(name);
   const policy: TokenPolicy = tokenPolicies[name];
   return policy.carrier !== 'code' && policy.sameSite === 'lax';
 };

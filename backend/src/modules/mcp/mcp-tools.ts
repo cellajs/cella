@@ -130,7 +130,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
       name,
       description: spec.description,
       inputSchema: toInputSchema(inputSchema),
-      annotations: { readOnlyHint: isRead, destructiveHint: method === 'DELETE', idempotentHint: method !== 'POST' },
+      annotations: { readOnlyHint: isRead, destructiveHint: !isRead && method !== 'POST', idempotentHint: method !== 'POST' },
       _meta: { scope, approvalRequired: spec.approvalRequired },
     },
     call: async (ctx, args) => {

@@ -1,5 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import type { ChannelEntityType, EntityRole } from 'shared';
+import { declineHolds } from 'shared/decline-hold';
 import type { UserContext } from '#/core/context';
 import { findInactiveMembershipsByEmails } from '#/modules/memberships/inactive-memberships-queries';
 import { findInviteeAccounts } from '#/modules/memberships/memberships-queries';
@@ -8,11 +9,15 @@ import type { inviteOutcomeSchema } from '#/modules/memberships/memberships-sche
 type InviteOutcome = z.infer<typeof inviteOutcomeSchema>;
 type InactiveMembership = Awaited<ReturnType<typeof findInactiveMembershipsByEmails>>[number];
 
-/** One address with what an invite does with it, and the rows the invite acts on. Only `outcome` goes on the wire. */
+/**
+ * One address with what an invite does with it, and the rows the invite acts on. Only `outcome` goes on the wire, where
+ * a `declined` one, left alone while its decline holds, reads as the `remind` it was.
+ */
 export type PlannedAddress =
   | { email: string; outcome: 'invite'; userId: string | null }
   | { email: string; outcome: 'add'; userId: string }
   | { email: string; outcome: 'remind'; invitation: InactiveMembership }
+  | { email: string; outcome: 'declined'; invitation: InactiveMembership }
   | { email: string; outcome: 'member'; role: EntityRole };
 
 interface PlanInvitesInput {
@@ -41,8 +46,9 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
   const invitationByEmail = new Map(invitations.map((invitation) => [invitation.email, invitation]));
 
   return uniqueEmails.map((email): PlannedAddress => {
-    // A pending invitation goes out again; a declined one opens again.
+    // A pending invitation goes out again, and a declined one opens again once its decline stops holding.
     const invitation = invitationByEmail.get(email);
+    if (invitation && declineHolds(invitation.rejectedAt)) return { email, outcome: 'declined', invitation };
     if (invitation) return { email, outcome: 'remind', invitation };
 
     const account = accountByEmail.get(email);
@@ -64,7 +70,7 @@ export async function planInvites(ctx: UserContext, { emails, entity, entityType
 /** The wire form of a plan: what the inviter may know about each address. */
 export function toInviteOutcome(planned: PlannedAddress): InviteOutcome {
   if (planned.outcome === 'member') return { email: planned.email, outcome: 'member', role: planned.role };
-  if (planned.outcome !== 'remind') return { email: planned.email, outcome: planned.outcome };
+  if (planned.outcome === 'invite' || planned.outcome === 'add') return { email: planned.email, outcome: planned.outcome };
   const { createdAt, rejectedAt } = planned.invitation;
   return { email: planned.email, outcome: 'remind', invitedAt: createdAt, ...(rejectedAt && { declinedAt: rejectedAt }) };
 }

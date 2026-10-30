@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, like } from 'drizzle-orm';
 import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -9,6 +9,7 @@ import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
+import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
@@ -66,6 +67,12 @@ export const sentMails = () =>
   );
 
 export const mailsTo = (email: string) => sentMails().filter(({ recipient }) => recipient.email === email);
+
+/**
+ * Ends the window of every bucket under `keyPrefix`, as the time running out would. A mail cap keeps its buckets in the
+ * worker's database across tests and runs, so a test that mails an address twice, or counts a shared ceiling, starts here.
+ */
+export const endRateLimitWindows = (keyPrefix: string) => adminDb.delete(rateLimitsTable).where(like(rateLimitsTable.key, `${keyPrefix}:%`));
 
 /**
  * The link `key` names in the last mail, a static prop (`magicLinkUrl`) or a recipient field (`inviteLink`), and the raw
@@ -216,6 +223,8 @@ interface TestSessionOpts {
   impersonatorSessionId?: string;
   /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
   steppedUpVia?: StepUpProof;
+  /** The SSO connection a federation sign-in came through. */
+  connectionId?: string;
 }
 
 /**
@@ -231,6 +240,7 @@ export async function insertTestSession(
     expiresInMs = 7 * 24 * 60 * 60 * 1000,
     impersonatorSessionId,
     steppedUpVia,
+    connectionId,
   }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
@@ -246,6 +256,7 @@ export async function insertTestSession(
     createdAt,
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
     impersonatorSessionId,
+    connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
   });

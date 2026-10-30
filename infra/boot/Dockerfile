@@ -8,10 +8,13 @@
 # so it needs iproute2. The JS bundle is produced on the host by
 # `pnpm --filter infra boot:build` (rolldown -> boot/dist/entry.cjs) before
 # `docker build` (context: infra/boot). NODE_VERSION is the root package.json
-# `engines.node`, passed by every build (`boot:image`, the deploy pipeline, bake);
-# without a default, so the `check=skip` line on top.
+# `engines.node`, passed by `boot:image`; without a default, so the `check=skip`
+# line on top. The release bake passes NODE_IMAGE, the `node` image at that
+# version by digest from infra/lib/deploy/node-image.ts, which a Node bump
+# refreshes.
 ARG NODE_VERSION
-FROM node:${NODE_VERSION}-bookworm-slim
+ARG NODE_IMAGE=node:${NODE_VERSION}-bookworm-slim
+FROM ${NODE_IMAGE}
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg iproute2 \

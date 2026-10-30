@@ -1198,7 +1198,7 @@ export const ssoCallback = <ThrowOnError extends boolean = true>(
 /**
  * Send an SSO recovery link
  *
- * For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
+ * For a browser whose institution sign-in was refused because an account already holds the asserted address or the institution does not prove it: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
  *
  * **POST /auth/sso/recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sso/recovery-link) ·· _auth · cella_
  *
@@ -1291,7 +1291,7 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
  * **POST /auth/step-up/code** ·· [sendStepUpCode](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/code) ·· _auth · cella_
  *
  * @param {sendStepUpCodeData} options
- * @returns Possible status codes: 204, 400, 401, 403, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 409, 429
  */
 export const sendStepUpCode = <ThrowOnError extends boolean = true>(
   options?: Options<SendStepUpCodeData, ThrowOnError>,
@@ -1517,7 +1517,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Revoke sessions
  *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).
  *
  * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· _me · cella_
  *
@@ -1564,7 +1564,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.
+ * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in. Only a system admin gets a newsletter image token.
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· _me · cella_
  *
@@ -1872,7 +1872,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Register a Web Push subscription
  *
- * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.
+ * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.
  *
  * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push · cella_
  *
@@ -1880,7 +1880,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.endpoint - `string` (optional)
  * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 200, 400, 401, 413
+ * @returns Possible status codes: 200, 400, 401, 413, 429
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,
@@ -2134,13 +2134,13 @@ export const getTenants = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.
+ * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.
  *
  * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· _tenants · cella_
  *
  * @param {selfCreateTenantData} options
  * @param {string=} options.body.name - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const selfCreateTenant = <ThrowOnError extends boolean = true>(
   options: Options<SelfCreateTenantData, ThrowOnError>,
@@ -2649,7 +2649,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
 /**
  * Get attachment
  *
- * Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.
+ * Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.
  *
  * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
  *
@@ -2806,7 +2806,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.
  *
  * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· _memberships · cella_
  *
@@ -2979,7 +2979,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships · cella_
  *
@@ -3002,7 +3002,7 @@ export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
 /**
  * Withdraw pending invitation
  *
- * Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.
+ * Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.
  *
  * **DELETE /{tenantId}/{organizationId}/memberships/pending/{id}** ·· [withdrawPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships/pending/{id}) ·· _memberships · cella_
  *

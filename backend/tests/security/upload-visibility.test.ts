@@ -1,11 +1,12 @@
 import { appConfig } from 'shared';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { env } from '#/env';
 import { defaultHeaders, overrideConfig } from '../fixtures';
 import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -71,6 +72,25 @@ describe('Upload visibility', async () => {
       expect(body.publicBucket, templateId).toBe(true);
       expect(body.params?.steps.exported, templateId).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucket });
     }
+  });
+
+  describe('attachment uploads', () => {
+    // A member role that reads attachments and creates none, as an app may configure it.
+    assumeMemberAttachmentPolicy({ create: 0 });
+
+    it('must not mint an attachment upload token without an organization the user may create in', async () => {
+      // Without an organization the files would lie under the user's own prefix, which no row can name and no sweep removes.
+      await expectRefusal(await requestToken({ templateId: 'attachment' }), 400, 'invalid_request');
+
+      const member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'upload-visibility-member');
+      const asMember = await requestToken({ templateId: 'attachment', organizationId: tenant.organization.id }, member.sessionCookie);
+      await expectRefusal(asMember, 403, 'forbidden');
+
+      // The organization's admin may create attachments there.
+      const asAdmin = await requestToken({ templateId: 'attachment', organizationId: tenant.organization.id });
+      expect(asAdmin.status).toBe(200);
+      expect(asAdmin.body.sub).toBe(`${tenant.organization.id}/${tenant.user.id}`);
+    });
   });
 
   describe('system uploads (newsletter images)', () => {

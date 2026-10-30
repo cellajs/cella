@@ -30,7 +30,10 @@ export interface FederationConfig {
   tenantClaim: string;
   /** Claims kept as a snapshot on the identity row; nothing in the template reads them for authorization. */
   snapshotClaims: readonly string[];
-  /** Whether the institution operates the mailbox it asserts, so a sign-in through it proves the address. */
+  /**
+   * Whether the federation's institutions operate the mailboxes of their domains, so a sign-in proves an address on
+   * one of its connection's domains.
+   */
   addressAuthority: boolean;
   /**
    * The `acr` values by which an institution asserts it used multi-factor authentication. A sign-in carrying one starts
@@ -122,6 +125,8 @@ export interface RetentionConfig {
   requestDays: number;
   /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
   invitationDays: number;
+  /** A declined invitation, from the decline: no invite opens it again or mails its address. At most `invitationDays`. */
+  declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;
 }
@@ -194,7 +199,8 @@ export interface MenuStructureItem<C extends string = string> {
   /**
    * A subentity membership auto-creates one on the parent, by default with the least-privileged
    * fitting role (`member` where the parent vocabulary has it). `carryRole` keeps the invited
-   * role when the parent vocabulary also has it (courseSection `student` to course `student`).
+   * role when the parent vocabulary also has it (courseSection `student` to course `student`), and
+   * refuses an invitation whose carried role outranks the inviter's own on the parent.
    */
   carryRole?: boolean;
 }
@@ -259,8 +265,10 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
-    rateLimits: { apiPointsPerHour: number };
+    /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
+    rateLimits: { apiPointsPerHour: number; invitationMailsPerDay: number };
   };
+  selfServiceTenantsPerUser: number;
   retention: RetentionConfig;
 
   systemRoles: T['systemRoles'];
@@ -341,14 +349,16 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   company: CompanyConfig;
 
+  /** Defaults of `user.userFlags`, a bag the user sets key by key; it gates no entitlement. */
   defaultUserFlags: Record<string, boolean>;
 
-  /** Per-organization feature flags and their defaults (e.g. `coursesEnabled: true`), read from `organization.organizationFlags`. */
+  /** Defaults of `organization.organizationFlags`, a bag anyone who may update the organization sets key by key. Never gate an entitlement on it: that belongs in the tenant's `subscriptionPlan` and `restrictions`, which only system admins write. */
   defaultOrganizationFlags: Record<string, boolean>;
 
   /**
    * Setup defaults layered under each organization's stored jsonb, read from `organization.setupConfig`. The template
-   * ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their own config.
+   * ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their own config. Anyone who may update the
+   * organization sets it, so it gates no entitlement.
    */
   defaultSetupConfig: Record<string, unknown>;
 }

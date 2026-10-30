@@ -1,5 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import process from 'node:process';
+import { parseEnv } from 'node:util';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
 import { envFlag } from 'shared/utils/worker-env';
@@ -11,15 +12,42 @@ import { severityLevels } from '#/schemas/api-error-schemas';
 // Variables already in the environment win over the file.
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+const exampleEnvFile = new URL('../.env.example', import.meta.url);
 
 /** Minimum length of a secret that signs or authenticates; the CDC and Yjs workers hold their copies to the same. */
 const minSecretLength = 16;
 
-/** A secret of at least `min` characters, refused with a message that names it. */
-const secretString = (name: string, min = minSecretLength) => z.string().min(min, `${name} must be at least ${min} characters`);
+/**
+ * Every secret the schema validates: each `secretString`, the cookie secret, and the relay's public key, which the
+ * backend never parses but its `.env` hands to a relay started beside it.
+ */
+const secretNames = new Set(['COOKIE_SECRET', 'YJS_TOKEN_PUBLIC_KEY']);
 
-/** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
-const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
+/** A secret of at least `min` characters, refused with a message that names it. */
+const secretString = (name: string, min = minSecretLength) => {
+  secretNames.add(name);
+  return z.string().min(min, `${name} must be at least ${min} characters`);
+};
+
+/** Development runs on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
+const minCookieSecretLength = appConfig.mode === 'development' ? 1 : minSecretLength;
+
+/**
+ * The secrets that still equal their value in `.env.example`, which ships in the repo. Tunnel mode alone reads it: a
+ * tunnel serves this API on the developer's database to the internet, where that value lets anyone sign cookies,
+ * unsubscribe links and relay tokens.
+ * @returns The offending names; empty outside tunnel mode or without the example file.
+ */
+const publishedSecrets = (): string[] => {
+  if (appConfig.mode !== 'tunnel' || !existsSync(exampleEnvFile)) return [];
+  const example = parseEnv(readFileSync(exampleEnvFile, 'utf8'));
+  return [...secretNames].filter((name) => {
+    const published = example[name];
+    // A cookie secret list verifies with every entry, so one published entry forges as well as the first.
+    // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
+    return !!published && !!process.env[name]?.split(',').some((entry) => entry.trim() === published);
+  });
+};
 
 /**
  * Per federation in `appConfig.federations`, the client id and secret it was registered with: `SSO_<KEY>_CLIENT_ID`
@@ -149,6 +177,14 @@ export const env = createEnv({
     z.object(shape).superRefine((values, ctx) => {
       for (const name of missingModeSecrets(values)) {
         ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when MODE=${values.MODE}` });
+      }
+      for (const name of publishedSecrets()) {
+        const fix =
+          name === 'YJS_TOKEN_PUBLIC_KEY'
+            ? 'set the key `pnpm --filter backend yjs:public-key` prints for a fresh YJS_TOKEN_PRIVATE_KEY'
+            : 'set a fresh value in backend/.env, for example from `openssl rand -hex 32`';
+        const message = `${name} equals its public value in backend/.env.example, which tunnel mode refuses: ${fix}`;
+        ctx.addIssue({ code: 'custom', path: [name], message });
       }
     }),
   // Skip validation under Vitest, whose env vars come from vitest.config.ts test.env.

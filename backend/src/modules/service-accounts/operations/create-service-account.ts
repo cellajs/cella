@@ -1,12 +1,12 @@
-import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { issueApiKey } from '#/modules/service-accounts/operations/issue-api-key';
 import { countActiveServiceAccounts, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 
 /**
@@ -14,17 +14,11 @@ import { log } from '#/utils/logger';
  * provenance of memberships stay theirs.
  */
 export async function createServiceAccountOp(ctx: UserContext, input: CreateServiceAccountInput) {
-  const { db, tenantId, organizationId, isSystemAdmin } = ctx.var;
+  const { db, tenantId, organizationId } = ctx.var;
   const creatorId = ctx.var.actor.id;
 
-  const { membership } = await getValidChannel(ctx, organizationId, 'organization', 'update');
-  // Roles are listed most-privileged first; a lower index is a higher role. Widened: a membership's role type also
-  // spans channel roles the organization does not declare.
-  const roles: readonly EntityRole[] = hierarchy.getRoles('organization');
-  const creatorRank = isSystemAdmin ? 0 : membership ? roles.indexOf(membership.role) : -1;
-  if (creatorRank < 0 || roles.indexOf(input.role) < creatorRank) {
-    throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'role_exceeds_creator', role: input.role } });
-  }
+  const { entity } = await getValidChannel(ctx, organizationId, 'organization', 'update');
+  assertRoleGrant(ctx, { subject: buildSubjectFromEntity('organization', entity), role: input.role, action: 'update' });
 
   assertTenantQuota(ctx, 'serviceAccount', await countActiveServiceAccounts(ctx, { tenantId }));
 

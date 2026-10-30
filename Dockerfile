@@ -24,14 +24,18 @@
 # Node CI tested. It has no default (the `check=skip` line on top keeps Docker
 # from warning about that); a local build passes it:
 #   docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target backend .
+# The release build passes NODE_IMAGE, the `node` image at that version by
+# digest from infra/lib/deploy/node-image.ts, which a Node bump refreshes; any
+# other build takes the tag.
 # =============================================================================
 
 ARG NODE_VERSION
+ARG NODE_IMAGE=node:${NODE_VERSION}-alpine
 
 # -----------------------------------------------------------------------------
 # Shared: base image with pnpm
 # -----------------------------------------------------------------------------
-FROM node:${NODE_VERSION}-alpine AS base
+FROM ${NODE_IMAGE} AS base
 
 WORKDIR /app
 
@@ -44,7 +48,7 @@ RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').pa
 # -----------------------------------------------------------------------------
 # Shared: production runtime base (non-root user, release metadata)
 # -----------------------------------------------------------------------------
-FROM node:${NODE_VERSION}-alpine AS runtime
+FROM ${NODE_IMAGE} AS runtime
 
 RUN addgroup --system --gid 1001 app && \
     adduser --system --uid 1001 app

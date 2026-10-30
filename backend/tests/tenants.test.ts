@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
-import { getTenants, selfCreateTenant, type Tenant, updateTenant } from 'sdk';
+import { createOrganizations, getTenants, selfCreateTenant, type Tenant, updateTenant } from 'sdk';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
@@ -10,8 +11,8 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { removeArchivedTenants } from '#/modules/tenants/operations/remove-archived-tenants';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { defaultHeaders } from './fixtures';
-import { createSystemAdminUser, createTestOrganization, createTestSession } from './helpers';
+import { defaultHeaders, overrideConfig } from './fixtures';
+import { createSystemAdminUser, createTestOrganization, createTestSession, createTestUser, expectRefusal } from './helpers';
 import { createAppClient } from './test-client';
 import { clearDatabase } from './test-utils';
 
@@ -112,6 +113,39 @@ describe('tenant responses with the organization the tenant holds', async () => 
     expect((created.data as Tenant).organization).toBeNull();
     expect((retried.data as Tenant).id).toBe((created.data as Tenant).id);
     expect((retried.data as Tenant).organization).toBeNull();
+  });
+});
+
+/**
+ * Each tenant brings its own organization slug, membership, points budget and security-inbox mail, so the tenants one
+ * account creates through onboarding are counted against `selfServiceTenantsPerUser`.
+ */
+describe('self-service tenants per user', async () => {
+  const call = await createAppClient();
+
+  it('must not let one user create more tenants than the cap via selfCreateTenant then createOrganizations', async () => {
+    const cap = 2;
+    onTestFinished(overrideConfig(appConfig, { selfServiceTenantsPerUser: cap }));
+    const user = await createTestUser(`tenant-cap-${nanoid(8)}@test.com`);
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+    const createdByUser = () => db.select({ id: tenantsTable.id }).from(tenantsTable).where(eq(tenantsTable.createdBy, user.id));
+    const createOrganization = async (tenantId: string) => {
+      const body = [{ id: `temp-${generateId()}`, name: 'Capped', slug: `capped-${nanoid(8)}` }];
+      expect((await call(createOrganizations, { path: { tenantId }, body, headers })).response.status).toBe(201);
+    };
+
+    // A parallel burst takes the count one request at a time: the first creates a tenant, the rest reuse it.
+    const burst = await Promise.all(Array.from({ length: 5 }, (_, n) => call(selfCreateTenant, { body: { name: `Burst ${n}` }, headers })));
+    expect(burst.map(({ response }) => response.status)).toEqual([200, 200, 200, 200, 200]);
+    expect(new Set(burst.map(({ data }) => (data as Tenant).id)).size).toBe(1);
+    await createOrganization((burst[0].data as Tenant).id);
+
+    const second = await call(selfCreateTenant, { body: { name: 'Second' }, headers });
+    expect(second.response.status).toBe(200);
+    await createOrganization((second.data as Tenant).id);
+
+    await expectRefusal(await call(selfCreateTenant, { body: { name: 'Past the cap' }, headers }), 403, 'restrict_by_app');
+    expect(await createdByUser()).toHaveLength(cap);
   });
 });
 

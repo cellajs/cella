@@ -137,13 +137,13 @@ describe('mapCdcComponent', () => {
     expect(c).toMatchObject({ status: 'degraded', reason: 'reading_again,wal_lag_high' });
   });
 
-  it('passes an unhealthy report of a stuck worker on, with the failure it reads again from', () => {
+  it('passes an unhealthy report of a stuck worker on, with the failure it reads again from but not its message', () => {
     const failure = { position: '0/50', count: 5, error: 'null value in column "organization_id"', passing: false };
     const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'], details: { failure } }));
 
     // A deploy that ends on a stuck worker must fail its smoke step, not warn: nothing is read until the rebuild.
     expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_stuck' });
-    expect(c.details?.failure).toEqual(failure);
+    expect(c.details?.failure).toEqual({ position: '0/50', count: 5, passing: false });
   });
 
   it("must not grade the worker's facts a second time: the grade is the worker's alone", () => {

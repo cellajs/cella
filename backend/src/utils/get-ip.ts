@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 
 /**
- * Single-trusted-proxy topology: the load balancer appends the rightmost forwarding entry, which a client cannot forge,
- * with the socket address as the direct-hit fallback. A different proxy count needs a different entry.
+ * Single-trusted-proxy topology: the last forwarding entry is the address exactly one proxy appended for its peer,
+ * with the socket address as the fallback. Behind no proxy, or one that passes the client's header through, the client chooses it.
  */
 export const getIp = (ctx: Context): string | null => {
   const xff = ctx.req.header('x-forwarded-for');

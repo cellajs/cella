@@ -20,7 +20,7 @@ Clean seeded data, or a branch with migrations, beside the stack you already run
 
 ```sh
 # The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml
-docker run -d --name scratch_db -e POSTGRES_PASSWORD=postgres -p 5440:5432 <image> -c wal_level=logical -c shared_preload_libraries=pg_cron -c cron.database_name=postgres
+docker run -d --name scratch_db -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:5440:5432 <image> -c wal_level=logical -c shared_preload_libraries=pg_cron -c cron.database_name=postgres
 
 export DEV_PORT_OFFSET=40 ADMIN_EMAIL=admin-test@cellajs.com
 export DATABASE_URL=postgres://runtime_role:dev_password@0.0.0.0:5440/postgres

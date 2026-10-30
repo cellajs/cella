@@ -18,17 +18,34 @@ A security test acts as the attacker. It signs in as one user, tries something t
 
 - **Crossing a boundary:** another tenant's or organization's data, through the API or straight against the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
+- **Granting above yourself:** a role, an invitation or a membership an accept brings along that outranks the role of whoever grants it.
 - **Reusing what should be dead:** a revoked session, a deleted account, a replayed OAuth code, an expired or out-of-scope token.
+- **Planting a sign-in address:** an invitation for an attacker's address, accepted by a signed-in victim, becoming a way to sign in to the victim's account.
+- **Acting through a stale tab:** an idle tab of one user replaying its queued writes after another user signs in on the same browser.
+- **Over-asking for scope:** an MCP client that starts with write scopes because the server named none.
+- **Holding a stolen session:** a copied cookie ending the owner's new sign-ins, a sign-out that fails quietly, a link reopened after its session ended.
 - **Proving with a dead key:** a token signed by a retired signing key, by an attacker's key under the server's key id, or with no signature at all.
+- **Claiming an address through a federation:** an institution's identity provider releasing an address outside its domains, collecting that address's invitations.
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.
 - **Assembling SQL from input:** a table name from a token, a sort key or a search pattern reaching SQL text.
 - **Steering the server's own requests:** a client metadata URL or a push endpoint pointed at a private address.
-- **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream.
+- **Leaking secrets:** hashes, token secrets or private keys in responses, logs or the CDC stream, and a provider's tokens or claims carried into a log line by an error's cause.
+- **Booting with published secrets:** a tunnel reachable from the internet that signs cookies and relay tokens with the values in `.env.example`.
+- **Probing for accounts:** a provider callback, a sign-in form or a waitlist that answers differently, or slower, when an account holds the address.
+- **Passing as another tab:** a write carrying a source id copied from another user's row, which that user's tab would take as its own echo and never fetch.
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
+- **Bending the shared clock:** a stamp far in the future, or at the counter's maximum, sent to make other tenants' writes lose or fail.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
+- **Guessing a second factor slowly:** TOTP codes tried at the pace the lockout allows, for as long as it takes.
+- **Serving a page from storage:** an uploaded HTML file opened from a presigned link, or uploads that no row can ever name.
 - **Exhausting the server with shape:** a body, a field, a batch or a document larger than its cap, or input that makes a parser or a regex work out of proportion.
+- **Holding the stream open:** a stream that never reads, or one that connects across its user's removal, keeping the server's memory or the left organization's frames.
+- **Mailing from the app's sender:** invitations, reminders, form confirmations or security alerts sent faster than their caps allow.
+- **Waiting out a failure:** a database blip that ends a process, or a health page that does costly work or leaks error text for anyone.
+- **Creating without bounds:** tenants or push subscriptions created by one account faster than any person would.
+- **Racing and flooding the sign-in plumbing:** concurrent code requests, sign-in starts that grow the cookie header, and mail caps sidestepped by a known browser.
 
-Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required and bounded. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
+Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
 
 ## Running tests
 

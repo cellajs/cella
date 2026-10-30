@@ -17,4 +17,4 @@ Development and build scripts for the backend.
 - **migrations/** - Migration generator scripts (CDC setup, activity triggers)
 - **seeds/** - Seed data by entity: user, organizations, `data` for product entities
 - **seeds/assets/** - Source files of the seeded attachments, one folder per file with `original` plus optional `thumbnail`, `preview` and `converted` variants; a changed set gets a new version prefix in `seeds/seed-assets.ts`
-- **drizzle-studio/** - Start/stop Drizzle Studio on a specific port
+- **drizzle-studio/** (`pnpm studio`) - Start/stop Drizzle Studio on a specific port. `pnpm dev` does not start it: it runs SQL as `DATABASE_ADMIN_URL` for any website that calls its port

@@ -20,7 +20,15 @@ const tenantRow = (status = 'active', authStrategies: string[] = []) =>
 const membership = (tenantId: string) =>
   ({ tenantId, channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: 'member', userId: 'u1' }) as never;
 
-type Actor = { kind: 'user' | 'service'; id: string; bindings: unknown[]; scopes: null; tenantId?: string; authStrategy?: string | null };
+type Actor = {
+  kind: 'user' | 'service';
+  id: string;
+  bindings: unknown[];
+  scopes: null;
+  tenantId?: string;
+  authStrategy?: string | null;
+  connectionId?: string;
+};
 
 const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; impersonator?: { id: string } | null; tenantId?: string | undefined }) => ({
   req: { param: (name: string) => (name === 'tenantId' ? opts.tenantId : undefined) },
@@ -64,7 +72,11 @@ describe('tenantGuard', () => {
 
   describe('sign-in policy (tenants.authStrategies)', () => {
     const bound = { id: 'conn-1' };
-    const member = (authStrategy: string | null): Actor => ({ ...user([membership(testTenantId)]), authStrategy });
+    const member = (authStrategy: string | null, connectionId?: string): Actor => ({
+      ...user([membership(testTenantId)]),
+      authStrategy,
+      connectionId,
+    });
 
     it('refuses a member who holds an identity through the connection but signed in another way, naming the entry', async () => {
       setTenantCache(testTenantId, tenantRow('active', ['surfconext']));
@@ -79,10 +91,13 @@ describe('tenantGuard', () => {
       expect((await runExpectingError(mockCtx({ actor: member(null), tenantId: testTenantId }))).type).toBe('sso_required');
     });
 
-    it('admits an allowed method without a lookup, an external without an identity, a system admin as themselves or as a user, and every tenant without a policy', async () => {
-      setTenantCache(testTenantId, tenantRow('active', ['surfconext']));
-      expect(await run(mockCtx({ actor: member('surfconext'), tenantId: testTenantId }))).toHaveBeenCalled();
+    it('admits an allowed method without a lookup, a federation sign-in through the connection, an external without an identity, a system admin as themselves or as a user, and every tenant without a policy', async () => {
+      setTenantCache(testTenantId, tenantRow('active', ['surfconext', 'passkey']));
+      expect(await run(mockCtx({ actor: member('passkey'), tenantId: testTenantId }))).toHaveBeenCalled();
       expect(findUserSsoConnection).not.toHaveBeenCalled();
+
+      vi.mocked(findUserSsoConnection).mockResolvedValue(bound);
+      expect(await run(mockCtx({ actor: member('surfconext', 'conn-1'), tenantId: testTenantId }))).toHaveBeenCalled();
 
       vi.mocked(findUserSsoConnection).mockResolvedValue(undefined as never);
       expect(await run(mockCtx({ actor: member('magic'), tenantId: testTenantId }))).toHaveBeenCalled();
