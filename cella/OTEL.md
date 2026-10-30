@@ -45,8 +45,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 ```
 
-The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed VM receives only the variables its runtime secrets declare, so declare these beside the
-Maple key in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts).
+The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed VM receives only the variables its runtime secrets and its service's `env` declare: a secret one beside the
+Maple key in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts), any other in the service's `env` in [services.config.ts](../infra/config/services.config.ts).
 
 The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals, with no
 session replay, cookies or user id ([maple.ts](../frontend/src/lib/maple.ts)): the privacy policy relies on that. In development a local tracer keeps the spans for the devtools.

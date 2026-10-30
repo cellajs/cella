@@ -31,7 +31,7 @@ export function runOverrides(run: JobRun, definition: JobDefinitionFacts): strin
   return own;
 }
 
-/** How the environment's last deploy went: a blocked one owes an apply or a secret, a failed one is read in Show runs. */
+/** How the environment's last deploy went: a blocked one owes an identity update, an apply or a secret, a failed one is read in Show runs. */
 export const runsProvider: StatusProvider<RunsFacts> = {
   domain: 'runs',
   async gather(session) {
@@ -69,8 +69,8 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         const outcome = mainJobOutcome(last);
         if (outcome === 'deployed') return runs.ok(`deployed ${sha}`);
         if (outcome === 'blocked') {
-          return runs.warn(`${sha} is blocked: its record names what is owed, an apply or a secret`, {
-            description: 'Read what is owed; the apply, or storing the secret, starts this target again',
+          return runs.warn(`${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`, {
+            description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
             command: actionCommand('runs'),
           });
         }

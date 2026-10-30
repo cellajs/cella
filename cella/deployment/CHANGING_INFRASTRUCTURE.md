@@ -20,7 +20,7 @@ request checks for privileged changes that are still owed.
 - the load balancer, but not its pools' servers: enabling a service with a load balancer route takes an apply first
 - the main job's definition
 
-Identities are IAM, written at an Owner moment ([Machine policies](#machine-policies)). To apply, `pnpm infra` → **Review & apply changes** (`pnpm infra apply`):
+Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Review & apply changes** (`pnpm infra apply`):
 
 1. Shows the plan: what differs between the code and the live resources, drift made outside Pulumi included, and asks once whether to apply it. Answering no applies nothing.
 2. On a yes, applies the plan. Running machines and the load balancer stay in place. If a deploy ran meanwhile, you see the new plan and confirm again.
@@ -34,14 +34,14 @@ Every deploy runs the same plan first. A pending privileged change ends the run 
 
 ## Pull request check
 
-Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes before the next deploy: **Update identities** for an application or a policy that is new, gone or changed, an apply for a privileged resource. It never fails, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes before the next deploy: **Update identities** for an application or a policy that is new, gone or changed, an apply for a privileged resource. It fails only when the head cannot render, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
 
 ## Removing a secret
 
-**Deploy right after an Apply that removes a secret.** A machine boots from its own generation's secret list and fails its boot on a `required` secret it can no longer read. So when an Apply deletes a runtime secret, or narrows which secrets a machine key reads, an old machine that reboots before the deploy stays down until the deploy replaces it. A deployment that serves users keeps the old secret and the old consumer lists for one release, and removes them in the next.
+**Deploy right after an Apply that removes a secret**, with `pnpm infra start-deploy`. A machine boots from its own generation's secret list and fails its boot on a `required` secret it can no longer read. So when an Apply deletes a runtime secret, or narrows which secrets a machine key reads, an old machine that reboots before the deploy stays down until the deploy replaces it. A deployment that serves users keeps the old secret and the old consumer lists for one release, and removes them in the next.
 
-## Machine policies
+## Identities
 
 The machines' IAM applications and their policies follow the **service registry** ([config/services.config.ts](../../infra/config/services.config.ts)), not the enabled set: every registry service has an application whose policy reads its own secret folder, pulls the release's images and writes its boot accounts, wherever it runs. Toggling `enabled` or `singleVM` therefore changes no identity. Neither does a change to a runtime secret's consumers, as each consumer keeps its own copy in its own folder.
 
-They are IAM, so only an Owner moment writes them: the setup, then **Update identities** (`pnpm infra identity`) after a change to the registry. It reads what differs with the observer key and asks for an Owner API key only when something has to change. Until then a deploy ends blocked at "Check identities", its first step, which reads the same plan as the apply. The plan also names a policy beside a declared one and a key beside an identity's standing one: **Update identities** deletes either; **Rotate keys** replaces every key and deletes the rest.
+They are IAM, so only an Owner moment writes them: the setup, then **Update identities** (`pnpm infra identity`) after a change to the registry or an upgrade that changes a declared policy, the deploy key's included. It reads what differs with the observer key and asks for an Owner API key only when something has to change. Until then a deploy ends blocked at "Check identities", its first step, which reads the same plan as the apply. Update identities starts no deploy: `pnpm infra start-deploy` or the next apply starts the blocked target. The plan also names a policy beside a declared one and a key beside an identity's standing one: **Update identities** deletes either; **Rotate keys** replaces every key and deletes the rest.

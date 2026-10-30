@@ -7,7 +7,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 Publishing a release starts an automatic deployment: it creates new servers for that exact version,
 checks them, moves traffic without downtime and removes the old servers.
 [Pulumi](https://www.pulumi.com/) manages the cloud resources, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
-Setup, deploys and running servers each use their own API keys, with only the permissions they need.
+Setup, deploys and running servers each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need.
 
 ## Overview
 
@@ -47,7 +47,7 @@ Resources and traffic flow:
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Every routed service shares the app origin under its own path prefix, so the API needs no CORS.
+- **Load balancer:** the only public way to the machines. Every routed service shares the app origin under its own path prefix, so the API needs no CORS.
 - **Internal listener:** the backend's second port, for the CDC socket and the Yjs relay's materialize route. Only a private load balancer frontend that admits the private network reaches it.
 - **VMs:** all inbound traffic is dropped, SSH included. A machine pulls each image by the digest its tag had when the deploy planned it, so a later push under that tag changes nothing it runs.
 - **Placement:** every service gets its own VM, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend VM. The oauth, mcp and jobs workers and the migrate companion run the backend image in a `MODE` of their own.
@@ -59,11 +59,11 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job). The [runner](#the-runner) starts one when the environment's target moves; a rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. The [runner](#the-runner) starts one when the target moves; a rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
 
 ### What a deploy deploys
 
-Production deploys the newest release (the highest `x.y.z` tag). Staging, or any other environment, is optional: it deploys only while the repository's file `infra/environments` has a line for it. The file holds one line per environment:
+Production deploys the newest release (the highest `x.y.z` tag). Staging is optional: it deploys only while the repository's file `infra/environments` has a line for it. The file holds one line per environment:
 
 ```
 # <environment> <target> [retry <n>]
@@ -86,23 +86,23 @@ An environment that follows the releases, as production does, takes `releases` o
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-<mode>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secrets its runs read, the deploy key's copy and the passphrase. A run fetches the target commit, installs the engine's own workspaces with no key in their environment, and runs the target's own deploy. It starts from the `node` image of the root `engines.node`, so a Node bump owes an apply.
+Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secrets its runs read, the deploy key's copy and the passphrase. A run fetches the target commit, installs the engine's own workspaces with no key in their environment, and runs the target's own deploy. It starts from the `node` image of the root `engines.node`, so a Node bump owes an apply.
 
 A run ends in one of three outcomes:
 
 - **Deployed:** the target serves.
-- **Blocked:** the run's record names what is owed. A privileged change is made by an apply ([Changing infrastructure](./deployment/CHANGING_INFRASTRUCTURE.md)), a required secret stored in **Manage runtime secrets**, and either starts the target again.
+- **Blocked:** the run stopped before it made any machine, on something only an operator settles, which its record names: identities that differ from the declared ones, a privileged change or an empty required secret ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
 - **Failed:** the running release stays, and the target waits for a change in git or a start by hand.
 
-`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. The run's log is in Cockpit under Serverless Jobs.
+`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`; the runner reads the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
 **Releases only.** In an environment that follows the releases, as production does, the definition's own script refuses a target that no release tag names, before it fetches anything. It catches a start by hand that names the wrong commit. A key that may start runs can also start one with values or a command of its own, which gets past that check: Show runs flags such a run.
 
-The rule is as strong as who may push a tag: `99.0.0` pushed on any commit is the newest release. So an app sets a tag ruleset that lets only its release GitHub App create, move or delete tags, with no bypass.
+The rule is as strong as who may push a tag: `99.0.0` pushed on any commit is the newest release. So an app sets a ruleset that restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
 ### The runner
 
-One small machine per app starts its deploys. Once a minute, for every environment it serves, it finds the target and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one is started again by the apply that clears the block.
+One small machine per app starts its deploys. Once a minute, for every environment it serves, it finds the target and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one for an operator to clear the block.
 
 `infra/runner.json` is committed: the runner's project, the release its program runs from and the environments it serves. **Set up the runner** adds an environment ([Fresh installation](./deployment/FRESH_INSTALLATION.md)), and **Replace the runner** (`pnpm infra runner-replace`) gives the machine the file's release and environments: run it after the file changes. Nothing reaches the machine from outside; its log is on its serial console.
 
@@ -122,6 +122,8 @@ When the registry lacks one of the release's images, or the frontend bucket its 
 
 ```
 The runner sees a new target and starts a run of the main job
+        ↓
+Check identities: they must be as declared
         ↓
 Stack lock + preflight: no privileged change or required secret may be owed
         ↓
@@ -171,6 +173,6 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per service: VM size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | A deploy |
+| [config/services.config.ts](../infra/config/services.config.ts) | Per service: VM size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | A deploy; a new or changed load balancer route takes **Review & apply changes** first |
 | [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention | **Review & apply changes** (privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

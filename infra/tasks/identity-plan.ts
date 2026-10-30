@@ -109,7 +109,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   );
   if (lines.length > 0) {
     throw new ExitCodeError(
-      `The identities of ${appConfig.mode} differ from the declared ones: ${lines.join('; ')}. Update identities writes them (\`${actionCommand('identity')}\`, an Owner API key), then an apply starts this target again.`,
+      `The identities of ${appConfig.mode} differ from the declared ones: ${lines.join('; ')}. Update identities writes them (\`${actionCommand('identity')}\`, an Owner API key), then \`${actionCommand('start-deploy')}\` or an apply starts this target again.`,
       2,
     );
   }

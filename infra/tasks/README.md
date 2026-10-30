@@ -1,29 +1,18 @@
 # infra/tasks
 
-The deploy's steps and the operator tasks. [deploy-run.ts](./deploy-run.ts) runs the deploy's steps in order; the sequencers below keep their live effects as functions on a plan, so unit tests assert step order and every guard.
+The deploy's steps and the operator tasks. The sequencers keep their live effects as functions on a plan, so unit tests assert step order and every guard.
 
-| Task | Purpose | Invocation |
-| --- | --- | --- |
-| [cutover.ts](./cutover.ts) | `sequenceCutover` re-points a service's LB pool to its new generation. | In-process from the waved rollout, between the `pulumi up` create and destroy bookends. |
-| [geoip-refresh.ts](./geoip-refresh.ts) | `sequenceGeoipRefresh` publishes the DB-IP Lite databases and a `manifest.json` to the `geoip/` prefix of the public bucket; nothing uploads on a bad archive. | The deploy's "Ensure GeoIP data" step, best-effort. |
-| [reset-database.ts](./reset-database.ts) | `sequenceDatabaseReset` deletes and recreates the app's logical database, then re-grants both roles. | **Reset database** (`pnpm infra db-reset`); live effects in [cli/actions/reset-database.ts](../cli/actions/reset-database.ts). |
+- **Deploy steps**: [main-job.ts](./main-job.ts) runs [deploy.ts](./deploy.ts), and [deploy-run.ts](./deploy-run.ts) runs the steps in order on the table `deploy-env.ts` builds: `identity-plan`, `ensure-state-bucket`, `install-pulumi-providers`, `sync-rollout-config`, `forget-retired-resources`, `preflight-privileged`, `assert-secrets-deliverable`, `build-release`, `geoip-refresh`, `generation-keys`, the waved rollout and `smoke`.
+- **Build**: `build-release` makes the builder machine, from `build-images` (the image bake), `frontend-build-env`, `frontend-assets` and `release-files` (the frontend files and where the entry files wait).
+- **Rollout**: `deploy-rollout` runs the two waves through `rollout-plans`, `rollout` and `rollout-runtime`; `cutover` moves a pool, and `wait-for-version` waits for a service to serve the release.
+- **Apply and operator tasks**: `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `passphrase-custody`, `verify-after-apply`, `repair-certs`, `record-rotation`, `manage-runtime-secrets` and `reset-database`.
+- **Identity tasks**, written at an Owner moment: `machine-identities`, `machine-policies`, `machine-keys`, `setup-ci-key`, `setup-operator-app`, `setup-observer-app`, `provision-managed-key`.
+- **Pull request check**: `privileged-check` renders the base and the head with `privileged-footprint`.
+- **Status**: `status`, the report behind `pnpm infra status`.
+- **Retired-model migrations**: `admit-operator-buckets`, `copy-shared-secrets`, `move-secret-paths`.
+
+`args.ts` holds the flag helpers the tasks share.
 
 ## Failing a task
 
-A task that [deploy-run.ts](./deploy-run.ts) runs in-process reports failure by throwing, never through `process.exit` or `process.exitCode`: the deploy stops only on a throw. A task whose exit code means something to a standalone caller (exit 2, blocked: the preflight for a pending privileged change, the secrets check for a missing required secret) throws `ExitCodeError` ([lib/utils/errors.ts](../lib/utils/errors.ts)), and `runIfMain` exits with its code.
-
-## Cutover strategies
-
-Each service's strategy is declared in [config/services.config.ts](../config/services.config.ts); behavior per strategy: [rollout strategies](../../cella/DEPLOYMENT.md#rollout-strategies).
-
-- An unhealthy new generation aborts before any LB mutation.
-- The waved rollout always sets `healthAfterExpand` ([rollout.ts](./rollout.ts) `activateService`): health is probed through the public LB after the expand. A failed gate sets the pool back to `[old]`; with no old generation the pool stays `[new]`, so every pool names a VM that exists.
-- A stop-first service gets no LB call and no health poll: the stack update replaces its generation, and the smoke step's `/health?depth=full` on the primary service shows the handoff ([smoke.ts](./smoke.ts)).
-- Smoke results are `ok`, `warn` or `fail`, and only `fail` exits non-zero. The component verdict is [lib/health-components.ts](../lib/health-components.ts), which `infra status` shares.
-- Under `singleVM`, `isSingletonHost` ([lib/services.ts](../lib/services.ts)) flags a host running a stop-first worker in-process, and [rollout-plans.ts](./rollout-plans.ts) marks its plan `singletonHost`, so the rollout reaps its displaced generation right after promotion.
-- [sync-rollout-config.ts](./sync-rollout-config.ts) reconciles the control object's pointers with the generations the stack runs, right after the deploy takes the stack lock and before the preflight plans; its comments say which pointers it drops and why.
-
-## Database reset rules
-
-- Order pinned by tests: confirmation and backup-ready precede the delete; steps after the delete rethrow as `ResetIrrecoverableError` (behavior: [Reset the database](../../cella/deployment/RUNBOOKS.md#reset-the-database)).
-- Tests assert each URL and method of `lib/scaleway/scaleway-rdb.ts` (captured live with `scw --debug`).
+A task that [deploy-run.ts](./deploy-run.ts) runs in-process reports failure by throwing, never through `process.exit` or `process.exitCode`: the deploy stops only on a throw. A task whose exit code means something to a standalone caller (exit 2, blocked: the identity check for identities that differ, the preflight for a pending privileged change, the secrets check for a missing required secret) throws `ExitCodeError` ([lib/utils/errors.ts](../lib/utils/errors.ts)), and `runIfMain` exits with its code.

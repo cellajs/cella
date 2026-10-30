@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { telemetrySink } from '../config/telemetry.config';
 import { managedKeys } from '../lib/managed-keys';
+import { actionCommand } from '../lib/operator-actions';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
@@ -112,11 +113,11 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   if (!secret) return;
   // Pulumi owns container creation (resources/secrets.ts); refuse to create one
   // out-of-band here, since that would make the next `pulumi up` fail with
-  // "secret already exists". Deploy first so the container exists, then rotate.
+  // "secret already exists". An apply makes the container, then rotate.
   const copies = await secretCopyContainers(ctx.client, secret);
   if (missingCopies(copies).length > 0) {
     ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. Deploy first so Pulumi creates it, then rotate.`,
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. Apply first (\`${actionCommand('apply')}\`), which creates it, then rotate.`,
     );
     return;
   }
@@ -152,12 +153,12 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to set (Esc to go back)', ctx.secrets);
   if (!secret) return;
   // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
-  // Operators must deploy the empty container before setting its value.
+  // An apply makes the empty container before the operator sets its value.
   const copies = await secretCopyContainers(ctx.client, secret);
   if (missingCopies(copies).length > 0) {
     ctx.log(
       `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. ` +
-        `Deploy first so Pulumi creates it, then run "Set or update" again to give it a value.`,
+        `Apply first (\`${actionCommand('apply')}\`), which creates it, then run "Set or update" again to give it a value.`,
     );
     return;
   }

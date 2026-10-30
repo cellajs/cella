@@ -1,6 +1,6 @@
 {
   "name": "infra",
-  "description": "Pulumi IaC for Scaleway infrastructure and Kubernetes workloads",
+  "description": "Pulumi program and CLI that set up and deploy the app on Scaleway",
   "type": "module",
   "scripts": {
     "cli": "tsx cli/infra-cli.ts",

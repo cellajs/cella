@@ -39,7 +39,7 @@ export const OPERATOR_ACTIONS = {
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description: 'Replace the CI deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine.',
+    description: 'Replace the deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
@@ -124,8 +124,8 @@ export const OPERATOR_ACTIONS = {
   },
   teardown: {
     label: 'Tear down stack',
-    key: 'owner',
-    description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
+    key: 'operator',
+    description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals with your Owner API key.',
   },
 } as const satisfies Record<string, OperatorAction>;
 
@@ -234,7 +234,7 @@ export const MENU_ROWS = {
     group: 'rare',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'Owner key · DESTRUCTIVE',
+    hint: 'operator key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;

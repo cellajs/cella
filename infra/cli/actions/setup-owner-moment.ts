@@ -44,7 +44,7 @@ export interface OwnerMomentResult {
   runnerKeyRotated: boolean;
 }
 
-/** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
+/** Mint (or rotate) the deploy key, retrying on operator confirm. */
 async function mintCiKey(
   ownerSecretKey: string,
   opts: { projectId: string; organizationId: string; appConfig: InfraContext['appConfig']; mode: string },
@@ -72,10 +72,12 @@ function printSummary(opts: { rotated: boolean; ciAccessKey: string; names: Prin
   console.info(`\n${divider}`);
   if (ciAccessKey) {
     console.info(
-      `${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Identities written.'))} CI deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`,
+      `${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Identities written.'))} Deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`,
     );
   } else {
-    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`);
+    console.info(
+      `${warningMark} ${pc.bold(pc.yellowBright('Done, but the deploy key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`,
+    );
   }
   console.info(divider);
 }
@@ -137,7 +139,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt and checked as every Owner
  * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The machine identities with their policies and
- * standing keys (in the deploy folder), the CI deploy key (its copy for the main job), and the app's operator and observer: created when the
+ * standing keys (in the deploy folder), the deploy key (its copy for the main job), and the app's operator and observer: created when the
  * app has none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces
  * the deploy key and every machine key, the runner's too when the runner serves this environment. Undefined when declined.
  */
@@ -190,7 +192,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
     console.warn(`${warningMark} Machine identities incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
   }
 
-  console.info('\n→ CI deploy key');
+  console.info('\n→ Deploy key');
   const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
   console.info('\n→ Operator');
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);

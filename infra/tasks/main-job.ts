@@ -10,8 +10,8 @@ const runTask: RunTask = (script, args) =>
 
 /**
  * One run of the main job, on the target commit's own engine (plan §3.5): the deploy of `TARGET_SHA` to `MODE`, the reap of the generation it
- * displaced included. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed; blocked, when the deploy stopped on a privileged
- * change or a required secret the operator owes, which its record names; or failed.
+ * displaced included. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed; blocked, when the deploy stopped on identities, a
+ * privileged change or a required secret the operator owes, which its record names; or failed.
  */
 export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number {
   const mode = env.MODE;
@@ -23,7 +23,9 @@ export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number 
   console.info(`[main-job] ${mode}: ${sha} (retry ${env.RETRY ?? '0'})`);
   const deployed = run('deploy', ['--mode', mode, '--sha', sha]);
   if (deployed === MAIN_JOB_EXIT.blocked) {
-    console.info('[main-job] blocked: the record names what is owed, an apply or a secret; settling it starts this target again');
+    console.info(
+      '[main-job] blocked: the record names what is owed, an identity update, an apply or a secret; the runner does not start this target again',
+    );
     return MAIN_JOB_EXIT.blocked;
   }
   if (deployed !== MAIN_JOB_EXIT.deployed) return MAIN_JOB_EXIT.failed;
