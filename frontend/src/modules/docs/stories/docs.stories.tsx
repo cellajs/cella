@@ -146,6 +146,8 @@ const sidebarOnClose = fn();
 
 /** Sidebar rows link to their hash, mark the active row, and on click scroll there and close the sidebar sheet. */
 export const SidebarItems: Story = {
+  // A search that hides a row makes its link navigate; these rows stay in place
+  parameters: { app: { url: '/' } },
   beforeEach: () => {
     sidebarOnClose.mockClear();
     sheeter.setState({ sheets: [] });

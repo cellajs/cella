@@ -10,7 +10,7 @@ export function useDragAutoScroll(gridRef: RefObject<HTMLDivElement | null>, ena
     if (!grid) return;
 
     const scrollParent = getScrollParent(grid);
-    if (scrollParent instanceof Window) return autoScrollWindowForElements({ getAllowedAxis: () => 'vertical' });
-    return autoScrollForElements({ element: scrollParent, getAllowedAxis: () => 'vertical' });
+    if (scrollParent instanceof HTMLElement) return autoScrollForElements({ element: scrollParent, getAllowedAxis: () => 'vertical' });
+    return autoScrollWindowForElements({ getAllowedAxis: () => 'vertical' });
   }, [enabled, gridRef]);
 }

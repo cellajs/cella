@@ -49,7 +49,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     if (ResizeObserver == null || grid == null) return;
 
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
-    const isWindowScroll = scrollContainer instanceof Window;
+    const isWindowScroll = !(scrollContainer instanceof HTMLElement);
 
     // useSyncExternalStore re-reads getSnapshot after notify and bails out on an identical reference.
     const commit = (next: GridDimensions) => {
