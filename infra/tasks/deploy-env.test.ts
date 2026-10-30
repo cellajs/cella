@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { principalSecretCondition } from '../lib/runtime-secrets';
 import { ALLOWED_KEYS, buildDeployEnv } from './deploy-env';
 
 const fakeAppConfig = {
@@ -30,9 +29,7 @@ describe('buildDeployEnv', () => {
   });
 
   it('derives values from appConfig', () => {
-    // The grant assertion rows are the shared builder's output, covered by tests/unit/secret-scope.test.ts and the singleVM cases below.
-    const { grant_rows_json: _rows, ...values } = buildDeployEnv(fakeAppConfig);
-    expect(values).toEqual({
+    expect(buildDeployEnv(fakeAppConfig)).toEqual({
       environment: 'production',
       image_tag: '',
       pulumi_stack: 'production',
@@ -76,31 +73,6 @@ describe('buildDeployEnv', () => {
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     });
-  });
-
-  it('singleVM: the same principals as split-VM, each reading its own folder, so placement changes no identity', () => {
-    type Row = { app: string; condition: string };
-    const single = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).grant_rows_json) as Row[];
-    const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).grant_rows_json) as Row[];
-    expect(single).toEqual(split);
-    const backend = single.find((row) => row.app === 'cella-production-vm-backend');
-    expect(backend?.condition).toBe(principalSecretCondition('backend'));
-    expect(backend?.condition).not.toContain('/yjs/');
-  });
-
-  it('toggling enabled never changes a principal row', () => {
-    type Row = { app: string; sets: string[]; condition: string };
-    const allOn = {
-      ...fakeAppConfig.services,
-      yjs: { enabled: true, publicUrl: 'https://yjs.cella.example' },
-      mcp: { enabled: true, publicUrl: 'https://mcp.cella.example' },
-      oauth: { enabled: true, publicUrl: 'https://api.cella.example/oauth' },
-    };
-    for (const singleVM of [false, true]) {
-      const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).grant_rows_json) as Row[];
-      const on = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM, services: allOn }).grant_rows_json) as Row[];
-      expect(on).toEqual(off);
-    }
   });
 
   it('strips hyphens from registry_ns', () => {

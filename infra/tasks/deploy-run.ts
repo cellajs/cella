@@ -39,8 +39,7 @@ export type TaskName =
   | 'build-release'
   | 'sync-rollout-config'
   | 'generation-keys'
-  | 'assert-grants'
-  | 'assert-deploy-policy'
+  | 'identity-plan'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -174,6 +173,15 @@ export async function runDeploy(
   let outcome: 'ok' | 'error' = 'ok';
   let failure: unknown;
   try {
+    // Identities are IAM, which only an Owner moment writes: one that differs from the declared ones ends the run blocked before it starts.
+    await step('Check identities', () =>
+      fx.task('identity-plan', [
+        '--project-id',
+        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+        '--organization-id',
+        process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
+      ]),
+    );
     await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
     await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
@@ -192,14 +200,6 @@ export async function runDeploy(
     // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
     await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
-    await step("Check the deploy key's policy", () =>
-      fx.task('assert-deploy-policy', [
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--organization-id',
-        process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-      ]),
-    );
     // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
     // this step checks from metadata that every copy a machine reads has one. Secret containers are privileged, so nothing after this step
     // makes a copy: a missing one ends the run blocked before any machine exists, and storing it starts the target again.
@@ -257,25 +257,6 @@ export async function runDeploy(
     });
 
     await step('Base stack update', () => fx.update(stack));
-    await step('Verify identity grants', async () => {
-      // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were read.
-      const rows = JSON.parse(env.grant_rows_json) as Array<{ app: string; sets: string[]; condition: string }>;
-      for (const row of rows) {
-        await fx.task('assert-grants', [
-          '--application-name',
-          row.app,
-          '--required-sets',
-          row.sets.join(','),
-          '--secret-condition',
-          row.condition,
-          '--project-id',
-          process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-          '--organization-id',
-          process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-          ...(row.condition ? ['--project-scope'] : []),
-        ]);
-      }
-    });
     try {
       await step('Waved rollout', () =>
         fx.rollout([
@@ -420,8 +401,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'generation-keys': async (argv) => (await import('./generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
-  'assert-grants': async (argv) => (await import('./assert-grants')).main(argv),
-  'assert-deploy-policy': async (argv) => (await import('./assert-deploy-policy')).main(argv),
+  'identity-plan': async (argv) => (await import('./identity-plan')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),

@@ -24,7 +24,7 @@ Identities are IAM, written at an Owner moment ([Machine policies](#machine-poli
 
 1. Shows the plan: what differs between the code and the live resources, drift made outside Pulumi included, and asks once whether to apply it. Answering no applies nothing.
 2. On a yes, applies the plan. Running machines and the load balancer stay in place. If a deploy ran meanwhile, you see the new plan and confirm again.
-3. Verifies the result live: every machine and deploy identity holds exactly its declared grant, and the declared database privileges exist. A mismatch fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
+3. Verifies the result live: the declared database privileges exist. A mismatch fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm infra preview` shows the same plan without the question and changes nothing at all, for a script or a look that must never apply.
 
@@ -44,6 +44,4 @@ Every pull request gets the keyless `privileged-changes` check. Its summary name
 
 The machines' IAM applications and their policies follow the **service registry** ([config/services.config.ts](../../infra/config/services.config.ts)), not the enabled set: every registry service has an application whose policy reads its own secret folder, pulls the release's images and writes its boot accounts, wherever it runs. Toggling `enabled` or `singleVM` therefore changes no identity. Neither does a change to a runtime secret's consumers, as each consumer keeps its own copy in its own folder.
 
-They are IAM, so only an Owner moment writes them: the setup, then **Update identities** (`pnpm infra identity`) after a change to the registry. It reads what differs with the observer key and asks for an Owner API key only when something has to change. Until then the next deploy stops at "Verify identity grants".
-
-A deploy also stops at "Read machine keys" when an identity holds a key beside its standing one. **Update identities** deletes such a key; **Rotate keys** replaces every key and deletes the rest.
+They are IAM, so only an Owner moment writes them: the setup, then **Update identities** (`pnpm infra identity`) after a change to the registry. It reads what differs with the observer key and asks for an Owner API key only when something has to change. Until then a deploy ends blocked at "Check identities", its first step, which reads the same plan as the apply. The plan also names a policy beside a declared one and a key beside an identity's standing one: **Update identities** deletes either; **Rotate keys** replaces every key and deletes the rest.
