@@ -2,16 +2,7 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  dropPromptOnlyEnv,
-  type ExecLike,
-  modeEnvValues,
-  parseEnvFile,
-  parseSecretReference,
-  RETIRED_KEY_NAMES,
-  resolveSecretReference,
-  writeEnvValues,
-} from './env-files';
+import { dropPromptOnlyEnv, modeEnvValues, parseEnvFile, RETIRED_KEY_NAMES, writeEnvValues } from './env-files';
 
 describe('dropPromptOnlyEnv', () => {
   it('takes a privileged key and the passphrase out of the environment and names what it found', () => {
@@ -41,9 +32,9 @@ describe('modeEnvValues', () => {
       {
         SCW_OBSERVER_ACCESS_KEY: 'SCWO',
         SCW_OBSERVER_SECRET_KEY: 's',
-        PULUMI_CONFIG_PASSPHRASE: 'keychain:cella-production/PULUMI_CONFIG_PASSPHRASE',
+        PULUMI_CONFIG_PASSPHRASE: 'p',
         SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
-        SCW_OWNER_SECRET_KEY: 'op:op://Infra/owner/secret',
+        SCW_OWNER_SECRET_KEY: 's',
         SCW_BOOTSTRAP_KEY: 'SCWOLD',
       },
       'production',
@@ -90,44 +81,5 @@ describe('writeEnvValues', () => {
   it('refuses a value that spans lines', () => {
     const path = join(mkdtempSync(join(tmpdir(), 'envw-')), '.env.staging');
     expect(() => writeEnvValues(path, { X: 'a\nb' })).toThrow(/cannot span lines/);
-  });
-});
-
-describe('secret references', () => {
-  const calls: Array<{ cmd: string; args: string[]; input?: string }> = [];
-  const exec =
-    (answer: { status: number; stdout?: string; stderr?: string }): ExecLike =>
-    (cmd, args, input) => {
-      calls.push({ cmd, args, input });
-      return { status: answer.status, stdout: answer.stdout ?? '', stderr: answer.stderr ?? '' };
-    };
-
-  it('parses the two reference forms and passes literals through', () => {
-    expect(parseSecretReference('keychain:cella-production/PULUMI_CONFIG_PASSPHRASE')).toEqual({
-      kind: 'keychain',
-      service: 'cella-production',
-      account: 'PULUMI_CONFIG_PASSPHRASE',
-    });
-    expect(parseSecretReference('op:op://Infra/scaleway-owner/secret')).toEqual({ kind: 'op', ref: 'op://Infra/scaleway-owner/secret' });
-    expect(parseSecretReference('plain-value')).toBeUndefined();
-    expect(resolveSecretReference('X', 'plain-value', exec({ status: 1 }))).toBe('plain-value');
-  });
-
-  it('reads a keychain entry through the platform tool and strips the trailing newline', () => {
-    calls.length = 0;
-    expect(resolveSecretReference('P', 'keychain:svc/acct', exec({ status: 0, stdout: 'hunter2\n' }), 'darwin')).toBe('hunter2');
-    expect(calls[0]).toEqual({ cmd: 'security', args: ['find-generic-password', '-s', 'svc', '-a', 'acct', '-w'], input: undefined });
-    calls.length = 0;
-    expect(resolveSecretReference('P', 'keychain:svc/acct', exec({ status: 0, stdout: 'hunter2' }), 'linux')).toBe('hunter2');
-    expect(calls[0]?.cmd).toBe('secret-tool');
-  });
-
-  it('names the missing entry', () => {
-    expect(() => resolveSecretReference('P', 'keychain:svc/acct', exec({ status: 44, stderr: 'not found' }), 'darwin')).toThrow(
-      /P: keychain entry svc\/acct not found \(security could not read it; not found\)/,
-    );
-    expect(() => resolveSecretReference('K', 'op:op://v/i/f', exec({ status: 1, stderr: 'not signed in' }))).toThrow(
-      /1Password read of op:\/\/v\/i\/f failed \(not signed in\)/,
-    );
   });
 });

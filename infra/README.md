@@ -98,7 +98,7 @@ Stable check `id`s:
 
 ## Key files
 
-`infra/.env.<mode>` holds the environment's Scaleway project (`SCW_PROJECT_ID`, written by setup) and the observer key (`SCW_OBSERVER_*`). It overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A value may be a pointer, `keychain:<service>/<account>` or `op:op://…`, resolved on load from the OS keychain or the 1Password CLI. A bare `infra/.env` is never read.
+`infra/.env.<mode>` holds the environment's Scaleway project (`SCW_PROJECT_ID`, written by setup) and the observer key (`SCW_OBSERVER_*`). It overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A bare `infra/.env` is never read.
 
 The CLI reads no privileged key and no passphrase from a file or the environment, in any form: it drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` with a notice, so nothing on the machine can change infrastructure with nobody at the prompt. The operator key comes from the prompt, and the passphrase from Secret Manager with it.
 
