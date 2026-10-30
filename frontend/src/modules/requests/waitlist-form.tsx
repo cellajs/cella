@@ -68,7 +68,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)}
-        className={cn('flex items-end gap-4 max-sm:flex-col max-xs:min-w-full', className)}
+        className={cn('flex items-start gap-4 max-sm:flex-col max-xs:min-w-full', className)}
       >
         <FormField
           control={form.control}

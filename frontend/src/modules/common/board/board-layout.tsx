@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 import { Fragment, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { isPanelReorderDragData, PanelDragHandleContext, PanelToggleContext, reorderPanels } from '~/modules/common/board/board-drag';
-import { boardStore, useBoardStore } from '~/modules/common/board/board-store';
+import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
@@ -25,7 +25,7 @@ export interface BoardLayoutPanel {
   panelId: string;
   /** Accessible name of the panel's region. */
   label?: string;
-  /** Consecutive panels of one group move as one under `groupHeader`, and still resize and collapse apart. */
+  /** Consecutive panels of one group move as one under `groupHeader` and resize apart. They do not collapse: see `onGroupCollapse`. */
   group?: { id: string; label: string };
 }
 
@@ -66,6 +66,8 @@ interface BoardLayoutProps {
   panelFade?: 'all' | 'marked';
   /** The header of a group, spanning its panels. */
   groupHeader?: (groupId: string) => ReactNode;
+  /** The handle of a group was pressed: the app replaces the group with one collapsed panel, under the id of the group. */
+  onGroupCollapse?: (groupId: string) => void;
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
@@ -81,6 +83,7 @@ export function BoardLayout({
   onPanelReorder,
   panelFade,
   groupHeader,
+  onGroupCollapse,
   ref,
 }: BoardLayoutProps) {
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
@@ -96,17 +99,14 @@ export function BoardLayout({
 
   const items = toReorderItems(panels);
   const itemsRef = useLatestRef(items);
+  const onGroupCollapseRef = useLatestRef(onGroupCollapse);
 
   const handleItemToggle = useCallback(
     (itemId: string) => {
-      const panelIds = itemsRef.current.find((item) => item.id === itemId)?.panels.map((panel) => panel.panelId) ?? [];
-      const { panelCollapseState } = boardStore.getState();
-      const collapse = !panelIds.every((panelId) => panelCollapseState[panelId]);
-      for (const panelId of panelIds) {
-        if (!!panelCollapseState[panelId] !== collapse) panelGroupApiRef.current?.togglePanel(panelId);
-      }
+      if (itemsRef.current.find((item) => item.id === itemId)?.group) onGroupCollapseRef.current?.(itemId);
+      else panelGroupApiRef.current?.togglePanel(itemId);
     },
-    [itemsRef],
+    [itemsRef, onGroupCollapseRef],
   );
 
   // The store only holds the state, so a panel marked open from outside, to reveal a form in it, gets its width here
@@ -127,7 +127,9 @@ export function BoardLayout({
 
       // Wait one frame for the expand to settle before scrolling
       requestAnimationFrame(() => {
-        const el = document.querySelector(`[data-panel="${CSS.escape(panelId)}"]`);
+        // A panel that expands into a group is gone by now
+        const id = CSS.escape(panelId);
+        const el = document.querySelector(`[data-panel="${id}"], [data-panel-group="${id}"]`);
         el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
       });
     },
@@ -171,8 +173,8 @@ export function BoardLayout({
     });
   }, [reorderable, onPanelReorder, itemIdsRef]);
 
-  const renderPanel = ({ panelId, label }: BoardLayoutPanel, index: number) => (
-    <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade} label={label}>
+  const renderPanel = ({ panelId, label, group }: BoardLayoutPanel, index: number) => (
+    <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible={!group} fade={panelFade} label={label}>
       {children(panelId, index)}
     </ResizablePanel>
   );
@@ -223,7 +225,7 @@ export function BoardLayout({
             {reorderable ? (
               <PanelDragWrapper
                 panelId={item.id}
-                panelIds={item.panels.map((panel) => panel.panelId)}
+                collapsible={!item.group}
                 index={i}
                 total={items.length}
                 itemIdsRef={itemIdsRef}
@@ -267,7 +269,7 @@ export function BoardLayout({
 /** Wraps a panel or a group with drag-and-drop reorder support. Provides drag handle ref via context. */
 function PanelDragWrapper({
   panelId,
-  panelIds,
+  collapsible,
   index,
   total,
   itemIdsRef,
@@ -277,8 +279,7 @@ function PanelDragWrapper({
   children,
 }: {
   panelId: string;
-  /** The panels it moves. */
-  panelIds: string[];
+  collapsible: boolean;
   index: number;
   total: number;
   itemIdsRef: React.RefObject<string[]>;
@@ -290,7 +291,8 @@ function PanelDragWrapper({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [handleEl, setHandleEl] = useState<HTMLElement | null>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
-  const isCollapsed = useBoardStore((state) => panelIds.every((id) => !!state.panelCollapseState[id]));
+  const isCollapsed = useBoardStore((state) => collapsible && !!state.panelCollapseState[panelId]);
+  const handleElRef = useLatestRef(handleEl);
 
   const registerHandle = useCallback((el: HTMLElement | null) => setHandleEl(el), []);
 
@@ -310,7 +312,11 @@ function PanelDragWrapper({
 
   const handleToggleCollapsed = useCallback(() => {
     onItemToggle(panelId);
-  }, [onItemToggle, panelId]);
+    // Swapping a group and its panel remounts the handle, which drops focus to the body
+    requestAnimationFrame(() => {
+      if (document.activeElement === document.body) handleElRef.current?.focus({ preventScroll: true });
+    });
+  }, [onItemToggle, panelId, handleElRef]);
 
   const ctxValue = useMemo(
     () => ({ panelId, registerHandle, onMove: handleMove, onToggleCollapsed: handleToggleCollapsed, isCollapsed, previewContainer, index, total }),

@@ -159,7 +159,7 @@ export function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.Gr
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-group-label"
-      className={cn('group-label pointer-coarse:px-3 px-2 pointer-coarse:py-2 py-1.5', className)}
+      className={cn('group-label pointer-coarse:px-3 px-2 pointer-coarse:py-2 py-1.5 text-xs', className)}
       {...props}
     />
   );

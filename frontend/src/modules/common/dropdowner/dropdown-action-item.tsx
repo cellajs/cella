@@ -93,7 +93,7 @@ export function DropdownActionGroup({ label, children }: { label: string; childr
     return (
       <div className="flex flex-col">
         {/* Lines up with the rows' text */}
-        <p className="group-label px-4.5 pt-2 pb-1">{label}</p>
+        <p className="group-label px-4.5 pt-2 pb-1 text-xs">{label}</p>
         {children}
       </div>
     );
