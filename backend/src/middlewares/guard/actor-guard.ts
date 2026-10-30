@@ -16,8 +16,8 @@ export const actorGuard = xMiddleware(
     errors: [401, 403],
     security: [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }],
     provides: ['actor'],
-    name: 'actor',
-    description: 'Requires a session cookie, a secret API key or an access token; acts as the user or service account it proves',
+    name: 'Actor',
+    description: 'Works with a signed-in session, a secret API key or an access token. The request acts as the user or service account behind it.',
   },
   (ctx, next) => (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
 );

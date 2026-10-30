@@ -26,7 +26,7 @@ export interface GenExtensionDefinition {
 export interface GenOperationTool {
   /** What the tool does, written for a model */
   description: string;
-  /** Whether the client asks its user before running the tool */
+  /** Whether the tool is marked for the client to ask its user first; a hint, nothing enforces it */
   approvalRequired: boolean;
   /** The entity the tool acts on: with the method it names the scope a token needs */
   entity: string;
@@ -49,6 +49,8 @@ export interface GenOperationSummary {
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */
   extensions: Record<string, string[]>;
+  /** The labels of those values, which the docs show and search */
+  extensionNames: string[];
   /** Tags grouped by their kind (e.g., { module: ['tasks'], owner: ['app'] }) */
   tagsByKind: Record<string, string[]>;
   /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */

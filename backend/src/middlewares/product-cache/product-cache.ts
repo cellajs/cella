@@ -14,7 +14,12 @@ import { coalesce, isInFlight } from '#/utils/request-coalescing';
  */
 export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
-    { functionName: 'productCache', type: 'x-cache', name: 'app', description: 'Entity-keyed detail cache with per-request read authorization' },
+    {
+      functionName: 'productCache',
+      type: 'x-cache',
+      name: 'Detail cache',
+      description: "Can answer from the server's cache, marked by the X-Cache response header. Read access is still checked on every request.",
+    },
     async (ctx, next) => {
       const id = ctx.req.param('id');
       if (!id) {

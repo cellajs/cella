@@ -26,6 +26,7 @@ const searchFields = (op: GenOperationSummary) =>
     ...op.tags,
     ...Object.values(op.tagsByKind).flat(),
     ...Object.values(op.extensions).flat(),
+    ...op.extensionNames,
   ].map(foldText);
 
 /** The operations a search keeps. `filter` is `${kind}:${value}` (`owner:cella`) or the MCP tools filter; `q` uses the shared search grammar. */

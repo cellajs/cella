@@ -35,8 +35,8 @@ export const tenantGuard = xMiddleware(
     errors: [403],
     requires: ['actor'],
     provides: ['tenant'],
-    name: 'tenant',
-    description: 'Requires being in the tenant: a member, a system admin, or its creator while it has no organization',
+    name: 'Tenant',
+    description: "Requires membership in this tenant. System admins also pass, and so does the tenant's creator until it has an organization.",
   },
   async (ctx, next) => {
     const { tenantId } = routeTarget(ctx);

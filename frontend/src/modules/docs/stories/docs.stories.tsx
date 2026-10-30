@@ -35,6 +35,7 @@ const operation = (id: string, summary: string, method: string, path: string, ha
   hasResponseBody: true,
   hasExample: true,
   extensions: {},
+  extensionNames: [],
   tagsByKind: {},
 });
 

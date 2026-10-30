@@ -17,8 +17,8 @@ export const userGuard = xMiddleware(
     errors: [401],
     security: [{ cookieAuth: [] }],
     provides: ['actor', 'session'],
-    name: 'user',
-    description: 'Requires a session cookie; acts as the signed-in user',
+    name: 'User',
+    description: 'Only a signed-in session works here, no API key or access token. The request acts as that user.',
   },
   async (ctx, next) => {
     // A refused cookie is deleted, so the browser stops presenting it.

@@ -7,8 +7,8 @@ export const publicGuard = xMiddleware(
     functionName: 'publicGuard',
     type: 'x-guard',
     security: [],
-    name: 'public',
-    description: 'No sign-in required',
+    name: 'Public',
+    description: 'No sign-in required.',
   },
   async (ctx, next) => {
     ctx.set('db', baseDb);

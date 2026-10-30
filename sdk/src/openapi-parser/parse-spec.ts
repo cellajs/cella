@@ -226,9 +226,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       }
 
       const extensions: Record<string, string[]> = {};
+      const extensionNames: string[] = [];
       for (const ext of extensionDefs) {
         const value = op[ext.key as `x-${string}`];
-        if (Array.isArray(value)) extensions[ext.id] = value;
+        if (!Array.isArray(value)) continue;
+        extensions[ext.id] = value;
+        for (const id of value) if (ext.values?.[id]?.name) extensionNames.push(ext.values[id].name);
       }
 
       const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
@@ -250,6 +253,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         hasResponseBody: responses.some((r) => r.schema !== undefined),
         hasExample: responses.some((r) => r.status >= 200 && r.status < 300 && r.example !== undefined),
         extensions,
+        extensionNames,
         tagsByKind: groupTagsByKind(op.tags ?? [], tagKindMap),
         ...(entityType && { entityType }),
         ...(enabledBy && { enabledBy }),

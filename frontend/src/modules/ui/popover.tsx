@@ -12,11 +12,14 @@ export interface PositionedContentProps {
 /** Gap in px between a control and its popover, combobox, menu or select popup: the focus ring takes 4 (2 offset plus 2 ring), leaving 4 clear. */
 export const popupSideOffset = 8;
 
-export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
+/** Lets many triggers share one popover: pass it to the root and to each trigger, which hands its `payload` to the root. */
+export const createPopoverHandle = PopoverPrimitive.createHandle;
+
+export function Popover<Payload = unknown>({ ...props }: PopoverPrimitive.Root.Props<Payload>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-export function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
+export function PopoverTrigger<Payload = unknown>({ ...props }: PopoverPrimitive.Trigger.Props<Payload>) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 

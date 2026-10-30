@@ -36,20 +36,26 @@ export function JsonActions({ url, data, filename, resourceName, className }: Js
 
   return (
     <ButtonGroup className={className}>
-      <TooltipButton toolTipContent={t('c:open')}>
-        <Button variant="outline" className="flex-none" aria-label={t('c:open')} onClick={handleOpen}>
+      <TooltipButton toolTipContent={t('c:docs.open_in_new_tab')}>
+        <Button variant="outline" className="flex-none" aria-label={t('c:docs.open_in_new_tab')} onClick={handleOpen}>
           <ExternalLinkIcon />
           <span className="max-lg:hidden">{t('c:open')}</span>
         </Button>
       </TooltipButton>
-      <TooltipButton toolTipContent={t('c:copy')}>
-        <Button variant="outline" aria-label={t('c:copy')} onClick={handleCopy}>
+      <TooltipButton toolTipContent={t('c:docs.copy_json')}>
+        <Button variant="outline" aria-label={t('c:docs.copy_json')} onClick={handleCopy}>
           <CopiedIcon copied={copied} icon={CopyIcon} />
           <span className="max-lg:hidden">{t('c:copy')}</span>
         </Button>
       </TooltipButton>
-      <TooltipButton toolTipContent={t('c:download')}>
-        <Button variant="outline" className="flex-none" aria-label={t('c:download')} disabled={isInProgress} onClick={() => download(url, filename)}>
+      <TooltipButton toolTipContent={t('c:docs.download_json')}>
+        <Button
+          variant="outline"
+          className="flex-none"
+          aria-label={t('c:docs.download_json')}
+          disabled={isInProgress}
+          onClick={() => download(url, filename)}
+        >
           {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon />}
           <span className="max-lg:hidden">{t('c:download')}</span>
         </Button>
