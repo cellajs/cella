@@ -53,6 +53,8 @@ Break-glass access from your laptop, for any operator task against the live data
    pnpm infra db-close
    ```
 
+While it is open, **Review & apply changes** (`pnpm infra apply`) refuses to run, as it would remove the ACL and keep the endpoint: close it first.
+
 ## A stopped CDC worker
 
 A stopped CDC worker's replication slot keeps WAL until the database volume fills. When the worker cannot be brought back, [open the database](#open-the-database) and drop the slot:
