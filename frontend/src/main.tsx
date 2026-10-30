@@ -21,7 +21,7 @@ import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { ReloadPrompt } from '~/modules/common/reload-prompt';
 import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { PersistedQueryProvider } from '~/query/persisted-query-provider';
-import { checkForUpdate } from '~/utils/app-update';
+import { checkForUpdate, reloadOntoWaitingWorker } from '~/utils/app-update';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initInputModality } from '~/utils/input-modality';
@@ -67,7 +67,7 @@ const canonicalUrl = canonicalOriginUrl(window.location, appConfig.frontendUrl, 
 if (canonicalUrl) {
   // No render, so this host registers no service worker of its own.
   void leaveForCanonicalOrigin(canonicalUrl);
-} else {
+} else if (!(await reloadOntoWaitingWorker())) {
   ReactDOM.createRoot(root, {
     onUncaughtError: (error, errorInfo) => reportReactError('uncaught', error, errorInfo.componentStack),
     onCaughtError: (error, errorInfo) => reportReactError('boundary', error, errorInfo.componentStack),
