@@ -1,0 +1,76 @@
+name: Deploy status
+
+# Reports on GitHub whether a release reached production, from outside: the release's commit has to answer on
+# the public health endpoint. Nothing in this file deploys, and it reads no Scaleway key.
+#
+# It runs in a repository with the variable PRODUCTION_URL, the app's address without a trailing slash. A deploy
+# that never shows ends as a failure here: `pnpm infra runs` says why. After a deploy that came later than the
+# wait, run this by hand with the release's tag.
+
+permissions: {}
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to report on
+        required: true
+
+# A newer release replaces the wait for an older one.
+concurrency:
+  group: deploy-status
+  cancel-in-progress: true
+
+jobs:
+  watch:
+    if: vars.PRODUCTION_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      deployments: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - name: Wait for the release to answer
+        id: wait
+        run: |
+          report() {
+            jq -n --arg state "$1" --arg description "$2" --arg log_url "$RUN_URL" --arg environment_url "$PRODUCTION_URL" \
+              '{ $state, $description, $log_url, $environment_url }' |
+              gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --input - --silent
+          }
+
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)
+          id=$(jq -n --arg ref "$sha" --arg description "Release $TAG" \
+            '{ $ref, $description, environment: "production", auto_merge: false, required_contexts: [] }' |
+            gh api "repos/$GITHUB_REPOSITORY/deployments" --input - --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          report in_progress "Waiting for $TAG to answer"
+
+          # Five answers in a row, two minutes: the version moves during the rollout, before its smoke tests end.
+          answers=0
+          deadline=$((SECONDS + 1200))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            live=$(curl -fsSL --max-time 10 "$PRODUCTION_URL/api/health?depth=full" | jq -r '.version // empty') || live=''
+            if [ "$live" = "$sha" ]; then answers=$((answers + 1)); else answers=0; fi
+            if [ "$answers" -ge 5 ]; then
+              report success "$TAG answers in production"
+              exit 0
+            fi
+            sleep 30
+          done
+
+          report failure "$TAG not live after 20 minutes: pnpm infra runs says why"
+          exit 1
+
+      - name: Close the wait a newer release replaced
+        if: cancelled() && steps.wait.outputs.id != ''
+        run: |
+          jq -n --arg description "A newer release replaced $TAG" '{ state: "inactive", $description }' |
+            gh api "repos/$GITHUB_REPOSITORY/deployments/${{ steps.wait.outputs.id }}/statuses" --input - --silent
