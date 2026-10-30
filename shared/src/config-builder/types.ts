@@ -268,6 +268,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
     rateLimits: { apiPointsPerHour: number; invitationMailsPerDay: number };
   };
+  selfServiceTenantsPerUser: number;
   retention: RetentionConfig;
 
   systemRoles: T['systemRoles'];

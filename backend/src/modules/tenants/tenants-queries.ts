@@ -1,4 +1,4 @@
-import { and, count, eq, lt, notInArray, type SQL } from 'drizzle-orm';
+import { and, count, eq, lt, notInArray, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -107,14 +107,28 @@ export const findTenant = async (ctx: DbContext, { where }: FindTenantOpts) => {
   return row ? toTenant(row) : undefined;
 };
 
-interface FindOrphanTenantOpts {
+interface TenantCreatorOpts {
   createdBy: string;
 }
 
 /** A tenant the user created that holds no organization yet, in its response shape; undefined when none does. */
-export const findOrphanTenant = async (ctx: DbContext, { createdBy }: FindOrphanTenantOpts) => {
+export const findOrphanTenant = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) => {
   const tenantsWithOrg = ctx.var.db.select({ tenantId: organizationsTable.tenantId }).from(organizationsTable);
   return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
+};
+
+/**
+ * Makes the creations of one user wait for each other until the transaction ends, so a parallel burst reads the
+ * orphan and the count one request at a time. Its own statement: the reads after it take their snapshot once it is granted.
+ */
+export const lockTenantCreation = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) => {
+  await ctx.var.db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`tenant_creation:${createdBy}`}, 0))`);
+};
+
+/** How many tenants the user created, archived ones included. */
+export const countTenantsCreatedBy = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) => {
+  const [{ total }] = await ctx.var.db.select({ total: count() }).from(tenantsTable).where(eq(tenantsTable.createdBy, createdBy));
+  return total;
 };
 
 interface InsertTenantOpts {

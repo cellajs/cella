@@ -18,6 +18,7 @@ interface Operation {
   method: string;
   path: string;
   guards: string[];
+  rateLimiters: string[];
   enabledBy?: ConfigSwitch;
   /** The names of its path and query parameters. */
   parameters: string[];
@@ -27,7 +28,7 @@ interface Operation {
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
-/** Every operation of the API with its guard chain (`x-guard`) and config switch (`x-enabled-by`), from the app's own OpenAPI document. */
+/** Every operation of the API with its guard chain (`x-guard`), limiters and config switch (`x-enabled-by`), from the app's own OpenAPI document. */
 const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
   const { paths = {} } = app.getOpenAPI31Document({ openapi: '3.1.0', info: { title: 'guards', version: '0' } });
   return Object.entries(paths).flatMap(([path, item]) =>
@@ -40,6 +41,7 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
           method: method.toUpperCase(),
           path,
           guards: (operation['x-guard'] as string[] | undefined) ?? [],
+          rateLimiters: (operation['x-rate-limiter'] as string[] | undefined) ?? [],
           enabledBy: operation['x-enabled-by'] as ConfigSwitch | undefined,
           parameters: (operation.parameters ?? []).flatMap((parameter) => ('name' in parameter ? [parameter.name] : [])),
           streams: Object.values(operation.responses ?? {}).some((response) => 'content' in response && !!response.content?.['text/event-stream']),
@@ -47,6 +49,30 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
       ];
     }),
   );
+};
+
+/**
+ * Routes that take a write or an anonymous request without a limiter, each with what bounds the work one request causes.
+ * A route an app adds to this list names that bound the same way.
+ */
+const routesWithoutLimiter: Record<string, string> = {
+  getAuthHealth: 'a primary-key read of one bucket and the active federations',
+  getPendingMfa: "reads the browser's own confirm-mfa token and writes nothing",
+  signOut: "ends only the caller's own session",
+  github: 'a redirect and a state cookie',
+  google: 'a redirect and a state cookie',
+  microsoft: 'a redirect and a state cookie',
+  getSsoEntry: 'one read by connection id',
+  startSso: 'a redirect; the discovery fetch is shared while in flight and goes to a configured issuer',
+  startSsoFederation: 'a redirect; the discovery fetch is shared while in flight and goes to a configured issuer',
+  getPublicCounts: 'counted at most once a minute per process',
+  getApiProtectedResourceMetadata: 'static JSON from the path, no database',
+  getMcpProtectedResourceMetadata: 'static JSON from the path, no database',
+  startImpersonation: 'system admins only',
+  stopImpersonation: 'needs an impersonation session and writes that one session',
+  markNotificationsRead: "one update of at most 200 of the caller's own rows, idempotent",
+  updateNotificationPreferences: "one row of the caller's own",
+  deletePushSubscription: "deletes the caller's own row only",
 };
 
 /** A route whose config switch is off is refused before any guard runs (`x-enabled-by`). */
@@ -118,6 +144,21 @@ describe('Route guards', async () => {
       const { status } = await request(operation, sysAdmin.sessionCookie);
       expect(status, nameOf(operation)).not.toBe(403);
     }
+  });
+
+  it('must not take a write or an anonymous request on a route without a limiter, unless the list names its bound', () => {
+    // Every route, switched off ones included: a limiter belongs to the route whatever the config.
+    const unlimited = operationsOf(baseApp).filter(
+      ({ method, guards, rateLimiters }) => (method !== 'GET' || guards.includes('publicGuard')) && rateLimiters.length === 0,
+    );
+    for (const operation of unlimited) {
+      expect(
+        routesWithoutLimiter[operation.operationId],
+        `${nameOf(operation)} takes requests without a limiter: give it xRateLimiter, or add it to routesWithoutLimiter with what bounds its cost`,
+      ).toBeDefined();
+    }
+    const stale = Object.keys(routesWithoutLimiter).filter((operationId) => !unlimited.some((operation) => operation.operationId === operationId));
+    expect(stale, 'these routesWithoutLimiter entries name a route that has a limiter now, or no route: drop them').toEqual([]);
   });
 
   it('must not list or read by another user without the guard that relates the caller to that user', () => {

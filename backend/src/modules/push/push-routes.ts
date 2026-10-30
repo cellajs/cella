@@ -1,5 +1,6 @@
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { userGuard } from '#/middlewares/guard';
+import { pushSubscriptionLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   deletePushSubscriptionQuerySchema,
   deletePushSubscriptionResponseSchema,
@@ -23,10 +24,11 @@ const pushRoutes = createXRoutes(['push', 'cella'], {
     method: 'post',
     path: '/subscriptions',
     xGuard: [userGuard],
+    xRateLimiter: [pushSubscriptionLimiter],
     summary: 'Register a Web Push subscription',
     description:
       'Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. ' +
-      'The endpoint must be an https URL of a known browser push service.',
+      'The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.',
     request: { body: jsonBody(pushSubscriptionBodySchema) },
     responses: { 200: json('Stored subscription', pushSubscriptionResponseSchema) },
   }),

@@ -52,6 +52,15 @@ export const uploadTokenLimiter = rateLimiter('limit', 'uploadToken', [['userId'
   description: 'Upload tokens per user: 300 per hour',
 });
 
+/**
+ * A budget: a browser registers when its user turns push on and when its push service rotates the subscription, so a
+ * user on several devices stays far below it.
+ */
+export const pushSubscriptionLimiter = rateLimiter('limit', 'pushSubscription', ['userId'], {
+  limits: { points: 30, duration: 60 * 60, blockDuration: 0 },
+  description: 'Push subscription registrations per user: 30 per hour',
+});
+
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },

@@ -1872,7 +1872,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Register a Web Push subscription
  *
- * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.
+ * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.
  *
  * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push · cella_
  *
@@ -1880,7 +1880,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.endpoint - `string` (optional)
  * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 200, 400, 401, 413
+ * @returns Possible status codes: 200, 400, 401, 413, 429
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,
@@ -2134,13 +2134,13 @@ export const getTenants = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused, and takes the new name.
+ * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.
  *
  * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· _tenants · cella_
  *
  * @param {selfCreateTenantData} options
  * @param {string=} options.body.name - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
 export const selfCreateTenant = <ThrowOnError extends boolean = true>(
   options: Options<SelfCreateTenantData, ThrowOnError>,

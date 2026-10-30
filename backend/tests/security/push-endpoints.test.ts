@@ -2,7 +2,7 @@ import { parse } from 'node:url';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createPushSubscription } from 'sdk';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpoint';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
@@ -10,6 +10,9 @@ import { defaultHeaders } from '../fixtures';
 import { createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
+
+// The registration limiter is under test here; each test signs in a user of its own, so its budget starts empty.
+vi.unmock('#/middlewares/rate-limiter/core');
 
 const keys = { p256dh: 'test-p256dh', auth: 'test-auth' };
 
@@ -77,6 +80,37 @@ describe('Push subscription endpoints', async () => {
     for (const endpoint of [...realEndpoints, ...probes].filter(isPushServiceEndpoint)) {
       expect(parse(endpoint).hostname, endpoint).toBe(new URL(endpoint).hostname);
     }
+  });
+
+  it('must not keep more than 20 push subscriptions for one user via repeated registrations', async () => {
+    const { user, headers } = await userWithSession();
+    const other = await userWithSession();
+    const otherEndpoint = `${realEndpoints[0]}-other`;
+    expect((await call(createPushSubscription, { body: { endpoint: otherEndpoint, keys }, headers: other.headers })).response.status).toBe(200);
+    const endpoints = Array.from({ length: 25 }, (_, n) => `https://fcm.googleapis.com/fcm/send/flood-${n}`);
+
+    for (const endpoint of endpoints) {
+      const { response } = await call(createPushSubscription, { body: { endpoint, keys }, headers });
+      expect(response.status, endpoint).toBe(200);
+    }
+
+    // The newest registrations stay, a new device among them; another user's subscription is untouched.
+    expect((await endpointsOf(user.id)).sort()).toEqual(endpoints.slice(-20).sort());
+    expect(await endpointsOf(other.user.id)).toEqual([otherEndpoint]);
+  });
+
+  it('must not register push subscriptions past 30 an hour for one user', async () => {
+    const { headers } = await userWithSession();
+    const register = (n: number) =>
+      call(createPushSubscription, { body: { endpoint: `https://fcm.googleapis.com/fcm/send/paced-${n}`, keys }, headers });
+
+    for (let n = 0; n < 30; n++) expect((await register(n)).response.status).toBe(200);
+    await expectRefusal(await register(30), 429, 'too_many_requests');
+
+    // Another user's budget is their own (positive control).
+    const other = await userWithSession();
+    const { response } = await call(createPushSubscription, { body: { endpoint: realEndpoints[0], keys }, headers: other.headers });
+    expect(response.status).toBe(200);
   });
 
   it('registers subscriptions on known push services (positive control)', async () => {
