@@ -9,7 +9,7 @@ import { env } from '../env';
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
-export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MAX, sslCa, debug: env.DEBUG });
+export const db = createPgConnection(env.DATABASE_URL, { name: 'yjs', max: env.YJS_DB_POOL_MAX, sslCa, debug: env.DEBUG });
 
 /** What a relay transaction may read beyond live rows: `includeDeleted` lets RLS show soft-deleted rows too. */
 interface RlsOptions {

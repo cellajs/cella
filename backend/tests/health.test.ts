@@ -48,12 +48,36 @@ describe('Health endpoint', () => {
 
   it("must not show a failed job store read's own message in the unauthenticated diagnostics", async () => {
     const { readJobsHealth } = await import('#/lib/jobs-health');
+    const { clearJobsHealthCache } = await import('#/lib/health');
+    clearJobsHealthCache();
     vi.mocked(readJobsHealth).mockRejectedValueOnce(new Error('failed query: select state from pgboss.job_marker'));
 
     const res = await fetchHealth('?depth=full');
     const text = await res.text();
     expect(text).not.toContain('job_marker');
     expect(JSON.parse(text).components.jobs).toMatchObject({ status: 'degraded', reason: 'jobs_unreadable' });
+  });
+
+  it("must not show a CDC flush failure's query text in the unauthenticated diagnostics", async () => {
+    const { cdcWebSocketServer } = await import('#/lib/cdc-websocket');
+    const socket = { on: (_event: string, _handler: (data: Buffer) => void) => {}, close: () => {} };
+    const handlers: Record<string, (data: Buffer) => void> = {};
+    socket.on = (event, handler) => {
+      handlers[event] = handler;
+    };
+    // A test double and a private entry: `accept` needs a real HTTP upgrade to get here.
+    (cdcWebSocketServer as unknown as { handleConnection: (ws: typeof socket) => void }).handleConnection(socket);
+    const failure = { position: '0/1', count: 2, since: new Date().toISOString(), error: 'Failed query: select x from cdc_marker' };
+    const payload = { status: 'degraded', reasons: ['reading_again'], details: { failure }, generation: 1 };
+    handlers.message(Buffer.from(JSON.stringify({ _control: 'health', payload })));
+
+    try {
+      const text = await (await fetchHealth('?depth=full')).text();
+      expect(text).not.toContain('cdc_marker');
+      expect(JSON.parse(text).components.cdc.details.failure).toMatchObject({ position: '0/1', count: 2 });
+    } finally {
+      cdcWebSocketServer.close();
+    }
   });
 
   it('GET /health?depth=full cdc section has expected shape', async () => {
