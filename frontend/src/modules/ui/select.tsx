@@ -99,7 +99,7 @@ export function SelectContent({
 }
 
 export function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) {
-  return <SelectPrimitive.GroupLabel data-slot="select-label" className={cn('group-label px-2 py-1.5', className)} {...props} />;
+  return <SelectPrimitive.GroupLabel data-slot="select-label" className={cn('group-label px-2 py-1.5 text-xs', className)} {...props} />;
 }
 
 export function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {

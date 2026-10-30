@@ -44,7 +44,7 @@ export function SelectDrawerRows<TValue extends string>({ options, selected, onS
           <Fragment key={run.options[0].value}>{rows(run.options)}</Fragment>
         ) : (
           <Fragment key={run.group}>
-            <p className="group-label px-4 pt-3 pb-1">{run.group}</p>
+            <p className="group-label px-4 pt-3 pb-1 text-xs">{run.group}</p>
             {rows(run.options)}
           </Fragment>
         ),
