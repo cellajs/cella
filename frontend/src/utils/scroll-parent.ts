@@ -11,7 +11,9 @@ export function getScrollParent(node: HTMLElement): HTMLElement | Window {
 }
 
 /** Scroll offset of a scroll parent from `getScrollParent`. */
-export const scrollTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? scrollParent.scrollY : scrollParent.scrollTop);
+export const scrollTopOf = (scrollParent: HTMLElement | Window) =>
+  scrollParent instanceof HTMLElement ? scrollParent.scrollTop : scrollParent.scrollY;
 
 /** Viewport position of a scroll parent's top edge: 0 for the window. */
-export const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
+export const viewportTopOf = (scrollParent: HTMLElement | Window) =>
+  scrollParent instanceof HTMLElement ? scrollParent.getBoundingClientRect().top : 0;

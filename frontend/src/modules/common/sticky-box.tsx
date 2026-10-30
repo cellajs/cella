@@ -124,7 +124,7 @@ export function StickyBox({
       return;
     }
     const scrollParent = getScrollParent(sentinel);
-    const root = scrollParent instanceof Window ? null : scrollParent;
+    const root = scrollParent instanceof HTMLElement ? scrollParent : null;
     const observer = new IntersectionObserver(
       ([entry]) => {
         const { rootBounds } = entry;
