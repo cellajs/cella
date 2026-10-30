@@ -3,6 +3,7 @@ import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
+import { listenHost } from 'shared/utils/listen-host';
 import { WebSocketServer } from 'ws';
 import { gradeEventLoop } from '#/lib/health-helpers';
 import { yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
@@ -52,7 +53,7 @@ export function buildHttpApp(): Hono {
 
 /** Listens on YJS_PORT: the health app over HTTP, and editor sockets through the upgrade and connection handlers. */
 export function startWsServer(): void {
-  const server = serve({ fetch: buildHttpApp().fetch, hostname: '0.0.0.0', port: env.YJS_PORT }, () => {
+  const server = serve({ fetch: buildHttpApp().fetch, hostname: listenHost(), port: env.YJS_PORT }, () => {
     log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
   });
   httpServer = server;

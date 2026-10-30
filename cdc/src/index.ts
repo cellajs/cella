@@ -1,5 +1,6 @@
 import { type ServerType, serve } from '@hono/node-server';
 import { createHealthApp } from 'shared/health-app';
+import { listenHost } from 'shared/utils/listen-host';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from './env';
@@ -33,7 +34,7 @@ export async function runCdcWorker(options: { inProcess?: boolean } = {}): Promi
 
   // hostname doubles as the Host fallback for the load balancer's host-less HTTP/1.0 health probe,
   // which @hono/node-server otherwise rejects with 400 Missing host header.
-  healthServer = serve({ fetch: healthApp.fetch, hostname: '0.0.0.0', port: env.CDC_HEALTH_PORT }, () => {
+  healthServer = serve({ fetch: healthApp.fetch, hostname: listenHost(), port: env.CDC_HEALTH_PORT }, () => {
     log.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
   });
 

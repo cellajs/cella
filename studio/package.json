@@ -4,7 +4,7 @@
   "description": "Drizzle Studio launcher for local database inspection",
   "type": "module",
   "scripts": {
-    "dev": "tsx ../backend/scripts/drizzle-studio/start.ts",
+    "studio": "tsx ../backend/scripts/drizzle-studio/start.ts",
     "stop": "tsx ../backend/scripts/drizzle-studio/stop.ts"
   },
   "keywords": [

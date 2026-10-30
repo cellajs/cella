@@ -126,7 +126,8 @@ const repoDocRoutes = {
   'infra/README.md': '/docs/page/guides/deployment/infra-cli',
 } as const;
 
-const repoLinks = { repoRoot: path.resolve(import.meta.dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes };
+const repoRoot = path.resolve(import.meta.dirname, '..');
+const repoLinks = { repoRoot, repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes };
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
 const devPort = Number(frontendUrl.port) || appConfig.devPorts.frontend;
@@ -147,7 +148,8 @@ const gitSha = (() => {
 const viteConfig = {
   logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
-    host: '0.0.0.0',
+    // Loopback unless DEV_HOST names an address: `DEV_HOST=0.0.0.0` opens the dev server to other devices.
+    host: process.env.DEV_HOST || '127.0.0.1',
     port: devPort,
     strictPort: true,
     // Same-origin development: the dev server is the app origin and proxies the
@@ -174,6 +176,9 @@ const viteConfig = {
     // Host header and point HMR websockets back at the public origin.
     ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
     watch: { ignored: ['**/backend/**', '**/sdk/**'] },
+    // The folders the app reads from outside this package; a file it imports, such as a repo doc, is served too. Vite's
+    // default, the workspace root, serves any file in the checkout by path to whoever reaches the server, a tunnel included.
+    fs: { allow: [import.meta.dirname, ...['shared', 'sdk', 'locales', 'json', 'node_modules'].map((dir) => path.join(repoRoot, dir))] },
   },
   preview: { port: devPort },
   build: {

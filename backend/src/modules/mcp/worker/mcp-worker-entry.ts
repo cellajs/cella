@@ -1,5 +1,6 @@
 import { type ServerType, serve } from '@hono/node-server';
 import { appConfig } from 'shared';
+import { listenHost } from 'shared/utils/listen-host';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
@@ -37,7 +38,7 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
   const app = createBaseApp();
   app.route(mcpMountPath, mcpHandlers);
 
-  server = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
+  server = serve({ fetch: app.fetch, hostname: listenHost(), port }, () => {
     baseLog.info(`MCP service listening on port ${port}`);
   });
 
