@@ -52,13 +52,13 @@ Editing needs a token. The backend issues one for a single entity, for a few min
 
 A valid token opens the socket, and then the relay decides for itself: it asks the permission engine, as the API would, whether this user may update this row. Until that answer is in, the socket receives nothing of the document and relays nothing. A refusal never tells someone without access whether the entity exists. A document's tenant and organization come from the entity row, never from a token or from whoever joined first.
 
-A socket lives no longer than its token. The client refreshes its token and reconnects, and a user who lost access gets no new one, so revoked access ends an open editing session within five minutes.
+A socket lives no longer than its token. The client refreshes its token and reconnects, and a user who lost access gets no new one, so revoked access ends an open editing session within five minutes. The same bound holds when a session ends, by a sign-out, a revocation or a stopped impersonation: no new token is minted for it, and its open sockets and earlier tokens lapse.
 
 ### Presence
 
 Cursors and selections are relayed between the editors of a document. A socket can announce only its own cursors, so nobody can move or remove someone else's, and a socket's cursors leave with it.
 
-Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS, so the relay passes on a cursor only when its colour is a hex colour and its name is short text; any other cursor reaches no peer. Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Authorship comes from the log: every update is stored under the user its token names, and materialization credits editors from there.
+Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS, so the relay passes on a cursor only when its colour is a hex colour and its name is short text; any other cursor reaches no peer. Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Every update is logged under the user its token names, and a save credits one editor per window: the newest who may still update the entity.
 
 ## Collab session lifecycle
 
