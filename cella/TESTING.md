@@ -33,7 +33,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Exhausting the server with shape:** a body, a field, a batch or a document larger than its cap, or input that makes a parser or a regex work out of proportion.
 - **Holding the stream open:** a stream that never reads, or one that connects across its user's removal, keeping the server's memory or the left organization's frames.
 
-Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required and bounded. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
+Rules for every route live in [route-guards.test.ts](../backend/tests/security/route-guards.test.ts). It reads its table from the generated OpenAPI document, so an app's routes are covered too. `request-bodies.test.ts` beside it checks that every request body is required, bounded and names no server-only column. An app tests its own entities in `*-app.test.ts` files. The backend suite also runs as `runtime_role` to exercise database policies.
 
 ## Running tests
 

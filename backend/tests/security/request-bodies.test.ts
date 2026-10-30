@@ -1,4 +1,6 @@
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
+import { auditColumns, tombstoneColumns } from '#/db/utils/audit-columns';
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
@@ -76,5 +78,45 @@ describe('request bodies', () => {
       }),
     );
     expect([...new Set(found)]).toEqual([]);
+  });
+
+  // A body that names a column the server owns reaches the row through a spread, so an update body built as
+  // `createInsertSchema(table).partial()` without a pick would let a caller move a row to another tenant or forge a writer.
+  // Fix: pick the fields a caller may send. Id columns stay open on POST bodies.
+  it('must not let any request body name a server-only column', async () => {
+    const { paths = {}, components } = await loadDocument();
+    const schemas: Record<string, SchemaNode> = components?.schemas ?? {};
+    const stamps = new Set([...Object.keys(auditColumns()), ...Object.keys(tombstoneColumns()), 'tenantId', 'seq']);
+    // A POST names ids as the home of a create (the placement keys) or as a selector (a catch-up or a presigned-url read).
+    const ids = new Set<string>(Object.values(appConfig.entityIdColumnKeys));
+
+    const named = (node: SchemaNode | undefined, seen: string[]): string[] => {
+      if (!node) return [];
+      if (node.$ref) {
+        const name = node.$ref.split('/').pop() ?? '';
+        return seen.includes(name) ? [] : named(schemas[name], [...seen, name]);
+      }
+      const record = typeof node.additionalProperties === 'object' ? node.additionalProperties : undefined;
+      return [
+        ...Object.keys(node.properties ?? {}),
+        ...named(node.items, seen),
+        ...named(record, seen),
+        ...Object.values(node.properties ?? {}).flatMap((child) => named(child, seen)),
+        ...[...(node.allOf ?? []), ...(node.anyOf ?? []), ...(node.oneOf ?? [])].flatMap((child) => named(child, seen)),
+      ];
+    };
+
+    const found = Object.values(paths).flatMap((item) =>
+      httpMethods.flatMap((method) => {
+        const operation = item[method];
+        const body = operation?.requestBody;
+        if (!operation || !body || '$ref' in body) return [];
+        const keys = Object.values(body.content).flatMap((content) => named(content.schema, []));
+        return [...new Set(keys)]
+          .filter((key) => stamps.has(key) || (ids.has(key) && method !== 'post'))
+          .map((key) => `${operation.operationId}: body property "${key}" is a server-only column, pick the fields a caller may send`);
+      }),
+    );
+    expect(found).toEqual([]);
   });
 });
