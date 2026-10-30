@@ -20,6 +20,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
 - **Reusing what should be dead:** a revoked session, a deleted account, a replayed OAuth code, an expired or out-of-scope token.
 - **Planting a sign-in address:** an invitation for an attacker's address, accepted by a signed-in victim, becoming a way to sign in to the victim's account.
+- **Acting through a stale tab:** an idle tab of one user replaying its queued writes after another user signs in on the same browser.
 - **Proving with a dead key:** a token signed by a retired signing key, by an attacker's key under the server's key id, or with no signature at all.
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.
 - **Assembling SQL from input:** a table name from a token, a sort key or a search pattern reaching SQL text.

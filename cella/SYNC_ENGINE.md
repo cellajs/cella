@@ -79,11 +79,11 @@ When an update moves a product to a path a subscriber can no longer read, that s
 
 ### Detail cache
 
-The server caches enriched product detail responses briefly. Every write of the row drops its entry, and every hit rechecks access. Lists bypass it.
+The server caches enriched product detail responses briefly. A write of the row drops its entry in the process that wrote and in the one the CDC worker reaches; another process serves the cached row until it expires, a deleted one included. Every hit rechecks the caller's access against the cached row. Lists bypass it.
 
 ## Access
 
-**Row readability** decides whether a user may fetch a row. List reads, range fetches, change frames and detail-cache hits all ask the permission engine about full rows. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
+**Row readability** decides whether a user may fetch a row. List reads, range fetches and change frames ask the permission engine about full rows, and a detail-cache hit about the row as it was cached. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
 **Summary answerability** decides whether a user may see a view's frontiers and counts. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
 

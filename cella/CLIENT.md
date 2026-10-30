@@ -93,7 +93,7 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `yDocs`, `yDocStates`, `yDocUpdates` | Collaborative documents the user opened for editing, so they open from storage and stay editable offline: a trimmed state plus the updates no server has confirmed yet. Old documents are evicted, never one with unsaved edits |
 | `unsaveableYDocs` | Edits that can no longer be saved (access lost, entity deleted), kept until the user copies or discards them |
 
-The database follows authentication, not routes: signing in binds it, sign-out deletes it (after asking when it holds edits no server has), and involuntary session loss only closes it, so offline work survives signing back in. Signing out in one tab signs out every tab of that user.
+The database follows authentication, not routes: signing in binds it, sign-out deletes it (after asking when it holds edits no server has), and involuntary session loss only closes it, so offline work survives signing back in. Signing out in one tab signs out every tab of that user. A tab whose signed-in user changes in another tab reloads before it resumes queued writes, and they stay on disk for their user's next session.
 
 ## Cold start to live
 
@@ -102,5 +102,5 @@ Boot order, cached data first:
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
 2. The app route waits until the per-user database is bound and its stores hydrated, sync cursor included.
 3. The persister restores the cache scope.
-4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it.
+4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it, and at once whenever the app comes back online or regains focus.
 5. Route loaders fill the current view. A background fill then loads each list not cached yet, the current organization's first, then the other organizations'. From then on catchup keeps them fresh.
