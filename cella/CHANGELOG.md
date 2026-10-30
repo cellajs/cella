@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.31.0](https://github.com/cellajs/cella/compare/0.30.0...0.31.0) (2026-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **frontend:** segmented control, docs operations search and access, chevrons that only toggle ([#1659](https://github.com/cellajs/cella/issues/1659))
+* security review fixes, batches 1 to 4 combined ([#1656](https://github.com/cellajs/cella/issues/1656))
+* **sso:** a federated address proves only its connection's domains ([#1641](https://github.com/cellajs/cella/issues/1641))
+* **auth:** one step-up code, one OAuth state cookie, known-browser cap ([#1642](https://github.com/cellajs/cella/issues/1642))
+* **memberships:** no grant outranks the role of whoever grants it ([#1644](https://github.com/cellajs/cella/issues/1644))
+* **backend:** caps on tenants per user and push subscriptions ([#1647](https://github.com/cellajs/cella/issues/1647))
+* **dev:** dev servers and database ports bind loopback ([#1649](https://github.com/cellajs/cella/issues/1649))
+* **attachments:** presigned non-media downloads, tokens need an org ([#1650](https://github.com/cellajs/cella/issues/1650))
+* **sync:** bounded clock skew, locked quotas, deletes carry their stx ([#1651](https://github.com/cellajs/cella/issues/1651))
+* **mail:** caps on security alerts, invitations per tenant and address ([#1652](https://github.com/cellajs/cella/issues/1652))
+* **infra:** one zone for the deploy path ([#1654](https://github.com/cellajs/cella/issues/1654))
+* **backend:** caps on bodies, stamps, batches, documents, SSE slots ([#1627](https://github.com/cellajs/cella/issues/1627))
+
+### 🎉 New features
+
+* **frontend:** segmented control, docs operations search and access, chevrons that only toggle ([#1659](https://github.com/cellajs/cella/issues/1659)) ([cb99d23](https://github.com/cellajs/cella/commit/cb99d237e6056615b090d6c999b5fda341b14898))
+
+
+### 🐞 Bug fixes
+
+* a tab reloads when another user signs in, caches last 10 s ([#1637](https://github.com/cellajs/cella/issues/1637)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **attachments:** presigned non-media downloads, tokens need an org ([#1650](https://github.com/cellajs/cella/issues/1650)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **auth:** accept TOTP one step either side, cap failures per 3 weeks ([#1640](https://github.com/cellajs/cella/issues/1640)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **auth:** an accepted invitation adds no address to the account ([#1634](https://github.com/cellajs/cella/issues/1634)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **auth:** one step-up code, one OAuth state cookie, known-browser cap ([#1642](https://github.com/cellajs/cella/issues/1642)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **auth:** sign-in answers alike whether an account holds the address ([#1648](https://github.com/cellajs/cella/issues/1648)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **auth:** step-up to end another session, sign-out writes first ([#1643](https://github.com/cellajs/cella/issues/1643)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **backend:** caps on bodies, stamps, batches, documents, SSE slots ([#1627](https://github.com/cellajs/cella/issues/1627)) ([99b66bb](https://github.com/cellajs/cella/commit/99b66bbbd0b82c8dbb8e4aab7bb5e29d2d177ca1))
+* **backend:** caps on tenants per user and push subscriptions ([#1647](https://github.com/cellajs/cella/issues/1647)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **backend:** every request string takes a length cap ([#1630](https://github.com/cellajs/cella/issues/1630)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **backend:** keep error causes, push endpoints and raw IPs out of logs ([#1633](https://github.com/cellajs/cella/issues/1633)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **backend:** pool error no longer ends the process, health stays cheap ([#1646](https://github.com/cellajs/cella/issues/1646)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **backend:** tunnel mode refuses to boot with the example secrets ([#1631](https://github.com/cellajs/cella/issues/1631)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **dev:** dev servers and database ports bind loopback ([#1649](https://github.com/cellajs/cella/issues/1649)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **frontend:** scroll helpers work under vitest, sidebar story keeps its rows in place ([#1660](https://github.com/cellajs/cella/issues/1660)) ([06f4dea](https://github.com/cellajs/cella/commit/06f4deac30b5c95c6b5dda3b4add5d94a10c5a4f))
+* **infra:** apply refuses while the database's public endpoint is open ([#1658](https://github.com/cellajs/cella/issues/1658)) ([cad8a2c](https://github.com/cellajs/cella/commit/cad8a2c576d560d2d54c8e03fb846c471992d03e))
+* **infra:** bases pinned by digest, CLI release-age exemption narrowed ([#1645](https://github.com/cellajs/cella/issues/1645)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **mail:** caps on security alerts, invitations per tenant and address ([#1652](https://github.com/cellajs/cella/issues/1652)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **mcp:** the challenge names read scopes, overwriting tools are destructive ([#1638](https://github.com/cellajs/cella/issues/1638)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **memberships:** no grant outranks the role of whoever grants it ([#1644](https://github.com/cellajs/cella/issues/1644)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* security review fixes, batches 1 to 4 combined ([#1656](https://github.com/cellajs/cella/issues/1656)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **sso:** a federated address proves only its connection's domains ([#1641](https://github.com/cellajs/cella/issues/1641)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **sync:** an echo needs the tab's user, edits skip a sent create ([#1653](https://github.com/cellajs/cella/issues/1653)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **sync:** bounded clock skew, locked quotas, deletes carry their stx ([#1651](https://github.com/cellajs/cella/issues/1651)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **sync:** stalled streams end at 64 KiB, connects recheck memberships ([#1636](https://github.com/cellajs/cella/issues/1636)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+* **yjs:** the relay refuses an awareness entry past its state cap ([#1629](https://github.com/cellajs/cella/issues/1629)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+
+
+### 🔧 Small improvements
+
+* **infra:** one identity plan for the apply and the deploy ([#1655](https://github.com/cellajs/cella/issues/1655)) ([399f884](https://github.com/cellajs/cella/commit/399f884dcf8fd441e86c08dd6b2d1660a4864392))
+* **infra:** one zone for the deploy path ([#1654](https://github.com/cellajs/cella/issues/1654)) ([0f8d7ff](https://github.com/cellajs/cella/commit/0f8d7ff868e1bbaf26ad49d05a261c708ec63c49))
+
+
+### 📖 Documentation
+
+* **infra:** match the infra docs and CLI messages to the code ([#1657](https://github.com/cellajs/cella/issues/1657)) ([9f51fde](https://github.com/cellajs/cella/commit/9f51fde653baaf8d4e1d41f0eb8aedff253e8a61))
+* the client address needs exactly one appending proxy ([#1632](https://github.com/cellajs/cella/issues/1632)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+
+
+### 🧪 Tests
+
+* **security:** no request body names a server-only column ([#1639](https://github.com/cellajs/cella/issues/1639)) ([df8a3d2](https://github.com/cellajs/cella/commit/df8a3d22bd3974bd75652afe385727de8fd1ade3))
+
 ## [0.30.0](https://github.com/cellajs/cella/compare/0.29.1...0.30.0) (2026-10-29)
 
 
