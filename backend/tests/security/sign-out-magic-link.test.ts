@@ -1,14 +1,14 @@
-import { confirmMagicLink, getPendingMagicLink, invokeToken, signOut } from 'sdk';
+import { confirmMagicLink, getPendingMagicLink, getTokenData, invokeToken, revokeMySessions, signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, cookieChange, cookiesAfter, createTestUser, expectRefusal, insertTestToken, tokenRow } from '../helpers';
+import { authCookie, cookieChange, cookiesAfter, createTestUser, expectRefusal, insertTestToken, sessionRow, tokenRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { insertSession } from './session-helpers';
+import { insertSession, sessionSetBy } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
 
@@ -22,7 +22,8 @@ const requestedMagicLink = async (user: { id: string; email: string }) => {
 
 /**
  * An opened magic link lets the browser that holds its single-use cookie back in for the rest of its window, without
- * any other proof. On a shared computer that browser serves the next person too, so signing out spends the link.
+ * any other proof. On a shared computer that browser serves the next person too, so signing out spends the link, and
+ * so does ending that session from another device.
  */
 describe('Sign-out after a magic-link sign-in', async () => {
   const call = await createAppClient();
@@ -81,6 +82,27 @@ describe('Sign-out after a magic-link sign-in', async () => {
     expect(cookieChange(reopened.response, 'session')).not.toBe('set');
   });
 
+  it('must not sign a browser in again from a magic link whose session was revoked', async () => {
+    const owner = await createTestUser(`revoked-elsewhere-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row, requestedHere } = await requestedMagicLink(owner);
+
+    // A shared computer opens the link; within its window the owner ends that session from the phone.
+    const opened = await openLink(raw, requestedHere);
+    expect(opened.response.status).toBe(302);
+    const sharedBrowser = cookiesAfter(requestedHere, opened.response);
+    const sharedSession = await sessionSetBy(opened.response);
+    const phone = await insertSession(owner);
+    const revoked = await call(revokeMySessions, { body: { ids: [sharedSession.id] }, headers: phone.headers });
+    expect(revoked.response.status).toBe(200);
+    expect(await sessionRow(sharedSession.id)).toMatchObject({ revocationReason: 'other_session' });
+    expect(await tokenRow(row.id)).toBeUndefined();
+
+    // The next person reopens the link from the history, with the single-use cookie and the ended session cookie.
+    const reopened = await openLink(raw, sharedBrowser);
+    await expectRefusal(reopened, 401, 'magic_not_found');
+    expect(cookieChange(reopened.response, 'session')).not.toBe('set');
+  });
+
   it('must not sign the next person in as the owner via a magic link held for confirmation at sign-out', async () => {
     const owner = await createTestUser(`held-link-${nanoid(6)}@security-test.com`.toLowerCase());
     const { raw, row } = await requestedMagicLink(owner);
@@ -126,5 +148,32 @@ describe('Sign-out after a magic-link sign-in', async () => {
     const reopened = await openLink(otherLink.raw, otherBrowser);
     expect(reopened.response.status).toBe(302);
     expect(reopened.response.headers.get('location')?.startsWith(appConfig.frontendUrl)).toBe(true);
+  });
+});
+
+/** An opened invitation names its address, organization and inviter to the browser holding its single-use cookie. */
+describe('Sign-out after opening an invitation', async () => {
+  const call = await createAppClient();
+
+  it('must delete the invitation cookie at sign-out', async () => {
+    const user = await createTestUser(`invitee-${nanoid(6)}@security-test.com`.toLowerCase());
+    const singleUse = nanoid(40);
+    const { row } = await insertTestToken('invitation', { email: user.email }, { openedWith: singleUse });
+    const session = await insertSession(user);
+    const browser = `${session.cookie}; ${authCookie('invitation', singleUse)}`;
+    const readInvitation = (cookie: string) =>
+      call(getTokenData, { path: { type: 'invitation', id: row.id }, headers: { ...defaultHeaders, Cookie: cookie } });
+
+    // Positive control: until sign-out this browser reads the invitation.
+    const before = await readInvitation(browser);
+    expect(before.response.status).toBe(200);
+    expect(before.data).toMatchObject({ email: user.email });
+
+    const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: browser } });
+    expect(signedOut.response.status).toBe(204);
+    expect(cookieChange(signedOut.response, 'invitation')).toBe('cleared');
+
+    // The next person at the browser holds no cookie that opens it.
+    await expectRefusal(await readInvitation(cookiesAfter(browser, signedOut.response)), 401, 'invitation_not_found');
   });
 });

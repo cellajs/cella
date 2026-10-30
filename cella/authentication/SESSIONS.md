@@ -14,6 +14,10 @@ ones a click from a mail or a provider's callback must carry are Lax.
 
 An ended session keeps its row for the sessions list, stamped with who ended it and why: a sign-out, an end from another session, turning MFA on, a newer sign-in in the same browser, the session cap, or a stopped impersonation. Its app streams (SSE) close at once. Its collaborative editor sockets, and the editor tokens minted before the end, lapse within five minutes, the lifetime of an editor token.
 
+Ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-up), so a copied cookie cannot end each new sign-in of the owner; signing out asks nothing. A sign-out, an end from another session and turning MFA on also delete the account's opened magic link, so the browser that opened it cannot sign in again from its history.
+
+A sign-out ends the session and what the browser holds of a sign-in in progress before it clears any cookie. It also clears an opened invitation, so the next person at the browser cannot read it; an invitee who signs out to answer with another account asks for a new link. A sign-out that fails leaves the browser signed in with all its cookies, and the sign-out page says so and offers to try again.
+
 A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone, since any other 401 refuses a proof while signed in.
 
 ## Devices

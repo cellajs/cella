@@ -47,7 +47,7 @@ One module, `auth/tokens/`, issues, opens and spends every token, with one polic
 | `oauth-connect` | cookie | Connecting a provider account to the signed-in account | minutes |
 | `step-up` | code | Proving presence again with an emailed code | minutes |
 
-Opening a link redeems it: the first redemption wins, and the token then works once, for a short while, in that browser alone. A token or code issued for a session serves that session alone and dies with it.
+Opening a link redeems it: the first redemption wins, and the token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
 
 A magic link signs in directly only in the browser that asked for it. Opened anywhere else, the link is held and the holder confirms on a page that names the address: a link planted in someone's browser, or fetched by a mail scanner, signs nobody in and is not used up. A link of another account than the one signed in is refused, and an expired one leads to an error page that offers a new link.
 
@@ -66,10 +66,10 @@ An account-security action needs more than a session: the session must have prov
 | Action | Holds a passkey or TOTP | No factor, recent sign-in | No factor, older sign-in |
 | --- | --- | --- | --- |
 | Mint an API key, create or re-enable a service account, consent to an OAuth client | factor | set up a factor | set up a factor |
-| Set up a passkey or authenticator app, connect a provider, delete the account | factor | passes | emailed code |
+| Set up a passkey or authenticator app, connect a provider, end another session, delete the account | factor | passes | emailed code |
 | Delete a passkey or the authenticator app, turn MFA on or off | factor | | |
 
-Revoking a key, a session or a connected app, disabling a service account and leaving an organization need no step-up.
+Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
 - **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA.
 - **Set up a factor**: the dialog offers to add a passkey or an authenticator app. Setting it up proves it on the session, so the action runs right after.

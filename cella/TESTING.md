@@ -22,6 +22,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Planting a sign-in address:** an invitation for an attacker's address, accepted by a signed-in victim, becoming a way to sign in to the victim's account.
 - **Acting through a stale tab:** an idle tab of one user replaying its queued writes after another user signs in on the same browser.
 - **Over-asking for scope:** an MCP client that starts with write scopes because the server named none.
+- **Holding a stolen session:** a copied cookie ending the owner's new sign-ins, a sign-out that fails quietly, a link reopened after its session ended.
 - **Proving with a dead key:** a token signed by a retired signing key, by an attacker's key under the server's key id, or with no signature at all.
 - **Claiming an address through a federation:** an institution's identity provider releasing an address outside its domains, collecting that address's invitations.
 - **Steering the app with input:** open redirects, unregistered redirect URIs, unsafe URLs in content.

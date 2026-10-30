@@ -12,6 +12,7 @@ import { type CodeTokenType, type CookieTokenType, type LinkTokenType, tokenPoli
 import type { InsertTokenModel } from '#/modules/auth/tokens/tokens-db';
 import {
   deleteBoundToken,
+  deleteOpenedLinkTokens,
   deleteReplacedTokens,
   deleteSessionCodeToken,
   findBoundToken,
@@ -279,10 +280,11 @@ export const spendCodeToken = async (opts: SpendCodeTokenOpts): Promise<TokenRec
 
 /**
  * When the spend deletes this browser's cookie. `now`: the spend runs on the pool and is final at once. `after-commit`:
- * the spend runs in the caller's transaction, final only at its commit, so the cookie is the caller's to delete then;
- * a rollback leaves the browser its token for the next attempt.
+ * the spend runs in `txCtx`, the caller's transaction (the pool when left out), and the cookie is the caller's to delete
+ * once the spend and every write it goes with committed; a failure before leaves the browser its token for the next
+ * attempt.
  */
-type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-commit'; txCtx: DbContext };
+type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-commit'; txCtx?: DbContext };
 
 /**
  * Spends the token this browser's cookie of `type` binds it to: deletes its row and, with `deleteCookie: 'now'`, the
@@ -298,7 +300,7 @@ export const spendCookieToken = async (
   type: TokenType,
   opts: SpendCookieTokenOpts = { deleteCookie: 'now' },
 ): Promise<TokenRecord | null> => {
-  const spendCtx = opts.deleteCookie === 'after-commit' ? opts.txCtx : dbCtx;
+  const spendCtx = opts.deleteCookie === 'after-commit' ? (opts.txCtx ?? dbCtx) : dbCtx;
   const cookie = getAuthCookie(ctx, type);
   if (opts.deleteCookie === 'now') deleteAuthCookie(ctx, type);
   if (!cookie) return null;
@@ -308,3 +310,10 @@ export const spendCookieToken = async (
   if (spent.sessionId && !(await findLiveSession(spendCtx, { id: spent.sessionId }))) return null;
   return spent;
 };
+
+/**
+ * Deletes the user's opened magic link, so the browser that opened it cannot sign in from it again within its
+ * single-use window: for a session end where the person leaves. An account holds one magic link at a time, as a new one
+ * replaces the older, so this is the link any session of the user may have come from.
+ */
+export const deleteOpenedMagicLink = (ctx: DbContext, userId: string) => deleteOpenedLinkTokens(ctx, { type: 'magic', userId });

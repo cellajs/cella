@@ -705,6 +705,7 @@
   "sign_in_with_your_institution": "Sign in with your institution",
   "sign_out": "Sign out",
   "sign_out_anyway": "Sign out anyway",
+  "sign_out_failed": "Sign-out failed: you are still signed in on this device.",
   "sign_out_others": "Sign out other sessions",
   "sign_out_unsaved.text": "Signing out discards these edits. Edits not saved yet still save while this page stays open, and sign-out then continues by itself.",
   "sign_up": "Sign up",

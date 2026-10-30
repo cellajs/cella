@@ -4,6 +4,7 @@ import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
 import type { SessionEndReason, SessionModel, SessionType } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
+import { deleteOpenedMagicLink } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteProviderSessionsByUser } from '#/modules/oauth-server/oauth-server-queries';
 import { log } from '#/utils/logger';
 
@@ -12,10 +13,11 @@ type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionTy
 
 /**
  * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on): the authorization
- * server's sessions of the user are deleted too, so no browser keeps answering OAuth clients for them. Sign-in
+ * server's sessions of the user are deleted too, so no browser keeps answering OAuth clients for them, and so is the
+ * user's opened magic link, so the browser that opened it cannot sign in again from its history. Sign-in
  * housekeeping and a stopped impersonation leave them.
  */
-const deletesProviderSessions = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
+const leavingReasons = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
 
 type RevokeSessionsOpts = SessionSelection & {
   userId: string;
@@ -56,7 +58,10 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
       ? await updateSessionsRevoked(txCtx, { match: { impersonatorSessionIds: endedIds }, revokedBy: by, revocationReason: 'impersonation_stopped' })
       : [];
 
-    if (deletesProviderSessions.has(reason)) await deleteProviderSessionsByUser(txCtx, { userId });
+    if (leavingReasons.has(reason)) {
+      await deleteProviderSessionsByUser(txCtx, { userId });
+      await deleteOpenedMagicLink(txCtx, userId);
+    }
     return { ended: stamped, layered: stopped };
   });
 

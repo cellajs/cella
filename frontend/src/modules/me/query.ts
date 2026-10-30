@@ -282,12 +282,15 @@ export const useRevokeConnectedAppMutation = () =>
     },
   });
 
-/** Revokes sessions by id; each cached session takes the server's revoked row, so it moves to the history. */
+/**
+ * Revokes sessions by id, after a step-up when another session is among them; each cached session takes the server's
+ * revoked row, so it moves to the history.
+ */
 export const useRevokeSessionsMutation = () =>
   useMutation<RevokeMySessionsResponse['data'], ApiError, string[]>({
     mutationKey: meKeys.delete.sessions,
     mutationFn: async (ids) => {
-      const { data } = await revokeMySessions({ body: { ids } });
+      const { data } = await withStepUp(() => revokeMySessions({ body: { ids } }));
       return data;
     },
     onSuccess: (revoked) => {
