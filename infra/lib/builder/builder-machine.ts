@@ -72,8 +72,10 @@ unset REPO_KEY
 git -C /build checkout -q FETCH_HEAD
 
 printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
-# A BuildKit container: the docker driver writes no layer cache to a registry.
-docker buildx create --use --name release --driver docker-container >/dev/null
+# A BuildKit container: the docker driver writes no layer cache to a registry. Its image by digest, as it runs every build and pushes with the
+# builder key: a BuildKit bump takes the index digest that 'docker buildx imagetools inspect moby/buildkit:<version>' prints.
+docker buildx create --use --name release --driver docker-container \
+  --driver-opt image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea >/dev/null
 
 step build
 # The frontend builds on a copy made before anything runs: the app's dependencies reach neither the images' source nor the boot bundle.

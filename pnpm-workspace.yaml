@@ -18,7 +18,8 @@ ignoredOptionalDependencies:
 # A version installs a day after its publish (supply-chain guard), so a release that needs a new create-cella waits for it
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@cellajs/cli'
+  # Only the CLI version a release needs before its day is up: the entry is removed, or bumped when a release needs another.
+  - '@cellajs/cli@0.6.0'
 overrides:
   # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
   '@blocknote/shadcn>lucide-react': ^1.59.0

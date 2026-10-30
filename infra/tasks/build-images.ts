@@ -1,3 +1,4 @@
+import { pinnedNodeImage } from '../lib/deploy/node-image';
 import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { parseServiceRows } from '../lib/utils/service-rows';
 
@@ -22,7 +23,7 @@ export interface BakeOptions {
   releaseSha: string;
   /** The build epoch: a second tag on every image, which says it was built under the current builder key. */
   epoch: string;
-  /** The root package.json `engines.node`: the Node every image's `FROM` uses. */
+  /** The root package.json `engines.node`: every image's `FROM` takes the `node` image at it by digest, as `NODE_IMAGE`. */
   nodeVersion: string;
   /** Path of the build context relative to the bake process cwd (the repo root). */
   context?: string;
@@ -52,7 +53,7 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
       dockerfile: row.dockerfile,
       ...(row.target ? { target: row.target } : {}),
       tags: tags(row.service),
-      args: { RELEASE_SHA: opts.releaseSha, NODE_VERSION: opts.nodeVersion },
+      args: { RELEASE_SHA: opts.releaseSha, NODE_IMAGE: pinnedNodeImage(opts.nodeVersion, 'alpine') },
       ...cache(row.service),
     };
   }
@@ -60,7 +61,7 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
     tags: tags(BOOT_IMAGE_NAME),
-    args: { NODE_VERSION: opts.nodeVersion },
+    args: { NODE_IMAGE: pinnedNodeImage(opts.nodeVersion, 'bookworm-slim') },
     ...cache(BOOT_IMAGE_NAME),
   };
   const services = rows.map((row) => row.service);
