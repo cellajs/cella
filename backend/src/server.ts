@@ -7,6 +7,14 @@ import { healthApp } from '#/lib/health';
 import '#/lib/lens-telemetry'; // registers doba lens otel hooks
 import { app as middlewares } from '#/middlewares/app';
 
+/** The path prefixes the load balancer keeps on same-origin requests, each stripped once before routing. */
+const mountedPrefixes = ['/api', '/mcp'];
+
+/** The Fetch standard's forbidden methods: `new Request` throws on them, and no route serves them. */
+const forbiddenMethods = new Set(['CONNECT', 'TRACE', 'TRACK']);
+
+const startsWithMountedPrefix = (path: string) => mountedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+
 /**
  * Serves a path prefix by redispatching each request under it through the app, with the prefix off its path. The
  * request is rebuilt from named fields. `mount()`'s own `new Request(url, request)` reads the request as a
@@ -15,12 +23,18 @@ import { app as middlewares } from '#/middlewares/app';
  * `Request`.
  * @param app - The app that serves the prefix and takes the redispatch.
  * @param prefix - The path prefix to strip, such as `/api`.
+ * @throws AppError 404 `route_not_found` for a path still under a mounted prefix after the strip, so a request
+ *   redispatches once at most, and for a forbidden method.
  */
 function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
   app.mount(prefix, (request, env, executionCtx) => app.fetch(request, env, executionCtx), {
     replaceRequest: (request) => {
+      const path = app.getPath(request).slice(prefix.length) || '/';
+      if (startsWithMountedPrefix(path) || forbiddenMethods.has(request.method.toUpperCase())) {
+        throw new AppError(404, 'route_not_found', 'warn');
+      }
       const url = new URL(request.url);
-      url.pathname = app.getPath(request).slice(prefix.length) || '/';
+      url.pathname = path;
       // A stream body needs `duplex`, which the lib's `RequestInit` leaves out.
       const init: RequestInit & { duplex?: 'half' } = { method: request.method, headers: request.headers, signal: request.signal };
       if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -39,9 +53,7 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
 export function createBaseApp() {
   const app = new OpenAPIHono<Env>();
 
-  // The load balancer preserves same-origin `/api` and `/mcp` prefixes; the redispatch strips them.
-  mountPrefix(app, '/api');
-  mountPrefix(app, '/mcp');
+  for (const prefix of mountedPrefixes) mountPrefix(app, prefix);
 
   app.get('/favicon.ico', (ctx) => ctx.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
 

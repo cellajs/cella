@@ -50,7 +50,7 @@
   "email.hi": "Hi {{name}},",
   "email.invitation_address.preview": "Confirm this address to join {{entityName}}",
   "email.invitation_address.subject": "Confirm your address to join {{entityName}} on {{appName}}",
-  "email.invitation_address.text": "You asked to join <strong>{{entityName}}</strong> on {{appName}} as {{accountEmail}}, with an invitation sent to this address. Open the link in the browser you are signed in with to confirm this address is yours: it is then added to your account.",
+  "email.invitation_address.text": "You asked to join <strong>{{entityName}}</strong> on {{appName}} as {{accountEmail}}, with an invitation sent to this address. Open the link in the browser you are signed in with to confirm this address is yours and join. This address is not added to your account.",
   "email.invitation_address.title": "Confirm this address to join <strong>{{entityName}}</strong>",
   "email.link_expires": "This link expires in {{duration}}.",
   "email.magic_link.preview": "Your link to sign in. Ignore this email if you did not ask for it.",
