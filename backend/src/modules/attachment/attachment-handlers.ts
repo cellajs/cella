@@ -47,8 +47,8 @@ app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
-  const { ids } = ctx.req.valid('json');
-  const result = await deleteAttachmentsOp(ctx, ids);
+  const { ids, stx } = ctx.req.valid('json');
+  const result = await deleteAttachmentsOp(ctx, ids, stx);
   return ctx.json(result, 200);
 });
 

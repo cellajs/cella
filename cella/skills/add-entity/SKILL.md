@@ -83,11 +83,11 @@ and the renderers.
 - `operations/`, one file per operation:
   - **Create** (`create-attachments.ts`): normalize each item with `<name>Contract.normalizeCreateItem`.
     `checkIdempotency(ctx, <name>sTable, ids)` runs first, and only the items it did not return go on:
-    the quota (`countTenantEntityRows`, `assertTenantQuota`), then per item `assertBlockFields`,
-    `resolvePlacement` (its `columns` on the row, `public` copied from the home channel) and
-    `canCreateEntity(ctx, buildSubjectFromEntity('<name>', row))`. The insert and
-    `dispatchMutation(txCtx, '<name>.created', { after })` share one `tenantContext`. The answer holds
-    the rows and `rejectedIds`, and is 201 only when this request inserted a row.
+    per item `assertBlockFields`, `resolvePlacement` (its `columns` on the row, `public` copied from
+    the home channel) and `canCreateEntity(ctx, buildSubjectFromEntity('<name>', row))`. The insert runs
+    through `insertWithinTenantQuota(txCtx, '<name>', insert)`, which checks the tenant quota under a
+    lock, and shares one `tenantContext` with `dispatchMutation(txCtx, '<name>.created', { after })`.
+    The answer holds the rows and `rejectedIds`, and is 201 only when this request inserted a row.
   - **Update**: `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })` inside the write
     transaction, so the merge starts from a locked row; `assertBlockFields` on the ops.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`.
@@ -99,7 +99,9 @@ and the renderers.
     a range read: a row that leaves the filter would never reach the caches. The rows go out through
     `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and
     the route declares the page with `productListResponseSchema('<name>', <name>Schema)`.
-  - **Delete** (`delete-attachments.ts`) and the single read (`get-attachment.ts`).
+  - **Delete** (`delete-attachments.ts`): the soft delete stores the body's `stx` ids, or a
+    `createServerStx()` without one, through `stripChangedFields(<name>sTable.stx, stx)`.
+  - **Single read** (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })`, every route with

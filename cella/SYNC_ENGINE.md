@@ -144,7 +144,7 @@ A product mutation patches the cache optimistically and reconciles with the stor
 
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field: deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
-An online write is ordered by arrival: the server stamps it with a fresh server HLC, so a device clock that runs behind cannot lose an edit. A replayed offline write keeps its client timestamps, its intent time, so it loses to an edit made elsewhere while it was queued. Its losing fields are skipped and the server returns the stored row, never a conflict response.
+An online write is ordered by arrival: the server stamps it with a fresh server HLC, so a device clock that runs behind cannot lose an edit. A replayed offline write keeps its client timestamps, its intent time, so it loses to an edit made elsewhere while it was queued. Its losing fields are skipped and the server returns the stored row, never a conflict response. A timestamp further ahead of the server's clock than a short bound moves no clock and loses to the next write of its field, so one request cannot outrank every later edit.
 
 ### Paused writes
 

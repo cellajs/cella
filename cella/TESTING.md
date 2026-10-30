@@ -33,6 +33,7 @@ A security test acts as the attacker. It signs in as one user, tries something t
 - **Booting with published secrets:** a tunnel reachable from the internet that signs cookies and relay tokens with the values in `.env.example`.
 - **Probing for accounts:** a provider callback, a sign-in form or a waitlist that answers differently, or slower, when an account holds the address.
 - **Reading what was deleted:** a range read or a catch-up returning a deleted row's content to a reader who never saw it live.
+- **Bending the shared clock:** a stamp far in the future, or at the counter's maximum, sent to make other tenants' writes lose or fail.
 - **Rendering what a user typed:** a name parsed as markup, a spreadsheet formula in an export, a co-editor's style in presence.
 - **Guessing a second factor slowly:** TOTP codes tried at the pace the lockout allows, for as long as it takes.
 - **Serving a page from storage:** an uploaded HTML file opened from a presigned link, or uploads that no row can ever name.
