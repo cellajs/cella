@@ -6,10 +6,10 @@ import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, 
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { appPrincipalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
-import { environments } from '../lib/stack/project-per-mode';
+import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { dropPromptOnlyEnv, loadBaseEnvFiles, writeModeEnvValues } from '../lib/utils/env-files';
+import { dropPromptOnlyEnv, loadBaseEnvFiles, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { within } from '../lib/utils/retry';
@@ -105,15 +105,19 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
  */
 async function loadContext(environment: Environment, log?: (message: string) => void): Promise<InfraContext> {
   const stack = await loadStackContext(environment, log);
-  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to infra/.env.<mode>.
+  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes it to the stack file.
   if (!stack.projectId && stack.state !== 'fresh') {
-    throw new Error(`SCW_PROJECT_ID is not set: add this environment's project id to infra/.env.${environment} before running the infra CLI.`);
+    throw new Error(
+      `infra/Pulumi.${environment}.yaml names no project: add this environment's project id under config, as infra:projectId, before running the infra CLI.`,
+    );
   }
-  // An existing stack that still reads its project from backend/.env takes the id into its own file, where every environment keeps it.
-  if (stack.projectIdSource === 'shared-file') {
-    writeModeEnvValues(environment, { SCW_PROJECT_ID: stack.projectId });
-    log?.(`SCW_PROJECT_ID copied to infra/.env.${environment}: every environment keeps its project id in its own file.`);
+  // An existing stack whose project an env file still names moves it to the stack file, which every checkout has.
+  if (stack.projectIdSource === 'env-file' && stack.stackYaml) {
+    writeStackFileProjectId(environment, stack.projectId);
+    log?.(`The project id moved to infra/Pulumi.${environment}.yaml: commit that file.`);
   }
+  // A stack file that came with a pull names the project already: the env file's copy goes.
+  if (stack.projectIdSource === 'stack-file') removeModeProjectId(environment);
   const context = { ...stack, hasCiKey: stack.state === 'bootstrapped' };
   // An existing stack keeps its passphrase in Secret Manager: reading it unlocks the session with the operator key, so nobody types it.
   setPassphraseCustody(undefined);

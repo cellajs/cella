@@ -21,7 +21,7 @@ Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the install wizard; on a
    brew install pulumi/tap/pulumi
    ```
 
-3. A Scaleway project per environment (optional): without `SCW_PROJECT_ID` in `infra/.env.<mode>`, the wizard picks or creates one and writes its id there. Each environment needs a project of its own.
+3. A Scaleway project per environment (optional): the wizard picks or creates one and writes its id to `infra/Pulumi.<mode>.yaml`. Each environment needs a project of its own.
 4. A fixed public IPv4 address to work from, such as an office line or a VPN exit, and a password manager. Scaleway accepts the operator key the wizard makes from that address only, and the key is shown once.
 5. The root `package.json`'s `repository` set to the https URL of the app's repository, which create-cella leaves empty: every deploy fetches its commit from there.
 

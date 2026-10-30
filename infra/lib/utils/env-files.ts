@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { infraDir } from './paths';
 
@@ -32,10 +32,18 @@ export function sharedFileProjectId(): string | undefined {
   return undefined;
 }
 
-/** The project id a mode's own env file names: every environment has a project of its own, and this is where its id lives. */
+/** The project id a mode's env file still names: the CLI moves it to the mode's stack file. */
 export function ownProjectId(mode: string): string | undefined {
   const path = modeEnvPath(mode);
   return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
+}
+
+/** Take the project id out of a mode's env file, once the stack file holds it; a file left with no line is deleted. */
+export function removeModeProjectId(mode: string): void {
+  if (!ownProjectId(mode)) return;
+  const path = modeEnvPath(mode);
+  writeEnvValues(path, {}, { remove: ['SCW_PROJECT_ID'] });
+  if (readFileSync(path, 'utf8').trim() === '') rmSync(path);
 }
 
 /** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key is written. */
@@ -157,7 +165,7 @@ export function writeEnvValues(path: string, values: Record<string, string>, opt
 }
 
 /** Write values into `infra/.env.<mode>`, the file `loadModeEnvFile` reads; `remove` drops superseded names. */
-export function writeModeEnvValues(
+function writeModeEnvValues(
   mode: string,
   values: Record<string, string>,
   opts: { remove?: readonly string[] } = {},

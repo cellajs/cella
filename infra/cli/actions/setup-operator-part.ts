@@ -14,6 +14,7 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
 import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
+import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -251,6 +252,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   } else {
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
   }
+  writeStackFileProjectId(environment, projectId);
 
   // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
   if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
