@@ -6,7 +6,7 @@ import { mockPastIsoDate } from '#/mocks';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, createTestUser, rawJsonRequest, sentMails } from '../helpers';
+import { createTestOrganization, createTestUser, endRateLimitWindows, rawJsonRequest, sentMails } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -106,6 +106,8 @@ describe('Pending invitations list', async () => {
     const { items } = await listPending(inviter);
     const byEmail = new Map(items.map((item) => [item.email, item.id]));
 
+    // A day after the invitations, so the resends mail.
+    await endRateLimitWindows('invitationMailAddress');
     const toAccount = await resend(byEmail.get(accountAlternate) ?? '');
     const toNewcomer = await resend(byEmail.get(newcomer) ?? '');
     expect(toAccount.response.status).toBe(204);

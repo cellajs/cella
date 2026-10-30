@@ -1,14 +1,20 @@
-import { getRequests } from 'sdk';
+import { getRequests, getTenants } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { createTenant } from '#/modules/tenants/operations/create-tenant';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createTestSession, createTestUser, mailsTo } from '../helpers';
+import { createTestSession, createTestUser, endRateLimitWindows, mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase } from '../test-utils';
+
+// Other files in the worker refuse non-admins too, and each refusal counts toward the hourly ceiling.
+beforeEach(async () => {
+  await endRateLimitWindows('securityInboxMailUser');
+  await endRateLimitWindows('securityInboxMailType');
+});
 
 afterEach(async () => {
   await clearDatabase();
@@ -35,6 +41,27 @@ describe('security inbox mails', async () => {
         details: { ip: expect.any(String), route: '/requests' },
       },
     ]);
+  });
+
+  it("must mail the security inbox at most once per hour for one user's refused system-route calls", async () => {
+    const user = await createTestUser(signUpUser.email);
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+
+    const refusals = [await call(getRequests, { headers }), await call(getTenants, { headers }), await call(getRequests, { headers })];
+
+    // Every call is refused and logged; the inbox hears of the user once.
+    expect(refusals.map(({ response }) => response.status)).toEqual([403, 403, 403]);
+    expect(inboxMails()).toHaveLength(1);
+  });
+
+  it('must not mail the security inbox past its hourly ceiling, however many accounts are refused', async () => {
+    for (let index = 0; index <= 20; index++) {
+      const user = await createTestUser(`ceiling-${index}@example.com`);
+      const { response } = await call(getRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
+      expect(response.status).toBe(403);
+    }
+
+    expect(inboxMails()).toHaveLength(20);
   });
 
   it('reports a new tenant', async () => {

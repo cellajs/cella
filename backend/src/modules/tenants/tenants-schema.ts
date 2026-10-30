@@ -17,6 +17,11 @@ const rateLimitsSchema = z.object({
     .int()
     .min(0)
     .describe('Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)'),
+  invitationMailsPerDay: z
+    .number()
+    .int()
+    .min(0)
+    .describe('Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)'),
 });
 
 const quotasSchema = z
@@ -56,7 +61,7 @@ const partialRestrictionsSchema = z
       .optional()
       .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)'),
     allowUnregisteredClients: z.boolean().optional(),
-    rateLimits: z.object({ apiPointsPerHour: z.number().int().min(0).optional() }).optional(),
+    rateLimits: rateLimitsSchema.partial().optional(),
   })
   .describe('Partial restrictions override');
 

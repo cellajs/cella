@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ALTER COLUMN "restrictions" SET DEFAULT '{"quotas":{"user":1000,"organization":1,"attachment":100,"serviceAccount":20,"apiKey":100},"rateLimits":{"apiPointsPerHour":1000,"invitationMailsPerDay":250},"allowUnregisteredClients":true}';

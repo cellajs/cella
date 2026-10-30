@@ -125,6 +125,8 @@ export interface RetentionConfig {
   requestDays: number;
   /** Rejected join requests, and invitations after their last mail; a held invitation goes with its draft channel. */
   invitationDays: number;
+  /** A declined invitation, from the decline: no invite opens it again or mails its address. At most `invitationDays`. */
+  declinedInvitationHoldDays: number;
   rateLimitDaysAfterWindow: number;
   pushSubscriptionDaysUnseen: number;
 }
@@ -263,7 +265,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
-    rateLimits: { apiPointsPerHour: number };
+    /** API points per hour per actor; invitation mails per day the tenant sends, new, reminded and reopened alike. 0 lifts either. */
+    rateLimits: { apiPointsPerHour: number; invitationMailsPerDay: number };
   };
   retention: RetentionConfig;
 

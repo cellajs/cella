@@ -491,6 +491,10 @@ export type Tenant = {
        * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
        */
       apiPointsPerHour: number;
+      /**
+       * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+       */
+      invitationMailsPerDay: number;
     };
     /**
      * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
@@ -684,7 +688,7 @@ export type InviteOutcome = {
    */
   email: string;
   /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
    */
   outcome: 'invite' | 'remind' | 'add' | 'member';
   invitedAt?: string;
@@ -3834,7 +3838,14 @@ export type UpdateTenantData = {
       };
       allowUnregisteredClients?: boolean;
       rateLimits?: {
+        /**
+         * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
+         */
         apiPointsPerHour?: number;
+        /**
+         * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
+         */
+        invitationMailsPerDay?: number;
       };
     };
   };

@@ -2096,9 +2096,14 @@
                     "type": "integer",
                     "minimum": 0,
                     "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                  },
+                  "invitationMailsPerDay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
                   }
                 },
-                "required": ["apiPointsPerHour"]
+                "required": ["apiPointsPerHour", "invitationMailsPerDay"]
               },
               "allowUnregisteredClients": {
                 "type": "boolean",
@@ -2207,7 +2212,8 @@
               "apiKey": 100
             },
             "rateLimits": {
-              "apiPointsPerHour": 1000
+              "apiPointsPerHour": 1000,
+              "invitationMailsPerDay": 250
             },
             "allowUnregisteredClients": true
           },
@@ -2958,7 +2964,7 @@
           "outcome": {
             "type": "string",
             "enum": ["invite", "remind", "add", "member"],
-            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out."
+            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out."
           },
           "invitedAt": {
             "type": "string"
@@ -8215,7 +8221,8 @@
                           "apiKey": 100
                         },
                         "rateLimits": {
-                          "apiPointsPerHour": 1000
+                          "apiPointsPerHour": 1000,
+                          "invitationMailsPerDay": 250
                         },
                         "allowUnregisteredClients": true
                       },
@@ -8255,7 +8262,8 @@
                           "apiKey": 100
                         },
                         "rateLimits": {
-                          "apiPointsPerHour": 1000
+                          "apiPointsPerHour": 1000,
+                          "invitationMailsPerDay": 250
                         },
                         "allowUnregisteredClients": true
                       },
@@ -8472,7 +8480,13 @@
                         "properties": {
                           "apiPointsPerHour": {
                             "type": "integer",
-                            "minimum": 0
+                            "minimum": 0,
+                            "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
+                          },
+                          "invitationMailsPerDay": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
                           }
                         }
                       }
@@ -12006,7 +12020,7 @@
         "operationId": "membershipInvite",
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
-        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
+        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -13267,7 +13281,7 @@
         "operationId": "resendPendingInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
-        "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+        "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -13332,7 +13346,7 @@
         "operationId": "withdrawPendingInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Withdraw pending invitation",
-        "description": "Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.",
+        "description": "Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

@@ -2,6 +2,7 @@ import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query
 import { t } from 'i18next';
 import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership, withdrawPendingInvitation } from 'sdk';
+import { declineHolds } from 'shared/decline-hold';
 import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
@@ -93,7 +94,9 @@ export const useInviteMemberMutation = () =>
     onSuccess: ({ data, outcomes }, { channel }) => {
       const { id: entityId, entityType, organizationId } = channel;
       // New invitations, and declined ones that opened again, are pending now; members added at once are not
-      const pendingAdded = outcomes.filter(({ outcome, declinedAt }) => outcome === 'invite' || (outcome === 'remind' && declinedAt)).length;
+      const pendingAdded = outcomes.filter(
+        ({ outcome, declinedAt }) => outcome === 'invite' || (outcome === 'remind' && !!declinedAt && !declineHolds(declinedAt)),
+      ).length;
       if (!pendingAdded && !data.length) return;
 
       if (pendingAdded) {

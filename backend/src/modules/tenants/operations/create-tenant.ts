@@ -13,8 +13,8 @@ export async function createTenant(
 
   log.info('Tenant auto-created', { tenantId: tenant.id, name, createdBy });
 
-  // Fire-and-forget security notification to sysadmin
-  sendSecurityInboxEmail('tenant-created', { tenantName: name, userEmail });
+  // Any signed-in user creates tenants, so the notice is throttled per creator.
+  await sendSecurityInboxEmail('tenant-created', { tenantName: name, userEmail }, createdBy);
 
   return tenant;
 }

@@ -7,6 +7,7 @@ import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpe
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
 import { findInactiveMembershipInOrg, stampInactiveMembershipsReminded } from '#/modules/memberships/inactive-memberships-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
+import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { findUserById } from '#/modules/user/user-queries';
 import { getValidChannel } from '#/permissions';
 import type { EntityModel } from '#/tables';
@@ -17,7 +18,8 @@ import { log } from '#/utils/logger';
  * Resends the invitation email for a pending membership, named by the pending row's own id; the caller needs `update`
  * on the invited channel. Every pending invitation answers 204 alike: one holding a token gets a fresh link that retires
  * the older ones, one without (sent to an address an account held) gets its invitation email again, and a held one
- * stays held until its channel is published. A missing, foreign or rejected row is 404.
+ * stays held until its channel is published. An address the tenant mailed in the last day gets nothing, and its link
+ * keeps working. A missing, foreign or rejected row is 404; past the tenant's daily mails, 429.
  */
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const invitation = await findInactiveMembershipInOrg(ctx, { id });
@@ -27,6 +29,9 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
 
   // The publish of its channel sends a held invitation; a resend before it would let the invitee into the draft.
   if (isHeldInvitation(invitation.channelType, entity, invitation.role)) return;
+
+  const heldBack = await takeInvitationMails(ctx, { mailNow: [invitation.email] });
+  if (heldBack.size) return;
 
   const token = await findInvitationToken(ctx, { inactiveMembershipId: invitation.id });
   if (!token) return remindInvitee(ctx, invitation, entity);

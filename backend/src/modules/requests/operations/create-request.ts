@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
-import { getRateLimiterInstance, subjectSegment } from '#/middlewares/rate-limiter/helpers';
+import { getRateLimiterInstance, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { sendMatrixMessage } from '#/modules/requests/helpers/send-matrix-message';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import type { requestCreateBodySchema } from '#/modules/requests/requests-schema';
@@ -10,8 +10,10 @@ import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../../../../emails';
 
-/** One account-exists mail per address a day, however often the waitlist form names it. */
-const accountExistsMails = getRateLimiterInstance({ keyPrefix: 'accountExistsMail', points: 1, duration: 60 * 60 * 24 });
+const addressMailLimits = { points: 1, duration: 60 * 60 * 24 };
+/** One mail per address a day from the form, whatever its type: anyone may type anyone's address into it. */
+const addressMails = getRateLimiterInstance({ keyPrefix: 'requestFormMail', ...addressMailLimits, inMemoryBlock: false });
+const mayMail = async (email: string) => (await reserveAttempt(addressMails, subjectSegment('email', email), addressMailLimits)).granted;
 
 type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
 
@@ -19,7 +21,8 @@ type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
  * Stores a waitlist, newsletter or contact request and confirms it by mail. The caller answers every submission alike,
  * so the form tells nobody whether an address has an account or is listed already: a waitlist request from an address
  * with an account gets a mail pointing to sign-in and is not stored, and a repeat of a waitlist or newsletter request is
- * dropped. Notifying the team runs in the background, so a stored request is answered as fast as a dropped one.
+ * dropped. An address gets one mail from the form a day. Notifying the team runs in the background, so a stored
+ * request is answered as fast as a dropped one.
  */
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
   // The body schema trims and lowercases the address.
@@ -29,11 +32,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   if (type === 'waitlist') {
     const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
     if (existingUser) {
-      const mailToday = await accountExistsMails.consume(subjectSegment('email', normalizedEmail)).then(
-        () => true,
-        () => false,
-      );
-      if (mailToday) {
+      if (await mayMail(normalizedEmail)) {
         mailer
           .sendEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.language }])
           .catch((err) => log.error('Failed to send account-exists email', { err }));
@@ -42,6 +41,8 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     }
   }
 
+  // Taken before the insert, so a stored request and a dropped repeat cost the same statements.
+  const confirms = await mayMail(normalizedEmail);
   // The unique index drops a repeat of a waitlist or newsletter request, concurrent ones included.
   const createdRequest = await insertRequest(ctx, { email: normalizedEmail, type, message });
   if (!createdRequest) return;
@@ -79,6 +80,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     })
     .catch((err) => log.error('Failed to notify the team of a request', { err }));
 
+  if (!confirms) return;
   mailer
     .sendEmails(requestResponseEmail, { type }, [{ email: normalizedEmail, lng }])
     .catch((err) => log.error('Failed to send request confirmation', { err }));

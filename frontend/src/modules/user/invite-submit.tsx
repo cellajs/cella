@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { systemInvite as baseSystemInvite, type InviteOutcome } from 'sdk';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
+import { declineHolds } from 'shared/decline-hold';
 import type { z } from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
@@ -53,7 +54,8 @@ export interface InviteFormProps {
 
 /**
  * The one message after a membership invite: what happened in the title ("2 invited, 1 reminded"), then a line for each
- * thing the inviter did not see coming, such as a member left out or a declined invitation sent again.
+ * thing the inviter did not see coming, such as a member left out, a declined invitation sent again or one whose
+ * decline still holds.
  */
 function useInviteResultMessage() {
   const { t } = useTranslation();
@@ -61,7 +63,9 @@ function useInviteResultMessage() {
 
   return (channel: EnrichedChannel, role: string, { outcomes, held }: { outcomes: InviteOutcome[]; held: boolean }) => {
     const of = (outcome: InviteOutcome['outcome']) => outcomes.filter((item) => item.outcome === outcome);
-    const [invited, reminded, added, members] = [of('invite'), of('remind'), of('add'), of('member')];
+    const [invited, invitedBefore, added, members] = [of('invite'), of('remind'), of('add'), of('member')];
+    const standing = invitedBefore.filter(({ declinedAt }) => declineHolds(declinedAt));
+    const reminded = invitedBefore.filter(({ declinedAt }) => !declineHolds(declinedAt));
     const declined = reminded.filter(({ declinedAt }) => declinedAt);
     const roles = hierarchy.getRoles(channel.entityType) as readonly string[];
 
@@ -77,6 +81,7 @@ function useInviteResultMessage() {
 
     const [member] = members;
     const [decliner] = declined;
+    const [stander] = standing;
     const [adder] = added;
     const lines = [
       held && t('c:invite_result_held', { name: channel.name }),
@@ -86,6 +91,8 @@ function useInviteResultMessage() {
         : members.length === 1 && t('c:invite_result_member', { email: member.email }),
       declined.length > 1 && t('c:invite_result_declined_counted', { count: declined.length }),
       decliner?.declinedAt && declined.length === 1 && t('c:invite_result_declined', { email: decliner.email, date: day(decliner.declinedAt) }),
+      standing.length > 1 && t('c:invite_result_decline_holds_counted', { count: standing.length }),
+      stander?.declinedAt && standing.length === 1 && t('c:invite_result_decline_holds', { email: stander.email, date: day(stander.declinedAt) }),
       added.length > 1 && t('c:invite_result_added_directly_counted', { count: added.length }),
       adder && added.length === 1 && t('c:invite_result_added_directly', { email: adder.email }),
     ].filter(Boolean);

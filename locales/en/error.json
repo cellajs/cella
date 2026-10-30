@@ -97,6 +97,8 @@
   "invitation_address_unproven.text": "This invitation was sent to another address. Confirm that address is yours to join with this account.",
   "invitation_expired": "Invitation expired",
   "invitation_expired.text": "Use the button below to get a new link by email.",
+  "invitation_limit_reached": "Invitation limit reached",
+  "invitation_limit_reached.text": "Your organization has sent as many invitations as it may in a day. Contact support to raise the limit.",
   "invitation_not_found": "Invitation link not valid",
   "invitation_not_found.text": "It was already used or doesn't exist. Sign in directly, or reply to the invitation email to ask for a new one.",
   "last_admin": "An admin is needed",

@@ -90,7 +90,7 @@ export const config = {
       serviceAccount: 20,
       apiKey: 100,
     },
-    rateLimits: { apiPointsPerHour: 1000 },
+    rateLimits: { apiPointsPerHour: 1000, invitationMailsPerDay: 250 },
   } as const,
 
   /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
@@ -105,6 +105,7 @@ export const config = {
     oidcPayloadDaysAfterUse: 30,
     requestDays: 365,
     invitationDays: 120,
+    declinedInvitationHoldDays: 30,
     rateLimitDaysAfterWindow: 1,
     pushSubscriptionDaysUnseen: 400,
   },

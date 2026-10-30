@@ -424,6 +424,7 @@ export const zTenant = z.object({
     quotas: z.record(z.string(), z.int().gte(0)),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
+      invitationMailsPerDay: z.int().gte(0),
     }),
     allowUnregisteredClients: z.boolean(),
   }),
@@ -1563,6 +1564,7 @@ export const zUpdateTenantBody = z.object({
       rateLimits: z
         .object({
           apiPointsPerHour: z.int().gte(0).optional(),
+          invitationMailsPerDay: z.int().gte(0).optional(),
         })
         .optional(),
     })

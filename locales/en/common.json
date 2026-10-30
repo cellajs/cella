@@ -348,6 +348,8 @@
   "invite_result_added": "{{count}} added",
   "invite_result_added_directly": "{{email}} was already in the organization and is added directly.",
   "invite_result_added_directly_counted": "{{count}} were already in the organization and are added directly.",
+  "invite_result_decline_holds": "{{email}} declined on {{date}}, so no invitation goes out yet.",
+  "invite_result_decline_holds_counted": "{{count}} declined recently, so no invitation goes out to them yet.",
   "invite_result_declined": "{{email}} had declined on {{date}} and is invited again.",
   "invite_result_declined_counted": "{{count}} had declined before and are invited again.",
   "invite_result_held": "They go out when {{name}} is published.",
