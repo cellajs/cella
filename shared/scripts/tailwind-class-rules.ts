@@ -67,12 +67,12 @@ function isFrontendStylesheet(file: string): boolean {
 }
 
 /** Test files pass made-up class names to check prop forwarding and merging. */
-function isClassSource(file: string): boolean {
+export function isClassSource(file: string): boolean {
   return isFrontendScript(file) && !/\.test\.tsx?$/.test(file);
 }
 
 /** `@tailwindcss/node` from the frontend package, directly or through `@tailwindcss/vite`, which depends on it. */
-function loadTailwindNode(): TailwindNode {
+export function loadTailwindNode(): TailwindNode {
   const frontendRequire = createRequire(join(repoRoot, 'frontend/package.json'));
   let path: string;
   try {
@@ -134,7 +134,7 @@ function isClassNamed(...names: (string | undefined)[]): boolean {
 }
 
 /** Strings in class positions: class attributes, class helper calls, cva, `tw` templates and class-named values. */
-function classTexts(sourceFile: ts.SourceFile): ClassText[] {
+export function classTexts(sourceFile: ts.SourceFile): ClassText[] {
   const texts: ClassText[] = [];
   const add = (node: ts.StringLiteralLike | ts.TemplateLiteralLikeNode, openStart = false, openEnd = false) => {
     const start = node.getStart(sourceFile) + 1;
@@ -288,7 +288,7 @@ function classTexts(sourceFile: ts.SourceFile): ClassText[] {
 }
 
 /** Whole tokens of `text` with their offsets; a token touching an open side is part of a dynamic class and skipped. */
-function classTokens({ start, text, raw, openStart, openEnd }: ClassText): Token[] {
+export function classTokens({ start, text, raw, openStart, openEnd }: ClassText): Token[] {
   const result: Token[] = [];
   for (const match of text.matchAll(/\S+/g)) {
     const end = match.index + match[0].length;
