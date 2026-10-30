@@ -26,7 +26,7 @@ export interface AssertGrantsOptions {
   /** Permission sets the VM must hold (the caller derives the per-principal set). */
   required: readonly string[];
   /**
-   * Exact CEL condition the secret-granting rules must carry together (REQ-9, built by serviceKeyCondition / bootKeyCondition). A condition too
+   * Exact CEL condition the secret-granting rules must carry together (REQ-9, built by serviceKeyCondition). A condition too
    * large for one rule is spread over several (`ruleConditions`): every secret-granting rule must carry one of those parts, and every part must be carried.
    * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned ones. That is a FAILURE here, not a warning.
    */

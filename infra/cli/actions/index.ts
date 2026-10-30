@@ -11,7 +11,6 @@ import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
 import { runRepositoryKey } from './repository-key';
 import { runResetDatabase } from './reset-database';
-import { runRotatePassphrase } from './rotate-passphrase';
 import { runRotateSecrets } from './rotate-secrets';
 import { runRunnerIdentity, runRunnerReplace } from './runner';
 import { runRuns } from './runs';
@@ -28,13 +27,12 @@ type ActionRunners = Record<OperatorActionId, (context: InfraContext) => Promise
 /** The function behind every operator action: the menu and `pnpm infra <action>` both run an action through this table. */
 export const ACTION_RUNNERS: ActionRunners = {
   // The status task reads config while its module loads, so it is imported once the context has loaded the config.
-  status: async (context) => (await import('../../tasks/status')).runStatus({ ...context, operatorSecretKey: rememberedOperatorKey()?.secretKey }),
+  status: async (context) => (await import('../../tasks/status')).runStatus({ ...context, operatorKey: rememberedOperatorKey() }),
   runs: runRuns,
   preview: runPreview,
   apply: runApply,
   'rotate-keys': (context) => runSetup(context, 'rotate-keys'),
   'rotate-secrets': runRotateSecrets,
-  'rotate-passphrase': runRotatePassphrase,
   'operator-key': runOperatorKey,
   identity: runIdentity,
   'start-deploy': runStartDeploy,

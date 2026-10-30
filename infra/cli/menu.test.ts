@@ -15,8 +15,8 @@ import {
   visibleRows,
 } from './menu';
 
-const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', encrypted: true, dbExposed: false };
-const partial: MenuState = { ...bootstrapped, stackState: 'partial', encrypted: false };
+const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', dbExposed: false };
+const partial: MenuState = { ...bootstrapped, stackState: 'partial' };
 
 const plain = (text: string) => stripVTControlCharacters(text);
 
@@ -36,7 +36,7 @@ describe('mainMenuItems', () => {
       '  Show runs                read-only',
       '  Review & apply changes   operator key',
       'Change',
-      '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -58,7 +58,7 @@ describe('mainMenuItems', () => {
       '  Show runs                read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -116,7 +116,6 @@ describe('pickItems', () => {
     expect(render(pickItems('rotate', bootstrapped))).toEqual([
       '  Rotate keys          Owner key',
       '  Rotate secrets       operator key',
-      '  Rotate passphrase    operator key',
       '  Set up operator key  Owner key',
       '  ← Back',
     ]);
@@ -128,16 +127,6 @@ describe('pickItems', () => {
     expect(render(pickItems('db-open', { ...bootstrapped, environment: 'production' }))).toEqual([
       '  Open public DB access  operator key',
       '- Seed database (seed data never goes to production)',
-      '  ← Back',
-    ]);
-  });
-
-  it('disables the passphrase rotation on a stack without encrypted state', () => {
-    expect(render(pickItems('rotate', partial))).toEqual([
-      '  Rotate keys          Owner key',
-      '  Rotate secrets       operator key',
-      '- Rotate passphrase (the stack has no encrypted state yet)',
-      '  Set up operator key  Owner key',
       '  ← Back',
     ]);
   });

@@ -13,7 +13,7 @@ import { acquirePrivilegedKey } from './operator-unlock';
 
 /**
  * Store, replace or remove the read-only key a private repository is fetched with (D19), in the deploy folder of this environment's
- * project, on the operator key. The deploy hands it to the builder in its read-once bundle. Where the runner is set up, its project keeps a
+ * project, on the operator key. The deploy writes it into the builder's cloud-init. Where the runner is set up, its project keeps a
  * copy (D22), which Replace the runner gives to the runner machine. A key the repository does not answer is not stored. An empty answer
  * removes a stored key, for a repository anyone may read.
  */

@@ -13,49 +13,39 @@ export interface MachineIdentitiesOptions extends ProvisionScopedKeyOptions {
 export interface MachineIdentitiesResult {
   /** service slug → application id. */
   serviceAppIds: Record<string, string>;
-  /** The boot fetcher application id. */
-  bootAppId: string;
   /** The builder application id. */
   builderAppId: string;
-  /** Every created/reused application id (services, boot, builder). */
+  /** Every created/reused application id (services, builder). */
   allAppIds: string[];
 }
 
 /**
- * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`),
- * the boot fetcher application (`<slug>-<mode>-boot`) and the builder application (`<slug>-<mode>-builder`), applications only:
- * their POLICIES are the machine policies, written at Owner moments
- * (lib/scaleway/machine-policies.ts), and
- * their standing KEYS are made at Owner moments too (tasks/machine-keys.ts) and
- * only handed over by a deploy. Runs with an IAMManager-capable key.
- * Idempotent: an existing application is reused by name.
+ * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`) and the builder application (`<slug>-<mode>-builder`),
+ * applications only: their POLICIES are the machine policies, written at Owner moments (lib/scaleway/machine-policies.ts), and their
+ * standing KEYS are made at Owner moments too (tasks/machine-keys.ts), which a deploy writes into each new machine's cloud-init. Runs with an
+ * IAMManager-capable key. Idempotent: an existing application is reused by name.
  */
 export async function makeMachineIdentities(opts: MachineIdentitiesOptions): Promise<MachineIdentitiesResult> {
   const serviceAppIds: Record<string, string> = {};
   for (const service of opts.services) {
     const app = await ensureApplication(opts, {
       suffix: `vm-${service}`,
-      description: `Non-human principal for ${service} service machines: reads its own secret folder (standing key, handed over by a deploy)`,
+      description: `Non-human principal for ${service} service machines: reads its own secret folder, pulls images, writes its boot account`,
     });
     serviceAppIds[service] = app.id;
   }
-  const boot = await ensureApplication(opts, {
-    suffix: 'boot',
-    description: 'Non-human boot fetcher: registry pull, boot-diag write, handoff-only secret read (standing key)',
-  });
   const builder = await ensureApplication(opts, {
     suffix: 'builder',
     description: "Non-human builder: pushes a release's images and writes its frontend files, on a builder machine",
   });
   return {
     serviceAppIds,
-    bootAppId: boot.id,
     builderAppId: builder.id,
-    allAppIds: [...Object.values(serviceAppIds), boot.id, builder.id],
+    allAppIds: [...Object.values(serviceAppIds), builder.id],
   };
 }
 
-/** Ensure every machine identity exists: one `vm-<service>` application per `principalServices` entry, the boot application and the builder. The setup and Update identities call it, at Owner moments. */
+/** Ensure every machine identity exists: one `vm-<service>` application per `principalServices` entry and the builder. The setup and Update identities call it, at Owner moments. */
 export async function ensureMachineIdentities(opts: Omit<MachineIdentitiesOptions, 'services'>): Promise<MachineIdentitiesResult> {
   return makeMachineIdentities({ ...opts, services: principalServices().map((svc) => svc.slug) });
 }

@@ -3,13 +3,13 @@ import { principalSecretCondition } from '../runtime-secrets';
 import { principalServices } from '../services';
 import {
   BACKEND_S3_PERMISSION_SETS,
-  BOOT_PROJECT_PERMISSION_SETS,
   BUILDER_PROJECT_PERMISSION_SETS,
+  MACHINE_PROJECT_PERMISSION_SETS,
   SERVICE_SECRET_PERMISSION_SETS,
 } from './permissions';
 import { principalNames, principalTags } from './principals';
 import type { PolicyRule } from './scaleway-iam';
-import { BOOT_KEY_CONDITION, ruleConditions } from './secret-paths';
+import { ruleConditions } from './secret-paths';
 
 /** One machine policy as it must be: the identity it belongs to, and its rules. */
 export interface MachinePolicy {
@@ -22,7 +22,7 @@ export interface MachinePolicy {
 }
 
 /**
- * The machine policies of one environment: one per registry service, one for the boot fetcher, one for the builder. They are written at
+ * The machine policies of one environment: one per registry service and one for the builder. They are written at
  * Owner moments, never by the Pulumi program: the operator and the deploy key hold no IAM write. Principals and conditions follow the service
  * registry, not the enabled set, so a service toggle changes compute only. The deploy's grant check compares the live policies with the same
  * builders (lib/scaleway/grant-rows.ts).
@@ -34,7 +34,7 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
   const services = principalServices().map((svc) => ({
     name: `${slug}-vm-${svc.slug}-policy`,
     applicationName: names.vmService(svc.slug),
-    description: `Path-conditioned secret read${svc.s3Access ? ' + S3 object access' : ''} for the ${svc.slug} service machines (written at Owner moments)`,
+    description: `Path-conditioned secret read, image pulls, boot accounts${svc.s3Access ? ', S3 object access' : ''} for the ${svc.slug} service machines (written at Owner moments)`,
     rules: [
       // One rule per part of the condition: a condition too large for one rule is spread over several, which grant the same in sum.
       ...ruleConditions(principalSecretCondition(svc.slug)).map((condition) => ({
@@ -42,20 +42,13 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
         project_ids: [projectId],
         condition,
       })),
-      ...(svc.s3Access ? [{ permission_set_names: [...BACKEND_S3_PERMISSION_SETS], project_ids: [projectId] }] : []),
+      {
+        permission_set_names: [...new Set([...MACHINE_PROJECT_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])])],
+        project_ids: [projectId],
+      },
     ],
     tags,
   }));
-  const boot: MachinePolicy = {
-    name: `${slug}-vm-boot-policy`,
-    applicationName: names.boot,
-    description: 'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (written at Owner moments)',
-    rules: [
-      { permission_set_names: [...BOOT_PROJECT_PERMISSION_SETS], project_ids: [projectId] },
-      { permission_set_names: [...SERVICE_SECRET_PERMISSION_SETS], project_ids: [projectId], condition: BOOT_KEY_CONDITION },
-    ],
-    tags,
-  };
   const builder: MachinePolicy = {
     name: `${slug}-builder-policy`,
     applicationName: names.builder,
@@ -63,7 +56,7 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
     rules: [{ permission_set_names: [...BUILDER_PROJECT_PERMISSION_SETS], project_ids: [projectId] }],
     tags,
   };
-  return [...services, boot, builder];
+  return [...services, builder];
 }
 
 /** A rule in a form two rules compare by: sets and projects in order, an absent condition as empty. */

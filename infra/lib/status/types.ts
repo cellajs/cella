@@ -1,3 +1,4 @@
+import type { KeyPair } from '../scaleway/operator-identity';
 import type { StackState } from '../stack/bootstrap-stack-state';
 import type { PendingOperation } from '../stack/pending-operations';
 
@@ -83,8 +84,8 @@ export interface ProbeSession {
   scalewayKeyAvailable: boolean;
   accessKey?: string;
   secretKey?: string;
-  /** The operator key the run holds, which lists the machines: the observer key reads none. Absent outside a session unlocked with it. */
-  operatorSecretKey?: string;
+  /** The operator key the run holds, which lists the machines and reads the stack checkpoint: the observer key reads neither. Absent outside a session unlocked with it. */
+  operatorKey?: KeyPair;
   hasDomain: boolean;
   computeDeferredSince?: string;
   /** True when the exposure overlay or stack config turns the public DB endpoint on. */

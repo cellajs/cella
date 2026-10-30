@@ -98,6 +98,8 @@ A run ends in one of three outcomes:
 
 **Releases only.** In an environment that follows the releases, as production does, the definition's own script refuses a target that no release tag names, before it fetches anything. It catches a start by hand that names the wrong commit. A key that may start runs can also start one with values or a command of its own, which gets past that check: Show runs flags such a run.
 
+The rule is as strong as who may push a tag: `99.0.0` pushed on any commit is the newest release. So an app sets a tag ruleset that lets only its release GitHub App create, move or delete tags, with no bypass.
+
 ### The runner
 
 One small machine per app starts its deploys. Once a minute, for every environment it serves, it finds the target and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one is started again by the apply that clears the block.
@@ -136,11 +138,7 @@ Publish the frontend entry files + smoke checks
 (degraded components warn, unhealthy ones fail the run)
         ↓
 Remove every displaced generation
-        ↓
-Take the boot key out of the user data of every machine that booted
 ```
-
-A machine's first boot writes its boot key to disk, where every later boot reads it. Scaleway shows a machine's user data to every key that may read machines, so the key stays in it only until the machine's boot account arrives.
 
 The primary service owns migrations: the migrate companion runs at the boot of its new generation, before the app starts. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
 
@@ -158,7 +156,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 At every boot the boot runner reads the machine's runtime secrets from Secret Manager, with each service's own key, into its compose env file.
 
-- **The Pulumi state holds no secret value but two.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The two exceptions sit under the passphrase: the boot key, which each machine's user data carries, and the password of a Redis store an app enables.
+- **The Pulumi state holds no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase, as do the service keys each machine's user data carries.
 - **A deploy writes no secret of the app's.** An apply makes and copies every value, so a secret added to the registry reaches the stack through **Review & apply changes**. Before it makes any machine, the deploy checks that every required copy holds a value. A missing one ends the run blocked, and storing it in **Manage runtime secrets** starts the target again.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 - **A missing required secret stops the boot**, so a machine never crash-loops behind a 502.

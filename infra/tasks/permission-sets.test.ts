@@ -36,9 +36,8 @@ describe('deploy key rights', () => {
     expect(metadata[0]?.condition).toBeUndefined();
   });
 
-  it("writes secrets in the hand-over folder only: never an app secret, nor the engine's or the deploy folder", () => {
-    const writes = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerSecretWrite'));
-    expect(writes.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/handoff/")']);
+  it("writes no secret: every app secret is the apply's", () => {
+    expect(rules.flatMap(setsOf).filter((set) => /^SecretManagerSecret(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
   it('reads IAM in the organization, and everything else in its own project', () => {

@@ -39,19 +39,13 @@ export const OPERATOR_ACTIONS = {
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description:
-      'Replace the CI deploy key, the observer key, every standing machine key and, where the runner serves this environment, the runner key and machine (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
+    description: 'Replace the CI deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
     description:
       'Fresh database role passwords and rotatable generated secrets, every copy rewritten; the next deploy replaces every machine. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
-  },
-  'rotate-passphrase': {
-    label: 'Rotate passphrase',
-    key: 'operator',
-    description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
   },
   'operator-key': {
     label: 'Set up operator key',
@@ -63,7 +57,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs, write the machine policies and the observer policy, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the applications the service registry needs, write the machine policies and the observer policy, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin and boot applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   'start-deploy': {
     label: 'Start a deploy',
@@ -190,10 +184,9 @@ export const MENU_ROWS = {
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-secrets', 'rotate-passphrase', 'operator-key'],
-    hint: 'keys, secrets, passphrase, operator key',
-    description:
-      'Replace every Scaleway key or every secret the engine makes, re-encrypt the stack, or set up the operator key and its dedicated IP.',
+    actions: ['rotate-keys', 'rotate-secrets', 'operator-key'],
+    hint: 'keys, secrets, operator key',
+    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator key and its dedicated IP.',
   },
   secrets: {
     group: 'change',

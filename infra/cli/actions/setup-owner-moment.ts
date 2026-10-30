@@ -139,7 +139,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
  * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The machine identities with their policies and
  * standing keys (in the deploy folder), the CI deploy key (its copy for the main job), and the app's operator and observer: created when the
  * app has none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces
- * every key, the runner's too when the runner serves this environment. Undefined when declined.
+ * the deploy key and every machine key, the runner's too when the runner serves this environment. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -173,13 +173,13 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
 
-  console.info('\n→ Machine identities (one application per registry service, and the boot fetcher, each with a standing key)');
+  console.info('\n→ Machine identities (one application per registry service, and the builder, each with a standing key)');
   try {
     const registry = { slug: appConfig.slug, mode: environment };
     await ensureMachineIdentities({ ...registry, callerSecretKey: pair.secretKey, projectId, organizationId });
     console.info('\n→ Machine policies');
     await writeMachinePolicies({ secretKey: pair.secretKey }, organizationId, machinePolicies(appConfig, projectId));
-    // The standing keys go to the deploy folder, which a deploy hands over from; a rotation makes every one anew.
+    // The standing keys go to the deploy folder, where a deploy reads them; a rotation makes every one anew.
     console.info('\n→ Standing machine keys');
     const auth = { secretKey: pair.secretKey };
     const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
@@ -197,7 +197,7 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
 
   // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');
-  await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId, { rotate: mode === 'rotate-keys' }).catch((error) =>
+  await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId).catch((error) =>
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
 

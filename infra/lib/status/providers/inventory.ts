@@ -238,7 +238,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     try {
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
-      const { operatorSecretKey } = session;
+      const operatorSecretKey = session.operatorKey?.secretKey;
       const { naming, region, zones } = deriveInfra(session.appConfig);
       const rollout = (await session.scalewayFacts()).rollout;
       if (!rollout) return undefined;
@@ -259,7 +259,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
         // Every zone of the region: a machine an intruder made in another zone of the project is still the project's. The observer key reads
-        // no machine, as user data holds the boot key; a listing that fails leaves the machines unread and the other checks standing.
+        // no machine, as user data holds the machine's keys; a listing that fails leaves the machines unread and the other checks standing.
         operatorSecretKey
           ? Promise.all(
               zones.map((zone) =>

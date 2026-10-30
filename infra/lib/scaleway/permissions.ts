@@ -43,9 +43,6 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
  */
 export const DEPLOY_SECRET_METADATA_SETS = ['SecretManagerReadOnly'] as const;
 
-/** Secret writes, in the hand-over folder only: the read-once bundles a deploy stages for its machines. Every app secret is the apply's. */
-export const DEPLOY_SECRET_WRITE_SETS = ['SecretManagerSecretCreate', 'SecretManagerSecretWrite', 'SecretManagerSecretDelete'] as const;
-
 /** Secret values, in the deploy folder only: the standing machine keys and the telemetry key. */
 export const DEPLOY_SECRET_VALUE_SETS = ['SecretManagerSecretAccess'] as const;
 
@@ -60,8 +57,8 @@ export const DEPLOY_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 /**
  * Project-scoped sets for the observer application, the key a person and their agents read with: what `status`, `runs` and the plan of an
  * identity update read, each set named one by one, so a set that also reads secret values never comes in by a wider name. The key works from
- * any address, so it holds no set that reads a key in the clear: no Instances set, as a machine's user data holds the boot key until the
- * deploy scrubs it (a builder's for its whole build), and no registry set, as an image holds the app's code. Object Storage reads need the
+ * any address, so it holds no set that reads a key in the clear: no Instances set, as a machine's user data holds its keys, and no registry
+ * set, as an image holds the app's code. Object Storage reads need the
  * bucket policy too: the state and boot-diagnostics buckets name the observer, the others do not.
  */
 export const OBSERVER_PROJECT_PERMISSION_SETS = [
@@ -97,7 +94,7 @@ export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as con
  */
 export const OPERATOR_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// Machine identities: service and boot grants
+// Machine identities: service and builder grants
 
 /** Secret-value read sets, always paired with a resource-level path condition. SecretManagerReadOnly alone is metadata-only and 403s the sync; SecretManagerSecretAccess decrypts the values. */
 export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
@@ -105,8 +102,8 @@ export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretM
 /** Backend service app S3 signing sets for attachment uploads and presigned URLs. Granular object sets, NOT FullAccess; bucket policies scope which buckets. */
 export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const;
 
-/** Boot application sets: pull images and write boot diagnostics. Its Secret Manager rule is separate and conditioned to the handoff folder (bootKeyCondition). */
-export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
+/** Every service key's unconditioned sets: pull the release's images and write its boot account, where the diagnostics bucket's policy admits it. */
+export const MACHINE_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
 /**
  * Builder application sets: push a release's images (the registry has no narrower set than full access) and write the frontend's files,

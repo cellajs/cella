@@ -59,8 +59,9 @@ describe('boot', () => {
   });
 
   it('must not upload, export or print a secret via a failed release command', async () => {
-    const bootKey = { accessKey: 'SCWBOOTACCESSKEY0001', secretKey: 'boot-sk-1111-2222-3333' };
     const serviceKey = { accessKey: 'SCWSERVICEACCESSKEY2', secretKey: 'svc-sk-4444-5555-6666' };
+    // The key of a worker the host carries beside its own service.
+    const coHostedKey = 'cdc-sk-7777-8888-9999';
     const { password: dbPassword, dsn } = leakableDsn();
     const cookieSecret = 'ck-8888bbbbdd';
     const sinkKey = 'ik-9999ccccee';
@@ -68,11 +69,11 @@ describe('boot', () => {
       'db-url-id': dsn,
       'cookie-id': cookieSecret,
       'sink-id': sinkKey,
-      'handoff-id': JSON.stringify(serviceKey),
     };
 
-    files.set('/etc/app/scw-access-key', `${bootKey.accessKey}\n`);
-    files.set('/etc/app/scw-secret-key', `${bootKey.secretKey}\n`);
+    files.set('/etc/app/scw-access-key', `${serviceKey.accessKey}\n`);
+    files.set('/etc/app/scw-secret-key', `${serviceKey.secretKey}\n`);
+    files.set('/etc/app/scw-secret-key-cdc', `${coHostedKey}\n`);
     // The host boot log, mounted into the runner: cloud-init's script and earlier output, a secret among it without its name.
     files.set('/var/log/infra-boot.log', `::cella:: boot start\nlauncher saw ${cookieSecret}\nDATABASE_URL=${dsn}\n`);
     files.set(
@@ -87,7 +88,7 @@ describe('boot', () => {
         registry: 'rg.nl-ams.scw.cloud/ns',
         region: 'nl-ams',
         credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
-        serviceKeyHandoffs: [{ service: 'backend', secretId: 'handoff-id', cacheFile: '/etc/app/service-key-backend.json' }],
+        serviceSecretKeyFiles: { cdc: '/etc/app/scw-secret-key-cdc' },
         exportS3Env: true,
         bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
         releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', '--rm', 'backend-release'] },
@@ -125,7 +126,7 @@ describe('boot', () => {
 
     const ok = (stdout = ''): ExecResult => ({ code: 0, stdout, stderr: '' });
     // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw, the
-    // service key and the boot key among them, each without the name that would get its line scrubbed.
+    // service keys among them, each without the name that would get its line scrubbed.
     const exec: ExecFn = async (command, args, opts) => {
       const line = [command, ...args].join(' ');
       if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
@@ -140,7 +141,7 @@ describe('boot', () => {
           [
             `backend | auth rejected ${cookieSecret}`,
             `backend | sink ${sinkKey}`,
-            `backend | s3 refused ${serviceKey.secretKey}, then ${bootKey.secretKey}`,
+            `backend | s3 refused ${serviceKey.secretKey}, then ${coHostedKey}`,
           ].join('\n'),
         );
       }
@@ -162,14 +163,14 @@ describe('boot', () => {
     expect(printed.some((line) => line.includes('boot-failed'))).toBe(true);
 
     const channels = [...sent.map((request) => request.body), ...printed, (error as Error).message].join('\n');
-    for (const secret of [bootKey.secretKey, serviceKey.secretKey, dbPassword, cookieSecret, sinkKey]) {
+    for (const secret of [serviceKey.secretKey, coHostedKey, dbPassword, cookieSecret, sinkKey]) {
       expect(channels).not.toContain(secret);
     }
   });
 
   it('kills a stuck release companion, removes its container and names the phase in the upload', async () => {
-    files.set('/etc/app/scw-access-key', 'SCWBOOTACCESSKEY0001\n');
-    files.set('/etc/app/scw-secret-key', 'boot-sk-1111-2222-3333\n');
+    files.set('/etc/app/scw-access-key', 'SCWSERVICEACCESSKEY1\n');
+    files.set('/etc/app/scw-secret-key', 'svc-sk-1111-2222-3333\n');
     files.set(
       '/etc/app/boot-plan.json',
       JSON.stringify({
@@ -232,8 +233,8 @@ describe('boot', () => {
   describe('live telemetry', () => {
     /** A backend plan whose runtime manifest delivers the sink's ingest key, so boot telemetry exports. */
     function writeSinkPlan(): void {
-      files.set('/etc/app/scw-access-key', 'SCWBOOTACCESSKEY0001\n');
-      files.set('/etc/app/scw-secret-key', 'boot-sk-1111-2222-3333\n');
+      files.set('/etc/app/scw-access-key', 'SCWSERVICEACCESSKEY1\n');
+      files.set('/etc/app/scw-secret-key', 'svc-sk-1111-2222-3333\n');
       files.set(
         '/etc/app/boot-plan.json',
         JSON.stringify({

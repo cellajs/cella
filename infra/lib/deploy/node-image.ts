@@ -1,6 +1,6 @@
 /**
  * The digests of the `node` images the engine starts on its own machines with a key beside them: the runner machine (the runner key) and the
- * builder (the builder and boot keys). Whoever controls a tag on Docker Hub can move it; a digest names one image. A Node bump at the root
+ * builder (the builder key). Whoever controls a tag on Docker Hub can move it; a digest names one image. A Node bump at the root
  * `engines.node` adds its two digests here, read with `docker buildx imagetools inspect node:<version>-bookworm` (and `-bookworm-slim`).
  */
 const nodeImageDigests: Record<string, Record<NodeImageVariant, string>> = {

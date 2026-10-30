@@ -85,10 +85,9 @@ describe('describeKey / classifyPrincipal', () => {
     expect(formatKeyLine(desc, 'ci-deploy')).toBe('SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 12:54 UTC)');
     expect(hoursUntilExpiry(desc, Date.parse('2026-09-24T10:54:29Z'))).toBeCloseTo(2, 5);
   });
-  it('classifies the admin, boot and VM applications and outside applications', () => {
+  it('classifies the admin and VM applications and outside applications', () => {
     const app = (name: string) => ({ accessKey: 'k', bearer: 'application' as const, name, bearerId: 'id' });
     expect(classifyPrincipal(app('cella-production-admin'), names)).toBe('admin');
-    expect(classifyPrincipal(app('cella-production-boot'), names)).toBe('boot');
     expect(classifyPrincipal(app('cella-production-vm-backend'), names)).toBe('vm-service');
     expect(classifyPrincipal(app('something-else'), names)).toBe('application');
   });

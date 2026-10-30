@@ -32,6 +32,7 @@ const RETIRED_LABELS = [
   'Apply infra change',
   'Apply changes',
   'Store passphrase in keychain',
+  'Rotate passphrase',
   'Manage keys & secrets',
   'Manage database',
   'Stack setup →',

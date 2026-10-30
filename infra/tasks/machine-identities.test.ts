@@ -6,7 +6,7 @@ import { ensureMachineIdentities, missingMachineIdentities } from './machine-ide
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ ensureApplication: vi.fn(), provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/iam-client', () => ({ resolveApplicationIdByName: vi.fn() }));
 
-const base = { callerSecretKey: 'boot-secret', organizationId: 'org-1', projectId: 'proj', slug: 'cella', mode: 'production' };
+const base = { callerSecretKey: 'owner-secret', organizationId: 'org-1', projectId: 'proj', slug: 'cella', mode: 'production' };
 
 beforeEach(() => {
   vi.mocked(ensureApplication).mockReset();
@@ -14,10 +14,10 @@ beforeEach(() => {
 });
 
 describe('ensureMachineIdentities', () => {
-  it('one application per registry service plus boot and builder, whatever is enabled and wherever it runs', async () => {
+  it('one application per registry service plus the builder, whatever is enabled and wherever it runs', async () => {
     const result = await ensureMachineIdentities(base);
     const suffixes = vi.mocked(ensureApplication).mock.calls.map(([, app]) => app.suffix);
-    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot', 'builder']);
+    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'builder']);
     expect(result.allAppIds).toEqual([
       'id-vm-backend',
       'id-vm-cdc',
@@ -26,7 +26,6 @@ describe('ensureMachineIdentities', () => {
       'id-vm-oauth',
       'id-vm-jobs',
       'id-vm-frontend',
-      'id-boot',
       'id-builder',
     ]);
   });
@@ -42,10 +41,10 @@ describe('missingMachineIdentities', () => {
 
   it('names the applications the registry needs and Scaleway does not have, without creating one', async () => {
     vi.mocked(resolveApplicationIdByName).mockImplementation(async (_auth, _org, name) =>
-      name.endsWith('-vm-jobs') || name.endsWith('-boot') ? null : 'id',
+      name.endsWith('-vm-jobs') || name.endsWith('-builder') ? null : 'id',
     );
 
-    expect(await missingMachineIdentities(check)).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
+    expect(await missingMachineIdentities(check)).toEqual(['cella-production-vm-jobs', 'cella-production-builder']);
     expect(provisionScopedKey).not.toHaveBeenCalled();
   });
 
@@ -56,7 +55,6 @@ describe('missingMachineIdentities', () => {
     expect(await missingMachineIdentities(check)).toEqual([]);
     expect(vi.mocked(resolveApplicationIdByName).mock.calls.map(([, , name]) => name)).toEqual([
       ...['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend'].map((service) => `cella-production-vm-${service}`),
-      'cella-production-boot',
       'cella-production-builder',
     ]);
   });

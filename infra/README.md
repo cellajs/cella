@@ -48,9 +48,9 @@ Three rules:
 
 ## Security boundaries
 
-- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's.
+- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
 - **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes the operator key.
-- **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the key reaches the machine in a bundle that can be read once.
+- **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the deploy writes that key into the cloud-init of the machines that run the service.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
 - **Builds hold no key where the app's code runs.**
 
@@ -70,7 +70,7 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so the machines are listed with the operator key once a session holds it, and `inventory.machines` is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {

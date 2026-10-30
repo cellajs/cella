@@ -16,12 +16,10 @@ vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
   resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
 }));
 
-/** The deploy's staged keys, as tasks/stage-generation-keys.ts writes them for the Pulumi program. */
+/** The deploy's machine keys, as tasks/generation-keys.ts writes them for the Pulumi program. */
 const keys = {
-  bootAccessKey: 'SCWBOOTACCESSKEY',
-  bootSecretKey: 'boot-secret-key-value',
-  // Keyed by service and release; the test stack's release is `latest`.
-  handoffSecretIds: { 'backend@latest': 'handoff-backend-id', 'frontend@latest': 'handoff-frontend-id' },
+  backend: { accessKey: 'SCWBACKENDACCESSKEY', secretKey: 'backend-secret-key-value' },
+  frontend: { accessKey: 'SCWFRONTENDACCESSKEY', secretKey: 'frontend-secret-key-value' },
 };
 
 let h: MockHarness;
@@ -79,16 +77,15 @@ describe('compute module', () => {
     }
   });
 
-  it('bakes the minted boot key into every VM and hands each VM the bundles of the services it carries only', () => {
+  it("must not give a machine another service's key: each VM carries its own service's key only", () => {
     for (const server of servers) {
       const cloudInit = cloudInitOf(server);
-      expect(cloudInit).toContain(`<<'SCW_ACCESS_KEY_EOF'\n${keys.bootAccessKey}\nSCW_ACCESS_KEY_EOF`);
-      expect(cloudInit).toContain(`<<'SCW_SECRET_KEY_EOF'\n${keys.bootSecretKey}\nSCW_SECRET_KEY_EOF`);
+      const own = keys[serviceOf(server)];
+      expect(cloudInit).toContain(`<<'SCW_ACCESS_KEY_EOF'\n${own.accessKey}\nSCW_ACCESS_KEY_EOF`);
+      expect(cloudInit).toContain(`<<'SCW_SECRET_KEY_EOF'\n${own.secretKey}\nSCW_SECRET_KEY_EOF`);
+      for (const other of Object.values(keys).filter((key) => key !== own)) expect(cloudInit, server.name).not.toContain(other.secretKey);
       const { plan } = bootPlanOf(server);
-      expect(
-        plan.serviceKeyHandoffs?.map((handoff) => [handoff.service, handoff.secretId]),
-        server.name,
-      ).toEqual([[serviceOf(server), keys.handoffSecretIds[`${serviceOf(server)}@latest`]]]);
+      expect(plan.serviceSecretKeyFiles, server.name).toBeUndefined();
       // Only the upload-signing service gets its key exported as S3 env.
       expect(plan.exportS3Env, server.name).toBe(serviceOf(server) === 'backend' ? true : undefined);
     }

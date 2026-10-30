@@ -5,11 +5,11 @@ import { appStorageNeeds, services } from '../lib/services';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import {
   backendServiceApplicationId,
-  bootApplicationId,
   builderApplicationId,
   ciDeployApplicationId,
   observerApplicationId,
   operatorApplicationId,
+  serviceApplicationIds,
 } from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
@@ -220,7 +220,7 @@ const privateUploadsBucket = needs.uploadBuckets
     )
   : undefined;
 
-/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer and the people's applications; every other key, the deploy key and a machine's boot key included, is denied. */
+/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer and the people's applications; every other key, the deploy key included, is denied. */
 if (privateUploadsBucket) {
   new scaleway.object.BucketPolicy('private-uploads-policy', {
     bucket: privateUploadsBucket.name,
@@ -258,39 +258,42 @@ const bootDiagBucket = new scaleway.object.Bucket(
   { protect: isProduction },
 );
 
+// Each machine key writes its own reports only: a service's boot accounts (`boot-diag/<service>-…`), the builder's under `boot-diag/builder/`.
+const reportWriters = [
+  ...Object.entries(serviceApplicationIds).map(([service, id]) => ({ id, prefix: `boot-diag/${service}-` })),
+  { id: builderApplicationId, prefix: 'boot-diag/builder/' },
+];
+
 new scaleway.object.BucketPolicy('boot-diag-policy', {
   bucket: bootDiagBucket.name,
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: pulumi.all([humanAccess(bootDiagBucket.name), bootApplicationId, observerApplicationId]).apply(([admin, bootId, observerId]) => [
-      // The boot fetcher writes diagnostics during VM startup.
-      ...(bootId
-        ? [
-            {
-              Sid: 'BootWriteBootDiagnostics',
-              Effect: 'Allow',
-              Principal: { SCW: `application_id:${bootId}` },
-              Action: ['s3:PutObject'],
-              Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
-            },
-          ]
-        : []),
-      // The observer reads what machines wrote about their boot.
-      ...(observerId
-        ? [
-            {
-              Sid: 'ObserverReadBootDiagnostics',
-              Effect: 'Allow',
-              Principal: { SCW: `application_id:${observerId}` },
-              Action: ['s3:ListBucket', 's3:GetObject'],
-              Resource: [bootDiagBucket.name, pulumi.interpolate`${bootDiagBucket.name}/*`],
-            },
-          ]
-        : []),
-      deployAccess(bootDiagBucket.name),
-      ...admin,
-    ]),
+    Statement: pulumi
+      .all([humanAccess(bootDiagBucket.name), observerApplicationId, pulumi.all(reportWriters.map((writer) => writer.id))])
+      .apply(([admin, observerId, writerIds]) => [
+        ...reportWriters.map((writer, index) => ({
+          Sid: `MachineReports${index}`,
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${writerIds[index]}` },
+          Action: ['s3:PutObject'],
+          Resource: [pulumi.interpolate`${bootDiagBucket.name}/${writer.prefix}*`],
+        })),
+        // The observer reads what machines wrote about their boot.
+        ...(observerId
+          ? [
+              {
+                Sid: 'ObserverReadBootDiagnostics',
+                Effect: 'Allow',
+                Principal: { SCW: `application_id:${observerId}` },
+                Action: ['s3:ListBucket', 's3:GetObject'],
+                Resource: [bootDiagBucket.name, pulumi.interpolate`${bootDiagBucket.name}/*`],
+              },
+            ]
+          : []),
+        deployAccess(bootDiagBucket.name),
+        ...admin,
+      ]),
   }),
 });
 

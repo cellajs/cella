@@ -21,7 +21,7 @@ function fake(
     },
     keys: async () => {
       ops.push('keys');
-      return { bundleId: 'bundle-1', boot: { accessKey: 'SCWBOOT', secretKey: 'boot-secret' } };
+      return { accessKey: 'SCWBUILDER', secretKey: 'builder-secret' };
     },
     removeBuilders: async () => {
       ops.push('remove');
