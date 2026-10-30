@@ -10,7 +10,6 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import type { Environment } from '../../lib/stack/bootstrap-stack-state';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
-import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { ensureMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
@@ -109,7 +108,7 @@ async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
 
 /**
  * Pick or create this environment's Scaleway project when it has none yet, using the Owner API key. Every environment has a project of its own:
- * the project of another environment is listed and cannot be taken. The chosen id is written to infra/.env.<mode> as SCW_PROJECT_ID.
+ * the project of another environment is listed and cannot be taken. The stack file gets the chosen id once the stack exists, later in this run.
  */
 async function ensureProjectId(opts: { slug: string; mode: Environment; secretKey: string; organizationId: string }): Promise<string> {
   console.info(`\n→ Scaleway project for ${opts.mode} ${pc.dim('(none configured yet)')}`);
@@ -130,9 +129,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
     console.info(`  ${changeMark} Created project ${project.name} (${project.id})`);
     projectId = project.id;
   }
-  writeModeEnvValues(opts.mode, { SCW_PROJECT_ID: projectId });
   process.env.SCW_PROJECT_ID = projectId;
-  console.info(`  ${checkMark} SCW_PROJECT_ID written to infra/.env.${opts.mode}`);
   return projectId;
 }
 

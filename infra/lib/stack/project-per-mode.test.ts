@@ -8,10 +8,18 @@ const reader = (files: { own?: Record<string, string>; shared?: string; stacks?:
 });
 
 describe('resolveModeProject', () => {
+  it('takes the stack file over every other source', () => {
+    expect(resolveModeProject({ stack: 'stack-1', own: 'own-1', resolved: 'own-1', shared: 'shared-1', hasStack: true })).toEqual({
+      projectId: 'stack-1',
+      source: 'stack-file',
+      dropShared: false,
+    });
+  });
+
   it("takes the id of the mode's own file", () => {
     expect(resolveModeProject({ own: 'own-1', resolved: 'own-1', shared: 'shared-1', hasStack: false })).toEqual({
       projectId: 'own-1',
-      source: 'mode-file',
+      source: 'env-file',
       dropShared: false,
     });
   });
@@ -27,7 +35,7 @@ describe('resolveModeProject', () => {
   it('lets an existing stack keep the id of the shared file', () => {
     expect(resolveModeProject({ resolved: 'shared-1', shared: 'shared-1', hasStack: true })).toEqual({
       projectId: 'shared-1',
-      source: 'shared-file',
+      source: 'env-file',
       dropShared: false,
     });
   });

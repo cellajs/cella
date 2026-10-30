@@ -1,3 +1,4 @@
 encryptionsalt: v1:WbJTuXXMBv4=:v1:ptni5f6WWI+LMYw7:t1I/Htd0Pdk/MvPNYe994olKq4tklg==
 config:
+  infra:projectId: 3ad2b2d5-a772-40a2-a82b-bd0cee9ebb12
   infra:bootstrapComplete: "2026-06-20T05:30:28.418Z"

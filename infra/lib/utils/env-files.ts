@@ -1,5 +1,4 @@
-import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { infraDir } from './paths';
 
@@ -33,10 +32,18 @@ export function sharedFileProjectId(): string | undefined {
   return undefined;
 }
 
-/** The project id a mode's own env file names: every environment has a project of its own, and this is where its id lives. */
+/** The project id a mode's env file still names: the CLI moves it to the mode's stack file. */
 export function ownProjectId(mode: string): string | undefined {
   const path = modeEnvPath(mode);
   return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
+}
+
+/** Take the project id out of a mode's env file, once the stack file holds it; a file left with no line is deleted. */
+export function removeModeProjectId(mode: string): void {
+  if (!ownProjectId(mode)) return;
+  const path = modeEnvPath(mode);
+  writeEnvValues(path, {}, { remove: ['SCW_PROJECT_ID'] });
+  if (readFileSync(path, 'utf8').trim() === '') rmSync(path);
 }
 
 /** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key is written. */
@@ -73,8 +80,7 @@ export function dropPromptOnlyEnv(env: NodeJS.ProcessEnv = process.env): string[
 }
 
 /**
- * The values a parsed mode env file exports, and the warnings it earns. A prompt-only name is dropped before its value is looked at, so a
- * `keychain:` or `op:` reference under one is never resolved. A retired name is dropped the same way: the admin application key is gone, and the
+ * The values a parsed mode env file exports, and the warnings it earns. A retired name is dropped: the admin application key is gone, and the
  * provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI runner, a shell export).
  */
 export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
@@ -113,52 +119,9 @@ export function loadModeEnvFile(mode: string, log: (message: string) => void = (
     log(`Tightened ${modeEnvPath} to 600 (was ${(fileMode & 0o777).toString(8)}): it carries a live secret key.`);
   }
   const { values, warnings } = modeEnvValues(parseEnvFile(modeEnvPath), mode);
-  for (const [key, value] of Object.entries(values)) process.env[key] = resolveSecretReference(key, value);
+  for (const [key, value] of Object.entries(values)) process.env[key] = value;
   log(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`);
   return warnings;
-}
-
-/** Minimal command runner, injectable for tests. */
-export type ExecLike = (cmd: string, args: string[], input?: string) => { status: number | null; stdout: string; stderr: string };
-
-const defaultExec: ExecLike = (cmd, args, input) => {
-  const res = spawnSync(cmd, args, { encoding: 'utf8', input, stdio: [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe'] });
-  return { status: res.status, stdout: res.stdout ?? '', stderr: res.stderr ?? '' };
-};
-
-/** `keychain:<service>/<account>` → the OS keychain entry; `op:<op://vault/item/field>` → the 1Password CLI. Anything else is the literal value. */
-export function parseSecretReference(
-  value: string,
-): { kind: 'keychain'; service: string; account: string } | { kind: 'op'; ref: string } | undefined {
-  const keychain = value.match(/^keychain:([^/]+)\/(.+)$/);
-  if (keychain) return { kind: 'keychain', service: keychain[1] as string, account: keychain[2] as string };
-  const op = value.match(/^op:(op:\/\/.+)$/);
-  if (op) return { kind: 'op', ref: op[1] as string };
-  return undefined;
-}
-
-/**
- * Resolve a secret reference to its value at load time, so a passphrase or key can live in the OS keychain or a password manager while the env file
- * holds only a pointer. A literal value passes through untouched. A reference that cannot be read throws with the command to fix it.
- */
-export function resolveSecretReference(key: string, value: string, exec: ExecLike = defaultExec, platform = process.platform): string {
-  const ref = parseSecretReference(value);
-  if (!ref) return value;
-  const fail = (what: string, detail: string) => new Error(`${key}: ${what} (${detail.trim() || 'no output'})`);
-  if (ref.kind === 'op') {
-    const res = exec('op', ['read', ref.ref]);
-    if (res.status !== 0) throw fail(`1Password read of ${ref.ref} failed`, res.stderr);
-    return res.stdout.replace(/\r?\n$/, '');
-  }
-  const [cmd, args] =
-    platform === 'darwin'
-      ? ['security', ['find-generic-password', '-s', ref.service, '-a', ref.account, '-w']]
-      : ['secret-tool', ['lookup', 'service', ref.service, 'account', ref.account]];
-  const res = exec(cmd, args);
-  if (res.status !== 0 || res.stdout === '') {
-    throw fail(`keychain entry ${ref.service}/${ref.account} not found`, `${cmd} could not read it; ${res.stderr}`);
-  }
-  return res.stdout.replace(/\r?\n$/, '');
 }
 
 /** Path of the mode-scoped operator env file. */
@@ -202,7 +165,7 @@ export function writeEnvValues(path: string, values: Record<string, string>, opt
 }
 
 /** Write values into `infra/.env.<mode>`, the file `loadModeEnvFile` reads; `remove` drops superseded names. */
-export function writeModeEnvValues(
+function writeModeEnvValues(
   mode: string,
   values: Record<string, string>,
   opts: { remove?: readonly string[] } = {},
