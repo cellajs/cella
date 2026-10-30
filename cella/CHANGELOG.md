@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.32.0](https://github.com/cellajs/cella/compare/0.31.1...0.32.0) (2026-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** commit the project id in the stack file, drop keychain and op pointers ([#1665](https://github.com/cellajs/cella/issues/1665))
+
+### 🎉 New features
+
+* **frontend:** shared code block and theme, docs access popovers ([#1666](https://github.com/cellajs/cella/issues/1666)) ([385ab44](https://github.com/cellajs/cella/commit/385ab44e3b2ef74e72a034de219d1240584e3f5a))
+* show each release's deploy in GitHub's Deployments panel ([#1663](https://github.com/cellajs/cella/issues/1663)) ([2016462](https://github.com/cellajs/cella/commit/2016462297ca5ba1f225788ffe65a42dfba9e3a1))
+
+
+### 🔧 Small improvements
+
+* **infra:** commit the project id in the stack file, drop keychain and op pointers ([#1665](https://github.com/cellajs/cella/issues/1665)) ([f45f3e3](https://github.com/cellajs/cella/commit/f45f3e377aa6f9f4db26432310735e881fc4db7b))
+
 ## [0.31.1](https://github.com/cellajs/cella/compare/0.31.0...0.31.1) (2026-10-30)
 
 
