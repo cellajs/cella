@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/cellajs/cella/compare/0.31.0...0.31.1) (2026-10-30)
+
+
+### 🐞 Bug fixes
+
+* **infra:** keep the boot diagnostics policy within Scaleway's 10 statements ([#1661](https://github.com/cellajs/cella/issues/1661)) ([f496623](https://github.com/cellajs/cella/commit/f4966236dfcdc5fbac937b7301f6d4ddf3b6f81d))
+
 ## [0.31.0](https://github.com/cellajs/cella/compare/0.30.0...0.31.0) (2026-10-30)
 
 
