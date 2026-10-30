@@ -1,17 +1,16 @@
 import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
+import { CodeCopyButton } from '~/modules/common/code-copy-button';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { hasDescriptionKeyword } from '~/modules/common/json-viewer/utils';
+import { CodeViewer } from '~/modules/docs/code-viewer';
+import { CodeBlock } from '~/modules/ui/code-block';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
-import { lazyNamed } from '~/utils/lazy-named';
-
-// Lazy: shiki and its grammars load when the code view opens, not with the docs route.
-const CodeViewer = lazyNamed(() => import('~/modules/docs/code-viewer'), 'CodeViewer');
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
@@ -49,6 +48,8 @@ export function ViewerGroup({
     { value: 'type', icon: FileTypeIcon, label: t('c:type'), ariaLabel: t('c:docs.view_type'), show: !!typeCode },
   ];
 
+  const shownCode = viewMode === 'zod' ? zodCode : viewMode === 'type' ? typeCode : undefined;
+
   return (
     // Isolated: the controls' z-index orders them over the panel only, a pinned bar paints over both
     <div className="relative isolate">
@@ -56,6 +57,7 @@ export function ViewerGroup({
         {descriptionToggle && viewMode === 'format' && hasDescriptionKeyword(schema) && (
           <HelpToggle open={descriptionsOpen} onToggle={() => setDescriptionsOpen(!descriptionsOpen)} className="size-7" />
         )}
+        {shownCode && <CodeCopyButton value={shownCode} />}
         <SegmentedControl value={viewMode} onValueChange={setViewMode} size="xs" className="border-transparent max-md:hidden">
           {toggleItems
             .filter((item) => item.show)
@@ -67,7 +69,7 @@ export function ViewerGroup({
             ))}
         </SegmentedControl>
       </div>
-      <div className="overflow-x-auto rounded-md bg-muted/50">
+      <CodeBlock className="overflow-x-auto">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}
@@ -88,16 +90,14 @@ export function ViewerGroup({
                 hideDescriptions={descriptionToggle && !descriptionsOpen}
               />
             )}
-            <Suspense fallback={null}>
-              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
-              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} />}
-            </Suspense>
+            {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
+            {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} />}
             {viewMode === 'example' && example !== undefined && (
               <JsonViewer value={example} rootName={false} defaultInspectDepth={defaultInspectDepth} indentWidth={3} />
             )}
           </motion.div>
         </AnimatePresence>
-      </div>
+      </CodeBlock>
     </div>
   );
 }

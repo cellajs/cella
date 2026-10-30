@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useRef } from 'react';
 import { scrollToSectionById, spyPrefix } from '~/hooks/scroll-spy-store';
+import { CodeCopyButton } from '~/modules/common/code-copy-button';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import { CodeBlock } from '~/modules/page/code-block';
+import { CodeBlock, CodeBlockActions, CodeBlockContent } from '~/modules/ui/code-block';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
@@ -57,5 +58,18 @@ function MdxTable(props: ComponentProps<'table'>) {
   );
 }
 
+/** Build-time Shiki `<pre>` (vite.config.ts) in a code block frame; the copy button reads the rendered text. */
+function MdxPre(props: ComponentProps<'pre'>) {
+  const preRef = useRef<HTMLPreElement>(null);
+  return (
+    <CodeBlock className="my-5">
+      <CodeBlockActions>
+        <CodeCopyButton value={() => preRef.current?.textContent ?? ''} />
+      </CodeBlockActions>
+      <CodeBlockContent ref={preRef} {...props} />
+    </CodeBlock>
+  );
+}
+
 /** MDX overrides for docs bodies, provided via MDXProvider so they apply inside imported repo docs too. */
-export const mdxComponents = { a: MdxLink, h2: MdxHeading, pre: CodeBlock, table: MdxTable };
+export const mdxComponents = { a: MdxLink, h2: MdxHeading, pre: MdxPre, table: MdxTable };

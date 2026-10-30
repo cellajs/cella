@@ -46,7 +46,7 @@ describe('code block language', () => {
       initialContent: languages.map((language) => ({ ...codeBlock(language), id: language })),
       extensions: [syntaxHighlighter],
     });
-    const tokens = (language: string) => element.querySelectorAll(`[data-id="${language}"] code span[style*="--shiki-dark"]`).length;
+    const tokens = (language: string) => element.querySelectorAll(`[data-id="${language}"] code span[style*="color"]`).length;
 
     await vi.waitFor(() => {
       for (const language of languages.filter((language) => language !== 'text')) expect(tokens(language), language).toBeGreaterThan(0);

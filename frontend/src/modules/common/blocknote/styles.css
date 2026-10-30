@@ -109,16 +109,23 @@ li:has(.is-focused) {
   box-decoration-break: clone;
 }
 
-.dark .bn-block-content[data-content-type="codeBlock"] {
-  background: color-mix(in oklch, var(--input) 50%, transparent);
-  border: 0.05rem solid color-mix(in oklch, var(--ring) 40%, transparent);
+/* The frame of `ui/code-block.tsx`, over BlockNote's near-black surface: its token colors need the same ground as every other code view. */
+.bn-shadcn .bn-block-content[data-content-type="codeBlock"] {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--muted) 50%, transparent);
+  color: var(--muted-foreground);
+}
+
+.bn-shadcn .bn-block-content[data-content-type="codeBlock"] > div > select {
+  color: var(--foreground);
 }
 
 .bn-block-content[data-content-type="codeBlock"] code {
   border: 0;
   background: transparent;
   padding: 0;
-  color: #fff;
+  color: inherit;
   font-weight: inherit;
 }
 

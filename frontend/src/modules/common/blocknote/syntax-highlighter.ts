@@ -2,6 +2,7 @@ import { SyntaxHighlightingExtension } from '@blocknote/core/extensions';
 import { createBundledHighlighter, type DynamicImportLanguageRegistration } from '@shikijs/core';
 import { createJavaScriptRawEngine } from '@shikijs/engine-javascript/raw';
 import type { codeBlockConfig } from 'shared/utils/blocknote-schema-configs';
+import { codeTheme } from '~/utils/code-theme';
 
 /** BlockNote never asks a grammar for plain text, so every other language `codeBlockConfig` allows needs one here. */
 type HighlightedLanguage = Exclude<keyof typeof codeBlockConfig.supportedLanguages, 'text'>;
@@ -15,18 +16,13 @@ const languages: Record<HighlightedLanguage, DynamicImportLanguageRegistration> 
   markdown: () => import('@shikijs/langs-precompiled/markdown'),
   typescript: () => import('@shikijs/langs-precompiled/typescript'),
 };
-
-// BlockNote picks the light and dark theme by the words in their names.
 const createHighlighter = createBundledHighlighter({
   langs: languages,
-  themes: {
-    'github-dark-default': () => import('@shikijs/themes/github-dark-default'),
-    'github-light-default': () => import('@shikijs/themes/github-light-default'),
-  },
+  themes: { [codeTheme.name]: () => Promise.resolve(codeTheme) },
   engine: () => createJavaScriptRawEngine(),
 });
 
-/** Highlights code blocks with the theme pair of the docs and the code viewer. */
+/** Highlights code blocks with the theme of the docs and the code viewer. */
 export const syntaxHighlighter = SyntaxHighlightingExtension({
-  createHighlighter: () => createHighlighter({ themes: ['github-dark-default', 'github-light-default'], langs: [] }),
+  createHighlighter: () => createHighlighter({ themes: [codeTheme.name], langs: [] }),
 });

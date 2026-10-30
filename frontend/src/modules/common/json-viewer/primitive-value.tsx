@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { useState } from 'react';
-import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
+import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { jsonSchemaTypes } from '~/modules/common/json-viewer/utils';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { cn } from '~/utils/cn';
@@ -52,9 +52,9 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
     case 'string': {
       const str = String(value);
 
-      // Schema-mode type keywords render unquoted and in their type color.
+      // Schema-mode type keywords render unquoted and in the type color.
       if (openapiMode === 'schema' && jsonSchemaTypes.has(str)) {
-        return <span className={cn(baseClass, jsonViewerTheme.schemaType, getTypeColorClass(str))}>{str}</span>;
+        return <span className={cn(baseClass, jsonViewerTheme.schemaType)}>{str}</span>;
       }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;

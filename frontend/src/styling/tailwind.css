@@ -100,6 +100,10 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-code-key: var(--code-key);
+  --color-code-type: var(--code-type);
+  --color-code-number: var(--code-number);
+  --color-code-boolean: var(--code-boolean);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-primary: var(--primary);
@@ -470,31 +474,6 @@
   box-decoration-break: clone;
 }
 
-/* Shiki emits light and dark token variables without a default color.
-   App tokens provide container chrome; the active GitHub theme provides contrast. */
-.prose pre.shiki {
-  margin: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.875rem 1rem;
-  overflow-x: auto;
-  background-color: var(--shiki-light-bg);
-}
-
-.prose pre.shiki,
-.prose pre.shiki span {
-  color: var(--shiki-light);
-}
-
-.dark .prose pre.shiki {
-  background-color: var(--shiki-dark-bg);
-}
-
-.dark .prose pre.shiki,
-.dark .prose pre.shiki span {
-  color: var(--shiki-dark);
-}
-
 @layer base {
   /* Theme tokens */
   :root {
@@ -552,6 +531,11 @@
     --warning-foreground: oklch(0.9851 0 0);
     --info: oklch(0.5 0.16 255);
     --info-foreground: oklch(0.9851 0 0);
+    /* Syntax colors of code and the JSON viewer (code-theme.ts); the rest of their text takes the four text steps. */
+    --code-key: oklch(0.508 0.118 165.612);
+    --code-type: oklch(0.558 0.288 302.321);
+    --code-number: oklch(0.555 0.163 48.998);
+    --code-boolean: oklch(0.514 0.222 16.935);
     /* An app's identity color for special buttons, defaulting to each mode's primary; an app may set it apart. */
     --brand: var(--primary);
     --brand-foreground: var(--primary-foreground);
@@ -603,6 +587,10 @@
     --warning-foreground: oklch(0.1963 0.0092 285.53);
     --info: oklch(0.72 0.14 250);
     --info-foreground: oklch(0.1963 0.0092 285.53);
+    --code-key: oklch(0.765 0.177 163.223);
+    --code-type: oklch(0.714 0.203 305.504);
+    --code-number: oklch(0.828 0.189 84.429);
+    --code-boolean: oklch(0.712 0.194 13.428);
     --brand: var(--primary);
     --brand-foreground: var(--primary-foreground);
     /* Black over a near-black page separates less, so the dark scrim dims further. */

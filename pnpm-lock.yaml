@@ -524,9 +524,6 @@ importers:
       '@shikijs/langs-precompiled':
         specifier: ^4.5.0
         version: 4.5.0
-      '@shikijs/themes':
-        specifier: ^4.5.0
-        version: 4.5.0
       '@simplewebauthn/browser':
         specifier: ^14.0.0
         version: 14.0.0
