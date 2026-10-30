@@ -73,11 +73,23 @@ interface NodeDescription {
   isPrimitiveArray: boolean;
 }
 
+/** A description keyword. Always a string, so a parameter or property named `description`, which holds a schema, never matches. */
+const isDescriptionKeyword = (key: string | number, value: unknown) =>
+  (key === 'description' || key === 'refDescription') && typeof value === 'string';
+
+/** Whether a schema holds a description keyword at any depth. */
+export function hasDescriptionKeyword(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(hasDescriptionKeyword);
+  if (!isRecord(value)) return false;
+  return Object.entries(value).some(([key, child]) => isDescriptionKeyword(key, child) || hasDescriptionKeyword(child));
+}
+
 /** What an object or array node renders. In schema mode its keywords become labels and an array schema's item properties are hoisted. */
 export function describeNode(
   value: Record<string, unknown> | unknown[],
   openapiMode: JsonViewerProps['openapiMode'],
   isPropertiesNode: boolean,
+  hideDescriptions: boolean,
 ): NodeDescription {
   const isArray = Array.isArray(value);
   const schemaRecord = openapiMode === 'schema' && isRecord(value) ? value : null;
@@ -127,7 +139,12 @@ export function describeNode(
   // Hide schema keys promoted into labels and hoist array-item properties.
   const filteredEntries =
     openapiMode === 'schema' && !isArray
-      ? rawEntries.filter(([key]) => (isPropertiesNode || !labelKeys.has(key)) && !(isArraySchema && key === 'items'))
+      ? rawEntries.filter(
+          ([key, child]) =>
+            (isPropertiesNode || !labelKeys.has(key)) &&
+            !(isArraySchema && key === 'items') &&
+            !(hideDescriptions && isDescriptionKeyword(key, child)),
+        )
       : rawEntries;
 
   const items = schemaRecord?.items;

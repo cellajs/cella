@@ -17,6 +17,7 @@ const longTimeout = 10_000;
 const manager = Toast.createToastManager<ToastData>();
 let held: ToastManagerAddOptions<ToastData>[] = [];
 let subscriberCount = 0;
+let frontmostId: string | undefined;
 
 /**
  * The manager the app's `Toaster` renders. Toasts shown before any `Toaster` subscribes (a route `beforeLoad` on
@@ -57,11 +58,17 @@ function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
   return options.timeout ?? (type === 'error' || options.description ? longTimeout : timeout);
 }
 
-/** A string message gets a stable id, so repeating it refreshes the visible toast. Errors are announced urgently. */
+/**
+ * A string message gets a stable id, so repeating it shows one toast. Base UI updates a known id where it stands, under
+ * the toasts added since: a repeat that is covered closes first, so its add lands on top. An explicit id is the caller
+ * updating its own toast, which stays in place and keeps its `onClose` unfired. Errors are announced urgently.
+ */
 function show(type?: ToastSeverity) {
   return (message: ReactNode, options: ToastOptions = {}) => {
     const id = options.id ?? (typeof message === 'string' ? `toast:${message}` : undefined);
-    return add({ priority: type === 'error' ? 'high' : 'low', ...options, id, title: message, type, timeout: timeoutFor(type, options) });
+    if (!options.id && id && id !== frontmostId) close(id);
+    frontmostId = add({ priority: type === 'error' ? 'high' : 'low', ...options, id, title: message, type, timeout: timeoutFor(type, options) });
+    return frontmostId;
   };
 }
 

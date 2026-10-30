@@ -8,7 +8,7 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
-import { SidebarNavButton } from '~/modules/navigation/nav-buttons';
+import { navIconStrokeWidth, SidebarNavButton } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { TriggerOrganizationFn } from '~/modules/navigation/types';
 import { useRouteOrganizationId } from '~/modules/navigation/use-route-organization-id';
@@ -75,8 +75,9 @@ function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreate
       onClick={() => onClick(buttonRef)}
       itemClassName="pb-0"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-foreground/40 border-dashed transition-transform group-hover:scale-110">
-        <PlusIcon className="size-4" />
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-foreground/15 more-contrast:border-sidebar-foreground/40 border-dashed transition-transform group-hover:scale-110">
+        {/* The nav icons' rendered stroke: theirs is drawn at size-5, this one at size-4 */}
+        <PlusIcon className="size-4" strokeWidth={(navIconStrokeWidth * 5) / 4} />
       </span>
     </SidebarNavButton>
   );

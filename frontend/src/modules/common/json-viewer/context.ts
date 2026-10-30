@@ -14,6 +14,7 @@ export interface JsonViewerContextValue {
   searchText: string;
   expandAll: boolean;
   showKeyQuotes: boolean;
+  hideDescriptions: boolean;
   openapiMode?: 'spec' | 'schema';
 }
 

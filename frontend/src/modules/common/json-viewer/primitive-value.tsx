@@ -9,7 +9,8 @@ import { tw } from '~/utils/tw';
 const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidden">"</span>;
 
 const baseClass = tw('wrap-break-word whitespace-pre-line');
-const stringClass = cn(baseClass, 'inline-block max-w-[600px] align-top');
+// The row sets where it breaks. A deep row on a phone scrolls sideways before its text gets narrower than this.
+const stringClass = cn(baseClass, 'min-w-24');
 
 interface InlinePrimitiveValueProps {
   value: unknown;

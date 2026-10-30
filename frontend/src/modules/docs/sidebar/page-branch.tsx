@@ -3,13 +3,14 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
 import { getSection, scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { expandRowLinkClass, handleExpandKeys, RowExpandToggle } from '~/modules/common/row-expand-toggle';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { sidebarBulletClass, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
@@ -37,64 +38,74 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((child) => child.page.id === activePageId);
 
+  const toggle = () => onToggle(page.id);
+  const rowClass = cn(
+    expandRowLinkClass,
+    'w-full justify-start',
+    isRoot
+      ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
+      : 'focus-inset h-8 pl-5 font-normal text-muted-foreground data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground data-[expanded=true]:text-foreground',
+  );
+
   return (
     <Collapsible
       open={hasChildren && isExpanded}
       render={<SidebarMenuItem className={isRoot ? 'group/page-root' : 'group/page-parent'} data-expanded={isExpanded} />}
     >
-      {!isRoot && hasChildren && (
-        <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
-      )}
-
-      <div className={isRoot ? sidebarStickyRowClass : 'contents'}>
-        <Link
-          to="/docs/page/$"
-          params={{ _splat: page.id }}
-          preload={isExpanderOnly ? false : 'intent'}
-          draggable={false}
-          data-active={isActive}
-          data-expanded={isExpanded}
-          className={cn(
-            buttonVariants({ variant: 'ghost' }),
-            'w-full justify-start',
-            isRoot
-              ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
-              : 'focus-inset h-8 pl-5 font-normal text-muted-foreground data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground data-[expanded=true]:text-foreground',
-          )}
-          onClick={(event) => {
-            if (isModifiedClick(event)) return;
-            if (isExpanderOnly) {
-              event.preventDefault();
-              onToggle(page.id);
-              return;
-            }
-            // On the page itself a click collapses the subtree at the top, and further down scrolls back up with the subtree open
-            if (hasChildren && isExpanded && isActive) {
-              event.preventDefault();
-              if (getSection() === pageSectionId) {
-                onToggle(page.id);
-              } else {
-                scrollToSectionById(pageSectionId);
-                sheeter.getState().remove(docsSidebarSheetId);
-              }
-              return;
-            }
-            if (hasChildren && !isExpanded) onToggle(page.id);
-            // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-            if (!hasChildren) closeSidebarSheetAndNavigate(event);
-          }}
-        >
-          <span className="truncate">{page.name}</span>
-          {hasChildren && (
-            <ChevronDownIcon
-              className={cn(
-                'ml-auto shrink-0 opacity-40 transition-transform duration-200',
-                isRoot ? 'group-data-[expanded=true]/page-root:rotate-180' : 'group-data-[expanded=true]/page-parent:rotate-180',
-              )}
-            />
-          )}
-        </Link>
+      <div className={cn('group/expand-row', isRoot ? sidebarStickyRowClass : 'relative')}>
+        {isExpanderOnly ? (
+          // A page without content of its own: the whole row opens and closes it
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            data-expanded={isExpanded}
+            className={rowClass}
+            onClick={toggle}
+            onKeyDown={(event) => handleExpandKeys(event, isExpanded, toggle)}
+          >
+            <span className="truncate">{page.name}</span>
+            <ChevronDownIcon className={cn('ml-auto shrink-0 opacity-40 transition-transform duration-200', isExpanded && 'rotate-180')} />
+          </button>
+        ) : (
+          <>
+            <Link
+              to="/docs/page/$"
+              params={{ _splat: page.id }}
+              preload="intent"
+              draggable={false}
+              aria-expanded={hasChildren ? isExpanded : undefined}
+              data-active={isActive}
+              data-expanded={isExpanded}
+              className={cn(rowClass, hasChildren && 'pr-9')}
+              onKeyDown={hasChildren ? (event) => handleExpandKeys(event, isExpanded, toggle) : undefined}
+              onClick={(event) => {
+                if (isModifiedClick(event)) return;
+                // On the page itself a click collapses the subtree at the top, and further down scrolls back up with the subtree open
+                if (hasChildren && isExpanded && isActive) {
+                  event.preventDefault();
+                  if (getSection() === pageSectionId) {
+                    toggle();
+                  } else {
+                    scrollToSectionById(pageSectionId);
+                    sheeter.getState().remove(docsSidebarSheetId);
+                  }
+                  return;
+                }
+                if (hasChildren && !isExpanded) toggle();
+                // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
+                if (!hasChildren) closeSidebarSheetAndNavigate(event);
+              }}
+            >
+              <span className="truncate">{page.name}</span>
+            </Link>
+            {hasChildren && <RowExpandToggle isExpanded={isExpanded} onToggle={toggle} />}
+          </>
+        )}
       </div>
+      {/* After the row, so a hover or active fill never covers the rail */}
+      {!isRoot && hasChildren && (
+        <div className="pointer-events-none absolute top-4.5 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
+      )}
       {!isRoot && <div className={sidebarBulletClass} />}
 
       {hasChildren && (

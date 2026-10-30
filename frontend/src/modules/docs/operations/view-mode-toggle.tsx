@@ -1,21 +1,40 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { ListIcon, TableIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import type { OperationSearch } from '~/modules/docs/types';
+import { SegmentedNav, segmentClassName } from '~/modules/ui/segmented-control';
+
+/** The search goes along; the sort and the expanded tag belong to one view. */
+const carrySearch = ({ q, filter }: OperationSearch) => ({ q, filter });
+
+/** The path alone picks the active view: the current URL can hold search params the links do not carry. */
+const activeOptions = { exact: true, includeSearch: false };
 
 export function ViewModeToggle() {
   const { t } = useTranslation();
-  const isTableRoute = useRouterState({ select: (state) => state.location.pathname === '/docs/operations/table' });
-  const viewMode = isTableRoute ? 'table' : 'list';
 
   return (
-    <ToggleGroup type="single" variant="outline" value={viewMode}>
-      <ToggleGroupItem value="list" aria-label={t('c:list_view')} render={<Link to="/docs/operations" draggable={false} />}>
-        <ListIcon className="size-4" />
-      </ToggleGroupItem>
-      <ToggleGroupItem value="table" aria-label={t('c:table_view')} render={<Link to="/docs/operations/table" draggable={false} />}>
-        <TableIcon className="size-4" />
-      </ToggleGroupItem>
-    </ToggleGroup>
+    <SegmentedNav aria-label={t('c:view_mode')}>
+      <Link
+        to="/docs/operations"
+        search={carrySearch}
+        activeOptions={activeOptions}
+        aria-label={t('c:list_view')}
+        draggable={false}
+        className={segmentClassName}
+      >
+        <ListIcon />
+      </Link>
+      <Link
+        to="/docs/operations/table"
+        search={carrySearch}
+        activeOptions={activeOptions}
+        aria-label={t('c:table_view')}
+        draggable={false}
+        className={segmentClassName}
+      >
+        <TableIcon />
+      </Link>
+    </SegmentedNav>
   );
 }

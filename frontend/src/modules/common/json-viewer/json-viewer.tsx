@@ -48,6 +48,7 @@ export function JsonViewer({
   expandAll = false,
   searchMatchPath = null,
   showKeyQuotes = true,
+  hideDescriptions = false,
 }: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
 
@@ -68,13 +69,14 @@ export function JsonViewer({
     searchText,
     expandAll,
     showKeyQuotes,
+    hideDescriptions,
     openapiMode,
   };
 
   return (
     <JsonViewerContext.Provider value={contextValue}>
       <MatchScope terms={searchText ? [foldText(searchText)] : []}>
-        <div data-openapi-mode={openapiMode} className="group/json-viewer font-mono text-foreground text-sm leading-relaxed">
+        <div data-openapi-mode={openapiMode} className="group/json-viewer font-mono text-foreground text-sm leading-normal">
           <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
         </div>
       </MatchScope>

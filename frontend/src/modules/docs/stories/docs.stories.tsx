@@ -200,8 +200,9 @@ export const SidebarItems: Story = {
 
 const renderOperation = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
-/** An expanded tag's link collapses it (drops operationTag) only at the tag itself, not while one of its operations is current. */
+/** An expanded tag's link collapses it (drops operationTag) only at the tag itself; its chevron collapses it anywhere, in place. */
 export const TagItemReclick: Story = {
+  parameters: { app: { url: '/?q=keep&operationTag=me#tag/me/get/me' } },
   render: () => (
     <SidebarMenu className="w-64">
       {(['me', 'users'] as const).map((name) => (
@@ -213,6 +214,7 @@ export const TagItemReclick: Story = {
           isExpanded
           isActive
           isAtTag={name === 'users'}
+          isOnRoute
           activeItemIndex={name === 'me' ? 1 : -1}
           layoutId={name}
           renderItem={renderOperation}
@@ -224,8 +226,16 @@ export const TagItemReclick: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(await canvas.findByRole('button', { name: /^me/ })).toHaveAttribute('href', '/docs/operations?q=keep&operationTag=me#tag/me');
-    await expect(canvas.getByRole('button', { name: /^users/ })).toHaveAttribute('href', '/docs/operations?q=keep#tag/users');
+    const me = await canvas.findByRole('link', { name: /^me/ });
+    await expect(me).toHaveAttribute('aria-expanded', 'true');
+    await expect(me).toHaveAttribute('href', '/docs/operations?q=keep&operationTag=me#tag/me');
+    await expect(canvas.getByRole('link', { name: /^users/ })).toHaveAttribute('href', '/docs/operations?q=keep#tag/users');
+
+    await userEvent.click(canvas.getAllByRole('button', { hidden: true })[0]);
+    await waitFor(() => expect(getRouter().state.location.search).toEqual({ q: 'keep' }));
+    const { location } = getRouter().state;
+    await expect(location.pathname).toBe('/');
+    await expect(location.hash).toBe('tag/me/get/me');
   },
 };
 
@@ -265,7 +275,7 @@ function PageTreeSpyPage() {
   );
 }
 
-/** On an open parent page, a click further down scrolls back to the page itself; there, the next click collapses it. */
+/** On an open parent page, a click further down scrolls back to the page itself; there, the next click collapses it. The chevron toggles anywhere, without navigating. */
 export const PageBranchReclick: Story = {
   beforeEach: () => {
     pageOnToggle.mockClear();
@@ -285,6 +295,13 @@ export const PageBranchReclick: Story = {
 
     await userEvent.click(guide);
     await expect(pageOnToggle).toHaveBeenCalledWith('guide');
+
+    pageOnToggle.mockClear();
+    const pathname = getRouter().state.location.pathname;
+    await userEvent.click(within(canvasElement).getByRole('button', { hidden: true }));
+    await expect(pageOnToggle).toHaveBeenCalledWith('guide');
+    await expect(getRouter().state.location.pathname).toBe(pathname);
+    await expect(guide).toHaveFocus();
   },
 };
 
@@ -317,8 +334,8 @@ export const Responses: Story = {
 
     await userEvent.click(ok);
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
-    await expect(await canvas.findByRole('button', { name: /view_format/ })).toHaveAttribute('aria-pressed', 'true');
-    await expect(canvas.getByRole('button', { name: /view_example/ })).toHaveAttribute('aria-pressed', 'false');
+    await expect(await canvas.findByRole('radio', { name: /view_format/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(canvas.getByRole('radio', { name: /view_example/ })).toHaveAttribute('aria-checked', 'false');
 
     await userEvent.click(notFound);
     await expect(await canvas.findByText(/no_response_body/)).toBeVisible();
@@ -357,7 +374,7 @@ export const Examples: Story = {
     await expect(canvas.queryByRole('button', { name: /404/ })).toBeNull();
 
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
-    await expect(canvas.getByRole('button', { name: /view_example/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(canvas.getByRole('radio', { name: /view_example/ })).toHaveAttribute('aria-checked', 'true');
   },
 };
 

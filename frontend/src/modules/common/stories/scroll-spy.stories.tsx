@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react';
 import { expect, waitFor } from 'storybook/test';
 import { getSection, scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -29,19 +30,10 @@ const tabs: SidebarTab[] = [
   { id: 'delete-section', label: 'Delete', icon: Trash2Icon },
 ];
 
-// ─── AsideAnchor (mirrors ~/modules/common/aside-anchor.tsx) ─────────────────
-
-const AsideAnchor = ({ id, children, extraOffset }: { id: string; children?: React.ReactNode; extraOffset?: boolean }) => (
-  <div id={`spy-${id}-anchor-wrap`} className="last:mb-12 md:last:mb-[70vh]">
-    <div id={`spy-${id}`} className={cn('absolute w-[.05rem]', extraOffset ? '-mt-16 h-16' : '-mt-8 h-8')} />
-    {children}
-  </div>
-);
-
 // ─── Section card ────────────────────────────────────────────────────────────
 
 const SectionCard = ({ id, title, lines = 8 }: { id: string; title: string; lines?: number }) => (
-  <AsideAnchor id={id} extraOffset>
+  <AsideAnchor id={id}>
     <div className="rounded-lg border bg-card p-6 shadow-sm">
       <h2 className="mb-4 font-semibold text-xl">{title}</h2>
       {Array.from({ length: lines }, (_, i) => (

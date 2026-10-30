@@ -139,7 +139,10 @@ function ContextLink({ channel, className }: ContextLinkProps) {
       params={route.params}
       {...pageTopHashNav}
       draggable={false}
-      className={cn('focus-inset -m-1 flex min-w-0 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground', className)}
+      className={cn(
+        'focus-inset link-decoration active:link-decoration-strong -m-1 flex min-w-0 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground hover:underline',
+        className,
+      )}
     >
       <MiddleCut text={channel.name} />
     </Link>

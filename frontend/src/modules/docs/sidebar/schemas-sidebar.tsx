@@ -14,9 +14,11 @@ const renderItem = (schema: GenComponentSchema, isActive: boolean) => <SchemaIte
 
 interface SchemasSidebarProps {
   activeTag?: string;
+  /** The schemas page is open: off it, a tag only links there. */
+  isOnRoute: boolean;
 }
 
-export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
+export function SchemasSidebar({ activeTag, isOnRoute }: SchemasSidebarProps) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('schemas');
 
@@ -42,6 +44,7 @@ export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
             layoutId={layoutId}
             isActive={isActive}
             isAtTag={isAtTag}
+            isOnRoute={isOnRoute}
             activeItemIndex={activeSchemaIndex}
             renderItem={renderItem}
             itemKey={itemKey}

@@ -15,6 +15,7 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
+import { textDocument } from './description-document';
 import { toBatches } from './seed-volume';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
@@ -71,6 +72,8 @@ export const organizationsSeed = async () => {
     ...org,
     tenantId: tenants[Math.floor(i / ORGANIZATIONS_PER_TENANT)].id, // one org per tenant
     createdBy: defaultAdminUser.id,
+    // The details editor reads only a block document: the mock's plain text opens as an empty editor
+    welcomeText: textDocument(`Welcome to ${org.name}!`),
   }));
   const organizations = await db
     .insert(organizationsTable)

@@ -13,7 +13,7 @@ const SchemasPage = lazyNamed(() => import('~/modules/docs/schemas/schemas-page'
 export const Route = createFileRoute('/_public/_content/docs/schemas')({
   staticData: { isAuth: false },
   validateSearch: schemasRouteSearchParamsSchema,
-  search: { middlewares: [stripForeignParams('operationTag')] },
+  search: { middlewares: [stripForeignParams('operationTag', 'q', 'filter', 'sort', 'order')] },
   head: () => pageHead(i18n.t('c:schema_other')),
   loader: async () => {
     await Promise.all([queryClient.query(schemasQueryOptions), queryClient.query(schemaTagsQueryOptions)]);

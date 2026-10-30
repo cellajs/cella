@@ -2,7 +2,7 @@
 /** Release identifier (git SHA, or 'unknown') used as Maple serviceVersion. */
 declare const __APP_VERSION__: string;
 
-/** Root package.json version (release-please), shown on the docs landing page. */
+/** Root package.json version (release-please), shown on the docs landing page and in the info panel. */
 declare const __PKG_VERSION__: string;
 
 /** True outside production mode; gates devtools-only branches at build time. */

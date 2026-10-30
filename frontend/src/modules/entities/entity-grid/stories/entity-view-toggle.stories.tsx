@@ -21,22 +21,22 @@ export const ShouldSwitchView: Story = {
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const grid = await canvas.findByRole('button', { name: /grid/i });
-    const table = canvas.getByRole('button', { name: /table/i });
+    const grid = await canvas.findByRole('radio', { name: /grid/i });
+    const table = canvas.getByRole('radio', { name: /table/i });
 
     await step('grid is active without a view in the URL', async () => {
-      await expect(grid).toHaveAttribute('aria-pressed', 'true');
+      await expect(grid).toHaveAttribute('aria-checked', 'true');
     });
 
     await step('click table to switch', async () => {
       await userEvent.click(table);
-      await waitFor(() => expect(table).toHaveAttribute('aria-pressed', 'true'));
-      await expect(grid).toHaveAttribute('aria-pressed', 'false');
+      await waitFor(() => expect(table).toHaveAttribute('aria-checked', 'true'));
+      await expect(grid).toHaveAttribute('aria-checked', 'false');
     });
 
     await step('click table again: it stays active', async () => {
       await userEvent.click(table);
-      await expect(table).toHaveAttribute('aria-pressed', 'true');
+      await expect(table).toHaveAttribute('aria-checked', 'true');
     });
   },
 };
@@ -47,6 +47,6 @@ export const TableFromUrl: Story = {
   parameters: { app: { url: '/?view=table' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole('button', { name: /table/i })).toHaveAttribute('aria-pressed', 'true');
+    await expect(await canvas.findByRole('radio', { name: /table/i })).toHaveAttribute('aria-checked', 'true');
   },
 };

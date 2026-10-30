@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { hasDescriptionKeyword } from '~/modules/common/json-viewer/utils';
+import { HelpToggle } from '~/modules/ui/help-toggle';
+import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { lazyNamed } from '~/utils/lazy-named';
 
 // Lazy: shiki and its grammars load when the code view opens, not with the docs route.
@@ -23,11 +25,22 @@ interface ViewerGroupProps {
   example?: unknown;
   defaultInspectDepth?: number;
   defaultViewMode?: SchemaViewMode;
+  /** Hides the schema's descriptions behind a help toggle, which shows only when the schema has any. */
+  descriptionToggle?: boolean;
 }
 
-export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspectDepth = 5, defaultViewMode = 'format' }: ViewerGroupProps) {
+export function ViewerGroup({
+  schema,
+  zodCode,
+  typeCode,
+  example,
+  defaultInspectDepth = 5,
+  defaultViewMode = 'format',
+  descriptionToggle,
+}: ViewerGroupProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
+  const [descriptionsOpen, setDescriptionsOpen] = useState(false);
 
   const toggleItems: { value: SchemaViewMode; icon: IconComponent; label: string; ariaLabel: string; show: boolean }[] = [
     { value: 'format', icon: TextAlignStartIcon, label: t('c:docs.format'), ariaLabel: t('c:docs.view_format'), show: true },
@@ -37,29 +50,23 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
   ];
 
   return (
-    <div className="relative">
-      <ToggleGroup
-        type="single"
-        value={viewMode}
-        onValueChange={(value) => setViewMode((mode) => toggleItems.find((item) => item.value === value)?.value ?? mode)}
-        size="xs"
-        variant="outline"
-        className="absolute top-2 right-2 z-10 bg-muted/50 max-md:hidden"
-      >
-        {toggleItems
-          .filter((item) => item.show)
-          .map(({ value, icon: Icon, label, ariaLabel }) => (
-            <ToggleGroupItem
-              key={value}
-              value={value}
-              aria-label={ariaLabel}
-              className="text-muted-foreground hover:text-foreground data-pressed:text-foreground"
-            >
-              <Icon className="mr-1.5" />
-              <span className="text-xs">{label}</span>
-            </ToggleGroupItem>
-          ))}
-      </ToggleGroup>
+    // Isolated: the controls' z-index orders them over the panel only, a pinned bar paints over both
+    <div className="relative isolate">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+        {descriptionToggle && viewMode === 'format' && hasDescriptionKeyword(schema) && (
+          <HelpToggle open={descriptionsOpen} onToggle={() => setDescriptionsOpen(!descriptionsOpen)} className="size-7" />
+        )}
+        <SegmentedControl value={viewMode} onValueChange={setViewMode} size="xs" className="border-transparent max-md:hidden">
+          {toggleItems
+            .filter((item) => item.show)
+            .map(({ value, icon: Icon, label, ariaLabel }) => (
+              <SegmentedControlItem key={value} value={value} aria-label={ariaLabel}>
+                <Icon />
+                {label}
+              </SegmentedControlItem>
+            ))}
+        </SegmentedControl>
+      </div>
       <div className="overflow-x-auto rounded-md bg-muted/50">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -68,7 +75,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="p-3 md:py-6"
+            className="p-3 md:py-4"
           >
             {viewMode === 'format' && (
               <JsonViewer
@@ -78,6 +85,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
                 rootName={false}
                 defaultInspectDepth={defaultInspectDepth}
                 indentWidth={3}
+                hideDescriptions={descriptionToggle && !descriptionsOpen}
               />
             )}
             <Suspense fallback={null}>

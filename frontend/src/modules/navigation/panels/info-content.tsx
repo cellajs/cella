@@ -17,7 +17,8 @@ import { tw } from '~/utils/tw';
 
 const statusVariant: Record<HealthStatus, StatusDotVariant> = { healthy: 'success', degraded: 'warning', unhealthy: 'destructive' };
 
-const statusCardClass = tw('flex items-center gap-2 rounded-md border border-input border-dashed px-4 py-2 text-left text-xs');
+// Same box as a NavSheetRow, with the dot in its 16px icon column, so dots and labels line up with the rows above
+const statusCardClass = tw('flex items-center gap-2 rounded-md border border-transparent px-3 py-2 text-left text-xs');
 
 /** One status entry; hover or focus shows what it covers and, when not healthy, which check failed and why. */
 function StatusEntryCard({ graded: { entry, status, component, reason } }: { graded: GradedStatusEntry }) {
@@ -25,8 +26,8 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
 
   return (
     <HoverCard>
-      <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect border-input')}>
-        <StatusDot variant={statusVariant[status]} />
+      <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect')}>
+        <StatusDot variant={statusVariant[status]} className="mx-1" />
         <span className="min-w-0">{t(entry.label)}</span>
       </HoverCardTrigger>
       <HoverCardContent side="top" className="flex w-60 flex-col gap-1 p-3">
@@ -70,7 +71,7 @@ export function InfoContent() {
       <div className="flex flex-col gap-1">
         <h3 className="group-label px-3">{t('c:support')}</h3>
         <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} />} />
-        <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" />} />
+        <NavSheetRow icon={BookOpenIcon} label={t('c:docs')} render={<Link to="/docs" />} />
         {appConfig.has.chatSupport && (
           <NavSheetRow ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => askForHelp(supportRef)} />
         )}
@@ -80,22 +81,25 @@ export function InfoContent() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2 px-3">
           <h3 className="group-label">{t('c:status')}</h3>
-          {hasStatusPage && (
-            <Button
-              variant="link"
-              size="auto"
-              className="gap-1 text-faint-foreground text-xs hover:text-muted-foreground"
-              onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
-            >
-              <ExternalLinkIcon className="size-3" />
-              {t('c:details')}
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="text-faint-foreground text-xs">{__PKG_VERSION__}</span>
+            {hasStatusPage && (
+              <Button
+                variant="link"
+                size="auto"
+                className="gap-1 text-faint-foreground text-xs hover:text-muted-foreground"
+                onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
+              >
+                <ExternalLinkIcon className="size-3" />
+                {t('c:details')}
+              </Button>
+            )}
+          </div>
         </div>
         <div className={cn('gap-2 pt-1', allHealthy ? 'flex flex-col' : 'grid grid-cols-2')}>
           {allHealthy ? (
             <div className={statusCardClass}>
-              <StatusDot variant="success" />
+              <StatusDot variant="success" className="mx-1" />
               {t('c:all_systems_healthy')}
             </div>
           ) : (

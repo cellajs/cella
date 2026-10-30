@@ -8,7 +8,7 @@ export function FAQ() {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-measure">
       <Accordion className="w-full">
         {faqsData.map((faq, index) => {
           const question = `about:faq.question_${index + 1}` as TKey;

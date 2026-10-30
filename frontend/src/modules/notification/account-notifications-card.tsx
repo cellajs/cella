@@ -6,9 +6,8 @@ import { HelpText } from '~/modules/common/help-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { notificationPreferencesQueryOptions, useUpdateNotificationPreferencesMutation } from '~/modules/notification/query';
 import { usePushSubscription } from '~/modules/notification/use-push-subscription';
-import { FieldContent, FieldLabel, FieldLayout, FieldTitle } from '~/modules/ui/field';
 import { Label } from '~/modules/ui/label';
-import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
+import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { Switch } from '~/modules/ui/switch';
 
 /** Cadences are mutually exclusive: one enum column, and each notification is digested once. */
@@ -56,24 +55,13 @@ export function AccountNotificationsCard() {
           <HelpText content={t('c:notifications.digest.text')} className="mb-4">
             <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
-          {/* RadioGroup's `grid` already stacks the tiles, so only the desktop row needs a class */}
-          <RadioGroup
-            aria-labelledby="digest-label"
-            value={data.digest}
-            onValueChange={(digest) => updatePreferences({ digest })}
-            className="lg:grid-cols-3"
-          >
+          <SegmentedControl aria-labelledby="digest-label" value={data.digest} onValueChange={(digest) => updatePreferences({ digest })}>
             {digestOptions.map(({ value, label }) => (
-              <FieldLabel key={value} htmlFor={`digest-${value}`} card>
-                <FieldLayout orientation="horizontal">
-                  <RadioGroupItem id={`digest-${value}`} value={value} />
-                  <FieldContent>
-                    <FieldTitle>{t(label)}</FieldTitle>
-                  </FieldContent>
-                </FieldLayout>
-              </FieldLabel>
+              <SegmentedControlItem key={value} value={value}>
+                {t(label)}
+              </SegmentedControlItem>
             ))}
-          </RadioGroup>
+          </SegmentedControl>
         </div>
       </div>
     </ToolCard>

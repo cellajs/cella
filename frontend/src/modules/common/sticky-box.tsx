@@ -1,25 +1,6 @@
 import { type ComponentProps, type CSSProperties, type RefObject, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
-
-/** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
-export function getScrollParent(node: HTMLElement): HTMLElement | Window {
-  let parent: HTMLElement | null = node;
-  // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
-  while ((parent = parent.parentElement)) {
-    const overflowY = getComputedStyle(parent, null).getPropertyValue('overflow-y');
-    if (parent === document.body) return window;
-    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-      return parent;
-    }
-  }
-  return window;
-}
-
-/** Scroll offset of a scroll parent from `getScrollParent`. */
-const scrollTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? scrollParent.scrollY : scrollParent.scrollTop);
-
-/** Viewport position of a scroll parent's top edge: 0 for the window. */
-export const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
+import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-parent';
 
 const passiveArg = { passive: true } as const;
 

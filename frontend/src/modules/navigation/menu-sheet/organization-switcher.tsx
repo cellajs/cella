@@ -13,7 +13,6 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
-import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { useOrganizationUnseenCounts } from '~/modules/seen/use-unseen-count';
@@ -126,14 +125,6 @@ interface OrganizationSwitcherProps {
 export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const { active } = useSwitcherOrganizations();
-  const unseenCounts = useOrganizationUnseenCounts();
-  // Unseen content homed in the organization itself, as the desktop menu header shows it
-  const unseenCount = useMenuItemUnseenCount(organization, true);
-
-  // Unseen news elsewhere, the reason to switch
-  let otherUnseenCount = 0;
-  for (const item of active) if (item.id !== organization.id) otherUnseenCount += unseenCounts.get(item.id) ?? 0;
 
   const openMenu = () => {
     dropdowner.getState().create(<OrganizationSwitcherMenu organization={organization} triggerRef={triggerRef} />, {
@@ -152,7 +143,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
         variant="ghost"
         onClick={openMenu}
         aria-label={t('c:switch_organization', { name: organization.name })}
-        className="relative h-12 w-full justify-start gap-3 px-3 text-md data-dropdowner-active:bg-muted"
+        className="h-12 w-full justify-start gap-3 px-3 text-md data-dropdowner-active:bg-muted"
       >
         <EntityAvatar
           className="size-8 shrink-0"
@@ -162,10 +153,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
           url={organization.thumbnailUrl}
         />
         <span className="min-w-0 grow truncate text-left">{organization.name}</span>
-        {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
         <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
-        {/* On the corner, as on the nav buttons, so it reads as the other organizations' count and not this one's */}
-        {otherUnseenCount > 0 && <CountBadge count={otherUnseenCount} className="absolute -top-1 -right-1" />}
       </Button>
     </div>
   );

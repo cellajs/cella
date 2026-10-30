@@ -11,11 +11,11 @@ interface OperationSectionProps {
 /** A part of an operation's detail, such as its request or responses, open by default. */
 export function OperationSection({ title, children }: OperationSectionProps) {
   return (
-    <Collapsible defaultOpen className="mt-8">
+    <Collapsible defaultOpen className="mt-5">
       <CollapsibleTrigger
         nativeButton
         render={
-          <Button variant="ghost" size="sm" className="group/operation-section w-full justify-start gap-2">
+          <Button variant="ghost" size="sm" className="group/operation-section gap-2 aria-expanded:not-hover:bg-transparent">
             <span>{title}</span>
             <ChevronDownIcon className="opacity-40 transition-transform duration-200 group-hover/operation-section:opacity-70 group-data-panel-open/operation-section:rotate-180" />
           </Button>

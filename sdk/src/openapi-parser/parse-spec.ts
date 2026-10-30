@@ -55,6 +55,7 @@ function summarizeResponse(
   response: OpenApiResponseObject | OpenApiReferenceObject,
   spec: OpenApiSpec,
   componentResponses: Record<string, OpenApiResponseObject>,
+  sharedHeaders: Set<string>,
 ): GenResponseSummary {
   let description = '';
   let name: string | undefined;
@@ -74,10 +75,12 @@ function summarizeResponse(
       const componentSchema = contentType ? component.content?.[contentType]?.schema : undefined;
       if (componentSchema) schema = resolveSchema(componentSchema, spec);
       if (component.headers) {
-        headers = Object.entries(component.headers).map(([headerName, header]) => ({
-          name: headerName,
-          description: ('description' in header && header.description) || '',
-        }));
+        headers = Object.entries(component.headers)
+          .filter(([headerName]) => !sharedHeaders.has(headerName))
+          .map(([headerName, header]) => ({
+            name: headerName,
+            description: ('description' in header && header.description) || '',
+          }));
       }
     }
   } else {
@@ -194,6 +197,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     if (!('$ref' in value)) componentResponses[name] = value;
   }
 
+  // A header every component declares, the request id, is a field of the error body too: each response lists only its own
+  const [firstComponent, ...otherComponents] = Object.values(componentResponses);
+  const sharedHeaders = new Set(
+    otherComponents.length ? Object.keys(firstComponent.headers ?? {}).filter((header) => otherComponents.every((c) => c.headers?.[header])) : [],
+  );
+
   for (const [path, pathItem] of Object.entries(spec.paths ?? {})) {
     if (!pathItem) continue;
 
@@ -213,7 +222,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       for (const [statusCode, entry] of Object.entries(op.responses ?? {})) {
         // The ResponsesObject index signature includes `unknown`, so a boundary cast is required.
         const response = entry as OpenApiResponseObject | OpenApiReferenceObject | undefined;
-        if (response) responses.push(summarizeResponse(statusCode, response, spec, componentResponses));
+        if (response) responses.push(summarizeResponse(statusCode, response, spec, componentResponses, sharedHeaders));
       }
 
       const extensions: Record<string, string[]> = {};
@@ -245,6 +254,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         ...(entityType && { entityType }),
         ...(enabledBy && { enabledBy }),
         ...(tool && { tool }),
+        ...(op.security && { security: op.security }),
       });
 
       const operationDetail: GenOperationDetail = { operationId: op.operationId, responses };

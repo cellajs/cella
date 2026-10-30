@@ -43,12 +43,14 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="py-2 text-foreground-soft hover:text-foreground group-data-open/accordion-header:text-foreground">
+            <AccordionTrigger className="focus-inset py-2 font-normal text-foreground-soft hover:text-foreground hover:no-underline group-data-open/accordion-header:text-foreground [&>svg]:size-4 [&>svg]:translate-y-1">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
-                <div className={cn('rounded px-2 py-0.5 font-mono font-semibold', getStatusColor(response.status))}>{response.status}</div>
+                <div className={cn('rounded px-2 py-0.5 font-mono font-semibold transition-colors', getStatusColor(response.status))}>
+                  {response.status}
+                </div>
                 <div
                   className={cn(
-                    'grow',
+                    'link-decoration group-active/accordion-header:link-decoration-strong grow group-hover/accordion-header:underline',
                     examplesOnly
                       ? 'text-muted-foreground group-data-open/accordion-header:text-foreground'
                       : 'text-foreground group-data-open/accordion-header:text-primary',
@@ -57,13 +59,15 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   {response.description}
                 </div>
                 {response.name && (
-                  <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs max-md:hidden">{response.name}</span>
+                  <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs transition-colors group-hover/accordion-header:text-foreground max-md:hidden">
+                    {response.name}
+                  </span>
                 )}
               </div>
             </AccordionTrigger>
             <AccordionContent>
               {response.headers && (
-                <dl className="flex flex-wrap gap-x-4 gap-y-1 px-3 pt-2 text-sm">
+                <dl className="flex max-w-measure flex-wrap gap-x-4 gap-y-1 px-3 pt-2 text-sm">
                   {response.headers.map((header) => (
                     <div key={header.name}>
                       <dt className="inline font-mono text-foreground-soft">{header.name}</dt>
@@ -79,6 +83,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                   example={response.example}
                   defaultViewMode={examplesOnly ? 'example' : undefined}
+                  descriptionToggle
                 />
               ) : (
                 <div className="p-3 text-muted-foreground">{t('c:docs.no_response_body')}</div>

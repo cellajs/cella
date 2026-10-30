@@ -40,4 +40,6 @@ export interface JsonViewerProps {
   searchMatchPath?: JsonPath | null;
   /** Whether to show quotes around keys (default: true) */
   showKeyQuotes?: boolean;
+  /** Schema mode: leaves out `description` and `refDescription` keywords (default: false) */
+  hideDescriptions?: boolean;
 }

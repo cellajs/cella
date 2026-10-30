@@ -30,7 +30,8 @@ export function MiddleCut({ text, className }: MiddleCutProps) {
       <span aria-hidden className="overflow-hidden text-ellipsis whitespace-pre">
         <HighlightText text={text.slice(0, splitAt)} />
       </span>
-      <span aria-hidden className="whitespace-pre">
+      {/* The start gives way first; an end wider than the whole box is cut at its own end */}
+      <span aria-hidden className="max-w-full shrink-0 overflow-hidden text-ellipsis whitespace-pre">
         <HighlightText text={text.slice(splitAt)} />
       </span>
     </span>

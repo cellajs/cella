@@ -6,6 +6,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { TocAside } from '~/modules/page/toc-aside';
+import { getRouter } from '~/routes/-router-instance';
 import { withApp } from '~/stories/with-app';
 
 /** Scroll-spy asides: the docs page "on this page" nav and the legal page subject nav. */
@@ -112,7 +113,6 @@ export const Legal: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // The subject link is the collapsible trigger, so it carries a button role
     const termsLink = (await canvas.findByText(/terms_of_use/)).closest('a');
     await expect(termsLink).toHaveAttribute('href', '/legal/terms#overview');
 
@@ -145,7 +145,7 @@ function LegalSpyPage() {
   return <SpyPage ids={legalIds} aside={<LegalAside subjects={subjects} currentSubject={'terms' as LegalSubject} />} />;
 }
 
-/** Away from its overview a subject click scrolls back there and keeps the subject open; at the overview it collapses. */
+/** Away from its overview a subject click scrolls back there and keeps the subject open; at the overview it collapses. The chevron toggles without navigating. */
 export const LegalSubjectReclick: Story = {
   render: () => <LegalSpyPage />,
   play: async ({ canvasElement }) => {
@@ -163,5 +163,10 @@ export const LegalSubjectReclick: Story = {
 
     await userEvent.click(termsLink);
     await waitFor(() => expect(termsLink).toHaveAttribute('aria-expanded', 'false'));
+
+    const { pathname } = getRouter().state.location;
+    await userEvent.click(within(termsLink.parentElement as HTMLElement).getByRole('button', { hidden: true }));
+    await waitFor(() => expect(termsLink).toHaveAttribute('aria-expanded', 'true'));
+    await expect(getRouter().state.location.pathname).toBe(pathname);
   },
 };

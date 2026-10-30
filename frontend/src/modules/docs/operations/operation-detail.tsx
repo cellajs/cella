@@ -5,9 +5,12 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationDetail, GenOperationSummary } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
+import { OperationAccess } from '~/modules/docs/operations/operation-access';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
@@ -49,6 +52,26 @@ function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperation
   return tagDetails.find((entry) => entry.operationId === operation.id);
 }
 
+/** Every OpenAPI tag by kind, as a bare value such as `product` says little alone. The owner comes last: most operations share it. */
+function OperationTags({ tagsByKind }: Pick<GenOperationSummary, 'tagsByKind'>) {
+  const kinds = Object.entries(tagsByKind).toSorted(([a], [b]) => Number(a === 'owner') - Number(b === 'owner'));
+  if (!kinds.length) return null;
+
+  return (
+    <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+      {kinds.map(([kind, values]) => (
+        <div key={kind}>
+          <dt className="inline text-muted-foreground">{upperFirst(kind)}</dt>
+          <dd className="inline">
+            {' '}
+            <HighlightText text={values.join(', ')} />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 interface OperationDetailProps {
   operation: GenOperationSummary;
   detail?: GenOperationDetail;
@@ -60,21 +83,30 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
   const detail = useResolvedDetail(operation, detailProp);
 
   return (
-    <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
+    <Card id={`spy-${operation.hash}`} className={cn('border-0 sm:py-5', className)}>
       <CardHeader className="group/hash-url">
         <div className="flex items-center justify-between">
           <CardTitle level={3} className="gap-2 leading-8 sm:text-xl">
-            {operation.summary}
+            <HighlightText text={operation.summary} />
             <HashUrlButton hash={operation.hash} />
           </CardTitle>
-          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">{operation.id}</div>
+          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
+            <HighlightText text={operation.id} />
+          </div>
         </div>
-        {operation.description && <CardDescription className="max-w-3xl whitespace-pre-line text-base">{operation.description}</CardDescription>}
+        {operation.description && (
+          <CardDescription className="max-w-measure whitespace-pre-line text-base">
+            <HighlightText text={operation.description} />
+          </CardDescription>
+        )}
+        <OperationTags tagsByKind={operation.tagsByKind} />
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
           <MethodLabel method={operation.method} size="md" />
-          <code className="break-all text-muted-foreground sm:text-lg">{operation.path}</code>
+          <code className="break-all text-muted-foreground sm:text-lg">
+            <HighlightText text={operation.path} />
+          </code>
           {operation.deprecated && (
             <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
@@ -82,6 +114,8 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
           )}
           <SwitchedOffBadge enabledBy={operation.enabledBy} withReason />
         </div>
+
+        <OperationAccess operation={operation} />
 
         <Suspense fallback={<Spinner />}>
           <OperationRequest detail={detail} />
@@ -95,28 +129,25 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
 
 interface TagOperationsListProps {
   operations: GenOperationSummary[];
+  tagName: string;
 }
 
 /** Fetches tag details once (not per-child) and registers all operation hashes with the scroll spy. */
-export function TagOperationsList({ operations }: TagOperationsListProps) {
+export function TagOperationsList({ operations, tagName }: TagOperationsListProps) {
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 
-  const tagName = operations.length > 0 ? operations[0].tags[0] : '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const detailsById = new Map(tagDetails.map((detail) => [detail.operationId, detail]));
 
-  // Without operations the tag name is '', whose query fetches nothing; this skips the empty dashed list
-  if (operations.length === 0) return null;
-
   return (
-    <div className="border-t border-dashed">
+    <div>
       {operations.map((operation) => (
         <OperationDetail
           key={operation.hash}
           operation={operation}
           detail={detailsById.get(operation.id)}
-          className="rounded-none last:rounded-b-lg"
+          className="rounded-none border-input border-t border-dashed last:rounded-b-lg"
         />
       ))}
     </div>

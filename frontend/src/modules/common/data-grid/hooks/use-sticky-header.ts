@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import { useLayoutEffect } from 'react';
-import { getScrollParent, stackOffset, stackOffsetCss } from '~/modules/common/sticky-box';
+import { stackOffset, stackOffsetCss } from '~/modules/common/sticky-box';
+import { getScrollParent } from '~/utils/scroll-parent';
 
 /**
  * Pins measured header cells with fixed positioning below the sticky stack (the bars `StickyBox` publishes), syncing

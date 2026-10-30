@@ -25,15 +25,20 @@ export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
       press={false}
       className={cn('size-6 text-muted-foreground focus-visible:text-foreground', className)}
     >
-      <span className="relative size-4">
-        <CircleQuestionMarkIcon
-          className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', open && 'rotate-90 opacity-0')}
-        />
-        <ChevronUpIcon
-          className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', !open && '-rotate-90 opacity-0')}
-        />
-      </span>
+      <HelpToggleIcon open={open} />
     </Button>
+  );
+}
+
+/** The question mark that turns into a chevron while help is open, for a control larger than `HelpToggle`, such as a section bar. */
+export function HelpToggleIcon({ open, className }: { open: boolean; className?: string }) {
+  return (
+    <span className={cn('relative size-4 shrink-0', className)}>
+      <CircleQuestionMarkIcon
+        className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', open && 'rotate-90 opacity-0')}
+      />
+      <ChevronUpIcon className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', !open && '-rotate-90 opacity-0')} />
+    </span>
   );
 }
 

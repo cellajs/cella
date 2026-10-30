@@ -10,7 +10,7 @@ import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoge
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { Button } from '~/modules/ui/button';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
@@ -129,24 +129,26 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
       <AnimatePresence mode="popLayout">
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <ToggleGroup
-              type="multiple"
-              onValueChange={(value) => updateMode((value as InviteMode[])[0] ?? null)}
-              className="w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3"
-            >
+            <div className="flex w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3">
               {inviteTiles.map(({ mode, icon: Icon, label }) => (
-                <ToggleGroupItem key={mode} size="tile" variant="tile" value={mode} className="w-auto grow py-6 sm:py-10">
+                <Button
+                  key={mode}
+                  variant="outline"
+                  size="auto"
+                  className="group/tile grow gap-3 rounded-xl p-3 py-6 text-left sm:py-10"
+                  onClick={() => updateMode(mode)}
+                >
                   <Icon className="size-12" strokeWidth={1} />
-                  <div className="flex flex-col truncate pl-3">
+                  <div className="flex flex-col truncate">
                     <p>{t(label)}</p>
-                    <div className="mt-1 flex items-center truncate text-muted-foreground transition-colors group-hover/toggle:text-foreground">
+                    <div className="mt-1 flex items-center truncate text-muted-foreground transition-colors group-hover/tile:text-foreground">
                       <strong>{t('c:continue')}</strong>
                       <AnimatedArrow />
                     </div>
                   </div>
-                </ToggleGroupItem>
+                </Button>
               ))}
-            </ToggleGroup>
+            </div>
           </motion.div>
         )}
         {current && (

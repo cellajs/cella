@@ -11,23 +11,24 @@ interface SelectRoleProps {
   className?: string;
 }
 
-/** A role filter whose "All" option reads and writes `undefined`. */
+/** A role filter; no role selected reads and writes `undefined`. */
 export function SelectRole({ entityType, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
   const roleOptions = entityType ? hierarchy.getRoles(entityType) : appConfig.systemRoles;
 
-  const options = [{ value: 'all', label: t('c:all') }, ...roleOptions.map((role) => ({ value: role, label: t(role) }))];
+  const options = roleOptions.map((role) => ({ value: role, label: t(role) }));
 
   return (
     <ResponsiveSelect
       options={options}
-      value={value ?? 'all'}
-      onChange={(role) => onChange(role === 'all' ? undefined : role)}
-      placeholder={t('c:placeholder.select_role')}
+      value={value}
+      onChange={onChange}
+      onClear={() => onChange(undefined)}
       title={t('c:role')}
       showTitle
+      align="start"
       className={className}
       disabled={!isOnline}
     />
