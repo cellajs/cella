@@ -1,6 +1,7 @@
 /**
  * Sources for a paginated list's `total`: `pageLength` reports the fetched page length, `counter`
- * an eventually consistent precomputed total, `exact` a `COUNT(*)`.
+ * an eventually consistent precomputed total, `exact` a `COUNT(*)`. `getTotal` builds its own query: a drizzle builder
+ * changes in place, so one the items query was chained from already holds the page's limit and offset.
  */
 export type ListTotalSource = { kind: 'pageLength' } | { kind: 'counter' | 'exact'; getTotal: () => Promise<number> };
 

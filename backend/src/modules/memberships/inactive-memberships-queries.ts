@@ -280,7 +280,9 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   const table = inactiveMembershipsTable;
   const orderBy = getOrderColumns({ sort, order, fallback: ['createdAt', 'desc'], columns: { createdAt: table.createdAt }, tieBreaker: table.id });
 
-  const pendingMembershipsQuery = db
+  const where = and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt));
+
+  const itemsQuery = db
     .select({
       id: table.id,
       role: table.role,
@@ -290,9 +292,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       createdBy: table.createdBy,
     })
     .from(table)
-    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt)));
-
-  const itemsQuery = pendingMembershipsQuery
+    .where(where)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
@@ -300,7 +300,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
     getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(pendingMembershipsQuery.as('pendingMemberships'));
+      const [{ total }] = await db.select({ total: count() }).from(table).where(where);
       return total;
     },
   });
