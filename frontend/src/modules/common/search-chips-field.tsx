@@ -268,6 +268,30 @@ export function SearchChipsField({
     .filter((recent) => matchesTerms([foldText(recent.text)], terms) && foldText(recent.text) !== foldText(word))
     .slice(0, 2);
 
+  const groupRow = (group: SearchOptionGroup) => (
+    <ComboboxGroup key={group.key} aria-label={group.label} className="flex gap-1 overflow-x-auto border-b px-3 py-2 last:border-b-0">
+      {group.options.map((option) => (
+        <ComboboxItem
+          key={option.value}
+          value={{ kind: 'option', group, option } satisfies SearchSelection}
+          aria-selected={option.isSelected}
+          className={cn(
+            'w-auto shrink-0 rounded-full border border-input px-2.5 py-0',
+            group.isCompact ? 'h-6.5 pointer-coarse:h-8.5' : 'h-7.5 pointer-coarse:h-10',
+            option.isSelected &&
+              'border-transparent bg-primary text-primary-foreground data-highlighted:bg-primary data-highlighted:text-primary-foreground',
+          )}
+        >
+          {option.icon}
+          {option.label}
+          {option.count !== undefined && (
+            <span className={cn('text-xs tabular-nums', !option.isSelected && 'text-muted-foreground')}>{option.count}</span>
+          )}
+        </ComboboxItem>
+      ))}
+    </ComboboxGroup>
+  );
+
   return (
     <div ref={fieldRef} className={cn('flex min-w-0 grow flex-col gap-1', className)}>
       <Combobox<SearchSelection>
@@ -307,6 +331,10 @@ export function SearchChipsField({
             enterKeyHint="search"
             onFocus={() => {
               if (hasOptions) setIsOpen(true);
+            }}
+            // A suggestion closes the options before focus leaves, so this ends that search
+            onBlur={() => {
+              if (!isOpen) onSearchEnd?.(query);
             }}
             onKeyDown={handleKeyDown}
           />
@@ -353,29 +381,7 @@ export function SearchChipsField({
               </div>
             ) : (
               <>
-                {groups.map((group) => (
-                  <ComboboxGroup key={group.key} aria-label={group.label} className="flex gap-1 overflow-x-auto border-b px-3 py-2 last:border-b-0">
-                    {group.options.map((option) => (
-                      <ComboboxItem
-                        key={option.value}
-                        value={{ kind: 'option', group, option } satisfies SearchSelection}
-                        aria-selected={option.isSelected}
-                        className={cn(
-                          'w-auto shrink-0 rounded-full border border-input px-2.5 py-0',
-                          group.isCompact ? 'h-6.5 pointer-coarse:h-8.5' : 'h-7.5 pointer-coarse:h-10',
-                          option.isSelected &&
-                            'border-transparent bg-primary text-primary-foreground data-highlighted:bg-primary data-highlighted:text-primary-foreground',
-                        )}
-                      >
-                        {option.icon}
-                        {option.label}
-                        {option.count !== undefined && (
-                          <span className={cn('text-xs tabular-nums', !option.isSelected && 'text-muted-foreground')}>{option.count}</span>
-                        )}
-                      </ComboboxItem>
-                    ))}
-                  </ComboboxGroup>
-                ))}
+                {groups.filter((group) => !group.isCompact).map(groupRow)}
                 {recents.length > 0 && (
                   <ComboboxGroup aria-label={t('c:history')} className="border-b p-1 last:border-b-0">
                     {recents.map((recent) => (
@@ -404,6 +410,7 @@ export function SearchChipsField({
                     ))}
                   </ComboboxGroup>
                 )}
+                {groups.filter((group) => group.isCompact).map(groupRow)}
               </>
             )}
           </ComboboxList>
