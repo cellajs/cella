@@ -6,8 +6,6 @@ export interface ModuleConfig {
   owner: 'cella' | 'app';
   description: string;
   scope: ModuleScope[];
-  /** When true, the module is opt-in when an app is created (`create-cella`); its folder is removed if deselected. */
-  optional?: boolean;
   /** When true, the module's operations drop from the generated docs and search, but stay in openapi.json and the SDK. */
   hidden?: boolean;
 }

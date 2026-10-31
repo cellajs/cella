@@ -2,7 +2,7 @@
 // Usage, from the app's repo root: [START='pnpm dev'] [EMAIL=<admin email>] [OUT_DIR=<dir>] node <cella>/cella/skills/verify/smoke-driver.mjs
 // START= (empty) attaches to a stack that already answers at the app's URLs.
 import { spawn } from 'node:child_process';
-import { mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, openSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseEnv } from 'node:util';
@@ -17,6 +17,8 @@ if (!EMAIL) throw new Error('No admin email: set EMAIL, or ADMIN_EMAIL in backen
 const BOOT_MS = 5 * 60_000;
 // The first signed-in page of a dev server compiles most of the app on demand
 const PAGE_MS = 120_000;
+// The sign-in routes refuse a user agent that names a headless browser
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
 const t0 = Date.now();
 const evidence = [];
@@ -66,6 +68,47 @@ process.on('SIGINT', () => {
   stop();
   process.exit(130);
 });
+
+// The way in the Quickstart gives a new app, which a minted session skips: the link the backend prints in its console.
+const signInWithPrintedLink = async () => {
+  const context = await browser.newContext({ userAgent: BROWSER_UA, serviceWorkers: 'block' });
+  const page = await context.newPage();
+  await page.goto(`${base}/auth/authenticate`, { waitUntil: 'domcontentloaded' });
+  const emailInput = page.locator('input[type=email], input[name=email]').first();
+  await emailInput.waitFor({ timeout: PAGE_MS });
+  await emailInput.fill(EMAIL);
+  await emailInput.press('Enter');
+  const sendLink = page.getByRole('button', { name: /sign in with email/i });
+  await sendLink.waitFor({ timeout: PAGE_MS });
+
+  const logStart = statSync(logPath).size;
+  const [sent] = await Promise.all([page.waitForResponse((response) => response.url().endsWith('/auth/magic/send')), sendLink.click()]);
+  // Repeated runs on one database reach the limit on links per address, which says nothing about the sign-in
+  if (sent.status() === 429) {
+    log('skipped', 'the magic link sign-in: this address reached its limit on links');
+    await context.close();
+    return;
+  }
+
+  let link = null;
+  const linkDeadline = Date.now() + 15_000;
+  while (!link && Date.now() < linkDeadline) {
+    link = /\[magic-link\] \S+ (\S+)/.exec(readFileSync(logPath).subarray(logStart).toString())?.[1];
+    if (!link) await sleep(500);
+  }
+  if (!link) fail(`The backend printed no magic link after ${sent.status()} from /auth/magic/send: see ${logPath}`);
+
+  await page.goto(link, { waitUntil: 'domcontentloaded' });
+  const landed = new URL(page.url());
+  const me = await page.request.get(`${api}/me`);
+  check('the seeded admin signs in with the magic link the backend prints', !landed.pathname.startsWith('/auth') && me.ok(), {
+    landed: landed.pathname,
+    error: landed.searchParams.get('error'),
+    me: me.status(),
+  });
+  await page.request.post(`${api}/auth/sign-out`, { headers: { 'content-type': 'application/json' } });
+  await context.close();
+};
 
 let browser = null;
 try {
@@ -125,6 +168,8 @@ try {
   const organization = organizations.find(({ id }) => id === administered?.channelId) ?? organizations[0];
 
   browser = await chromium.launch();
+  // A stack this driver did not start leaves no log to read the link from
+  if (START) await signInWithPrintedLink();
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce' });
   await context.addCookies([session.cookie]);
   const page = await context.newPage();
