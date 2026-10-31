@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.33.0](https://github.com/cellajs/cella/compare/0.32.0...0.33.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* **frontend:** pinned UI steps aside while editing text on a phone, list totals fix, android-emulator skill ([#1671](https://github.com/cellajs/cella/issues/1671))
+* **frontend:** data grid has one keyboard model ([#1670](https://github.com/cellajs/cella/issues/1670))
+* **frontend:** panel groups collapse through the app, smaller group labels, docs TL;DR block ([#1667](https://github.com/cellajs/cella/issues/1667))
+
+### 🎉 New features
+
+* **frontend:** pinned UI steps aside while editing text on a phone, list totals fix, android-emulator skill ([#1671](https://github.com/cellajs/cella/issues/1671)) ([aa9fed1](https://github.com/cellajs/cella/commit/aa9fed11a96c9550df70a0586d0c61b840947ca3))
+* **skills:** css-review, a whole-app review of classes and CSS ([#1669](https://github.com/cellajs/cella/issues/1669)) ([33c278d](https://github.com/cellajs/cella/commit/33c278dc42ecc08acdf18e07cf5c74fd3aca1a0c))
+
+
+### 🐞 Bug fixes
+
+* **frontend:** panel groups collapse through the app, smaller group labels, docs TL;DR block ([#1667](https://github.com/cellajs/cella/issues/1667)) ([7785e2a](https://github.com/cellajs/cella/commit/7785e2a12f523420446571132ae00a667e966b36))
+
+
+### 🔧 Small improvements
+
+* **frontend:** data grid has one keyboard model ([#1670](https://github.com/cellajs/cella/issues/1670)) ([0948a37](https://github.com/cellajs/cella/commit/0948a3754767003c96d78d9ed30a5443d7b23563))
+
 ## [0.32.0](https://github.com/cellajs/cella/compare/0.31.1...0.32.0) (2026-10-30)
 
 
