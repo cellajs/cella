@@ -7,6 +7,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ViewMenu, type ViewMenuExport, type ViewMenuSort } from '~/modules/common/data-table/view-menu';
 import { FocusView } from '~/modules/common/focus-view';
+import { SearchChipsField, type SearchFilters } from '~/modules/common/search-chips-field';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 
 interface TableBarFiltersOptions<T extends { q?: string }> {
@@ -53,8 +54,8 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   actions?: ReactNode;
   /** Rendered after the count. */
   countExtra?: ReactNode;
-  /** Filter controls opening the bar, before the actions. */
-  filters?: ReactNode;
+  /** What the list filters on beside its search words: its search then takes chips and offers them. */
+  searchFilters?: SearchFilters;
   sort?: ViewMenuSort;
   export?: ViewMenuExport<TRow>;
   /** Controls of the page's own, such as a view toggle, after the view menu. */
@@ -68,7 +69,7 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   after?: ReactNode;
 }
 
-/** The bar above an entity table: filters, actions and count, search, view controls and focus view. */
+/** The bar above an entity table: actions and count, search, view controls and focus view. */
 export function TableBarShell<TRow extends object>({
   isFiltered,
   onSearch,
@@ -82,7 +83,7 @@ export function TableBarShell<TRow extends object>({
   setColumns,
   actions,
   countExtra,
-  filters,
+  searchFilters,
   sort,
   export: exportOptions,
   controls,
@@ -93,6 +94,7 @@ export function TableBarShell<TRow extends object>({
 }: TableBarShellProps<TRow>) {
   const { t } = useTranslation();
   const searchLabel = t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) });
+  const foundCount = isFiltered && total !== null ? t('c:resource_count', { count: total, resource: t(label, { count: total }) }) : '';
 
   return (
     <>
@@ -114,15 +116,34 @@ export function TableBarShell<TRow extends object>({
           ))
         }
         count={
-          <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+          <TableCount count={isFiltered ? null : total} label={label}>
             {countExtra}
           </TableCount>
         }
         search={
-          <TableSearch name={searchName} label={searchLabel} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />
+          searchFilters ? (
+            <SearchChipsField
+              {...searchFilters}
+              name={searchName}
+              label={searchLabel}
+              value={searchVars.q ?? ''}
+              count={foundCount}
+              onSearch={onSearch}
+              onReset={onResetFilters}
+              className="edgeless"
+            />
+          ) : (
+            <TableSearch
+              name={searchName}
+              label={searchLabel}
+              value={searchVars.q}
+              count={foundCount}
+              onSearch={onSearch}
+              allowOfflineSearch={allowOfflineSearch}
+            />
+          )
         }
         searchLabel={searchLabel}
-        filters={filters}
         controls={
           <>
             <ViewMenu sort={sort} columns={columns} setColumns={setColumns} export={exportOptions} />

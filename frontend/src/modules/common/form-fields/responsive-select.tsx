@@ -1,10 +1,7 @@
-import { FunnelXIcon } from 'lucide-react';
 import { Fragment, type ReactNode, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 import { groupRuns, SelectDrawer } from '~/modules/common/form-fields/select-drawer';
-import { Button } from '~/modules/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
@@ -39,16 +36,12 @@ const selectItem = (option: ResponsiveSelectOption) => (
 
 interface ResponsiveSelectProps {
   options: ResponsiveSelectOption[];
-  /** Undefined selects nothing: the trigger shows the placeholder, or with `showTitle` the title alone. */
+  /** Undefined selects nothing: the trigger shows the placeholder. */
   value?: string;
   onChange: (value: string) => void;
-  /** Adds a clear button to a phone's drawer while a value is selected; from `sm` up the filter bar's Clear does this. */
-  onClear?: () => void;
   placeholder?: string;
-  /** Names a select that no form label names, as in a filter bar: its drawer heading and accessible name. Its value takes the weight of the buttons beside it. */
+  /** Names a select that no form label names: its drawer heading and accessible name. Its value takes the weight of the buttons beside it. */
   title?: string;
-  /** Shows the title before the value ("Role Admin"), for a select that stands without a label, as in a filter bar. */
-  showTitle?: boolean;
   /** Shows only the selected option's icon; the title names the trigger. */
   iconOnly?: boolean;
   className?: string;
@@ -61,32 +54,20 @@ export function ResponsiveSelect({
   options,
   value,
   onChange,
-  onClear,
   placeholder,
   title,
-  showTitle,
   iconOnly,
   className,
   disabled = false,
   align = 'end',
 }: ResponsiveSelectProps) {
-  const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const selectedOption = options.find((option) => option.value === value);
   const ariaLabel = title && selectedOption ? `${title}: ${selectedOption.label}` : title;
 
-  const selectedLabel = selectedOption && <span className={cn('truncate', title && 'font-medium')}>{labelOf(selectedOption)}</span>;
-  const triggerContent =
-    showTitle && title ? (
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="text-faint-foreground">{title}</span>
-        {selectedLabel}
-      </span>
-    ) : (
-      (selectedLabel ?? placeholder)
-    );
+  const triggerContent = selectedOption ? <span className={cn('truncate', title && 'font-medium')}>{labelOf(selectedOption)}</span> : placeholder;
 
   if (isMobile) {
     return (
@@ -107,22 +88,6 @@ export function ResponsiveSelect({
             onChange(next);
             setDrawerOpen(false);
           }}
-          footer={
-            onClear &&
-            selectedOption && (
-              <Button
-                variant="outline"
-                className="mt-2"
-                onClick={() => {
-                  onClear();
-                  setDrawerOpen(false);
-                }}
-              >
-                <FunnelXIcon />
-                {t('c:clear')}
-              </Button>
-            )
-          }
         />
       </>
     );

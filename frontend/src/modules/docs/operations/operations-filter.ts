@@ -1,8 +1,7 @@
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { matchesSearch, parseSearchQuery } from 'shared/utils/parse-search-query';
-import { foldText } from 'shared/utils/text-match';
+import { foldText, matchesTerms, parseTerms } from 'shared/utils/text-match';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import type { OperationSearch } from '~/modules/docs/types';
 
@@ -15,7 +14,7 @@ const kindOrder = ['owner', 'entity'];
 /** Tag kinds without a filter option: the sidebar picks the module, and schema tags do not apply to operations. */
 const unfilteredKinds = ['module', 'schema'];
 
-/** An operation's text fields, folded for `matchesSearch`. */
+/** An operation's text fields, folded for `matchesTerms`. */
 const searchFields = (op: GenOperationSummary) =>
   [
     op.summary,
@@ -29,7 +28,7 @@ const searchFields = (op: GenOperationSummary) =>
     ...op.extensionNames,
   ].map(foldText);
 
-/** The operations a search keeps. `filter` is `${kind}:${value}` (`owner:cella`) or the MCP tools filter; `q` uses the shared search grammar. */
+/** The operations a search keeps. `filter` is `${kind}:${value}` (`owner:cella`) or the MCP tools filter. */
 export function filterOperations(operations: GenOperationSummary[], { q, filter }: OperationSearch) {
   let matches = operations;
   if (filter === mcpToolFilter) {
@@ -43,13 +42,13 @@ export function filterOperations(operations: GenOperationSummary[], { q, filter 
     }
   }
 
-  const search = parseSearchQuery(q);
-  if (!search.effectiveQ) return matches;
+  const terms = parseTerms(q);
+  if (!terms.length) return matches;
 
-  return matches.filter((op) => matchesSearch(searchFields(op), search));
+  return matches.filter((op) => matchesTerms(searchFields(op), terms));
 }
 
-/** The options of the filter select, grouped by what they narrow. Counted over every operation, so the numbers hold still while a search narrows the rows. */
+/** The options of the filter, by what they narrow. Counted over every operation, so the numbers hold still while a search narrows the rows. */
 export function useOperationFilterOptions(operations: GenOperationSummary[]) {
   const { t } = useTranslation();
 
@@ -68,12 +67,11 @@ export function useOperationFilterOptions(operations: GenOperationSummary[]) {
     Object.entries(countsByKind[kind]).map(([value, count]) => ({
       value: `${kind}:${value}`,
       label: kind === 'entity' ? t('c:docs.entity_tag', { name: upperFirst(value) }) : upperFirst(value),
-      group: upperFirst(kind),
       count,
     })),
   );
   const toolCount = operations.filter((op) => op.tool).length;
-  const toolOptions = toolCount ? [{ value: mcpToolFilter, label: t('c:docs.mcp_tools'), group: t('c:docs.exposed_as'), count: toolCount }] : [];
+  const toolOptions = toolCount ? [{ value: mcpToolFilter, label: t('c:docs.mcp_tools'), count: toolCount }] : [];
 
   // An option every operation matches filters nothing, as owner "cella" in the template
   return [...tagOptions, ...toolOptions].filter((option) => option.count < operations.length);

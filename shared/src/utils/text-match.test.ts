@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { containsWord, findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match';
+import { findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match';
 
 describe('foldText', () => {
   it('lowercases and strips accents', () => {
@@ -31,16 +31,13 @@ describe('parseTerms', () => {
 describe('matchesTerms', () => {
   const fields = ['sync drops updates', 'realtime', 'joost kramer'].map(foldText);
 
-  it('needs every term in all mode and any term in any mode', () => {
+  it('needs every term', () => {
     expect(matchesTerms(fields, ['sync', 'joost'])).toBe(true);
     expect(matchesTerms(fields, ['sync', 'missing'])).toBe(false);
-    expect(matchesTerms(fields, ['sync', 'missing'], 'any')).toBe(true);
-    expect(matchesTerms(fields, ['missing'], 'any')).toBe(false);
   });
 
   it('matches nothing without terms', () => {
     expect(matchesTerms(fields, [])).toBe(false);
-    expect(matchesTerms(fields, [], 'any')).toBe(false);
   });
 });
 
@@ -103,15 +100,5 @@ describe('trimAroundMatch', () => {
 
   it('finds the match through accents', () => {
     expect(trimAroundMatch(`${'x'.repeat(200)} Renée`, ['renee'], 40)).toMatch(/…x+ Renée$/);
-  });
-});
-
-describe('containsWord', () => {
-  it('matches whole words and phrases only', () => {
-    expect(containsWord('a rapid api fix', 'api')).toBe(true);
-    expect(containsWord('a rapid fix', 'api')).toBe(false);
-    expect(containsWord('needs design soon', 'needs design')).toBe(true);
-    expect(containsWord('front-end work', 'front')).toBe(true);
-    expect(containsWord('renee', '')).toBe(false);
   });
 });

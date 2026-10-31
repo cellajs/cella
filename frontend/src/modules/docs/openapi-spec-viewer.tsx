@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
-import { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';
 import { SearchField } from '~/modules/common/search-field';
+import { FindSteps, stepOnEnter, useMatchSteps } from '~/modules/docs/find-steps';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { openApiSpecQueryOptions, openApiUrl } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
@@ -40,7 +40,15 @@ export function OpenApiSpecViewer() {
       />
 
       <div className="sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 bg-background py-2 max-sm:flex-col">
-        <SearchField id="openapi-search" label={t('c:placeholder.search')} value={searchText} onSearch={handleSearchChange} steps={steps} />
+        <SearchField
+          id="openapi-search"
+          label={t('c:placeholder.search')}
+          value={searchText}
+          onSearch={handleSearchChange}
+          onKeyDown={stepOnEnter(steps)}
+        >
+          <FindSteps steps={steps} />
+        </SearchField>
 
         <Button
           variant="outline"

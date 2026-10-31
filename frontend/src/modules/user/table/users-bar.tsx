@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
-import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { DeleteUsers } from '~/modules/user/delete-users';
@@ -26,10 +26,13 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
   const { role } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const handleRoleChange = (role?: string) => {
-    clearSelection();
-    setSearch({ role: role as UsersRouteSearchParams['role'] });
-  };
+  const searchFilters = useRoleSearchFilter({
+    value: role,
+    onChange: (role) => {
+      clearSelection();
+      setSearch({ role: role as UsersRouteSearchParams['role'] });
+    },
+  });
 
   const openInvite = () =>
     openInviteDialog({ mode: 'email', description: t('c:invite_users.text'), triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
@@ -59,7 +62,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInvite} />}
-      filters={<SelectRole value={role} onChange={handleRoleChange} className="h-10" />}
+      searchFilters={searchFilters}
       selection={{
         count: selected.length,
         onClear: clearSelection,

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 import { useOperationFilterOptions } from '~/modules/docs/operations/operations-filter';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import type { OperationSearch } from '~/modules/docs/types';
@@ -24,6 +23,7 @@ export function OperationsBar({ operations, total, search, setSearch, columns, s
   const { t } = useTranslation();
   const barFilters = useTableBarFilters({ searchVars: search, setSearch, reset: { q: '', filter: undefined } });
   const filterOptions = useOperationFilterOptions(operations);
+  const pickedFilter = filterOptions.find((option) => option.value === search.filter);
 
   return (
     <TableBarShell
@@ -33,19 +33,20 @@ export function OperationsBar({ operations, total, search, setSearch, columns, s
       label="c:operation"
       searchName="operationsSearch"
       allowOfflineSearch
-      filters={
-        filterOptions.length > 0 && (
-          <ResponsiveSelect
-            options={filterOptions}
-            value={search.filter}
-            onChange={(filter) => setSearch({ filter })}
-            onClear={() => setSearch({ filter: undefined })}
-            placeholder={t('c:filter')}
-            title={t('c:filter_resource', { resource: t('c:operation', { count: 2 }) })}
-            align="start"
-            className="sm:min-w-32"
-          />
-        )
+      searchFilters={
+        filterOptions.length > 0
+          ? {
+              groups: [
+                {
+                  key: 'filter',
+                  label: t('c:filter_resource', { resource: t('c:operation', { count: 2 }) }),
+                  options: filterOptions.map((option) => ({ ...option, isSelected: option.value === search.filter })),
+                  onToggle: (filter) => setSearch({ filter: filter === search.filter ? undefined : filter }),
+                },
+              ],
+              chips: pickedFilter ? [{ key: 'filter', label: pickedFilter.label, onRemove: () => setSearch({ filter: undefined }) }] : [],
+            }
+          : undefined
       }
       controls={<ViewModeToggle />}
     />

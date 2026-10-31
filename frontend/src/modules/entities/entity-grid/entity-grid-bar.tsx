@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
-import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
@@ -54,6 +54,7 @@ export function EntityGridBar({
 
   const total = useListQueryTotal(queryKey);
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', role: undefined } });
+  const searchFilters = useRoleSearchFilter({ entityType, value: role, onChange: (role) => setSearch({ role }) });
 
   if (!alwaysShow && !barFilters.isFiltered && (total ?? 0) <= gridPreviewLimit) {
     return actions ? <div className="flex items-center">{actions}</div> : null;
@@ -67,7 +68,7 @@ export function EntityGridBar({
       label={label}
       searchName="entitySearch"
       actions={actions}
-      filters={roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} />}
+      searchFilters={roleFilter ? searchFilters : undefined}
       sort={{
         options: sortOptions,
         value: sort ?? sortOptions[0].value,
