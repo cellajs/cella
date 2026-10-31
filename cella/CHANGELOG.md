@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.34.0](https://github.com/cellajs/cella/compare/0.33.0...0.34.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* plain search words, and filters as chips in the search field ([#1674](https://github.com/cellajs/cella/issues/1674))
+* a new app's seeded admin signs in, modules have no optional flag ([#1672](https://github.com/cellajs/cella/issues/1672))
+
+### 🎉 New features
+
+* plain search words, and filters as chips in the search field ([#1674](https://github.com/cellajs/cella/issues/1674)) ([210be2d](https://github.com/cellajs/cella/commit/210be2d3cfa9c382399aa35414c56b1a1dca2468))
+
+
+### 🐞 Bug fixes
+
+* a new app's seeded admin signs in, modules have no optional flag ([#1672](https://github.com/cellajs/cella/issues/1672)) ([e96927f](https://github.com/cellajs/cella/commit/e96927f2ada6ef45ec3388b1bfc911f7a2dd1357))
+* **frontend:** recent searches above compact filters, and saved after a suggestion ([#1675](https://github.com/cellajs/cella/issues/1675)) ([1fe5fab](https://github.com/cellajs/cella/commit/1fe5fab02d878ee6b25c308d60bb9248cb503d12))
+
 ## [0.33.0](https://github.com/cellajs/cella/compare/0.32.0...0.33.0) (2026-10-31)
 
 
