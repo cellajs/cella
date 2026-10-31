@@ -3,16 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type CSSProperties, type Dispatch, type SetStateAction, useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
-import { cn } from '~/utils/cn';
-import {
-  type CellSelectionMode,
-  type Column,
-  type ColumnWidths,
-  DataGrid,
-  type DataGridProps,
-  type RowSelectionMode,
-  type SortColumn,
-} from '../data-grid';
+import { type Column, type ColumnWidths, DataGrid, type DataGridProps, type SortColumn } from '../data-grid';
 
 // Sample data types
 interface Person {
@@ -198,7 +189,7 @@ const responsiveColumns: Column<Person>[] = [
 ];
 
 /**
- * A high-performance data grid component with cell selection, column resize,
+ * A high-performance data grid component with keyboard cell navigation, column resize,
  * sorting, responsive columns, and copy/paste support.
  */
 const meta: Meta<DataGridProps<Person>> = {
@@ -207,8 +198,6 @@ const meta: Meta<DataGridProps<Person>> = {
   tags: ['autodocs'],
   parameters: { layout: 'padded' },
   argTypes: {
-    cellSelectionMode: { control: 'select', options: ['none', 'cell', 'cell-range'] },
-    rowSelectionMode: { control: 'select', options: ['none', 'single', 'multi'] },
     rowHeight: { control: { type: 'number', min: 25, max: 80 } },
     headerRowHeight: { control: { type: 'number', min: 25, max: 80 } },
     enableVirtualization: { control: 'boolean' },
@@ -235,66 +224,6 @@ export const Default: Story = {};
 
 /** All columns including frozen ID, custom renderers, and many fields. */
 export const FullColumns: Story = { args: { columns: fullColumns } };
-
-/** Toggle between all selection modes interactively. */
-export const SelectionModes: Story = {
-  render: function Render(args) {
-    const [cellMode, setCellMode] = useState<CellSelectionMode>('cell');
-    const [rowMode, setRowMode] = useState<RowSelectionMode>('multi');
-    const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
-    const [selectedRange, setSelectedRange] = useState<{ start: { idx: number; rowIdx: number }; end: { idx: number; rowIdx: number } } | null>(null);
-
-    return (
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          <span className="text-sm">Cell:</span>
-          {(['none', 'cell', 'cell-range'] as CellSelectionMode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setCellMode(m);
-                setSelectedRange(null);
-              }}
-              className={cn('rounded px-3 py-1 text-sm', cellMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted')}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <span className="text-sm">Row:</span>
-          {(['none', 'single', 'multi'] as RowSelectionMode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setRowMode(m);
-                setSelectedRows(new Set());
-              }}
-              className={cn('rounded px-3 py-1 text-sm', rowMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted')}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-        <div style={{ height: 350 }}>
-          <DataGrid
-            {...args}
-            cellSelectionMode={cellMode}
-            rowSelectionMode={rowMode}
-            selectedRows={selectedRows}
-            onSelectedRowsChange={setSelectedRows}
-            selectedCellRange={selectedRange}
-            onSelectedCellRangeChange={({ range }) => setSelectedRange(range)}
-            rowKeyGetter={(row) => row.id}
-          />
-        </div>
-      </div>
-    );
-  },
-  args: { columns: basicColumns },
-};
 
 /** Drag column borders to resize. Widths are persisted in state. */
 export const ColumnResize: Story = {
@@ -373,7 +302,6 @@ export const CopyCell: Story = {
         <div style={{ height: 300 }}>
           <DataGrid
             {...args}
-            cellSelectionMode="cell"
             onCellCopy={({ value }) => {
               setCopied(value != null ? String(value) : '');
             }}
@@ -418,7 +346,7 @@ export const CopyCell: Story = {
 export const ShouldSelectCellOnClick: Story = {
   name: 'when cell is clicked, should select it',
   tags: ['!dev', '!autodocs'],
-  args: { columns: basicColumns, cellSelectionMode: 'cell' },
+  args: { columns: basicColumns },
   play: async ({ canvas, step }) => {
     await step('Click a cell to select it', async () => {
       const cell = await canvas.findByText('Alice');
@@ -433,7 +361,7 @@ export const ShouldSelectCellOnClick: Story = {
 export const ShouldNavigateWithArrowKeys: Story = {
   name: 'when arrow key is pressed, should move selection',
   tags: ['!dev', '!autodocs'],
-  args: { columns: basicColumns, cellSelectionMode: 'cell' },
+  args: { columns: basicColumns },
   play: async ({ canvas, step }) => {
     await step('Click first cell', async () => {
       const cell = await canvas.findByText('Alice');
@@ -444,87 +372,6 @@ export const ShouldNavigateWithArrowKeys: Story = {
       await waitFor(() => {
         expect(canvas.getByText('Johnson').closest('.rdg-cell')).toHaveAttribute('aria-selected', 'true');
       });
-    });
-  },
-};
-
-export const ShouldSelectRowOnClick: Story = {
-  name: 'when row is clicked, should show row outline',
-  tags: ['!dev', '!autodocs'],
-  render: function Render(args) {
-    const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
-    return (
-      <div style={{ height: 300 }}>
-        <DataGrid {...args} selectedRows={selectedRows} onSelectedRowsChange={setSelectedRows} rowKeyGetter={(row) => row.id} />
-      </div>
-    );
-  },
-  args: { columns: basicColumns, rowSelectionMode: 'single' },
-  play: async ({ canvas, step }) => {
-    await step('Click on a row and verify it is selected', async () => {
-      const cell = await canvas.findByText('Bob');
-      await userEvent.click(cell, { delay: 100 });
-      await waitFor(() => {
-        expect(cell.closest('.rdg-row')).toHaveAttribute('aria-selected', 'true');
-      });
-    });
-
-    await step('Row cells should have selection border, not individual cell outline', async () => {
-      const cell = await canvas.findByText('Bob');
-      const cellEl = cell.closest('.rdg-cell')!;
-      const style = window.getComputedStyle(cellEl);
-      // The per-cell selection ring is a solid outline. Chromium keeps reporting its 2px width when the style is
-      // none, and UA :focus-visible may draw outline:auto on a focused cell, so the check reads the style.
-      expect(style.outlineStyle).not.toBe('solid');
-    });
-  },
-};
-
-export const ShouldSelectCellRange: Story = {
-  name: 'when shift+click in cell-range mode, should select range',
-  tags: ['!dev', '!autodocs'],
-  args: { columns: basicColumns, cellSelectionMode: 'cell-range' },
-  play: async ({ canvas, step }) => {
-    await step('Click first cell', async () => {
-      const cell = await canvas.findByText('Alice');
-      await userEvent.click(cell, { delay: 100 });
-      await waitFor(() => {
-        expect(cell.closest('.rdg-cell')).toHaveAttribute('aria-selected', 'true');
-      });
-    });
-
-    await step('Shift+Arrow extends the selection into a multi-cell range', async () => {
-      const grid = canvas.getByRole('grid');
-      // A real shift+pointer range drag can't run in the headless test runner (untrusted pointer events don't
-      // drive react-data-grid's range selection). We drive cella's keyboard range extension (Shift+Arrow, wired
-      // to `extendSelection`) from the already-selected cell, which is the deterministic path.
-      const selected = grid.querySelector<HTMLElement>('.rdg-cell[aria-selected="true"]') ?? grid;
-      selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }));
-      selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }));
-
-      await waitFor(() => {
-        // Cells in range should have the range class
-        const rangeCells = grid.querySelectorAll('.rdg-cell-in-range');
-        expect(rangeCells.length).toBeGreaterThan(1);
-      });
-    });
-
-    await step('Range cells should not have individual outlines', async () => {
-      const grid = canvas.getByRole('grid');
-      const rangeCells = grid.querySelectorAll('.rdg-cell-in-range');
-      for (const cell of rangeCells) {
-        const style = window.getComputedStyle(cell);
-        // See ShouldSelectRowOnClick: no cell draws the solid per-cell selection ring.
-        expect(style.outlineStyle).not.toBe('solid');
-      }
-    });
-
-    await step('Range boundary should have selection borders', async () => {
-      const grid = canvas.getByRole('grid');
-      const topCells = grid.querySelectorAll('.rdg-cell-range-top');
-      expect(topCells.length).toBeGreaterThan(0);
-      const bottomCells = grid.querySelectorAll('.rdg-cell-range-bottom');
-      expect(bottomCells.length).toBeGreaterThan(0);
     });
   },
 };
@@ -671,7 +518,7 @@ export const ShouldResizeColumn: Story = {
 export const ShouldFreezeFrozenColumns: Story = {
   name: 'when a column is frozen, its cells carry the sticky pinning contract',
   tags: ['!dev', '!autodocs'],
-  args: { columns: fullColumns, cellSelectionMode: 'cell' },
+  args: { columns: fullColumns },
   play: async ({ canvas, step }) => {
     await step('Frozen cells are marked sticky and pinned via a frozen-left offset', async () => {
       const grid = canvas.getByRole('grid');

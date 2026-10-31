@@ -8,10 +8,11 @@ interface HelpToggleProps {
   open: boolean;
   onToggle: () => void;
   className?: string;
+  tabIndex?: number;
 }
 
 /** Opens and closes a help text; the question mark and the chevron crossfade in place, so the row never reflows. */
-export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
+export function HelpToggle({ open, onToggle, className, tabIndex }: HelpToggleProps) {
   const { t } = useTranslation();
 
   return (
@@ -21,6 +22,7 @@ export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
       size="icon"
       aria-label={t('c:help')}
       aria-expanded={open}
+      tabIndex={tabIndex}
       onClick={onToggle}
       press={false}
       className={cn('size-6 text-muted-foreground focus-visible:text-foreground', className)}

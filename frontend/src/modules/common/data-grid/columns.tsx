@@ -1,4 +1,3 @@
-import { tw } from '~/utils/tw';
 import { RenderCheckbox } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
 import type { Column, RenderCellProps, RenderHeaderCellProps } from './types';
@@ -44,12 +43,9 @@ export const SelectColumn: Column<any, any> = {
   width: 35,
   minWidth: 35,
   maxWidth: 35,
-  cellClass: tw(
-    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:rounded aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background',
-  ),
-  headerCellClass: tw(
-    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:rounded aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background',
-  ),
+  // The checkbox draws its own ring
+  cellClass: 'rdg-cell-checkbox focus-ring:not-data-pointer-focus:has-focus-visible:outline-hidden',
+  headerCellClass: 'rdg-cell-checkbox focus-ring:not-data-pointer-focus:has-focus-visible:outline-hidden',
   renderHeaderCell(props) {
     return <HeaderRenderer {...props} />;
   },

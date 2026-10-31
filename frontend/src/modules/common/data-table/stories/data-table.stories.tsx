@@ -12,7 +12,15 @@ const columns: ColumnOrColumnGroup<Row>[] = [{ key: 'name', name: 'Name' }];
 
 function Table({ rows, error, isLoading }: { rows?: Row[]; error?: Error; isLoading?: boolean }) {
   return (
-    <DataTable<Row> columns={columns} rows={rows} error={error} isLoading={isLoading} rowKeyGetter={(row) => row.id} hasNextPage={false} readOnly />
+    <DataTable<Row>
+      columns={columns}
+      rows={rows}
+      error={error}
+      isLoading={isLoading}
+      rowKeyGetter={(row) => row.id}
+      hasNextPage={false}
+      hideEndMarker
+    />
   );
 }
 
@@ -76,8 +84,7 @@ function ReorderableTable() {
         rows={rows}
         rowKeyGetter={(row) => row.id}
         hasNextPage={false}
-        readOnly
-        cellSelectionMode="cell"
+        hideEndMarker
         enableVirtualization={false}
         onRowReorder={(fromIdx, toIdx, edge) => {
           let insertAt = edge === 'bottom' ? toIdx + 1 : toIdx;

@@ -9,17 +9,9 @@ export interface GroupedColumnHeaderRowProps<R, SR> {
   columns: readonly CalculatedColumn<R, SR>[];
   selectCell: (position: Position) => void;
   selectedCellIdx: number | undefined;
-  isCellSelectionEnabled: boolean;
 }
 
-function GroupedColumnHeaderRow<R, SR>({
-  rowIdx,
-  level,
-  columns,
-  selectedCellIdx,
-  selectCell,
-  isCellSelectionEnabled,
-}: GroupedColumnHeaderRowProps<R, SR>) {
+function GroupedColumnHeaderRow<R, SR>({ rowIdx, level, columns, selectedCellIdx, selectCell }: GroupedColumnHeaderRowProps<R, SR>) {
   const cells: React.ReactNode[] = [];
   const renderedParents = new Set<CalculatedColumnParent<R, SR>>();
 
@@ -37,14 +29,7 @@ function GroupedColumnHeaderRow<R, SR>({
       renderedParents.add(parent);
       const { idx } = parent;
       cells.push(
-        <GroupedColumnHeaderCell<R, SR>
-          key={idx}
-          column={parent}
-          rowIdx={rowIdx}
-          isCellSelected={selectedCellIdx === idx}
-          isCellSelectionEnabled={isCellSelectionEnabled}
-          selectCell={selectCell}
-        />,
+        <GroupedColumnHeaderCell<R, SR> key={idx} column={parent} rowIdx={rowIdx} isCellSelected={selectedCellIdx === idx} selectCell={selectCell} />,
       );
     }
   }

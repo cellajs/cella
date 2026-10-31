@@ -30,7 +30,7 @@ export function InvitationsTable() {
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          readOnly: true,
+          hideEndMarker: true,
           error,
           isLoading,
           isFetching,

@@ -1,7 +1,6 @@
 import type { CalculatedColumn, CalculatedColumnOrColumnGroup, Maybe } from '../types';
 
 export * from './breakpoint-utils';
-export * from './cell-range-utils';
 export * from './clipboard-utils';
 export * from './col-span-utils';
 export * from './dom-utils';
