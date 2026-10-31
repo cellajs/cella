@@ -90,7 +90,7 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
             transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
             className="overflow-hidden"
           >
-            <AlertBanner id="menu_management" variant="info" icon={InfoIcon} animate>
+            <AlertBanner id="menu_management" variant="info" className="my-2" icon={InfoIcon} animate>
               {t('c:configure_menu.text')}
             </AlertBanner>
           </motion.div>

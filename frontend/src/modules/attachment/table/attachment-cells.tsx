@@ -123,7 +123,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       disabled={isInProgress}
       // Not `disabled`: the tooltip says why there is nothing to download, and a disabled button would not show it.
       aria-disabled={!!pending}
-      className="justify-center aria-disabled:opacity-50"
+      className="justify-center aria-disabled:opacity-50 aria-disabled:hover:text-foreground-soft"
       aria-label={tooltip}
       data-tooltip="true"
       data-tooltip-content={tooltip}

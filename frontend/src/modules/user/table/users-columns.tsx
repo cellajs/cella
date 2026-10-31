@@ -63,7 +63,7 @@ export const useColumns = () => {
         }),
       },
     ]),
-    emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),
+    emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true, cellClass: 'text-muted-foreground' }),
     {
       key: 'role',
       name: t('c:role'),

@@ -2,6 +2,7 @@ import { HeadContent, Outlet } from '@tanstack/react-router';
 import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
 import { appConfig } from 'shared';
+import { useCutTextTitle } from '~/hooks/use-cut-text-title';
 import { useLazyComponent } from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TooltipProvider } from '~/modules/ui/tooltip';
@@ -17,6 +18,7 @@ function NoChatSupport() {
 
 export function Root() {
   const isOnline = useOnlineManager();
+  useCutTextTitle();
 
   const GleapSupport = useLazyComponent(
     () => (appConfig.has.chatSupport && isOnline ? loadChatSupport() : Promise.resolve({ GleapSupport: NoChatSupport })),

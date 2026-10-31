@@ -31,12 +31,11 @@ export function OfflineFilesPreference() {
     });
 
   return (
-    <PreferencesGroup title={t('c:offline')} help className="pb-8">
+    <PreferencesGroup title={t('c:offline')} className="pb-8">
       <PreferenceButton
         ref={triggerRef}
         icon={HardDriveDownloadIcon}
         label={label}
-        description={t('c:offline_files.text')}
         onClick={openSetting}
         status={
           footprint && (

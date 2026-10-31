@@ -39,7 +39,7 @@ function Explanations({ items }: { items: AccessValue[] }) {
       {items.map(({ value, name, description, code }) => (
         <div key={value} className="flex flex-col gap-1">
           <p className="font-medium text-sm">{name}</p>
-          <p className="text-pretty text-muted-foreground text-sm">{description}</p>
+          {description && <p className="text-pretty text-muted-foreground text-sm">{description}</p>}
           {code && <code className="font-mono text-muted-foreground text-xs">{code}</code>}
         </div>
       ))}
@@ -95,25 +95,26 @@ interface AccessCellProps {
   label: string;
   items: AccessValue[];
   tabIndex: number;
+  className?: string;
 }
 
 /** A grid cell's values behind one trigger. The one popup they share lives in `AccessCellPopover`, so a hover never renders the grid. */
-export function AccessCell({ label, items, tabIndex }: AccessCellProps) {
+export function AccessCell({ label, items, tabIndex, className }: AccessCellProps) {
   const text = items.map(({ name }) => name).join(', ');
-  const explained = items.filter(({ description }) => description);
-  if (!explained.length) return <div className="truncate text-muted-foreground text-xs">{text}</div>;
+  if (!items.some(({ description }) => description)) return <div className={cn('truncate text-muted-foreground text-xs', className)}>{text}</div>;
 
   const isLong = items.length > 1 && text.length > maxCellText;
 
   return (
     <PopoverTrigger
       handle={cellHandle}
-      payload={{ label, items: explained }}
+      payload={{ label, items }}
       tabIndex={tabIndex}
       {...openBehavior}
       className={cn(
         triggerClass,
         'flex max-w-full items-center gap-1.5 text-left text-muted-foreground text-xs hover:text-foreground data-popup-open:text-foreground',
+        className,
       )}
     >
       <span className={cn('truncate', explainedUnderline)}>{isLong ? items[0].name : text}</span>

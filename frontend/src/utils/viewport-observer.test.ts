@@ -23,4 +23,21 @@ describe('initViewportObserver', () => {
 
     expect(document.body.classList.contains('keyboard-open')).toBe(false);
   });
+
+  it('keeps an open keyboard while scrolling pans the visual viewport', () => {
+    vi.stubGlobal('requestAnimationFrame', (frame: FrameRequestCallback) => frames.push(frame));
+    const viewport = Object.assign(new EventTarget(), { height: window.innerHeight, offsetTop: 0, scale: 1 });
+    vi.stubGlobal('visualViewport', viewport);
+    initViewportObserver();
+
+    viewport.height = window.innerHeight - 300;
+    viewport.dispatchEvent(new Event('resize'));
+    flushFrames();
+    expect(document.body.classList.contains('keyboard-open')).toBe(true);
+
+    viewport.offsetTop = 300;
+    viewport.dispatchEvent(new Event('scroll'));
+    flushFrames();
+    expect(document.body.classList.contains('keyboard-open')).toBe(true);
+  });
 });

@@ -19,13 +19,8 @@ import { cn } from '~/utils/cn';
 /** Tag kinds whose columns start hidden, to keep the default table narrow; the columns menu shows them. */
 const hiddenTagKinds = new Set(['owner', 'entity']);
 
-/** Tag kinds shown as plain small text; the other kinds get a badge per value. */
-const plainTagKinds = new Set(['owner']);
-
-/** Comma-separated plain labels. */
-function LabelList({ labels }: { labels: string[] }) {
-  return <div className="truncate text-muted-foreground text-xs">{labels.join(', ')}</div>;
-}
+/** Extensions that decide whether a request gets through: their values read as content, the others as support. */
+const prominentExtensions = new Set(['x-guard', 'x-rate-limiter']);
 
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
   const { t } = useTranslation();
@@ -48,7 +43,14 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         description: ext.values?.[value]?.description,
         isGuard: ext.key === 'x-guard',
       }));
-      return <AccessCell label={extensionLabel(ext)} items={items} tabIndex={tabIndex} />;
+      return (
+        <AccessCell
+          label={extensionLabel(ext)}
+          items={items}
+          tabIndex={tabIndex}
+          className={cn(prominentExtensions.has(ext.key) && 'text-foreground')}
+        />
+      );
     },
   }));
 
@@ -82,14 +84,13 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
     minBreakpoint: 'md',
     resizable: true,
     // A set width keeps the spare room for the path column
-    width: plainTagKinds.has(kind) ? 90 : 130,
+    width: kind === 'owner' ? 90 : 130,
     minWidth: 80,
     placeholderValue: '-',
     renderCell: ({ row }: { row: GenOperationSummary }) => {
       const values = row.tagsByKind[kind];
       if (!values?.length) return null;
-      if (plainTagKinds.has(kind)) return <LabelList labels={values} />;
-      return <TagBadges values={values} />;
+      return <TagBadges kind={kind} values={values} />;
     },
   }));
 
@@ -155,7 +156,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             variant="cell"
             size="cell"
             tabIndex={tabIndex}
-            className="justify-center opacity-60"
+            className="justify-center"
             aria-label={t('c:docs.view_example')}
             data-tooltip="true"
             data-tooltip-content={t('c:docs.view_example')}

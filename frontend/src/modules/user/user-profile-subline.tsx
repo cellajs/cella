@@ -16,7 +16,6 @@ export function UserProfileSubline({ user }: UserProfileSublineProps) {
     // The text column clips: the link's ring sits in a padding its negative margin takes back, and pr-1 keeps the column from scrolling on focus.
     <div className="flex min-w-0 items-center gap-2 pr-1 text-muted-foreground">
       <a href={`mailto:${user.email}`} className="group/email focus-inset -m-1 truncate rounded-sm p-1 transition-colors hover:text-foreground">
-        {/* An underline on the link stops at MiddleCut's inline-flex box */}
         <MiddleCut text={user.email} className="link-decoration group-active/email:link-decoration-strong group-hover/email:underline" />
       </a>
       {user.mfaRequired !== undefined && (

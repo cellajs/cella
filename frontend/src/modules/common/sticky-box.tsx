@@ -1,5 +1,6 @@
 import { type ComponentProps, type CSSProperties, type RefObject, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
+import { cn } from '~/utils/cn';
 import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-parent';
 
 const passiveArg = { passive: true } as const;
@@ -269,7 +270,8 @@ export function StickyBox({
       <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
       <div
         ref={barRef}
-        className={className}
+        // Through CSS, not `enabled`: that renders another tree, which would remount the bar's content on every focus change
+        className={cn(className, 'text-editing:static!')}
         data-sticky={stuck}
         style={barStyle}
         {...rest}

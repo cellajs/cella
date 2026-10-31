@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { isInviteEmail } from '~/modules/common/form-fields/select-emails';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -32,7 +33,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
     form.setValue('emails', extractEmails(text), { shouldDirty: true });
   };
 
-  const emails = form.getValues('emails') ?? [];
+  const emails = useWatch({ control: form.control, name: 'emails' }) ?? [];
   const check = useInviteCheck(channel, emails);
 
   return (
@@ -46,11 +47,10 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
               onChange={(event) => handleTextChange(event.target.value)}
               placeholder={t('c:placeholder.paste_emails')}
               autoResize
-              className="min-h-24"
+              className="max-h-[60vh] min-h-24 overflow-y-auto"
               autoComplete="off"
             />
           </FormControl>
-          <div className="text-muted-foreground text-sm">{t('c:emails_recognized', { count: emails.length })}</div>
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
         <InviteGroups emails={emails} check={check} />

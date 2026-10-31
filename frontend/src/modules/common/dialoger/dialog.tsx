@@ -76,12 +76,14 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         finalFocus={() => finalFocusFor(triggerRef, String(id))}
       >
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
-        {(title || description) && (
-          <DialogHeader sticky className={dock ? 'text-center' : headerClassName}>
+        {(title || (description && !inline)) && (
+          // Inline, the page scrolls: it has no padding to keep the stuck header off the window's edge, so top-4 does, and the description scrolls away
+          <DialogHeader sticky className={cn(dock ? 'text-center' : headerClassName, inline && 'sm:top-4')}>
             {title && <DialogTitle className="h-6 truncate leading-6">{titleContent}</DialogTitle>}
-            {description && <DialogDescription>{description}</DialogDescription>}
+            {description && !inline && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
+        {description && inline && <DialogDescription>{description}</DialogDescription>}
         <OverlayCloseContext.Provider value={{ close: dismiss, back: dismiss }}>{content}</OverlayCloseContext.Provider>
       </DialogContent>
     </Dialog>

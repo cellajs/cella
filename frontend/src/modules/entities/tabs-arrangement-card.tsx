@@ -126,7 +126,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
         const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
         if (!row.description) return name;
         return (
-          <HelpText content={<p className="text-xs">{row.description}</p>} tabIndex={tabIndex}>
+          <HelpText content={<p className="pt-1">{row.description}</p>} tabIndex={tabIndex}>
             {name}
           </HelpText>
         );

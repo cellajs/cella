@@ -23,7 +23,13 @@ interface TabNavLabelProps {
 /** A tab's label, shortened in the middle past 20 characters. */
 export function TabNavLabel({ label }: TabNavLabelProps) {
   const { t } = useTranslation();
-  return <span className="group-active/tab:press block">{truncateMiddle(t(label), 20)}</span>;
+  const text = t(label);
+  const shortText = truncateMiddle(text, 20);
+  return (
+    <span className="group-active/tab:press block" title={shortText === text ? undefined : text}>
+      {shortText}
+    </span>
+  );
 }
 
 interface TabNavShellProps {

@@ -76,11 +76,11 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
   );
 }
 
-export function TagBadges({ values }: { values: string[] }) {
+export function TagBadges({ kind, values }: { kind: string; values: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {values.map((tag) => (
-        <Badge key={tag} variant="outline">
+        <Badge key={tag} variant={kind === 'owner' ? 'secondary' : 'outline'}>
           {tag}
         </Badge>
       ))}

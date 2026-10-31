@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react';
-import { type ReactNode, type Ref, useId, useState } from 'react';
+import { type ReactNode, type Ref, useState } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { HelpToggle } from '~/modules/ui/help-toggle';
@@ -67,7 +67,6 @@ interface PreferenceButtonProps {
   label: string;
   /** The value at the end of the label line, such as a badge. */
   status?: ReactNode;
-  description?: string;
   ref?: Ref<HTMLButtonElement>;
   onClick: () => void;
   /** Detail under the label, such as a meter. */
@@ -75,49 +74,34 @@ interface PreferenceButtonProps {
 }
 
 /**
- * A button that opens a preference's dialog. Its icon takes the switch column, so its label lines up with the switches,
- * and its description below opens with the group's help toggle. Its hover background is `bg-muted`, so a muted fill in
- * `status` or `children` switches on `group-hover/preference` to stay visible.
+ * A button that opens a preference's dialog. Its icon takes the switch column, so its label lines up with the switches.
+ * Its hover background is `bg-muted`, so a muted fill in `status` or `children` switches on `group-hover/preference` to
+ * stay visible.
  */
-export function PreferenceButton({ icon: Icon, label, status, description, ref, onClick, children }: PreferenceButtonProps) {
-  const descriptionId = useId();
-
+export function PreferenceButton({ icon: Icon, label, status, ref, onClick, children }: PreferenceButtonProps) {
   return (
-    <div className="flex flex-col">
-      <Button
-        ref={ref}
-        variant="outline"
-        size="auto"
-        aria-haspopup="dialog"
-        aria-describedby={description ? descriptionId : undefined}
-        onClick={onClick}
-        className="group/preference grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_1rem] gap-x-3 gap-y-1.5 whitespace-normal px-3 py-2.5 text-left"
-      >
-        <Icon className="size-4 justify-self-center" />
-        <span>{label}</span>
-        {status}
-        <ChevronRightIcon className="col-start-4 size-4 text-muted-foreground" />
-        {children && <span className="col-span-3 col-start-2 flex flex-col gap-1.5 font-normal">{children}</span>}
-      </Button>
-      {description && (
-        <PreferenceDescription id={descriptionId} className="pr-3 pl-13">
-          {description}
-        </PreferenceDescription>
-      )}
-    </div>
+    <Button
+      ref={ref}
+      variant="outline"
+      size="auto"
+      aria-haspopup="dialog"
+      onClick={onClick}
+      className="group/preference grid w-full grid-cols-[1.75rem_minmax(0,1fr)_auto_1rem] gap-x-3 gap-y-1.5 whitespace-normal px-3 py-2.5 text-left"
+    >
+      <Icon className="size-4 justify-self-center" />
+      <span>{label}</span>
+      {status}
+      <ChevronRightIcon className="col-start-4 size-4 text-muted-foreground" />
+      {children && <span className="col-span-3 col-start-2 flex flex-col gap-1.5 font-normal">{children}</span>}
+    </Button>
   );
 }
 
 /** Opens and closes with its group's help toggle through `group/prefs`. */
-function PreferenceDescription({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+function PreferenceDescription({ id, children }: { id: string; children: ReactNode }) {
   return (
     // The grid row animates from `0fr` to `1fr`, as HelpCollapse does, so the text opens and closes smoothly.
-    <div
-      className={cn(
-        'grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 group-data-[help-open=true]/prefs:grid-rows-[1fr] group-data-[help-open=true]/prefs:opacity-100 motion-reduce:transition-none',
-        className,
-      )}
-    >
+    <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 group-data-[help-open=true]/prefs:grid-rows-[1fr] group-data-[help-open=true]/prefs:opacity-100 motion-reduce:transition-none">
       <p id={id} className="overflow-hidden text-muted-foreground text-sm">
         <span className="block pt-1">{children}</span>
       </p>

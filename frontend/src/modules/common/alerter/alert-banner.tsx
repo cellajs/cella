@@ -8,7 +8,6 @@ import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Alert, AlertAction, AlertDescription, AlertTitle, type alertVariants } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { cn } from '~/utils/cn';
 
 export type AlertContextMode = 'public' | 'app';
 
@@ -55,7 +54,7 @@ export function AlertBanner({
   const showAlert = !isDown && !seenAlerts.includes(id);
 
   const alertContent = (
-    <Alert variant={variant} onClose={setAsSeen} className={animate ? undefined : className}>
+    <Alert variant={variant} onClose={setAsSeen} className={className}>
       {Icon && <Icon />}
       {title && <AlertTitle>{t(title)}</AlertTitle>}
       {children && <AlertDescription>{children}</AlertDescription>}
@@ -67,7 +66,8 @@ export function AlertBanner({
     return (
       <AnimatePresence initial={false}>
         {showAlert && (
-          <motion.div key={id} {...collapseMotion} className={cn('overflow-hidden', className)}>
+          // A margin on the alert stays inside the measured height, so it opens and closes with the block
+          <motion.div key={id} {...collapseMotion} className="overflow-hidden">
             {alertContent}
           </motion.div>
         )}

@@ -327,8 +327,11 @@
   }
 }
 
-/* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar or the on-screen keyboard is up. */
-@custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *));
+/* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar, the on-screen keyboard or a text editor is up. */
+@custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *, .text-editing *));
+
+/* Pinned UI stops pinning while a touch device edits text (text-editing-observer.ts). */
+@custom-variant text-editing (&:is(.text-editing *));
 
 /* A checkbox or radio under the pointer, or whose label is: Base UI renders no element a label is for, so a hovered
    label never reaches it natively. :where holds one-class specificity, so an invalid or checked edge still wins. Never a

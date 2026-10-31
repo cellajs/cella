@@ -17,11 +17,12 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
   const isHeld = (row: PendingMembership) => isUnpublishedDraft(channel) && !hierarchy.getPrepareRoles(channel.entityType).includes(row.role);
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
-    emailColumn({ name: t('c:email') }),
+    emailColumn({ name: t('c:email'), width: 240, resizable: true }),
     {
       key: 'role',
       name: t('c:role'),
       width: 100,
+      minWidth: 100,
       placeholderValue: '-',
       renderCell: ({ row }) => row.role && t(row.role),
     },
@@ -43,6 +44,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       key: 'actions',
       name: '',
       width: 220,
+      minWidth: 220,
       renderCell: ({ row }) => (
         <div className="flex gap-1">
           {!isHeld(row) && (
