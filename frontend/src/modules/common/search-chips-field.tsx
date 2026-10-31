@@ -70,6 +70,7 @@ interface SearchChipsFieldProps extends SearchFilters {
   /** Accessible name, and the placeholder. */
   label: string;
   name?: string;
+  id?: string;
   disabled?: boolean;
   isSearching?: boolean;
   /** What the search finds, as "4 tasks"; empty while nothing narrows the list. */
@@ -110,6 +111,7 @@ export function SearchChipsField({
   onReset,
   label,
   name,
+  id,
   disabled,
   isSearching = false,
   count = '',
@@ -297,6 +299,7 @@ export function SearchChipsField({
           <ComboboxPrimitive.Input
             ref={inputRef}
             render={<InputGroupInput className="min-w-24 pl-0!" />}
+            id={id}
             name={name}
             disabled={disabled}
             placeholder={!isMobile && hasChips ? undefined : label}

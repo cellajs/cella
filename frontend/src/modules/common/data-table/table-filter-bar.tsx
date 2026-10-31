@@ -22,6 +22,8 @@ interface TableFilterBarProps {
   searchVars?: Record<string, unknown>;
   /** Slides the closed bar back in on a scroll up, for a long page. */
   sticky?: boolean;
+  /** For a page whose search is its main control: the field fills the row ahead of the count, and a phone's closed row shows it as a field. */
+  wideSearch?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ export function TableFilterBar({
   onResetFilters,
   searchVars,
   sticky,
+  wideSearch,
 }: TableFilterBarProps) {
   const isDesktop = useBreakpointAbove('sm');
   const barRef = useRef<HTMLDivElement>(null);
@@ -62,12 +65,33 @@ export function TableFilterBar({
     setIsOpen(false);
   };
 
-  const closedBar = (
+  const start = (
+    <div className="flex min-w-0 items-center gap-3">
+      {actions}
+      {count && <div className="group-has-[input:focus]/table-bar:hidden">{count}</div>}
+    </div>
+  );
+
+  const closedBar = wideSearch ? (
     <TableBarContainer ref={barRef} searchVars={searchVars} className="group/table-bar">
-      <div className="flex min-w-0 items-center gap-3">
-        {actions}
-        {count && <div className="group-has-[input:focus]/table-bar:hidden">{count}</div>}
-      </div>
+      {isDesktop ? (
+        <div className="min-w-0 grow">{search}</div>
+      ) : (
+        <button
+          type="button"
+          onClick={open}
+          className="focus-effect flex h-10 min-w-0 grow items-center gap-2 rounded-md px-1.5 text-start text-muted-foreground"
+        >
+          <SearchIcon className="size-5 shrink-0" />
+          <span className="truncate">{searchLabel}</span>
+        </button>
+      )}
+      {start}
+      {controls}
+    </TableBarContainer>
+  ) : (
+    <TableBarContainer ref={barRef} searchVars={searchVars} className="group/table-bar">
+      {start}
       <div className="grow" />
       {isDesktop ? (
         <div className="flex items-center gap-2">{search}</div>
