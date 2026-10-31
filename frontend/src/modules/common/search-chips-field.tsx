@@ -224,6 +224,8 @@ export function SearchChipsField({
       // A keyword comes back to be edited; a filter just goes
       const lastWord = words.at(-1);
       if (lastWord) {
+        // Else the key goes on to delete the word's last character
+        event.preventDefault();
         setWords(words.slice(0, -1));
         setDraft(lastWord);
       } else chips.at(-1)?.onRemove();
