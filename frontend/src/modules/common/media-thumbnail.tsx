@@ -21,7 +21,7 @@ export function MediaThumbnail({ url, contentType, name, className }: MediaThumb
 
   return (
     <Avatar className={cn('rounded-md bg-muted', className)}>
-      <AvatarImage src={url ?? undefined} alt={name} draggable={false} className="group-hover/cell-button:opacity-80" />
+      <AvatarImage src={url ?? undefined} alt={name} draggable={false} />
       <AvatarFallback>{fallback}</AvatarFallback>
     </Avatar>
   );

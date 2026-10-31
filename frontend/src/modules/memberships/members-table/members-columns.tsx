@@ -25,7 +25,7 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       resizable: true,
       renderCell: ({ row, tabIndex }) => <UserCell user={row} email={row.email} tabIndex={tabIndex} className="font-medium" />,
     },
-    emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),
+    emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true, cellClass: 'text-muted-foreground' }),
     {
       key: 'role',
       name: t('c:role'),

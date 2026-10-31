@@ -25,7 +25,7 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
     placeholderValue: '-',
     renderCell: ({ row }) => {
       const values = row.tagsByKind[kind];
-      return values?.length ? <TagBadges values={values} /> : null;
+      return values?.length ? <TagBadges kind={kind} values={values} /> : null;
     },
   }));
 

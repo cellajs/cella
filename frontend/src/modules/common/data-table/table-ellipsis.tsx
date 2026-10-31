@@ -65,7 +65,7 @@ export function TableEllipsis<T extends EllipsisRow>({ row, tabIndex, options }:
       variant="cell"
       size="cell"
       tabIndex={tabIndex}
-      className="justify-center data-dropdowner-active:opacity-100"
+      className="justify-center"
       aria-label={t('c:actions')}
       onClick={openDropdown}
     >

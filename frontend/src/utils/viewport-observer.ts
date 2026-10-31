@@ -17,9 +17,8 @@ export const initViewportObserver = () => {
   const measure = () => {
     // Pinch zoom shrinks the visual viewport without hiding anything under it, which would read as a keyboard.
     if (viewport.scale > 1.01) return false;
-    // Rubber-band overscroll drives offsetTop negative, which would inflate the occlusion.
-    const offsetTop = Math.max(0, viewport.offsetTop);
-    return window.innerHeight - viewport.height - offsetTop >= minKeyboardPx;
+    // The height alone: scrolling pans the visual viewport down the layout viewport, which raises offsetTop under an open keyboard.
+    return window.innerHeight - viewport.height >= minKeyboardPx;
   };
 
   const update = () => {

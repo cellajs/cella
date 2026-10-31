@@ -49,13 +49,8 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
   const search = searchFilter([usersTable.name, usersTable.email], q);
   if (search) filters.push(search);
 
-  const usersQuerySelect = { ...memberSelect, role: systemRolesTable.role };
-  const baseQuery = db
-    .select(usersQuerySelect)
-    .from(usersTable)
-    .innerJoin(actorsTable, userActorJoin)
-    .leftJoin(systemRolesTable, eq(usersTable.id, systemRolesTable.userId))
-    .where(and(...filters));
+  const where = and(...filters);
+  const systemRoleJoin = eq(usersTable.id, systemRolesTable.userId);
 
   const orderBy = getOrderColumns({
     sort,
@@ -72,7 +67,12 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
     tieBreaker: usersTable.id,
   });
 
-  const itemsQuery = baseQuery
+  const itemsQuery = db
+    .select({ ...memberSelect, role: systemRolesTable.role })
+    .from(usersTable)
+    .innerJoin(actorsTable, userActorJoin)
+    .leftJoin(systemRolesTable, systemRoleJoin)
+    .where(where)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
@@ -80,7 +80,12 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
     getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(baseQuery.as('users'));
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(usersTable)
+        .innerJoin(actorsTable, userActorJoin)
+        .leftJoin(systemRolesTable, systemRoleJoin)
+        .where(where);
       return total;
     },
   });

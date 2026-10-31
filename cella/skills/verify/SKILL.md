@@ -45,6 +45,7 @@ pnpm seed                                                                  # mig
 - A freshly seeded admin opens on the onboarding dialog: `PUT <api>/me` with `{ userFlags: { finishedOnboarding: true } }` skips it, as the drivers do.
 - Boot smoke of a checkout or a new app: `node cella/skills/verify/smoke-driver.mjs` from the repo root starts `pnpm dev`, waits for a healthy stack with an active CDC replication, signs in as `ADMIN_EMAIL`, opens `/home` and an organization's attachments (seeded rows expected), then stops the stack. `START=` attaches to a stack that already runs; `OUT_DIR` holds the stack log, screenshots and `evidence.json`. The nightly `create-flow.yml` workflow in [create-cella](https://github.com/cellajs/create-cella/blob/main/.github/workflows/create-flow.yml) runs it on a new app: keep its interface stable.
 - Realtime behavior across two tabs (entity sync, collaborative descriptions): the `two-tab-sync-test` skill and its driver.
+- The on-screen keyboard, the visual viewport, editing text on a phone or real touch scrolling: the `android-emulator` skill. Desktop Chromium with a phone viewport shows none of these.
 - Breakpoints come from `appConfig.theme.screenSizes`, not Tailwind's defaults: cella adds `xs` 420 and sets `2xl` to 1400. `useBreakpointBelow('sm')` is strict `< 640`.
 
 ## Gotchas

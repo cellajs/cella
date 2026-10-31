@@ -6,7 +6,7 @@ import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, type EllipsisRow, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { MiddleCut } from '~/modules/common/middle-cut';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
 import { tw } from '~/utils/tw';
@@ -87,7 +87,11 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
 interface EmailColumnOptions {
   name: string;
   minBreakpoint?: BreakpointKey;
+  /** In px, resizable down to the minimum width. Defaults to a share of the free width. */
+  width?: number;
   resizable?: boolean;
+  /** `text-muted-foreground` where another column, such as the name, identifies the row. */
+  cellClass?: string;
 }
 
 /** The address as a mailto link; a row without one shows the placeholder. */
@@ -102,9 +106,9 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
         draggable={false}
-        className="active:press link-decoration active:link-decoration-strong truncate outline-0 hover:underline"
+        className="active:press link-decoration active:link-decoration-strong truncate outline-0 transition-colors hover:text-foreground hover:underline"
       >
-        <MiddleCut text={row.email} />
+        <HighlightText text={row.email} />
       </a>
     ) : null,
 });

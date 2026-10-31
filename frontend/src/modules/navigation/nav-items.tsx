@@ -18,7 +18,7 @@ export const navItems = [
   { id: 'notifications', type: 'base', icon: BellIcon, sheet: () => <NotificationsSheet />, badge: UnreadNavBadge },
   {
     id: 'account',
-    type: 'footer',
+    type: 'base',
     icon: UserIcon,
     sheet: () => <AccountSheet />,
     mirrorOnMobile: true,

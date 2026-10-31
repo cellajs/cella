@@ -69,7 +69,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
               transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
               // z-108 keeps it under the spotlight's dim (110), with the rest of the page
               className={cn(
-                'inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-floating backdrop-blur-xs',
+                'text-editing:invisible inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-floating backdrop-blur-xs',
                 sheetLayer ? 'absolute' : 'fixed',
               )}
             >

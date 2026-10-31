@@ -10,6 +10,7 @@ const maxKeptEndLength = 20;
 
 interface MiddleCutProps {
   text: string;
+  /** Takes the link underline: an underline on a parent link stops at this inline-flex box. */
   className?: string;
 }
 
@@ -25,7 +26,7 @@ export function MiddleCut({ text, className }: MiddleCutProps) {
     matchStart !== undefined && matchStart < naturalSplit && text.length - matchStart <= 2 * maxKeptEndLength ? matchStart : naturalSplit;
 
   return (
-    <span className={cn('inline-flex min-w-0 max-w-full', className)}>
+    <span data-whole-text={text} className={cn('inline-flex min-w-0 max-w-full', className)}>
       <span className="sr-only">{text}</span>
       <span aria-hidden className="overflow-hidden text-ellipsis whitespace-pre">
         <HighlightText text={text.slice(0, splitAt)} />

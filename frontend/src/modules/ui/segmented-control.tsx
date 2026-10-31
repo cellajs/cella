@@ -4,16 +4,19 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { type ComponentProps, useLayoutEffect, useRef } from 'react';
 import { cn } from '~/utils/cn';
 
-const trackVariants = cva('relative isolate inline-flex w-fit max-w-full items-stretch gap-0.5 rounded-md border border-input bg-muted p-0.5', {
-  variants: {
-    size: {
-      default: 'h-10 text-sm [--segment-px:--spacing(2.5)]',
-      sm: 'h-9 text-sm [--segment-px:--spacing(2)]',
-      xs: 'h-7 text-xs [--segment-px:--spacing(1.5)]',
+const trackVariants = cva(
+  'relative isolate inline-flex w-fit max-w-full items-stretch gap-0.5 rounded-md border border-input bg-muted p-0.5 dark:bg-black/40',
+  {
+    variants: {
+      size: {
+        default: 'h-10 text-sm [--segment-px:--spacing(2.5)]',
+        sm: 'h-9 text-sm [--segment-px:--spacing(2)]',
+        xs: 'h-7 text-xs [--segment-px:--spacing(1.5)]',
+      },
     },
+    defaultVariants: { size: 'default' },
   },
-  defaultVariants: { size: 'default' },
-});
+);
 
 /** One weight in both states: a heavier active label would resize its segment and shift the others. */
 export const segmentClassName =

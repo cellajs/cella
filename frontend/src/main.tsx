@@ -25,6 +25,7 @@ import { checkForUpdate, reloadOntoWaitingWorker } from '~/utils/app-update';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initInputModality } from '~/utils/input-modality';
+import { initTextEditingObserver } from '~/utils/text-editing-observer';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
 client.setConfig(createClientConfig());
@@ -48,6 +49,7 @@ renderAscii();
 initFaviconBadge(appConfig.mode);
 
 initViewportObserver();
+initTextEditingObserver();
 
 initInputModality();
 
