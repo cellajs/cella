@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, pgTable, text } from 'drizzle-orm/pg-core';
-import { matchesSearch, parseSearchQuery } from 'shared/utils/parse-search-query';
-import { foldText, type MatchMode } from 'shared/utils/text-match';
+import { foldText, matchesTerms, parseTerms } from 'shared/utils/text-match';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getSeedDb } from '#/db/db';
 import { searchFilter } from '#/utils/sql';
@@ -18,26 +17,10 @@ const rows = [
   { id: 7, name: '1000 sure', email: 'front-end@team.io' },
 ];
 
-/** Queries in the shared grammar; each must select the same rows in the database and in the browser. */
-const cases: { q: string; mode?: MatchMode }[] = [
-  { q: 'renee' },
-  { q: 'wunsch strosin' },
-  { q: '"wunsch - strosin"' },
-  { q: 'kling hotmail' },
-  { q: 'gmail -api' },
-  { q: '-hotmail' },
-  { q: '100%' },
-  { q: 'conor_' },
-  { q: 'front -end' },
-  { q: 'tools rapid', mode: 'any' },
-  { q: '"design -' },
-];
+/** Each must select the same rows in the database and in the browser. */
+const queries = ['renee', 'wunsch strosin', 'kling hotmail', 'kling, hotmail', '100%', 'conor_', 'front-end', 'missing', '   '];
 
-/**
- * `searchFilter` is the database half of a list search and `matchesSearch` the browser half: a list filtered offline, a
- * page filtered by the server and the marks painted over the result must agree, in the template and in every app.
- */
-describe('searchFilter agrees with matchesSearch', () => {
+describe('searchFilter agrees with matchesTerms', () => {
   const db = getSeedDb();
 
   beforeAll(async () => {
@@ -49,15 +32,15 @@ describe('searchFilter agrees with matchesSearch', () => {
     await db.execute(sql`drop table if exists search_filter_samples`);
   });
 
-  it.each(cases)('$q ($mode)', async ({ q, mode }) => {
+  it.each(queries)('%s', async (q) => {
     const found = await db
       .select({ id: samples.id })
       .from(samples)
-      .where(searchFilter([samples.name, samples.email], q, mode))
+      .where(searchFilter([samples.name, samples.email], q))
       .orderBy(samples.id);
 
-    const parsed = parseSearchQuery(q);
-    const expected = rows.filter((row) => matchesSearch([row.name, row.email ?? ''].map(foldText), parsed, mode)).map((row) => row.id);
+    const terms = parseTerms(q);
+    const expected = rows.filter((row) => !terms.length || matchesTerms([row.name, row.email ?? ''].map(foldText), terms)).map((row) => row.id);
 
     expect(found.map((row) => row.id)).toEqual(expected);
   });

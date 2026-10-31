@@ -1,5 +1,3 @@
-export type MatchMode = 'all' | 'any';
-
 /** `[start, end)` in the original string's code units. */
 export type MatchRange = [start: number, end: number];
 
@@ -12,38 +10,18 @@ const combiningMarks = /[\u0300-\u036f]/g;
  */
 export const foldText = (text: string): string => text.toLowerCase().normalize('NFD').replace(combiningMarks, '');
 
-/** The folded, whitespace-separated terms of a query. */
+/** The folded terms of a query, the words between its spaces and commas. */
 export const parseTerms = (query: string | null | undefined): string[] =>
   foldText(query ?? '')
-    .split(/\s+/)
+    .split(/[\s,]+/)
     .filter(Boolean);
 
 /**
- * Whether the folded fields contain every term (`all`) or at least one (`any`). The caller passes
- * fields through `foldText`, so a list folds each row once and not per keystroke. An empty query
- * matches nothing: showing everything is the caller's decision.
+ * Whether the folded fields contain every term. The caller passes fields through `foldText`, so a list folds each row once
+ * and not per keystroke. An empty query matches nothing: showing everything is the caller's decision.
  */
-export const matchesTerms = (foldedFields: string[], terms: string[], mode: MatchMode = 'all'): boolean => {
-  if (!terms.length) return false;
-  const hasTerm = (term: string) => foldedFields.some((field) => field.includes(term));
-  return mode === 'all' ? terms.every(hasTerm) : terms.some(hasTerm);
-};
-
-const wordChar = /[\p{L}\p{N}]/u;
-
-/**
- * Whether a folded field holds `term` with no letter or digit right before or after it: a whole word, or a whole
- * phrase. Exclusions match this way, so `-api` spares "rapid".
- */
-export const containsWord = (foldedField: string, term: string): boolean => {
-  if (!term) return false;
-  for (let at = foldedField.indexOf(term); at !== -1; at = foldedField.indexOf(term, at + 1)) {
-    const before = foldedField[at - 1];
-    const after = foldedField[at + term.length];
-    if ((!before || !wordChar.test(before)) && (!after || !wordChar.test(after))) return true;
-  }
-  return false;
-};
+export const matchesTerms = (foldedFields: string[], terms: string[]): boolean =>
+  terms.length > 0 && terms.every((term) => foldedFields.some((field) => field.includes(term)));
 
 /**
  * Folds one code point at a time so each folded code unit knows the original offset it came from.

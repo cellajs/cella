@@ -5,13 +5,18 @@ import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 import type { NavItemId, RecentSelection } from '~/modules/navigation/types';
 import { idbKvStorage } from '~/query/idb-kv-storage';
-import { addRecentSearch, withoutRecentSearch } from '~/utils/recent-searches';
+import { addRecentListSearch, addRecentSearch, type RecentListSearch, withoutRecentSearch } from '~/utils/recent-searches';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Search values entered in AppSearch
   /** Records a search that opened a result: most recent first, a value contained in another kept once. */
   saveRecentSearch: (value: string) => void;
   removeRecentSearch: (value: string) => void;
+
+  /** Recent searches of a list with filters, by list, such as 'task-board'. */
+  recentListSearches: Record<string, RecentListSearch[]>;
+  saveRecentListSearch: (list: string, search: RecentListSearch) => void;
+  removeRecentListSearch: (list: string, search: RecentListSearch) => void;
 
   recentSelections: RecentSelection[]; // Most recent first
   /** Puts the entry first and drops the ones `isAvailable` rejects, so an entry that can no longer open holds no place. */
@@ -51,6 +56,7 @@ interface InitStore
   extends Pick<
     NavigationStoreState,
     | 'recentSearches'
+    | 'recentListSearches'
     | 'recentSelections'
     | 'searchCollapsedTypes'
     | 'keepNavOpen'
@@ -67,6 +73,7 @@ const maxRecentSelections = 6;
 
 const initStore: InitStore = {
   recentSearches: [],
+  recentListSearches: {},
   recentSelections: [],
   searchCollapsedTypes: {},
   navSheetOpen: null,
@@ -85,6 +92,20 @@ export const useNavigationStore = create<NavigationStoreState>()(
       persist(
         (set, get) => ({
           ...initStore,
+          saveRecentListSearch: (list, search) => {
+            const searches = get().recentListSearches[list] ?? [];
+            const next = addRecentListSearch(searches, search);
+            if (next === searches) return;
+            set((state) => {
+              state.recentListSearches[list] = next;
+            });
+          },
+          removeRecentListSearch: (list, search) => {
+            const key = JSON.stringify(search);
+            set((state) => {
+              state.recentListSearches[list] = (get().recentListSearches[list] ?? []).filter((other) => JSON.stringify(other) !== key);
+            });
+          },
           saveRecentSearch: (value) => {
             const recentSearches = addRecentSearch(get().recentSearches, value);
             // An unchanged list would still write the persisted store
@@ -171,6 +192,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
             keepOpenPreference: state.keepOpenPreference,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
+            recentListSearches: state.recentListSearches,
             recentSelections: state.recentSelections,
             searchCollapsedTypes: state.searchCollapsedTypes,
             lastOrganizationId: state.lastOrganizationId,

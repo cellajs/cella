@@ -77,13 +77,7 @@ const meta = {
   decorators: [withApp],
   beforeEach: () => {
     // Story tests run without the app's translations; the counts read through these two
-    i18n.addResourceBundle(
-      'en',
-      'c',
-      { resource_count: '{{count}} {{resource, lowercase}}', resource_count_found: '{{count}} {{resource, lowercase}} found' },
-      true,
-      true,
-    );
+    i18n.addResourceBundle('en', 'c', { resource_count: '{{count}} {{resource, lowercase}}' }, true, true);
     return () => i18n.removeResourceBundle('en', 'c');
   },
   parameters: { app: { queryData: [[listKey, { items: rows, total: 2 }]] } },
@@ -97,15 +91,10 @@ const body = () => within(document.body);
 const searchInput = (canvasElement: HTMLElement, name: string) => canvasElement.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
 const hasIcon = (element: HTMLElement, icon: string) => !!element.querySelector(`.lucide-${icon}`);
 
-/** Resets through the count's clear button; the search resets before the selection clears. */
+/** Resets through the field's clear button. */
 async function expectReset(canvasElement: HTMLElement, args: BarArgs, reset: Record<string, unknown>) {
-  await userEvent.click(within(canvasElement).getByRole('button', { name: 'clear' }));
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'clear_search' }));
   await expect(args.setSearch).toHaveBeenCalledWith(reset);
-  const clear = args.clearSelection as ReturnType<typeof fn>;
-  const search = args.setSearch as ReturnType<typeof fn>;
-  if (clear.mock.calls.length) {
-    await expect(search.mock.invocationCallOrder[0]).toBeLessThan(clear.mock.invocationCallOrder[0]);
-  }
 }
 
 export const UsersFiltered: Story = {
@@ -190,7 +179,6 @@ export const MembersPage: Story = {
     await expect(canvas.getByRole('button', { name: 'invite' })).toBeInTheDocument();
     await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(true);
     await expect(hasIcon(canvasElement, 'expand')).toBe(true);
-    await expect(canvas.getByRole('combobox')).toHaveClass('w-auto');
     await expect(await body().findByRole('button', { name: 'remove' })).toBeInTheDocument();
     await expect(canvasElement.querySelector('div.empty\\:hidden')).not.toBeNull();
   },
@@ -248,7 +236,7 @@ export const Pages: Story = {
   args: { bar: 'pages', q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(searchInput(canvasElement, 'pageSearch')).not.toBeNull();
-    await expect(within(canvasElement).getByText('2 page found')).toBeVisible();
+    await expect(within(canvasElement).getByText('2 page')).toBeVisible();
     await expectReset(canvasElement, args, { q: '' });
   },
 };

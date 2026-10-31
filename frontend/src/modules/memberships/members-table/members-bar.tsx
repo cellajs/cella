@@ -6,7 +6,7 @@ import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
-import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { toastOffline } from '~/modules/common/toaster/toaster';
@@ -48,10 +48,14 @@ export function MembersTableBar({
 
   const organizationId = channelOrganizationId(channel);
 
-  const onRoleChange = (role?: string) => {
-    clearSelection();
-    setSearch({ role: role as MembersRouteSearchParams['role'] });
-  };
+  const searchFilters = useRoleSearchFilter({
+    entityType: channel.entityType,
+    value: role,
+    onChange: (role) => {
+      clearSelection();
+      setSearch({ role: role as MembersRouteSearchParams['role'] });
+    },
+  });
 
   const confirmRemove = () =>
     openDeleteDialog({
@@ -101,7 +105,7 @@ export function MembersTableBar({
       searchName="memberSearch"
       actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInvite} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
-      filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} />}
+      searchFilters={searchFilters}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
       export={
         !isSheet && canUpdate ? { filename: `${appConfig.slug}-${channel.slug}-members`, selectedRows: selected, fetchRows: fetchExport } : undefined

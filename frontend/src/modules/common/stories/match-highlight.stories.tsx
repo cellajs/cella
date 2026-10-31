@@ -5,7 +5,7 @@ import { expect, userEvent } from 'storybook/test';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MatchScope } from '~/modules/common/match-highlight/match-scope';
 import { useMatchHighlight } from '~/modules/common/match-highlight/use-match-highlight';
-import { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';
+import { useMatchSteps } from '~/modules/docs/find-steps';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 

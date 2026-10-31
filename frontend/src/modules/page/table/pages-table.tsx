@@ -1,8 +1,7 @@
 import { BirdIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { matchesSearch, parseSearchQuery } from 'shared/utils/parse-search-query';
-import { foldText } from 'shared/utils/text-match';
+import { foldText, matchesTerms, parseTerms } from 'shared/utils/text-match';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid/types';
@@ -57,12 +56,12 @@ export function PagesTable() {
 
   const tree = useTreeRows<DocPage>({ defaultExpanded: true, rowHeight: pagesRowHeight, maxDepth: maxPageDepth, mutate: treeMutate });
 
-  const parsedQuery = parseSearchQuery(q);
-  const filtered = parsedQuery.effectiveQ
+  const terms = parseTerms(q);
+  const filtered = terms.length
     ? pages.filter((page) =>
-        matchesSearch(
+        matchesTerms(
           [page.name, page.description, page.keywords, page.id].map((value) => foldText(value ?? '')),
-          parsedQuery,
+          terms,
         ),
       )
     : pages;

@@ -1,13 +1,9 @@
-import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
-import type { MatchSteps } from '~/modules/common/match-highlight/use-match-steps';
 import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 interface SearchFieldProps {
   /** The applied query, such as the URL's `q`: the field takes it over while nobody types in it. */
@@ -20,9 +16,9 @@ interface SearchFieldProps {
   id?: string;
   disabled?: boolean;
   isSearching?: boolean;
-  /** Matches found in the content, stepped through with the arrows, Enter and Shift+Enter. */
-  steps?: MatchSteps;
-  /** Beside the clear button while a query is typed, such as a match mode. */
+  /** What the query finds, as "4 tasks"; empty while there is no query. */
+  count?: string;
+  /** Beside the clear button while a query is typed, such as a find's steps. */
   children?: ReactNode;
   /** Runs before the field's own keys; an event it handles (`preventDefault`) skips them. */
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
@@ -32,12 +28,9 @@ interface SearchFieldProps {
 
 const typingPause = 250;
 
-const stepButtonClass = tw('focus-effect flex size-7 items-center justify-center rounded-md hover:bg-muted disabled:opacity-50');
-
 /**
- * The input of an in-page search: a list's filter or a find in content. It applies the query once typing pauses, follows
- * the applied query from outside, clears with its X or Escape (a second Escape leaves the field), and with `steps` shows
- * where the current match is.
+ * The input of an in-page search with words only: a list without filters, or a find in content. It applies the query once
+ * typing pauses, follows the applied query from outside, and clears with its X or Escape (a second Escape leaves the field).
  */
 export function SearchField({
   value,
@@ -47,13 +40,12 @@ export function SearchField({
   id,
   disabled,
   isSearching = false,
-  steps,
+  count,
   children,
   onKeyDown,
   ref,
   className,
 }: SearchFieldProps) {
-  const { t } = useTranslation();
   const ownRef = useRef<HTMLInputElement>(null);
   const inputRef = ref ?? ownRef;
 
@@ -77,11 +69,7 @@ export function SearchField({
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
 
-    if (event.key === 'Enter' && steps?.total) {
-      event.preventDefault();
-      if (event.shiftKey) steps.previous();
-      else steps.next();
-    } else if (event.key === 'Escape') {
+    if (event.key === 'Escape') {
       if (inputValue) clear();
       else event.currentTarget.blur();
     }
@@ -108,37 +96,11 @@ export function SearchField({
       </InputGroupAddon>
 
       <InputGroupAddon className="gap-0.5 pr-2" align="inline-end">
-        {inputValue && steps && (
-          <>
-            <span className="mr-1 whitespace-nowrap text-muted-foreground text-sm tabular-nums">
-              {steps.total === 0 && t('c:no_results')}
-              {steps.total > 0 && (steps.index >= 0 ? t('c:match_position', { current: steps.index + 1, total: steps.total }) : steps.total)}
-            </span>
-            {/* Mouse down keeps focus in the field, so typing goes on after a step */}
-            <button
-              type="button"
-              aria-label={t('c:previous')}
-              className={stepButtonClass}
-              disabled={!steps.total}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={steps.previous}
-            >
-              <ChevronUpIcon className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('c:next')}
-              className={stepButtonClass}
-              disabled={!steps.total}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={steps.next}
-            >
-              <ChevronDownIcon className="size-4" />
-            </button>
-            <span className="sr-only" aria-live="polite">
-              {steps.announcement}
-            </span>
-          </>
+        {/* Mounted while empty too: a status region announces changes only once it exists */}
+        {count !== undefined && (
+          <span role="status" className="mr-1 whitespace-nowrap text-muted-foreground text-sm tabular-nums">
+            {inputValue && count}
+          </span>
         )}
         {inputValue && children}
         <SearchClearButton
