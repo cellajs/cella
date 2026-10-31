@@ -269,7 +269,7 @@ export function SearchChipsField({
     .slice(0, 2);
 
   const groupRow = (group: SearchOptionGroup) => (
-    <ComboboxGroup key={group.key} aria-label={group.label} className="flex gap-1 overflow-x-auto border-b px-3 py-2 last:border-b-0">
+    <ComboboxGroup key={group.key} aria-label={group.label} className="no-scrollbar flex gap-1 overflow-x-auto border-b px-3 py-2 last:border-b-0">
       {group.options.map((option) => (
         <ComboboxItem
           key={option.value}
@@ -417,7 +417,7 @@ export function SearchChipsField({
         </ComboboxContent>
       </Combobox>
 
-      {isMobile && hasChips && <div className="flex gap-1.5 overflow-x-auto">{chipNodes}</div>}
+      {isMobile && hasChips && <div className="no-scrollbar flex gap-1.5 overflow-x-auto">{chipNodes}</div>}
     </div>
   );
 }
