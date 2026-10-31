@@ -1,21 +1,13 @@
 import { PencilIcon } from 'lucide-react';
-import { type MouseEvent, memo } from 'react';
+import { type FocusEvent, type KeyboardEvent, type MouseEvent, memo } from 'react';
 import { useRovingTabIndex } from './hooks';
 import type { CalculatedColumn, CellMouseEventHandler, CellRendererProps, MergedSlots, TileSide } from './types';
 import { cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
-
-const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10 aria-selected:outline-hidden';
-const cellRangeTopClassname = 'rdg-cell-range-top border-t-2 border-t-primary';
-const cellRangeBottomClassname = 'rdg-cell-range-bottom border-b-2 border-b-primary';
-const cellRangeLeftClassname = 'rdg-cell-range-left border-l-2 border-l-primary';
-const cellRangeRightClassname = 'rdg-cell-range-right border-r-2 border-r-primary';
 
 function Cell<R, SR>({
   column,
   colSpan,
   isCellSelected,
-  isInSelectedRange,
-  rangeBoundary,
   isDraggedOver,
   row,
   rowIdx,
@@ -31,14 +23,9 @@ function Cell<R, SR>({
   onRowChange,
   selectCell,
   style,
-  isCellSelectionEnabled,
   ...props
 }: CellRendererProps<R, SR>) {
-  const roving = useRovingTabIndex(isCellSelected);
-  // Without cell selection the gridcell is not a tab stop and interactive children keep their DOM tab order.
-  const tabIndex = isCellSelectionEnabled ? roving.tabIndex : -1;
-  const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
-  const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
+  const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(isCellSelected);
 
   const { cellClass } = column;
 
@@ -46,22 +33,7 @@ function Cell<R, SR>({
   // Explicit cursor so the hover affordance matches the editor: I-beam for free text, pointer for pickers.
   const editorCursor = isEditable ? (column.editorOptions?.editorType === 'select' ? 'cursor-pointer' : 'cursor-text') : undefined;
 
-  className = getCellClassname(
-    column,
-    {
-      [cellInRangeClassname]: isInSelectedRange === true,
-      [cellRangeTopClassname]: isInSelectedRange === true && (rangeBoundary?.isTop ?? false),
-      [cellRangeBottomClassname]: isInSelectedRange === true && (rangeBoundary?.isBottom ?? false),
-      [cellRangeLeftClassname]: isInSelectedRange === true && (rangeBoundary?.isLeft ?? false),
-      [cellRangeRightClassname]: isInSelectedRange === true && (rangeBoundary?.isRight ?? false),
-    },
-    // Without cell selection the focus outline comes from :focus-visible on an interactive child, so mouse clicks draw none.
-    !isCellSelectionEnabled &&
-      'has-focus-visible:outline-2 has-focus-visible:outline-ring has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
-    editorCursor,
-    typeof cellClass === 'function' ? cellClass(row) : cellClass,
-    className,
-  );
+  className = getCellClassname(column, editorCursor, typeof cellClass === 'function' ? cellClass(row) : cellClass, className);
 
   const effectiveTabIndex = column.focusable === false ? -1 : tabIndex;
 
@@ -82,9 +54,11 @@ function Cell<R, SR>({
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
     // Focus without scrolling so the cell's scroll margin cannot jump the page; the mousedown default must stay for row drag.
     event.currentTarget.focus({ preventScroll: true });
+    // Script focus matches :focus-visible in Chromium even from a click, so the ring's selector excludes this marker.
+    event.currentTarget.setAttribute('data-pointer-focus', '');
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
-      selectCell({ rowIdx, idx: column.idx }, { extendSelection: event.shiftKey });
+      selectCell({ rowIdx, idx: column.idx });
     }
   }
 
@@ -105,6 +79,14 @@ function Cell<R, SR>({
     handleMouseEvent(event, onCellContextMenu);
   }
 
+  function handleBlur(event: FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.removeAttribute('data-pointer-focus');
+  }
+
+  function handleKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+    event.currentTarget.removeAttribute('data-pointer-focus');
+  }
+
   function handleRowChange(newRow: R) {
     onRowChange(column, rowIdx, newRow);
   }
@@ -114,7 +96,7 @@ function Cell<R, SR>({
       role="gridcell"
       aria-colindex={column.idx + 1} // aria-colindex is 1-based
       aria-colspan={colSpan}
-      aria-selected={isCellSelected || isInSelectedRange}
+      aria-selected={isCellSelected}
       aria-readonly={!isEditable || undefined}
       tabIndex={effectiveTabIndex}
       className={className}
@@ -124,6 +106,8 @@ function Cell<R, SR>({
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       onFocus={onFocus}
+      onBlur={handleBlur}
+      onKeyDownCapture={handleKeyDownCapture}
       {...props}
     >
       {column.mergedSlots != null ? (

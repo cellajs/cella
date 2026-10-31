@@ -35,7 +35,6 @@ interface HeaderCellProps<R, SR> {
   onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
   onColumnResizeEnd: () => void;
   shouldFocusGrid: boolean;
-  isCellSelectionEnabled: boolean;
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   /** Steps this column one place by keyboard, and reports whether a column stood there to swap with. */
   moveColumn?: Maybe<(column: CalculatedColumn<R, SR>, step: -1 | 1) => boolean>;
@@ -50,7 +49,6 @@ export function HeaderCell<R, SR>({
   colSpan,
   rowIdx,
   isCellSelected,
-  isCellSelectionEnabled,
   onColumnResize,
   onColumnResizeEnd,
   onColumnsReorder,
@@ -66,11 +64,7 @@ export function HeaderCell<R, SR>({
   const [preview, setPreview] = useState<{ container: HTMLElement } | null>(null);
   const rowSpan = getHeaderCellRowSpan(column, rowIdx);
   // set the tabIndex to 0 when there is no selected cell so grid can receive focus
-  const roving = useRovingTabIndex(shouldFocusGrid || isCellSelected);
-  // Without cell selection every header cell keeps its natural tab order, so sortable headers stay keyboard reachable.
-  const tabIndex = isCellSelectionEnabled ? roving.tabIndex : 0;
-  const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
-  const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
+  const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(shouldFocusGrid || isCellSelected);
   const sortIndex = sortColumns?.findIndex((sort) => sort.columnKey === column.key);
   const sortColumn = sortIndex !== undefined && sortIndex > -1 ? sortColumns![sortIndex] : undefined;
   const sortDirection = sortColumn?.direction;
@@ -78,14 +72,12 @@ export function HeaderCell<R, SR>({
   const ariaSort = sortDirection && !priority ? (sortDirection === 'ASC' ? 'ascending' : 'descending') : undefined;
   const { sortable, resizable, draggable } = column;
 
-  const className = getCellClassname(
-    column,
-    'border-t-0',
-    column.headerCellClass,
-    { 'cursor-pointer': sortable, 'touch-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
-    // aria-selected is never true without cell selection, so the focus outline comes from :focus-visible.
-    !isCellSelectionEnabled && 'focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid focus-visible:-outline-offset-2',
-  );
+  const className = getCellClassname(column, 'border-t-0', column.headerCellClass, {
+    'cursor-pointer': sortable,
+    'touch-none': resizable,
+    'opacity-40': isDragging,
+    'z-3': column.frozen,
+  });
 
   useEffect(() => {
     const el = cellRef.current;
@@ -183,7 +175,7 @@ export function HeaderCell<R, SR>({
       event.preventDefault();
       const step = key === 'ArrowLeft' ? -1 : 1;
       // The header element is keyed by column, so focus travels with it; the selected cell follows so arrows resume there
-      if (moveColumn(column, step) && isCellSelectionEnabled) selectCell({ idx: column.idx + step, rowIdx });
+      if (moveColumn(column, step)) selectCell({ idx: column.idx + step, rowIdx });
     } else if (resizable && !event.shiftKey && isCtrlKeyHeldDown(event) && (key === 'ArrowLeft' || key === 'ArrowRight')) {
       // stopPropagation prevents grid navigation during column resize
       event.stopPropagation();

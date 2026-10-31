@@ -70,7 +70,7 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
         rowHeight={36}
         hideHeader={hideHeader}
         enableVirtualization={false}
-        readOnly
+        hideEndMarker
       />
     </div>
   );

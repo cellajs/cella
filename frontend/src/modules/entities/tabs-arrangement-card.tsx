@@ -122,10 +122,14 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       // Rows take their height from this cell, so a description wraps where a fixed row would truncate it
       wrapText: true,
       cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
-      renderCell: ({ row }) => {
+      renderCell: ({ row, tabIndex }) => {
         const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
         if (!row.description) return name;
-        return <HelpText content={<p className="text-xs">{row.description}</p>}>{name}</HelpText>;
+        return (
+          <HelpText content={<p className="text-xs">{row.description}</p>} tabIndex={tabIndex}>
+            {name}
+          </HelpText>
+        );
       },
     },
     {
@@ -134,11 +138,16 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       width: 64,
       cellClass: firstLineCellClass,
       headerCellClass: 'justify-center',
-      renderCell: ({ row }) =>
+      renderCell: ({ row, tabIndex }) =>
         row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />
         ) : (
-          <Switch aria-label={`${row.name}: ${t('c:visible')}`} checked={row.visible} onCheckedChange={(visible) => toggleHidden(row.id, visible)} />
+          <Switch
+            aria-label={`${row.name}: ${t('c:visible')}`}
+            tabIndex={tabIndex}
+            checked={row.visible}
+            onCheckedChange={(visible) => toggleHidden(row.id, visible)}
+          />
         ),
     },
   ];
@@ -151,7 +160,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
         rowHeight={56}
         columns={columns}
         hasNextPage={false}
-        readOnly
+        hideEndMarker
         enableVirtualization={false}
         onRowReorder={onRowReorder}
         renderRowDragPreview={renderRowDragPreview}

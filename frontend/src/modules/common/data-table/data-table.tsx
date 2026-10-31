@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import {
   type CellRendererProps,
-  type CellSelectionMode,
   type ColumnWidths,
   DataGrid,
   type DataGridProps,
@@ -33,7 +32,6 @@ type ForwardedGridProps<TData> = Pick<
   | 'onSortColumnsChange'
   | 'isCompact'
   | 'hideHeader'
-  | 'rowSelectionMode'
   | 'onRowReorder'
   | 'onRowReparent'
   | 'canDropRow'
@@ -62,8 +60,8 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   /** The last column resize belongs to this value: while another value holds, columns take their default widths. */
   resetWidthsKey?: string | number | boolean;
   className?: string;
-  /** When true, hides infinite loader (for static/non-paginated tables). Also forwarded to the grid. */
-  readOnly?: boolean;
+  /** Omits the "all loaded" marker below the rows, for a table that is no paginated list. */
+  hideEndMarker?: boolean;
   enableVirtualization?: boolean;
 
   selectedRows?: Set<string>;
@@ -73,8 +71,6 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
 
-  /** Cell selection mode (focus + range). Defaulted to 'none' when readOnly. @default 'cell' */
-  cellSelectionMode?: CellSelectionMode;
   /** Row height in px, for the grid and its skeleton. Defaults to 52. */
   rowHeight?: number;
 }
@@ -100,13 +96,12 @@ export function DataTable<TData>({
   fetchMore,
   resetWidthsKey,
   className,
-  readOnly,
+  hideEndMarker,
   enableVirtualization,
   selectedRows,
   onSelectedRowsChange,
   renderRow,
   renderCell,
-  cellSelectionMode,
   rowHeight = 52,
   ...gridProps
 }: DataTableProps<TData>) {
@@ -189,17 +184,15 @@ export function DataTable<TData>({
             onRowsChange={edits.onRowsChange}
             rowHeight={rowHeight}
             enableVirtualization={enableVirtualization}
-            readOnly={readOnly}
             columnWidths={columnWidths}
             onColumnWidthsChange={(map) => setWidths({ key: resetWidthsKey, map })}
             selectedRows={selectedRows}
             onSelectedRowsChange={handleSelectedRowsChange}
             onNearEndChange={enableVirtualization ? setNearEnd : undefined}
-            cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
             renderers={renderers}
           />
         </EditStatusContext>
-        {!readOnly && (
+        {(hasNextPage || !hideEndMarker) && (
           <InfiniteLoader
             hasNextPage={hasNextPage}
             isFetching={isFetching}

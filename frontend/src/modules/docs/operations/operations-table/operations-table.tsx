@@ -53,7 +53,6 @@ export function OperationsTable() {
             <DataTable<GenOperationSummary>
               columns={columns}
               rows={sortedOperations}
-              cellSelectionMode="none"
               hasNextPage={false}
               rowKeyGetter={(row) => row.hash}
               rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}

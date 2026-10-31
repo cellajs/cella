@@ -15,7 +15,6 @@ export interface HeaderRowProps<R, SR> {
   lastFrozenColumnIndex: number;
   selectedCellIdx: number | undefined;
   shouldFocusGrid: boolean;
-  isCellSelectionEnabled: boolean;
   headerRowClass: Maybe<string>;
 }
 
@@ -34,7 +33,6 @@ function HeaderRow<R, SR>({
   selectedCellIdx,
   selectCell,
   shouldFocusGrid,
-  isCellSelectionEnabled,
 }: HeaderRowProps<R, SR>) {
   // The drag that reorders columns has no key of its own, so Ctrl+Shift+Arrow steps one column past its neighbour.
   const moveColumn = onColumnsReorder
@@ -61,7 +59,6 @@ function HeaderRow<R, SR>({
         colSpan={colSpan}
         rowIdx={rowIdx}
         isCellSelected={selectedCellIdx === column.idx}
-        isCellSelectionEnabled={isCellSelectionEnabled}
         onColumnResize={onColumnResize}
         onColumnResizeEnd={onColumnResizeEnd}
         onColumnsReorder={onColumnsReorder}

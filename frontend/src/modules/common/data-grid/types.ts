@@ -45,17 +45,6 @@ export interface Position {
   readonly rowIdx: number;
 }
 
-/** Inclusive, normalized range of selected cells (start <= end). */
-export interface CellRange {
-  readonly start: Position;
-  readonly end: Position;
-}
-
-export interface SelectedCellRangeChangeArgs<R, SR> {
-  range: CellRange | null;
-  cells?: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }>;
-}
-
 /** Context passed to a column's `estimateLines` callback for width-aware row sizing. */
 export interface EstimateLinesContext {
   /** The column's rendered width in pixels (flex-resolved, or the declared width). */
@@ -190,6 +179,7 @@ export interface RenderCellProps<TRow, TSummaryRow = unknown> {
   row: TRow;
   rowIdx: number;
   isCellEditable: boolean;
+  /** Pass to every focusable control in the cell: without it each row adds a Tab stop to the grid's single one. */
   tabIndex: number;
   onRowChange: (row: TRow) => void;
 }
@@ -216,8 +206,6 @@ interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.
   onCellContextMenu?: CellMouseEventHandler<TRow, TSummaryRow>;
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
-  /** Enables the cell-level roving tab index. When false the gridcell leaves the tab order and children follow DOM order. */
-  isCellSelectionEnabled: boolean;
 }
 
 export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererProps<TRow, TSummaryRow> {
@@ -226,9 +214,6 @@ export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererPr
   colSpan: number | undefined;
   isDraggedOver: boolean;
   isCellSelected: boolean;
-  isInSelectedRange?: boolean;
-  /** Range boundary info for styling (only set when isInSelectedRange is true) */
-  rangeBoundary?: { isTop: boolean; isBottom: boolean; isLeft: boolean; isRight: boolean };
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
 }
 
@@ -294,7 +279,6 @@ export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderR
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
   rowClass: Maybe<(row: TRow, rowIdx: number) => Maybe<string>>;
   renderCell: (key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode;
-  selectedCellRange?: CellRange | null;
 }
 
 export interface RowsChangeData<R, SR = unknown> {
@@ -362,7 +346,6 @@ export interface Renderers<TRow, TSummaryRow> {
 export interface SelectCellOptions {
   enableEditor?: Maybe<boolean>;
   shouldFocusCell?: Maybe<boolean>;
-  extendSelection?: Maybe<boolean>;
 }
 
 export interface ColumnWidth {
@@ -371,12 +354,6 @@ export interface ColumnWidth {
 }
 
 export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
-
-/** Cell focus mode: disabled, one navigable cell, or a Shift-extended copy/paste range. */
-export type CellSelectionMode = 'none' | 'cell' | 'cell-range';
-
-/** Row-body selection: disabled, replacement single-select, or toggle/range multi-select. */
-export type RowSelectionMode = 'none' | 'single' | 'multi';
 
 export type ResizedWidth = number | 'max-content';
 

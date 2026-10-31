@@ -2,7 +2,7 @@ import { type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
 import { memo, useMemo } from 'react';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
 import type { RenderRowProps } from './types';
-import { cn, getCellRangeBoundary, getColSpan, isCellInRange } from './utils/grid-utils';
+import { cn, getColSpan } from './utils/grid-utils';
 
 // Rows are real subgrid boxes: column tracks still resolve at the root grid, and the row has a hit-test box for drag and drop and row-wide indicators.
 const rowClassname = 'rdg-row group/row col-span-full grid grid-cols-subgrid aria-selected:bg-accent aria-selected:hover:bg-accent';
@@ -27,8 +27,6 @@ function Row<R, SR>({
   onRowChange,
   selectCell,
   renderCell,
-  selectedCellRange,
-  isCellSelectionEnabled,
   animateReorder,
   style,
   ...props
@@ -49,10 +47,6 @@ function Row<R, SR>({
 
     const isCellSelected = selectedCellIdx === idx;
 
-    const position = { idx, rowIdx };
-    const isInSelectedRange = selectedCellRange ? isCellInRange(position, selectedCellRange) : false;
-    const rangeBoundary = isInSelectedRange && selectedCellRange ? getCellRangeBoundary(position, selectedCellRange) : undefined;
-
     if (isCellSelected && selectedCellEditor) {
       cells.push(selectedCellEditor);
     } else {
@@ -64,9 +58,6 @@ function Row<R, SR>({
           rowIdx,
           isDraggedOver: false,
           isCellSelected,
-          isCellSelectionEnabled,
-          isInSelectedRange,
-          rangeBoundary,
           onCellMouseDown,
           onCellClick,
           onCellDoubleClick,

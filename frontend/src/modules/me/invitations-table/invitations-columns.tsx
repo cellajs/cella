@@ -54,7 +54,7 @@ export const useColumns = () => {
       key: 'actions',
       name: '',
       width: 200,
-      renderCell: ({ row }) => (
+      renderCell: ({ row, tabIndex }) => (
         <div className="flex w-full max-w-50 gap-2">
           {actionButtons.map(({ label, variant, action }) => (
             <Button
@@ -62,6 +62,7 @@ export const useColumns = () => {
               key={action}
               size="xs"
               variant={variant}
+              tabIndex={tabIndex}
               onClick={() => answerInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
             >
               {label}

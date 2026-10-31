@@ -47,10 +47,12 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden border-t-[0.05rem] border-border ${textOverflow}`,
     'sm:group-hover/row:bg-muted/50',
-    'aria-selected:outline-2 aria-selected:outline-ring aria-selected:outline-solid aria-selected:-outline-offset-2',
+    // The ring marks keyboard focus, on the cell or a control in it: a click on a read-only cell shows nothing.
+    'focus-ring:not-data-pointer-focus:focus-visible:outline-2 focus-ring:not-data-pointer-focus:focus-visible:outline-solid',
+    'focus-ring:not-data-pointer-focus:has-focus-visible:outline-2 focus-ring:not-data-pointer-focus:has-focus-visible:outline-solid',
+    'outline-ring -outline-offset-2',
     '[&:not([aria-readonly=true])]:aria-selected:bg-accent/60',
-    'max-xs:aria-selected:bg-transparent max-xs:aria-selected:outline-hidden',
-    '[.rdg-readonly_&]:aria-selected:outline-hidden',
+    'max-xs:aria-selected:bg-transparent',
     { 'rdg-cell-frozen sticky z-1': column.frozen },
     ...extraClasses,
   );
