@@ -2343,6 +2343,7 @@ export const zGetPendingMembershipsResponse = z.object({
       role: z.enum(['admin', 'member']),
       createdAt: z.string(),
       remindedAt: z.string().nullable(),
+      linkExpiresAt: z.string().nullable(),
       createdBy: zActorRef.nullable(),
     }),
   ),

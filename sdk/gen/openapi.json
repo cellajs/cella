@@ -13282,6 +13282,7 @@
                       "role": "member",
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "remindedAt": "2024-11-21T01:19:53.533Z",
+                      "linkExpiresAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
                         "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                         "kind": "user",
@@ -13296,6 +13297,7 @@
                       "role": "member",
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "remindedAt": "2024-10-29T04:35:17.725Z",
+                      "linkExpiresAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
                         "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                         "kind": "user",
@@ -13333,6 +13335,9 @@
                           "remindedAt": {
                             "type": ["string", "null"]
                           },
+                          "linkExpiresAt": {
+                            "type": ["string", "null"]
+                          },
                           "createdBy": {
                             "anyOf": [
                               {
@@ -13344,7 +13349,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "email", "role", "createdAt", "remindedAt", "createdBy"]
+                        "required": ["id", "email", "role", "createdAt", "remindedAt", "linkExpiresAt", "createdBy"]
                       }
                     },
                     "total": {

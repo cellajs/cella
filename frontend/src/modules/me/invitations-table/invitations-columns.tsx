@@ -12,7 +12,7 @@ export const useColumns = () => {
 
   const actionButtons = [
     { label: t('c:accept'), variant: 'success', action: 'accept' },
-    { label: t('c:reject'), variant: 'destructive', action: 'reject' },
+    { label: t('c:decline'), variant: 'secondary', action: 'reject' },
   ] as const;
 
   const { mutate: answerInvitation } = useHandleInvitationMutation();

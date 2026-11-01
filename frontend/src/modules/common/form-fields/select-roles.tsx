@@ -19,21 +19,21 @@ interface SelectRolesProps extends RoleGroupProps {
   required?: boolean;
 }
 
-interface RoleOptionProps {
+interface RoleCheckboxProps {
   role: EntityRole;
-  /** The option's control, named by the label with this id. */
-  renderControl: (labelId: string) => ReactNode;
+  checked: boolean;
+  onToggle: () => void;
 }
 
-/** A role with its control. Inside a form Field every control would take the field's label; the role's own label id keeps its name. */
-export function RoleOption({ role, renderControl }: RoleOptionProps) {
+/** A role with its checkbox. Inside a form Field every control would take the field's label; the role's own label id keeps its name. */
+function RoleCheckbox({ role, checked, onToggle }: RoleCheckboxProps) {
   const { t } = useTranslation();
   const labelId = useId();
 
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: the Base UI control renders the hidden input this label wraps
     <label className="inline-flex cursor-pointer items-center gap-2">
-      {renderControl(labelId)}
+      <Checkbox checked={checked} onCheckedChange={onToggle} aria-labelledby={labelId} />
       <span id={labelId} className="font-normal text-sm leading-none peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-70">
         {t(role)}
       </span>
@@ -56,13 +56,7 @@ export function SelectRoles({ onChange, value = emptyRoles, label, required, cla
       )}
       <div className={cn('inline-flex items-center gap-2', className)}>
         {roles.all.map((role) => (
-          <RoleOption
-            key={role}
-            role={role}
-            renderControl={(labelId) => (
-              <Checkbox checked={value.includes(role)} onCheckedChange={() => toggleRole(role)} aria-labelledby={labelId} />
-            )}
-          />
+          <RoleCheckbox key={role} role={role} checked={value.includes(role)} onToggle={() => toggleRole(role)} />
         ))}
       </div>
     </Fieldset.Root>
