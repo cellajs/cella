@@ -151,5 +151,7 @@ export const pendingMembershipSchema = z.object({
   createdAt: membershipSchema.shape.createdAt,
   /** The last email; null while it waits for its channel to be published. */
   remindedAt: z.string().nullable(),
+  /** When a link in the last email stops working, derived for every row alike; null while no email went out. */
+  linkExpiresAt: z.string().nullable(),
   createdBy: nullableActorRefSchema,
 });

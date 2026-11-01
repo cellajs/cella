@@ -63,7 +63,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
                 disabled={isPending}
                 onClick={() => answer(inactiveMembership.id, 'reject')}
               >
-                {t('c:reject')}
+                {t('c:decline')}
               </Button>
             </div>
           </li>

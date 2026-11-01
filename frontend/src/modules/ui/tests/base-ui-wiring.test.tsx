@@ -7,6 +7,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('i18next', () => ({ default: { t: (key: string) => key }, t: (key: string) => key }));
+// jsdom has none, and a segmented control's pill follows its track through one.
+vi.stubGlobal(
+  'ResizeObserver',
+  class {
+    observe() {}
+    disconnect() {}
+  },
+);
 
 const { Button } = await import('~/modules/ui/button');
 const { Combobox, ComboboxInput, ComboboxItem, ComboboxList } = await import('~/modules/ui/combobox');
@@ -255,7 +263,7 @@ describe('role selectors in a form field', () => {
     const radios = [...el.querySelectorAll('[role="radio"]')];
 
     expect(nameOf(group)).toBe('Role');
-    expect(radios.map(nameOf)).toEqual(radios.map((_, i) => el.querySelectorAll('label')[i].textContent));
+    expect(radios.map(nameOf)).toEqual(radios.map((radio) => radio.textContent));
     expect(new Set(radios.map(nameOf)).size).toBe(radios.length);
   });
 

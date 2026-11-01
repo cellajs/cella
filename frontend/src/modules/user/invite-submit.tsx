@@ -1,15 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-import { SendIcon } from 'lucide-react';
+import { ClockIcon, SendIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
-import { systemInvite as baseSystemInvite, type InviteOutcome } from 'sdk';
+import { systemInvite as baseSystemInvite } from 'sdk';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
-import { declineHolds } from 'shared/decline-hold';
-import type { z } from 'zod';
-import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { z } from 'zod';
+import type { TKey } from '~/lib/i18n-locales';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
@@ -19,113 +17,91 @@ import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { sendInBatches } from '~/modules/memberships/query';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { FormField, FormItem } from '~/modules/ui/field';
+import { type InviteResultData, inviteResultNeedsScreen, inviteResultTitle } from '~/modules/user/invite-result';
+import type { InviteCheck } from '~/modules/user/use-invite-check';
 import { formResolver } from '~/utils/form-resolver';
 
-type InviteFormValues = z.infer<typeof zMembershipInviteBody>;
+/** The invite dialog's id, which the form marks as unsaved and closes by. */
+export const inviteDialogId = 'invite-users';
+
+/** The invite body with no limit on addresses, since they go out in batches, plus the text a list held that is no address. */
+const inviteFormSchema = zMembershipInviteBody.extend({
+  emails: z.array(zMembershipInviteBody.shape.emails.element).min(1),
+  unparsed: z.array(z.string()),
+});
+
+type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
 /** The target vocabulary's least-privileged role; without an entity type, the organization's. */
 const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
   hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
 
-/** The invite dialog's id, which the form reads its description from and closes by. */
-export const inviteDialogId = 'invite-users';
-
-/** The three invite forms of one channel share this form and its draft, so a switch of mode keeps the addresses. */
+/** The form every invite mode of one channel shares, so a switch of mode keeps the addresses. */
 export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: inviteDialogId,
     formOptions: {
-      resolver: formResolver(zMembershipInviteBody),
-      defaultValues: { emails: [], role: defaultInviteRole(entityType) },
+      resolver: formResolver(inviteFormSchema),
+      defaultValues: { emails: [], unparsed: [], role: defaultInviteRole(entityType) },
     },
   });
 }
 
-export interface InviteFormProps {
+type InviteForm = ReturnType<typeof useInviteFormDraft>;
+
+/** What each mode's field works on: its form values, and what an invite would do with them. */
+export interface InviteFieldProps {
+  form: InviteForm;
+  channel?: EnrichedChannel;
+  check: InviteCheck;
+  emails: string[];
+  unparsed: string[];
+}
+
+interface UseInviteSubmitOptions {
   /** Without one the form sends a system invite. */
   channel?: EnrichedChannel;
-  /** Rendered in the `invite-users` dialog, which a sent invite closes. */
-  dialog?: boolean;
-  /** Takes the place of the cancel button, as the onboarding footer does. */
-  children?: ReactNode;
+  onSent: () => void;
+  /** Takes over when a sent invite has more to say than a toast holds. */
+  onResult: (result: InviteResultData) => void;
+  /** After a send a toast covers. */
+  onClose: () => void;
 }
 
-/**
- * The one message after a membership invite: what happened in the title ("2 invited, 1 reminded"), then a line for each
- * thing the inviter did not see coming, such as a member left out, a declined invitation sent again or one whose
- * decline still holds.
- */
-function useInviteResultMessage() {
+/** Sends the form as a membership invite to `channel`, or as a system invite without one, then says what happened. */
+export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInviteSubmitOptions) {
   const { t } = useTranslation();
-  const day = (date: string) => dayjs.utc(date).local().format('D MMM');
 
-  return (channel: EnrichedChannel, role: string, { outcomes, held }: { outcomes: InviteOutcome[]; held: boolean }) => {
-    const of = (outcome: InviteOutcome['outcome']) => outcomes.filter((item) => item.outcome === outcome);
-    const [invited, invitedBefore, added, members] = [of('invite'), of('remind'), of('add'), of('member')];
-    const standing = invitedBefore.filter(({ declinedAt }) => declineHolds(declinedAt));
-    const reminded = invitedBefore.filter(({ declinedAt }) => !declineHolds(declinedAt));
-    const declined = reminded.filter(({ declinedAt }) => declinedAt);
-    const roles = hierarchy.getRoles(channel.entityType) as readonly string[];
-
-    const title = held
-      ? t('c:invite_result_saved', { count: invited.length + reminded.length })
-      : [
-          invited.length && t('c:invite_result_invited', { count: invited.length }),
-          reminded.length && t('c:invite_result_reminded', { count: reminded.length }),
-          added.length && t('c:invite_result_added', { count: added.length }),
-        ]
-          .filter(Boolean)
-          .join(', ');
-
-    const [member] = members;
-    const [decliner] = declined;
-    const [stander] = standing;
-    const [adder] = added;
-    const lines = [
-      held && t('c:invite_result_held', { name: channel.name }),
-      members.length > 1 && t('c:invite_result_member_counted', { count: members.length }),
-      member && members.length === 1 && member.role && roles.indexOf(role) < roles.indexOf(member.role)
-        ? t('c:invite_result_member_kept', { email: member.email, role: t(`c:${member.role}`) })
-        : members.length === 1 && t('c:invite_result_member', { email: member.email }),
-      declined.length > 1 && t('c:invite_result_declined_counted', { count: declined.length }),
-      decliner?.declinedAt && declined.length === 1 && t('c:invite_result_declined', { email: decliner.email, date: day(decliner.declinedAt) }),
-      standing.length > 1 && t('c:invite_result_decline_holds_counted', { count: standing.length }),
-      stander?.declinedAt && standing.length === 1 && t('c:invite_result_decline_holds', { email: stander.email, date: day(stander.declinedAt) }),
-      added.length > 1 && t('c:invite_result_added_directly_counted', { count: added.length }),
-      adder && added.length === 1 && t('c:invite_result_added_directly', { email: adder.email }),
-    ].filter(Boolean);
-
-    toaster.success(title, lines.length ? { description: lines.join(' ') } : undefined);
-  };
-}
-
-/** Sends the form as a membership invite to `channel`, or as a system invite without one; a sent invite runs `onSent` and says what happened. */
-export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: boolean | undefined, onSent: () => void) {
-  const { t } = useTranslation();
-  const showResult = useInviteResultMessage();
-
-  const close = () => {
+  const report = (result: InviteResultData) => {
     onSent();
-    if (isDialog) dialoger.getState().remove(inviteDialogId);
+    if (inviteResultNeedsScreen(result, t)) return onResult(result);
+
+    onClose();
+    const description = result.held && channel ? t('c:invite_result_held', { name: channel.name }) : undefined;
+    toaster.success(inviteResultTitle(result, t), description ? { description } : undefined);
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
-    mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
-    onSuccess: ({ invitesSentCount, rejectedIds }, { emails }) => {
-      close();
-      if (invitesSentCount > 0) {
-        const resource = t('c:user', { count: invitesSentCount });
-        toaster.success(t('c:success.invite_resource_counted', { count: invitesSentCount, resource }));
-      }
-      if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
-    },
+    mutationFn: ({ emails }: { emails: string[] }) => sendInBatches(emails, (batch) => baseSystemInvite({ body: { emails: batch } })),
   });
 
-  const onSubmit = (body: InviteFormValues) => {
-    if (!channel) return systemInvite(body);
+  const onSubmit = ({ unparsed, ...body }: InviteFormValues) => {
+    if (!channel) {
+      return systemInvite(body, {
+        onSuccess: ({ results, unsent }) => {
+          const rejected = results.flatMap(({ rejectedIds }) => rejectedIds);
+          const outcomes = body.emails
+            .filter((email) => !rejected.includes(email) && !unsent.includes(email))
+            .map((email) => ({ email, outcome: 'invite' as const }));
+          report({ outcomes, rejected, unsent, unparsed, held: false });
+        },
+      });
+    }
 
     const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
     const query = { entityId: channel.id, entityType: channel.entityType };
@@ -133,10 +109,8 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
     membershipInvite(
       { body, path, query, channel },
       {
-        onSuccess: (result) => {
-          close();
-          showResult(channel, body.role, result);
-        },
+        onSuccess: ({ outcomes, held, unsent }) =>
+          report({ outcomes, rejected: [], unsent, unparsed, held, role: body.role, entityType: channel.entityType }),
       },
     );
   };
@@ -144,29 +118,41 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
   return { onSubmit, isPending: isPending || isSystemInvitePending };
 }
 
-interface InviteFormFooterProps extends Omit<InviteFormProps, 'dialog'> {
-  form: ReturnType<typeof useInviteFormDraft>;
-  /** What the submit does: new invitations, invitations sent again, and members it leaves out. */
-  counts: { invite: number; remind: number; member: number };
-  loading: boolean;
-  onCancel: () => void;
+interface SubmitLabelOptions {
+  invite: number;
+  remind: number;
+  isEmpty: boolean;
+  held: boolean;
 }
 
-/** Role choice for a channel invite, with when its email goes out in a draft channel, then the submit button with the address count. */
-export function InviteFormFooter({ form, channel, counts, loading, onCancel, children }: InviteFormFooterProps) {
+const submitLabel = ({ invite, remind, isEmpty, held }: SubmitLabelOptions): TKey => {
+  if (!invite && !remind) return isEmpty ? 'c:invite' : 'c:nothing_to_send';
+  if (held) return 'c:save';
+  if (invite && remind) return 'c:invite_and_remind';
+  return remind ? 'c:remind' : 'c:invite';
+};
+
+interface InviteFormFooterProps {
+  form: InviteForm;
+  channel?: EnrichedChannel;
+  check: InviteCheck;
+  /** The form holds no address and no text. */
+  isEmpty: boolean;
+  /** The picked role's email waits for its draft channel's publish. */
+  held: boolean;
+  loading: boolean;
+  onCancel: () => void;
+  /** Takes the place of the cancel button, as the onboarding footer does. */
+  children?: ReactNode;
+}
+
+/** Role choice for a channel invite, with what the role may do and when its email goes out in a draft channel, then the submit button. */
+export function InviteFormFooter({ form, channel, check, isEmpty, held, loading, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
-  const { invite, remind, member } = counts;
-  const label =
-    invite && remind
-      ? t('c:invite_and_remind', { invite, remind })
-      : remind
-        ? t('c:remind_count', { count: remind })
-        : invite
-          ? t('c:invite_count', { count: invite })
-          : member
-            ? t('c:nothing_to_send')
-            : t('c:invite');
+  // An address the check could not answer for still goes: the send decides, and its result says what happened.
+  const invite = check.groups.new.length + check.groups.unchecked.length;
+  const remind = check.groups.again.length;
 
   return (
     <>
@@ -175,18 +161,23 @@ export function InviteFormFooter({ form, channel, counts, loading, onCancel, chi
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem className="ml-3 flex-row flex-wrap items-center gap-x-4 gap-y-2">
-              <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:role')} />
+            <FormItem className="gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:join_as')} />
+                {value && <span className="text-muted-foreground text-sm">{t(`c:role_description.${value}`)}</span>}
+              </div>
               {isUnpublishedDraft(channel) && (
-                <p className="basis-full text-muted-foreground text-sm">
-                  <NamedText
-                    i18nKey={hierarchy.getPrepareRoles(channel.entityType).includes(value) ? 'c:invite_prepare.text' : 'c:invite_held.text'}
-                    name={channel.name}
-                    values={{ roles: t(`c:${value}`, { count: 2 }) }}
-                  />
-                </p>
+                <Alert variant="info">
+                  <ClockIcon />
+                  <AlertDescription>
+                    <NamedText
+                      i18nKey={held ? 'c:invite_held.text' : 'c:invite_prepare.text'}
+                      name={channel.name}
+                      values={{ roles: t(`c:${value}`, { count: 2 }) }}
+                    />
+                  </AlertDescription>
+                </Alert>
               )}
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -195,7 +186,7 @@ export function InviteFormFooter({ form, channel, counts, loading, onCancel, chi
       <FormActions>
         <SubmitButton disabled={!invite && !remind} loading={loading}>
           <SendIcon />
-          {label}
+          {t(submitLabel({ invite, remind, isEmpty, held }))}
         </SubmitButton>
         {!children && <CancelButton dirty={form.isDirty} onClick={onCancel} />}
         {children}

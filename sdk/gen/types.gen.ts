@@ -5647,6 +5647,7 @@ export type GetPendingMembershipsResponses = {
       role: 'admin' | 'member';
       createdAt: string;
       remindedAt: string | null;
+      linkExpiresAt: string | null;
       createdBy: ActorRef | null;
     }>;
     total: number;
