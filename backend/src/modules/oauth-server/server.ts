@@ -5,6 +5,7 @@ import { RESPONSE_ALREADY_SENT } from '@hono/node-server/utils/response';
 import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type Provider from 'oidc-provider';
+import { servicePaths } from 'shared';
 import { createHealthApp } from 'shared/health-app';
 import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
@@ -15,7 +16,7 @@ import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
-const oauthMount = '/oauth';
+const oauthMount = servicePaths.oauth;
 
 /** The `?depth=full` diagnostics, in the API's component shape: the store answers and a signing key exists, else 503. */
 async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {

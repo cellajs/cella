@@ -16,14 +16,14 @@ API process (producer)                 jobs worker (maintainer)
 PostgreSQL schema pgboss  ◀──────────────────────┘
   queue · job · schedule · version
         ▲
-        └── a consumer process works its own queues (MODE of its own)
+        └── a consumer process works its own queues (SERVICE of its own)
 ```
 
 The jobs worker runs from the backend image. Cron and supervision belong to exactly one process, so it cuts over stop-first, and nothing routes to it.
 
 ## Declaring jobs and queues
 
-A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job: it belongs to the database's nightly retention procedure ([Data lifecycle](../cella/ARCHITECTURE.md#data-lifecycle)).
+A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job: it belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
 A cron job runs once per period: a run that overruns delays the next one, never overlaps it, and a period missed while no maintainer ran sends one catch-up job. A run that throws is logged, and the next period runs again.
 

@@ -24,9 +24,9 @@ access token (RS256 JWT, one tenant, one resource)
 REST API (serviceGuard / actorGuard)   MCP endpoint (tokenGuard)
 ```
 
-The worker is a `MODE` of the backend image. The reverse proxy routes `/oauth/*` to it, so the issuer (`appConfig.oauthUrl`) shares the app origin with the API and the consent page. The provider runs with its own Postgres adapter, no dynamic client registration, no developer interactions, no id tokens: the app is an authorization server, not an identity provider.
+The worker is a `SERVICE` of the backend image. The reverse proxy routes `/oauth/*` to it, so the issuer (`appConfig.oauthUrl`) shares the app origin with the API and the consent page. The provider runs with its own Postgres adapter, no dynamic client registration, no developer interactions, no id tokens: the app is an authorization server, not an identity provider.
 
-The code is in `backend/src/modules/oauth-server/`, and `oauth/src/oauth-worker.ts` is the development entry. Claim names, limits and other details are documented there, at their declarations.
+The code is in `backend/src/modules/oauth-server/`; `pnpm dev` starts the worker beside the API. Claim names, limits and other details are documented there, at their declarations.
 
 ## Clients and consent
 

@@ -27,12 +27,17 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
 
   return (
     <>
-      {typeValues.map((type, index) => (
-        <span key={type}>
-          <span className={cn(jsonViewerTheme.schemaType, 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
-          {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
+      {typeValues.length > 0 && (
+        // One unit: a union wraps whole, with no pipe left at the end of a line.
+        <span>
+          {typeValues.map((type, index) => (
+            <span key={type}>
+              <span className={cn(jsonViewerTheme.schemaType, 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
+              {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
+            </span>
+          ))}
         </span>
-      ))}
+      )}
       {compositionLabel && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-muted text-code-type')}>{compositionLabel}</span>}
       {refValue && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>{refValue}</span>}
       {contentTypeValue && <span className="ml-1 text-muted-foreground text-xs italic">{contentTypeValue}</span>}

@@ -25,11 +25,16 @@ uniform float uZoom;       /* view eases back as the colony divides */
 uniform float uGrid;       /* pixel-grid cells across: lower is chunkier */
 uniform int uStamp;        /* grain stamp: 0 square, 1 plus */
 uniform int uShape;        /* 0 the morphing mark, 1 the database icon */
+uniform int uPalette;      /* 0 the violet gradient, 1 the rotating marketing hues */
 uniform float uEnter;      /* entrance progress 0..1; at 1 the piece is at rest */
 uniform float uFizz;       /* fizz clock in seconds, separate from the frozen shape clock of a still */
 uniform float uFizzAmount; /* fizz strength 0..1; 0 leaves every grain as uTime draws it */
 out vec4 outColor;
 
+/* gradient stops, bottom to top; they lean blue because a multiply blend over the warm marketing gradient pulls them toward pink */
+const vec3 ORCHID = vec3(0.706, 0.416, 0.902);
+const vec3 VIOLET = vec3(0.541, 0.376, 0.941);
+const vec3 PERIWINKLE = vec3(0.392, 0.455, 0.969);
 /* marketing gradient hues (styling/gradients.css) */
 const vec3 PEACH = vec3(1.000, 0.780, 0.576);
 const vec3 BLUE = vec3(0.224, 0.627, 0.984);
@@ -160,12 +165,14 @@ vec3 paletteAt(float t){
     sin(t * 0.043 + 5.1)));
   return (w.x * PEACH + w.y * BLUE + w.z * PURPLE + w.w * TEAL) / (w.x + w.y + w.z + w.w);
 }
+/* The gradient is fixed to the canvas: a grain's hue depends on where it sits, and the
+   stop positions waver a little so the bands of color never read as straight lines. */
 vec3 brandFlow(vec2 p, float time){
-  vec3 cA = paletteAt(time);
-  vec3 cB = paletteAt(time - 9.0);
   float n1 = 0.5 + 0.5 * sin(p.x * 2.0 + p.y * 1.3 + time * 0.45);
   float n2 = 0.5 + 0.5 * sin((p.x - p.y) * 1.9 - time * 0.35 + 2.1);
-  vec3 c = mix(cA, cB, n1);
+  float x = clamp(0.5 + 0.5 * dot(p, vec2(0.35, 0.94)) / 1.1 + 0.07 * (n1 - 0.5), 0.0, 1.0);
+  vec3 c = x < 0.5 ? mix(ORCHID, VIOLET, x * 2.0) : mix(VIOLET, PERIWINKLE, (x - 0.5) * 2.0);
+  if (uPalette == 1) c = mix(paletteAt(time), paletteAt(time - 9.0), n1);
   c *= 0.92 + 0.16 * n2;
   return c;
 }
@@ -177,7 +184,7 @@ vec3 brandFlow(vec2 p, float time){
    Entrance (condense): the survival falloff K starts wide open, so sparse grains dust
    the whole frame; as it tightens they wink out from the outside in and the mark
    precipitates. No grain travels, and at uEnter = 1 every factor is the identity.
-   Fizz keeps the grains of a still alive on their own clock while the shape and palette hold: the grid slowly wavers
+   Fizz keeps the grains of a still alive on their own clock while the shape holds: the grid slowly wavers
    by up to half a cell, and edge grains flicker harder and re-roll their survival on staggered beats, fading into the
    new roll. Grains inside the boundary always survive, so the outline stays put. It fades in with the entrance and is
    the identity at 0. */
@@ -218,11 +225,12 @@ vec4 pixelLiquid(vec2 q, float time, float N, float K, float shrink, float alpha
   float luma = dot(g, vec3(0.299, 0.587, 0.114));
   g = mix(g, clamp(mix(vec3(luma), g, 2.4), 0.0, 1.0), 1.0 - uDark);
   float depth = smoothstep(0.0, -0.10, d);
-  /* light mode inverts the band shading: light core, dark edge (dark mode glows white at the edge) */
-  g = mix(g * mix(0.92, 0.82, uDark), g * mix(1.45, 1.12, uDark), depth);
-  /* light mode: the band body itself goes whiteish (the mask saturates well before the centerline) */
+  bool hues = uPalette == 1;
+  /* light mode: the gradient keeps the band body close to its edge, so a band reads as one color; the hues go light inside a dark edge (dark mode glows white at the edge) */
+  g = mix(g * mix(0.92, 0.82, uDark), g * mix(hues ? 1.45 : 1.08, 1.12, uDark), depth);
+  /* light mode: white in the band body; the gradient takes only a trace, since white disappears under a multiply blend */
   float core = smoothstep(0.0, -0.025, d);
-  g = mix(g, vec3(1.0), (1.0 - uDark) * core * 0.7);
+  g = mix(g, vec3(1.0), (1.0 - uDark) * core * (hues ? 0.7 : 0.06));
   g *= 0.94 + 0.12 * h2;
   float rim = exp(-abs(d) * 55.0);
   g += vec3(1.0) * rim * 0.40 * uDark;
@@ -231,7 +239,7 @@ vec4 pixelLiquid(vec2 q, float time, float N, float K, float shrink, float alpha
   float rimL = exp(-abs(d) * 90.0);
   float mx = max(g.r, max(g.g, g.b));
   vec3 vivid = pow(g / max(mx, 1e-3), vec3(3.0)) * 0.85;
-  g = mix(g, vivid, rimL * (1.0 - uDark));
+  g = mix(g, vivid, rimL * (hues ? 1.0 : 0.25) * (1.0 - uDark));
   return vec4(g, grainA * dotM * alphaMul * mix(0.45, 1.0, ez));
 }
 

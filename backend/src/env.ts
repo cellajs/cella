@@ -3,9 +3,10 @@ import process from 'node:process';
 import { parseEnv } from 'node:util';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
+import { localDatabaseUrl } from 'shared/local-database';
 import { envFlag } from 'shared/utils/worker-env';
 import { z } from 'zod';
-import { type ModeSecret, missingModeSecrets, processModes } from '#/env-mode-secrets';
+import { missingServiceSecrets, type ProcessService, processServices, type ServiceSecret } from '#/env-service-secrets';
 import { severityLevels } from '#/schemas/api-error-schemas';
 
 // Resolved from this file (src/ or the dist/ bundle), so it works regardless of cwd (e.g. vitest workers).
@@ -31,6 +32,22 @@ const secretString = (name: string, min = minSecretLength) => {
 
 /** Development runs on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' ? 1 : minSecretLength;
+
+// biome-ignore lint/style/noProcessEnv: this file IS the env loader.
+const service: ProcessService = processServices.find((name) => name === process.env.SERVICE) ?? 'api';
+
+/** The port a process listens on unless `PORT` says otherwise: its service's configured one; the release companion listens nowhere. */
+const servicePort: Record<ProcessService, number> = {
+  api: appConfig.services.backend.port,
+  migrate: appConfig.services.backend.port,
+  mcp: appConfig.services.mcp.port,
+  oauth: appConfig.services.oauth.port,
+  jobs: appConfig.services.jobs.port,
+};
+
+/** A local stack's database URLs default to the compose containers; a deployed one receives them as runtime secrets. */
+const localDatabase = (role: Parameters<typeof localDatabaseUrl>[1]) =>
+  appConfig.isLocal ? z.url().default(localDatabaseUrl('dev', role)) : z.url();
 
 /**
  * The secrets that still equal their value in `.env.example`, which ships in the repo. Tunnel mode alone reads it: a
@@ -68,22 +85,23 @@ export const env = createEnv({
   server: {
     NODB: envFlag('false'),
     DEBUG: envFlag('false'),
-    DATABASE_URL: z.url(),
+    DATABASE_URL: localDatabase('runtime_role'),
     // Admin credential (table owner, BYPASSRLS): only the migrate, seed and maintenance paths need it; the request-serving API boots without it.
-    DATABASE_ADMIN_URL: z.url().optional(),
+    DATABASE_ADMIN_URL: appConfig.isLocal ? localDatabase('postgres') : z.url().optional(),
     // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots
     // superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it.
-    // See jobs/README.md, Connection budget.
+    // See cella/JOBS.md, Connection budget.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     // The database pg_cron runs in, where migrations schedule the retention job: needed where the admin role is no superuser and so may not read `cron.database_name`.
     PG_CRON_DATABASE: z.string().optional(),
-    NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('staging'), z.literal('tunnel'), z.literal('test')]),
-    PORT: z.coerce.number().default(appConfig.devPorts.api),
+    // The build Node runs: a development or test stack, or a production build; `APP_MODE` names the config.
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    PORT: z.coerce.number().default(servicePort[service]),
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
-    INTERNAL_PORT: z.coerce.number().default(appConfig.devPorts.internal),
-    // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
+    INTERNAL_PORT: z.coerce.number().default(appConfig.services.backend.internalPort),
+    // Service-bound secrets (env-service-secrets.ts): each is required below only in the services that read it.
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
     // Web Push (has.push): both keys present enables sending. VAPID_SUBJECT must be a `mailto:` or `https:` URL; unset, it
@@ -157,9 +175,10 @@ export const env = createEnv({
 
     SCW_AI_API_KEY: z.string().optional(),
 
-    MODE: z.enum(processModes).default('api'),
+    // The process this backend image runs as.
+    SERVICE: z.enum(processServices).default('api'),
 
-    // Apply migrations and roles before binding the API port. Production runs migrations in a separate mode.
+    // Apply migrations and roles before binding the API port. Production runs migrations as a service of their own.
     RUN_MIGRATIONS_ON_BOOT: envFlag('true'),
 
     PINO_LOG_LEVEL: z
@@ -172,11 +191,11 @@ export const env = createEnv({
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
-  // A worker VM receives only the secrets its mode reads, so a mode-bound secret is required in its own modes alone.
+  // A worker VM receives only the secrets its service reads, so a service-bound secret is required in its own services alone.
   createFinalSchema: (shape) =>
     z.object(shape).superRefine((values, ctx) => {
-      for (const name of missingModeSecrets(values)) {
-        ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when MODE=${values.MODE}` });
+      for (const name of missingServiceSecrets(values)) {
+        ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when SERVICE=${values.SERVICE}` });
       }
       for (const name of publishedSecrets()) {
         const fix =
@@ -193,13 +212,13 @@ export const env = createEnv({
 });
 
 /**
- * A mode-bound secret for the code path that reads it. Throws in a process whose mode does not receive it, so nothing
- * signs, hashes or compares with a missing key.
+ * A service-bound secret for the code path that reads it. Throws in a process whose service does not receive it, so
+ * nothing signs, hashes or compares with a missing key.
  * @param name - The secret's env var.
  * @returns Its value.
  */
-export function modeSecret(name: ModeSecret): string {
+export function serviceSecret(name: ServiceSecret): string {
   const value = env[name];
-  if (!value) throw new Error(`${name} is not configured: MODE=${env.MODE} does not receive it`);
+  if (!value) throw new Error(`${name} is not configured: SERVICE=${env.SERVICE} does not receive it`);
   return value;
 }

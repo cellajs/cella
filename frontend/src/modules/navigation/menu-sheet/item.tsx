@@ -33,7 +33,8 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
   const hasSubmenu = isSubmenuShown(item);
   const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
 
-  const { to, params, search } = getChannelRoute(item, isSubitem);
+  // A parent's page holds no place for an archived sub-row, so it opens its own
+  const { to, params, search } = getChannelRoute(item, isSubitem && !item.membership.archived);
 
   return (
     <Link
@@ -57,7 +58,7 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
     >
       <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
-      {isSubitem && <SubmenuConnector className="-top-2 h-4" />}
+      {isSubitem && !item.membership.archived && <SubmenuConnector className="-top-2 h-4" />}
       <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(

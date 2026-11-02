@@ -1,6 +1,6 @@
 import { CountBadge } from '~/modules/common/count-badge';
+import { useTotalUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import type { NavBadgeProps } from '~/modules/navigation/types';
-import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { cn } from '~/utils/cn';
 
 export function UnseenNavBadge({ isActive, className }: NavBadgeProps) {

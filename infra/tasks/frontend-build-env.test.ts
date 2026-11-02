@@ -2,23 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { frontendBuildEnv, parseServiceUrls } from './frontend-build-env';
 
 describe('frontendBuildEnv', () => {
-  it('emits APP_MODE and config-loader URL overrides from enabled services JSON', () => {
+  it('emits APP_MODE and the config-loader origin override from enabled services JSON', () => {
     const raw = JSON.stringify([
-      { service: 'backend', public_url: 'https://api.example' },
+      { service: 'backend', public_url: 'https://app.example/api' },
       { service: 'frontend', public_url: 'https://app.example' },
       { service: 'cdc', public_url: '' },
     ]);
-    expect(frontendBuildEnv('staging', raw)).toEqual({
-      APP_MODE: 'staging',
-      BACKEND_URL: 'https://api.example',
-      FRONTEND_URL: 'https://app.example',
-    });
+    expect(frontendBuildEnv('staging', raw)).toEqual({ APP_MODE: 'staging', APP_ORIGIN: 'https://app.example' });
   });
 
-  it('throws when required public URLs are absent', () => {
-    expect(() => frontendBuildEnv('production', JSON.stringify([{ service: 'backend', public_url: 'https://api.example' }]))).toThrow(
-      /frontend\/backend/,
-    );
+  it('throws when the frontend public URL is absent', () => {
+    expect(() => frontendBuildEnv('production', JSON.stringify([{ service: 'backend', public_url: 'https://app.example/api' }]))).toThrow(/frontend/);
   });
 });
 

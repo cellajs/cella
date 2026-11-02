@@ -1,24 +1,24 @@
 import process from 'node:process';
 import { appConfig } from 'shared';
+import { localDatabaseUrl } from 'shared/local-database';
+import { loadBackendDotenv } from 'shared/utils/worker-env';
 
-// Load backend/.env for the offset-aware DATABASE_* URLs; absent in CI.
-try {
-  process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
-} catch {}
+// The app's own overrides and its cookie secret; absent in CI.
+loadBackendDotenv();
 
-/** Derived from `appConfig.devPorts` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
+/** Derived from `appConfig.services` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
 // Measures the backend port directly: the Vite proxy serializes requests and resets connections. The configured mount path is preserved so API routes resolve.
 const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
 // biome-ignore lint/style/noProcessEnv: bench reads the app's backend PORT from backend/.env here.
-export const BACKEND_PORT = Number(process.env.PORT ?? appConfig.devPorts.api);
+export const BACKEND_PORT = Number(process.env.PORT ?? appConfig.services.backend.port);
 export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
 // biome-ignore lint/style/noProcessEnv: bench reads the cdc worker's CDC_HEALTH_PORT override like the worker does.
-export const CDC_HEALTH_PORT = Number(process.env.CDC_HEALTH_PORT ?? appConfig.devPorts.cdcHealth);
+export const CDC_HEALTH_PORT = Number(process.env.CDC_HEALTH_PORT ?? appConfig.services.cdc.port);
 export const CDC_HEALTH_URL = `http://localhost:${CDC_HEALTH_PORT}/health?depth=full`;
 
 // biome-ignore lint/style/noProcessEnv: bench reads the relay's YJS_PORT override like the relay does.
-export const YJS_PORT = Number(process.env.YJS_PORT ?? appConfig.devPorts.yjs);
+export const YJS_PORT = Number(process.env.YJS_PORT ?? appConfig.services.yjs.port);
 /** The relay directly, like BASE_URL: the Vite proxy's `/yjs` path would add a hop to every frame. */
 export const YJS_URL = `ws://localhost:${YJS_PORT}`;
 export const YJS_HEALTH_URL = `http://localhost:${YJS_PORT}/health?depth=full`;
@@ -59,4 +59,4 @@ export const SSE_SYNC_MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate'
 
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
 // biome-ignore lint/style/noProcessEnv: bench reads the app's DATABASE_ADMIN_URL here.
-export const DB_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@0.0.0.0:5432/postgres';
+export const DB_URL = process.env.DATABASE_ADMIN_URL ?? localDatabaseUrl('dev', 'postgres');

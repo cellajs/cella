@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { modeSecret } from '#/env';
+import { serviceSecret } from '#/env';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsMaterializeBodySchema } from '#/modules/yjs/yjs-schema';
 
@@ -19,7 +19,7 @@ const app = new Hono<Env>();
  */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-relay-secret');
-  if (!secret || !safeEqual(secret, modeSecret('YJS_RELAY_SECRET'))) {
+  if (!secret || !safeEqual(secret, serviceSecret('YJS_RELAY_SECRET'))) {
     throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'Relay secret missing or wrong' } });
   }
 

@@ -5,6 +5,9 @@ import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/buil
 import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 
+/** Enough pages for any member's lists: a fetch stops at the last page, and a refetch keeps the pages it holds. */
+const menuListPages = 50;
+
 /**
  * Builds the menu from cache, serving what is already cached and revalidating behind it.
  *
@@ -25,7 +28,7 @@ export async function getMenuData() {
     appConfig.channelEntityTypes.map(async (entityType) => {
       const listQuery = getChannelListQuery(entityType);
       if (!listQuery) return;
-      const options = listQuery({ relatableUserId: userId });
+      const options = { ...listQuery({ relatableUserId: userId }), pages: menuListPages };
       await queryClient.infiniteQuery({ ...options, staleTime: 'static' });
       void queryClient.infiniteQuery(options).catch(() => {});
     }),

@@ -1,12 +1,4 @@
-import type {
-  ConfigMode,
-  FederationConfig,
-  NavigationConfig,
-  ProductEmbedding,
-  RequiredConfig,
-  S3ConfigInput,
-  SlotOf,
-} from '../src/config-builder/types.ts';
+import type { FederationConfig, NavigationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput, SlotOf } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -91,7 +83,7 @@ export const config = {
       apiKey: 100,
     },
     rateLimits: { apiPointsPerHour: 1000, invitationMailsPerDay: 250 },
-  } as const,
+  },
 
   /**
    * Tenants one user may create through onboarding (`selfCreateTenant`); a tenant reused while it holds no organization
@@ -129,38 +121,49 @@ export const config = {
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
-  // URLs & endpoints
+  // Origin & services
 
-  // Same-origin: every service is a path under the app origin, so cookies stay
-  // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
-  // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
-  // These URLs are the single source: the config builder derives `services.<slug>.publicUrl`
-  // from them, so mode configs override the URLs here and never the `services` block.
-  frontendUrl: 'https://www.__project_slug__.example.com',
-  backendUrl: 'https://www.__project_slug__.example.com/api',
-  backendAuthUrl: 'https://www.__project_slug__.example.com/api/auth',
-  yjsUrl: 'wss://www.__project_slug__.example.com/yjs',
-  mcpUrl: 'https://www.__project_slug__.example.com/mcp',
-  /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
-  oauthUrl: 'https://www.__project_slug__.example.com/oauth',
-  // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
+  /**
+   * The app's one origin. Every service is a path under it (`servicePaths`): the builder derives `frontendUrl`,
+   * `backendUrl`, `yjsUrl`, `mcpUrl` and `oauthUrl`, and `services.<slug>.publicUrl`, from it. Same-origin keeps cookies
+   * first-party (`__Host-`, SameSite=Strict), needs no CORS and collapses the CSP to 'self'. A mode file sets its own.
+   */
+  origin: 'https://www.__project_slug__.example.com',
+
+  /**
+   * This app's number on a developer's machine, 0-9 without 4, so stacks of different apps run side by side (shared/README.md).
+   * It adds its number to the frontend port and its origin, and ten times its number to every other service port and
+   * to the local database ports (`shared/src/local-database.ts`). With two stacks on one number, whichever backend binds
+   * :4000 first answers every app's `/api` proxy.
+   */
+  devAppIndex: 0,
+
+  /**
+   * The services this app runs, each with the port it listens on, as app number 0 has them: the Vite proxy targets in
+   * development, the deploy's container ports, and the folded workers' ports under `singleVM`. A mode file flips a
+   * flag, e.g. mcp on in staging only. `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback
+   * for when the origin carries no port (tunnel mode); otherwise the origin's port wins.
+   */
   services: {
-    frontend: { enabled: true as boolean },
-    backend: { enabled: true as boolean },
-    cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean },
-    mcp: { enabled: false as boolean },
-    oauth: { enabled: false as boolean },
+    frontend: { enabled: true, port: 3000 },
+    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
+    backend: { enabled: true, port: 4000, internalPort: 4005 },
+    // The port is its health endpoint.
+    cdc: { enabled: true, port: 4001 },
+    yjs: { enabled: false, port: 4002 },
+    mcp: { enabled: false, port: 4003 },
+    /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
+    oauth: { enabled: false, port: 4004 },
     // The job store's maintainer (cron and queue supervision); off means no sweeps or queues run anywhere.
-    jobs: { enabled: true as boolean },
+    jobs: { enabled: true, port: 4006 },
   },
 
-  // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
+  // Cost escape hatch: when true the backend (SERVICE=api) also boots every enabled
   // service in-process: one VM for previews/small apps. Default false keeps the
   // split (one service per process). HTTP keeps its LB overlap on a deploy; the
   // co-hosted cdc and jobs wait for the old VM's slot and scheduler, so live
   // updates pause until it is reaped.
-  singleVM: false as boolean,
+  singleVM: false,
 
   aboutUrl: '/about',
   statusUrl: 'https://status.__project_slug__.example.com',
@@ -175,45 +178,17 @@ export const config = {
   supportEmail: 'support@__project_slug__.example.com',
   securityEmail: 'security@__project_slug__.example.com',
 
-  // Mode & flags
-
-  mode: 'development' as ConfigMode,
-  maintenance: false,
-
-  /**
-   * This app's number on a developer's machine, 0-9 without 4, so stacks of different apps run side by side (shared/README.md).
-   * With two stacks on one number, whichever backend binds :4000 first answers every app's `/api` proxy.
-   * The database ports follow by hand: `DB_PORT` and `DB_TEST_PORT` in `backend/.env` are 5432 and 5434 plus ten times this number.
-   */
-  devAppIndex: 0,
-
-  /**
-   * Local dev listen ports, also the Vite proxy targets, as app number 0 has them. `devAppIndex` adds its
-   * number to `frontend` and ten times its number to the others, and a linked git worktree adds 100 per worktree.
-   * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
-   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
-   * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
-   */
-  devPorts: {
-    frontend: 3000,
-    api: 4000,
-    cdcHealth: 4001,
-    yjs: 4002,
-    mcp: 4003,
-    oauth: 4004,
-    internal: 4005,
-    jobs: 4006,
-  },
+  // Flags
 
   has: {
-    pwa: true as boolean,
-    push: false as boolean,
-    commentEmail: false as boolean,
-    selfRegistration: false as boolean,
-    waitlist: false as boolean,
+    pwa: true,
+    push: false,
+    commentEmail: false,
+    selfRegistration: false,
+    waitlist: false,
     /** Off until S3 is configured: files stay in the browser (IndexedDB). */
-    uploadEnabled: false as boolean,
-    chatSupport: false as boolean,
+    uploadEnabled: false,
+    chatSupport: false,
   },
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
@@ -231,11 +206,11 @@ export const config = {
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
   enabledOAuthProviders: ['github'] as const,
   /**
-   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities
-   * issuer slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a
-   * federation is live when those are set. Mode configs point a key at its test issuer. A tenant's connection names
-   * one entry and the institution behind it. A new app starts with none; the template's own config declares
-   * `surfconext` as a worked example.
+   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities issuer
+   * slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a federation is
+   * live when those are set. Every mode but production signs in through its `sandbox`. A tenant's connection names one
+   * entry and the institution behind it. A new app starts with none; the template's own config declares `surfconext` as
+   * a worked example.
    */
   federations: {} as Record<string, FederationConfig>,
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
@@ -309,9 +284,9 @@ export const config = {
 
   gleapToken: '',
   /**
-   * MapLibre style URL per color mode for the contact map; empty hides the map. OpenFreeMap needs no key:
-   * light 'https://tiles.openfreemap.org/styles/positron', dark 'https://tiles.openfreemap.org/styles/dark'.
-   * The CSP allows each style's origin; tiles, fonts and icons must come from that same origin.
+   * MapLibre style URL per color mode for the contact map; empty hides the map. OpenFreeMap needs no key: light
+   * 'https://tiles.openfreemap.org/styles/positron', dark 'https://tiles.openfreemap.org/styles/dark'. The CSP allows
+   * each style's origin; tiles, fonts and icons must come from that same origin.
    */
   mapStyleUrls: { light: '', dark: '' },
   matrixURL: 'https://matrix-client.matrix.org',
@@ -344,7 +319,7 @@ export const config = {
       darkButtonLabel: '#262626',
     },
     screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
-  } as const,
+  },
   placeholderColors: [
     'bg-blue-300',
     'bg-lime-300',
@@ -370,7 +345,6 @@ export const config = {
     name: '__project_name__',
     shortName: '__project_name__',
     email: 'info@__project_slug__.example.com',
-    supportEmail: 'support@__project_slug__.example.com',
     tel: '',
     streetAddress: '',
     postcode: '',

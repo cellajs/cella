@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import { localDatabaseUrl } from 'shared/local-database';
 import { envFlag, loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
 import { yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { z } from 'zod';
@@ -6,7 +7,8 @@ import { z } from 'zod';
 loadBackendDotenv();
 
 const envSchema = workerEnvBase.extend({
-  DATABASE_URL: z.url(),
+  // A local stack defaults to the dev container; a deployed one receives it as a runtime secret.
+  DATABASE_URL: appConfig.isLocal ? z.url().default(localDatabaseUrl('dev', 'runtime_role')) : z.url(),
 
   // The public half of the backend's token key: verifies editor tokens, cannot sign one.
   YJS_TOKEN_PUBLIC_KEY: z.string().refine(
@@ -23,8 +25,8 @@ const envSchema = workerEnvBase.extend({
   // Authenticates the relay on the backend's internal materialize route.
   YJS_RELAY_SECRET: z.string().min(16, 'YJS_RELAY_SECRET must be at least 16 characters'),
   // The backend's internal listener; its routes are not on the public API.
-  BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.devPorts.internal}`),
-  YJS_PORT: z.coerce.number().default(appConfig.devPorts.yjs),
+  BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.services.backend.internalPort}`),
+  YJS_PORT: z.coerce.number().default(appConfig.services.yjs.port),
   // The log listener holds one more connection, outside this pool.
   YJS_DB_POOL_MAX: z.coerce.number().default(10),
 

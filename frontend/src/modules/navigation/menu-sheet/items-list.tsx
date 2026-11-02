@@ -4,9 +4,12 @@ import type { ChannelEntityType } from 'shared';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenuItem } from '~/modules/me/types';
+import { MenuSheetArchivedGroup } from '~/modules/navigation/menu-sheet/archived-group';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
 import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
+import { useSubmenuArchivedOpen } from '~/modules/navigation/menu-sheet/helpers/use-submenu-archived-open';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { getChannelRoute } from '~/utils/channel-route';
@@ -18,6 +21,26 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
   if (!matchRoute({ to, params, fuzzy: true })) return null;
 
   return <MenuSheetChannelTabs channel={channel} className="py-1 pl-12" />;
+}
+
+/** The archived sub-rows of a row behind a toggle, for a row that has any. Their unseen count stays on the toggle. */
+function ArchivedSubmenu({ submenu, itemId }: { submenu: UserMenuItem[]; itemId: string }) {
+  const [isOpen, setIsOpen] = useSubmenuArchivedOpen(itemId);
+  const archivedItems = submenu.filter((sub) => sub.membership.archived);
+  if (!archivedItems.length) return null;
+
+  return (
+    <MenuSheetArchivedGroup
+      isSubmenu
+      isOpen={isOpen}
+      onToggle={() => setIsOpen(!isOpen)}
+      archivedCount={archivedItems.length}
+      archivedChannelIds={archivedItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
+      connectorClassName="-top-2 h-4.25"
+    >
+      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} isArchived isSubmenu />
+    </MenuSheetArchivedGroup>
+  );
 }
 
 /** The placeholder a section shows while it has no items. */
@@ -50,9 +73,12 @@ export function MenuSheetItemsList({ items, entityType, isArchived, options, isS
         <MenuSheetItem item={item} isSubitem={isSubmenu} icon={options?.icon} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (
-          <ul>
-            <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} isSubmenu />
-          </ul>
+          <>
+            <ul>
+              <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} isSubmenu />
+            </ul>
+            <ArchivedSubmenu submenu={item.submenu} itemId={item.id} />
+          </>
         )}
       </li>
     );

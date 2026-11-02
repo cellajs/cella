@@ -1,12 +1,12 @@
 import { exec } from 'node:child_process';
 import os from 'node:os';
-import { appConfig } from 'shared';
 import { checkMark } from 'shared/utils/console';
+import { frontendDevPort } from 'shared/utils/tool-ports';
 
 const isWindows = os.platform() === 'win32';
 
 // The port this checkout's dev server listens on (vite.config.ts): another checkout's Vite keeps running.
-const port = Number(new URL(appConfig.frontendUrl).port) || appConfig.devPorts.frontend;
+const port = frontendDevPort();
 
 /**
  * Stop the Vite dev server of this checkout.

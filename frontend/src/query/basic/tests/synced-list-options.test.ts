@@ -1,5 +1,5 @@
 import '~/query/tests/query-client-env';
-import { InfiniteQueryObserver, infiniteQueryOptions, QueryClient, queryOptions } from '@tanstack/react-query';
+import { InfiniteQueryObserver, infiniteQueryOptions, QueryClient, QueryObserver, queryOptions } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -156,5 +156,29 @@ describe('a paged list whose last observer leaves while it reads', () => {
     answer(list(row('a', 'fresh')));
 
     await vi.waitFor(() => expect(queryClient.getQueryData(options.queryKey)?.pages[0].items).toEqual([row('a', 'fresh')]));
+  });
+});
+
+describe('a marked list under an app whose global refetchOnMount is false', () => {
+  it('refetches when a reader mounts', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { refetchOnMount: false, staleTime: Number.POSITIVE_INFINITY } } });
+    let reads = 0;
+    const options = syncedListOptions(
+      queryOptions({
+        queryKey: homeKey,
+        queryFn: async () => {
+          reads++;
+          return list(row('a', 'fresh'));
+        },
+      }),
+      scope,
+    );
+    client.setQueryData(homeKey, list(row('a', 'stale')));
+    client.getQueryCache().find({ queryKey: homeKey, exact: true })?.invalidate();
+
+    const unsubscribe = new QueryObserver(client, options).subscribe(() => {});
+    await vi.waitFor(() => expect(reads).toBe(1));
+    await vi.waitFor(() => expect(names(client.getQueryData(homeKey))).toEqual(['a:fresh']));
+    unsubscribe();
   });
 });

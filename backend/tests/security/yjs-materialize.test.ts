@@ -3,7 +3,7 @@ import { updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { modeSecret } from '#/env';
+import { serviceSecret } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
@@ -34,7 +34,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
   const removals: (() => Promise<void>)[] = [];
 
-  const materialize = async (body: Record<string, unknown>, secret: string | null = modeSecret('YJS_RELAY_SECRET')) => {
+  const materialize = async (body: Record<string, unknown>, secret: string | null = serviceSecret('YJS_RELAY_SECRET')) => {
     const response = await internalApp.fetch(
       new Request('http://localhost/internal/yjs/materialize', {
         method: 'POST',
@@ -124,7 +124,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   it('must not write without the relay secret or with a wrong one', async () => {
     const refused = await materialize(bodyFor(ownScope(), 'no secret'), null);
     await expectRefusal(refused, 401, 'unauthorized');
-    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${modeSecret('YJS_RELAY_SECRET')}x`)).status).toBe(401);
+    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${serviceSecret('YJS_RELAY_SECRET')}x`)).status).toBe(401);
     expect((await stored())?.description).toBe(original);
   });
 

@@ -142,6 +142,7 @@
   "sso_entry_pending.text": "{{institution}} heeft de toegang tot {{appName}} nog niet geactiveerd. Vraag het de beheerder van je instelling, of log op een andere manier in als je bent uitgenodigd.",
   "sso_recovery_send": "Mail mij een inloglink",
   "switch_organization": "{{name}}, wissel van organisatie",
+  "switch_organization_unseen": "{{name}}, wissel van organisatie. Andere organisaties hebben nieuwe inhoud.",
   "tab": "Tab",
   "table_view": "Tabelweergave",
   "time_mini.hours": "{{count}}u",

@@ -1,28 +1,20 @@
 import type { DeepPartial } from '../src/config-builder/types.ts';
-import type { config as _default } from './config.default.ts';
+import { config } from './config.default.ts';
 
 export const development = {
-  mode: 'development',
-  name: 'Cella DEVELOPMENT',
-  slug: 'cella-development',
+  name: `${config.name} DEVELOPMENT`,
+  slug: `${config.slug}-development`,
 
   has: { selfRegistration: true, waitlist: true, chatSupport: false },
 
   domain: '',
-  // Same-origin in development too: the Vite dev server proxies /api, /yjs and /mcp
-  // to the service ports (vite.config.ts), so cookies and CSP behave like production.
-  // Services listen on `devPorts`; `devAppIndex` moves that block and these URL ports together.
-  frontendUrl: 'http://localhost:3000',
-  backendUrl: 'http://localhost:3000/api',
-  backendAuthUrl: 'http://localhost:3000/api/auth',
-  yjsUrl: 'ws://localhost:3000/yjs',
-  mcpUrl: 'http://localhost:3000/mcp',
-  oauthUrl: 'http://localhost:3000/oauth',
+  // Same-origin in development too: the Vite dev server is the origin and proxies the service paths to the service
+  // ports (vite.config.ts), so cookies and CSP behave like production. `devAppIndex` moves this port with the services.
+  origin: 'http://localhost:3000',
   // The authorization server runs locally so the MCP consent flow can be exercised end to end.
   services: { oauth: { enabled: true }, mcp: { enabled: true } },
-  federations: {
-    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
-  },
 
-  s3: { publicBucket: 'cella-shared-public', privateBucket: 'cella-shared-private' },
-} satisfies DeepPartial<typeof _default>;
+  // The template's shared development buckets hold the seed files and the GeoIP databases, so seeded attachments
+  // render before the app has storage of its own.
+  s3: { region: 'nl-ams', host: 's3.nl-ams.scw.cloud', publicBucket: 'cella-shared-public', privateBucket: 'cella-shared-private' },
+} satisfies DeepPartial<typeof config>;

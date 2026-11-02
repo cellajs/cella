@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 // A test of the query layer imports this before query-client.ts, which wires the online listeners and reads
-// navigator.onLine when it loads. The client's cache callbacks lazy-import on-error and on-success; neither is under test.
+// navigator.onLine when it loads. The client's cache callbacks lazy-import on-error, which is not under test.
 // `setTimeout` reads the global at call time, so fake timers drive the idle fallback of `scheduleIdle`.
 vi.stubGlobal('window', {
   addEventListener: vi.fn(),
@@ -11,7 +11,6 @@ vi.stubGlobal('window', {
 // Base UI's toast module lowercases navigator.userAgent when it loads, so the stub carries one.
 vi.stubGlobal('navigator', { onLine: true, userAgent: '' });
 vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
-vi.mock('~/query/on-success', () => ({ onSuccess: vi.fn() }));
 
 /** An empty storage for a module that reads `localStorage` itself; node tests run without one. */
 export function stubLocalStorage(): void {

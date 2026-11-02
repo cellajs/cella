@@ -8,7 +8,7 @@ import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
+import { isPanelReorderDragData, PanelCollapseContext, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -43,6 +43,8 @@ interface BoardLayoutProps {
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   /** `marked` when panel content carries `hintFadeOut`, so frames and avatars stay solid through a collapse hint */
   panelFade?: 'all' | 'marked';
+  /** The row always fits its parent, for a parent that cannot scroll: see the F rules in resizable-panels.md. */
+  mustFit?: boolean;
   ref?: React.Ref<BoardLayoutHandle>;
 }
 
@@ -57,6 +59,7 @@ export function BoardLayout({
   reorderable,
   onPanelReorder,
   panelFade,
+  mustFit,
   ref,
 }: BoardLayoutProps) {
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
@@ -139,29 +142,38 @@ export function BoardLayout({
       onLayoutChanged={handleLayoutChanged}
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
+      mustFit={mustFit}
       className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
       {panels.map(({ panelId, label }, i) => (
-        <motion.div key={panelId} layout="position" layoutId={`${boardId}-${panelId}`} className="relative flex shrink-0">
+        <motion.div
+          key={panelId}
+          // With nothing to reorder, this would only slide panels while a fit snaps their widths
+          layout={reorderable ? 'position' : false}
+          layoutId={reorderable ? `${boardId}-${panelId}` : undefined}
+          className="relative flex shrink-0"
+        >
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
           <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade} label={label}>
-            {reorderable ? (
-              <PanelDragWrapper
-                panelId={panelId}
-                index={i}
-                total={panels.length}
-                panelIdsRef={panelIdsRef}
-                onEdgeChange={updateDropIndicator}
-                onPanelToggle={handlePanelToggle}
-                onPanelReorder={onPanelReorder}
-              >
-                {children(panelId, i)}
-              </PanelDragWrapper>
-            ) : (
-              children(panelId, i)
-            )}
+            <PanelCollapseScope panelId={panelId} onToggle={handlePanelToggle}>
+              {reorderable ? (
+                <PanelDragWrapper
+                  panelId={panelId}
+                  index={i}
+                  total={panels.length}
+                  panelIdsRef={panelIdsRef}
+                  onEdgeChange={updateDropIndicator}
+                  onPanelToggle={handlePanelToggle}
+                  onPanelReorder={onPanelReorder}
+                >
+                  {children(panelId, i)}
+                </PanelDragWrapper>
+              ) : (
+                children(panelId, i)
+              )}
+            </PanelCollapseScope>
           </ResizablePanel>
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
 
@@ -193,6 +205,11 @@ export function BoardLayout({
       {panelGroup}
     </ScrollArea>
   );
+}
+
+function PanelCollapseScope({ panelId, onToggle, children }: { panelId: string; onToggle: (panelId: string) => void; children: ReactNode }) {
+  const value = useMemo(() => ({ panelId, onToggleCollapsed: () => onToggle(panelId) }), [panelId, onToggle]);
+  return <PanelCollapseContext.Provider value={value}>{children}</PanelCollapseContext.Provider>;
 }
 
 /** Wraps a panel with drag-and-drop reorder support. Provides drag handle ref via context. */

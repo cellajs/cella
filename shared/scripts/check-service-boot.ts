@@ -5,6 +5,7 @@ import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { parseEnv } from 'node:util';
+import { localDatabasePort, localDatabaseUrl } from '../src/local-database.ts';
 import { repoRoot } from './repo-files.ts';
 
 interface PgClient {
@@ -18,21 +19,21 @@ const { Client } = createRequire(join(repoRoot, 'backend/package.json'))('pg') a
 
 /** The values every service starts with: the example env, so a developer's own keys and endpoints stay out. */
 const exampleEnv = parseEnv(readFileSync(join(repoRoot, 'backend/.env.example'), 'utf8'));
-const envFile = join(repoRoot, 'backend/.env');
-const dbPort = process.env.DB_TEST_PORT ?? (existsSync(envFile) ? parseEnv(readFileSync(envFile, 'utf8')).DB_TEST_PORT : undefined);
-if (!dbPort) {
-  console.error('DB_TEST_PORT is required (backend/.env or the environment): the services boot on the test database server.');
-  process.exit(1);
-}
 
+/** The services boot on the test database server, on a scratch database of their own. */
+const dbPort = localDatabasePort('test');
 const database = 'service_boot_check';
-const dbUrl = (credentials: string, name = database) => `postgres://${credentials}@127.0.0.1:${dbPort}/${name}`;
 
 // The ports `pnpm dev` would use in this checkout. A bundle cannot tell a worktree apart, so it gets the offset passed.
 process.env.NODE_ENV = 'development';
 process.env.APP_MODE = 'development';
 const { appConfig } = await import('../src/config-builder/app-config.ts');
-const ports = appConfig.devPorts;
+const ports = {
+  api: appConfig.services.backend.port,
+  internal: appConfig.services.backend.internalPort,
+  cdcHealth: appConfig.services.cdc.port,
+  yjs: appConfig.services.yjs.port,
+};
 
 const serviceEnv: NodeJS.ProcessEnv = {
   ...process.env,
@@ -40,10 +41,10 @@ const serviceEnv: NodeJS.ProcessEnv = {
   NODE_ENV: 'development',
   APP_MODE: 'development',
   DEV_PORT_OFFSET: String(appConfig.devPortOffset),
-  DATABASE_URL: dbUrl('runtime_role:dev_password'),
-  DATABASE_ADMIN_URL: dbUrl('postgres:postgres'),
-  DATABASE_CDC_URL: dbUrl('admin_role:dev_password'),
-  // Production migrates in MODE=migrate before the API starts; so does this check.
+  DATABASE_URL: localDatabaseUrl('test', 'runtime_role', database),
+  DATABASE_ADMIN_URL: localDatabaseUrl('test', 'postgres', database),
+  DATABASE_CDC_URL: localDatabaseUrl('test', 'admin_role', database),
+  // Production migrates as SERVICE=migrate before the API starts; so does this check.
   RUN_MIGRATIONS_ON_BOOT: 'false',
   SINGLE_VM: 'false',
   GEOIP_SOURCE_URL: 'off',
@@ -164,7 +165,7 @@ const portTaken = (port: number) =>
 
 /** Drops the scratch database and the CDC worker's replication slot in it, and creates it again when `fresh`. */
 const resetDatabase = async (fresh: boolean) => {
-  const client = new Client({ connectionString: dbUrl('postgres:postgres', 'postgres') });
+  const client = new Client({ connectionString: localDatabaseUrl('test', 'postgres') });
   await client.connect().catch((error) => {
     throw new Error(`No test database server on port ${dbPort} (pnpm docker:test starts it): ${error instanceof Error ? error.message : error}`);
   });
@@ -204,7 +205,7 @@ try {
   const yjs: Service = { name: 'yjs', cwd: stage('yjs'), args: ['--no-experimental-webstorage', 'dist/yjs-worker.js'] };
 
   await resetDatabase(true);
-  await run({ ...api, name: 'migrate', env: { MODE: 'migrate' } }, 180_000);
+  await run({ ...api, name: 'migrate', env: { SERVICE: 'migrate' } }, 180_000);
 
   const apiProcess = start(api);
   await healthy(apiProcess, 'api', ports.api);

@@ -26,7 +26,8 @@ interface NavSheetPanelProps {
 
 /**
  * A panel whose body renders hidden while it is closed, so what the body loads (a lazy tool, a suspense query) is in
- * place before it opens and the collapse animates to the body's full height. A hidden body runs no effects, so it polls nothing.
+ * place before it opens and the collapse animates to the body's full height. A hidden body runs no effects, so it polls
+ * nothing, and what it reads in an effect arrives after the collapse measured it: a read that changes the body's height suspends.
  */
 function NavSheetPanel({ id, label, indicator, children }: NavSheetPanelProps) {
   const { t } = useTranslation();

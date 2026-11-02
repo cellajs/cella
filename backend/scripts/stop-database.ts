@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { appConfig } from 'shared';
+import { composeEnv } from 'shared/local-database';
 import { checkMark } from '#/utils/console';
 
 /**
@@ -14,7 +15,7 @@ const stopDatabase = () => {
     return;
   }
 
-  execSync('docker compose down', { stdio: 'inherit' });
+  execSync('docker compose down', { stdio: 'inherit', env: { ...process.env, ...composeEnv() } });
 };
 
 stopDatabase();

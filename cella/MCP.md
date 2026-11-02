@@ -21,9 +21,9 @@ MCP endpoint  /<tenant>/<org>/mcp
 the route: its guards, limiters, cache and handler, as for a REST request
 ```
 
-The worker is a `MODE` of the backend image, and the reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls but serves only the MCP routes.
+The worker is a `SERVICE` of the backend image, and the reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls but serves only the MCP routes.
 
-The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the tools (`mcp-tools.ts`); `mcp/src/mcp-worker.ts` is the development entry. Error codes, limits and schema details are documented there, at their declarations.
+The code is in `backend/src/modules/mcp/`: the JSON-RPC server, the routes and the tools (`mcp-tools.ts`). `pnpm dev` starts the worker beside the API. Error codes, limits and schema details are documented there, at their declarations.
 
 ## Discovery and tokens
 

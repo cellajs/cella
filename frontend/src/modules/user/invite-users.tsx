@@ -172,12 +172,12 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
                       type="button"
                       variant="outline"
                       size="auto"
-                      className="h-auto flex-col items-start justify-start gap-2.5 whitespace-normal rounded-xl p-4 text-left"
+                      className="h-auto items-start justify-start whitespace-normal rounded-xl p-4 text-left max-sm:grid max-sm:grid-cols-[auto_1fr] max-sm:items-center max-sm:gap-x-2.5 max-sm:gap-y-1 sm:flex-col sm:gap-2.5"
                       onClick={() => chooseMode(mode)}
                     >
-                      <Icon className="size-10" strokeWidth={1.25} />
+                      <Icon className="size-5 sm:size-10 sm:stroke-[1.25]" />
                       <span>{t(label)}</span>
-                      <span className="font-normal text-muted-foreground">{t(text)}</span>
+                      <span className="font-normal text-muted-foreground max-sm:col-start-2">{t(text)}</span>
                     </Button>
                   );
                 })}

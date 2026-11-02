@@ -3,7 +3,7 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import { withCollaboration } from '@blocknote/core/yjs';
-import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { EmojiPickerController, FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type CSSProperties, type MouseEventHandler, type RefObject, useEffect, useEffectEvent, useImperativeHandle, useRef } from 'react';
 import { appConfig } from 'shared';
@@ -285,7 +285,7 @@ export function BlockNote({
 
       <MentionMenu members={members} editor={editor} />
 
-      {emojis && <GridSuggestionMenuController triggerCharacter=":" columns={8} minQueryLength={1} />}
+      {emojis && <EmojiPickerController triggerCharacter=":" minQueryLength={1} />}
 
       <EditorFilePanel uppyPanelProps={uppyPanelProps} filePanel={filePanel} />
     </BlockNoteView>

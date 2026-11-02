@@ -29,9 +29,9 @@ describe('compose synth', () => {
       const meta = svc['x-service'];
       if (!meta?.coHosted) continue;
       for (const [key, value] of Object.entries(svc.environment ?? {})) {
-        // Process-identity keys stay off the host: MODE/PORT configure which
+        // Process-identity keys stay off the host: SERVICE and PORT configure which
         // entrypoint a *container* boots; the folded workers boot in-process.
-        if (key === 'MODE' || key === 'PORT') {
+        if (key === 'SERVICE' || key === 'PORT') {
           expect(host?.environment?.[key]).not.toBe(value);
           continue;
         }

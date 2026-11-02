@@ -66,7 +66,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
       {/* The curve and the headline paint over it; a phone draws it larger, so the section crops more of it */}
       <Suspense fallback={null}>
         <div
-          className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(144vmin,1182px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply max-sm:w-[174vmin] dark:mix-blend-normal"
+          className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(144vmin,1182px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply max-sm:w-[174vmin] dark:opacity-17 dark:mix-blend-normal"
           aria-hidden="true"
         >
           {/* A finer grid than the auth colony's: on this larger canvas it keeps the grain about the same size */}

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { apiErrorFromResponse, clientConfig } from '~/lib/api';
+import { apiFetch } from '~/lib/api-client';
 
 /** What the authorization server's interaction route reports about a pending consent. */
 export interface ConsentDetails {
@@ -17,8 +17,7 @@ export interface ConsentDetails {
 const interactionUrl = (uid: string, suffix: string) => `${appConfig.oauthUrl}/interaction/${encodeURIComponent(uid)}/${suffix}`;
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await clientConfig.fetch(url, init);
-  if (!response.ok) throw await apiErrorFromResponse(response);
+  const response = await apiFetch(url, init);
   return response.json();
 }
 

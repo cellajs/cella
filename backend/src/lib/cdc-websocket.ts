@@ -4,7 +4,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, isValidEventType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
-import { modeSecret } from '#/env';
+import { serviceSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
@@ -63,7 +63,7 @@ const idleTimeoutMs = 90_000;
 export function cdcSecretRefusal(presented: string | string[] | undefined): string | undefined {
   let expected: string;
   try {
-    expected = modeSecret('CDC_SECRET');
+    expected = serviceSecret('CDC_SECRET');
   } catch {
     return 'CDC_SECRET not configured';
   }

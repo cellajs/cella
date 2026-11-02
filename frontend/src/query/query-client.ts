@@ -8,7 +8,6 @@ import type { QueryMeta } from '~/query/react-query';
 
 // Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then(({ onError }) => onError(error, meta));
-const handleSuccess = () => import('~/query/on-success').then(({ onSuccess }) => onSuccess());
 
 /** What an stx mutation's variables carry, alone or once per item of a batch. */
 interface StxVariables {
@@ -74,11 +73,9 @@ export const queryClient: QueryClient =
         quarantineOnClientError(error, variables, mutation.options.mutationKey);
         return handleError(error, mutation.meta);
       },
-      onSuccess: handleSuccess,
     }),
     queryCache: new QueryCache({
       onError: (error, query) => handleError(error, query.meta),
-      onSuccess: handleSuccess,
     }),
     defaultOptions: {
       queries: {

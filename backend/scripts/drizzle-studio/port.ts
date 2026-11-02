@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
+import { drizzleStudioPort } from 'shared/utils/tool-ports';
 
-/** Drizzle Studio port derived from backend port + 983. Defaults to 5003. */
-export const STUDIO_PORT = Number(new URL(appConfig.backendUrl).port) + 983;
+export const STUDIO_PORT = drizzleStudioPort();

@@ -142,26 +142,6 @@ li:has(.is-focused) {
   visibility: visible;
 }
 
-.bn-grid-suggestion-menu-item[aria-selected="true"],
-.bn-grid-suggestion-menu-item:hover {
-  background-color: var(--accent) !important;
-}
-
-.bn-grid-suggestion-menu-empty-item,
-.bn-grid-suggestion-menu-loader {
-  padding: 0.5rem;
-}
-
-.bn-grid-suggestion-menu {
-  max-height: 25rem !important;
-  background-color: var(--popover) !important;
-  border: 0.05rem solid var(--border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 0.05rem 4px 0 rgb(0 0 0 / 0.1) !important;
-  gap: 0.75rem !important;
-  padding: 0.5rem !important;
-}
-
 /* Our PopoverContent has no width of its own, unlike the shadcn one BlockNote's kit expects: the caption and link forms shrank to a 0px input. */
 .bn-form-popover {
   width: 18rem;

@@ -33,7 +33,7 @@ export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
 
   return (
     <FormItem name="invite-emails">
-      <FormLabel>{t('c:paste_emails')}</FormLabel>
+      <FormLabel help={t('c:invite_hint_email')}>{t('c:paste_emails')}</FormLabel>
       <FormControl>
         <Input
           ref={(node) => {
@@ -64,7 +64,7 @@ export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
           }}
         />
       </FormControl>
-      <InviteFieldLine hint={t('c:invite_hint_email')} list={list} check={check} />
+      <InviteFieldLine list={list} check={check} />
     </FormItem>
   );
 }

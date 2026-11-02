@@ -1,15 +1,5 @@
 import process from 'node:process';
-
-// DB_TEST_PORT (app-specific) comes from backend/.env, or from the environment where there is no .env, as in CI.
-try {
-  process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
-} catch {}
-
-// biome-ignore lint/style/noProcessEnv: test bootstrap runs before any env module exists; CI provides DB_TEST_PORT directly
-const port = process.env.DB_TEST_PORT;
-if (!port) {
-  throw new Error('DB_TEST_PORT is required (set it in backend/.env or the environment) to run database tests.');
-}
+import { localDatabaseUrl } from './local-database.ts';
 
 /** The database a backend test worker owns, by its `VITEST_POOL_ID`, so files in parallel workers never share rows. */
 export const testWorkerDatabase = (poolId: number | string) => `backend_worker_${poolId}`;
@@ -23,7 +13,7 @@ export const withDatabase = (url: string, database: string) => {
 
 // Inside a backend test worker (TEST_DB_PER_WORKER, set by backend/vitest.config.ts) the worker's own database; in the
 // main process and the yjs and cdc tests the shared `postgres`.
-// biome-ignore lint/style/noProcessEnv: read before any env module exists, like DB_TEST_PORT
+// biome-ignore lint/style/noProcessEnv: read before any env module exists
 const poolId = process.env.TEST_DB_PER_WORKER ? process.env.VITEST_POOL_ID : undefined;
 export const testDatabaseName = poolId ? testWorkerDatabase(poolId) : 'postgres';
 
@@ -33,9 +23,7 @@ export const testDatabaseName = poolId ? testWorkerDatabase(poolId) : 'postgres'
  */
 export const cdcTestDatabase = 'cdc_integration';
 
-// URLs are derived from the required port and the dev roles' names and passwords (mirrors backend/compose.yaml).
-const databaseUrl = (role: string, password: string, database: string) => `postgres://${role}:${password}@0.0.0.0:${port}/${database}`;
-export const testCdcDatabaseUrl = databaseUrl('postgres', 'postgres', cdcTestDatabase);
-export const testDatabaseUrl = databaseUrl('postgres', 'postgres', testDatabaseName);
-export const testRuntimeDatabaseUrl = databaseUrl('runtime_role', 'dev_password', testDatabaseName);
-export const testAdminRoleDatabaseUrl = databaseUrl('admin_role', 'dev_password', testDatabaseName);
+export const testCdcDatabaseUrl = localDatabaseUrl('test', 'postgres', cdcTestDatabase);
+export const testDatabaseUrl = localDatabaseUrl('test', 'postgres', testDatabaseName);
+export const testRuntimeDatabaseUrl = localDatabaseUrl('test', 'runtime_role', testDatabaseName);
+export const testAdminRoleDatabaseUrl = localDatabaseUrl('test', 'admin_role', testDatabaseName);

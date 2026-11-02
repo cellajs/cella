@@ -18,7 +18,7 @@
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
 # rolldown build) → `<svc>` (production target). Targets: `backend` (also reused by
 # the `mcp`, `oauth` and `jobs` services through `reusesImageOf`, each with its
-# own MODE and port), `cdc`, `yjs`. Not used in local dev.
+# own SERVICE and port), `cdc`, `yjs`. Not used in local dev.
 #
 # NODE_VERSION is the root package.json `engines.node`, so the images run the
 # Node CI tested. It has no default (the `check=skip` line on top keeps Docker
@@ -134,13 +134,11 @@ USER root
 RUN mkdir -p backend/geoip && chown app:app backend/geoip
 USER app
 
-ENV PORT=4000
-
 EXPOSE 4000
 
-# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts);
-# this baked one covers standalone runs. ${PORT} keeps it honest when the image
-# is reused on another port (mcp runs it with PORT=4003, jobs with PORT=4006).
+# Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts); this baked one covers standalone
+# runs. The process listens on its SERVICE's configured port unless PORT says otherwise, so a standalone run on
+# another SERVICE passes PORT too.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4000}/health || exit 1
 

@@ -4,6 +4,7 @@ import { CountBadge } from '~/modules/common/count-badge';
 import { channelTabsInMenu } from '~/modules/common/page/tab-nav';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { MenuSheetChannelTabs } from '~/modules/navigation/menu-sheet/channel-tabs';
+import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/organization-sections';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
@@ -40,7 +41,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             {badge}
           </div>
         ) : (
-          <div className="px-3 pt-3">
+          <div className="px-3 pt-3 pb-2">
             <Link
               to={to}
               params={params}
@@ -63,6 +64,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             </Link>
           </div>
         ))}
+      {!hasSwitcher && <div className={menuHairlineClass} />}
       {hasTabsInMenu && <MenuSheetChannelTabs channel={organization} className="px-3 pb-2" />}
       {sections.map(({ options, items }) => (
         <MenuSheetSection

@@ -34,7 +34,7 @@ const focusById = (id: string) => focusElement(document.getElementById(id));
  * `size-px border-0 p-0` outranks the button's own box, which would otherwise add its height to the page at the end of a layout.
  */
 const layoutStopClass = tw(
-  'sr-only size-px border-0 p-0 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-200 focus:h-10 focus:border focus:px-4 focus:shadow-floating',
+  'sr-only size-px border-0 p-0 focus:not-sr-only focus:fixed focus:z-200 focus:h-10 focus:border focus:px-4 focus:shadow-floating',
 );
 
 /** First Tab stop of a layout, visible on focus: moves focus to the page's `<main>`, past the navigation (WCAG 2.4.1). */
@@ -42,7 +42,12 @@ export function SkipLink() {
   const { t } = useTranslation();
 
   return (
-    <Button id={focusTargets.skipLink} variant="outline" onClick={() => focusElement(document.querySelector('main'))} className={layoutStopClass}>
+    <Button
+      id={focusTargets.skipLink}
+      variant="outline"
+      onClick={() => focusElement(document.querySelector('main'))}
+      className={cn(layoutStopClass, 'focus:top-3 focus:left-3')}
+    >
       {t('c:go_to_content')}
     </Button>
   );
@@ -58,7 +63,11 @@ export function BackToStart() {
   };
 
   return (
-    <Button variant="outline" onClick={handleClick} className={layoutStopClass}>
+    <Button
+      variant="outline"
+      onClick={handleClick}
+      className={cn(layoutStopClass, 'focus:bottom-[calc(1rem+var(--bottom-inset,0px))] focus:left-1/2 focus:-translate-x-1/2')}
+    >
       {t('c:go_to_start')}
     </Button>
   );

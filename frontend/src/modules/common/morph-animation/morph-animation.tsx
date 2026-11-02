@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { MorphRenderer, type MorphStamp, type MorphVariant } from '~/modules/common/morph-animation/renderer';
+import { type MorphPalette, MorphRenderer, type MorphStamp, type MorphVariant } from '~/modules/common/morph-animation/renderer';
 import { fragmentSource } from '~/modules/common/morph-animation/shader';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -15,6 +15,8 @@ interface MorphAnimationProps {
   /** Canvas margin around the shape (default: 1.2); below 1 it magnifies */
   overscan?: number;
   stamp?: MorphStamp;
+  /** `violet` (default) suits the marketing gradient; `brand` rotates its four hues and suits a plain page background */
+  palette?: MorphPalette;
   /** Clock value to freeze the piece at: it condenses in on mount, then holds that frame */
   still?: number;
   /** With `still`: how strongly its grains keep fizzing while the shape holds, 0 to 1 (default: 0) */
@@ -29,6 +31,7 @@ export function MorphAnimation({
   speed = 0.7,
   overscan = 1.2,
   stamp = 'square',
+  palette = 'violet',
   still,
   fizz = 0,
   className,
@@ -45,6 +48,7 @@ export function MorphAnimation({
     renderer.setPhone(isPhone);
     renderer.setOverscan(overscan);
     renderer.setStamp(stamp);
+    renderer.setPalette(palette);
     renderer.setSpeed(speed);
     renderer.setStill(still ?? null);
     renderer.setFizz(fizz);
@@ -94,6 +98,10 @@ export function MorphAnimation({
   useEffect(() => {
     rendererRef.current?.setStamp(stamp);
   }, [stamp]);
+
+  useEffect(() => {
+    rendererRef.current?.setPalette(palette);
+  }, [palette]);
 
   useEffect(() => {
     rendererRef.current?.setStill(still ?? null);

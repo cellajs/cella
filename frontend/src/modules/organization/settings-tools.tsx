@@ -67,6 +67,7 @@ export function OrganizationDeleteCard({ organization }: OrganizationCardProps) 
       name={organization.name}
       resource="c:organization"
       dialogId="delete-organization"
+      channel={organization}
       notice="c:delete_organization_notice.text"
       values={{ days: appConfig.retention.archivedTenantDays }}
       renderDialog={() => (

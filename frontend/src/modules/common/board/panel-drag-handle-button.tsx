@@ -2,7 +2,7 @@ import { ChevronsLeftRightIcon, ChevronsRightLeftIcon, GripVerticalIcon } from '
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { usePanelDragHandle } from '~/modules/common/board/board-drag';
+import { usePanelCollapse, usePanelDragHandle } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
@@ -29,12 +29,13 @@ interface PanelDragHandleButtonProps {
 /**
  * A panel header button that is also the panel's reorder handle, from the board's drag context (null when the board is
  * not reorderable): a click collapses the panel, ←/→ move it, and its move menu leads with the collapse. On hover the
- * `icon` cross-fades to a drag grip.
+ * `icon` cross-fades to a drag grip. Without reordering it only collapses.
  */
 export function PanelDragHandleButton({ name, fallbackLabel, className, icon, preview, children }: PanelDragHandleButtonProps) {
   const { t } = useTranslation();
   const panelDrag = usePanelDragHandle();
-  const isCollapsed = useBoardStore((state) => !!panelDrag && !!state.panelCollapseState[panelDrag.panelId]);
+  const panelCollapse = usePanelCollapse();
+  const isCollapsed = useBoardStore((state) => !!panelCollapse && !!state.panelCollapseState[panelCollapse.panelId]);
 
   const content = (
     <>
@@ -60,7 +61,13 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
 
   if (!panelDrag) {
     return (
-      <Button variant="ghost" className={className} aria-label={fallbackLabel}>
+      <Button
+        variant="ghost"
+        className={className}
+        aria-label={fallbackLabel}
+        aria-expanded={panelCollapse ? !isCollapsed : undefined}
+        onClick={panelCollapse?.onToggleCollapsed}
+      >
         {content}
       </Button>
     );

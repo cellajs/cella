@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { config } from 'shared/config/config.default';
+import { servicePaths } from 'shared/config-builder/service-paths';
 import { describe, expect, it } from 'vitest';
 import { buildOperationDocsUrl } from '../plugin';
 
@@ -8,7 +9,7 @@ import { buildOperationDocsUrl } from '../plugin';
 describe('buildOperationDocsUrl', () => {
   it('builds a frontend docs link with the operationTag param and hash anchor', () => {
     const url = buildOperationDocsUrl('post', '/auth/check-email', 'auth');
-    expect(url).toBe(`${config.frontendUrl}/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email`);
+    expect(url).toBe(`${config.origin}/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email`);
   });
 });
 
@@ -20,7 +21,7 @@ describe('generated sdk.gen.ts docs links', () => {
     if (!existsSync(generatedSdk)) return;
     const source = readFileSync(generatedSdk, 'utf-8');
     expect(source).not.toMatch(/\/docs#tag\//);
-    expect(source).not.toContain(`${config.backendUrl}/docs`);
+    expect(source).not.toContain(`${config.origin}${servicePaths.backend}/docs`);
   });
 
   it('emits docs links in the expected frontend format', () => {
@@ -29,7 +30,7 @@ describe('generated sdk.gen.ts docs links', () => {
     const links = source.match(/https?:\/\/[^)\s]*\/docs\/operations\?operationTag=[^)\s]+/g) ?? [];
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      expect(link).toMatch(new RegExp(`^${escapeRegExp(config.frontendUrl)}/docs/operations\\?operationTag=[^#]+#tag/[^/]+/[A-Z]+/`));
+      expect(link).toMatch(new RegExp(`^${escapeRegExp(config.origin)}/docs/operations\\?operationTag=[^#]+#tag/[^/]+/[A-Z]+/`));
     }
   });
 });

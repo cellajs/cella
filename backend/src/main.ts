@@ -8,13 +8,13 @@ const exitOnStartFailure = (name: string) => (error: unknown) => {
 };
 
 // Load exactly one runtime entry. Workers skip API initialization and wait for the API to complete migrations.
-if (env.MODE === 'migrate') {
+if (env.SERVICE === 'migrate') {
   await import('#/main.migrate');
-} else if (env.MODE === 'mcp') {
+} else if (env.SERVICE === 'mcp') {
   (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker().catch(exitOnStartFailure('mcp-worker'));
-} else if (env.MODE === 'oauth') {
+} else if (env.SERVICE === 'oauth') {
   (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthWorker().catch(exitOnStartFailure('oauth-worker'));
-} else if (env.MODE === 'jobs') {
+} else if (env.SERVICE === 'jobs') {
   (await import('#/lib/jobs-worker')).startJobsWorker().catch(exitOnStartFailure('jobs'));
 } else {
   await import('#/main.api');

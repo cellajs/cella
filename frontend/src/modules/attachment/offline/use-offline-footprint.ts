@@ -1,21 +1,33 @@
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { liveQuery } from 'dexie';
 import i18n from 'i18next';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { offlineFilesRules, offlineFilesTiers } from '~/modules/attachment/offline/offline-files-store';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { getLocalUserDb } from '~/query/local-user-db';
+import { queryClient } from '~/query/query-client';
 
-type OfflineFootprint = Awaited<ReturnType<typeof attachmentStorage.tierFootprint>>;
+const readFootprint = async () => (getLocalUserDb() ? attachmentStorage.tierFootprint(offlineFilesTiers.map(offlineFilesRules)) : null);
 
-/** What this device stores for offline use against each tier, live while mounted; null while signed out. */
+/** Local data, kept current by the hook's live query; a failed read resolves to null, since the hook suspends on it. */
+const footprintQueryOptions = queryOptions({
+  queryKey: ['offlineFootprint'],
+  queryFn: () => readFootprint().catch(() => null),
+  meta: { persist: false },
+});
+
+/**
+ * What this device stores for offline use against each tier, live while mounted; null while signed out. Suspends on the
+ * first read, so a closed nav sheet panel, which runs no effects, has it before it opens.
+ */
 export function useOfflineFootprint() {
-  const [footprint, setFootprint] = useState<OfflineFootprint | null>(null);
+  const { data: footprint } = useSuspenseQuery(footprintQueryOptions);
   useEffect(() => {
-    if (!getLocalUserDb()) return;
-    const rules = offlineFilesTiers.map(offlineFilesRules);
-    const subscription = liveQuery(() => attachmentStorage.tierFootprint(rules)).subscribe({
-      next: setFootprint,
-      error: () => setFootprint(null),
+    const { queryKey } = footprintQueryOptions;
+    const subscription = liveQuery(readFootprint).subscribe({
+      next: (next) => writeKeepingMark(queryClient, queryKey, () => next),
+      error: () => writeKeepingMark(queryClient, queryKey, () => null),
     });
     return () => subscription.unsubscribe();
   }, []);

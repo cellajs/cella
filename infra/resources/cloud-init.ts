@@ -45,7 +45,7 @@ export interface CloudInitParams {
 /**
  * Ceiling on the release companion (migrations, job store install, admin seed). It must fail and upload its diagnostics while the deploy's health gate
  * still polls (`deployHealthGateSeconds`, counted from the end of the provisioning update, by which the companion has barely started), or the deploy
- * reports a failure with no bundle to show. The backend's own lock and statement timeouts (MODE=migrate) sit below it.
+ * reports a failure with no bundle to show. The backend's own lock and statement timeouts (SERVICE=migrate) sit below it.
  */
 export const releaseCommandTimeoutSeconds = 180;
 

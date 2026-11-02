@@ -1,6 +1,7 @@
 import process from 'node:process';
 import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { servicePaths } from 'shared';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { listenHost } from 'shared/utils/listen-host';
@@ -47,7 +48,7 @@ export function buildHttpApp(): Hono {
 
   const app = new Hono();
   app.route('/', healthApp);
-  app.route('/yjs', healthApp);
+  app.route(servicePaths.yjs, healthApp);
   return app;
 }
 

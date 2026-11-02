@@ -51,7 +51,8 @@ decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `
 2. `shared/config/permissions-config.ts`: a `case '<name>'` with one line per channel and role (`1`
    allow, `0` deny, `'own'` creator only). A type without a case is denied to every role, and nothing
    reports it. The model: [Permissions](../../PERMISSIONS.md).
-3. `shared/config/config.default.ts`: the opt-ins of step 6; a channel also goes in `menuStructure`.
+3. `shared/config/config.default.ts`: the opt-ins of step 6; a channel also goes in `menuStructure`, with
+   `archivable: false` when it only groups others and has no life of its own to archive.
 4. `pnpm --filter backend ts`. The registries typed `satisfies Record<…EntityType, …>` fail on the
    new type: `channel-tables.ts` or `product-tables.ts`, and the product mock registry (filled in
    `app-product-mocks.ts`). The other backend errors follow from those and close with them. The
@@ -267,7 +268,7 @@ exist need a data migration that gives them the new id column.
   not name): `membershipColumns` in `defineBackendModule`; it runs before the insert, inside the
   caller's transaction, for an item its caller gave no `extraFields`.
 - **Scheduled jobs and queues**: `jobs` and `queues` in `defineBackendModule`; the jobs worker
-  creates and runs them ([Jobs worker](../../../jobs/README.md)).
+  creates and runs them ([Jobs worker](../../JOBS.md)).
 - **A per-user client store** (recent picks): `idbKvStorage('<base>')` with `skipHydration: true`,
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
 - **Error types of its own**: `<type>` and `<type>.text` in `locales/en/appError.json`, thrown as

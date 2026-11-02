@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeftIcon, ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
+import { ArrowLeftIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isStrategyEnabled } from 'shared';
@@ -10,6 +10,7 @@ import { AuthDivider } from '~/modules/auth/auth-divider';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
+import { ServerUnavailableAlert } from '~/modules/auth/server-unavailable-alert';
 import { SsoProviders } from '~/modules/auth/sso-providers';
 import { AcceptInvitationStep } from '~/modules/auth/steps/accept-invitation';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
@@ -57,8 +58,8 @@ export function AuthenticatePage() {
   const {
     data: tokenData,
     isLoading: isTokenLoading,
-    isError: isTokenError,
-  } = useQuery({ ...tokenQuery, meta: { ...tokenQuery.meta, suppressGlobalErrorToast: !!signedInUser } });
+    error: tokenError,
+  } = useQuery({ ...tokenQuery, meta: { ...tokenQuery.meta, suppressGlobalErrorToast: (error) => !!signedInUser && error.status === 401 } });
 
   const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
@@ -84,7 +85,7 @@ export function AuthenticatePage() {
   const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.inactiveMembershipId;
   useEffect(() => {
     if (!nothingToConfirm) return;
-    if (isTokenError) toaster.info(t('c:invite_link_spent'));
+    if (tokenError?.status === 401) toaster.info(t('c:invite_link_spent'));
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
   }, [nothingToConfirm]);
 
@@ -93,7 +94,7 @@ export function AuthenticatePage() {
       <>
         <Spinner size="lg" />
         {showSlowWarning && (
-          <Alert variant="warning">
+          <Alert variant="warning" className="soft-border-strong border-2">
             <TriangleAlertIcon />
             <AlertTitle>{t('c:server_unresponsive')}</AlertTitle>
             <AlertDescription>{t('c:server_unresponsive.text')}</AlertDescription>
@@ -140,13 +141,7 @@ export function AuthenticatePage() {
         </>
       )}
 
-      {isHealthError && (
-        <Alert variant="destructive">
-          <ServerOffIcon />
-          <AlertTitle>{t('c:server_unreachable')}</AlertTitle>
-          <AlertDescription>{t('c:server_unreachable.text')}</AlertDescription>
-        </Alert>
-      )}
+      {isHealthError && <ServerUnavailableAlert />}
     </>
   );
 }

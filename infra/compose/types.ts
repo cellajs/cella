@@ -1,4 +1,4 @@
-import type { Environment } from '../lib/stack/bootstrap-stack-state';
+import type { PerMode } from '../lib/general-config';
 
 /** VM cutover strategy: `start-first` overlaps generations behind the LB; `stop-first` releases a singleton resource before replacement starts. */
 export type ReplacementStrategy = 'start-first' | 'stop-first';
@@ -15,9 +15,6 @@ export type LbRoute = 'default' | 'host' | 'path';
 
 /** Shared-host path prefix matched without stripping: leading slash, no trailing slash, and the service must serve under it. */
 export type PathPrefix = `/${string}`;
-
-/** A service's VM size: one type for all modes, or a per-mode map. */
-export type ServiceInstanceType = string | Partial<Record<Environment, string>>;
 
 /** Where a service's container runs: its own VM generation, or collocated on the singleVM host. */
 export type ServicePlacement = 'vm' | 'host';
@@ -78,7 +75,7 @@ export interface ServiceMeta {
   /** Under `appConfig.singleVM`, `'host'` runs this service as a second container on the host VM. */
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box. */
-  instanceType: ServiceInstanceType;
+  instanceType: PerMode<string>;
   /** This service signs S3 requests with its own standing service key (REQ-20). */
   s3Access?: boolean;
   /** Deploy-time env bindings resolved by the compute module; see {@link AppServiceConfig.bindings}. */
@@ -172,13 +169,13 @@ export interface AppServiceConfig {
    */
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box, there is no fleet-wide fallback. A single type for all modes, or a per-mode map. */
-  instanceType: ServiceInstanceType;
+  instanceType: PerMode<string>;
   /** Service-specific environment variables. Merged after the standard env so it can override it; do not repeat the engine-injected `NODE_ENV`/`APP_MODE`/`TZ`. */
   env?: Readonly<Record<string, string>>;
   /**
    * Deploy-time values for this service's `${VAR}` env placeholders, expressed as templates over other services:
    * `@{<slug>.url}`, `@{<slug>.privateIp}`, `@{<slug>.port}`, or `@{self.…}`. Resolved by the compute module when the
-   * VM's .env is written. Vars without a binding fall back to the compute module's shared env pool (FRONTEND_URL, BACKEND_URL, …).
+   * VM's .env is written. Vars without a binding fall back to the compute module's shared env pool (APP_ORIGIN, FRONTEND_CSP, …).
    */
   bindings?: Readonly<Record<string, string>>;
   /** Inject `NODE_ENV`/`APP_MODE`/`TZ`. Default true; set false for the SPA proxy. */

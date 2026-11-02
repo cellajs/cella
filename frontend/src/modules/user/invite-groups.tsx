@@ -37,16 +37,14 @@ const revealStep = 50;
 const revealAllUpTo = 100;
 
 interface InviteFieldLineProps {
-  /** Until the first address is in. */
-  hint: string;
   list: InviteList;
   check: InviteCheck;
 }
 
 /** One line under a field, saying what just happened to what was in it. Stays mounted, so a change is announced. */
-export function InviteFieldLine({ hint, list, check }: InviteFieldLineProps) {
+export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
   const { t } = useTranslation();
-  const { last, typedInvalid, hasList, people } = list;
+  const { last, typedInvalid, people } = list;
   const listed = last && !last.repeat && (list.emails.includes(last.address) || list.unparsed.includes(last.address)) ? last.address : null;
 
   const content = () => {
@@ -75,7 +73,7 @@ export function InviteFieldLine({ hint, list, check }: InviteFieldLineProps) {
         </>
       );
     }
-    return hasList ? null : hint;
+    return null;
   };
 
   return (

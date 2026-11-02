@@ -28,7 +28,7 @@ type NodeKey = keyof typeof nodes;
 // Node columns in percent of the container width. A phone spreads them to the edges, where its small boxes would leave
 // the margins empty; from `sm` up the gentler line angles keep the labels clear of the boxes.
 const columns: Record<'phone' | 'wide', Record<NodeKey, number>> = {
-  phone: { yjs: 13, client: 32, database: 50, api: 68, cdc: 87 },
+  phone: { yjs: 13, client: 22, database: 50, api: 78, cdc: 87 },
   wide: { yjs: 20, client: 35, database: 50, api: 65, cdc: 80 },
 };
 
@@ -37,45 +37,49 @@ interface Edge {
   id?: string;
   from: NodeKey;
   to: NodeKey;
-  label?: string;
+  label: string;
   labelOffset?: number;
   offset?: number;
   /** Adds a start arrowhead. */
   bidirectional?: boolean;
-  /** Defaults to `requestStroke`. */
-  stroke?: string;
-}
-
-interface StreamEdge extends Edge {
   stroke: string;
-  label: string;
+  /** A stream connection: dashed, with dashes that flow. Others are solid. */
+  stream?: boolean;
 }
 
 const requestStroke = '#9ca3af';
 
-// REST request/response flow, drawn as solid grey lines.
-const requestEdges: Edge[] = [
-  { from: 'cdc', to: 'database', label: 'SQL', offset: -6, labelOffset: -14 },
-  { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14, bidirectional: true },
-  { from: 'yjs', to: 'api', label: 'Save', labelOffset: 14 },
-];
-
-// Stream connections, drawn dashed.
-const streamEdges: StreamEdge[] = [
-  { from: 'client', to: 'api', stroke: 'var(--primary)', label: 'HTTP', offset: 10, bidirectional: true },
-  { from: 'api', to: 'database', stroke: 'var(--primary)', label: 'SQL', labelOffset: 22, bidirectional: true },
-  { from: 'database', to: 'cdc', stroke: '#eab308', label: 'WAL stream', offset: -8, labelOffset: -14 },
-  { from: 'cdc', to: 'api', stroke: '#3b82f6', label: 'Changes', labelOffset: 30 },
-  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE', labelOffset: 14, offset: 4 },
-  { from: 'client', to: 'yjs', stroke: '#a855f7', label: 'Changes', labelOffset: 30, bidirectional: true },
+const edges: Edge[] = [
+  // REST request/response flow.
+  { from: 'cdc', to: 'database', stroke: requestStroke, label: 'SQL', offset: -6, labelOffset: -14 },
+  { from: 'yjs', to: 'database', stroke: requestStroke, label: 'SQL', labelOffset: -14, bidirectional: true },
+  { from: 'yjs', to: 'api', stroke: requestStroke, label: 'Save', labelOffset: 14 },
+  // Stream connections.
+  { from: 'client', to: 'api', stroke: 'var(--primary)', label: 'HTTP', offset: 10, bidirectional: true, stream: true },
+  { from: 'api', to: 'database', stroke: 'var(--primary)', label: 'SQL', labelOffset: 22, bidirectional: true, stream: true },
+  { from: 'database', to: 'cdc', stroke: '#eab308', label: 'WAL stream', offset: -8, labelOffset: -14, stream: true },
+  { from: 'cdc', to: 'api', stroke: '#3b82f6', label: 'Changes', labelOffset: 30, stream: true },
+  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE', labelOffset: 14, offset: 18, stream: true },
+  { from: 'client', to: 'yjs', stroke: '#a855f7', label: 'Changes', labelOffset: 30, bidirectional: true, stream: true },
   // Part 4: the workers run inside the API server's VM, so their two outside connections end at that VM.
-  { id: 'vm-wal', from: 'database', to: 'api', stroke: '#eab308', label: 'WAL stream', offset: 12, labelOffset: 44 },
-  { id: 'vm-socket', from: 'client', to: 'api', stroke: '#a855f7', label: 'Changes', offset: 24, labelOffset: 14, bidirectional: true },
+  { id: 'vm-wal', from: 'database', to: 'api', stroke: '#eab308', label: 'WAL stream', offset: 12, labelOffset: 44, stream: true },
+  // Runs between HTTP and SSE, so its label stacks above SSE's.
+  {
+    id: 'vm-socket',
+    from: 'client',
+    to: 'api',
+    stroke: '#a855f7',
+    label: 'Changes',
+    offset: -4,
+    labelOffset: -42,
+    bidirectional: true,
+    stream: true,
+  },
 ];
 
 const edgeKey = (edge: Edge) => edge.id ?? `${edge.from}-${edge.to}`;
 
-const edgeByKey: Record<string, Edge> = Object.fromEntries([...requestEdges, ...streamEdges].map((edge) => [edgeKey(edge), edge]));
+const edgeByKey: Record<string, Edge> = Object.fromEntries(edges.map((edge) => [edgeKey(edge), edge]));
 
 // Which nodes and edges participate in each mode. Edge keys are `${from}-${to}`, or the edge's `id`.
 const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
@@ -204,16 +208,10 @@ const splitLanes = (line: Line) => {
   ];
 };
 
-// How far a line ends from a node's center: the circle through a square box's corners, easing to the VM box's edges as the server widens.
+// How far a line ends from a node's center: where it leaves the box, plus the padding.
 const trimOf = (geometry: Geometry, key: NodeKey, ux: number, uy: number) => {
   const { w, h } = geometry.halves[key];
-  const stretch = Math.min(1, (w / h - 1) * 2);
-  if (stretch <= 0) return Math.hypot(w, h) + edgePadding;
-  const side = geometry.halves.database?.w ?? h;
-  const round = Math.SQRT2 * side + edgePadding;
-  const clearance = round - side;
-  const edge = Math.min((w + clearance) / (Math.abs(ux) || 1e-6), (h + clearance) / (Math.abs(uy) || 1e-6));
-  return round + (edge - round) * stretch;
+  return Math.min(w / Math.abs(ux), h / Math.abs(uy)) + edgePadding;
 };
 
 interface ArrowMarkerProps {
@@ -447,13 +445,12 @@ export function SyncDiagram() {
         aria-label={t('about:sync_diagram.toggle_labels')}
         className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
-        {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
+        {/* SVG overlay drawn in real pixel space and re-measured on resize. Unclipped and above the boxes, so a label wider than its gap stays whole. */}
         {geometry && (
-          <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
+          <svg className="absolute inset-0 z-1 size-full overflow-visible" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
             <defs>
-              <ArrowMarker id="request-arrow" fill={requestStroke} />
-              {streamEdges.map((edge) => (
-                <ArrowMarker key={edgeKey(edge)} id={`stream-arrow-${edgeKey(edge)}`} fill={edge.stroke} />
+              {edges.map((edge) => (
+                <ArrowMarker key={edgeKey(edge)} id={`arrow-${edgeKey(edge)}`} fill={edge.stroke} />
               ))}
             </defs>
 
@@ -470,7 +467,7 @@ export function SyncDiagram() {
                 <motion.line
                   key={`${key}-retract`}
                   {...line}
-                  stroke={edge.stroke ?? requestStroke}
+                  stroke={edge.stroke}
                   strokeWidth={2}
                   strokeLinecap="round"
                   initial={{ pathLength: 1, opacity: 1 }}
@@ -483,52 +480,15 @@ export function SyncDiagram() {
               );
             })}
 
-            {requestEdges.map(({ from, to, label, offset, labelOffset, bidirectional }) => {
-              const key = `${from}-${to}`;
+            {edges.map((edge) => {
+              const { from, to, stroke, label, labelOffset, offset, bidirectional, stream } = edge;
+              const key = edgeKey(edge);
               if (!activeEdges.includes(key)) return null;
               const line = trimmedLine(from, to, offset);
               if (!line) return null;
               const timing = edgeTiming[mode][key] ?? fallbackTiming;
               const delay = startDelay(timing.delay, drawn[key]);
-              const arrow = drawn[key] ? 'url(#request-arrow)' : undefined;
-              const isIntroduced = introducedEdges.has(key);
-              return (
-                <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
-                  <motion.line
-                    {...line}
-                    stroke={requestStroke}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    markerStart={bidirectional ? arrow : undefined}
-                    markerEnd={arrow}
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ pathLength: { delay, duration: timing.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
-                    onAnimationComplete={() => setDrawn((prevDrawn) => ({ ...prevDrawn, [key]: true }))}
-                  />
-                  {label && (
-                    <EdgeLabel
-                      position={labelPos(line, labelOffset)}
-                      fill={requestStroke}
-                      show={isIntroduced || hovered === key || showAllLabels}
-                      delay={isIntroduced ? delay + timing.duration : 0}
-                    >
-                      {label}
-                    </EdgeLabel>
-                  )}
-                </EdgeGroup>
-              );
-            })}
-
-            {streamEdges.map(({ id, from, to, stroke, label, labelOffset, offset, bidirectional }) => {
-              const key = edgeKey({ id, from, to });
-              if (!activeEdges.includes(key)) return null;
-              const line = trimmedLine(from, to, offset);
-              if (!line) return null;
-              const timing = edgeTiming[mode][key] ?? fallbackTiming;
-              // In Part 4 the socket line runs where the HTTP label sits, so that label moves below it: right under on hover, a row lower when all labels show.
-              const underSocket = isVm && key === 'client-api';
-              const delay = startDelay(timing.delay, drawn[key]);
+              const arrow = drawn[key] ? `url(#arrow-${key})` : undefined;
               const isIntroduced = introducedEdges.has(key);
               // Part 4 is the whole picture, so all its lines flow, starting together once its last line is drawn.
               const flows = isVm ? Boolean(drawn['vm-wal'] && drawn['vm-socket']) : isIntroduced;
@@ -538,7 +498,7 @@ export function SyncDiagram() {
               const lanes = bidirectional ? splitLanes(line) : [{ lane: 'flow', seg: line }];
               return (
                 <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
-                  {drawn[key] ? (
+                  {stream && drawn[key] ? (
                     lanes.map(({ lane, seg }) => (
                       <motion.line
                         key={`${key}-${lane}`}
@@ -547,7 +507,7 @@ export function SyncDiagram() {
                         strokeWidth={2}
                         strokeLinecap="round"
                         strokeDasharray="5 5"
-                        markerEnd={`url(#stream-arrow-${key})`}
+                        markerEnd={arrow}
                         animate={{ strokeDashoffset: animateDashes ? [0, -10] : 0 }}
                         transition={animateDashes ? { repeat: dashRuns - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
@@ -559,6 +519,8 @@ export function SyncDiagram() {
                       stroke={stroke}
                       strokeWidth={2}
                       strokeLinecap="round"
+                      markerStart={bidirectional ? arrow : undefined}
+                      markerEnd={arrow}
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: 1, opacity: 1 }}
                       transition={{ pathLength: { delay, duration: timing.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
@@ -566,7 +528,7 @@ export function SyncDiagram() {
                     />
                   )}
                   <EdgeLabel
-                    position={labelPos(line, underSocket ? (showAllLabels ? 40 : 28) : labelOffset)}
+                    position={labelPos(line, labelOffset)}
                     fill={stroke}
                     show={labelsItself || hovered === key || showAllLabels}
                     delay={labelsItself ? delay + timing.duration : 0}
@@ -599,27 +561,27 @@ export function SyncDiagram() {
                   : { delay: startDelay(nodeDelay[mode][key] ?? 0), duration: isLastNode ? animTimeline.cdcIn : animTimeline.fade }
               }
             >
-              {key === 'api' ? (
-                <div className="relative size-11 sm:size-14 md:size-16">
-                  {/* Widens to the right from the server's own box, so the lines on the client side stay where they are. */}
-                  <div
-                    ref={(el) => {
-                      boxRefs.current[key] = el;
-                    }}
-                    className={cn(
-                      'absolute top-1/2 left-0 -translate-y-1/2 rounded-xl border bg-background shadow-sm transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
-                      isVm ? 'h-14 w-28 border-foreground/40 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
-                    )}
-                    style={{ transitionDuration: `${foldTimeline.morph}s`, transitionDelay: `${isVm ? vmAt.fold : 0}s` }}
-                  >
-                    <motion.div
-                      initial={false}
-                      animate={{ opacity: isVm ? 0 : 1 }}
-                      transition={{ delay: isVm ? vmAt.fold : foldTimeline.swap, duration: foldTimeline.swap }}
-                      className="absolute inset-0 flex items-center justify-center"
-                    >
-                      <Icon className="size-5 sm:size-7 md:size-8" />
-                    </motion.div>
+              {/* The node is centered on its column, so the API server's box widens into the VM around its own center. */}
+              <div
+                ref={(el) => {
+                  boxRefs.current[key] = el;
+                }}
+                className={cn(
+                  'relative flex items-center justify-center rounded-xl border bg-background shadow-sm',
+                  key === 'api' && 'transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
+                  becomesVm ? 'h-14 w-24 border-foreground/40 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
+                )}
+                style={{ transitionDuration: `${foldTimeline.morph}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ opacity: becomesVm ? 0 : 1 }}
+                  transition={{ delay: becomesVm ? vmAt.fold : foldTimeline.swap, duration: foldTimeline.swap }}
+                >
+                  <Icon className="size-5 sm:size-7 md:size-8" />
+                </motion.div>
+                {key === 'api' && (
+                  <>
                     <div
                       aria-hidden={!isVm}
                       className="absolute inset-0 flex items-center justify-center gap-2 overflow-hidden rounded-xl sm:gap-2.5 md:gap-3"
@@ -648,18 +610,9 @@ export function SyncDiagram() {
                     >
                       {t('about:sync_diagram.one_vm')}
                     </motion.span>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  ref={(el) => {
-                    boxRefs.current[key] = el;
-                  }}
-                  className="flex size-11 items-center justify-center rounded-xl border bg-background shadow-sm sm:size-14 md:size-16"
-                >
-                  <Icon className="size-5 sm:size-7 md:size-8" />
-                </div>
-              )}
+                  </>
+                )}
+              </div>
               <span
                 className={cn('truncate text-muted-foreground text-xs transition-opacity', becomesVm && 'opacity-0')}
                 style={{ transitionDuration: `${foldTimeline.swap}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}

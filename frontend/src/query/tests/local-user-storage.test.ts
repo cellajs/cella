@@ -12,7 +12,9 @@ vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload },
 const quarantineFailedSync = vi.fn(async (_record: unknown) => {});
 vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync: (record: unknown) => quarantineFailedSync(record) }));
 
-const { apiErrorFromResponse } = await import('~/lib/api');
+const { ApiError } = await import('~/lib/api');
+/** What the API client throws for a gateway's 503. */
+const gatewayError = () => new ApiError({ status: 503, type: 'service_unavailable', severity: 'error' });
 const { userStore, userStorageKey } = await import('~/modules/user/user-store');
 const { getLocalUserDb } = await import('~/query/local-user-db');
 const { onError } = await import('~/query/on-error');
@@ -196,7 +198,7 @@ describe('the per-user database follows who is signed in', () => {
       retryDelay: (_failureCount, error) => (error instanceof TypeError ? 0 : 800),
       mutationFn: async () => {
         if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
-        throw await apiErrorFromResponse(gateway());
+        throw gatewayError();
       },
     })
       .mutate({ name: 'offline edit', stx: { mutationId: 'm-2' } })
@@ -229,7 +231,7 @@ describe('the per-user database follows who is signed in', () => {
       mutationFn: async () => {
         if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
         deploy.sends++;
-        if (!deploy.over) throw await apiErrorFromResponse(new Response(null, { status: 503 }));
+        if (!deploy.over) throw gatewayError();
       },
     })
       .mutate({ name: 'offline edit', stx: { mutationId: 'm-3' } })

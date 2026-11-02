@@ -70,10 +70,22 @@ const openMenu = async (page) => {
   await preferences.click();
   await keepOpen.waitFor({ state: 'hidden' });
 
-  // Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count
-  for (const toggle of await page.locator('#nav-sheet li[data-archived-visible="true"][data-has-archived="true"] > div > button').all()) await toggle.click();
-  await page.locator('#nav-sheet li[data-archived-visible="true"][data-has-archived="true"]').first().waitFor({ state: 'detached' });
+  // Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
+  // its row out of the match, so the loop asks for the first one each time.
+  const unfolded = page.locator('#nav-sheet li[data-archived-visible="true"][data-has-archived="true"] > div button');
+  while (await unfolded.count()) await unfolded.first().click();
 };
+
+/**
+ * Hides what only a development stack shows: the debug button in the sidebar, and the health dot on the menu's Info row
+ * when a throwaway stack runs without every service. A stylesheet, so it also holds for the dot, which renders once the
+ * open sheet's health check answers.
+ */
+const hideDevUi = (page) => page.addStyleTag({ content: 'button[aria-label="toggle debug toolbar"], #nav-sheet .animate-status-pulse { visibility: hidden; }' });
+
+/** Waits for a member's activity and MFA columns: a row renders first, and its last cell holds "-" until they arrive. */
+const membersFilled = (page) =>
+  page.waitForFunction(() => /\d/.test([...(document.querySelector('.rdg-row')?.querySelectorAll('[role="gridcell"]') ?? [])].at(-1)?.textContent ?? ''));
 
 /**
  * Takes two things out of an organization's header that a visitor never meets: the entity id a development build
@@ -99,14 +111,21 @@ export const shots = [
     device: 'pcWide',
     path: '/system/organizations',
     out: 'frontend/public/static/marketing/screenshots/system-page',
-    open: openMenu,
+    open: async (page) => {
+      await openMenu(page);
+      await hideDevUi(page);
+    },
   },
   {
     id: 'org-page',
     device: 'pc',
     path: '{org}/organization/members',
     out: 'frontend/public/static/marketing/screenshots/org-page',
-    open: tidyHeader,
+    open: async (page) => {
+      await membersFilled(page);
+      await tidyHeader(page);
+      await hideDevUi(page);
+    },
   },
   {
     id: 'settings',
@@ -116,11 +135,13 @@ export const shots = [
     // The page opens on General, a short form, and the sessions card below it gains an "Unnamed device" row with every
     // driver run: the sign-in methods fill the frame, the same on any database. `block: 'start'` puts the card's top
     // at the frame's top, less the scroll margin, which also ends the frame above the next card's empty state.
-    open: async (page) =>
-      page.locator('#spy-authentication-anchor-wrap').evaluate((element) => {
+    open: async (page) => {
+      await page.locator('#spy-authentication-anchor-wrap').evaluate((element) => {
         element.style.scrollMarginTop = '3rem';
         element.scrollIntoView({ block: 'start' });
-      }),
+      });
+      await hideDevUi(page);
+    },
   },
   {
     id: 'readme',
@@ -128,8 +149,10 @@ export const shots = [
     path: '{org}/organization/members',
     out: 'frontend/public/static/marketing/screenshots/readme-screenshot',
     open: async (page) => {
+      await membersFilled(page);
       await openMenu(page);
       await tidyHeader(page);
+      await hideDevUi(page);
     },
   },
 ];

@@ -10,6 +10,11 @@ const nodeImageDigests: Record<string, Record<NodeImageVariant, string>> = {
     bookworm: 'sha256:5c4012d11d9857c42713ba511fbc19645cac1706bb710d51d42b0d301dff7f88',
     'bookworm-slim': 'sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe',
   },
+  '26.13.0': {
+    alpine: 'sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94',
+    bookworm: 'sha256:fa52d1669505e29b58c042875b1d65c229e0787a3610fd52869b22b68e480853',
+    'bookworm-slim': 'sha256:bc0a2afd3b74ce12222fc8bab99271e66257f021078f5f4a5d687a77d280c1d9',
+  },
 };
 
 /**

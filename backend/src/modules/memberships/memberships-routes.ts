@@ -74,7 +74,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update membership',
     description:
-      "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
+      "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.",
     request: { params: idInTenantOrgParamSchema, body: jsonBody(membershipUpdateBodySchema) },
     responses: { 200: json('Membership updated', updatedMembershipSchema, mockMembershipResponse()), ...errors(409) },
   }),

@@ -62,8 +62,8 @@ describe('deriveInfra', () => {
     expect(bySlug.get('oauth')).toBe('https://www.cellajs.com/oauth');
   });
 
-  it('hasDomain is false for localhost', () => {
-    const d = deriveInfra(fakeConfig({ domain: 'localhost', frontendUrl: 'http://localhost:3000', backendUrl: 'http://localhost:4000' }));
+  it('hasDomain is false for a local mode, whose domain is empty', () => {
+    const d = deriveInfra(fakeConfig({ domain: '', frontendUrl: 'http://localhost:3000', backendUrl: 'http://localhost:4000' }));
     expect(d.hasDomain).toBe(false);
   });
 

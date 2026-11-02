@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CircleAlertIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 
-const alertVariantNames = ['default', 'brand', 'destructive', 'success', 'info', 'warning', 'plain', 'secondary'] as const;
+const alertVariantNames = ['default', 'destructive', 'success', 'info', 'warning', 'plain'] as const;
 
 /**
  * Displays a callout for user attention.
@@ -13,7 +13,6 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     variant: { options: alertVariantNames, control: { type: 'radio' } },
-    soft: { control: { type: 'boolean' } },
   },
   args: { variant: 'default' },
   render: (args) => (
@@ -46,22 +45,17 @@ export const Destructive: Story = {
   args: { variant: 'destructive' },
 };
 
-/** Every variant in soft and solid fill; a row whose text washes out means a solid `text-*-foreground` leaked into the soft form. */
+/** Every variant. */
 export const VariantMatrix: Story = {
   parameters: { controls: { disable: true } },
   render: () => (
-    <div className="flex w-full max-w-2xl flex-col gap-6">
-      {([true, false] as const).map((soft) => (
-        <div key={String(soft)} className="flex flex-col gap-2">
-          <p className="font-medium text-muted-foreground text-xs uppercase">{soft ? 'soft' : 'solid'}</p>
-          {alertVariantNames.map((variant) => (
-            <Alert key={variant} variant={variant} soft={soft}>
-              <CircleAlertIcon />
-              <AlertTitle>{variant}</AlertTitle>
-              <AlertDescription>The quick brown fox jumps over the lazy dog.</AlertDescription>
-            </Alert>
-          ))}
-        </div>
+    <div className="flex w-full max-w-2xl flex-col gap-2">
+      {alertVariantNames.map((variant) => (
+        <Alert key={variant} variant={variant}>
+          <CircleAlertIcon />
+          <AlertTitle>{variant}</AlertTitle>
+          <AlertDescription>The quick brown fox jumps over the lazy dog.</AlertDescription>
+        </Alert>
       ))}
     </div>
   ),
