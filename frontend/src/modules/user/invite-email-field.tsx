@@ -1,59 +1,70 @@
+import { type ClipboardEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
-import { InviteGroups, InviteSummary } from '~/modules/user/invite-groups';
+import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
+import { Input } from '~/modules/ui/input';
+import { InviteFieldLine } from '~/modules/user/invite-groups';
+import { focusOnMount } from '~/modules/user/invite-result';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
-import { parseInviteText, SelectEmails } from '~/modules/user/select-emails';
+import { isInviteEmail, withPasted } from '~/modules/user/invite-text';
 
-// From this many addresses on, the chips are too many to read and a list takes their place
-const groupFrom = 9;
+// Past the press that took focus: the list growing under the pointer would move what it is pressing.
+const blurDelay = 200;
 
-const inputId = 'invite-emails';
-
-export function InviteEmailField({ form, check, emails, unparsed }: InviteFieldProps) {
+/** One address at a time. Enter, a separator or leaving the field moves it below, and the field is ready for the next. */
+export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
   const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const setEmails = (next: string[]) => form.setValue('emails', next, { shouldDirty: true });
-  const setUnparsed = (next: string[]) => form.setValue('unparsed', next, { shouldDirty: true });
-
-  // A removed row unmounts its focused remove button, so focus goes to the input and not to the page
-  const remove = (address: string) => {
-    setEmails(emails.filter((email) => email !== address));
-    setUnparsed(unparsed.filter((item) => item !== address));
-    document.getElementById(inputId)?.focus();
+  const handleChange = (value: string) => {
+    const whole = value.match(/^(\S+)[\s,;]$/)?.[1];
+    if (whole && isInviteEmail(whole)) list.commitTyped(whole);
+    else list.setTyped(value);
   };
 
-  const fix = (address: string, text: string) => {
-    if (text === address) return;
-    const parsed = parseInviteText(text);
-    setEmails([...new Set([...emails, ...parsed.emails])]);
-    setUnparsed([...new Set([...unparsed.filter((item) => item !== address), ...parsed.unparsed])]);
+  // An input flattens pasted lines to spaces, which would lose what sets the parts apart.
+  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData.getData('text');
+    if (!list.typed && isInviteEmail(pasted.trim())) return;
+    if (!/[\n,;]|@.+\./.test(pasted)) return;
+    event.preventDefault();
+    list.add(withPasted(event));
+    list.setTyped('');
   };
-
-  const showList = emails.length + unparsed.length >= groupFrom;
 
   return (
-    <>
-      <FormField
-        control={form.control}
-        name="emails"
-        render={({ field: { onChange, value } }) => (
-          <FormItem>
-            <FormLabel htmlFor={inputId}>{t('c:paste_emails')}</FormLabel>
-            <SelectEmails
-              placeholder={t('c:add_email')}
-              value={value}
-              onChange={onChange}
-              unparsed={unparsed}
-              onUnparsedChange={setUnparsed}
-              hideChips={showList}
-              inputProps={{ id: inputId, autoComplete: 'off' }}
-              viewOf={check.viewOf}
-            />
-            <InviteSummary hint={t('c:invite_hint_email')} check={check} />
-          </FormItem>
-        )}
-      />
-      {showList && <InviteGroups check={check} onRemove={remove} onFix={fix} />}
-    </>
+    <FormItem name="invite-emails">
+      <FormLabel>{t('c:paste_emails')}</FormLabel>
+      <FormControl>
+        <Input
+          ref={(node) => {
+            inputRef.current = node;
+            if (autoFocus) focusOnMount(node);
+          }}
+          type="text"
+          inputMode="email"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          enterKeyHint="enter"
+          placeholder={t('c:placeholder.email')}
+          aria-invalid={list.typedInvalid || undefined}
+          value={list.typed}
+          onChange={({ target }) => handleChange(target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+            // Also on an empty input, so Enter never submits the surrounding form
+            event.preventDefault();
+            list.commitTyped();
+          }}
+          onPaste={handlePaste}
+          onBlur={() => {
+            setTimeout(() => {
+              if (document.activeElement !== inputRef.current) list.commitTyped();
+            }, blurDelay);
+          }}
+        />
+      </FormControl>
+      <InviteFieldLine hint={t('c:invite_hint_email')} list={list} check={check} />
+    </FormItem>
   );
 }

@@ -39,9 +39,11 @@ interface TileHeadProps {
   status?: { tone: TileTone; label: string };
   /** The line under the title, after the status. */
   meta: ReactNode;
+  /** The line under the title explains the tile, so it wraps and is never cut. */
+  wrapMeta?: boolean;
 }
 
-function TileHead({ icon, iconLabel, title, badges, status, meta }: TileHeadProps) {
+function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: TileHeadProps) {
   return (
     <>
       {iconLabel && <span className="sr-only">{iconLabel}</span>}
@@ -54,7 +56,7 @@ function TileHead({ icon, iconLabel, title, badges, status, meta }: TileHeadProp
           <span className="min-w-0 truncate font-medium text-sm">{title}</span>
           {badges}
         </span>
-        <span className="truncate text-muted-foreground text-sm">
+        <span className={cn('text-muted-foreground text-sm', !wrapMeta && 'truncate')}>
           {status && (
             <>
               <span className={cn('font-medium', tileTones[status.tone].text)}>{status.label}</span>
@@ -74,19 +76,26 @@ export interface ExpandableTileProps extends TileHeadProps {
   /** Above the details while the tile is open, such as a secret to copy. */
   lead?: ReactNode;
   /** `ExpandableTileDetail`s, shown while the tile is open. */
-  details: ReactNode;
+  details?: ReactNode;
   /** Buttons under the details. */
   actions?: ReactNode;
+  className?: string;
+  panelClassName?: string;
 }
 
 /** A list item as a card that opens to its details and actions. An `Accordion` holds its tiles and keeps one of them open at a time. */
-export function ExpandableTile({ value, lead, details, actions, ...head }: ExpandableTileProps) {
+export function ExpandableTile({ value, lead, details, actions, className, panelClassName, ...head }: ExpandableTileProps) {
   return (
     // The trigger's focus ring draws on the card, so an open tile rings its details too
     <AccordionPrimitive.Item
       value={value}
       render={
-        <Card className="gap-0 py-0 focus-ring:has-[>button:focus-visible]:ring-2 focus-ring:has-[>button:focus-visible]:ring-ring focus-ring:has-[>button:focus-visible]:ring-offset-2 focus-ring:has-[>button:focus-visible]:ring-offset-background sm:gap-0 sm:py-0" />
+        <Card
+          className={cn(
+            'gap-0 py-0 focus-ring:has-[>button:focus-visible]:ring-2 focus-ring:has-[>button:focus-visible]:ring-ring focus-ring:has-[>button:focus-visible]:ring-offset-2 focus-ring:has-[>button:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
+            className,
+          )}
+        />
       }
     >
       <AccordionPrimitive.Trigger className="group/expandable-tile flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left focus-visible:outline-hidden">
@@ -94,9 +103,9 @@ export function ExpandableTile({ value, lead, details, actions, ...head }: Expan
         <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-panel-open/expandable-tile:rotate-180" />
       </AccordionPrimitive.Trigger>
       {/* pl-12 lines the panel up with the title: px-3, the size-6 icon and gap-3 */}
-      <AccordionContent className="flex flex-col gap-3 pr-3 pb-3 pl-12">
+      <AccordionContent className={cn('flex flex-col gap-3 pr-3 pb-3 pl-12', panelClassName)}>
         {lead}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{details}</dl>
+        {details && <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{details}</dl>}
         {actions && <div className="flex flex-wrap items-center gap-x-3 gap-y-2">{actions}</div>}
       </AccordionContent>
     </AccordionPrimitive.Item>

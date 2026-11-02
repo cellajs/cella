@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { ClockIcon, SendIcon } from 'lucide-react';
+import { CircleQuestionMarkIcon, ClockIcon, SendIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
@@ -20,18 +20,26 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { sendInBatches } from '~/modules/memberships/query';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { Button } from '~/modules/ui/button';
 import { FormField, FormItem } from '~/modules/ui/field';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { type InviteResultData, inviteResultNeedsScreen, inviteResultTitle } from '~/modules/user/invite-result';
 import type { InviteCheck } from '~/modules/user/use-invite-check';
+import type { InviteList } from '~/modules/user/use-invite-list';
 import { formResolver } from '~/utils/form-resolver';
 
 /** The invite dialog's id, which the form marks as unsaved and closes by. */
 export const inviteDialogId = 'invite-users';
 
-/** The invite body with no limit on addresses, since they go out in batches, plus the text a list held that is no address. */
+/**
+ * The invite body with no limit on addresses, since they go out in batches, plus the text a list held that is no address
+ * and the text on its way in: what the email field holds, and a paste nobody asked to check yet.
+ */
 const inviteFormSchema = zMembershipInviteBody.extend({
   emails: z.array(zMembershipInviteBody.shape.emails.element).min(1),
   unparsed: z.array(z.string()),
+  typed: z.string().optional(),
+  pasted: z.string().optional(),
 });
 
 type InviteFormValues = z.infer<typeof inviteFormSchema>;
@@ -46,20 +54,21 @@ export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntity
     formContainerId: inviteDialogId,
     formOptions: {
       resolver: formResolver(inviteFormSchema),
-      defaultValues: { emails: [], unparsed: [], role: defaultInviteRole(entityType) },
+      defaultValues: { emails: [], unparsed: [], typed: '', pasted: '', role: defaultInviteRole(entityType) },
     },
   });
 }
 
-type InviteForm = ReturnType<typeof useInviteFormDraft>;
+export type InviteForm = ReturnType<typeof useInviteFormDraft>;
 
-/** What each mode's field works on: its form values, and what an invite would do with them. */
+/** What each mode's field works on: the list it adds to, and what an invite would do with it. */
 export interface InviteFieldProps {
-  form: InviteForm;
   channel?: EnrichedChannel;
   check: InviteCheck;
-  emails: string[];
-  unparsed: string[];
+  list: InviteList;
+  /** Takes focus on arrival, for a person who just picked this mode. */
+  autoFocus: boolean;
+  onToEmail: () => void;
 }
 
 interface UseInviteSubmitOptions {
@@ -90,7 +99,7 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
     mutationFn: ({ emails }: { emails: string[] }) => sendInBatches(emails, (batch) => baseSystemInvite({ body: { emails: batch } })),
   });
 
-  const onSubmit = ({ unparsed, ...body }: InviteFormValues) => {
+  const onSubmit = ({ unparsed, typed: _typed, pasted: _pasted, ...body }: InviteFormValues) => {
     if (!channel) {
       return systemInvite(body, {
         onSuccess: ({ results, unsent }) => {
@@ -132,12 +141,36 @@ const submitLabel = ({ invite, remind, isEmpty, held }: SubmitLabelOptions): TKe
   return remind ? 'c:remind' : 'c:invite';
 };
 
+/** What every role of the channel may do, on request. It only explains: the role is picked beside it. */
+function RoleHelp({ entityType }: { entityType: ChannelEntityType }) {
+  const { t } = useTranslation();
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button type="button" variant="ghost" size="icon" press={false} aria-label={t('c:role_help')} className="size-6 text-muted-foreground">
+            <CircleQuestionMarkIcon />
+          </Button>
+        }
+      />
+      <PopoverContent align="start" aria-label={t('c:role_help')} className="flex w-80 max-w-(--available-width) flex-col gap-2.5 p-3 text-sm">
+        {hierarchy.getRoles(entityType).map((role) => (
+          <div key={role}>
+            <p className="font-medium">{t(`c:${role}`)}</p>
+            <p className="text-muted-foreground">{t(`c:role_description.${role}`)}</p>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface InviteFormFooterProps {
   form: InviteForm;
   channel?: EnrichedChannel;
   check: InviteCheck;
-  /** The form holds no address and no text. */
-  isEmpty: boolean;
+  list: InviteList;
   /** The picked role's email waits for its draft channel's publish. */
   held: boolean;
   loading: boolean;
@@ -146,13 +179,14 @@ interface InviteFormFooterProps {
   children?: ReactNode;
 }
 
-/** Role choice for a channel invite, with what the role may do and when its email goes out in a draft channel, then the submit button. */
-export function InviteFormFooter({ form, channel, check, isEmpty, held, loading, onCancel, children }: InviteFormFooterProps) {
+/** Role choice for a channel invite, with when its email goes out in a draft channel, then the submit button. */
+export function InviteFormFooter({ form, channel, check, list, held, loading, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
   // An address the check could not answer for still goes: the send decides, and its result says what happened.
-  const invite = check.groups.new.length + check.groups.unchecked.length;
+  const invite = check.groups.new.length + check.groups.unchecked.length + (list.typedAddress ? 1 : 0);
   const remind = check.groups.again.length;
+  const isEmpty = !list.hasList && !list.typed.trim();
 
   return (
     <>
@@ -162,9 +196,9 @@ export function InviteFormFooter({ form, channel, check, isEmpty, held, loading,
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="gap-3">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="flex items-center gap-2">
                 <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:join_as')} />
-                {value && <span className="text-muted-foreground text-sm">{t(`c:role_description.${value}`)}</span>}
+                <RoleHelp entityType={channel.entityType} />
               </div>
               {isUnpublishedDraft(channel) && (
                 <Alert variant="info">

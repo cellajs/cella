@@ -1,74 +1,71 @@
-import { useRef, useState } from 'react';
+import { PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StatusDot, tileTones } from '~/modules/common/expandable-tile';
+import { Button } from '~/modules/ui/button';
 import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
-import { InviteSummary } from '~/modules/user/invite-groups';
+import { focusOnMount } from '~/modules/user/invite-result';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
-import { parseInviteText, withPasted } from '~/modules/user/select-emails';
-import { cn } from '~/utils/cn';
 
-export function InviteBulkField({ form, check, emails, unparsed }: InviteFieldProps) {
+/** Any text, read only when asked. The box then closes to one row, and Add more opens it again. */
+export function InviteBulkField({ list, autoFocus }: InviteFieldProps) {
   const { t } = useTranslation();
+  const { hasList, pasted, emails, unparsed } = list;
 
-  // Null until the user types: until then the box shows what the form holds, such as the email mode's chips.
-  const [rawText, setRawText] = useState<string | null>(null);
-  const marksRef = useRef<HTMLDivElement>(null);
+  if (hasList && !list.pasteOpen) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <span role="status" className="text-muted-foreground text-sm">
+          {t('c:invite_list_count', { count: emails.length + unparsed.length })}
+        </span>
+        <Button ref={focusOnMount} type="button" variant="secondary" size="sm" onClick={() => list.setPasteOpen(true)}>
+          <PlusIcon />
+          {t('c:add_more')}
+        </Button>
+      </div>
+    );
+  }
 
-  const text = rawText ?? [...emails, ...unparsed].join('\n');
-
-  // `tidy` rewrites the box to one item per line, which is what keeps each mark next to its own line.
-  const applyText = (next: string, tidy?: boolean) => {
-    const parsed = parseInviteText(next);
-    setRawText(tidy ? parsed.lines.join('\n') : next);
-    form.setValue('emails', parsed.emails, { shouldDirty: true });
-    form.setValue('unparsed', parsed.unparsed, { shouldDirty: true });
+  const close = () => {
+    list.setPasted('');
+    list.setPasteOpen(false);
   };
 
-  // A line with no text has no mark; before the box is tidied, a line with several addresses reads as its first.
-  const marks = text.split('\n').map((line) => {
-    const { emails: lineEmails, unparsed: lineRest } = parseInviteText(line);
-    const address = lineEmails[0] ?? lineRest[0];
-    return address ? check.viewOf(address) : null;
-  });
-
   return (
-    <FormItem name="bulk-emails">
-      <FormLabel>{t('c:paste_emails')}</FormLabel>
-      <div className="relative">
+    <div className="flex flex-col gap-4">
+      <FormItem name="bulk-emails">
+        <FormLabel>{t('c:invite_mode_bulk')}</FormLabel>
         <FormControl>
           <Textarea
-            value={text}
-            onChange={(event) => applyText(event.target.value)}
-            onPaste={(event) => {
-              event.preventDefault();
-              applyText(withPasted(event), true);
-            }}
-            onBlur={() => rawText !== null && applyText(rawText, true)}
-            onScroll={({ currentTarget }) => {
-              if (marksRef.current) marksRef.current.scrollTop = currentTarget.scrollTop;
-            }}
+            ref={autoFocus || hasList ? focusOnMount : undefined}
+            value={pasted}
+            onChange={({ target }) => list.setPasted(target.value)}
             placeholder={t('c:placeholder.paste_emails')}
-            wrap="off"
-            rows={Math.max(marks.length, 6)}
-            className="max-h-[60vh] min-h-40 resize-none overflow-auto whitespace-pre pl-8 leading-6"
+            rows={4}
+            className="max-h-[40vh] min-h-26 resize-y"
             autoComplete="off"
             autoCapitalize="none"
             spellCheck={false}
           />
         </FormControl>
-        {/* Lies over the box, line for line: the box does not wrap, so each row sits on its own line */}
-        <div ref={marksRef} aria-hidden="true" className="pointer-events-none absolute inset-px overflow-hidden rounded-md py-2 text-md sm:text-sm">
-          {marks.map((view, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: a row belongs to a line number, not to the text on it
-            <div key={index} className="flex h-6 items-center justify-between pr-3 pl-3">
-              {view && <StatusDot tone={view.tone} checking={view.checking} />}
-              {view?.chipNote && <span className={cn('truncate bg-background pl-2 font-medium', tileTones[view.tone].text)}>{view.chipNote}</span>}
-            </div>
-          ))}
-        </div>
+        <p className="text-muted-foreground text-sm">{t('c:invite_hint_bulk')}</p>
+      </FormItem>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          disabled={!pasted.trim()}
+          onClick={() => {
+            list.add(pasted);
+            close();
+          }}
+        >
+          {t('c:invite_check_list')}
+        </Button>
+        {hasList && (
+          <Button type="button" variant="secondary" onClick={close}>
+            {t('c:close')}
+          </Button>
+        )}
       </div>
-      <InviteSummary hint={t('c:invite_hint_bulk')} check={check} />
-    </FormItem>
+    </div>
   );
 }

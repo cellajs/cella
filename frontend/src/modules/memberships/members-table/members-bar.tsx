@@ -80,7 +80,7 @@ export function MembersTableBar({
   const openInvite = () => {
     if (!onlineManager.isOnline()) return toastOffline();
     const description = <NamedText i18nKey="c:invite_members.text" name={channel.name} />;
-    openInviteDialog({ channel, mode: null, description, triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
+    openInviteDialog({ channel, description, triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
   };
 
   const fetchExport = (limit: number, offset: number) =>
