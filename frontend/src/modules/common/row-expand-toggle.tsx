@@ -32,7 +32,7 @@ export function RowExpandToggle({ isExpanded, onToggle }: RowExpandToggleProps) 
       type="button"
       tabIndex={-1}
       aria-hidden="true"
-      className="group/expand-toggle absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center"
+      className="group/expand-toggle absolute inset-y-0 right-1 my-auto flex size-8 no-focus-ring:h-full items-center justify-center"
       // Chrome focuses a clicked button; focus stays where it was
       onMouseDown={(event) => event.preventDefault()}
       onClick={onToggle}

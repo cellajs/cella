@@ -44,7 +44,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
     'w-full justify-start',
     isRoot
       ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
-      : 'focus-inset h-8 pl-5 font-normal text-muted-foreground data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground data-[expanded=true]:text-foreground',
+      : 'focus-inset h-8 no-focus-ring:h-9 pl-5 font-normal text-muted-foreground data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:text-foreground data-[expanded=true]:text-foreground',
   );
 
   return (
@@ -104,7 +104,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
       </div>
       {/* After the row, so a hover or active fill never covers the rail */}
       {!isRoot && hasChildren && (
-        <div className="pointer-events-none absolute top-4.5 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
+        <div className="pointer-events-none absolute no-focus-ring:top-5 top-4.5 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
       )}
       {!isRoot && <div className={sidebarBulletClass} />}
 
@@ -112,7 +112,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
         <CollapsibleContent className={collapsiblePanelClass}>
           {isRoot ? (
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
-            <ul className="flex flex-col gap-1 py-1">
+            <ul className="flex flex-col gap-1 no-focus-ring:gap-0 py-1">
               {children.map((child) => (
                 <PageBranch
                   key={child.page.id}

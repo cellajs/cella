@@ -1,9 +1,10 @@
 import { IndicatorBar } from '~/modules/common/spy-nav-item';
 
-// In rem, so the bar scales with the root font size: it sits centred on an `h-8` row, below the list's `py-1`
-const rowHeightRem = 2;
-const barHeightRem = 1;
-const barTopRem = 0.25 + (rowHeightRem - barHeightRem) / 2;
+// A CSS variable, so the bar follows the row height `sidebarLeafClass` sets for each screen; rem scales with the root font size
+const rowHeightClass = '[--leaf-row:2rem] no-focus-ring:[--leaf-row:2.25rem]';
+const height = '1rem';
+// Centred on a row, below the list's `py-1`
+const barTop = 'calc(0.25rem + (var(--leaf-row) - 1rem) / 2)';
 
 interface ActiveIndicatorProps {
   /** Index of the active row in the list. Pass -1 (or any negative) to hide. */
@@ -14,17 +15,19 @@ interface ActiveIndicatorProps {
   isMobile: boolean;
 }
 
-/** Assumes a `relative` list with `py-1` whose rows are `h-8` and stack with no gap. */
+/** Assumes a `relative` list with `py-1` whose rows are `sidebarLeafClass` and stack with no gap. */
 export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndicatorProps) {
   if (activeIndex < 0) return null;
-  const rowOffset = activeIndex * rowHeightRem;
-  const height = `${barHeightRem}rem`;
+  const rowOffset = `${activeIndex} * var(--leaf-row)`;
   // A transform transition stays on the compositor, where a `top` transition relayouts every frame
-  const style = isMobile
-    ? { top: `${barTopRem}rem`, height, transform: `translateY(${rowOffset}rem)` }
-    : { top: `${barTopRem + rowOffset}rem`, height };
+  const style = isMobile ? { top: barTop, height, transform: `translateY(calc(${rowOffset}))` } : { top: `calc(${barTop} + ${rowOffset})`, height };
 
   return (
-    <IndicatorBar layoutId={layoutId} animate={!isMobile} className={isMobile ? 'transition-transform duration-200' : undefined} style={style} />
+    <IndicatorBar
+      layoutId={layoutId}
+      animate={!isMobile}
+      className={isMobile ? `${rowHeightClass} transition-transform duration-200` : rowHeightClass}
+      style={style}
+    />
   );
 }

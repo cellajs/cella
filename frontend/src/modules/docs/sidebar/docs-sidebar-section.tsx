@@ -6,11 +6,11 @@ import { tw } from '~/utils/tw';
 export const sidebarStickyRowClass = tw('sticky top-2 z-10 bg-card');
 
 /**
- * The bullet on the rail of an `h-8` collapsible row, darker while open. It sits in the row's `data-expanded` item, beside
+ * The bullet on the rail of a collapsible row (`h-8`, `h-9` without a focus ring), darker while open. It sits in the row's `data-expanded` item, beside
  * the row: inside it, the row's press transform would become its containing block and shift it off the rail.
  */
 export const sidebarBulletClass = tw(
-  'pointer-events-none absolute top-3.5 left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 [[data-expanded=true]>&]:bg-muted-foreground/60',
+  'pointer-events-none absolute no-focus-ring:top-4 top-3.5 left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 [[data-expanded=true]>&]:bg-muted-foreground/60',
 );
 
 interface DocsSidebarSectionProps {
@@ -29,7 +29,7 @@ export function DocsSidebarSection({ label, action, children }: DocsSidebarSecti
         {action}
       </div>
       <SidebarGroupContent>
-        <SidebarGroup className="gap-1 p-1 pt-0">{children}</SidebarGroup>
+        <SidebarGroup className="gap-1 no-focus-ring:gap-0 p-1 pt-0">{children}</SidebarGroup>
       </SidebarGroupContent>
     </SidebarGroup>
   );

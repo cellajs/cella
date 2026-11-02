@@ -83,7 +83,7 @@ function CollapsibleTagItemBase<T>({
           aria-expanded={isOnRoute ? isExpanded : undefined}
           className={cn(
             expandRowLinkClass,
-            'focus-inset h-8 w-full justify-start pl-5 font-normal text-muted-foreground group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:text-foreground',
+            'focus-inset h-8 no-focus-ring:h-9 w-full justify-start pl-5 font-normal text-muted-foreground group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:text-foreground',
             isOnRoute && 'pr-9',
           )}
           onKeyDown={isOnRoute ? (event) => handleExpandKeys(event, isExpanded, toggle) : undefined}
@@ -98,7 +98,7 @@ function CollapsibleTagItemBase<T>({
         {isOnRoute && <RowExpandToggle isExpanded={isExpanded} onToggle={toggle} />}
       </div>
       {/* After the row, so a hover or active fill never covers the rail */}
-      <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/tag:block" />
+      <div className="pointer-events-none absolute no-focus-ring:top-5 top-4.5 bottom-3 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/tag:block" />
       <div className={sidebarBulletClass} />
       <CollapsibleContent className={collapsiblePanelClass}>
         <div className="relative flex flex-col py-1">
