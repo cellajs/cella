@@ -42,8 +42,8 @@ export function useInviteList(form: InviteForm) {
   };
 
   /** Moves a whole address out of the field and into the list. Answers false for a partial one, which stays and is marked. */
-  const commitTyped = (text = form.getValues('typed') ?? '') => {
-    const value = text.trim();
+  const commitTyped = (text?: string) => {
+    const value = (text ?? form.getValues('typed') ?? '').trim();
     if (!value) return true;
     if (!isInviteEmail(value)) {
       setTypedInvalid(true);
