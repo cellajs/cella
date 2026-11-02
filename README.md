@@ -37,7 +37,7 @@
 
 ## Requirements
 
-Node.js 26, [pnpm 11](https://pnpm.io/installation), [Docker](https://docs.docker.com/get-docker/). [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and [gh cli](https://cli.github.com/)
+Node.js 26, [pnpm 11](https://pnpm.io/installation), [Docker](https://docs.docker.com/get-docker/). Recommended: [gh cli](https://cli.github.com/)
 
 <br>
 

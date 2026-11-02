@@ -119,5 +119,5 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
     console.info(`[magic-link] ${email} ${magicLinkUrl}`);
   }
 
-  log.info('Magic link email sent', { userId, signUp: !existingUser });
+  log.info('Magic link created', { userId, signUp: !existingUser });
 };

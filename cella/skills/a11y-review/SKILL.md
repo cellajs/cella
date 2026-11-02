@@ -54,7 +54,7 @@ Use this part after a full audit, when `pnpm -C a11y report` lists open criteria
 4. **When unsure, record `open`** with what was seen. A wrong Supports reaches a published report; an open row costs a person a minute.
 5. **Stay inside the criterion.** Read its text in WCAG 2.2 Understanding first; note other problems for the row they belong to.
 6. **Do not decide what needs assistive technology.** 4.1.2 and 4.1.3 get findings from the tree, never Supports: only a screen reader shows what is announced.
-7. **Ignore development-only UI**: the debug menu, devtools and the "Testing credentials" banner.
+7. **Ignore development-only UI**: the debug menu, devtools and the "Sign in as the seeded admin" banner.
 8. **A row that failed before becomes Supports only after its fix was driven in the running app.** Reading the diff is not evidence; say in the evidence what you did and what happened.
 
 ## What to check

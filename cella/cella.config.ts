@@ -5,7 +5,7 @@ import { defineConfig } from '@cellajs/cli/config';
  */
 export default defineConfig({
   settings: {
-    upstreamUrl: 'git@github.com:cellajs/cella.git',
+    upstreamUrl: 'https://github.com/cellajs/cella.git',
     upstreamBranch: 'main',
     // upstreamTrack: 'release',
     mergePackageJson: true,
@@ -27,7 +27,6 @@ export default defineConfig({
       'README.md',
       'infra/compose.gen.yml',
       'infra/Pulumi.production.yaml',
-      'infra/Pulumi.staging.yaml',
       'infra/environments',
       'infra/runner.json',
       'sdk/gen',

@@ -15,8 +15,8 @@ if (appConfig.mode === 'development') {
     className: tw('fixed inset-x-0 bottom-0 z-40 rounded-none border-0 border-t'),
     children: (
       <>
-        <strong className="mr-2">Testing credentials</strong>
-        <p>Hi there! New developer? Welcome to Cella! Sign in using ADMIN_EMAIL using a magic link or OAuth.</p>
+        <strong className="mr-2">Sign in as the seeded admin</strong>
+        <p>Use the ADMIN_EMAIL address in backend/.env. The magic link is printed in the terminal running pnpm dev.</p>
       </>
     ),
   });

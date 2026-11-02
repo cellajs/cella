@@ -21,6 +21,7 @@
     "access": "public"
   },
   "scripts": {
+    "prepare": "lefthook install || exit 0",
     "docker": "pnpm --filter backend docker:up --detach --wait",
     "docker:test": "docker compose -f backend/compose.yaml --profile test up -d --wait db_test",
     "docker:test:down": "docker compose -f backend/compose.yaml --profile test down db_test",
@@ -57,7 +58,7 @@
     "build:dev": "pnpm -r --parallel build:dev",
     "build:staging": "pnpm -r --parallel build:staging",
     "start": "pnpm -r --parallel start",
-    "test": "pnpm test:full",
+    "test": "pnpm sdk && pnpm test:full",
     "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run --silent=passed-only",
     "test:core:verbose": "pnpm docker:test && cross-env TEST_MODE=core vitest run",
     "test:core:runtime": "pnpm docker:test && cross-env TEST_MODE=core TEST_DB_ROLE=runtime vitest run --project=backend-runtime --silent=passed-only",

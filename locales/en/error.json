@@ -156,6 +156,8 @@
   "oauth_consent_failed.text": "The authorization could not be completed. Try again.",
   "oauth_email_exists": "Email already in use",
   "oauth_email_exists.text": "The email of this account already belongs to another user. If that's you, sign in first and connect it from your account settings.",
+  "oauth_not_configured": "Provider not set up",
+  "oauth_not_configured.text": "This app has no keys for this sign-in provider yet. Use another method, or add the provider's client id and secret to backend/.env.",
   "oauth_failed": "Sign-in failed",
   "oauth_failed.text": "Try again or use another method.",
   "oauth_wrong_email": "Email doesn't match",

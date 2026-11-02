@@ -6,9 +6,6 @@ import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
-import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
-import { createProvider } from '#/modules/oauth-server/provider';
-import { createOauthListener } from '#/modules/oauth-server/server';
 
 let server: Server | undefined;
 
@@ -30,6 +27,12 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
     if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.devPorts.api });
   }
 
+  // Loaded here so an app with the server off never loads oidc-provider, which warns about the Node version on import.
+  const [{ ensureSigningKeys }, { createProvider }, { createOauthListener }] = await Promise.all([
+    import('#/modules/oauth-server/keystore'),
+    import('#/modules/oauth-server/provider'),
+    import('#/modules/oauth-server/server'),
+  ]);
   await ensureSigningKeys();
   const provider = await createProvider();
   server = createServer(createOauthListener(provider));

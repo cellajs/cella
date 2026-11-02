@@ -265,7 +265,7 @@ if (watchMode) {
       console.info(`${timestamp()} ${loadingMark} Another generate:sdk is running, skipping initial generation.`);
     }
   } else if (!existsSync(specPath)) {
-    console.warn(`${timestamp()} ${crossMark} openapi.cache.json not found. Run \`pnpm sdk\` first.`);
+    console.info(`${timestamp()} ${loadingMark} Waiting for the backend to write openapi.cache.json...`);
   }
 
   const watcher = chokidar.watch(specPath, { ignoreInitial: true, awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 } });

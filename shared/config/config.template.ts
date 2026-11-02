@@ -136,13 +136,13 @@ export const config = {
   // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
   // These URLs are the single source: the config builder derives `services.<slug>.publicUrl`
   // from them, so mode configs override the URLs here and never the `services` block.
-  frontendUrl: 'https://__project_slug__.example.com',
-  backendUrl: 'https://__project_slug__.example.com/api',
-  backendAuthUrl: 'https://__project_slug__.example.com/api/auth',
-  yjsUrl: 'wss://__project_slug__.example.com/yjs',
-  mcpUrl: 'https://__project_slug__.example.com/mcp',
+  frontendUrl: 'https://www.__project_slug__.example.com',
+  backendUrl: 'https://www.__project_slug__.example.com/api',
+  backendAuthUrl: 'https://www.__project_slug__.example.com/api/auth',
+  yjsUrl: 'wss://www.__project_slug__.example.com/yjs',
+  mcpUrl: 'https://www.__project_slug__.example.com/mcp',
   /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
-  oauthUrl: 'https://__project_slug__.example.com/oauth',
+  oauthUrl: 'https://www.__project_slug__.example.com/oauth',
   // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
   services: {
     frontend: { enabled: true as boolean },
@@ -164,7 +164,7 @@ export const config = {
 
   aboutUrl: '/about',
   statusUrl: 'https://status.__project_slug__.example.com',
-  productionUrl: 'https://__project_slug__.example.com',
+  productionUrl: 'https://www.__project_slug__.example.com',
 
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',

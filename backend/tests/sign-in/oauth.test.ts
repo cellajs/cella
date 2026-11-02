@@ -38,14 +38,17 @@ setTestConfig({ enabledAuthStrategies: ['oauth'], enabledOAuthProviders: ['githu
 vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
   OAuthCodeExchangeError: (await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>()).OAuthCodeExchangeError,
   githubAuth: {
+    configured: true,
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://github.com/login/oauth/authorize')),
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },
   googleAuth: {
+    configured: true,
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://accounts.google.com/o/oauth2/v2.0/auth')),
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },
   microsoftAuth: {
+    configured: true,
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')),
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },

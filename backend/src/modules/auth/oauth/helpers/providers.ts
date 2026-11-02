@@ -50,6 +50,9 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
   const client: oauth.Client = { client_id: clientId };
 
   return {
+    /** False without a client id and secret in the environment: the provider would refuse the round trip. */
+    configured: Boolean(clientId && clientSecret),
+
     /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
     createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
       return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
