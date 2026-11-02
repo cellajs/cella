@@ -13,7 +13,12 @@ interface BoardPanelHeaderProps {
 
 export function BoardPanelHeader({ leading, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
-    <div className={cn('z-50 flex min-h-13 items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
+    <div
+      className={cn(
+        'z-50 flex min-h-13 items-center gap-2 rounded-lg rounded-b-none border border-panel-edge border-b-0 p-2 max-sm:hidden',
+        className,
+      )}
+    >
       {leading}
       {!isCollapsed && actions && <div className={cn(hintFadeOut, 'flex grow items-center justify-end gap-2')}>{actions}</div>}
     </div>
@@ -44,7 +49,7 @@ export function BoardPanelBody({
   return (
     <div
       className={cn(
-        'relative flex max-w-full flex-1 shrink-0 snap-center flex-col sm:border',
+        'relative flex max-w-full flex-1 shrink-0 snap-center flex-col border-panel-edge sm:border',
         // Highlight the border when an ancestor wrapper is a hovered drop target
         'group-data-[highlighted=true]/paneldrop:border-primary',
         !windowScroll && 'sm:h-[calc(100dvh-var(--board-panel-offset,146px))]',
@@ -83,7 +88,7 @@ interface CollapsedPanelViewProps {
 const emptySections: CollapsedSection[] = [];
 
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
-const collapsedCountClass = tw('absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-faint-foreground text-xs');
+const collapsedCountClass = tw('absolute top-[calc(50%-0.625rem)] left-0 w-12 text-center font-medium text-faint-foreground text-sm');
 
 interface CollapsedSectionsProps {
   sections: CollapsedSection[];
@@ -98,7 +103,7 @@ function CollapsedSections({ sections, position }: CollapsedSectionsProps) {
       <div
         // biome-ignore lint/suspicious/noArrayIndexKey: static sections
         key={i}
-        className={cn('flex h-9 items-center justify-center p-2 text-xs', section.colorClass, section.borderClass)}
+        className={cn('flex h-9 items-center justify-center p-2 font-medium text-sm', section.colorClass, section.borderClass)}
       >
         {formatCount(section.count)}
       </div>
@@ -106,7 +111,10 @@ function CollapsedSections({ sections, position }: CollapsedSectionsProps) {
 }
 
 export function CollapsedPanelView({ mainCount, sections = emptySections, expand, className }: CollapsedPanelViewProps) {
-  const stripClass = cn('relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border', className);
+  const stripClass = cn(
+    'relative flex flex-1 snap-center flex-col border-panel-edge group-data-[highlighted=true]/paneldrop:border-primary sm:border',
+    className,
+  );
   const content = (
     <>
       <CollapsedSections sections={sections} position="top" />
