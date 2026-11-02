@@ -46,7 +46,6 @@ vi.mock('~/query/realtime/membership-ops', () => ({
   invalidateChannelList: vi.fn(),
   invalidateMemberQueries: vi.fn(),
   fetchMemberships: vi.fn(),
-  refreshMe: vi.fn(),
 }));
 
 vi.mock('~/query/realtime/sync-priority', async () => {

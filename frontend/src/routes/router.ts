@@ -25,8 +25,7 @@ export const router = createRouter({
 
 setRouter(router);
 
-const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
-  matches?.findLast((match) => match.staticData.boundary)?.staticData.boundary;
+const getBoundary = (staticData: ({ boundary?: BoundaryType } | undefined)[]) => staticData.findLast((data) => data?.boundary)?.boundary;
 
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;
@@ -50,12 +49,16 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
 
   if (uiStore.getState().focusView) uiStore.getState().setFocusView(false);
 
-  const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
-  cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
+  // Matched by path only: static data lives on the routes, and the load that follows validates the search.
+  const [pendingRoutes] = router.getMatchedRoutes(toLocation.pathname);
+  cleanupOnBoundaryChange(
+    getBoundary(router.state.matches.map((match) => match.staticData)),
+    getBoundary(pendingRoutes.map((route) => route.options.staticData)),
+  );
 
   // A forward navigation staying on the same leaf route has no scroll delta to mask.
   const fromLeafId = router.state.matches.at(-1)?.routeId;
-  const toLeafId = pendingMatches.at(-1)?.routeId;
+  const toLeafId = pendingRoutes.at(-1)?.id;
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
 });
 

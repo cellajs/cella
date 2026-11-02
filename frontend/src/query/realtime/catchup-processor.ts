@@ -157,7 +157,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   const membershipChannelsBefore = membershipChannelKeys();
   membershipOps.invalidateChannelList(null);
   await membershipOps.fetchMemberships();
-  membershipOps.refreshMe();
 
   // Remove org product caches after membership loss so surviving rows refetch under current permissions; the org prefix covers home and filtered lists.
   const membershipChannelsAfter = membershipChannelKeys();

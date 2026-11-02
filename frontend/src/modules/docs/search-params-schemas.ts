@@ -8,7 +8,7 @@ export const operationsRouteSearchParamsSchema = operationSearchSchema.extend({ 
 
 export const operationsTableRouteSearchParamsSchema = operationSearchSchema.extend({
   sort: z.string().optional(),
-  order: z.enum(['asc', 'desc']).optional(),
+  order: z.enum(['asc', 'desc']).optional().catch(undefined),
 });
 
 /** schemaTag is a string because schema tag names are backend-configured (tags with `kind: 'schema'`). */

@@ -213,8 +213,7 @@ const applyUpdatedSelf = (updatedUser: User) => {
 };
 
 /** Source of truth for the current user's memberships in the frontend. */
-export const myMembershipsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }), staleTime: 0 });
+export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }) });
 
 /**
  * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,
