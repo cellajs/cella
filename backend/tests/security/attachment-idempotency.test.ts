@@ -2,6 +2,7 @@ import { and, count, eq, isNull } from 'drizzle-orm';
 import { createAttachments, deleteAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -26,6 +27,7 @@ type Created = { data: { id: string; createdBy: { id: string } | null }[]; rejec
  * learn them: their replay must never return someone else's rows, nor count someone else's delete as theirs.
  */
 describe('Idempotent attachment creates and deletes', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
