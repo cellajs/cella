@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.34.0](https://github.com/cellajs/cella/compare/0.33.0...0.34.0) (2026-11-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* one dev port number per app, a pinned menu leaves the page in use, docs response headers ([#1680](https://github.com/cellajs/cella/issues/1680))
+* **frontend:** search chips open as a dialog on a phone, logo art split, channel tile and UI tuning ([#1679](https://github.com/cellajs/cella/issues/1679))
+* **frontend:** invite forms start from big buttons and collect addresses in tiles ([#1678](https://github.com/cellajs/cella/issues/1678))
+* **frontend:** invite forms share one state language, and a send says what happened per address ([#1677](https://github.com/cellajs/cella/issues/1677))
+* plain search words, and filters as chips in the search field ([#1674](https://github.com/cellajs/cella/issues/1674))
+* a new app's seeded admin signs in, modules have no optional flag ([#1672](https://github.com/cellajs/cella/issues/1672))
+
+### 🎉 New features
+
+* **frontend:** invite forms share one state language, and a send says what happened per address ([#1677](https://github.com/cellajs/cella/issues/1677)) ([ba5588f](https://github.com/cellajs/cella/commit/ba5588f6fba3aea4d86de0e72e9577fea4e00601))
+* **frontend:** invite forms start from big buttons and collect addresses in tiles ([#1678](https://github.com/cellajs/cella/issues/1678)) ([4a08f98](https://github.com/cellajs/cella/commit/4a08f98981dd346f7ffbf8547567ea7c731abc91))
+* **frontend:** search chips open as a dialog on a phone, logo art split, channel tile and UI tuning ([#1679](https://github.com/cellajs/cella/issues/1679)) ([28fe406](https://github.com/cellajs/cella/commit/28fe406d0bd2e191d3b5aa7b4104540cd4c17efe))
+* one dev port number per app, a pinned menu leaves the page in use, docs response headers ([#1680](https://github.com/cellajs/cella/issues/1680)) ([f63a22d](https://github.com/cellajs/cella/commit/f63a22dcba9e43fca4c34182e067b7a1910c7819))
+* plain search words, and filters as chips in the search field ([#1674](https://github.com/cellajs/cella/issues/1674)) ([210be2d](https://github.com/cellajs/cella/commit/210be2d3cfa9c382399aa35414c56b1a1dca2468))
+
+
+### 🐞 Bug fixes
+
+* a new app's seeded admin signs in, modules have no optional flag ([#1672](https://github.com/cellajs/cella/issues/1672)) ([e96927f](https://github.com/cellajs/cella/commit/e96927f2ada6ef45ec3388b1bfc911f7a2dd1357))
+* **frontend:** Backspace brings a search keyword back whole ([#1676](https://github.com/cellajs/cella/issues/1676)) ([2c1a476](https://github.com/cellajs/cella/commit/2c1a47662985a814dc2774c7bf50af77e5b17765))
+* **frontend:** recent searches above compact filters, and saved after a suggestion ([#1675](https://github.com/cellajs/cella/issues/1675)) ([1fe5fab](https://github.com/cellajs/cella/commit/1fe5fab02d878ee6b25c308d60bb9248cb503d12))
+
 ## [0.33.0](https://github.com/cellajs/cella/compare/0.32.0...0.33.0) (2026-10-31)
 
 
