@@ -6,7 +6,16 @@ Shared configuration, types, permissions, and utilities used by all packages.
 
 ## Dev ports
 
-`devPorts` in `config/config.default.ts` holds the local listen ports, and the development URL family (`frontendUrl`, `backendUrl`, ...) carries the frontend port. An app moves both by a ten of its own, so two apps run side by side.
+`devPorts` in `config/config.default.ts` holds the local listen ports, and the development URL family (`frontendUrl`, `backendUrl`, ...) carries the frontend port. Each app on a machine has its own number, `devAppIndex`, so apps run side by side and a browser tab switches between them by the last digit of the port:
+
+| Port | App number N | App 0 | App 1 | App 2 |
+| --- | --- | --- | --- | --- |
+| Frontend | 3000 + N | 3000 | 3001 | 3002 |
+| Services | 4000 + 10N, seven ports | 4000-4006 | 4010-4016 | 4020-4026 |
+| Dev database | 5432 + 10N | 5432 | 5442 | 5452 |
+| Test database | 5434 + 10N | 5434 | 5444 | 5454 |
+
+Storybook and Drizzle Studio follow the frontend port. The database ports live in `backend/.env`, because Docker Compose reads them there; `create-cella` writes them for a new app, and an app that changes its number edits them by hand. The numbers run from 0 to 9 without 4, whose internal listener would sit on a port that `fetch` refuses. The config refuses such a port at startup.
 
 A second checkout of the same app gets a further offset. `src/config-builder/app-config.ts` adds it to `devPorts` and to every `localhost` URL, in development and tunnel mode:
 

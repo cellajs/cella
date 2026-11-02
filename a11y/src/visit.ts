@@ -29,7 +29,7 @@ interface Visit {
  * errors, and the steps that ran on it before, since a failing step often meets what an earlier one left behind.
  */
 export async function visitState(session: Session, state: ScopeState, mode: Mode): Promise<Visit> {
-  const context = await newContext(session, { auth: state.auth, mode });
+  const context = await newContext(session, { auth: state.auth, mode }, state.context);
   const consoleErrors: string[] = [];
   context.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());

@@ -181,11 +181,15 @@ export const config = {
   maintenance: false,
 
   /**
-   * Local dev listen ports, also the Vite proxy targets. Ports are machine-global, so an app must
-   * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
-   * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy. Keep the
-   * app's offset in the tens: a linked git worktree adds 100 per worktree on its own, or
-   * `DEV_PORT_OFFSET` sets that by hand (shared/README.md).
+   * This app's number on a developer's machine, 0-9 without 4, so stacks of different apps run side by side (shared/README.md).
+   * With two stacks on one number, whichever backend binds :4000 first answers every app's `/api` proxy.
+   * The database ports follow by hand: `DB_PORT` and `DB_TEST_PORT` in `backend/.env` are 5432 and 5434 plus ten times this number.
+   */
+  devAppIndex: 0,
+
+  /**
+   * Local dev listen ports, also the Vite proxy targets, as app number 0 has them. `devAppIndex` adds its
+   * number to `frontend` and ten times its number to the others, and a linked git worktree adds 100 per worktree.
    * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
    * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
    * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).

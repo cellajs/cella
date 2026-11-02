@@ -8,7 +8,7 @@ import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { SkipLink } from '~/modules/navigation/focus-bridge';
+import { BackToStart, SkipLink } from '~/modules/navigation/focus-bridge';
 import { lazyNamed } from '~/utils/lazy-named';
 
 // Development only: staging and tunnel keep the devtools but don't show public visitors a 🐞
@@ -29,6 +29,7 @@ export function PublicLayout() {
         <DownAlert />
         <Outlet />
       </ErrorBoundary>
+      <BackToStart />
 
       {/* Bottom-left, above the docs sidebar but under the dev sign-in banner; below md it clears the docs floating nav */}
       <Suspense fallback={null}>

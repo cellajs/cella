@@ -103,7 +103,7 @@ whose evidence names a file that changed after the day of the decision, to look 
 [scope-config.ts](scope-config.ts) lists the pages and states the audit covers, following steps 2 and 3 of W3C's
 WCAG-EM: every page type, plus overlays such as dialogs, sheets and menus. A `{name}` in a path is filled by the
 resolver of that name in the same file, which reads the API as the audit user (`{org}` is an organization that user
-administers).
+administers). A state that exists only at one width, such as a phone's floating navigation, carries its own browser settings.
 
 ## In an app built on this template
 

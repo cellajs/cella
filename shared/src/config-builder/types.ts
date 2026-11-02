@@ -292,6 +292,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   mcpUrl: string;
   oauthUrl: string;
+  devAppIndex: number;
   devPorts: Record<'frontend' | 'api' | 'cdcHealth' | 'yjs' | 'mcp' | 'oauth' | 'internal' | 'jobs', number>;
   services: Record<string, AppServiceEndpointConfig>;
   singleVM: boolean;

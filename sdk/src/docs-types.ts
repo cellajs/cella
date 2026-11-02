@@ -133,7 +133,7 @@ export interface GenResponseSummary {
   schema?: GenSchema;
   /** Example response value */
   example?: unknown;
-  /** The response headers a component documents, such as `Retry-After` on a rate limit. */
+  /** The response headers a client acts on, such as `Retry-After` on a rate limit. */
   headers?: { name: string; description: string }[];
 }
 

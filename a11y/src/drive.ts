@@ -10,7 +10,7 @@ import { type Mode, newContext, openPage, resolvePath, type Session } from './se
 export async function openState(session: Session, id: string, options: { mode?: Mode; context?: BrowserContextOptions } = {}) {
   const state = scope.find((candidate) => candidate.id === id);
   if (!state) throw new Error(`No state "${id}" in a11y/scope-config.ts.`);
-  const context = await newContext(session, { auth: state.auth, mode: options.mode ?? 'light' }, options.context);
+  const context = await newContext(session, { auth: state.auth, mode: options.mode ?? 'light' }, { ...state.context, ...options.context });
   const page = await openPage(context, resolvePath(session, state.path));
   await state.open?.(page);
   return { page, context };

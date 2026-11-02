@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { BrowserContextOptions, Page } from 'playwright';
 
 export interface ScopeState {
   id: string;
@@ -9,6 +9,8 @@ export interface ScopeState {
   open?: (page: Page) => Promise<void>;
   /** `open` leaves an overlay (dialog, sheet, menu) open that holds focus until it closes. */
   overlay?: true;
+  /** Browser settings of this state's visits, such as a viewport the state only exists at. */
+  context?: BrowserContextOptions;
 }
 
 /** Overlays that hold focus while open. Toasts render as dialogs but never take focus. */

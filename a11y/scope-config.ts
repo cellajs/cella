@@ -50,6 +50,8 @@ export const scope: ScopeState[] = [
   { id: 'docs-operations', path: '/docs/operations', auth: false },
   { id: 'docs-schemas', path: '/docs/schemas', auth: false },
   { id: 'docs-page', path: '/docs/page/quickstart', auth: false },
+  // The floating nav's buttons are Tab stops at this width only
+  { id: 'docs-page-phone', path: '/docs/page/architecture', auth: false, context: { viewport: { width: 390, height: 800 } } },
   {
     id: 'docs-search',
     overlay: true,
@@ -83,6 +85,24 @@ export const scope: ScopeState[] = [
   { id: 'org-settings', path: '{org}/organization/settings', auth: true },
   { id: 'system-users', path: '/system/users', auth: true },
   { id: 'system-organizations', path: '/system/organizations', auth: true },
+
+  // No overlay: the page beside a pinned sheet stays in use, so axe must find it exposed. Pinning takes the width of `2xl`
+  {
+    id: 'menu-sheet-pinned',
+    path: '/home',
+    auth: true,
+    context: { viewport: { width: 1500, height: 900 } },
+    open: async (page) => {
+      await page.keyboard.press('Alt+M');
+      await settle(page);
+      const preferences = page.getByRole('button', { name: 'Preferences' });
+      await preferences.click();
+      await page.getByRole('switch', { name: /keep menu open/i }).click();
+      // An open panel dims the menu behind it
+      await preferences.click();
+      await settle(page);
+    },
+  },
 
   // Overlays
   {

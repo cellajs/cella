@@ -19,7 +19,7 @@ state and judging the result is this skill's job, and the driver cannot do it: r
 - A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
 - One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
 - `START= node ...` attaches to a stack that already answers. Use it whenever another checkout already runs a stack
-  on the database in `backend/.env` (check: `lsof -tiTCP:3000 -sTCP:LISTEN`): a second CDC worker there only waits for
+  on the database in `backend/.env` (check: `lsof -tiTCP:<devPorts.api> -sTCP:LISTEN`): a second CDC worker there only waits for
   the slot the running one holds.
 - The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
   table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.

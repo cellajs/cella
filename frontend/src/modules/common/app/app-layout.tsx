@@ -9,7 +9,7 @@ import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { Spotlighter } from '~/modules/common/spotlighter/provider';
 import { AppNav } from '~/modules/navigation/app-nav';
-import { SkipLink } from '~/modules/navigation/focus-bridge';
+import { BackToStart, SkipLink } from '~/modules/navigation/focus-bridge';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
 import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
@@ -47,6 +47,7 @@ export function AppLayout() {
         <DownAlert />
         <Dropdowner />
       </ErrorBoundary>
+      <BackToStart />
     </div>
   );
 }

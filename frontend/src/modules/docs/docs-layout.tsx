@@ -110,6 +110,7 @@ export function DocsLayout() {
     if (isSidebarOpen) {
       sheeter.getState().remove(docsSidebarSheetId);
     } else {
+      triggerRef.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
       sheeter.getState().create(sidebarContent, sidebarSheet);
     }
   };
@@ -142,7 +143,7 @@ export function DocsLayout() {
       ) : (
         <FloatingNav items={floatingNavItems} resetTrigger={isSidebarOpen} />
       )}
-      <main className={cn('focus-view-scope pb-[70vh]', isDesktop ? 'ml-(--docs-sidebar-width) focus-view:ml-0' : 'pt-4')}>
+      <main className={cn('focus-view-scope pb-[70vh] focus:outline-hidden', isDesktop ? 'ml-(--docs-sidebar-width) focus-view:ml-0' : 'pt-4')}>
         <Outlet />
       </main>
     </div>

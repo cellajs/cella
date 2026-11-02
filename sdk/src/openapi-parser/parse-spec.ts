@@ -49,6 +49,14 @@ function groupTagsByKind(tags: readonly string[], tagKindMap: Map<string, string
   return byKind;
 }
 
+/** The headers a response shows in the docs: a header without a description stays in the spec only. */
+function documentedHeaders(headers: OpenApiResponseObject['headers'], sharedHeaders: Set<string>): GenResponseSummary['headers'] {
+  return Object.entries(headers ?? {}).flatMap(([name, header]) => {
+    const description = 'description' in header ? header.description : undefined;
+    return description && !sharedHeaders.has(name) ? [{ name, description }] : [];
+  });
+}
+
 /** Resolves one response entry: a `$ref` to a component response, or an inline response with its schema and example. */
 function summarizeResponse(
   statusCode: string,
@@ -74,17 +82,11 @@ function summarizeResponse(
       contentType = component.content ? pickContentType(component.content) : undefined;
       const componentSchema = contentType ? component.content?.[contentType]?.schema : undefined;
       if (componentSchema) schema = resolveSchema(componentSchema, spec);
-      if (component.headers) {
-        headers = Object.entries(component.headers)
-          .filter(([headerName]) => !sharedHeaders.has(headerName))
-          .map(([headerName, header]) => ({
-            name: headerName,
-            description: ('description' in header && header.description) || '',
-          }));
-      }
+      headers = documentedHeaders(component.headers, sharedHeaders);
     }
   } else {
     description = response.description ?? '';
+    headers = documentedHeaders(response.headers, sharedHeaders);
     const selected = response.content ? pickContentType(response.content) : undefined;
     const mediaType = selected ? response.content?.[selected] : undefined;
     // The route's own example comes first: a route gives one only where its response differs from the schema's example.

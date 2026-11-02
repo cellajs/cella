@@ -48,11 +48,16 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     xRateLimiter: [mcpRequestLimiter],
     summary: 'MCP endpoint',
     description:
-      'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.',
+      'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.',
     request: { params: tenantOrgParamSchema, body: jsonBody(mcpBodySchema) },
     responses: {
       200: json('JSON-RPC response', z.any()),
-      403: json('Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names', jsonRpcErrorSchema),
+      403: {
+        ...json('Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names', jsonRpcErrorSchema),
+        headers: z.object({
+          'WWW-Authenticate': z.string().openapi({ description: "The scope to step up to, and where to find the authorization server's metadata." }),
+        }),
+      },
     },
   }),
 });

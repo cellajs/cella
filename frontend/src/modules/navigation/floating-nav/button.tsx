@@ -23,6 +23,7 @@ interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'aria
   /** Required on a nav item; an inert placeholder button may go without. */
   ariaLabel?: string;
   className?: string;
+  tabIndex?: number;
   ref?: Ref<HTMLButtonElement>;
   /** Marks on the button, such as a `Badge context="button"`. */
   children?: ReactNode;
@@ -34,6 +35,7 @@ export function FloatingNavButton({
   onClick,
   ariaLabel,
   className,
+  tabIndex,
   direction = 'right',
   label,
   labelVisible,
@@ -70,6 +72,7 @@ export function FloatingNavButton({
     <Button
       ref={ref}
       id={id}
+      tabIndex={tabIndex}
       size="icon"
       data-direction={direction}
       variant="secondary"
