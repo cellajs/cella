@@ -28,6 +28,7 @@ export function TableSearch({ name, label, value = '', count = '', allowOfflineS
       onSearch={onSearch}
       // The bar's own edge frames this field
       className="edgeless"
+      hideClear={isMobile}
       disabled={!isOnline && !allowOfflineSearch}
       isSearching={appFetchingCount > 0 && !!value}
       // On a phone the search key only lowers the keyboard; the list already follows the typing

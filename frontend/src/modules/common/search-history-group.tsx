@@ -1,6 +1,7 @@
 import { HistoryIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { CloseButton } from '~/modules/common/close-button';
+import { SearchRecentRemoveButton } from '~/modules/common/search-clear-button';
+import { SearchRowIcon } from '~/modules/common/search-row-icon';
 import { ComboboxGroup, ComboboxGroupLabel, ComboboxItem } from '~/modules/ui/combobox';
 
 /** A picked history row, which re-runs its query in place. */
@@ -23,21 +24,16 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
     <ComboboxGroup className="p-1">
       <ComboboxGroupLabel className="px-3">{t('c:history')}</ComboboxGroupLabel>
       {searches.map((search, index) => (
-        <ComboboxItem key={search} value={{ kind: 'history', value: search } satisfies HistoryEntry} className="justify-between">
+        <ComboboxItem key={search} value={{ kind: 'history', value: search } satisfies HistoryEntry} className="group/recent justify-between">
           <div className="flex min-w-0 items-center gap-2">
-            <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
+            <SearchRowIcon>
+              <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
+            </SearchRowIcon>
             <span className="truncate font-medium">{search}</span>
           </div>
           <div className="flex items-center">
             <span className="mx-3 text-faint-foreground text-xs max-sm:hidden">{index}</span>
-            <CloseButton
-              size="sm"
-              label="c:remove"
-              onClick={(event) => {
-                event.stopPropagation();
-                onRemove(search);
-              }}
-            />
+            <SearchRecentRemoveButton onRemove={() => onRemove(search)} />
           </div>
         </ComboboxItem>
       ))}

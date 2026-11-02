@@ -6,6 +6,8 @@ import { cn } from '~/utils/cn';
 
 interface ComboboxSearchInputProps extends Omit<ComboboxPrimitive.Input.Props, 'value'> {
   value: string;
+  /** Brightens the search icon. Defaults to having text; a field with chips beside its input says so itself. */
+  hasSearch?: boolean;
   wrapClassName?: string;
   isSearching?: boolean;
   spinnerDelay?: number;
@@ -21,6 +23,7 @@ export function ComboboxSearchInput({
   spinnerDelay,
   onClear,
   value,
+  hasSearch = value.length > 0,
   ref,
   ...props
 }: ComboboxSearchInputProps) {
@@ -32,7 +35,7 @@ export function ComboboxSearchInput({
       data-slot="combobox-search-input-wrapper"
       className={cn('group/search-input relative flex h-10 items-center border-b px-3', showClear && 'pr-10', wrapClassName)}
     >
-      <SearchSpinner isSearching={isSearching} value={value} appearDelay={spinnerDelay} />
+      <SearchSpinner isSearching={isSearching} hasSearch={hasSearch} appearDelay={spinnerDelay} />
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
         className={cn(

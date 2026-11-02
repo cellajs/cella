@@ -44,7 +44,17 @@ export function OperationsBar({ operations, total, search, setSearch, columns, s
                   onToggle: (filter) => setSearch({ filter: filter === search.filter ? undefined : filter }),
                 },
               ],
-              chips: pickedFilter ? [{ key: 'filter', label: pickedFilter.label, onRemove: () => setSearch({ filter: undefined }) }] : [],
+              chips: pickedFilter
+                ? [
+                    {
+                      key: 'filter',
+                      group: 'filter',
+                      value: pickedFilter.value,
+                      label: pickedFilter.label,
+                      onRemove: () => setSearch({ filter: undefined }),
+                    },
+                  ]
+                : [],
             }
           : undefined
       }

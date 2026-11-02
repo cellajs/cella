@@ -47,31 +47,27 @@ export function useSearchParams<T extends Record<string, string | string[] | und
   const [currentSearch, setCurrentSearch] = useState<T>(readSearch);
 
   const setSearch = (newValues: Partial<T>) => {
-    const updatedSearch = { ...currentSearch, ...newValues };
-
-    for (const key of objectKeys(updatedSearch)) {
+    // Only the keys asked for: a second write in the same tick holds a stale `currentSearch`, and would undo the first
+    const written: Partial<T> = {};
+    for (const key of objectKeys(newValues)) {
+      const value = newValues[key];
       // Clear empty values; the route's zod defaults fill them back in on read
-      if (updatedSearch[key] === '' || updatedSearch[key] === undefined) {
-        updatedSearch[key] = undefined as T[keyof T];
-        continue;
-      }
-
+      if (value === '') written[key] = undefined;
       // Flatten array values into underscore-joined string
-      if (!Array.isArray(updatedSearch[key])) continue;
-      const values = updatedSearch[key];
-      updatedSearch[key] = (values.length <= 1 ? values[0] : values.join('_')) as T[keyof T];
+      else if (Array.isArray(value)) written[key] = (value.length <= 1 ? value[0] : value.join('_')) as T[keyof T];
+      else written[key] = value;
     }
 
-    if (!Object.keys(updatedSearch).some((key) => updatedSearch[key] !== currentSearch[key])) return;
+    if (!objectKeys(written).some((key) => written[key] !== currentSearch[key])) return;
 
-    setCurrentSearch(updatedSearch);
+    setCurrentSearch((current) => ({ ...current, ...written }));
     if (saveDataInSearch) {
       navigate({
         replace: true,
         params,
         resetScroll: false,
         to: '.',
-        search: (prev) => ({ ...prev, ...updatedSearch }),
+        search: (prev) => ({ ...prev, ...written }),
       });
     }
   };

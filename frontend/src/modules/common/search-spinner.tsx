@@ -5,12 +5,12 @@ import { cn } from '~/utils/cn';
 
 interface SearchSpinnerProps {
   isSearching: boolean;
-  value: string;
+  hasSearch: boolean;
   /** Seconds before the spinner fades in (default 0.3, so a fast response shows no flicker); 0 shows it at once. */
   appearDelay?: number;
 }
 
-export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchSpinnerProps) {
+export function SearchSpinner({ isSearching, hasSearch, appearDelay = 0.3 }: SearchSpinnerProps) {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {isSearching ? (
@@ -24,7 +24,7 @@ export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchS
         </motion.div>
       ) : (
         <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <SearchIcon className={cn('mr-2 size-4 h-auto group-[.text-lg]/search-input:size-5', !value && 'opacity-50')} />
+          <SearchIcon className={cn('mr-2 size-4 h-auto group-[.text-lg]/search-input:size-5', !hasSearch && 'opacity-50')} />
         </motion.div>
       )}
     </AnimatePresence>
