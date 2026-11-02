@@ -23,7 +23,7 @@ export function ComboboxSearchInput({
   spinnerDelay,
   onClear,
   value,
-  hasSearch = value.length > 0,
+  hasSearch,
   ref,
   ...props
 }: ComboboxSearchInputProps) {
@@ -35,7 +35,7 @@ export function ComboboxSearchInput({
       data-slot="combobox-search-input-wrapper"
       className={cn('group/search-input relative flex h-10 items-center border-b px-3', showClear && 'pr-10', wrapClassName)}
     >
-      <SearchSpinner isSearching={isSearching} hasSearch={hasSearch} appearDelay={spinnerDelay} />
+      <SearchSpinner isSearching={isSearching} hasSearch={hasSearch ?? value.length > 0} appearDelay={spinnerDelay} />
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
         className={cn(
