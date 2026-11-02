@@ -1,44 +1,86 @@
-import { MailIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
+import { BanIcon, CircleAlertIcon, MailIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { lowercaseLabel } from 'shared/utils/i18n-text';
 import type { TKey } from '~/lib/i18n-locales';
-import { ExpandableList } from '~/modules/common/expandable-list';
-import { StatusDot, StatusTile, TileListHeading, type TileTone } from '~/modules/common/expandable-tile';
-import { MiddleCut } from '~/modules/common/middle-cut';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { ExpandableTile, StatusDot, tileTones } from '~/modules/common/expandable-tile';
+import type { IconComponent } from '~/modules/common/icons/types';
+import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
+import { Chip } from '~/modules/ui/chip';
 import { Input } from '~/modules/ui/input';
 import type { InviteCheck, InviteGroupKey } from '~/modules/user/use-invite-check';
+import type { InviteList, InvitePerson } from '~/modules/user/use-invite-list';
+import { cn } from '~/utils/cn';
 
-/** In the order they show: what needs a look comes first. */
-const inviteGroups: { key: InviteGroupKey; title: TKey; summary: TKey; tone: TileTone }[] = [
-  { key: 'fix', title: 'c:invite_group_fix', summary: 'c:invite_summary_fix', tone: 'destructive' },
-  { key: 'unchecked', title: 'c:invite_state_unchecked', summary: 'c:invite_summary_unchecked', tone: 'warning' },
-  { key: 'new', title: 'c:invite_group_new', summary: 'c:invite_summary_new', tone: 'success' },
-  { key: 'again', title: 'c:invite_group_again', summary: 'c:invite_summary_again', tone: 'info' },
-  { key: 'out', title: 'c:invite_group_out', summary: 'c:invite_summary_out', tone: 'muted' },
+/** Biggest problem first. New addresses are no problem, so that tile never opens by itself. */
+const inviteTiles: { key: InviteGroupKey; summary: TKey; word: TKey; note: TKey; icon: IconComponent }[] = [
+  { key: 'fix', summary: 'c:invite_summary_fix', word: 'c:invite_state_not_address', note: 'c:invite_state_edit_or_remove', icon: CircleAlertIcon },
+  {
+    key: 'unchecked',
+    summary: 'c:invite_summary_unchecked',
+    word: 'c:invite_tile_unchecked',
+    note: 'c:invite_tile_unchecked.text',
+    icon: CircleAlertIcon,
+  },
+  { key: 'out', summary: 'c:invite_summary_out', word: 'c:invite_tile_out', note: 'c:invite_tile_out.text', icon: BanIcon },
+  { key: 'again', summary: 'c:invite_summary_again', word: 'c:invite_tile_again', note: 'c:invite_tile_again.text', icon: RotateCcwIcon },
+  { key: 'new', summary: 'c:invite_summary_new', word: 'c:invite_group_new', note: 'c:invite_tile_new.text', icon: MailIcon },
 ];
 
-interface InviteSummaryProps {
-  /** Until the field holds something. */
+const tileTone = { fix: 'destructive', unchecked: 'warning', out: 'muted', again: 'info', new: 'success' } as const;
+
+const firstChips = 6;
+const revealStep = 50;
+// More hidden than this at once would be a sudden wall of chips, so they come a step at a time.
+const revealAllUpTo = 100;
+
+interface InviteFieldLineProps {
+  /** Until the first address is in. */
   hint: string;
+  list: InviteList;
   check: InviteCheck;
 }
 
-/** One line under a field: how many addresses fall in each group, so nothing goes unmentioned. Stays mounted, so a change is announced. */
-export function InviteSummary({ hint, check }: InviteSummaryProps) {
+/** One line under a field, saying what just happened to what was in it. Stays mounted, so a change is announced. */
+export function InviteFieldLine({ hint, list, check }: InviteFieldLineProps) {
   const { t } = useTranslation();
-  const counted = inviteGroups.filter(({ key }) => check.groups[key].length);
+  const { last, typedInvalid, hasList, people } = list;
+  const listed = last && !last.repeat && (list.emails.includes(last.address) || list.unparsed.includes(last.address)) ? last.address : null;
+
+  const content = () => {
+    if (typedInvalid) {
+      return (
+        <>
+          <StatusDot tone="destructive" />
+          <span className="min-w-0">
+            <span className={cn('font-medium', tileTones.destructive.text)}>{t('c:invite_state_not_address')}</span>
+            {` · ${lowercaseLabel(t('c:invite_state_check_spelling'))}`}
+          </span>
+        </>
+      );
+    }
+    if (last?.repeat) return t('c:invite_already_listed', { address: last.address });
+    if (listed) {
+      const { tone, word, note, checking } = check.viewOf(listed);
+      return (
+        <>
+          <StatusDot tone={tone} checking={checking} />
+          <span className="min-w-0 break-all">
+            <span className={cn('font-medium', tileTones[tone].text)}>{word}</span>
+            {` · ${people.get(listed)?.name ?? listed}`}
+            {note && ` · ${note}`}
+          </span>
+        </>
+      );
+    }
+    return hasList ? null : hint;
+  };
 
   return (
-    <div role="status" className="flex flex-wrap gap-x-3.5 gap-y-1 text-muted-foreground text-sm">
-      {counted.length
-        ? counted.map(({ key, summary, tone }) => (
-            <span key={key} className="flex items-center gap-1.5">
-              <StatusDot tone={tone} />
-              {t(summary, { count: check.groups[key].length })}
-            </span>
-          ))
-        : hint}
+    <div role="status" className="flex items-baseline gap-1.5 text-muted-foreground text-sm">
+      {content()}
     </div>
   );
 }
@@ -60,7 +102,7 @@ function EditableAddress({ value, onFix }: EditableAddressProps) {
       inputMode="email"
       autoCapitalize="none"
       spellCheck={false}
-      className="focus-inset h-7 px-1.5"
+      className="focus-inset h-8 px-2"
       onChange={({ target }) => setText(target.value)}
       onBlur={() => onFix(text)}
       onKeyDown={(event) => {
@@ -72,57 +114,137 @@ function EditableAddress({ value, onFix }: EditableAddressProps) {
   );
 }
 
-interface InviteGroupsProps {
-  check: InviteCheck;
-  onRemove: (address: string) => void;
-  /** Replaces a near-miss with the corrected text. */
-  onFix: (address: string, text: string) => void;
+interface InviteChipProps {
+  address: string;
+  person?: InvitePerson;
+  /** A date or reason beside the address. The tile carries the color. */
+  fact?: string;
+  onRemove: () => void;
 }
 
-/** The addresses as a list by what an invite does with them, for when there are too many to read as chips. */
-export function InviteGroups({ check, onRemove, onFix }: InviteGroupsProps) {
+/** An address as a plain chip. A long one wraps its fact under it and is never cut. */
+function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-4">
-      {inviteGroups.map(({ key, title }) => {
-        const items = check.groups[key].map((address) => ({ id: address }));
-        if (!items.length) return null;
+    <Chip
+      title={person ? address : undefined}
+      className="h-auto min-h-6 rounded-xl"
+      onRemove={onRemove}
+      removeLabel={t('c:remove_resource', { resource: address })}
+      start={
+        person && <EntityAvatar type={person.entityType} className="size-6 text-xs" id={person.id} name={person.name} url={person.thumbnailUrl} />
+      }
+    >
+      <span className="flex flex-wrap gap-x-1.5 whitespace-normal">
+        <span className="break-all">{person?.name ?? address}</span>
+        {fact && <span className="whitespace-nowrap text-muted-foreground">{fact}</span>}
+      </span>
+    </Chip>
+  );
+}
+
+interface InviteGroupsProps {
+  check: InviteCheck;
+  list: InviteList;
+  /** The invite waits for its draft channel's publish, which changes what a new address gets. */
+  held: boolean;
+}
+
+/** A tile per outcome, with only the biggest problem open. A tile holds plain chips, a few at first and more on request. */
+export function InviteGroups({ check, list, held }: InviteGroupsProps) {
+  const { t } = useTranslation();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const [picked, setPicked] = useState<{ key: string | null; revision: number } | null>(null);
+  const [limits, setLimits] = useState<Partial<Record<InviteGroupKey, number>>>({});
+
+  const present = inviteTiles.filter(({ key }) => check.groups[key].length);
+  const biggest = present.find(({ key }) => key !== 'new')?.key ?? null;
+  const open = picked?.revision === list.revision ? picked.key : biggest;
+
+  // A removed chip unmounts its focused button, so focus goes to its tile's head, or to the form's field with the tile gone too
+  const remove = (key: InviteGroupKey, address: string) => {
+    const tile = rootRef.current?.querySelector<HTMLElement>(`[data-invite-tile="${key}"] button`);
+    const next = check.groups[key].length > 1 ? tile : rootRef.current?.closest('form')?.querySelector<HTMLElement>('input, textarea, button');
+    list.remove(address);
+    next?.focus();
+  };
+
+  return (
+    <Accordion
+      ref={rootRef}
+      value={open ? [open] : []}
+      onValueChange={(value) => setPicked({ key: value[0] ?? null, revision: list.revision })}
+      className="flex flex-col gap-3"
+    >
+      {present.map(({ key, summary, word, note, icon: Icon }) => {
+        const addresses = check.groups[key];
+        // A "+1" takes the room of the chip it hides
+        const isLong = key !== 'fix' && addresses.length > firstChips + 1;
+        const limit = isLong ? (limits[key] ?? firstChips) : addresses.length;
+        const hidden = addresses.length - Math.min(limit, addresses.length);
+        const step = hidden > revealAllUpTo ? revealStep : hidden;
 
         return (
-          <section key={key} className="flex flex-col gap-2">
-            <TileListHeading title={t(title)} count={items.length} />
-            <ExpandableList
-              items={items}
-              initialDisplayCount={5}
-              alwaysShowAll={key === 'fix'}
-              renderItem={({ id }) => {
-                const { tone, word, note } = check.viewOf(id);
-                return (
-                  <StatusTile
-                    icon={<MailIcon className="text-muted-foreground" />}
-                    title={key === 'fix' ? <EditableAddress value={id} onFix={(text) => onFix(id, text)} /> : <MiddleCut text={id} />}
-                    status={{ tone, label: word }}
-                    meta={note}
-                    end={
+          <div key={key} data-invite-tile={key}>
+            <ExpandableTile
+              value={key}
+              className={key === 'fix' ? 'intent-destructive soft-border' : undefined}
+              panelClassName="max-sm:pl-3"
+              wrapMeta
+              icon={<Icon className="text-muted-foreground" />}
+              title={t(summary, { count: addresses.length })}
+              status={{ tone: tileTone[key], label: t(word) }}
+              meta={key === 'new' && held ? lowercaseLabel(t('c:invite_state_on_publish')) : lowercaseLabel(t(note))}
+              lead={
+                key === 'fix' ? (
+                  addresses.map((address) => (
+                    <div key={address} className="flex items-center gap-2">
+                      <EditableAddress value={address} onFix={(text) => list.fix(address, text)} />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        aria-label={t('c:remove_resource', { resource: id })}
-                        onClick={() => onRemove(id)}
-                        className="shrink-0"
+                        aria-label={t('c:remove_resource', { resource: address })}
+                        onClick={() => remove(key, address)}
+                        className="size-8 shrink-0"
                       >
                         <XIcon />
                       </Button>
-                    }
-                  />
-                );
-              }}
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {addresses.slice(0, limit).map((address) => (
+                      <InviteChip
+                        key={address}
+                        address={address}
+                        person={list.people.get(address)}
+                        fact={check.viewOf(address).fact}
+                        onRemove={() => remove(key, address)}
+                      />
+                    ))}
+                    {isLong && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="auto"
+                        press={false}
+                        aria-label={hidden ? t('c:invite_show_more', { step, hidden }) : undefined}
+                        onClick={() => setLimits({ ...limits, [key]: hidden ? limit + step : firstChips })}
+                        className="h-6 rounded-full px-2.5"
+                      >
+                        {hidden ? `+${hidden}` : t('c:show_less')}
+                      </Button>
+                    )}
+                  </div>
+                )
+              }
             />
-          </section>
+          </div>
         );
       })}
-    </div>
+    </Accordion>
   );
 }

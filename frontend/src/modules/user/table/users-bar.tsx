@@ -34,8 +34,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
     },
   });
 
-  const openInvite = () =>
-    openInviteDialog({ mode: 'email', description: t('c:invite_users.text'), triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
+  const openInvite = () => openInviteDialog({ description: t('c:invite_users.text'), triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
 
   const confirmDelete = () =>
     openDeleteDialog({

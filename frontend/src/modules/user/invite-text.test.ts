@@ -1,6 +1,6 @@
 import { zMembershipInviteBody, zSystemInviteBody } from 'sdk/zod.gen';
 import { describe, expect, it } from 'vitest';
-import { parseInviteText } from '~/modules/user/select-emails';
+import { parseInviteText } from '~/modules/user/invite-text';
 
 const accepted = [
   'user@example.com',
@@ -22,7 +22,7 @@ const accepted = [
   `a@${'b'.repeat(64)}.com`,
   `a@${'b.'.repeat(124)}com`,
   `${'a'.repeat(64)}@${'b'.repeat(60)}.${'c'.repeat(60)}.${'d'.repeat(60)}.com`,
-  // The next three were refused as chips although a submit accepts them.
+  // The next three were refused by the form although a submit accepts them.
   'user@example-.com',
   'user@sub-.example.com',
   `${'a'.repeat(65)}@example.com`,
@@ -48,7 +48,7 @@ const rejected = [
   'user@exa mple.com',
   'user@example.c',
   'user@example.123',
-  // The rest became chips that a submit then refused.
+  // The rest were accepted by the form and then refused by a submit.
   'us..er@gmail.com',
   '.user@gmail.com',
   '"john doe"@example.com',
@@ -68,7 +68,7 @@ const rejected = [
 const submits = (email: string) =>
   zSystemInviteBody.safeParse({ emails: [email] }).success && zMembershipInviteBody.shape.emails.safeParse([email]).success;
 
-// The chips and the submit answer alike: what parses as an address is what a submit accepts.
+// The form and the submit answer alike: what parses as an address is what a submit accepts.
 describe('parseInviteText against the submit rule', () => {
   it.each(accepted)('accepts %s', (email) => {
     expect(parseInviteText(email).emails).toEqual([email.toLowerCase()]);

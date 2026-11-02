@@ -15,14 +15,14 @@ import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 /** What an invite does with an address: asks to be fixed, goes unchecked, sends a first invitation, sends the email again, or leaves it out. */
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
 
-/** How an address reads everywhere it shows: chip, list row and summary. */
+/** How an address reads everywhere it shows: the line under a field, its tile and its chip. */
 export interface InviteView {
   group: InviteGroupKey;
   tone: TileTone;
   word: string;
   note: string;
-  /** After the address on a chip. */
-  chipNote?: string;
+  /** Beside the address on its chip, where its tile says too little: a date or a reason. */
+  fact?: string;
   checking?: boolean;
 }
 
@@ -34,11 +34,12 @@ const day = (date?: string) => (date ? dayjs.utc(date).local().format('D MMM') :
  */
 export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, held?: boolean): InviteView => {
   if (outcome?.outcome === 'member') {
-    const note = lowercaseLabel(t('c:invite_group_out'));
-    return { group: 'out', tone: 'muted', word: t('c:already_member'), note, chipNote: lowercaseLabel(t('c:member')) };
+    const word = t('c:already_member');
+    return { group: 'out', tone: 'muted', word, note: lowercaseLabel(t('c:invite_group_out')), fact: lowercaseLabel(word) };
   }
   if (outcome?.outcome !== 'remind') {
-    return { group: 'new', tone: 'success', word: t('c:invite_state_new'), note: lowercaseLabel(t('c:invite_state_gets_invitation')) };
+    const note = lowercaseLabel(t(held ? 'c:invite_state_on_publish' : 'c:invite_state_gets_invitation'));
+    return { group: 'new', tone: 'success', word: t('c:invite_state_new'), note };
   }
 
   const { declinedAt, invitedAt } = outcome;
@@ -47,23 +48,23 @@ export const outcomeView = (outcome: InviteOutcome | undefined, t: TFunction, he
     if (declineHolds(declinedAt)) {
       const until = dayjs.utc(declinedAt).add(appConfig.retention.declinedInvitationHoldDays, 'day').toISOString();
       const note = lowercaseLabel(t('c:invite_state_no_email_until', { date: day(until) }));
-      return { group: 'out', tone: 'warning', word, note, chipNote: note };
+      return { group: 'out', tone: 'warning', word, note, fact: note };
     }
-    return { group: 'again', tone: 'warning', word, note: lowercaseLabel(t('c:invite_state_invited_again')), chipNote: lowercaseLabel(word) };
+    return { group: 'again', tone: 'warning', word, note: lowercaseLabel(t('c:invite_state_invited_again')), fact: lowercaseLabel(word) };
   }
 
   const word = t('c:invite_state_invited', { date: day(invitedAt) }).trim();
   const note = lowercaseLabel(t(held ? 'c:invite_state_no_email_before_publish' : 'c:invite_state_gets_email_again'));
-  return { group: held ? 'out' : 'again', tone: 'info', word, note, chipNote: held ? note : lowercaseLabel(word) };
+  return { group: held ? 'out' : 'again', tone: 'info', word, note, fact: held ? note : lowercaseLabel(word) };
 };
 
 /** The view of text that holds no address: near-misses ask for a fix, anything else in a paste is simply left out. */
 export const unparsedView = (text: string, t: TFunction): InviteView => {
   if (!text.includes('@')) {
-    return { group: 'out', tone: 'muted', word: t('c:invite_state_no_address'), note: lowercaseLabel(t('c:invite_group_out')) };
+    const word = t('c:invite_state_no_address');
+    return { group: 'out', tone: 'muted', word, note: lowercaseLabel(t('c:invite_group_out')), fact: lowercaseLabel(word) };
   }
-  const word = t('c:invite_state_not_address');
-  return { group: 'fix', tone: 'destructive', word, note: lowercaseLabel(t('c:invite_state_edit_or_remove')), chipNote: lowercaseLabel(word) };
+  return { group: 'fix', tone: 'destructive', word: t('c:invite_state_not_address'), note: lowercaseLabel(t('c:invite_state_edit_or_remove')) };
 };
 
 /**
@@ -94,8 +95,7 @@ export function useInviteCheck(channel: EnrichedChannel | undefined, emails: str
       add(email, { group: 'new', tone: 'muted', word: t('c:invite_state_checking'), note: '', checking: true });
     } else {
       // The check failed: the send still goes and answers for this address, so nothing here claims it is new.
-      const word = t('c:invite_state_unchecked');
-      add(email, { group: 'unchecked', tone: 'warning', word, note: '', chipNote: lowercaseLabel(word) });
+      add(email, { group: 'unchecked', tone: 'warning', word: t('c:invite_state_unchecked'), note: '' });
     }
   }
 
