@@ -27,7 +27,7 @@ export function SchemasSidebar({ activeTag, isOnRoute }: SchemasSidebarProps) {
   const hash = useCurrentSection();
 
   return (
-    <SidebarMenu className="gap-1 p-0 pt-1">
+    <SidebarMenu className="gap-1 no-focus-ring:gap-0 p-0 pt-1">
       {schemaTags.map((tag) => {
         const tagSchemas = schemasByTag[tag.name] ?? [];
         const isAtTag = hash === `tag/${tag.name}`;

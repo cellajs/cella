@@ -1,16 +1,24 @@
-import { appConfig, type ChannelEntityType } from 'shared';
+import { appConfig } from 'shared';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
+import { type MembershipColumnsResolver, type MembershipEntity, onBackendModuleRegister } from '#/lib/module';
 import { channelIdColumnsOf, findMenuParent, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
 import { findMaxDisplayOrders, insertMembershipRows, insertMissingMembershipRows } from '#/modules/memberships/memberships-queries';
-import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
-type BaseEntityModel = EntityModel<ChannelEntityType> & {
-  [key: string]: unknown;
-  tenantId: string;
+const columnResolvers: MembershipColumnsResolver[] = [];
+
+// Index the `membershipColumns` each backend module declares (see defineBackendModule).
+onBackendModuleRegister(({ membershipColumns }) => {
+  if (membershipColumns) columnResolvers.push(membershipColumns);
+});
+
+const resolveModuleColumns = async (ctx: DbContext, { userId, entity }: { userId: string; entity: MembershipEntity }) => {
+  const columns: Partial<InsertMembershipModel> = {};
+  for (const resolve of columnResolvers) Object.assign(columns, await resolve(ctx, { userId, entity }));
+  return columns;
 };
 
 interface InsertMultipleProps<T> {
@@ -27,11 +35,17 @@ interface InsertMultipleProps<T> {
  * Organization and associated parent memberships are inserted when missing, per-user `displayOrder` comes from one
  * grouped query spaced by `orderGap`, and the inserted target memberships are returned.
  */
-export const insertMemberships = async <T extends BaseEntityModel>(
+export const insertMemberships = async <T extends MembershipEntity>(
   ctx: DbContext,
-  { items }: { items: Array<InsertMultipleProps<T>> },
+  { items: givenItems }: { items: Array<InsertMultipleProps<T>> },
 ): Promise<Array<MembershipBaseModel>> => {
-  if (!items.length) return [];
+  if (!givenItems.length) return [];
+
+  // Ahead of the order baseline: a resolver may insert memberships, whose order this run then continues from.
+  const items: Array<InsertMultipleProps<T>> = [];
+  for (const item of givenItems) {
+    items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
+  }
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 

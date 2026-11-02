@@ -16,7 +16,7 @@ import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-h
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
-import { removeRecentSearch, saveRecentSearch, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
+import { useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
 import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
@@ -40,6 +40,8 @@ export function DocsSearch() {
   const debouncedValue = useDebounce(searchValue, 100, { immediateValue: '' });
   const [scope, setScope] = useState<DocsSearchScope>('all');
   const recentSearches = useDocsSearchStore((state) => state.recentSearches);
+  const saveRecentSearch = useDocsSearchStore((state) => state.saveRecentSearch);
+  const removeRecentSearch = useDocsSearchStore((state) => state.removeRecentSearch);
 
   // null = blank query (default links); previous results stay visible while a new search runs
   const [results, setResults] = useState<DocsSearchResult[] | null>(null);
@@ -126,8 +128,9 @@ export function DocsSearch() {
             isSearching={isSearching}
             spinnerDelay={0}
             enterKeyHint="search"
-            className="h-12 text-lg"
-            wrapClassName="h-12 flex-1 border-b-0 text-lg"
+            // The field's size-5 icon takes the center of the rows' size-4 icons, and its text the text after them
+            className="-ml-0.5 h-12 text-lg"
+            wrapClassName="h-12 flex-1 border-b-0 pl-3.5 text-lg"
             placeholder={placeholder}
           />
         </SearchDialogBar>
@@ -159,7 +162,7 @@ export function DocsSearch() {
           </ComboboxList>
         </ScrollArea>
         {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. On a phone under the field, clear of the keyboard. */}
-        <div className="flex shrink-0 items-center gap-1 border-t p-2 max-sm:border-t-0 max-sm:border-b">
+        <div className="flex shrink-0 items-center gap-1 border-t px-4 py-2 max-sm:border-t-0 max-sm:border-b">
           {[{ value: 'all' as const, label: t('c:all') }, ...scopeChips].map((chip) => (
             <button
               type="button"

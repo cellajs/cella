@@ -1,4 +1,5 @@
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
 import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { uploader } from '~/modules/common/uploader/use-uploader';
@@ -22,7 +23,13 @@ export function Uploader() {
       <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
         <DialogHeader className="with-close-btn">
           <DialogTitle className={uploadData.title ? 'h-6 leading-6' : 'sr-only'}>{uploadData.title || t('c:upload')}</DialogTitle>
-          {uploadData.description && <DialogDescription>{uploadData.description}</DialogDescription>}
+          {uploadData.onDeleteImage ? (
+            <DialogDescription>
+              <Trans t={t} i18nKey="c:replace_image.text" components={{ delete_anchor: <InlineLinkButton onClick={uploadData.onDeleteImage} /> }} />
+            </DialogDescription>
+          ) : (
+            uploadData.description && <DialogDescription>{uploadData.description}</DialogDescription>
+          )}
         </DialogHeader>
         <UploadDashboard uppy={uppy} autoOpen={isImageTemplate(uploadData.templateId) ? 'imageEditor' : null} />
       </DialogContent>

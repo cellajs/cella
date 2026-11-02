@@ -7,7 +7,8 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ViewMenu, type ViewMenuExport, type ViewMenuSort } from '~/modules/common/data-table/view-menu';
 import { FocusView } from '~/modules/common/focus-view';
-import { SearchChipsField, type SearchFilters } from '~/modules/common/search-chips-field';
+import { SearchChipsField } from '~/modules/common/search-chips/search-chips-field';
+import type { SearchFilters } from '~/modules/common/search-chips/types';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 
 interface TableBarFiltersOptions<T extends { q?: string }> {
@@ -96,6 +97,38 @@ export function TableBarShell<TRow extends object>({
   const searchLabel = t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) });
   const foundCount = isFiltered && total !== null ? t('c:resource_count', { count: total, resource: t(label, { count: total }) }) : '';
 
+  const searchProps = searchFilters
+    ? {
+        searchInRow: true as const,
+        foundCount,
+        search: (
+          <SearchChipsField
+            {...searchFilters}
+            name={searchName}
+            label={searchLabel}
+            value={searchVars.q ?? ''}
+            count={foundCount}
+            onSearch={onSearch}
+            onReset={onResetFilters}
+            compactOnPhone
+            className="edgeless"
+          />
+        ),
+      }
+    : {
+        searchLabel,
+        search: (
+          <TableSearch
+            name={searchName}
+            label={searchLabel}
+            value={searchVars.q}
+            count={foundCount}
+            onSearch={onSearch}
+            allowOfflineSearch={allowOfflineSearch}
+          />
+        ),
+      };
+
   return (
     <>
       <TableFilterBar
@@ -103,6 +136,7 @@ export function TableBarShell<TRow extends object>({
         isFiltered={isFiltered}
         onResetFilters={onResetFilters}
         sticky={sticky}
+        {...searchProps}
         // Beside a view toggle a phone has room for the actions' icons only
         actions={
           !isFiltered &&
@@ -120,30 +154,6 @@ export function TableBarShell<TRow extends object>({
             {countExtra}
           </TableCount>
         }
-        search={
-          searchFilters ? (
-            <SearchChipsField
-              {...searchFilters}
-              name={searchName}
-              label={searchLabel}
-              value={searchVars.q ?? ''}
-              count={foundCount}
-              onSearch={onSearch}
-              onReset={onResetFilters}
-              className="edgeless"
-            />
-          ) : (
-            <TableSearch
-              name={searchName}
-              label={searchLabel}
-              value={searchVars.q}
-              count={foundCount}
-              onSearch={onSearch}
-              allowOfflineSearch={allowOfflineSearch}
-            />
-          )
-        }
-        searchLabel={searchLabel}
         controls={
           <>
             <ViewMenu sort={sort} columns={columns} setColumns={setColumns} export={exportOptions} />

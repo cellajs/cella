@@ -255,6 +255,9 @@ exist need a data migration that gives them the new id column.
 - **Rows that come with another entity** (default labels in each new project): `onMutation:
   { '<type>.created': handler }` in the module that owns the rows; the handler runs inside the
   create's transaction.
+- **Columns of its own on a membership** (filing a membership under a parent the channel row does
+  not name): `membershipColumns` in `defineBackendModule`; it runs before the insert, inside the
+  caller's transaction, for an item its caller gave no `extraFields`.
 - **Scheduled jobs and queues**: `jobs` and `queues` in `defineBackendModule`; the jobs worker
   creates and runs them ([Jobs worker](../../../jobs/README.md)).
 - **A per-user client store** (recent picks): `idbKvStorage('<base>')` with `skipHydration: true`,

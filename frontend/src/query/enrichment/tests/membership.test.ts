@@ -54,4 +54,16 @@ describe('membership enrichment', () => {
     });
     expect(roles()).toEqual(['admin', 'admin']);
   });
+
+  it('reaches the cached rows when a new membership row replaces the old one with the same role and order', () => {
+    const ids = () => (queryClient.getQueryData(['organization', 'list']) as any).pages[0].items.map((item: any) => item.membership?.id);
+    unsubscribe = initChannelEnrichment();
+
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1', { id: 'first' })] });
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }]));
+    expect(ids()).toEqual(['first']);
+
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1', { id: 'second' })] });
+    expect(ids()).toEqual(['second']);
+  });
 });

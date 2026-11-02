@@ -137,7 +137,7 @@ export interface BranchChanges {
 }
 
 /**
- * The finding for a branch that changes an app-owned path template code reads from (a pinned file, `logo.tsx`,
+ * The finding for a branch that changes an app-owned path template code reads from (a pinned file, `logo-art.tsx`,
  * `backend/drizzle`) without adding an alignment. Such a change never reaches an app's copy, so the app's template code
  * breaks until someone tells it what to add. An `Alignment: none, <reason>` line in a commit message waives it.
  */

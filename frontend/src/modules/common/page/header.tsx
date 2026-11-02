@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactElement, type ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -17,29 +17,37 @@ interface PageHeaderProps extends Omit<PageCoverProps, 'id' | 'url'> {
   panel?: ReactNode;
   /** Takes the place of the context line below the name, for an entity that sits in no hierarchy. */
   subline?: ReactNode;
+  /** Positioned over the avatar, which does not clip it. */
+  avatarBadge?: ReactNode;
+  /** Takes the place of the entity type in the context line. */
+  typeLabel?: ReactElement;
   /** Ancestor chain, root first. Entries must be enriched: their routes need `ancestorSlugs`. */
   parents?: EnrichedChannel[];
   /** @deprecated Use `parents`. */
   parent?: EnrichedChannel;
 }
 
-export function PageHeader({ entity, panel, subline, parents, parent, ...coverProps }: PageHeaderProps) {
+export function PageHeader({ entity, panel, subline, avatarBadge, typeLabel, parents, parent, ...coverProps }: PageHeaderProps) {
   // Ancestor chain, root first; the deprecated single `parent` folds in
   const ancestors = parents ?? (parent ? [parent] : []);
+  const isUser = entity.entityType === 'user';
 
   return (
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
       <div className="absolute bottom-0 flex min-h-18 w-full bg-background/50 p-1 backdrop-blur-xs dark:bg-background/75" id={pageTopHashNav.hash}>
-        <EntityAvatar
-          id={entity.id}
-          name={entity.name}
-          type={entity.entityType}
-          url={entity.thumbnailUrl}
-          // A user avatar rises by half its size to sit centered on the cover's edge
-          className={entity.entityType === 'user' ? 'mx-3 -mt-10 size-20 ring-4 ring-black/10 sm:-mt-13 sm:size-26' : 'm-2 size-12'}
-        />
+        {/* A user avatar rises by half its size to sit centered on the cover's edge */}
+        <div className={cn('relative shrink-0', isUser ? 'mx-3 -mt-10 size-20 sm:-mt-13 sm:size-26' : 'm-2 size-12')}>
+          <EntityAvatar
+            id={entity.id}
+            name={entity.name}
+            type={entity.entityType}
+            url={entity.thumbnailUrl}
+            className={cn('size-full', isUser && 'ring-4 ring-black/10')}
+          />
+          {avatarBadge}
+        </div>
 
         <div className="flex flex-col truncate py-1.5 pl-1">
           <h1 className="max-sm:wrap-break-word mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">
@@ -50,7 +58,7 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
             {subline ?? (
               // The text column clips: each link's ring sits in a padding its negative margin takes back
               <p className="flex min-w-0 items-center gap-1 pr-1 text-faint-foreground">
-                <ContextLine type={entity.entityType} ancestors={ancestors} />
+                <ContextLine type={entity.entityType} typeLabel={typeLabel} ancestors={ancestors} />
                 {appConfig.mode === 'development' && <span className="mt-0.5 ml-2 text-xs opacity-50 max-sm:hidden">{entity.id}</span>}
               </p>
             )}
@@ -64,11 +72,12 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
 
 interface ContextLineProps {
   type: (ChannelBase | UserBase)['entityType'];
+  typeLabel?: ReactElement;
   ancestors: EnrichedChannel[];
 }
 
 /** The entity's type and where it sits: "Project in Course (Class, Group) by Organization"; a phone keeps the top channel only. */
-function ContextLine({ type, ancestors }: ContextLineProps) {
+function ContextLine({ type, typeLabel, ancestors }: ContextLineProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
@@ -76,7 +85,7 @@ function ContextLine({ type, ancestors }: ContextLineProps) {
   const [channel, ...subChannels] = ancestors.filter((ancestor) => ancestor.entityType !== 'organization');
 
   const label = t(`c:${type}`);
-  const typeElement = <span className="font-semibold text-foreground" />;
+  const typeElement = typeLabel ?? <span className="font-semibold text-foreground" />;
   const trail = channel && <ChannelTrail channel={channel} subChannels={isMobile ? [] : subChannels} />;
   const organizationLink = organization && !isMobile && <ContextLink channel={organization} />;
   const values = { type: label, channel: channel?.name, organization: organization?.name };
@@ -95,7 +104,7 @@ function ContextLine({ type, ancestors }: ContextLineProps) {
   if (organizationLink) {
     return <Trans t={t} i18nKey="c:entity_context.by" values={values} components={{ type: typeElement, organization: organizationLink }} />;
   }
-  return <span className="font-semibold text-foreground">{label}</span>;
+  return typeLabel ?? <span className="font-semibold text-foreground">{label}</span>;
 }
 
 interface ChannelTrailProps {

@@ -11,10 +11,10 @@ interface NavSheetFrameProps {
   className?: string;
 }
 
-/** Shell of every nav sheet: card column, the sheet focus target first, optional panels, and the bottom focus bridges. */
+/** Shell of every nav sheet: a column with the sheet focus target first, optional panels, and the bottom focus bridges. */
 export function NavSheetFrame({ children, panels = false, ref, className }: NavSheetFrameProps) {
   return (
-    <div ref={ref} className={cn('flex min-h-dvh w-full flex-col bg-card', className)}>
+    <div ref={ref} className={cn('flex min-h-dvh w-full flex-col', className)}>
       <FocusTarget target="sheet" />
       {children}
       {panels && (

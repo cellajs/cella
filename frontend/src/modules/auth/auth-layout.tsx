@@ -47,7 +47,7 @@ export function AuthLayout() {
               className="focus-effect active:press mx-auto rounded-md p-4 transition-transform sm:hover:scale-105"
               aria-label={t('c:go_to_about')}
             >
-              <Logo height={40} title={t('c:go_to_about')} />
+              <Logo size="lg" title={t('c:go_to_about')} />
             </Link>
 
             <AppFooterLinks className="justify-center" links={authFooterLinks} />

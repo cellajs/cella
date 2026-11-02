@@ -14,6 +14,7 @@ import {
   getCellStyle,
   getHeaderCellRowSpan,
   getHeaderCellStyle,
+  headerCellFocusRing,
   isCtrlKeyHeldDown,
   stopPropagation,
 } from './utils/grid-utils';
@@ -72,7 +73,7 @@ export function HeaderCell<R, SR>({
   const ariaSort = sortDirection && !priority ? (sortDirection === 'ASC' ? 'ascending' : 'descending') : undefined;
   const { sortable, resizable, draggable } = column;
 
-  const className = getCellClassname(column, 'border-t-0', column.headerCellClass, {
+  const className = getCellClassname(column, headerCellFocusRing, 'border-t-0', column.headerCellClass, {
     'cursor-pointer': sortable,
     'touch-none': resizable,
     'opacity-40': isDragging,

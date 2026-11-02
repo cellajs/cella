@@ -80,7 +80,7 @@ export function AppFooter({ className = '' }: AppFooterProps) {
           className="focus-effect active:press rounded-md transition-transform hover:scale-105"
           aria-label={t('c:go_to_about')}
         >
-          <Logo height={25} title={t('c:go_to_about')} />
+          <Logo size="sm" title={t('c:go_to_about')} />
         </Link>
         <div className="ml-1 opacity-20">|</div>
         <UserTheme />

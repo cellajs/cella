@@ -12,6 +12,7 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { canMute } from '~/modules/navigation/menu-sheet/helpers/can-mute';
 import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
 import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
@@ -155,11 +156,13 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
             title={item.membership.archived ? t('c:restore') : t('c:archive')}
             onClick={() => toggleMembershipFlag('archived')}
           />
-          <MembershipFlagButton
-            icon={item.membership.muted ? BellIcon : BellOffIcon}
-            title={item.membership.muted ? t('c:unmute') : t('c:mute')}
-            onClick={() => toggleMembershipFlag('muted')}
-          />
+          {canMute(item) && (
+            <MembershipFlagButton
+              icon={item.membership.muted ? BellIcon : BellOffIcon}
+              title={item.membership.muted ? t('c:unmute') : t('c:mute')}
+              onClick={() => toggleMembershipFlag('muted')}
+            />
+          )}
         </div>
       </div>
     </motion.div>

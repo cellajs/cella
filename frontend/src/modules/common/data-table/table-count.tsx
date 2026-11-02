@@ -16,7 +16,14 @@ export function TableCount({ count, label, className, children }: TableCountProp
 
   return (
     // A phone stacks the count over its extra
-    <div className={cn('flex items-center gap-2 text-sm max-sm:flex-col max-sm:items-start max-sm:gap-0', className)}>
+    // Out of the row while empty so a flex gap skips it; display none would drop the status region from the accessibility tree
+    <div
+      className={cn(
+        'flex items-center gap-2 text-sm max-sm:flex-col max-sm:items-start max-sm:gap-0',
+        typeof count !== 'number' && 'sr-only',
+        className,
+      )}
+    >
       {/* Mounted while the count loads too: a status region announces changes only once it exists */}
       <div role="status" className="whitespace-nowrap text-muted-foreground">
         {typeof count === 'number' && t('c:resource_count', { count, resource: t(label, { count }) })}

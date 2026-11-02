@@ -25,8 +25,11 @@ export function ScrollReset({ children }: ScrollResetProps) {
 
   return (
     <ScrollResetContext.Provider value={scrollToReset}>
-      <div ref={sentinelRef} className="h-0" aria-hidden />
-      <div className="min-h-svh">{children}</div>
+      {/* One element for a parent's flex gap to space, with the sentinel inside it */}
+      <div className="min-h-svh">
+        <div ref={sentinelRef} className="h-0" aria-hidden />
+        {children}
+      </div>
     </ScrollResetContext.Provider>
   );
 }

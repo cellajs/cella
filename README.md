@@ -1,4 +1,4 @@
-<center>
+<div align="center">
 
   <img alt="screenshot" src="./frontend/public/static/marketing/screenshots/readme-screenshot-dark.webp#gh-dark-mode-only" />
   <img alt="screenshot" src="./frontend/public/static/marketing/screenshots/readme-screenshot.webp#gh-light-mode-only" />
@@ -26,7 +26,7 @@
     MIT license
 </p>
 <br />
-</center>
+</div>
 
 #### Contents
 
@@ -37,7 +37,7 @@
 
 ## Requirements
 
-Node.js 26, [pnpm 11](https://pnpm.io/installation), [Docker](https://docs.docker.com/get-docker/). For syncing with upstream: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and [gh cli](https://cli.github.com/)
+Node.js 26, [pnpm 11](https://pnpm.io/installation), [Docker](https://docs.docker.com/get-docker/). [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and [gh cli](https://cli.github.com/)
 
 <br>
 

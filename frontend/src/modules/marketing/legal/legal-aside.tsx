@@ -49,7 +49,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   const currentSection = spySection || legalOverviewId;
 
   return (
-    <div className={cn('mb-6 flex w-full flex-col gap-2', className)}>
+    <div className={cn('mb-6 flex w-full flex-col gap-2 no-focus-ring:gap-0', className)}>
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
@@ -102,7 +102,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                       layoutId={layoutId}
                       group="section"
                       staticIndicator={isMobile}
-                      className="pl-5"
+                      className="no-focus-ring:min-h-9 pl-5"
                     >
                       {sectionLabel}
                     </SpyNavItem>

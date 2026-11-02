@@ -3,18 +3,12 @@ import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dia
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus, useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
+import { searchDialogLayout } from '~/modules/common/search-dialog-bar';
 import { sheetLayerOf } from '~/modules/common/sheeter/sheet-layer';
 import { spotlightLift, useSpotlight } from '~/modules/common/spotlighter/use-spotlighter';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
-import { tw } from '~/utils/tw';
-
-// A phone's search dialog fills the screen with no backdrop or edge in sight: its height is the space above the keyboard
-// (--visual-viewport-height, which SearchDialogBar writes). A flex column, so the results fill and scroll while the field stays.
-const searchLayoutClass = tw(
-  'max-sm:data-closed:slide-out-to-top-2 max-sm:data-open:slide-in-from-top-2 max-sm:m-0 max-sm:flex max-sm:h-(--visual-viewport-height,100dvh) max-sm:max-h-none max-sm:w-full max-sm:flex-col max-sm:self-start max-sm:overflow-hidden max-sm:rounded-none max-sm:pt-[env(safe-area-inset-top)] max-sm:shadow-none max-sm:ring-0',
-);
 
 interface DialogerDialogProps {
   dialog: InternalDialog;
@@ -68,10 +62,9 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         layer={layer}
         outsideScroll={outsideScroll}
         dock={dock}
-        // A drag on the inset around a search dialog would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed.
-        viewportClassName={searchLayout ? 'max-sm:touch-none' : undefined}
-        overlayClassName={searchLayout ? 'max-sm:hidden' : undefined}
-        className={cn(className, searchLayout && searchLayoutClass, containerElement && (container?.overlay ? spotlightLift : 'z-40'))}
+        viewportClassName={searchLayout ? searchDialogLayout.viewportClassName : undefined}
+        overlayClassName={searchLayout ? searchDialogLayout.overlayClassName : undefined}
+        className={cn(className, searchLayout && searchDialogLayout.className, containerElement && (container?.overlay ? spotlightLift : 'z-40'))}
         initialFocus={() => touchInitialFocus(popupRef)}
         finalFocus={() => finalFocusFor(triggerRef, String(id))}
       >

@@ -31,6 +31,30 @@ export function SearchClearButton({ className, ...props }: ComponentProps<'butto
   );
 }
 
+interface SearchRecentRemoveButtonProps {
+  onRemove: () => void;
+  className?: string;
+}
+
+/** The X of a recent search, inside a `group/recent` row: it shows with the row's hover, and always where there is no hover. */
+export function SearchRecentRemoveButton({ onRemove, className }: SearchRecentRemoveButtonProps) {
+  const { t } = useTranslation();
+
+  return (
+    <SearchClearButton
+      aria-label={t('c:remove')}
+      className={cn(
+        'size-6 rounded-sm opacity-0 pointer-coarse:opacity-100 hover:bg-foreground/10 focus-visible:opacity-100 active:bg-foreground/10 group-hover/recent:opacity-100 max-sm:opacity-100',
+        className,
+      )}
+      onClick={(event) => {
+        event.stopPropagation();
+        onRemove();
+      }}
+    />
+  );
+}
+
 /** Plain X beside a search field that ends the search; larger than the clear X inside the field and in full text color. */
 export function SearchCloseButton({ className, ...props }: ComponentProps<'button'>) {
   const { t } = useTranslation();

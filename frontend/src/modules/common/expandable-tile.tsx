@@ -59,7 +59,7 @@ function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: Ti
         <span className={cn('text-muted-foreground text-sm', !wrapMeta && 'truncate')}>
           {status && (
             <>
-              <span className={cn('font-medium', tileTones[status.tone].text)}>{status.label}</span>
+              <span className={tileTones[status.tone].text}>{status.label}</span>
               {meta && ' · '}
             </>
           )}
@@ -159,7 +159,7 @@ export function TileListHeading({ title, count, level = 3, className, children }
 
   return (
     <div className={cn('flex items-center justify-between gap-2', children && 'min-h-9', className)}>
-      <Heading className="group-label text-xs">
+      <Heading className="group-label">
         {title}
         <span className="ml-3 font-normal text-faint-foreground">{count}</span>
       </Heading>

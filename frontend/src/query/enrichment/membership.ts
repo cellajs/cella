@@ -3,7 +3,7 @@ import { findMembership } from '~/query/enrichment/helpers';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
 /** Fields that affect enrichment; update when MembershipBase gains new meaningful fields. */
-const comparedKeys: (keyof MembershipBase)[] = ['archived', 'muted', 'displayOrder', 'role'];
+const comparedKeys: (keyof MembershipBase)[] = ['id', 'archived', 'muted', 'displayOrder', 'role'];
 
 function hasMembershipChanged(a: MembershipBase | null, b: MembershipBase | null): boolean {
   if (!a && !b) return false;

@@ -1,13 +1,15 @@
 import type { Hono } from 'hono';
 import type { Job, Queue, WorkOptions } from 'pg-boss';
-import type { ProductEntityType, TrackedEventType } from 'shared';
+import type { ChannelEntityType, ProductEntityType, TrackedEventType } from 'shared';
 import { type ModuleConfig, registerModule } from 'shared/module-registry';
-import type { Env } from '#/core/context';
+import type { DbContext, Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
 import type { StreamSignalDeclaration } from '#/modules/entities/stream/audiences';
+import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
 import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
+import type { EntityModel } from '#/tables';
 
 /**
  * A periodic job: pg-boss cron on a singleton queue named after the job, run by the jobs worker.
@@ -105,6 +107,22 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
 }
 
+/** The channel a membership is being inserted for. */
+export type MembershipEntity = EntityModel<ChannelEntityType> & {
+  [key: string]: unknown;
+  tenantId: string;
+};
+
+/**
+ * A module's own columns on a membership about to be inserted, resolved inside the caller's transaction before the
+ * insert, so the membership is complete from its first commit. May write rows of its own. An item its caller gave
+ * `extraFields` skips this; undefined adds nothing.
+ */
+export type MembershipColumnsResolver = (
+  ctx: DbContext,
+  item: { userId: string; entity: MembershipEntity },
+) => Promise<Partial<InsertMembershipModel> | undefined>;
+
 /** Shared module metadata plus backend-only capabilities, indexed by subsystems via {@link onBackendModuleRegister}. */
 export interface BackendModule extends ModuleConfig {
   /** The product entity this module owns; keys its product-scoped capabilities below. */
@@ -113,6 +131,8 @@ export interface BackendModule extends ModuleConfig {
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
+  /** Columns this module sets on memberships as they are inserted (see {@link MembershipColumnsResolver}). */
+  membershipColumns?: MembershipColumnsResolver;
   /** Cron jobs the jobs worker schedules and runs (see {@link BackendJob}). */
   jobs?: BackendJob[];
   /** Queues the jobs worker creates and, given a handler, works (see {@link BackendQueue}). */
@@ -137,6 +157,7 @@ export function defineBackendModule(module: BackendModule): void {
     productEntity: _productEntity,
     yjsMaterializer: _yjsMaterializer,
     onMutation: _onMutation,
+    membershipColumns: _membershipColumns,
     jobs = [],
     queues = [],
     routes = [],

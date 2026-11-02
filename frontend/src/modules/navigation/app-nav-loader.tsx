@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useEffectEvent, useRef, useState } from 'rea
 import { useDebounce } from '~/hooks/use-debounce';
 import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Logo } from '~/modules/common/logo';
+import { LogoMark } from '~/modules/common/logo-art';
 import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Spinner } from '~/modules/ui/spinner';
@@ -77,7 +77,7 @@ export function AppIcon({ className }: { className?: string }) {
           transition={popTransition}
           className="absolute flex"
         >
-          {showHome ? <HomeIcon strokeWidth={navIconStrokeWidth} className="size-5" /> : <Logo iconOnly height={28} className="size-7" />}
+          {showHome ? <HomeIcon strokeWidth={navIconStrokeWidth} className="size-5" /> : <LogoMark className="size-7" />}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -130,7 +130,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             className="absolute"
           >
             <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 1.5, repeat: 1, repeatDelay: 0.3, ease: 'easeInOut' }}>
-              <Logo iconOnly height={34} className="saturate-90" />
+              <LogoMark className="size-8 saturate-90" />
             </motion.div>
           </motion.div>
         )}

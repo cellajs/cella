@@ -43,7 +43,7 @@ export default defineConfig({
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
       'frontend/public/thumbnail.png',
-      'frontend/src/modules/common/logo.tsx',
+      'frontend/src/modules/common/logo-art.tsx',
       'frontend/vite/react-compiler-allowlist.app.json',
       'frontend/src/styling/app.css',
       'frontend/src/modules/auth/legal/legal-config.ts',

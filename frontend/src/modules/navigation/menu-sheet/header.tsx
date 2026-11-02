@@ -3,9 +3,10 @@ import { BellIcon, UserIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { Logo } from '~/modules/common/logo';
+import { LogoMark, LogoText } from '~/modules/common/logo-art';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { menuColumnsClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { openNavSheet } from '~/modules/navigation/nav-sheet';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
@@ -31,10 +32,14 @@ export function MenuSheetHeader() {
         <Link
           to="/home"
           draggable={false}
-          className="focus-effect active:press block rounded-md transition-transform hover:scale-105"
+          className={cn('focus-effect active:press flex items-center rounded-md transition-transform hover:scale-105', menuColumnsClass)}
           aria-label={t('c:go_to_home')}
+          title={t('c:go_to_home')}
         >
-          <Logo className="mx-1 h-8" title={t('c:go_to_home')} />
+          <span className="flex w-8 justify-center">
+            <LogoMark className="size-7" />
+          </span>
+          <LogoText className="h-7 w-auto" />
         </Link>
 
         {user && (

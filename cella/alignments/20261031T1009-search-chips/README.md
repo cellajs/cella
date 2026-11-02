@@ -25,7 +25,7 @@ No script: manual.
 
 1. Replace `parseSearchQuery(q).terms` with `parseTerms(q)` and `matchesSearch(fields, parsed)` with `!terms.length || matchesTerms(fields, terms)`. Drop `matchMode` from route schemas, query keys and search params, and run `pnpm sdk`.
 2. Replace `filters` on `TableBarShell` with `searchFilters`: `groups` of options and the `chips` of what is on. For a role, call `useRoleSearchFilter`.
-3. An app's own field with chips or suggestions becomes `SearchChipsField`, with filters as ordinary URL params and `q` holding words only. Pass `recents` and `onSearchEnd`, stored through `saveRecentListSearch` in `navigationStore`, where people repeat a search.
+3. An app's own field with chips or suggestions becomes `SearchChipsField`, with filters as ordinary URL params and `q` holding words only. Pass `recents` and `onSearchEnd`, kept in your module's own store, where people repeat a search.
 4. A filtered list drops its match stepping and shows a count. A find that keeps the content around its matches imports `useMatchSteps` and `FindSteps` from `~/modules/docs/find-steps`.
 5. A bar that composes `TableFilterBar` drops `filters`, and `TableCount` drops `isFiltered` and `onResetFilters`: the field's X resets. Replace `TableFilterBarContext` with `useBreakpointBelow('sm')`.
 6. `ResponsiveSelect` drops `onClear` and `showTitle`. Replace the key `resource_count_found` with `resource_count`.

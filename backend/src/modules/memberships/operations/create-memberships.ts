@@ -86,8 +86,14 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   });
   const mails = ({ email }: { email: string }) => !mailHeldBack.has(email);
 
+  // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
   const createdMemberships = adds.length
-    ? await insertMemberships(ctx, { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) })
+    ? await db.transaction((tx) =>
+        insertMemberships(
+          { var: { db: tx } },
+          { items: adds.map(({ userId }) => ({ userId, role, entity: { ...entity, tenantId }, createdBy: user.id })) },
+        ),
+      )
     : [];
   for (const { userId } of adds) invalidateCache.user(userId);
 

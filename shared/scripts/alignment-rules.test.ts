@@ -98,7 +98,7 @@ describe('owedAlignmentFindings', () => {
     "      'shared/config',",
     "      'backend/drizzle',",
     '      // App identity',
-    "      'frontend/src/modules/common/logo.tsx',",
+    "      'frontend/src/modules/common/logo-art.tsx',",
     "      'locales/en/app.json',",
     '    ],',
     '    pinned: [',
@@ -116,7 +116,7 @@ describe('owedAlignmentFindings', () => {
       'README.md',
       'shared/config',
       'backend/drizzle',
-      'frontend/src/modules/common/logo.tsx',
+      'frontend/src/modules/common/logo-art.tsx',
       'locales/en/app.json',
       'backend/src/modules.ts',
       'json/text-blocks.json',
@@ -124,8 +124,8 @@ describe('owedAlignmentFindings', () => {
   });
 
   it('asks for an alignment when a branch changes an app-owned path template code reads from', () => {
-    expect(rule(['frontend/src/modules/common/logo.tsx', 'frontend/src/modules/auth/auth-layout.tsx'])).toEqual([
-      'frontend/src/modules/common/logo.tsx',
+    expect(rule(['frontend/src/modules/common/logo-art.tsx', 'frontend/src/modules/auth/auth-layout.tsx'])).toEqual([
+      'frontend/src/modules/common/logo-art.tsx',
     ]);
     expect(rule(['backend/drizzle/20261004_x/migration.sql', 'backend/src/modules.ts'])).toEqual([
       'backend/drizzle/20261004_x/migration.sql',
@@ -147,7 +147,7 @@ describe('owedAlignmentFindings', () => {
   });
 
   it('is met by an alignment the branch adds or a reasoned waiver in a commit message', () => {
-    const logo = 'frontend/src/modules/common/logo.tsx';
+    const logo = 'frontend/src/modules/common/logo-art.tsx';
     const readme = 'cella/alignments/20261004T1215-logo-title/README.md';
     expect(rule([logo, readme])).toEqual([]);
     expect(rule([logo, readme], '', [])).toEqual([logo]);

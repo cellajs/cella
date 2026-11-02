@@ -1,10 +1,13 @@
 import { Link } from '@tanstack/react-router';
+import { UsersIcon } from 'lucide-react';
 import { createContext, type ReactNode, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type EntityRole, hierarchy, isUnpublishedDraft } from 'shared';
 import { getMemberStatIcon } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { ChannelTileEntity, EnrichedChannel } from '~/modules/entities/types';
 import { JoinedButton } from '~/modules/memberships/joined-button';
 import { Badge } from '~/modules/ui/badge';
@@ -12,6 +15,7 @@ import { Card } from '~/modules/ui/card';
 import { MemberAvatarGroup } from '~/modules/user/member-avatar';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
+import { dateFull } from '~/utils/date-full';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
 import { placeholderColorClass } from '~/utils/placeholder-color-class';
@@ -90,7 +94,7 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
       <TileLink className="block">
         <div
           // A min height would transfer through the aspect ratio into a min width wider than a phone's column
-          className={cn('relative flex aspect-5/2 flex-col bg-center bg-cover sm:aspect-3/1', !entity.bannerUrl && placeholderColorClass(entity.id))}
+          className={cn('relative flex aspect-9/4 flex-col bg-center bg-cover sm:aspect-5/2', !entity.bannerUrl && placeholderColorClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
@@ -141,53 +145,80 @@ export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
   );
 }
 
-interface ChannelTileStatsProps {
+interface TileCountProps {
+  icon?: IconComponent;
+  count: number;
+  /** The counted noun, already pluralized for `count`. */
+  resource: string;
+}
+
+/** An icon and a compact count; a tooltip and assistive technology get the exact count with its noun. */
+function TileCount({ icon: Icon, count, resource }: TileCountProps) {
+  const { t } = useTranslation();
+  const label = t('c:resource_count', { count, resource });
+  return (
+    <TooltipButton toolTipContent={label}>
+      <span className="inline-flex items-center gap-1">
+        {Icon && <Icon className="size-3.5" />}
+        <span aria-hidden="true">{formatCount(count)}</span>
+        <span className="sr-only">{label}</span>
+      </span>
+    </TooltipButton>
+  );
+}
+
+/** Compact stats: posts per `memberStatProductTypes` entry, then the latest post date (or the creation date). */
+export function ChannelTileStats() {
+  const { t } = useTranslation();
+  const entity = useTileEntity();
+  const counts = entity.included?.counts;
+  const postTypes = appConfig.memberStatProductTypes.filter((type) => counts?.entities?.[type] !== undefined);
+  const lastPostedAt = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
+  const shownDate = lastPostedAt ? new Date(lastPostedAt) : entity.createdAt;
+  const dateLabel = t(lastPostedAt ? 'c:last_post_on' : 'c:created_on', { date: dateFull(shownDate) });
+
+  return (
+    <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-xs sm:text-sm">
+      {postTypes.map((type) => {
+        const count = counts?.entities?.[type] ?? 0;
+        return <TileCount key={type} icon={getMemberStatIcon(type)} count={count} resource={t(`c:${type}`, { count })} />;
+      })}
+      {postTypes.length > 0 && <span aria-hidden="true">·</span>}
+      <TooltipButton toolTipContent={dateLabel}>
+        <span>
+          <span aria-hidden="true">{dateShort(shownDate)}</span>
+          <span className="sr-only">{dateLabel}</span>
+        </span>
+      </TooltipButton>
+    </div>
+  );
+}
+
+interface ChannelTileMemberCountProps {
   /** Counts only this role's members (default: all members). */
   countRole?: EntityRole;
 }
 
-/** Compact counts: members, a draft's pending invites and posts per `memberStatProductTypes` entry, then from `sm` the latest post date (or the creation date). */
-export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
+/** Footer part at the end of its line: the member count, and a draft's pending invites. Nothing for a row without counts. */
+export function ChannelTileMemberCount({ countRole }: ChannelTileMemberCountProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   const counts = entity.included?.counts;
-  const memberCount = counts && (countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total);
-  const postTypes = appConfig.memberStatProductTypes.filter((type) => counts?.entities?.[type] !== undefined);
-  const lastPostedAt = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
+  if (!counts) return null;
+  const memberCount = countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total;
 
   return (
-    <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-xs sm:text-sm">
-      {memberCount !== undefined && (
-        <span>
-          {formatCount(memberCount)} {t(`c:${countRole ?? 'member'}`, { count: memberCount }).toLowerCase()}
-        </span>
+    <span className="ms-auto inline-flex items-center gap-2 whitespace-nowrap text-muted-foreground text-xs sm:text-sm">
+      <TileCount icon={UsersIcon} count={memberCount} resource={t(`c:${countRole ?? 'member'}`, { count: memberCount })} />
+      {isUnpublishedDraft(entity) && !!counts.membership.pending && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span>
+            {formatCount(counts.membership.pending)} {t('c:pending').toLowerCase()}
+          </span>
+        </>
       )}
-      {isUnpublishedDraft(entity) && !!counts?.membership.pending && (
-        <span>
-          · {formatCount(counts.membership.pending)} {t('c:pending').toLowerCase()}
-        </span>
-      )}
-      {postTypes.length > 0 && (
-        <span className="inline-flex items-center gap-2">
-          ·
-          {postTypes.map((type) => {
-            const Icon = getMemberStatIcon(type);
-            const count = counts?.entities?.[type] ?? 0;
-            return (
-              <span key={type} className="inline-flex items-center gap-1">
-                {Icon && <Icon className="size-3.5" />}
-                {formatCount(count)}
-                <span className="sr-only">{t(`c:${type}`, { count })}</span>
-              </span>
-            );
-          })}
-        </span>
-      )}
-      <span className="max-sm:hidden">
-        {memberCount !== undefined && '· '}
-        {dateShort(lastPostedAt ? new Date(lastPostedAt) : entity.createdAt)}
-      </span>
-    </div>
+    </span>
   );
 }
 
@@ -231,17 +262,17 @@ interface ChannelTileFooterProps {
   children: ReactNode;
 }
 
-/** Area below the banner; it takes the card's remaining height and disappears when its parts render nothing. */
+/** Area below the banner, its parts in wrapping lines with the last at the bottom; it takes the card's remaining height and disappears when its parts render nothing. */
 export function ChannelTileFooter({ children }: ChannelTileFooterProps) {
-  return <div className="flex grow flex-col gap-3 p-3 empty:hidden">{children}</div>;
+  return <div className="flex grow flex-wrap content-between items-center gap-3 px-4 py-3 empty:hidden">{children}</div>;
 }
 
-/** Plain-text preview of the description; nothing for a row without a `description` field. It grows, so what follows sits at the bottom. */
+/** Plain-text preview of the description on a line of its own; nothing for a row without a `description` field. */
 export function ChannelTileDescription() {
   const { t } = useTranslation();
   const { description } = useTileEntity();
   if (description === undefined) return null;
-  return <p className="grow text-muted-foreground text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
+  return <p className="w-full text-muted-foreground text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
 }
 
 interface ChannelTileMembershipProps {
@@ -257,7 +288,7 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
   if (entity.invited) return <Badge variant="secondary">{t('c:pending')}</Badge>;
-  if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} className="w-full" redirectPath={null} />;
+  if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} redirectPath={null} />;
   return fallback;
 }
 
@@ -265,7 +296,7 @@ interface ChannelTileProps extends Pick<ChannelTileMembershipProps, 'hideOwnRole
   entity: ChannelTileEntity;
 }
 
-/** The default tile, composed from the parts: banner with member previews, description, and the viewer's membership. */
+/** The default tile, composed from the parts: banner with member previews, description, the viewer's membership and the member count. */
 export function ChannelTile({ entity, hideOwnRole }: ChannelTileProps) {
   return (
     <ChannelTileCard entity={entity}>
@@ -273,6 +304,7 @@ export function ChannelTile({ entity, hideOwnRole }: ChannelTileProps) {
       <ChannelTileFooter>
         <ChannelTileDescription />
         <ChannelTileMembership hideOwnRole={hideOwnRole} />
+        <ChannelTileMemberCount />
       </ChannelTileFooter>
     </ChannelTileCard>
   );

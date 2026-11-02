@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
-import type { SearchFilters } from '~/modules/common/search-chips-field';
+import type { SearchFilters } from '~/modules/common/search-chips/types';
 
 interface RoleSearchFilterOptions {
   /** Restrict options to this channel entity's role vocabulary; omit for system roles. */
@@ -19,6 +19,6 @@ export function useRoleSearchFilter({ entityType, value, onChange }: RoleSearchF
 
   return {
     groups: [{ key: 'role', label: t('c:role'), options, onToggle: (role) => onChange(role === value ? undefined : role) }],
-    chips: selected ? [{ key: 'role', label: selected.label, onRemove: () => onChange(undefined) }] : [],
+    chips: selected ? [{ key: 'role', group: 'role', value: selected.value, label: selected.label, onRemove: () => onChange(undefined) }] : [],
   };
 }

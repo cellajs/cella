@@ -26,6 +26,8 @@ export default plugin(
     // Where focus draws a ring: from `sm` up, and at any width with a fine pointer. A narrow touch screen draws none, like
     // a native app; a desktop zoomed to 400% is a 320px viewport and still has to show keyboard focus.
     api.addVariant('focus-ring', `@media (width >= ${appConfig.theme.screenSizes.sm}), (pointer: fine)`);
+    // That narrow touch screen: no ring needs room between rows, so a dense list trades its gaps for taller tap targets.
+    api.addVariant('no-focus-ring', `@media (width < ${appConfig.theme.screenSizes.sm}) and (pointer: coarse)`);
 
     // Increased contrast, asked for by the OS or stored on the user. The tokens carry almost all of it (tailwind.css
     // raises --border, --input and --sidebar-border); this is for the few places that draw no edge at all by default.

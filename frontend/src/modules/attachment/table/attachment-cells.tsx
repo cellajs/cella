@@ -107,7 +107,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
 
   // Local-first: a stored blob saves without the network, and the cloud URL is the fallback.
   const handleDownload = async () => {
-    if (pending) return;
+    if (pending || isInProgress) return;
     try {
       await saveAttachment(row, download);
     } catch {
@@ -120,9 +120,8 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       variant="cell"
       size="cell"
       tabIndex={tabIndex}
-      disabled={isInProgress}
-      // Not `disabled`: the tooltip says why there is nothing to download, and a disabled button would not show it.
-      aria-disabled={!!pending}
+      // Not `disabled`: a disabled button shows no tooltip saying why, and it drops focus out of the grid.
+      aria-disabled={!!pending || isInProgress}
       className="justify-center aria-disabled:opacity-50 aria-disabled:hover:text-foreground-soft"
       aria-label={tooltip}
       data-tooltip="true"

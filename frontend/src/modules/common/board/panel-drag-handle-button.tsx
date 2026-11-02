@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { usePanelDragHandle } from '~/modules/common/board/board-drag';
+import { useBoardStore } from '~/modules/common/board/board-store';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -11,7 +12,7 @@ import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
 interface PanelDragHandleButtonProps {
-  /** Sortable name announced by screen readers (e.g. the project or section name). */
+  /** Sortable name announced by screen readers (e.g. the project name). */
   name: string;
   /** aria-label when the board isn't reorderable (no drag handle). Omit to leave it unlabeled. */
   fallbackLabel?: string;
@@ -33,6 +34,7 @@ interface PanelDragHandleButtonProps {
 export function PanelDragHandleButton({ name, fallbackLabel, className, icon, preview, children }: PanelDragHandleButtonProps) {
   const { t } = useTranslation();
   const panelDrag = usePanelDragHandle();
+  const isCollapsed = useBoardStore((state) => !!panelDrag && !!state.panelCollapseState[panelDrag.panelId]);
 
   const content = (
     <>
@@ -64,7 +66,7 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
     );
   }
 
-  const { registerHandle, isCollapsed } = panelDrag;
+  const { registerHandle } = panelDrag;
   const CollapseIcon = isCollapsed ? ChevronsLeftRightIcon : ChevronsRightLeftIcon;
 
   return (

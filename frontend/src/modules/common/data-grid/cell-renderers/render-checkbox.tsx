@@ -12,10 +12,6 @@ export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
   return (
     <Checkbox
       {...props}
-      onMouseDown={(e) => {
-        // The cell's mousedown also toggles row selection, which would cancel out this click.
-        e.stopPropagation();
-      }}
       onClick={(e) => {
         withShift.current = e.nativeEvent.shiftKey;
         e.stopPropagation();

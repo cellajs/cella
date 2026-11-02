@@ -9,6 +9,7 @@ import {
   ChannelTileDescription,
   ChannelTileFooter,
   ChannelTileHeading,
+  ChannelTileMemberCount,
   ChannelTileMembers,
   ChannelTileMembership,
   ChannelTileParentChip,
@@ -129,7 +130,7 @@ export const LargeCounts: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText(/^2\.6k members?$/i)).toBeInTheDocument();
+    await expect(canvas.getByText('2.6k')).toBeInTheDocument();
     await expect(canvas.getByText('+1.2k')).toBeInTheDocument();
     await expect(canvas.getByText(/^21k/)).toBeInTheDocument();
     await expect(canvas.queryByText(/2610|1200|21312/)).toBeNull();
@@ -149,11 +150,12 @@ export const Composed: Story = {
           </>
         }
       >
-        <ChannelTileHeading meta={<ChannelTileStats countRole={leastPrivileged} />} />
+        <ChannelTileHeading meta={<ChannelTileStats />} />
       </ChannelTileBanner>
       <ChannelTileFooter>
         <ChannelTileDescription />
         <ChannelTileMembership fallback={<Button variant="outline">Join</Button>} />
+        <ChannelTileMemberCount countRole={leastPrivileged} />
       </ChannelTileFooter>
     </ChannelTileCard>
   ),

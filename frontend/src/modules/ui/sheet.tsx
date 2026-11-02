@@ -57,7 +57,8 @@ export function SheetContent({
       data-slot="sheet-content"
       data-sheet-layer
       className={cn(
-        'flex flex-col bg-background shadow-lg focus-visible:outline-hidden',
+        // The sheet's color sits on the popup, which a bounce of the scroll area reveals. A caller sets `--sheet-bg`, not a fill on its content.
+        'flex flex-col bg-(--sheet-bg) shadow-lg [--sheet-bg:var(--background)] focus-visible:outline-hidden',
         !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&
@@ -98,7 +99,7 @@ export function SheetHeader({ className, sticky, children, ...props }: React.Com
   return (
     <div
       data-slot="sheet-header"
-      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-background', className)}
+      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-(--sheet-bg)', className)}
       {...props}
     >
       {children}

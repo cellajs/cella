@@ -37,11 +37,11 @@ function SearchResultsSkeleton() {
   const { hasStarted } = useMountedState();
 
   return (
-    <div data-started={hasStarted} className="flex flex-col gap-4 p-4 transition-opacity duration-300 data-[started=false]:opacity-0">
+    <div data-started={hasStarted} className="flex flex-col p-1 transition-opacity duration-300 data-[started=false]:opacity-0">
       {Array.from({ length: 3 }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
-        <div key={i} className="flex items-center gap-3 py-1.5">
-          <Skeleton className="size-10 shrink-0 rounded-full" />
+        <div key={i} className="flex items-center gap-2 py-1.5 pl-3">
+          <Skeleton className="size-8 shrink-0 rounded-full" />
           <Skeleton className="h-4 w-48" />
         </div>
       ))}
@@ -140,7 +140,8 @@ export function AppSearch() {
       // On touch the keyboard's Search key would open a highlighted first result the user never chose.
       autoHighlight={!isTouchInteraction()}
     >
-      <div className="flex min-h-0 flex-col max-sm:flex-1 sm:rounded-lg sm:shadow-2xl">
+      {/* The results lead with size-8 avatars. The field's size-5 icon takes their center, and its text the text after them */}
+      <div className="flex min-h-0 flex-col [--search-icon-size:2rem] max-sm:flex-1 sm:rounded-lg sm:shadow-2xl">
         <SearchDialogBar>
           <ComboboxSearchInput
             ref={focusRef}
@@ -149,8 +150,8 @@ export function AppSearch() {
             isSearching={isFetching}
             spinnerDelay={0}
             enterKeyHint="search"
-            className="h-12 text-lg"
-            wrapClassName="h-12 flex-1 border-b-0 text-lg"
+            className="h-12 pl-1.5 text-lg"
+            wrapClassName="h-12 flex-1 border-b-0 pl-5.5 text-lg"
             placeholder={t('c:placeholder.search')}
           />
         </SearchDialogBar>

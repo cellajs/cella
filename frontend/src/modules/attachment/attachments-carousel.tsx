@@ -244,7 +244,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
         </>
       )}
       {!isDialog && (
-        <div className="relative mx-auto mt-[calc(1rem+2%)] w-fit">
+        <div className="relative mx-auto mt-[calc(1.5rem+2%)] w-fit">
           <CarouselDots size="sm" gap="lg" />
           {/* Reduced motion only: autoplay starts from this control, and a pause holds until it is pressed again. */}
           {items.length > 1 && reducedMotion && (

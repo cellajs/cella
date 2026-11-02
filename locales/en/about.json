@@ -179,7 +179,7 @@
   "features.yjs_collaboration.text": "Real-time co-editing with live presence, powered by Yjs. While connected, concurrent edits merge cleanly with no conflicts.",
   "features.zero_downtime": "Zero-downtime deploys",
   "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.",
-  "hero.text": "Cella is a <strong>TypeScript template</strong> to build fully EU-hosted apps with offline & real-time sync features.",
+  "hero.text": "A <strong>TypeScript template</strong> to build your own EU-hosted app with offline & real-time sync features.",
   "hero.title": "Ship modern web apps. Use a classic REST API.",
   "prerelease": "Prerelease",
   "pricing.plan_1.1": "Member of CellaJS community",
@@ -256,8 +256,8 @@
   "try_me": "Try me",
   "why.text_2": "Some data is <syncEngineLink>synced in real-time</syncEngineLink> to clients, some is just fetched. All data passes through Postgres, API & React Query.",
   "why.text_1": "Auth, permissions, UI components, automated SDK & docs, CLI to pull template changes, <featuresLink>and more</featuresLink>.",
-  "why.text_3": "Infrastructure as Code - wrapped in a CLI - allows you to easily deploy everything on European infrastructure.",
+  "why.text_3": "Automated handling of data retention policies. A simple CLI to setup and deploy on EU infra.",
   "why.title_2": "Selective sync engine",
   "why.title_1": "Batteries included template",
-  "why.title_3": "100% EU cloud infra"
+  "why.title_3": "GDPR-ready & EU-hosted"
 }

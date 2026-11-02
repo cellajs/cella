@@ -2,9 +2,9 @@ import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, isChannel } from 'shared';
-import { CloseButton } from '~/modules/common/close-button';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+import { SearchRecentRemoveButton } from '~/modules/common/search-clear-button';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
@@ -59,7 +59,7 @@ export function SearchResultBlock({
             value={item}
             disabled={isChannelType && 'membership' in item && item.membership === null}
             data-already-member={isChannelType && 'membership' in item && item.membership !== null}
-            className={cn('group justify-between', collapsed && 'hidden')}
+            className={cn('group group/recent justify-between', collapsed && 'hidden')}
           >
             <div className="flex min-w-0 items-center gap-2">
               <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
@@ -70,14 +70,7 @@ export function SearchResultBlock({
 
             <div className="flex items-center">
               {onRemove ? (
-                <CloseButton
-                  size="sm"
-                  label="c:remove"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRemove(item);
-                  }}
-                />
+                <SearchRecentRemoveButton onRemove={() => onRemove(item)} />
               ) : (
                 <Badge size="sm" soft className="hidden gap-1 group-data-[already-member=true]:flex">
                   <UserIcon />

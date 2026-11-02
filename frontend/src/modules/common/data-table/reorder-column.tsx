@@ -37,7 +37,8 @@ export function reorderColumn<TRow>({
     name: '',
     width: 36,
     maxWidth: 36,
-    cellClass: cn('justify-center', cellClass),
+    // The grip draws its own ring
+    cellClass: cn('justify-center focus-ring:has-focus:outline-hidden', cellClass),
     rowDragHandle: true,
     renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
     renderCell: ({ row, rowIdx, tabIndex }) => {

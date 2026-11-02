@@ -22,11 +22,14 @@ interface SearchFieldProps {
   children?: ReactNode;
   /** Runs before the field's own keys; an event it handles (`preventDefault`) skips them. */
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  /** Leaves out the X, for a field beside a button that clears it. */
+  hideClear?: boolean;
   ref?: RefObject<HTMLInputElement | null>;
   className?: string;
 }
 
-const typingPause = 250;
+/** How long a search waits after a keystroke before it applies. */
+export const typingPause = 250;
 
 /**
  * The input of an in-page search with words only: a list without filters, or a find in content. It applies the query once
@@ -43,6 +46,7 @@ export function SearchField({
   count,
   children,
   onKeyDown,
+  hideClear,
   ref,
   className,
 }: SearchFieldProps) {
@@ -51,18 +55,27 @@ export function SearchField({
 
   const [inputValue, setInputValue] = useState(value);
   const typedValue = useDebounce(inputValue, typingPause);
+  const sentRef = useRef(value);
+
+  const send = (next: string) => {
+    sentRef.current = next;
+    onSearch(next);
+  };
 
   useEffect(() => {
-    if (typedValue !== value) onSearch(typedValue);
+    if (typedValue !== value) send(typedValue);
   }, [typedValue]);
 
+  // A field in use keeps its text against a query still on its way; only a clear it did not send itself reaches it
   useEffect(() => {
-    if (document.activeElement !== inputRef.current) setInputValue(value);
+    const isClearedOutside = !value && !!sentRef.current;
+    if (isClearedOutside) sentRef.current = '';
+    if (isClearedOutside || document.activeElement !== inputRef.current) setInputValue(value);
   }, [value]);
 
   const clear = () => {
     setInputValue('');
-    onSearch('');
+    send('');
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -91,25 +104,27 @@ export function SearchField({
         onKeyDown={handleKeyDown}
       />
 
-      <InputGroupAddon className="pl-1.5">
-        <SearchSpinner value={inputValue} isSearching={isSearching} />
+      <InputGroupAddon className="pl-1.5 sm:pl-[calc(1rem-1px)]">
+        <SearchSpinner hasSearch={!!inputValue} isSearching={isSearching} />
       </InputGroupAddon>
 
-      <InputGroupAddon className="gap-0.5 pr-2" align="inline-end">
+      <InputGroupAddon className="gap-0.5 pr-1.5 has-[>button]:mr-0" align="inline-end">
         {/* Mounted while empty too: a status region announces changes only once it exists */}
         {count !== undefined && (
-          <span role="status" className="mr-1 whitespace-nowrap text-muted-foreground text-sm tabular-nums">
+          <span role="status" className="mr-1 whitespace-nowrap font-normal text-muted-foreground text-sm tabular-nums">
             {inputValue && count}
           </span>
         )}
         {inputValue && children}
-        <SearchClearButton
-          className={cn(!inputValue && 'invisible')}
-          onClick={() => {
-            clear();
-            inputRef.current?.focus();
-          }}
-        />
+        {!hideClear && (
+          <SearchClearButton
+            className={cn(!inputValue && 'invisible')}
+            onClick={() => {
+              clear();
+              inputRef.current?.focus();
+            }}
+          />
+        )}
       </InputGroupAddon>
     </InputGroup>
   );

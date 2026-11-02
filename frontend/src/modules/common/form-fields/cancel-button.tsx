@@ -7,13 +7,17 @@ interface CancelButtonProps extends ButtonProps {
   dirty: boolean;
 }
 
-/** A form's cancel button, shown once the form has changes. */
+/** A form's cancel button, shown once the form has changes; in a `FormActions` row on a phone it slides in and out. */
 export function CancelButton({ dirty, className, ...props }: CancelButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <Button type="reset" variant="secondary" className={cn(!dirty && 'invisible in-data-form-actions:hidden', className)} {...props}>
-      {t('c:cancel')}
-    </Button>
+    <div data-open={dirty || undefined} className={cn('form-actions-reveal', !dirty && 'invisible')}>
+      <div>
+        <Button type="reset" variant="secondary" className={cn('shrink-0', !dirty && 'sm:in-data-form-actions:hidden', className)} {...props}>
+          {t('c:cancel')}
+        </Button>
+      </div>
+    </div>
   );
 }
