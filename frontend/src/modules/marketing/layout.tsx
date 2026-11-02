@@ -18,7 +18,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
     <>
       <MarketingNav />
       <Suspense fallback={<Spinner size="lg" className="mt-[45vh]" />}>
-        <main>
+        <main className="focus:outline-hidden">
           {/* The gradient keeps the hero's height, centered and clipped: a short header shows its middle, unsquashed */}
           <section className="rich-gradient relative overflow-hidden pt-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">
             {/* A half-opaque halo of the page background clears the gradient behind the title without blanking it */}

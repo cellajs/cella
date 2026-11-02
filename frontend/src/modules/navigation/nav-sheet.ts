@@ -55,7 +55,7 @@ export function openNavSheet(
     sheeter.getState().create(content, { ...data, id: `${id}-sheet`, disablePointerDismissal: true });
     return;
   }
-  // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
+  // The sheeter disables outside-press while pinned; disabling it here suppresses the event in every state.
   sheeter.getState().replace(content, { ...data, id: navSheetId, disablePointerDismissal: false, autoScrollOnDrag: 'vertical' });
 }
 
@@ -63,6 +63,12 @@ export function openNavSheet(
 export function showMenuOrganization(organization: SheetOrganization) {
   navigationStore.getState().setNavSheetOpen('menu', organization.id);
   sheeter.getState().update(navSheetId, navSheetIdentity('menu', organization));
+}
+
+/** Closes a sheet stacked over the menu sheet, if one is open. */
+export function closeStackedNavSheet() {
+  const { navSheetOpen } = navigationStore.getState();
+  if (navSheetOpen) sheeter.getState().remove(`${navSheetOpen}-sheet`);
 }
 
 /** Closes the nav sheet and clears which nav item has it open. */

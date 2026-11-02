@@ -38,7 +38,7 @@ export function AboutPage() {
     <>
       <MarketingNav />
 
-      <main>
+      <main className="focus:outline-hidden">
         <Hero
           title="about:hero.title"
           // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
