@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { PanelTopIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
 import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
@@ -7,6 +8,7 @@ import { OperationSection } from '~/modules/docs/operations/operation-section';
 import { schemasQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
+import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { cn } from '~/utils/cn';
 
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
@@ -67,14 +69,20 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
             </AccordionTrigger>
             <AccordionContent>
               {response.headers && (
-                <dl className="flex max-w-measure flex-wrap gap-x-4 gap-y-1 px-3 pt-2 text-sm">
-                  {response.headers.map((header) => (
-                    <div key={header.name}>
-                      <dt className="inline font-mono text-foreground-soft">{header.name}</dt>
-                      <dd className="inline text-muted-foreground"> {header.description}</dd>
-                    </div>
-                  ))}
-                </dl>
+                // px-3 and leading-normal match the viewer below; a note, since an alert role announces on every opening of the panel
+                <Alert variant="info" role="note" className="mb-2 px-3">
+                  <PanelTopIcon />
+                  <AlertDescription>
+                    <dl className="w-full divide-y divide-foreground/10 leading-normal">
+                      {response.headers.map((header) => (
+                        <div key={header.name} className="flex justify-between gap-x-6 py-1.5 first:pt-0 last:pb-0 max-sm:flex-col">
+                          <dt className="shrink-0 font-mono text-foreground">{header.name}</dt>
+                          <dd className="sm:text-right">{header.description}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </AlertDescription>
+                </Alert>
               )}
               {schema ? (
                 <ViewerGroup
