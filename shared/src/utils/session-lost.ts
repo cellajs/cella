@@ -8,3 +8,7 @@ export type SessionLostType = (typeof types)[number];
 
 /** {@link SessionLostType} as a set, for a type read off the wire. */
 export const sessionLostTypes: ReadonlySet<string> = new Set(types);
+
+/** Whether a refusal ended the session: a 401 of a {@link SessionLostType}, or of no type, as a proxy answers one. */
+export const isSessionLost = ({ status, type }: { status?: number; type?: string }): boolean =>
+  status === 401 && (!type || sessionLostTypes.has(type));

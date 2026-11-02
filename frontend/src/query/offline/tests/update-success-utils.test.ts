@@ -1,16 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import '~/query/tests/query-client-env';
+import { afterEach, describe, expect, it } from 'vitest';
 
-// The module's list writer pulls in the app's query client at import; mergeServerResponse reads none of it.
-vi.mock('~/query/basic/cache-mutations', () => ({ cacheUpdate: vi.fn() }));
-
+const { queryClient } = await import('~/query/query-client');
 const { mergeServerResponse } = await import('../update-success-utils');
 
 describe('mergeServerResponse', () => {
-  const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
+  const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '100:0001:aaaaa' } };
   const serverStx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '200:0001:aaaaa' } };
   const cached = {
     id: 'e1',
+    entityType: 'task',
     name: 'Typed meanwhile',
+    status: 'open',
     description: 'old',
     keywords: 'old',
     labels: ['mine'],
@@ -20,7 +21,9 @@ describe('mergeServerResponse', () => {
   };
   const serverEntity = {
     id: 'e1',
+    entityType: 'task',
     name: 'Server name',
+    status: 'done elsewhere',
     description: 'new',
     keywords: 'new words',
     labels: ['server'],
@@ -28,17 +31,43 @@ describe('mergeServerResponse', () => {
     updatedAt: '2026-01-02',
     updatedBy: 'u2',
   };
-
-  it('takes from the response only what this mutation changed, the columns the server derived from it and the stamps, so a concurrent edit survives', () => {
-    const merged = mergeServerResponse({
+  const merge = (server = serverEntity) =>
+    mergeServerResponse({
+      queryClient,
       cached,
-      serverEntity,
+      serverEntity: server,
       mutatedKeys: ['description', 'labels'],
       derivedKeys: { description: ['keywords'], name: ['slug'] },
       skipKeys: ['labels'],
     });
 
-    // `name` was edited meanwhile and `labels` is skipped (raak's task skips its array fields): both keep the cached value.
-    expect(merged).toEqual({ ...cached, description: 'new', keywords: 'new words', stx: serverStx, updatedAt: '2026-01-02', updatedBy: 'u2' });
+  afterEach(() => queryClient.getMutationCache().clear());
+
+  it('takes every field of the stored row once no other edit of the row is queued, but the skipped keys and a description the server did not write', () => {
+    // `labels` is skipped, as raak's task skips the stubbed relations of its lite response.
+    expect(merge()).toEqual({ ...serverEntity, labels: ['mine'] });
+
+    // A response that carries the cached copy's description stamp did not write it: a collaborative patch survives.
+    expect(merge({ ...serverEntity, description: 'lagging', stx })).toMatchObject({ status: 'done elsewhere', description: 'old' });
+  });
+
+  it('takes from the response only what this mutation changed, the columns the server derived from it and the stamps while another edit of the row is queued, so its optimistic value survives', () => {
+    queryClient.getMutationCache().build(
+      queryClient,
+      { mutationKey: ['task', 'update'] },
+      {
+        context: undefined,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: true,
+        status: 'pending',
+        variables: { id: 'e1', ops: { name: 'Typed meanwhile' } },
+        submittedAt: Date.now(),
+      },
+    );
+
+    expect(merge()).toEqual({ ...cached, description: 'new', keywords: 'new words', stx: serverStx, updatedAt: '2026-01-02', updatedBy: 'u2' });
   });
 });

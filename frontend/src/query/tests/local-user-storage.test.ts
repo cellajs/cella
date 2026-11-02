@@ -4,14 +4,18 @@ import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 // A window that delivers events, so another tab's write to `localStorage` reaches this tab as the browser sends it.
 const reload = vi.fn();
 vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload }, setTimeout: window.setTimeout }));
+const quarantineFailedSync = vi.fn(async (_record: unknown) => {});
+vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync: (record: unknown) => quarantineFailedSync(record) }));
 
+const { apiErrorFromResponse } = await import('~/lib/api');
 const { userStore, userStorageKey } = await import('~/modules/user/user-store');
 const { getLocalUserDb } = await import('~/query/local-user-db');
+const { onError } = await import('~/query/on-error');
 const { markCacheRestored, queryClient } = await import('~/query/query-client');
 const { persister, persistOptions } = await import('~/query/persister');
 const { localUserStorageReady } = await import('~/query/local-user-storage');
@@ -32,9 +36,41 @@ afterEach(async () => {
   queryClient.clear();
   onlineManager.setOnline(true);
   reload.mockClear();
+  quarantineFailedSync.mockClear();
   userStore.getState().reset();
   for (const owner of [admin.id, target.id]) await Dexie.delete(dbName(owner));
 });
+
+/** What the provider's cache subscription writes after a cache change, without the write throttle. */
+const persistCache = async () => {
+  await persistQueryClientSave({ queryClient, persister, dehydrateOptions: persistOptions.dehydrateOptions });
+  await persister.flush();
+};
+const storedQueue = async () =>
+  (await getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray()).flatMap(({ mutations }) => mutations.map(({ state }) => state));
+const pausedInMemory = () =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .filter(({ state }) => state.isPaused)
+    .map(({ state }) => state.variables);
+
+/** An edit made offline, parked in the queue; once online its request waits for `answer`. */
+function queueOfflineEdit(variables: { name: string; stx?: { mutationId: string } }) {
+  const request = { answer: (_error: Error) => {} };
+  onlineManager.setOnline(false);
+  new MutationObserver<unknown, Error, typeof variables>(queryClient, {
+    mutationKey: ['thing', 'queued'],
+    retryDelay: 0,
+    mutationFn: async () => {
+      if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
+      await new Promise((_resolve, reject) => (request.answer = reject));
+    },
+  })
+    .mutate(variables)
+    .catch(() => {});
+  return request;
+}
 
 describe('the per-user database follows who is signed in', () => {
   it('must not store an impersonated user’s data on the admin’s device: no database is bound, and the admin’s returns after', async () => {
@@ -93,39 +129,14 @@ describe('the per-user database follows who is signed in', () => {
   });
 
   it('must not lose the writes a lost session left queued when the same user signs in again on the page: they return to memory and stay stored', async () => {
-    /** What the provider's cache subscription writes after a cache change, without the write throttle. */
-    const persistCache = async () => {
-      await persistQueryClientSave({ queryClient, persister, dehydrateOptions: persistOptions.dehydrateOptions });
-      await persister.flush();
-    };
-    const storedQueue = async () =>
-      (await getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray()).flatMap(({ mutations }) =>
-        mutations.map(({ state }) => state.variables),
-      );
-    const pausedInMemory = () =>
-      queryClient
-        .getMutationCache()
-        .getAll()
-        .filter(({ state }) => state.isPaused)
-        .map(({ state }) => state.variables);
-
     // The page's first restore is done; signing in restores the user's empty database, then an edit made offline pauses and is stored.
     userStore.setState({ user: target as never, impersonator: null });
     markCacheRestored();
     await localUserStorageReady();
-    onlineManager.setOnline(false);
-    new MutationObserver<unknown, Error, { name: string }>(queryClient, {
-      mutationKey: ['thing', 'queued'],
-      retryDelay: 0,
-      mutationFn: async () => {
-        if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
-      },
-    })
-      .mutate({ name: 'offline edit' })
-      .catch(() => {});
+    queueOfflineEdit({ name: 'offline edit' });
     await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
     await persistCache();
-    expect(await storedQueue()).toEqual([{ name: 'offline edit' }]);
+    expect(await storedQueue()).toMatchObject([{ variables: { name: 'offline edit' } }]);
 
     // The session is lost: the cache is cleared and the database closes, kept on disk.
     await teardownUserState(false);
@@ -137,7 +148,105 @@ describe('the per-user database follows who is signed in', () => {
     await persistCache();
     await localUserStorageReady();
 
-    expect(await storedQueue()).toEqual([{ name: 'offline edit' }]);
+    expect(await storedQueue()).toMatchObject([{ variables: { name: 'offline edit' } }]);
     expect(pausedInMemory()).toEqual([{ name: 'offline edit' }]);
+  });
+
+  // Only paused mutations were stored, so the write after the replay's resume deleted it, and the 401 then cleared memory: it was nowhere.
+  it('must not lose an edit whose replay meets the lost session: it stays stored while its request runs, quarantines nothing and returns at the next sign-in', async () => {
+    vi.stubGlobal('location', new URL('https://app.example/organization/attachments'));
+    userStore.setState({ user: target as never, impersonator: null });
+    markCacheRestored();
+    await localUserStorageReady();
+    const request = queueOfflineEdit({ name: 'offline edit', stx: { mutationId: 'm-1' } });
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
+    await persistCache();
+
+    // Back online, the replay's request is out: the store keeps it as the paused mutation it was, attempted.
+    onlineManager.setOnline(true);
+    void queryClient.resumePausedMutations();
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(0));
+    await persistCache();
+    expect(await storedQueue()).toMatchObject([{ isPaused: true, failureCount: 1, variables: { name: 'offline edit' } }]);
+
+    // The session ended meanwhile: the global handler tears the tab down on its 401, as on any lost session's.
+    vi.mocked(onError).mockImplementationOnce(() => void teardownUserState(false));
+    request.answer(Object.assign(new Error('Unauthorized'), { status: 401, type: 'session_expired' }));
+    await vi.waitFor(() => expect(getLocalUserDb()).toBeNull());
+    expect(quarantineFailedSync).not.toHaveBeenCalled();
+
+    userStore.setState({ user: target as never, impersonator: null });
+    await localUserStorageReady();
+    expect(pausedInMemory()).toMatchObject([{ name: 'offline edit' }]);
+    expect(await storedQueue()).toMatchObject([{ isPaused: true, variables: { name: 'offline edit' } }]);
+  });
+
+  // A replay a gateway answered settled as an error, and the next write dropped it from the stored queue.
+  it('must not lose an edit whose replay meets a deploy: the gateway answers it and the probe, the app goes offline and the replay waits stored', async () => {
+    const gateway = () => new Response(null, { status: 503 });
+    const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => gateway());
+    onTestFinished(() => probe.mockRestore());
+    userStore.setState({ user: target as never, impersonator: null });
+    markCacheRestored();
+    await localUserStorageReady();
+    onlineManager.setOnline(false);
+    new MutationObserver<unknown, Error, { name: string; stx: { mutationId: string } }>(queryClient, {
+      mutationKey: ['thing', 'queued'],
+      // A gateway's answer waits out the probe's attempts, as the default backoff does.
+      retryDelay: (_failureCount, error) => (error instanceof TypeError ? 0 : 800),
+      mutationFn: async () => {
+        if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
+        throw await apiErrorFromResponse(gateway());
+      },
+    })
+      .mutate({ name: 'offline edit', stx: { mutationId: 'm-2' } })
+      .catch(() => {});
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
+
+    onlineManager.setOnline(true);
+    void queryClient.resumePausedMutations();
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(0));
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1), { timeout: 4000 });
+    await persistCache();
+
+    expect(onlineManager.isOnline()).toBe(false);
+    expect(await storedQueue()).toMatchObject([{ isPaused: true, variables: { name: 'offline edit' } }]);
+    expect(quarantineFailedSync).not.toHaveBeenCalled();
+  });
+
+  // Behind a healthy edge the probe found the API reachable, so the replay settled as an error after three sends and was dropped.
+  it('must not lose an edit whose replay meets a deploy behind a healthy edge: it retries past any count, stored, until the API answers', async () => {
+    const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(null, { status: 204 }));
+    onTestFinished(() => probe.mockRestore());
+    userStore.setState({ user: target as never, impersonator: null });
+    markCacheRestored();
+    await localUserStorageReady();
+    onlineManager.setOnline(false);
+    const deploy = { sends: 0, over: false };
+    new MutationObserver<unknown, Error, { name: string; stx: { mutationId: string } }>(queryClient, {
+      mutationKey: ['thing', 'queued'],
+      retryDelay: 0,
+      mutationFn: async () => {
+        if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
+        deploy.sends++;
+        if (!deploy.over) throw await apiErrorFromResponse(new Response(null, { status: 503 }));
+      },
+    })
+      .mutate({ name: 'offline edit', stx: { mutationId: 'm-3' } })
+      .catch(() => {});
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
+
+    onlineManager.setOnline(true);
+    void queryClient.resumePausedMutations();
+    await vi.waitFor(() => expect(deploy.sends).toBeGreaterThan(5));
+    await persistCache();
+    expect(await storedQueue()).toMatchObject([{ isPaused: true, variables: { name: 'offline edit' } }]);
+
+    deploy.over = true;
+    await vi.waitFor(() => expect(queryClient.getMutationCache().getAll()[0]?.state.status).toBe('success'));
+    await persistCache();
+    expect(await storedQueue()).toEqual([]);
+    expect(onlineManager.isOnline()).toBe(true);
+    expect(quarantineFailedSync).not.toHaveBeenCalled();
   });
 });

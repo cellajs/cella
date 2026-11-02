@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
+import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, writeKeepingMark } from '~/query/basic/cache-mutations';
 import {
@@ -15,56 +15,17 @@ import {
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
 import type { ItemData, RoutableItemData } from '~/query/basic/types';
-import { isPending } from '~/query/offline/mutation-queue';
-import { entityIdsOf } from '~/query/offline/mutation-variables';
+import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
-/** Callers skip remote cache writes while this is true, so optimistic state survives; the mutation's onSuccess reconciles on settle. */
+/** Callers skip remote cache writes while this is true, so optimistic state survives; the row the server returns when the mutation settles replaces the cached one. */
 function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
-  const mutationCache = queryClient.getMutationCache();
-  for (const suffix of ['update', 'create', 'delete'] as const) {
-    const mutations = mutationCache.findAll({ mutationKey: [entityType, suffix] });
-    for (const mutation of mutations) {
-      if (isPending(mutation) && entityIdsOf(mutation.state.variables).includes(entityId)) return true;
-    }
-  }
-  return false;
+  return hasMutationOfRow(queryClient, entityType, entityId, isPending);
 }
 
 function isSoftDeleted(entity: ItemData): boolean {
   const deletedAt = asRecord(entity).deletedAt;
   return typeof deletedAt === 'string' && deletedAt.length > 0;
-}
-
-/** The stamp a Yjs-owned field is compared by: its own, else the description's, which derived columns follow. */
-function yjsFieldStamp(row: ItemData, field: string): string | undefined {
-  const { stx } = asRecord(row) as { stx?: { fieldTimestamps?: Record<string, string> } };
-  return stx?.fieldTimestamps?.[field] ?? stx?.fieldTimestamps?.description;
-}
-
-/** Whether a row carries sync metadata: in one that does, a field without a stamp was not written since the create. */
-function hasStx(row: ItemData): boolean {
-  const { stx } = asRecord(row);
-  return typeof stx === 'object' && stx !== null;
-}
-
-/**
- * The cache takes a Yjs-owned field only from a server write of it, which stamps the field anew. An incoming row that carries
- * the cached copy's stamp keeps the cached value, so a read that lags the relay cannot overwrite a collaborative patch. A
- * create stamps no field, so two rows that both carry `stx` and neither stamp count as unwritten too; a row without `stx`
- * applies. A server-side backfill of an owned field that stamps nothing reaches a client through a `clientCacheVersion` bump.
- */
-function guardYjsOwnedFields<T extends ItemData>(entityType: string, incoming: T, cached: ItemData | undefined): T {
-  if (!cached) return incoming;
-  const guarded = { ...incoming };
-  const bothCarryStx = hasStx(incoming) && hasStx(cached);
-  // SSE payloads carry entityType as a runtime string; an unregistered type gets the default fields.
-  for (const field of getYjsOwnedFields(entityType as ProductEntityType)) {
-    const stamp = yjsFieldStamp(incoming, field);
-    const unwritten = stamp === yjsFieldStamp(cached, field) && (stamp !== undefined || bothCarryStx);
-    if (unwritten && field in cached) asRecord(guarded)[field] = asRecord(cached)[field];
-  }
-  return guarded;
 }
 
 /** Patches only cached STX metadata for echo-prevented stream events, in place so no React Query observer is notified and optimistic fields survive. */

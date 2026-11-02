@@ -140,7 +140,7 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 ## Writes
 
-A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once. Paused edits replay after the first catchup attempt, or once the stream stops reconnecting. Online writes never wait.
+A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once, except a gateway's answer to a replay, as during a deploy: the replay stays queued and is sent again until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt, or once the stream stops reconnecting; an edit paused in the open page resumes as soon as the app is back online or regains focus. Online writes never wait.
 
 ### Merge metadata
 
@@ -152,11 +152,11 @@ An online write is ordered by arrival: the server stamps it with a fresh server 
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
-A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed.
+A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed. A replay that meets a lost session stays queued for the same user's next sign-in.
 
-A replayed create is idempotent by its row ids. Update and delete have no such check.
+A replayed create is idempotent by its row ids, and a replayed delete by its mutation id: the rows an earlier attempt of it deleted count as deleted, not refused. An update has no such check.
 
 ## Resilience
 

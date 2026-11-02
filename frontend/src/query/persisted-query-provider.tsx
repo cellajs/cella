@@ -79,8 +79,11 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
         warnMutationsWithoutDefaults(queryClient);
         resumeRestoredMutations();
       }}
-      // A failed restore releases the routes that wait for it too.
-      onError={markCacheRestored}
+      // A failed restore releases the routes that wait for it too, and the queue it hydrated before the failure replays after catchup.
+      onError={() => {
+        markCacheRestored();
+        resumeRestoredMutations();
+      }}
     >
       {children}
     </PersistQueryClientProvider>

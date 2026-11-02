@@ -142,11 +142,13 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     `createStxForDelete`) and passed in the variables. `squashIntoPendingCreate` gets the keys of
     the create item schema. They write and cancel through `~/query/basic/cache-mutations`
     (`cacheUpdate`, `cacheRemove`, `writeKeepingMark` for a detail, `cancelKeepingMark` in
-    `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark.
+    `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
+    update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
+    stamps when another one is written goes in its `derivedKeys`, a key the response stubs in its
+    `skipKeys`.
   - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
-    row refetches only the lists it can belong to. A column the server stamps when another one is
-    written goes in `derivedKeys` of `mergeServerResponse`.
+    row refetches only the lists it can belong to.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
   description, product: { entityType: '<name>' } })`, with `import '~/modules/<name>/query'` at the top,
   so the mutation defaults exist before the cache restore.

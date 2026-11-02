@@ -71,7 +71,7 @@ registerDescriptionDerivation('attachment', (description) => ({ keywords: derive
 
 const handleError = createResourceError('attachment');
 
-/** Refetches the organization's lists once no other attachment mutation is pending. */
+/** Marks the organization's lists for a refetch; the active ones refetch now unless another attachment mutation is pending. */
 const invalidateOrgLists = (queryClient: QueryClient, organizationId: string) =>
   invalidateIfLastMutation(queryClient, keys.all, keys.list.org(organizationId));
 
@@ -221,6 +221,7 @@ const attachmentUpdateOptions = (
     const cached = findAttachmentInCache(updatedAttachment.id);
     const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
     const merged = mergeServerResponse({
+      queryClient,
       cached,
       serverEntity: updatedAttachment,
       mutatedKeys,

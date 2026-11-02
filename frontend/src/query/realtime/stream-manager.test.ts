@@ -287,7 +287,11 @@ describe('the gate that paused writes wait on', () => {
     manager.disconnect();
   });
 
-  it('opens once a stream that fails in transport gives up, and stays closed while it reconnects', async () => {
+  // A server error frame reconnected without counting a failure, so a server that kept ending the stream that way held the gate for good.
+  it.each([
+    ['in transport', (stream?: FakeEventSource) => stream?.onerror?.()],
+    ['by a server error frame', (stream?: FakeEventSource) => stream?.emitServerError('access_changed')],
+  ])('opens once a stream that keeps failing %s gives up, and stays closed while it reconnects', async (_how, fail) => {
     vi.useFakeTimers();
     vi.resetModules();
     const fresh = await import('~/query/realtime/stream-manager');
@@ -305,7 +309,7 @@ describe('the gate that paused writes wait on', () => {
       released = true;
     });
     // The stream opens and fails before its offset event, so no catchup runs.
-    const failStream = () => FakeEventSource.instances.at(-1)?.onerror?.();
+    const failStream = () => fail(FakeEventSource.instances.at(-1));
 
     await manager.connect();
     failStream();

@@ -212,8 +212,11 @@ const applyUpdatedSelf = (updatedUser: User) => {
   updateUser(updatedUser);
 };
 
-/** Source of truth for the current user's memberships in the frontend. */
-export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }) });
+/**
+ * Source of truth for the current user's memberships in the frontend. Read without an abort signal: the read belongs to
+ * the whole app, and catchup awaits it, so a screen that unmounts must not cancel it.
+ */
+export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: () => getMyMemberships() });
 
 /**
  * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,

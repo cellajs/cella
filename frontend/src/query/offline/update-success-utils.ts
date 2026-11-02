@@ -1,29 +1,42 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { asRecord } from 'shared/utils/as-record';
+import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { cacheUpdate, writeKeepingMark } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
+import { hasMutationOfRow, isQueued } from '~/query/offline/mutation-queue';
 
 /**
- * Merges only this mutation's mutated fields from the server response onto the cached entity, so a concurrent mutation's optimistic values survive; stx, updatedAt, and updatedBy always come from the response.
+ * The cached row once a mutation of it settled. With no other mutation of the row queued, every field the stored row
+ * carries replaces the cached one, so a remote edit kept from the cache while the mutation was pending arrives: the
+ * server arbitrated the write by its stx. A Yjs-owned field stays as cached unless the server wrote it. With another
+ * mutation of the row queued, only this mutation's fields and the stamps come from the response, so that mutation's
+ * optimistic values survive until it settles in turn.
  * Returns the server entity when nothing is cached.
  */
-export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(options: {
+export function mergeServerResponse<T extends { id: string; entityType: string; stx?: unknown; updatedAt?: string | null }>(options: {
+  queryClient: QueryClient;
   cached?: T;
   serverEntity: T;
   mutatedKeys: string[];
   /** Per mutated key, the columns the server stamps when it stores the change (a body's keywords, a flag's actor): taken from the response with it. */
   derivedKeys?: Record<string, readonly string[]>;
-  /** Mutated or derived keys left as cached. */
+  /** Keys left as cached: fields the response does not carry, such as the stubbed relations of a lite response. A remote change of one arrives with the next read of the list. */
   skipKeys?: string[];
 }): T {
-  const { cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys } = options;
+  const { queryClient, cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys = [] } = options;
   if (!cached) return serverEntity;
 
   const serverRow = asRecord(serverEntity);
+  const skipped = Object.fromEntries(skipKeys.filter((key) => key in cached).map((key) => [key, asRecord(cached)[key]]));
+
+  // The settling mutation is running, so a queued one is another mutation of the row.
+  if (!hasMutationOfRow(queryClient, serverEntity.entityType, serverEntity.id, isQueued)) {
+    return { ...cached, ...guardYjsOwnedFields(serverEntity.entityType, serverEntity, cached), ...skipped };
+  }
+
   const serverUpdates: Record<string, unknown> = {};
   for (const key of [...mutatedKeys, ...mutatedKeys.flatMap((mutated) => derivedKeys[mutated] ?? [])]) {
-    if (skipKeys?.includes(key)) continue;
-    serverUpdates[key] = serverRow[key];
+    if (!skipKeys.includes(key)) serverUpdates[key] = serverRow[key];
   }
 
   return {

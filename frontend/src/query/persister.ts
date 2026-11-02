@@ -6,7 +6,8 @@ import { isRecord } from 'shared/utils/as-record';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
-import { upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
+import { isPending } from '~/query/offline/mutation-queue';
+import { isReplayed, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 import { onPageHide } from '~/utils/on-page-hide';
 
@@ -41,6 +42,15 @@ export const shouldPersistQuery = ({ state, meta }: Query): boolean =>
 function storedState(state: DehydratedQuery['state']): DehydratedQuery['state'] {
   if (state.status !== 'error') return state;
   return { ...state, status: 'success', error: null, fetchStatus: 'idle', fetchFailureCount: 0, fetchFailureReason: null, isInvalidated: true };
+}
+
+/**
+ * The state a queued mutation is stored with: a replay that runs is stored as the paused mutation it was, so a restore
+ * resumes it, and as attempted, since its request may commit before the tab closes or the session ends.
+ */
+function storedMutationState(state: DehydratedMutation['state']): DehydratedMutation['state'] {
+  if (state.isPaused) return state;
+  return { ...state, isPaused: true, failureCount: Math.max(state.failureCount, 1) };
 }
 
 /** What a stored query is diffed by: its data timestamp and its refetch mark. */
@@ -211,7 +221,9 @@ export function createIDBPersister(scope: string) {
 
       const { queries } = client.clientState;
       // Each queued mutation is stored with the version of its variables, which the restore reads.
-      const mutations = client.clientState.mutations.map(withVariablesVersion);
+      const mutations = client.clientState.mutations.map((mutation) =>
+        withVariablesVersion({ ...mutation, state: storedMutationState(mutation.state) }),
+      );
 
       const productQueries: DehydratedQuery[] = [];
       const bundledQueries: DehydratedQuery[] = [];
@@ -419,8 +431,9 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: Number.POSITIVE_INFINITY,
   dehydrateOptions: {
-    // Only paused mutations persist: active ones may hold non-cloneable streaming data.
-    shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
+    // Paused mutations persist, and a replay until it settles, so a tab closed or signed out while it runs replays it
+    // again; another active one may hold non-cloneable streaming data.
+    shouldDehydrateMutation: (mutation) => mutation.state.isPaused || (isPending(mutation) && isReplayed(mutation.state.variables)),
     shouldDehydrateQuery: shouldPersistQuery,
   },
 };

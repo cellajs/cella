@@ -82,6 +82,13 @@ export function mutationIdOf(variables: unknown): string | undefined {
   return undefined;
 }
 
+/** Whether queued variables, alone or once per item of a batch, carry the `replayed` stx flag a pause sets: what their mutation sends is a replay. */
+export function isReplayed(variables: unknown): boolean {
+  return (Array.isArray(variables) ? variables : [variables]).some(
+    (holder) => isRecord(holder) && isRecord(holder.stx) && holder.stx.replayed === true,
+  );
+}
+
 /**
  * Brings one mutation of a restored queue to the shape this bundle reads, before it is hydrated. One the upgrade does not know or throws
  * on, and one a newer bundle stored (a rollback), goes to the failed-sync quarantine: replayed as it is, its `mutationFn` would misread it.
