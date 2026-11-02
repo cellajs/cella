@@ -1,21 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { expect, spyOn, userEvent, within } from 'storybook/test';
-import { SelectEmails } from '~/modules/common/form-fields/select-emails';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { expect, userEvent, within } from 'storybook/test';
+import { SelectEmails } from '~/modules/user/select-emails';
 
 /**
  * Email chip input of the invite form: typed or pasted addresses become chips when an invite submit would accept them.
  */
 const meta: Meta<typeof SelectEmails> = {
-  title: 'common/SelectEmails',
+  title: 'user/SelectEmails',
   component: SelectEmails,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
-  beforeEach: () => {
-    const warning = spyOn(toaster, 'warning');
-    return () => warning.mockRestore();
-  },
 } satisfies Meta<typeof SelectEmails>;
 
 export default meta;
@@ -24,53 +19,13 @@ type Story = StoryObj<typeof SelectEmails>;
 
 const chipOf = (text: HTMLElement) => text.closest<HTMLElement>('[data-slot="chip"]') as HTMLElement;
 
-/**
- * Default email input with basic functionality.
- */
-export const Default: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState(['user@example.com', 'test@domain.org']);
-    return (
-      <div className="w-80">
-        <SelectEmails value={emails} onChange={setEmails} placeholder="Add email addresses..." />
-      </div>
-    );
-  },
-};
-
-/**
- * Empty email input ready for user input.
- */
-export const Empty: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState<string[]>([]);
-    return (
-      <div className="w-80">
-        <SelectEmails value={emails} onChange={setEmails} placeholder="Enter email addresses..." />
-      </div>
-    );
-  },
-};
-
-/**
- * Email input demonstrating paste functionality.
- * Try pasting: "test1@example.com, test2@example.com; test3@example.com"
- */
-export const PasteMultiple: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState<string[]>([]);
-    return (
-      <div className="w-96">
-        <SelectEmails value={emails} onChange={setEmails} placeholder="Paste multiple emails..." />
-        <p className="mt-2 text-muted-foreground text-xs">Try pasting: test1@example.com, test2@example.com; test3@example.com</p>
-      </div>
-    );
-  },
-};
+const newView = { group: 'new', tone: 'success', word: 'New', note: '' } as const;
+const noAddressView = { group: 'out', tone: 'muted', word: 'No address found', note: '' } as const;
 
 /** The field as the invite form uses it, inside a form that counts submits. */
 function InviteEmailsField({ initial = [] }: { initial?: string[] }) {
   const [emails, setEmails] = useState(initial);
+  const [unparsed, setUnparsed] = useState<string[]>([]);
   const [submits, setSubmits] = useState(0);
 
   return (
@@ -81,13 +36,27 @@ function InviteEmailsField({ initial = [] }: { initial?: string[] }) {
         setSubmits((count) => count + 1);
       }}
     >
-      <SelectEmails placeholder="Add an email" value={emails} onChange={setEmails} inputProps={{ autoComplete: 'off' }} />
+      <SelectEmails
+        placeholder="Add an email"
+        value={emails}
+        onChange={setEmails}
+        unparsed={unparsed}
+        onUnparsedChange={setUnparsed}
+        viewOf={(address) => (emails.includes(address) ? newView : noAddressView)}
+        inputProps={{ autoComplete: 'off' }}
+      />
       <output>value: {JSON.stringify(emails)}</output>
       <p>submits: {submits}</p>
       <button type="submit">Invite</button>
     </form>
   );
 }
+
+/** Default email input with basic functionality. */
+export const Default: Story = { render: () => <InviteEmailsField initial={['user@example.com', 'test@domain.org']} /> };
+
+/** Empty email input ready for user input. Try pasting: test1@example.com, test2@example.com; not an address */
+export const Empty: Story = { render: () => <InviteEmailsField /> };
 
 const playTags = ['!dev', '!autodocs'];
 
@@ -185,7 +154,7 @@ export const ShouldNotSubmitOnEnter: Story = {
 };
 
 export const ShouldRejectInvalid: Story = {
-  name: 'when the typed text is not an email address, should warn and add no chip',
+  name: 'when the typed text is not an email address, should name it in a chip of its own',
   tags: playTags,
   render: () => <InviteEmailsField />,
   play: async ({ canvasElement }) => {
@@ -194,9 +163,9 @@ export const ShouldRejectInvalid: Story = {
 
     await userEvent.type(input, 'not-an-email{Enter}');
 
-    await expect(toaster.warning).toHaveBeenCalledTimes(1);
     await expect(canvas.getByText('value: []')).toBeVisible();
-    await expect(input).toHaveValue('not-an-email');
+    await expect(canvas.getByRole('button', { name: 'not-an-email' })).toBeVisible();
+    await expect(input).toHaveValue('');
     await expect(canvas.getByText('submits: 0')).toBeVisible();
   },
 };
@@ -210,10 +179,8 @@ export const ShouldFollowSubmitRule: Story = {
     const input = canvas.getByRole('textbox');
 
     await userEvent.type(input, 'jöhn@example.com{Enter}');
-    await expect(toaster.warning).toHaveBeenCalledTimes(1);
     await expect(canvas.getByText('value: []')).toBeVisible();
 
-    await userEvent.clear(input);
     await userEvent.type(input, 'user@example-.com{Enter}');
     await expect(canvas.getByText('value: ["user@example-.com"]')).toBeVisible();
   },
@@ -232,11 +199,16 @@ export const ShouldKeepEveryPastedAddress: Story = {
 
     await expect(canvas.getByText('value: ["first@x.com","a@x.com","b@x.com","c@x.com"]')).toBeVisible();
     await expect(input).toHaveValue('');
+
+    // An address typed before a paste stays whole
+    await userEvent.keyboard('typed@x.com');
+    await userEvent.paste('pasted@x.com');
+    await expect(canvas.getByText('value: ["first@x.com","a@x.com","b@x.com","c@x.com","typed@x.com","pasted@x.com"]')).toBeVisible();
   },
 };
 
 export const ShouldKeepInvalidPastedText: Story = {
-  name: 'when a pasted list holds an invalid address, should add the others and leave it in the input',
+  name: 'when a pasted list holds an invalid address, should add the others and name it',
   tags: playTags,
   render: () => <InviteEmailsField />,
   play: async ({ canvasElement }) => {
@@ -247,8 +219,7 @@ export const ShouldKeepInvalidPastedText: Story = {
     await userEvent.paste('a@x.com, nope, c@x.com');
 
     await expect(canvas.getByText('value: ["a@x.com","c@x.com"]')).toBeVisible();
-    await expect(toaster.warning).toHaveBeenCalled();
-    await expect(input).toHaveValue('nope');
+    await expect(canvas.getByRole('button', { name: 'nope' })).toBeVisible();
   },
 };
 

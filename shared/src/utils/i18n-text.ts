@@ -8,7 +8,7 @@ export const i18nDefaultVariables = { appName: appConfig.name, company: appConfi
  * call it as `{{resource, lowercase}}`, so each language decides whether a noun lowercases mid-sentence; callers pass
  * the label form, `t('c:organization')`.
  */
-const lowercaseLabel = (value: unknown, lng?: string) => {
+export const lowercaseLabel = (value: unknown, lng?: string) => {
   const text = String(value);
   return /^\p{Lu}{2}/u.test(text) ? text : `${text.charAt(0).toLocaleLowerCase(lng)}${text.slice(1)}`;
 };

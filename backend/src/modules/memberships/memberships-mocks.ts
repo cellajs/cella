@@ -151,7 +151,7 @@ export const mockInactiveMembershipResponse = (key = 'inactive-membership:defaul
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
 const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
   const { id, email, role, createdAt, createdBy } = mockInactiveMembershipResponse(key);
-  return { id, email, role, createdAt, remindedAt: createdAt, createdBy };
+  return { id, email, role, createdAt, remindedAt: createdAt, linkExpiresAt: createdAt, createdBy };
 };
 
 export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);

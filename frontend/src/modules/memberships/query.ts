@@ -13,7 +13,7 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
-type PendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> & GetPendingMembershipsData['path'];
+type PendingMembershipsParams = Pick<GetPendingMembershipsData['query'], 'entityId' | 'entityType'> & GetPendingMembershipsData['path'];
 type MembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
 type PendingMembershipsListParams = PendingMembershipsParams & { limit?: number };
 type MembersListParams = MembersParams & { limit?: number };
@@ -27,6 +27,7 @@ const keys = {
     pending: (filters: PendingMembershipsParams) => ['invites', ...keys.list.base, filters] as const,
     similarPending: (filters: Pick<PendingMembershipsParams, 'entityId' | 'entityType'>) => ['invites', ...keys.list.base, filters] as const,
   },
+  check: (channelId?: string) => ['invites', 'check', channelId] as const,
   update: ['member', 'update'] as const,
   delete: ['member', 'delete'] as const,
 };
@@ -37,17 +38,35 @@ export const memberQueryKeys = keys;
 const inviteBatchSize = 50;
 
 /** Splits addresses into request-sized batches. */
-export const inviteBatches = (emails: string[]) =>
+const inviteBatches = (emails: string[]) =>
   Array.from({ length: Math.ceil(emails.length / inviteBatchSize) }, (_, index) =>
     emails.slice(index * inviteBatchSize, (index + 1) * inviteBatchSize),
   );
+
+/**
+ * Sends addresses batch by batch. A failing batch throws when nothing went out yet; after that its addresses and the
+ * ones behind it come back as `unsent`, so what did go out is not lost.
+ */
+export const sendInBatches = async <T>(emails: string[], send: (batch: string[]) => Promise<T>) => {
+  const batches = inviteBatches(emails);
+  const results: T[] = [];
+  for (const [index, batch] of batches.entries()) {
+    try {
+      results.push(await send(batch));
+    } catch (error) {
+      if (!index) throw error;
+      return { results, unsent: batches.slice(index).flat() };
+    }
+  }
+  return { results, unsent: [] as string[] };
+};
 
 type InviteCheckChannel = Pick<ChannelBase, 'id' | 'entityType' | 'tenantId'> & { organizationId?: string | null };
 
 /** What an invite would do with each address. Without a channel (a system invite) nothing is checked. */
 export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined, emails: string[]) =>
   queryOptions({
-    queryKey: ['invites', 'check', channel?.id, emails] as const,
+    queryKey: [...keys.check(channel?.id), emails] as const,
     queryFn: async ({ signal }): Promise<InviteOutcome[]> => {
       if (!channel) return [];
       const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel) };
@@ -88,22 +107,11 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 };
 
 export const pendingMembershipsQueryOptions = (params: PendingMembershipsListParams) => {
-  const {
-    entityId,
-    tenantId,
-    organizationId,
-    entityType,
-    q = '',
-    sort = 'createdAt',
-    order = 'desc',
-    limit = appConfig.requestLimits.pendingMemberships,
-  } = params;
-  const filters = { q, sort, order };
-  const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
-  const query = { ...filters, entityId, entityType };
+  const { entityId, tenantId, organizationId, entityType, limit = appConfig.requestLimits.pendingMemberships } = params;
+  const query = { entityId, entityType };
 
   return infiniteQueryOptions({
-    queryKey: keys.list.pending(keyFilters),
+    queryKey: keys.list.pending({ entityId, entityType, tenantId, organizationId }),
     ...offsetPaging(limit, (offset, signal) =>
       getPendingMemberships({ query: { ...query, ...pageQuery(limit, offset) }, path: { tenantId, organizationId }, signal }),
     ),

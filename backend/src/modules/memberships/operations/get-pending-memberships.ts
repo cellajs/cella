@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
+import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions';
@@ -27,7 +28,14 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
     limit,
   });
 
-  const items = await withActorRefs(ctx, rawItems);
+  // From the last email, never the token: only an address no account holds has one, and a row may not tell them apart.
+  const linkMs = tokenPolicies.invitation.ttl.milliseconds();
+  const withExpiry = rawItems.map((item) => ({
+    ...item,
+    linkExpiresAt: item.remindedAt ? new Date(Date.parse(item.remindedAt) + linkMs).toISOString() : null,
+  }));
+
+  const items = await withActorRefs(ctx, withExpiry);
 
   return { items, total };
 }

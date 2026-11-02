@@ -9,7 +9,7 @@ import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
-import { inviteBatches, memberQueryKeys } from '~/modules/memberships/query';
+import { memberQueryKeys, sendInBatches } from '~/modules/memberships/query';
 import type {
   DeleteMembershipsVariables,
   Member,
@@ -78,26 +78,33 @@ const restoreMemberLists = (previousLists: MemberListSnapshot[] = []) => {
   for (const [queryKey, previousData] of previousLists) queryClient.setQueryData(queryKey, previousData);
 };
 
+/** What an invite or a withdrawal changes: the channel's pending rows, what a check answers, and its members. */
+const invalidateInvites = ({ id: entityId, entityType, organizationId }: EnrichedChannel) => {
+  const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ entityId, entityType }));
+  for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
+  queryClient.invalidateQueries({ queryKey: memberQueryKeys.check(entityId) });
+  invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+};
+
 export const useInviteMemberMutation = () =>
-  useMutation<MembershipInviteResponse, ApiError, MembershipInviteVariables, undefined>({
+  useMutation<MembershipInviteResponse & { unsent: string[] }, ApiError, MembershipInviteVariables, undefined>({
     mutationKey: memberQueryKeys.update,
     // Past the per-request limit the addresses go out in batches, one answer for all
     mutationFn: async ({ body, path, query }) => {
-      const results: MembershipInviteResponse[] = [];
-      for (const emails of inviteBatches(body.emails)) results.push(await membershipInvite({ body: { ...body, emails }, path, query }));
+      const { results, unsent } = await sendInBatches(body.emails, (emails) => membershipInvite({ body: { ...body, emails }, path, query }));
       return {
         data: results.flatMap(({ data }) => data),
         outcomes: results.flatMap(({ outcomes }) => outcomes),
         held: results.some(({ held }) => held),
+        unsent,
       };
     },
-    onSuccess: ({ data, outcomes }, { channel }) => {
+    onSuccess: ({ outcomes }, { channel }) => {
       const { id: entityId, entityType, organizationId } = channel;
       // New invitations, and declined ones that opened again, are pending now; members added at once are not
       const pendingAdded = outcomes.filter(
         ({ outcome, declinedAt }) => outcome === 'invite' || (outcome === 'remind' && !!declinedAt && !declineHolds(declinedAt)),
       ).length;
-      if (!pendingAdded && !data.length) return;
 
       if (pendingAdded) {
         if (entityType !== 'organization' && organizationId) {
@@ -111,9 +118,7 @@ export const useInviteMemberMutation = () =>
         queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => updateMembershipCounts(oldEntity, pendingAdded));
       }
 
-      const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ entityId, entityType }));
-      for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
-      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+      invalidateInvites(channel);
     },
   });
 
@@ -125,13 +130,10 @@ export const useWithdrawInvitationMutation = () =>
       await withdrawPendingInvitation({ path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), id } });
     },
     onSuccess: (_, { channel }) => {
-      const { id: entityId, entityType, organizationId } = channel;
-      const detailQueryKey = getEntityQueryKeys(entityType).detail.byId(entityId);
+      const detailQueryKey = getEntityQueryKeys(channel.entityType).detail.byId(channel.id);
       queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => updateMembershipCounts(oldEntity, -1));
 
-      const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ entityId, entityType }));
-      for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
-      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+      invalidateInvites(channel);
     },
   });
 

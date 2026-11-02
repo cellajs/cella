@@ -1,6 +1,6 @@
 import { zMembershipInviteBody, zSystemInviteBody } from 'sdk/zod.gen';
 import { describe, expect, it } from 'vitest';
-import { isInviteEmail } from '~/modules/common/form-fields/select-emails';
+import { parseInviteText } from '~/modules/user/select-emails';
 
 const accepted = [
   'user@example.com',
@@ -68,14 +68,33 @@ const rejected = [
 const submits = (email: string) =>
   zSystemInviteBody.safeParse({ emails: [email] }).success && zMembershipInviteBody.shape.emails.safeParse([email]).success;
 
-describe('isInviteEmail', () => {
+// The chips and the submit answer alike: what parses as an address is what a submit accepts.
+describe('parseInviteText against the submit rule', () => {
   it.each(accepted)('accepts %s', (email) => {
-    expect(isInviteEmail(email)).toBe(true);
+    expect(parseInviteText(email).emails).toEqual([email.toLowerCase()]);
     expect(submits(email)).toBe(true);
   });
 
-  it.each(rejected)('rejects %s', (email) => {
-    expect(isInviteEmail(email)).toBe(false);
+  it.each(rejected.filter((email) => !/[<\s,;]/.test(email) && !email.endsWith('.')))('rejects %s', (email) => {
+    expect(parseInviteText(email).emails).toEqual([]);
     expect(submits(email)).toBe(false);
+  });
+});
+
+describe('parseInviteText', () => {
+  it.each([
+    ['one per line', 'a@x.com\nb@x.com', ['a@x.com', 'b@x.com'], []],
+    ['commas and semicolons', 'a@x.com, b@x.com; c@x.com', ['a@x.com', 'b@x.com', 'c@x.com'], []],
+    ['address-book form', 'Jane Doe <jane@x.com>, "Ann, B" <ann@x.com>', ['jane@x.com', 'ann@x.com'], []],
+    ['quoted addresses', '"jane@x.com","bob@x.com"', ['jane@x.com', 'bob@x.com'], []],
+    ['repeats in any case', 'a@x.com\nA@X.COM', ['a@x.com'], []],
+    ['an apostrophe in the address', "o'brien@x.ie", ["o'brien@x.ie"], []],
+    ['a line with no address is named', 'a@x.com\ndfgdfgd\ndfgdfg dgfdfg', ['a@x.com'], ['dfgdfgd', 'dfgdfg dgfdfg']],
+    ['a near-miss is named', 'jan@bartoletti', [], ['jan@bartoletti']],
+    ['an address the submit refuses is named', 'us..er@gmail.com', [], ['us..er@gmail.com']],
+    ['a character no address holds never leaves a shorter address', 'jöhn@example.com', [], ['jöhn@example.com']],
+    ['a typed address and a pasted one on one line', 'typed@x.com\npasted@x.com', ['typed@x.com', 'pasted@x.com'], []],
+  ])('reads %s', (_, text, emails, unparsed) => {
+    expect(parseInviteText(text)).toMatchObject({ emails, unparsed });
   });
 });

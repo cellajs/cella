@@ -1,20 +1,28 @@
+import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
-import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { type ComponentType, type ReactNode, type RefObject, useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { ClipboardPasteIcon, MailIcon, UsersRoundIcon } from 'lucide-react';
+import { MotionConfig, motion } from 'motion/react';
+import { type ComponentType, type ReactNode, type RefObject, useState } from 'react';
+import { useWatch } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { hierarchy, isUnpublishedDraft } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
-import { AlertBanner } from '~/modules/common/alerter/alert-banner';
-import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
-import { InlineLinkButton } from '~/modules/common/inline-link-button';
+import type { IconComponent } from '~/modules/common/icons/types';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { openPendingMembershipsSheet } from '~/modules/memberships/pending-memberships-count';
 import { Button } from '~/modules/ui/button';
-import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
-import { InviteEmailForm } from '~/modules/user/invite-email-form';
-import { InviteSearchForm } from '~/modules/user/invite-search-form';
-import { type InviteFormProps, inviteDialogId } from '~/modules/user/invite-submit';
+import { Form } from '~/modules/ui/field';
+import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
+import { InviteBulkField } from '~/modules/user/invite-bulk-field';
+import { InviteEmailField } from '~/modules/user/invite-email-field';
+import { focusOnMount, InviteResult, type InviteResultData } from '~/modules/user/invite-result';
+import { InviteSearchField } from '~/modules/user/invite-search-field';
+import { type InviteFieldProps, InviteFormFooter, inviteDialogId, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
+import { useInviteCheck } from '~/modules/user/use-invite-check';
 import { tw } from '~/utils/tw';
 
 type InviteMode = 'email' | 'search' | 'bulk';
@@ -43,125 +51,129 @@ export function openInviteDialog({ channel, mode, description, triggerRef, conta
   });
 }
 
-/** Per mode: the crumb in the dialog title, the explanation above the form, and the form. */
-const inviteModes: Record<InviteMode, { title: TKey; explain: TKey; Form: ComponentType<InviteFormProps> }> = {
-  email: { title: 'c:email', explain: 'c:invite_email.text', Form: InviteEmailForm },
-  search: { title: 'c:search', explain: 'c:invite_search.text', Form: InviteSearchForm },
-  bulk: { title: 'c:email_bulk', explain: 'c:invite_bulk.text', Form: InviteBulkEmailForm },
+/** Per mode: its name, the line under it on the chooser, its icon and its field. */
+const inviteModes: Record<InviteMode, { label: TKey; text: TKey; icon: IconComponent; Field: ComponentType<InviteFieldProps> }> = {
+  email: { label: 'c:invite_mode_email', text: 'c:invite_mode_email.text', icon: MailIcon, Field: InviteEmailField },
+  search: { label: 'c:invite_mode_search', text: 'c:invite_mode_search.text', icon: UsersRoundIcon, Field: InviteSearchField },
+  bulk: { label: 'c:invite_mode_bulk', text: 'c:invite_mode_bulk.text', icon: ClipboardPasteIcon, Field: InviteBulkField },
 };
 
-/** The modes to start from; bulk opens from the email mode's link. */
-const inviteTiles = [
-  { mode: 'email', icon: AtSignIcon, label: 'c:invite_by_email' },
-  { mode: 'search', icon: SearchIcon, label: 'c:invite_by_name' },
-] as const;
-
-/** The dialog title's crumb renders outside this component's MotionConfig, so both read this transition. */
 const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
+const modeEntrance = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
 
-interface InviteUsersProps extends InviteFormProps {
+interface InviteUsersProps {
+  /** Without one the form sends a system invite. */
+  channel?: EnrichedChannel;
+  /** Rendered in the `invite-users` dialog, which a sent invite closes. */
+  dialog?: boolean;
   mode?: InviteMode | null;
+  /** Takes the place of the cancel button, as the onboarding footer does. */
+  children?: ReactNode;
 }
 
-export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, children }: InviteUsersProps) {
+/** The invite form. The mode only swaps its field, so the form, its draft and a running send outlive a switch. */
+export function InviteUsers({ channel, dialog, mode: initialMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
+  const { nextStep } = useStepper();
 
   const [inviteMode, setInviteMode] = useState(initialMode);
+  const [result, setResult] = useState<InviteResultData | null>(null);
+  // A new key starts a field over, with the text typed into it.
+  const [fieldKey, setFieldKey] = useState(0);
 
-  // The dialog's caller owns the description copy, so read it once and keep it to compose against.
-  const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get(inviteDialogId)?.description : undefined));
+  const form = useInviteFormDraft(channel?.id, channel?.entityType);
+  const emails = useWatch({ control: form.control, name: 'emails' }) ?? [];
+  const unparsed = useWatch({ control: form.control, name: 'unparsed' }) ?? [];
+  const role = useWatch({ control: form.control, name: 'role' });
 
-  const updateMode = (mode: InviteMode | null) => {
-    setInviteMode(mode);
+  const held = !!channel && isUnpublishedDraft(channel) && !hierarchy.getPrepareRoles(channel.entityType).includes(role);
+  const check = useInviteCheck(channel, emails, unparsed, held);
 
-    dialoger.getState().update(inviteDialogId, {
-      titleContent: (
-        <div className="flex items-center gap-2">
-          {mode ? (
-            <button type="button" onClick={() => updateMode(null)}>
-              {t('c:invite')}
-            </button>
-          ) : (
-            <div>
-              <UnsavedBadge title={t('c:invite')} />
-            </div>
-          )}
-          <AnimatePresence>
-            {mode && (
-              <motion.span
-                className="flex items-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={modeTransition}
-              >
-                <ChevronRightIcon className="opacity-50" />
-                <UnsavedBadge title={t(inviteModes[mode].title)} />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
-      ),
-    });
+  const reset = () => {
+    form.reset();
+    setFieldKey((key) => key + 1);
   };
 
-  // The bulk link joins the dialog's description, where dismissing the alert below cannot hide it; onboarding has no dialog.
-  useEffect(() => {
-    if (!isDialog || !dialoger.getState().get(inviteDialogId)) return;
+  const close = () => {
+    if (dialog) dialoger.getState().remove(inviteDialogId);
+    nextStep();
+  };
 
-    dialoger.getState().update(inviteDialogId, {
-      description:
-        inviteMode === 'email' ? (
-          <>
-            {baseDescription}{' '}
-            <Trans t={t} i18nKey="c:invite_bulk_link" components={{ bulk_anchor: <InlineLinkButton onClick={() => updateMode('bulk')} /> }} />
-          </>
-        ) : (
-          baseDescription
-        ),
-    });
-  }, [inviteMode, isDialog, baseDescription]);
+  const { onSubmit, isPending } = useInviteSubmit({ channel, onSent: reset, onResult: setResult, onClose: close });
 
-  const current = inviteMode ? inviteModes[inviteMode] : null;
+  if (result) {
+    const openPending = () => {
+      const triggerRef = dialoger.getState().get(inviteDialogId)?.triggerRef;
+      if (!channel || !triggerRef) return;
+      if (!onlineManager.isOnline()) return toastOffline();
+      close();
+      openPendingMembershipsSheet(channel, triggerRef);
+    };
+
+    return (
+      <InviteResult result={result} onDone={close} onOpenPending={channel && dialog ? openPending : undefined} onInviteMore={() => setResult(null)} />
+    );
+  }
+
+  // Searching people needs a channel to check them against.
+  const modes: InviteMode[] = channel ? ['email', 'search', 'bulk'] : ['email', 'bulk'];
+  const Field = inviteMode ? inviteModes[inviteMode].Field : null;
 
   return (
     <MotionConfig transition={modeTransition}>
-      <AnimatePresence mode="popLayout">
-        {!inviteMode && (
-          <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <div className="flex w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3">
-              {inviteTiles.map(({ mode, icon: Icon, label }) => (
+      {inviteMode && Field ? (
+        // Coming from the chooser, whose pressed tile is gone, focus starts here and not on the page
+        <motion.div
+          key="invite-form"
+          ref={initialMode ? undefined : focusOnMount}
+          tabIndex={-1}
+          {...modeEntrance}
+          className="flex flex-col gap-4 outline-hidden"
+        >
+          <SegmentedControl<InviteMode>
+            aria-label={t('c:invite_mode')}
+            value={inviteMode}
+            onValueChange={setInviteMode}
+            disabled={isPending}
+            size="sm"
+          >
+            {modes.map((mode) => (
+              <SegmentedControlItem key={mode} value={mode}>
+                {t(inviteModes[mode].label)}
+              </SegmentedControlItem>
+            ))}
+          </SegmentedControl>
+          <Form {...form}>
+            <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+              <Field key={fieldKey} {...{ form, channel, check, emails, unparsed }} />
+              <InviteFormFooter {...{ form, channel, check, held }} isEmpty={!emails.length && !unparsed.length} loading={isPending} onCancel={reset}>
+                {children}
+              </InviteFormFooter>
+            </form>
+          </Form>
+        </motion.div>
+      ) : (
+        <motion.div key="invite-initial" {...modeEntrance}>
+          <div className="grid w-full gap-2 py-3 sm:grid-cols-3 sm:gap-3">
+            {modes.map((mode) => {
+              const { label, text, icon: Icon } = inviteModes[mode];
+              return (
                 <Button
                   key={mode}
                   variant="outline"
                   size="auto"
-                  className="group/tile grow gap-3 rounded-xl p-3 py-6 text-left sm:py-10"
-                  onClick={() => updateMode(mode)}
+                  className="h-auto flex-col items-start justify-start gap-2.5 whitespace-normal rounded-xl p-4 text-left"
+                  onClick={() => setInviteMode(mode)}
                 >
-                  <Icon className="size-12" strokeWidth={1} />
-                  <div className="flex flex-col truncate">
-                    <p>{t(label)}</p>
-                    <div className="mt-1 flex items-center truncate text-muted-foreground transition-colors group-hover/tile:text-foreground">
-                      <strong>{t('c:continue')}</strong>
-                      <AnimatedArrow />
-                    </div>
-                  </div>
+                  <Icon className="size-10" strokeWidth={1.25} />
+                  <span>{t(label)}</span>
+                  <span className="font-normal text-muted-foreground">{t(text)}</span>
                 </Button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-        {current && (
-          <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <AlertBanner id={`invite_${inviteMode}`} variant="info" icon={InfoIcon}>
-              {t(current.explain)}
-            </AlertBanner>
-            <current.Form channel={channel} dialog={isDialog}>
-              {children}
-            </current.Form>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
     </MotionConfig>
   );
 }

@@ -1,5 +1,5 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { ClockIcon, SearchIcon, UserIcon, UsersRoundIcon } from 'lucide-react';
+import { SearchIcon, UsersRoundIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,11 +9,10 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { StatusDot, tileTones } from '~/modules/common/expandable-tile';
 import { InputTriggerChevron } from '~/modules/common/form-fields/input-trigger-button';
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
-import { Badge } from '~/modules/ui/badge';
-import { Chip } from '~/modules/ui/chip';
 import {
   Combobox,
   ComboboxContent,
@@ -24,7 +23,9 @@ import {
   ComboboxPrimitive,
 } from '~/modules/ui/combobox';
 import { usersListQueryOptions } from '~/modules/user/query';
-import { inviteNote } from '~/modules/user/use-invite-check';
+import { InviteChip } from '~/modules/user/select-emails';
+import { type InviteCheck, outcomeView } from '~/modules/user/use-invite-check';
+import { cn } from '~/utils/cn';
 
 const contentVariants = {
   hidden: { opacity: 0, y: -5, scale: 0.98 },
@@ -32,17 +33,25 @@ const contentVariants = {
   exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
 };
 
+type SearchedUser = { id: string; name: string; email: string; entityType: 'user'; thumbnailUrl?: string | null };
+
 interface UserComboboxProps {
   value: string[];
   onChange: (emails: string[]) => void;
+  /** Text another mode kept that holds no address; this mode can only remove it. */
+  unparsed: string[];
+  onRemoveUnparsed: (text: string) => void;
   channel: ChannelBase & { organizationId?: string };
+  check: InviteCheck;
 }
 
-export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
+export function UserCombobox({ value, onChange, unparsed, onRemoveUnparsed, channel, check }: UserComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
   const [searchQuery, setSearchQuery] = useState('');
+  // Who a chosen address belongs to, so its chip shows the person picked; one restored from a draft stays an address.
+  const [chosenUsers, setChosenUsers] = useState<Map<string, SearchedUser>>(new Map());
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -53,9 +62,21 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
     triggerRef.current?.focus();
   };
 
+  const handleRemoveUnparsed = (text: string) => {
+    onRemoveUnparsed(text);
+    triggerRef.current?.focus();
+  };
+
   const { data, isFetching } = useInfiniteQuery(usersListQueryOptions({ q: debouncedSearchQuery }));
 
   const items = data?.pages.flatMap((page) => page.items) ?? [];
+
+  const handleValueChange = (emails: string[]) => {
+    const next = new Map(chosenUsers);
+    for (const user of items) if (emails.includes(user.email)) next.set(user.email, user);
+    setChosenUsers(next);
+    onChange(emails);
+  };
 
   // The same check as typed addresses: a member is left out, one invited before shows when
   const resultEmails = items.map((user) => user.email.toLowerCase()).sort();
@@ -69,7 +90,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       itemToStringLabel={(email) => email}
       itemToStringValue={(email) => email}
       value={value}
-      onValueChange={onChange}
+      onValueChange={handleValueChange}
       inputValue={searchQuery}
       onInputValueChange={setSearchQuery}
       filter={() => true}
@@ -83,12 +104,26 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
           <span className="sr-only">{value.length ? value.join(', ') : t('c:search_users')}</span>
         </ComboboxPrimitive.Trigger>
         <div className="pointer-events-none relative flex min-w-0 flex-wrap items-center gap-1">
-          {value.length ? (
-            value.map((email) => (
-              <Chip key={email} onRemove={() => handleUnselect(email)} removeLabel={t('c:remove_resource', { resource: email })} className="max-w-60">
-                <MiddleCut text={email} />
-              </Chip>
-            ))
+          {unparsed.map((text) => (
+            <InviteChip key={text} address={text} view={check.viewOf(text)} onRemove={() => handleRemoveUnparsed(text)} />
+          ))}
+          {value.length || unparsed.length ? (
+            value.map((email) => {
+              const user = chosenUsers.get(email);
+              return (
+                <InviteChip
+                  key={email}
+                  address={email}
+                  view={check.viewOf(email)}
+                  onRemove={() => handleUnselect(email)}
+                  start={
+                    user && <EntityAvatar type={user.entityType} className="size-6 text-xs" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  }
+                >
+                  {user?.name}
+                </InviteChip>
+              );
+            })
           ) : (
             <span aria-hidden="true" className="ml-1 text-sm">
               {t('c:search_users')}
@@ -113,7 +148,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                   {debouncedSearchQuery.length ? (
                     <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:user_other') }} />
                   ) : (
-                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" />
+                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_hint_search" />
                   )}
                 </ComboboxEmpty>
               </motion.div>
@@ -122,10 +157,9 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                 <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
                   {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
                     const outcome = outcomeByEmail.get(email.toLowerCase());
-                    const alreadyMember = outcome?.outcome === 'member';
-                    const invitedNote = outcome?.outcome === 'remind' ? inviteNote(outcome, t) : undefined;
+                    const view = outcome ? outcomeView(outcome, t) : null;
                     return (
-                      <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
+                      <ComboboxItem key={id} value={email} disabled={view?.group === 'out'} className="group/user-item justify-between">
                         <div className="flex min-w-0 items-center gap-2">
                           <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
                           <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
@@ -134,20 +168,14 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                         </div>
 
                         <div className="flex min-w-0 items-center gap-2">
-                          <Badge size="sm" soft className="hidden group-data-disabled/user-item:flex">
-                            <UserIcon />
-                            <span className="max-sm:hidden">{t('c:already_member')}</span>
-                          </Badge>
-                          {invitedNote && (
-                            <Badge size="sm" soft>
-                              <ClockIcon />
-                              <span className="max-sm:hidden">{invitedNote}</span>
-                            </Badge>
+                          {view && view.group !== 'new' ? (
+                            <span className="flex shrink-0 items-center gap-1.5 text-sm">
+                              <StatusDot tone={view.tone} />
+                              <span className={cn('font-medium max-sm:hidden', tileTones[view.tone].text)}>{view.word}</span>
+                            </span>
+                          ) : (
+                            <MiddleCut text={email} className="group-data-selected/user-item:hidden max-sm:hidden" />
                           )}
-                          <MiddleCut
-                            text={email}
-                            className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden"
-                          />
                           <ComboboxItemIndicator />
                         </div>
                       </ComboboxItem>
