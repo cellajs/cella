@@ -23,12 +23,23 @@ export function isPending(mutation: MutationLike): boolean {
   return mutation.state.status === 'pending';
 }
 
-/** Whether a mutation of the entity type, under any key it starts, holds this row and passes `test`, such as {@link isPending}. */
+/**
+ * The ids of the rows held by the entity type's mutations, under any key they start, that pass `test`, such as {@link isPending}.
+ * @param idsOf - Reads a mutation's rows from its variables; `deletedIdsOf` keeps a delete's only.
+ */
+export function rowIdsOfMutations(
+  client: QueryClient,
+  entityType: string,
+  test: (mutation: MutationLike) => boolean,
+  idsOf: (variables: unknown) => string[] = entityIdsOf,
+): Set<string> {
+  const mutations = client.getMutationCache().findAll({ mutationKey: [entityType], predicate: test });
+  return new Set(mutations.flatMap((mutation) => idsOf(mutation.state.variables)));
+}
+
+/** Whether a mutation of the entity type, under any key it starts, holds this row and passes `test`. */
 export function hasMutationOfRow(client: QueryClient, entityType: string, entityId: string, test: (mutation: MutationLike) => boolean): boolean {
-  return client
-    .getMutationCache()
-    .findAll({ mutationKey: [entityType], predicate: test })
-    .some((mutation) => entityIdsOf(mutation.state.variables).includes(entityId));
+  return rowIdsOfMutations(client, entityType, test).has(entityId);
 }
 
 /** Only offline-paused mutations may be coalesced or cancelled; online intent stays separate and scope-serialized for backend idempotency and LWW handling. */

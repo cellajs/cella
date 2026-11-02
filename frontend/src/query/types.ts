@@ -6,7 +6,12 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 /** Mutation variables of a generated `*Data` type: the request without its `url`. */
 export type MutationData<T> = Omit<T, 'url'>;
 
-export type QueryData<TItem> = { items: TItem[]; total: number };
+export type QueryData<TItem> = {
+  items: TItem[];
+  total: number;
+  /** Rows the server sent that a page hides while a delete of them is pending: the next page's offset counts them until the delete settles. */
+  hiddenIds?: string[];
+};
 
 export type PageParams = { page: number; offset: number };
 export type InfiniteQueryData<TItem, TPageParam = PageParams> = InfiniteData<QueryData<TItem>, TPageParam>;

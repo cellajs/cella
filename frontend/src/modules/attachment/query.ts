@@ -33,6 +33,7 @@ import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { liveItems, offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
+import { syncedListOptions } from '~/query/basic/synced-list-options';
 import type { OrgRoutableItemData } from '~/query/basic/types';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { registerVariablesVersion } from '~/query/offline/mutation-variables';
@@ -100,14 +101,16 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 
   const filters = { q, sort, order };
 
-  return infiniteQueryOptions({
-    queryKey: keys.list.filtered(organizationId, filters),
-    ...offsetPaging(limit, (offset, signal) =>
-      getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }).then(liveItems),
-    ),
-    meta: { persist: false },
-    staleTime: syncStaleTime,
-  });
+  return syncedListOptions(
+    infiniteQueryOptions({
+      queryKey: keys.list.filtered(organizationId, filters),
+      ...offsetPaging(limit, (offset, signal) =>
+        getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }).then(liveItems),
+      ),
+      meta: { persist: false },
+      staleTime: syncStaleTime,
+    }),
+  );
 };
 
 /**
@@ -117,16 +120,19 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
 const orgListSpansHomes = hierarchy.possibleHomeChannels('attachment').some((type) => type !== 'organization');
 
 export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { organizationId: string; tenantId: string }) => {
-  return queryOptions({
-    queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
-    queryFn: async () => {
-      return fetchAllPages(
-        ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }).then(liveItems),
-        1000,
-      );
-    },
-    staleTime: syncStaleTime,
-  });
+  return syncedListOptions(
+    queryOptions({
+      queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
+      queryFn: async () => {
+        return fetchAllPages(
+          ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }).then(liveItems),
+          1000,
+        );
+      },
+      staleTime: syncStaleTime,
+    }),
+    { organizationId, tenantId },
+  );
 };
 
 export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) =>

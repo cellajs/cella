@@ -32,10 +32,17 @@ export function queuedUpdateOf(variables: unknown): { id: string; ops: Row; fiel
   return { id: variables.id, ops: isRecord(variables.ops) ? variables.ops : {}, fieldTimestamps };
 }
 
+const idsIn = (rows: Row[]): string[] => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
+
 /** The ids of the rows a queued mutation creates, changes or deletes. */
 export function entityIdsOf(variables: unknown): string[] {
   if (!isRecord(variables)) return [];
-  return [variables, ...rowsIn(variables.data), ...rowsIn(variables.rows)].flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
+  return idsIn([variables, ...rowsIn(variables.data), ...rowsIn(variables.rows)]);
+}
+
+/** The ids of the rows a queued delete removes: the `rows` of {@link DeleteVariables}. */
+export function deletedIdsOf(variables: unknown): string[] {
+  return isRecord(variables) ? idsIn(rowsIn(variables.rows)) : [];
 }
 
 /** Rewrites variables a bundle of an older version queued into the shape the mutation reads now; null when it cannot. */

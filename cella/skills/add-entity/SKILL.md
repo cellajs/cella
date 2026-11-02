@@ -136,6 +136,10 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     Without the registration the first stream event for the type throws.
   - The canonical options (one list per parent channel, which sync keeps fresh), the list options
     and the detail options. The list fetches end in `.then(liveItems)`, which types their rows.
+    Both list options are wrapped in `syncedListOptions` (`~/query/basic/synced-list-options`), so a
+    list read keeps rows with a pending mutation as cached and runs on when the screen that started it
+    leaves. The canonical one also passes its scope, `organizationId` and `tenantId`, plus the home
+    `channelId` for a product homed below the organization, and its read merges the changes it overlapped.
   - Create, update and delete mutations: placeholders from `createOptimisticEntity`, variables typed
     `CreateVariables`, `UpdateVariables` and `DeleteVariables` (`~/query/offline/mutation-variables`),
     the stx built when the edit is made (`createStxForCreate`, `createStxForUpdate`,

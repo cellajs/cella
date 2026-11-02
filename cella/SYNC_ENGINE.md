@@ -119,7 +119,7 @@ Apps derive per-user state from `query/realtime/sync-events.ts`, never from queu
 
 Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, also when the app comes back online. A failed stream, a delivery shortfall or an absent CDC worker lets them go stale with time until a clean catchup ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
 
-A list the engine cannot patch whole, such as one a range overflowed or a filtered list a new row may belong to, carries a **refetch mark**: it refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. The mark outlives later patches and a reload, and only that refetch clears it.
+A list the engine cannot patch whole, such as one a range overflowed or a filtered list a new row may belong to, carries a **refetch mark**: it refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. The mark outlives later patches and a reload, and only that refetch clears it. A full read of a canonical list merges the range announced while it ran before it is cached.
 
 ### Unseen tracking
 
@@ -152,7 +152,7 @@ An online write is ordered by arrival: the server stamps it with a fresh server 
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. A list read that starts or ends while a row has a pending mutation keeps the row as cached, the stored row once the mutation settled. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
 A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed. A replay that meets a lost session stays queued for the same user's next sign-in.
 

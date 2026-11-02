@@ -48,7 +48,7 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
 
 Each entity module registers its query keys and range fetch once in its `query.ts`, so generic cache and realtime code never import entity modules. Staleness follows the stream. Sync deliveries are plain cache writes: upserts, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list they cannot patch.
 
-A cache write keeps a mark: one that changes nothing writes nothing, and a real write, or a mutation that cancels a running read, marks the query again.
+A cache write keeps a mark: one that changes nothing writes nothing, and a real write, or a mutation that cancels a running read, marks the query again. A synced list read belongs to the cache, not to the screen that started it: a screen that leaves never aborts it.
 
 ### Imperative reads
 
