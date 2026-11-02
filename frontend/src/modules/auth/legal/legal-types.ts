@@ -41,7 +41,8 @@ export interface SharedDataType {
   dataCategories: string[];
   dataSubjects: string[];
   storageLocation: string;
-  retentionPeriod: string;
+  /** One entry per line; several lines each name what they cover. */
+  retentionPeriod: string[];
   optional?: boolean;
 }
 
