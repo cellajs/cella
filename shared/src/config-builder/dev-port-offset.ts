@@ -1,4 +1,4 @@
-/** Ports between two checkouts of one app. `devAppIndex` moves `devPorts` by at most 90, so the two never meet. */
+/** Ports between two checkouts of one app. `devAppIndex` moves the service ports by at most 90, so the two never meet. */
 const slotSize = 100;
 
 /** Offsets stay below 1000, the distance from the frontend port to the API block. */

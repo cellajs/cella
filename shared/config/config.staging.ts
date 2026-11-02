@@ -1,24 +1,13 @@
 import type { DeepPartial } from '../src/config-builder/types.ts';
-import type { config as _default } from './config.default.ts';
+import { config } from './config.default.ts';
 
 export const staging = {
-  mode: 'staging',
-  name: 'Cella STAGING',
-  slug: 'cella-staging',
+  name: `${config.name} STAGING`,
+  slug: `${config.slug}-staging`,
 
-  domain: 'cellajs.com',
-
-  frontendUrl: 'https://staging.cellajs.com',
-  backendUrl: 'https://staging.cellajs.com/api',
-  backendAuthUrl: 'https://staging.cellajs.com/api/auth',
-  yjsUrl: 'wss://staging.cellajs.com/yjs',
-  mcpUrl: 'https://staging.cellajs.com/mcp',
-  oauthUrl: 'https://staging.cellajs.com/oauth',
-  // Off while the in-process authorization server does not answer on the single-machine host: its health check on port 4004 fails.
+  origin: `https://staging.${config.domain}`,
+  // Off while the in-process authorization server does not answer on the single-machine host: its health check fails.
   services: { oauth: { enabled: false } },
-  federations: {
-    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
-  },
 
   singleVM: true,
-} satisfies DeepPartial<typeof _default>;
+} satisfies DeepPartial<typeof config>;

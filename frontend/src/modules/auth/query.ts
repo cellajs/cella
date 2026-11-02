@@ -1,5 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { type GetTokenDataData, getAuthHealth, getPendingMagicLink, getPendingMfa, getSsoEntry, getTokenData } from 'sdk';
+import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
 
@@ -17,12 +18,15 @@ const authKeys = {
 // Abort at the timeout, so a down backend never hangs on the browser default.
 const healthTimeoutMs = 20000;
 
+/** For a page that says a failure in place: only a rate limit's wait still needs the toast. */
+const isNotRateLimit = (error: ApiError) => error.status !== 429;
+
 export const authHealthQueryOptions = queryOptions({
   queryKey: authKeys.health,
   queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(healthTimeoutMs)]) }),
   staleTime: 0,
   refetchOnMount: 'always',
-  retry: false,
+  meta: { suppressGlobalErrorToast: isNotRateLimit },
 });
 
 /** What a token stands for; disabled without an id. It may name another address than the one signed in here: it stays out of the local database. */
@@ -39,15 +43,13 @@ export const tokenDataQueryOptions = (type: TokenType, tokenId?: string) =>
 export const pendingMagicLinkQueryOptions = queryOptions({
   queryKey: authKeys.pendingMagicLink,
   queryFn: ({ signal }) => getPendingMagicLink({ signal }),
-  retry: false,
-  meta: { persist: false },
+  meta: { persist: false, suppressGlobalErrorToast: isNotRateLimit },
 });
 
 /** The account this browser's MFA challenge completes. The MFA route refetches it per visit and redirects without one, so no toast. */
 export const pendingMfaQueryOptions = queryOptions({
   queryKey: authKeys.pendingMfa,
   queryFn: ({ signal }) => getPendingMfa({ signal }),
-  retry: false,
   staleTime: Number.POSITIVE_INFINITY,
   meta: { persist: false, suppressGlobalErrorToast: true },
 });
@@ -58,15 +60,13 @@ export const ssoEntryQueryOptions = (connectionId?: string) =>
     queryKey: authKeys.ssoEntry(connectionId),
     queryFn: () => getSsoEntry({ path: { connectionId: connectionId ?? '' } }),
     enabled: !!connectionId,
-    retry: false,
   });
 
-/** Bound to one interaction, gone when it is answered: never persisted, never retried. */
+/** Bound to one interaction, gone when it is answered: never persisted. */
 export const consentDetailsQueryOptions = (uid: string) =>
   queryOptions({
     queryKey: authKeys.consent.details(uid),
     queryFn: () => getConsentDetails(uid),
-    retry: false,
     staleTime: Number.POSITIVE_INFINITY,
     meta: { persist: false, suppressGlobalErrorToast: true },
   });

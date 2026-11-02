@@ -17,7 +17,7 @@ function yjsTokenPublicKey(material: string): string {
 /**
  * App-owned mapping from runtime secrets to their consuming services; per-service manifests restrict each VM to the values it needs.
  * The consumer list also places the secret: each consumer gets its own copy in its own folder, which only its key reads. The
- * backend image checks the same assignment per process mode (backend/src/env-mode-secrets.ts, pinned by the tests).
+ * backend image checks the same assignment per process mode (backend/src/env-service-secrets.ts, pinned by the tests).
  * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({

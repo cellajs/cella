@@ -1,7 +1,12 @@
 import { defineServices } from '../compose/infrastructure';
 import { CRON_HOME_DATABASE } from '../lib/scaleway/db-privileges';
 
-/** App-owned registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing, certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. */
+/**
+ * App-owned registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing,
+ * certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. Each `port`,
+ * `internalPort` and `pathPrefix` repeats `services` and `servicePaths` of the shared config, which the engine never
+ * imports; `tests/unit/app-config-registry.test.ts` holds the two together.
+ */
 export const appServices = defineServices({
   backend: {
     image: '${REGISTRY}/backend:${BACKEND_TAG:-latest}',
@@ -16,7 +21,7 @@ export const appServices = defineServices({
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     // The managed instance's admin user is no superuser, so it may not read `cron.database_name`: the migrate step is told pg_cron's database.
-    release: { env: { MODE: 'migrate', PG_CRON_DATABASE: CRON_HOME_DATABASE }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
+    release: { env: { SERVICE: 'migrate', PG_CRON_DATABASE: CRON_HOME_DATABASE }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
     primaryRollout: true,
     drainSeconds: 10,
     // Reached at https://<app-host>/api/... through an LB path-begin route; the backend self-mounts '/api', so the LB strips nothing.
@@ -30,7 +35,7 @@ export const appServices = defineServices({
     s3Access: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
-    env: { FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}' },
+    env: { APP_ORIGIN: '${APP_ORIGIN}' },
   },
 
   cdc: {
@@ -46,7 +51,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
-    env: { BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', BACKEND_URL: '${BACKEND_URL}', CDC_HEALTH_PORT: '4001' },
+    env: { BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', APP_ORIGIN: '${APP_ORIGIN}' },
     // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
     bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
@@ -71,7 +76,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: { BACKEND_URL: '${BACKEND_URL}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', YJS_PORT: '4002' },
+    env: { APP_ORIGIN: '${APP_ORIGIN}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}' },
     // Materialize calls go to the backend's internal listener through the LB's private internal frontend, never the public API.
     bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
@@ -93,15 +98,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: {
-      MODE: 'mcp',
-      PORT: '4003',
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-      MCP_URL: '${MCP_URL}',
-    },
-    // The worker's own public URL, host-routed through the LB.
-    bindings: { MCP_URL: '@{self.url}' },
+    env: { SERVICE: 'mcp', APP_ORIGIN: '${APP_ORIGIN}' },
   },
 
   oauth: {
@@ -121,15 +118,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: {
-      MODE: 'oauth',
-      PORT: '4004',
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-      OAUTH_URL: '${OAUTH_URL}',
-    },
-    // The issuer URL, host-routed through the LB.
-    bindings: { OAUTH_URL: '@{self.url}' },
+    env: { SERVICE: 'oauth', APP_ORIGIN: '${APP_ORIGIN}' },
   },
 
   jobs: {
@@ -145,7 +134,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
     coHosted: true,
-    env: { MODE: 'jobs', PORT: '4006', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}' },
+    env: { SERVICE: 'jobs', APP_ORIGIN: '${APP_ORIGIN}' },
   },
 
   frontend: {
@@ -169,5 +158,5 @@ export const appServices = defineServices({
   },
 });
 
-/** Env keys selecting a container's process identity: which in-process worker to boot (`MODE`) and which port it binds (`PORT`). Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
-export const processIdentityEnv = ['MODE', 'PORT'] as const;
+/** Env keys selecting a container's process identity: which service of the backend image to boot (`SERVICE`), which also picks its port. Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
+export const processIdentityEnv = ['SERVICE', 'PORT'] as const;

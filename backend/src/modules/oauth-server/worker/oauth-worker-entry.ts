@@ -24,7 +24,7 @@ export async function startOauthWorker(options: { port?: number; inProcess?: boo
   if (!options.inProcess) {
     otel.start();
     otel.verifyConnection();
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.devPorts.api });
+    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
   }
 
   // Loaded here so an app with the server off never loads oidc-provider, which warns about the Node version on import.

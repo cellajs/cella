@@ -1,47 +1,35 @@
-import { CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CloudOffIcon, ServerOffIcon } from 'lucide-react';
+import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { type AlertKey, useAlertStore } from '~/modules/common/alerter/alert-store';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useOfflineAlert } from '~/modules/common/alerter/use-offline-alert';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { recheckNow } from '~/query/offline/connectivity';
 
 const downAlertConfig = {
   offline: { icon: CloudOffIcon, titleKey: 'c:offline', textKey: 'c:offline.alert', variant: 'warning' },
-  maintenance: { icon: ConstructionIcon, titleKey: 'c:maintenance_mode', textKey: 'c:maintenance_mode.text', variant: 'destructive' },
-  auth_unavailable: { icon: TriangleAlertIcon, titleKey: 'c:auth_unavailable', textKey: 'c:auth_unavailable.text', variant: 'plain' },
+  server: { icon: ServerOffIcon, titleKey: 'c:server_unreachable', textKey: 'c:server_unreachable.text', variant: 'destructive' },
 } as const;
 
-/** The server's down alert, else the offline alert; a server alert the user dismissed stays hidden while the layout is mounted. */
+/** The server's down alert, else the offline alert; a server alert the user dismissed stays hidden until that outage ends. */
 export function DownAlert() {
   const { t } = useTranslation();
-  const serverAlert = useAlertStore((state) => state.downAlert);
-  const setDownAlert = useAlertStore((state) => state.setDownAlert);
-  const setOfflineAlertShown = useAlertStore((state) => state.setOfflineAlertShown);
-  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
+  const isServerDown = useAlertStore((state) => state.downAlert);
+  const [isDismissed, setIsDismissed] = useState(false);
   const offlineAlert = useOfflineAlert();
 
-  const shownServerAlert = serverAlert && !dismissedAlerts[serverAlert] ? serverAlert : null;
-  const downAlert = shownServerAlert ?? (offlineAlert.isShown ? 'offline' : null);
+  // Reset during render, so the next outage shows from its first frame.
+  if (!isServerDown && isDismissed) setIsDismissed(false);
 
-  const isOfflineShown = downAlert === 'offline';
-  useEffect(() => {
-    setOfflineAlertShown(isOfflineShown);
-    return () => setOfflineAlertShown(false);
-  }, [isOfflineShown, setOfflineAlertShown]);
+  const isServerShown = isServerDown && !isDismissed;
+  if (!isServerShown && !offlineAlert.isShown) return null;
 
-  const dismissAlert = () => {
-    if (!shownServerAlert) return offlineAlert.dismiss();
-    setDismissedAlerts((prev) => ({ ...prev, [shownServerAlert]: true }));
-    setDownAlert(null);
-  };
-
-  if (!downAlert) return null;
-  const { icon: Icon, titleKey, textKey, variant } = downAlertConfig[downAlert];
+  const dismissAlert = () => (isServerShown ? setIsDismissed(true) : offlineAlert.dismiss());
+  const { icon: Icon, titleKey, textKey, variant } = downAlertConfig[isServerShown ? 'server' : 'offline'];
 
   return (
     <div className="pointer-events-auto fixed right-4 left-4 z-2000 max-sm:top-4 sm:bottom-4">
-      <Alert variant={variant} onClose={dismissAlert}>
+      <Alert variant={variant} onClose={dismissAlert} className="soft-border-strong shadow-floating">
         <Icon />
         <AlertDescription>
           <span className="font-bold">{t(titleKey)}</span>

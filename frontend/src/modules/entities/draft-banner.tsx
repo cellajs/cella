@@ -1,6 +1,6 @@
-import { RocketIcon } from 'lucide-react';
+import { CircleAlertIcon, RocketIcon } from 'lucide-react';
 import { type ReactNode, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { NamedText } from '~/modules/common/named-text';
@@ -33,10 +33,18 @@ export function DraftBanner({ channel, publishForm }: DraftBannerProps) {
   };
 
   return (
-    <Alert variant="plain" className="rounded-none border-0 border-b px-3 py-2">
+    <Alert variant="plain" className="rounded-none border-0 border-b px-3 py-2 shadow-[inset_0_0_8px_rgba(0,0,0,0.15)]">
       <AlertDescription className="flex w-full flex-wrap items-center justify-between gap-2">
-        <span className="max-w-measure text-muted-foreground">
-          <NamedText i18nKey="c:draft_banner.text" name={channel.name} values={{ prepareRoles: prepareRolesText(channel.entityType) }} />
+        <span className="flex max-w-measure gap-2 text-muted-foreground">
+          <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
+          <span>
+            <Trans
+              t={t}
+              i18nKey="c:draft_banner.text"
+              values={{ resource: t(`c:${channel.entityType}`), prepareRoles: prepareRolesText(channel.entityType) }}
+              components={{ strong: <strong className="font-semibold" /> }}
+            />
+          </span>
         </span>
         <Button ref={buttonRef} size="sm" className="max-sm:w-full" onClick={openPublishDialog}>
           <RocketIcon className="size-3.5" />

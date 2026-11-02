@@ -43,8 +43,8 @@ async function startMaintainer() {
 
 /**
  * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, works
- * the template's queues and creates queues declared by modules. Its own process (`MODE=jobs`) on
- * `devPorts.jobs`, or folded into the API under `singleVM`, where the API's `/health` already
+ * the template's queues and creates queues declared by modules. Its own process (`SERVICE=jobs`) on
+ * its configured port, or folded into the API under `singleVM`, where the API's `/health` already
  * carries the jobs component and its shutdown stops the store.
  */
 export async function startJobsWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
@@ -58,7 +58,7 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
     otel.start();
     otel.verifyConnection();
     // The API installs the job store at boot in development; production installs it from the migrate companion.
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.devPorts.api });
+    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
   }
 
   const boss = await startMaintainer();

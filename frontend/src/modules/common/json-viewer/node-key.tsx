@@ -19,12 +19,12 @@ export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired
 
   if (typeof keyName === 'number') {
     return (
-      <>
+      <span>
         <span ref={ref} className={jsonViewerTheme.index}>
           {keyName}
         </span>
         {colon}
-      </>
+      </span>
     );
   }
 
@@ -33,12 +33,13 @@ export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired
   const isMuted = isDictionaryKey || (openapiMode === 'schema' && !isObjectValue);
 
   return (
-    <>
+    // One unit, so the colon never wraps away from its key. A path key longer than the viewer breaks anywhere.
+    <span className="wrap-anywhere">
       <span ref={ref} className={cn(isMuted ? 'text-muted-foreground' : jsonViewerTheme.key, isDictionaryKey && 'italic')}>
         <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />
       </span>
       {hasSelfRequired && <span className={cn(jsonViewerTheme.badge, jsonViewerTheme.required, 'ml-1.5')}>required</span>}
       {colon}
-    </>
+    </span>
   );
 }

@@ -8,6 +8,7 @@ import type { PlacementDescriptor } from '~/lib/placements';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { getHasNavigated } from '~/utils/nav-transition';
 
 interface PageAsideItem extends PlacementDescriptor {
   icon?: IconComponent;
@@ -18,7 +19,7 @@ interface PageAsideItem extends PlacementDescriptor {
 interface PageAsideProps<T> {
   tabs: readonly T[];
   className?: string;
-  /** Focuses the first row on mount, from sm up. */
+  /** Focuses the first row on mount after a navigation, from sm up. */
   autoFocus?: boolean;
 }
 
@@ -32,7 +33,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (!isMobile && autoFocus) firstTabRef.current?.focus();
+    if (!isMobile && autoFocus && getHasNavigated()) firstTabRef.current?.focus();
   }, []);
 
   return (

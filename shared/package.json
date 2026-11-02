@@ -20,7 +20,7 @@
     "./config/*": "./config/*.ts"
   },
   "dependencies": {
-    "@blocknote/core": "^0.56.0",
+    "@blocknote/core": "^0.57.0",
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/context-async-hooks": "^3.0.0",
     "@opentelemetry/core": "^3.0.0",
@@ -35,9 +35,9 @@
     "@opentelemetry/sdk-logs": "^3.0.0",
     "@opentelemetry/sdk-metrics": "^3.0.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
-    "@opentelemetry/semantic-conventions": "^1.43.0",
+    "@opentelemetry/semantic-conventions": "^1.44.0",
     "dobajs": "0.1.0",
-    "hono": "^4.13.14",
+    "hono": "^4.13.16",
     "nanoid": "^6.0.2",
     "picocolors": "^1.1.1",
     "pino": "^10.4.0",

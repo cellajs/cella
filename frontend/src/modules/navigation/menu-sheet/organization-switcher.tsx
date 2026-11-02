@@ -10,24 +10,28 @@ import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
-import { menuColumnsClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
+import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
+import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
 import { navigationStore } from '~/modules/navigation/navigation-store';
-import { useOrganizationUnseenCounts } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
-/** The organizations of the signed-in user's menu in display order, active and archived apart. */
+/** The organizations of the signed-in user's menu in display order, active and archived apart, with their unseen counts. */
 function useSwitcherOrganizations() {
   const user = useUserStore((state) => state.user);
   const { menu } = useMenu(user?.id);
   const organizations = menuOrganizations(menu);
-  return { active: sortAndFilterMenu(organizations, false), archived: sortAndFilterMenu(organizations, true) };
+  return {
+    active: sortAndFilterMenu(organizations, false),
+    archived: sortAndFilterMenu(organizations, true),
+    unseenCounts: useOrganizationUnseenCounts(menu),
+  };
 }
 
 interface SwitcherOrganizationItemProps {
@@ -65,8 +69,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpointBelow('sm', false);
-  const { active, archived } = useSwitcherOrganizations();
-  const unseenCounts = useOrganizationUnseenCounts();
+  const { active, archived, unseenCounts } = useSwitcherOrganizations();
   const createOrganization = getMenuSection('organization')?.createAction;
   // Folds again with every opening, as the menu remounts; open from the start when the sheet shows an archived one
   const [showsArchived, setShowsArchived] = useState(organization.membership.archived);
@@ -126,6 +129,9 @@ interface OrganizationSwitcherProps {
 export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const { active, unseenCounts } = useSwitcherOrganizations();
+  // This sheet shows its own organization's counts; nothing else tells of new content in the others
+  const hasUnseenElsewhere = active.some(({ id }) => id !== organization.id && unseenCounts.has(id));
 
   const openMenu = () => {
     dropdowner.getState().create(<OrganizationSwitcherMenu organization={organization} triggerRef={triggerRef} />, {
@@ -138,24 +144,29 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
   };
 
   return (
-    <div className="px-3 pt-2 pb-2">
-      <Button
-        ref={triggerRef}
-        variant="ghost"
-        onClick={openMenu}
-        aria-label={t('c:switch_organization', { name: organization.name })}
-        className={cn('h-12 w-full justify-start border-0 text-md data-dropdowner-active:bg-muted', menuColumnsClass)}
-      >
-        <EntityAvatar
-          className="size-8 shrink-0"
-          type={organization.entityType}
-          id={organization.id}
-          name={organization.name}
-          url={organization.thumbnailUrl}
-        />
-        <span className="min-w-0 grow truncate text-left">{organization.name}</span>
-        <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
-      </Button>
-    </div>
+    <>
+      <div className={menuHairlineClass} />
+      <div className="px-3 py-1.5">
+        <Button
+          ref={triggerRef}
+          variant="ghost"
+          onClick={openMenu}
+          aria-label={t(hasUnseenElsewhere ? 'c:switch_organization_unseen' : 'c:switch_organization', { name: organization.name })}
+          className={cn('h-12 w-full justify-start border-0 text-md data-dropdowner-active:bg-muted', menuColumnsClass)}
+        >
+          <EntityAvatar
+            className="size-8 shrink-0"
+            type={organization.entityType}
+            id={organization.id}
+            name={organization.name}
+            url={organization.thumbnailUrl}
+          />
+          <span className="min-w-0 grow truncate text-left">{organization.name}</span>
+          {hasUnseenElsewhere && <span className="-mr-2 size-2 shrink-0 rounded-full bg-primary" />}
+          <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+        </Button>
+      </div>
+      <div className={menuHairlineClass} />
+    </>
   );
 }

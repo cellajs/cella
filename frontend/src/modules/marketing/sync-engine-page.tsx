@@ -55,7 +55,7 @@ export function SyncEnginePage() {
         <div className="relative overflow-x-clip" aria-hidden="true">
           <Suspense fallback={null}>
             <div className="mask-[linear-gradient(to_right,transparent_7rem,black_11rem)] pointer-events-none absolute -top-24 left-[calc(50%+18rem)] size-300 -translate-y-1/2 opacity-30 saturate-300 dark:opacity-25">
-              <MorphAnimation still={31} fizz={1} grid={230} stamp="plus" />
+              <MorphAnimation palette="brand" still={31} fizz={1} grid={230} stamp="plus" />
             </div>
           </Suspense>
         </div>

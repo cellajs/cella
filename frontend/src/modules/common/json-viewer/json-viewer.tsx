@@ -27,7 +27,7 @@ function createRefDataType(onNavigate: (targetPath: string[]) => void): DataType
           event.stopPropagation();
           onNavigate(parseRefPath(value));
         }}
-        className="link-decoration active:link-decoration-strong cursor-pointer text-primary text-sm hover:underline"
+        className="link-decoration active:link-decoration-strong wrap-anywhere cursor-pointer text-left text-primary text-sm hover:underline"
       >
         "{value}"
       </button>

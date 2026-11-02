@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { pendingMagicLinkQueryOptions } from '~/modules/auth/query';
+import { ServerUnavailableAlert } from '~/modules/auth/server-unavailable-alert';
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { NamedText } from '~/modules/common/named-text';
 import { Spinner } from '~/modules/common/spinner';
@@ -18,11 +19,12 @@ import { Button } from '~/modules/ui/button';
 export function ConfirmSignInPage() {
   const { t } = useTranslation();
 
-  const { data, isLoading, isError } = useQuery(pendingMagicLinkQueryOptions);
+  const { data, isLoading, error } = useQuery(pendingMagicLinkQueryOptions);
 
   if (isLoading) return <Spinner size="lg" />;
 
-  if (isError || !data) {
+  // The route refuses a link that is gone with a 401: any other failure says nothing about the link.
+  if (error?.status === 401) {
     return (
       <>
         <AuthHeader title={t('c:confirm_sign_in_expired')}>
@@ -32,6 +34,15 @@ export function ConfirmSignInPage() {
           <LogInIcon />
           {t('c:sign_in')}
         </Button>
+      </>
+    );
+  }
+
+  if (!data) {
+    return (
+      <>
+        <AuthHeader title={t('c:confirm_sign_in')} />
+        <ServerUnavailableAlert />
       </>
     );
   }

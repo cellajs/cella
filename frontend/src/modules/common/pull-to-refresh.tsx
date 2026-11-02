@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -13,6 +13,11 @@ const exitDuration = 450;
 const activationThreshold = 30;
 // First 30px of pull just shows the empty circle, progress starts after that (px).
 const emptyPhase = 30;
+// The full ring is cut into this many rounded pieces, this thick (viewBox units), filling this share of the ring.
+const pieceCount = 8;
+const pieceStroke = 5;
+const pieceFill = 0.66;
+const spinDuration = 3000;
 
 type Phase = 'idle' | 'refreshing' | 'exiting';
 
@@ -157,19 +162,17 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
   const clamped = Math.min(progressPull, refreshThreshold);
   const progress = clamped / refreshThreshold;
 
-  // Rings thicken inward from a fixed outer edge at radius 20 as the pull grows
-  const stroke = isActive ? 6 : 3 + progress * 1.5;
+  // Rings thicken inward from a fixed outer edge at radius 20 as the pull grows, up to the thickness of the pieces
+  const stroke = isActive ? pieceStroke : 3 + progress * (pieceStroke - 3);
   // Background extends 3px beyond the foreground on each side for padding.
   const backgroundStroke = stroke + 6;
   const radius = 20 - backgroundStroke / 2;
   const circumference = 2 * Math.PI * radius;
 
-  // While refreshing the ring "explodes" into evenly spaced dashes that spin.
-  const explodedSegments = 16;
-  const explodedSegment = circumference / explodedSegments;
-  const explodedDash = explodedSegment * 0.65;
-  const explodedGap = explodedSegment * 0.35;
-  const explodedDashArray = `${explodedDash} ${explodedGap}`;
+  // While refreshing, gaps open in the full ring. A round cap adds half the stroke at each end of a dash.
+  const segment = circumference / pieceCount;
+  const pieceDash = segment * pieceFill - pieceStroke;
+  const piecesDashArray = `${pieceDash} ${segment - pieceDash}`;
 
   const strokeDashoffset = circumference * (1 - progress);
 
@@ -196,18 +199,11 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       <svg
         className={cn('size-8', isActive && 'animate-spin')}
         viewBox="0 0 40 40"
-        style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
+        // Follows the finger with no transition: a transition restarted on every touchmove lurches during a slow pull
+        style={isActive ? { animationDuration: `${spinDuration}ms` } : { transform: `rotate(${pullPosition * 2}deg)` }}
       >
         <title>{t('c:pull_to_refresh')}</title>
-        <circle
-          cx="20"
-          cy="20"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={backgroundStroke}
-          className="text-background opacity-70 transition-[stroke-width] duration-150 ease-out"
-        />
+        <circle cx="20" cy="20" r={radius} fill="none" stroke="currentColor" strokeWidth={backgroundStroke} className="text-background opacity-70" />
         <circle
           cx="20"
           cy="20"
@@ -215,10 +211,11 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           fill="none"
           stroke="currentColor"
           strokeWidth={stroke}
-          strokeDasharray={isActive ? explodedDashArray : circumference}
+          strokeDasharray={isActive ? piecesDashArray : circumference}
           strokeDashoffset={isActive ? 0 : strokeDashoffset}
-          strokeLinecap={isActive ? 'butt' : 'round'}
-          className="text-foreground transition-[stroke-width] duration-150 ease-out"
+          strokeLinecap="round"
+          style={{ '--ring-segment': segment } as CSSProperties}
+          className={cn('text-foreground', isActive && 'animate-ring-cut')}
         />
       </svg>
     </div>

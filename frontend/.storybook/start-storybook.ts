@@ -1,9 +1,8 @@
 import { execSync } from 'node:child_process';
 import net from 'node:net';
-import { appConfig } from '../../shared';
+import { storybookPort } from '../../shared/src/utils/tool-ports.ts';
 
-// Derive Storybook's port from appConfig so each app gets a stable local port.
-const port = (Number(new URL(appConfig.frontendUrl).port) || appConfig.devPorts.frontend) + 3006;
+const port = storybookPort();
 
 /**
  * Install Playwright's pinned Storybook browser idempotently at test startup.

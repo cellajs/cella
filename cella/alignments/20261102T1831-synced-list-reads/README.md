@@ -28,7 +28,8 @@ No script: manual.
 3. Where the home channel comes from a placement (`resolveProductHome(type, placement)?.id`), pass the same id as `channelId` that the key builder uses.
 4. A feed under the product's list keys, such as projectcampus `itemsHomeFeedOrgOptions` (`['item', 'list', organizationId, { feed, q }, limit]`), is one: sync patches its rows, an edit cancels its read and a new row marks it, so wrap it without a scope. Lists under keys of their own, such as raak's public `publicList`, stay as they are.
 5. A wrapped paged list keeps `meta: { persist: false }`, as the template's filtered lists have it: a page stored on disk could keep a hidden id whose delete settled while the page was there.
-6. A canonical read that already carries rows of its own (raak's `carryUnansweredCreates`) keeps doing so; the helper runs after it. A canonical list with a server filter of its own (raak's `acceptedCutOff`) takes the merged range rows the filter would leave out, as a live patch of that list does.
+6. A wrapped list refetches when a reader mounts and the list carries a refetch mark, whatever the app's global `refetchOnMount`; remove a `refetchOnMount: true` a board or table set for that. Without the wrap, a list marked while off screen (an opaque view, an archived organization, an overflow) never refetches under `refetchOnMount: false`.
+7. A canonical read that already carries rows of its own (raak's `carryUnansweredCreates`) keeps doing so; the helper runs after it. A canonical list with a server filter of its own (raak's `acceptedCutOff`) takes the merged range rows the filter would leave out, as a live patch of that list does.
 
 ## Verify
 

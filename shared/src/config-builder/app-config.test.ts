@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { FederationConfig } from './types.ts';
 import { mergeDeep } from './utils.ts';
 
 const originalEnv = { ...process.env };
@@ -10,7 +11,7 @@ afterEach(() => {
 
 async function loadAppConfig(env: Record<string, string>) {
   vi.resetModules();
-  process.env = { ...originalEnv, ...env };
+  process.env = { ...originalEnv, APP_ORIGIN: '', ...env };
   return (await import('./app-config.ts')).appConfig;
 }
 
@@ -21,8 +22,15 @@ describe('mergeDeep', () => {
 });
 
 describe('appConfig service endpoints', () => {
-  it('derives service public URLs from the compatibility URL fields', async () => {
-    const appConfig = await loadAppConfig({ APP_MODE: 'development' });
+  it('derives every service URL and public URL from the origin', async () => {
+    const appConfig = await loadAppConfig({ APP_MODE: 'production' });
+    const { origin } = appConfig;
+    expect(appConfig.frontendUrl).toBe(origin);
+    expect(appConfig.backendUrl).toBe(`${origin}/api`);
+    expect(appConfig.backendAuthUrl).toBe(`${origin}/api/auth`);
+    expect(appConfig.yjsUrl).toBe(`${origin.replace('https', 'wss')}/yjs`);
+    expect(appConfig.mcpUrl).toBe(`${origin}/mcp`);
+    expect(appConfig.oauthUrl).toBe(`${origin}/oauth`);
     expect(appConfig.services.frontend.publicUrl).toBe(appConfig.frontendUrl);
     expect(appConfig.services.backend.publicUrl).toBe(appConfig.backendUrl);
     expect(appConfig.services.yjs.publicUrl).toBe(appConfig.yjsUrl);
@@ -30,18 +38,31 @@ describe('appConfig service endpoints', () => {
     expect('publicUrl' in appConfig.services.cdc).toBe(false);
   });
 
-  it('applies env URL overrides to service public URLs', async () => {
-    const appConfig = await loadAppConfig({
-      APP_MODE: 'production',
-      FRONTEND_URL: 'https://front.example',
-      BACKEND_URL: 'https://api.example',
-      YJS_URL: 'wss://yjs.example',
-      MCP_URL: 'https://mcp.example',
-    });
-    expect(appConfig.services.frontend.publicUrl).toBe('https://front.example');
-    expect(appConfig.services.backend.publicUrl).toBe('https://api.example');
-    expect(appConfig.services.yjs.publicUrl).toBe('wss://yjs.example');
-    expect(appConfig.services.mcp.publicUrl).toBe('https://mcp.example');
+  it('takes the origin from APP_ORIGIN, for a build or a container served elsewhere', async () => {
+    const appConfig = await loadAppConfig({ APP_MODE: 'production', APP_ORIGIN: 'https://app.example' });
+    expect(appConfig.services.frontend.publicUrl).toBe('https://app.example');
+    expect(appConfig.services.backend.publicUrl).toBe('https://app.example/api');
+    expect(appConfig.services.yjs.publicUrl).toBe('wss://app.example/yjs');
+  });
+
+  it('tells a local stack from a deployed one', async () => {
+    for (const mode of ['development', 'tunnel', 'test'] as const) expect((await loadAppConfig({ APP_MODE: mode })).isLocal).toBe(true);
+    for (const mode of ['staging', 'production'] as const) expect((await loadAppConfig({ APP_MODE: mode })).isDeployed).toBe(true);
+  });
+});
+
+describe('appConfig federations', () => {
+  it('signs in through a federation sandbox in every mode but production', async () => {
+    const production: Record<string, FederationConfig> = (await loadAppConfig({ APP_MODE: 'production' })).federations;
+    for (const [key, federation] of Object.entries(production)) {
+      if (!federation.sandbox) continue;
+      for (const mode of ['development', 'tunnel', 'staging', 'test'] as const) {
+        const federations: Record<string, FederationConfig> = (await loadAppConfig({ APP_MODE: mode })).federations;
+        const built = federations[key];
+        expect(built.issuer, `${key} in ${mode}`).toBe(federation.sandbox.issuer);
+        expect(built.idpMetadataUrl, `${key} in ${mode}`).toBe(federation.sandbox.idpMetadataUrl);
+      }
+    }
   });
 });
 
@@ -74,20 +95,21 @@ describe('appConfig devAppIndex', () => {
 
   afterEach(() => vi.doUnmock('../../config/config.default.ts'));
 
-  it('moves the frontend and its URLs by one, the services by ten and leaves production alone', async () => {
+  it('moves the frontend and its origin by one, the services by ten and leaves production alone', async () => {
     useIndex(0); // An app's own number would otherwise count twice
     const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
     const baseProduction = await loadAppConfig({ APP_MODE: 'production' });
     useIndex(2);
     const app = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
-    expect(app.devPorts.frontend).toBe(base.devPorts.frontend + 2);
+    expect(app.services.frontend.port).toBe(base.services.frontend.port + 2);
     expect(new URL(app.frontendUrl).port).toBe(String(Number(new URL(base.frontendUrl).port) + 2));
     expect(new URL(app.yjsUrl).port).toBe(new URL(app.frontendUrl).port);
-    expect(app.devPorts.api).toBe(base.devPorts.api + 20);
-    expect(app.devPorts.jobs).toBe(base.devPorts.jobs + 20);
+    expect(app.services.backend.port).toBe(base.services.backend.port + 20);
+    expect(app.services.backend.internalPort).toBe(base.services.backend.internalPort + 20);
+    expect(app.services.jobs.port).toBe(base.services.jobs.port + 20);
     const worktree = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100' });
-    expect(worktree.devPorts.api).toBe(base.devPorts.api + 120);
-    expect((await loadAppConfig({ APP_MODE: 'production' })).devPorts).toEqual(baseProduction.devPorts);
+    expect(worktree.services.backend.port).toBe(base.services.backend.port + 120);
+    expect((await loadAppConfig({ APP_MODE: 'production' })).services).toEqual(baseProduction.services);
   });
 
   it.each([
@@ -108,12 +130,12 @@ describe('appConfig devAppIndex', () => {
 describe('appConfig dev port offset', () => {
   const port = (url: string) => Number(new URL(url).port);
 
-  it('moves devPorts and the localhost URL family together', async () => {
+  it('moves the service ports and the localhost origin together', async () => {
     const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
     const shifted = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100' });
     expect(shifted.devPortOffset).toBe(100);
-    expect(shifted.devPorts.api).toBe(base.devPorts.api + 100);
-    expect(shifted.devPorts.internal).toBe(base.devPorts.internal + 100);
+    expect(shifted.services.backend.port).toBe(base.services.backend.port + 100);
+    expect(shifted.services.backend.internalPort).toBe(base.services.backend.internalPort + 100);
     expect(port(shifted.frontendUrl)).toBe(port(base.frontendUrl) + 100);
     expect(port(shifted.backendUrl)).toBe(port(base.backendUrl) + 100);
     expect(port(shifted.yjsUrl)).toBe(port(base.yjsUrl) + 100);
@@ -122,15 +144,15 @@ describe('appConfig dev port offset', () => {
 
   it('writes generated text with the configured ports', async () => {
     const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
-    process.env = { ...originalEnv, APP_MODE: 'development', DEV_PORT_OFFSET: '100' };
+    process.env = { ...originalEnv, APP_ORIGIN: '', APP_MODE: 'development', DEV_PORT_OFFSET: '100' };
     vi.resetModules();
     const { appConfig, withConfiguredDevPorts } = await import('./app-config.ts');
     expect(appConfig.backendUrl).not.toBe(base.backendUrl);
     expect(withConfiguredDevPorts(`{"url":"${appConfig.backendUrl}"}`)).toBe(`{"url":"${base.backendUrl}"}`);
   });
 
-  it('leaves an env URL override and the other modes unshifted', async () => {
-    const overridden = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100', FRONTEND_URL: 'http://localhost:3000' });
+  it('leaves an env origin override and the other modes unshifted', async () => {
+    const overridden = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100', APP_ORIGIN: 'http://localhost:3000' });
     expect(overridden.frontendUrl).toBe('http://localhost:3000');
     expect((await loadAppConfig({ APP_MODE: 'production', DEV_PORT_OFFSET: '100' })).devPortOffset).toBe(0);
     expect((await loadAppConfig({ APP_MODE: 'test', DEV_PORT_OFFSET: '100' })).devPortOffset).toBe(0);

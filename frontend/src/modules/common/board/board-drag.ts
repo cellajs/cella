@@ -36,6 +36,16 @@ interface PanelDragContext {
 
 export const PanelDragHandleContext = createContext<PanelDragContext | null>(null);
 
+interface PanelCollapseContextValue {
+  panelId: string;
+  onToggleCollapsed: () => void;
+}
+
+export const PanelCollapseContext = createContext<PanelCollapseContextValue | null>(null);
+
+/** Collapse for the panel around it, reorderable or not. Null outside a board layout, such as in a loading skeleton. */
+export const usePanelCollapse = () => useContext(PanelCollapseContext);
+
 /**
  * Returns drag handle registration and the move handler. Returns null if the panel is not reorderable.
  * @public

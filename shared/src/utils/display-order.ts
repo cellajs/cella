@@ -28,7 +28,8 @@ export const getEdgeOrder = (existingOrders: number[], edge: 'top' | 'bottom', a
 };
 
 /**
- * Order of a membership an archive or restore moves: the bottom of the list it joins. The server writes it and the client
+ * Order of a membership an archive or restore moves when the request names none: the top of the archive or the bottom of
+ * the active rows, next to the line it crossed, so the opposite move undoes it. The server writes it and the client
  * predicts it, so a moved menu row moves once.
  */
 export const getArchiveMoveOrder = (
@@ -39,9 +40,9 @@ export const getArchiveMoveOrder = (
   getEdgeOrder(
     memberships
       .filter((membership) => membership.channelType === channelType && membership.archived === archived)
-      // Ceil so a fractional displayOrder doesn't squeeze a future insert
-      .map((membership) => Math.ceil(membership.displayOrder)),
-    'bottom',
+      // Rounded outward so a fractional displayOrder doesn't squeeze a future insert
+      .map((membership) => (archived ? Math.floor(membership.displayOrder) : Math.ceil(membership.displayOrder))),
+    archived ? 'top' : 'bottom',
   );
 
 /**

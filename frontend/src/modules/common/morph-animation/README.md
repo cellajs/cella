@@ -25,18 +25,22 @@ How it works:
   off-beat sine waves); a sharpened softmax blends all five into the boundary. The
   logo holds the highest standing bias, so the flow keeps surfacing the mark at
   irregular intervals and never visibly resets.
-- **Rotating duo-tone palette.** The four marketing-gradient hues get the same score
-  treatment, so every frame has a specific one-or-two-hue palette that slowly rotates.
+- **A fixed gradient.** Color runs from orchid at the bottom through violet to periwinkle
+  at the top, the purple accent of the warm marketing gradient the piece sits on. A grain's
+  hue depends on where it is, so the colors never rotate and only the shape moves through them.
+- **The brand palette.** On a plain page background `palette="brand"` draws the four
+  marketing hues instead: each frame has a specific one-or-two-hue palette that slowly rotates.
 - **Soft-edge grains.** The field is quantized to a fine grid; cells outside the
   boundary survive probabilistically, shrink and fade individually, so the edge
   dissolves granularly. A grain stamps as a square or a small plus (`stamp` prop).
 - **Theme-aware shading.** Dark mode glows: brighter band core, white rim. Light mode
-  inverts: saturated hues, whiteish band body, a thin vivid contour, tuned for the
-  low-opacity `mix-blend-multiply` layer both variants are shown in.
+  uses saturated hues and an even band body with a faint contour, so a band reads as
+  one color in the low-opacity `mix-blend-multiply` layer both variants are shown in. The
+  brand palette has a whiteish band body and a thin vivid contour.
 - **The database icon.** `database` swaps the morphing curve for the distance to the
   strokes of lucide's database icon, with rounded joins, thicker strokes and more warp
   than the mark, so it reads as a blob first and its three discs second. Grains,
-  palette, entrance and fizz work as they do for the mark.
+  color, entrance and fizz work as they do for the mark.
 - **Mitosis.** Colony cells join through a smooth minimum, so a split pinches a shared
   membrane apart. Each daughter runs the same system at a time offset that scales with
   separation: siblings drift apart in character and re-synchronize as they merge.
@@ -50,11 +54,11 @@ How it works:
 
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;
-below 1 it magnifies), `stamp`, `still` and `fizz`. A still freezes the clock at a chosen value:
+below 1 it magnifies), `stamp`, `palette`, `still` and `fizz`. A still freezes the clock at a chosen value:
 the piece condenses in on mount, in view or not, then holds that frame and draws again only
-when the theme or another prop changes, so a page can show a fixed shape and palette at no
+when the theme or another prop changes, so a page can show a fixed shape at no
 ongoing cost. `fizz` keeps a still's grains alive on a clock of their own while the shape
-and palette hold: the grid slowly wavers and edge grains flicker and fade in and out. A
+holds: the grid slowly wavers and edge grains flicker and fade in and out. A
 fizzing still draws while in view, as a running piece does. `grid` counts cells across the canvas, so grains
 shrink with it; `minGrainPx` in the renderer stops that at a size that still reads as
 a pixel, and a phone-sized canvas draws the same piece with fewer, larger grains. Below

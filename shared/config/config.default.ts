@@ -1,12 +1,4 @@
-import type {
-  ConfigMode,
-  FederationConfig,
-  NavigationConfig,
-  ProductEmbedding,
-  RequiredConfig,
-  S3ConfigInput,
-  SlotOf,
-} from '../src/config-builder/types.ts';
+import type { FederationConfig, NavigationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput, SlotOf } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -91,7 +83,7 @@ export const config = {
       apiKey: 100,
     },
     rateLimits: { apiPointsPerHour: 1000, invitationMailsPerDay: 250 },
-  } as const,
+  },
 
   /**
    * Tenants one user may create through onboarding (`selfCreateTenant`); a tenant reused while it holds no organization
@@ -129,38 +121,49 @@ export const config = {
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
-  // URLs & endpoints
+  // Origin & services
 
-  // Same-origin: every service is a path under the app origin, so cookies stay
-  // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
-  // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
-  // These URLs are the single source: the config builder derives `services.<slug>.publicUrl`
-  // from them, so mode configs override the URLs here and never the `services` block.
-  frontendUrl: 'https://www.cellajs.com',
-  backendUrl: 'https://www.cellajs.com/api',
-  backendAuthUrl: 'https://www.cellajs.com/api/auth',
-  yjsUrl: 'wss://www.cellajs.com/yjs',
-  mcpUrl: 'https://www.cellajs.com/mcp',
-  /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
-  oauthUrl: 'https://www.cellajs.com/oauth',
-  // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
+  /**
+   * The app's one origin. Every service is a path under it (`servicePaths`): the builder derives `frontendUrl`,
+   * `backendUrl`, `yjsUrl`, `mcpUrl` and `oauthUrl`, and `services.<slug>.publicUrl`, from it. Same-origin keeps cookies
+   * first-party (`__Host-`, SameSite=Strict), needs no CORS and collapses the CSP to 'self'. A mode file sets its own.
+   */
+  origin: 'https://www.cellajs.com',
+
+  /**
+   * This app's number on a developer's machine, 0-9 without 4, so stacks of different apps run side by side (shared/README.md).
+   * It adds its number to the frontend port and its origin, and ten times its number to every other service port and
+   * to the local database ports (`shared/src/local-database.ts`). With two stacks on one number, whichever backend binds
+   * :4000 first answers every app's `/api` proxy.
+   */
+  devAppIndex: 0,
+
+  /**
+   * The services this app runs, each with the port it listens on, as app number 0 has them: the Vite proxy targets in
+   * development, the deploy's container ports, and the folded workers' ports under `singleVM`. A mode file flips a
+   * flag, e.g. mcp on in staging only. `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback
+   * for when the origin carries no port (tunnel mode); otherwise the origin's port wins.
+   */
   services: {
-    frontend: { enabled: true as boolean },
-    backend: { enabled: true as boolean },
-    cdc: { enabled: true as boolean },
-    yjs: { enabled: true as boolean },
-    mcp: { enabled: false as boolean },
-    oauth: { enabled: false as boolean },
+    frontend: { enabled: true, port: 3000 },
+    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
+    backend: { enabled: true, port: 4000, internalPort: 4005 },
+    // The port is its health endpoint.
+    cdc: { enabled: true, port: 4001 },
+    yjs: { enabled: true, port: 4002 },
+    mcp: { enabled: false, port: 4003 },
+    /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
+    oauth: { enabled: false, port: 4004 },
     // The job store's maintainer (cron and queue supervision); off means no sweeps or queues run anywhere.
-    jobs: { enabled: true as boolean },
+    jobs: { enabled: true, port: 4006 },
   },
 
-  // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
+  // Cost escape hatch: when true the backend (SERVICE=api) also boots every enabled
   // service in-process: one VM for previews/small apps. Default false keeps the
   // split (one service per process). HTTP keeps its LB overlap on a deploy; the
   // co-hosted cdc and jobs wait for the old VM's slot and scheduler, so live
   // updates pause until it is reaped.
-  singleVM: false as boolean,
+  singleVM: false,
 
   aboutUrl: '/about',
   statusUrl: '',
@@ -175,44 +178,16 @@ export const config = {
   supportEmail: 'info@cellajs.com',
   securityEmail: 'security@cellajs.com',
 
-  // Mode & flags
-
-  mode: 'development' as ConfigMode,
-  maintenance: false,
-
-  /**
-   * This app's number on a developer's machine, 0-9 without 4, so stacks of different apps run side by side (shared/README.md).
-   * With two stacks on one number, whichever backend binds :4000 first answers every app's `/api` proxy.
-   * The database ports follow by hand: `DB_PORT` and `DB_TEST_PORT` in `backend/.env` are 5432 and 5434 plus ten times this number.
-   */
-  devAppIndex: 0,
-
-  /**
-   * Local dev listen ports, also the Vite proxy targets, as app number 0 has them. `devAppIndex` adds its
-   * number to `frontend` and ten times its number to the others, and a linked git worktree adds 100 per worktree.
-   * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
-   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
-   * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
-   */
-  devPorts: {
-    frontend: 3000,
-    api: 4000,
-    cdcHealth: 4001,
-    yjs: 4002,
-    mcp: 4003,
-    oauth: 4004,
-    internal: 4005,
-    jobs: 4006,
-  },
+  // Flags
 
   has: {
-    pwa: true as boolean,
-    push: false as boolean,
-    commentEmail: false as boolean,
-    selfRegistration: false as boolean,
-    waitlist: false as boolean,
-    uploadEnabled: true as boolean,
-    chatSupport: false as boolean,
+    pwa: true,
+    push: false,
+    commentEmail: false,
+    selfRegistration: false,
+    waitlist: false,
+    uploadEnabled: true,
+    chatSupport: false,
   },
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.
@@ -231,8 +206,8 @@ export const config = {
   /**
    * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities
    * issuer slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a
-   * federation is live when those are set. Mode configs point a key at its test issuer. A tenant's connection names
-   * one entry and the institution behind it.
+   * federation is live when those are set. Every mode but production signs in through its `sandbox`. A tenant's
+   * connection names one entry and the institution behind it.
    */
   federations: {
     surfconext: {
@@ -240,6 +215,7 @@ export const config = {
       logo: '/static/auth/surfconext-logo.svg',
       issuer: 'https://connect.surfconext.nl',
       idpMetadataUrl: 'https://metadata.surfconext.nl/idps-metadata.xml',
+      sandbox: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
       scopes: ['openid'],
       clientAuthMethod: 'client_secret_basic',
       tenantClaim: 'schac_home_organization',
@@ -349,7 +325,7 @@ export const config = {
       darkButtonLabel: '#262626',
     },
     screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
-  } as const,
+  },
   placeholderColors: [
     'bg-blue-300',
     'bg-lime-300',
@@ -375,7 +351,6 @@ export const config = {
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
-    supportEmail: 'info@cellajs.com',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
     postcode: '90210 JS',

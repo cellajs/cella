@@ -284,7 +284,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Files:**
   - `backend/src/modules/mcp/`: `mcp-tools.ts` (redispatches through `app.fetch`; input schema, tool outcome), `mcp-server.ts` (JSON-RPC methods, scope mask), `mcp-handlers.ts`, `mcp-routes.ts` (guards `[tokenGuard, tenantGuard, orgGuard]`, `mcpRequestLimiter`), `mcp-module.ts`.
   - The tool registry is the OpenAPI registry read by `buildMcpTools` in `mcp-tools.ts`; the tool marker is `xTool` in `backend/src/core/openapi-extensions.ts`, checked at route build in `backend/src/core/x-routes.ts`.
-  - The `mcp` worker: `backend/src/modules/mcp/worker/mcp-worker-entry.ts` (own `createBaseApp`, mounts only `mcpHandlers`); `mcp/src/mcp-worker.ts` is a short dev entry; in-process under singleVM in `backend/src/main.api.ts`.
+  - The `mcp` worker: `backend/src/modules/mcp/worker/mcp-worker-entry.ts` (own `createBaseApp`, mounts only `mcpHandlers`); `SERVICE=mcp` starts it; in-process under singleVM in `backend/src/main.api.ts`.
   - `backend/src/middlewares/guard/token-guard.ts`, `service-guard.ts` (`setActorFromToken`), `backend/src/modules/oauth-server/{verify-access-token,resources,provider}.ts`.
   - Tools registered today: four `xTool` routes, all attachments, in `backend/src/modules/attachment/attachment-routes.ts`.
   - Tests: `backend/tests/mcp.test.ts`, `backend/tests/mcp-worker.test.ts`, `backend/src/modules/mcp/mcp-server.test.ts`, `mcp-tools.test.ts`, `backend/src/middlewares/guard/token-guard.test.ts`, `backend/tests/security/{api-key-scope,oauth-grants}.test.ts`.
@@ -396,7 +396,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/src/modules/common/uploader/helpers/uppy-helpers.ts`: `@uppy/url` with `COMPANION_URL` and `COMPANION_ALLOWED_HOSTS` from `@uppy/transloadit`; used by `open-image-upload.ts` and `blocknote/custom-file-panel/uppy-upload-panel.tsx`.
   - `backend/src/lib/health-probe.ts` (caller `backend/src/lib/health.ts`), `backend/src/lib/geoip.ts`, `backend/src/lib/mailer.ts` (Brevo), `backend/src/modules/requests/helpers/send-matrix-message.ts`, `yjs/src/sync/materialize.ts` (the relay's materialize call), CIMD and provider fetches in `backend/src/modules/oauth-server/`.
   - No outbound wrapper exists in `backend/src/lib`. `backend/src/utils/ip-subnet.ts` is client-address subnetting, not an outbound check.
-  - `oauth/` and `mcp/` packages hold only `oauth/src/oauth-worker.ts` and `mcp/src/mcp-worker.ts` with no fetch calls; the worker code is `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` and `backend/src/modules/mcp/worker/mcp-worker-entry.ts` (`waitForBackend` in `shared/src/utils/wait-for-backend.ts`). `mcp-tools.ts` uses an in-process `app.fetch`, not a network call.
+  - The worker code is `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` and `backend/src/modules/mcp/worker/mcp-worker-entry.ts`, each a `SERVICE` of the backend image (`waitForBackend` in `shared/src/utils/wait-for-backend.ts`). `mcp-tools.ts` uses an in-process `app.fetch`, not a network call.
   - `cdc/` has only a WebSocket client (`cdc/src/network/websocket-client.ts`). `backend/src/lib/transloadit.ts` only signs params. S3: `backend/src/lib/object-storage.ts` builds a client for `https://${appConfig.s3.host}`.
   - `backend/src/modules/push/helpers/push-service-endpoint.ts` and `push-sender.ts` (endpoint allowlist).
 - **Holds:**
@@ -440,7 +440,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/app.ts`: chain order is request-log context, invoke-token `Referrer-Policy`, `secureHeaders`, otel, request id, logger, CSRF (with skips), client version, body limit, compress (GET only).
   - `backend/src/middlewares/is-no-bot.ts` (used on `metrics-routes.ts`, `magic-routes.ts` and the auth routes in `general-routes.ts`).
   - `backend/src/middlewares/guard/service-guard.ts` (an API-key request carrying `Origin` is refused 403 `browser_origin`); `backend/src/modules/service-accounts/helpers/api-key.ts` (`hasApiKeyHeader`).
-  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, host routes, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `MODE`, and `backend/src/routes.ts` mounts every registered module in every mode.
+  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, host routes, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
   - Tests: `backend/tests/prefix-mount.test.ts` and `backend/tests/request-id.test.ts` at `backend/tests/`; `csrf`, `malformed-ids`, `internal-listener` under `backend/tests/security/`.
 - **Holds:**
   - `internal-listener`: the CDC socket is not reachable from the public listener under `/internal/cdc`, `/api/%2e%2e/internal/cdc`, `/api/../internal/cdc` or `/api/internal/cdc`; `/internal/yjs/materialize` is a 404 on the public listener under plain, `/api` and `/api/%2e%2e` prefixes even with the relay secret; `isCdcUpgradePath` matches only the exact raw target; dot-segment paths to the CDC socket on the internal listener are 404; an empty or missing secret is refused; a non-private peer is refused on every internal route; the health path stays served.
@@ -488,7 +488,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/error.ts` (`exposesServerMessages`, `hideIfServerError`, `appErrorHandler`).
   - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`.
   - `backend/src/utils/hash-pii.ts`, `hash-token.ts`.
-  - `backend/src/env.ts`, `backend/src/env-mode-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
+  - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
   - CDC strip: `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
   - Browser: `frontend/src/utils/teardown-user-state.ts`, `frontend/src/query/local-user-db.ts`, `frontend/src/query/local-user-storage.ts`, `frontend/src/query/idb-kv-storage.ts`, `frontend/src/lib/sw.ts`, `frontend/src/modules/auth/end-session.ts`, `frontend/src/query/on-error.ts`.
   - `.env.example` lists every secret name; no seed script reads a secret.

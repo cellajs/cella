@@ -87,9 +87,9 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
   components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
 
-  if (env.MODE === 'mcp') {
+  if (env.SERVICE === 'mcp') {
     components.mcp = buildMcpSelfComponent();
-  } else if (env.MODE === 'jobs') {
+  } else if (env.SERVICE === 'jobs') {
     components.jobs = await buildJobsComponent();
   } else {
     if (appConfig.services.cdc.enabled) components.cdc = buildCdcComponent();

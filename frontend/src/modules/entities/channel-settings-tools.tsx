@@ -1,12 +1,15 @@
-import { CircleAlertIcon, TrashIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, CircleAlertIcon, TrashIcon } from 'lucide-react';
 import { type ReactNode, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ChannelEntityType } from 'shared';
+import { type ChannelEntityType, isChannelArchivable } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { NamedText } from '~/modules/common/named-text';
 import { ToolCard } from '~/modules/common/tool-card';
+import type { EnrichedChannel } from '~/modules/entities/types';
+import { buildMembershipUpdate } from '~/modules/memberships/build-membership-update';
+import { canRestoreNow, useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { Button } from '~/modules/ui/button';
 
 /** Bases a module spreads into its `tools` with a `slot` and a `render`. Orders: general 10, details 20, tabs 80, danger 90; module tools default to 50. */
@@ -39,6 +42,33 @@ export function dangerToolBase(channelType: ChannelEntityType, resource: TKey): 
   };
 }
 
+/** The way out for someone who only wants a channel gone for themselves: archiving their own membership. */
+function ArchiveForMe({ channel, name }: { channel: EnrichedChannel; name: string }) {
+  const { t } = useTranslation();
+  const { mutate: updateMembership } = useMemberUpdateMutation();
+
+  const { membership } = channel;
+  if (!membership || !isChannelArchivable(channel.entityType)) return null;
+  const { archived } = membership;
+
+  const toggleArchived = () => {
+    if (archived && !canRestoreNow()) return;
+    updateMembership(buildMembershipUpdate({ ...channel, membership }, { archived: !archived }));
+  };
+
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-t pt-4">
+      <p className="min-w-64 flex-1 text-muted-foreground text-sm">
+        <NamedText i18nKey={archived ? 'c:archived_for_me_notice.text' : 'c:archive_for_me_notice.text'} name={name} />
+      </p>
+      <Button variant="outline" size="sm" onClick={toggleArchived}>
+        {archived ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
+        {archived ? t('c:restore') : t('c:archive_for_me')}
+      </Button>
+    </div>
+  );
+}
+
 interface DeleteToolCardProps {
   /** Entity display name, interpolated into the notice and confirm texts. */
   name: string;
@@ -52,6 +82,8 @@ interface DeleteToolCardProps {
   values?: Record<string, string | number>;
   /** Why the entity cannot be deleted now: the button is disabled and this note shows below it. */
   disabledReason?: TKey;
+  /** The channel the card deletes: below the button, viewers with a membership can also archive it for themselves. */
+  channel?: EnrichedChannel;
 }
 
 export function DeleteToolCard({
@@ -62,6 +94,7 @@ export function DeleteToolCard({
   notice = 'c:delete_resource_notice.text',
   values,
   disabledReason,
+  channel,
 }: DeleteToolCardProps) {
   const { t } = useTranslation();
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -95,6 +128,7 @@ export function DeleteToolCard({
           {t(disabledReason)}
         </p>
       )}
+      {channel && <ArchiveForMe channel={channel} name={name} />}
     </ToolCard>
   );
 }

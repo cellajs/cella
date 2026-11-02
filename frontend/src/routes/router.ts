@@ -8,7 +8,7 @@ import { createNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
-import { setSkipPageEnter } from '~/utils/nav-transition';
+import { setHasNavigated, setSkipPageEnter } from '~/utils/nav-transition';
 
 /** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
 export const router = createRouter({
@@ -42,6 +42,8 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
 let isForward = true;
 router.history.subscribe(({ action }) => {
   isForward = action.type === 'PUSH' || action.type === 'REPLACE';
+  // A page load only replaces: its redirects and slug rewrites
+  if (action.type !== 'REPLACE') setHasNavigated();
 });
 
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {

@@ -1,4 +1,5 @@
 import { BellIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { appConfig } from 'shared';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppIcon, AppNavLoader } from '~/modules/navigation/app-nav-loader';
@@ -12,7 +13,15 @@ import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 export const navItems = [
   // Leads only a nav bar of organization buttons; elsewhere the menu header links home. Whichever leads carries the brand intro and loader.
   { id: 'home', type: 'base', icon: AppIcon, href: '/home', iconOverride: AppNavLoader },
-  { id: 'menu', type: 'base', icon: MenuIcon, sheet: () => <MenuSheet />, iconOverride: AppNavLoader, badge: UnseenNavBadge },
+  // A menu per organization opens on one of them, so a count across them would not match what it shows
+  {
+    id: 'menu',
+    type: 'base',
+    icon: MenuIcon,
+    sheet: () => <MenuSheet />,
+    iconOverride: AppNavLoader,
+    badge: appConfig.navigation.menu === 'all' ? UnseenNavBadge : undefined,
+  },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   // Mentions and addressed activity; ambient posts stay on the menu badge above.
   { id: 'notifications', type: 'base', icon: BellIcon, sheet: () => <NotificationsSheet />, badge: UnreadNavBadge },

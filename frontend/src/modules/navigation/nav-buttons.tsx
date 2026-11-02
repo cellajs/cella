@@ -71,7 +71,7 @@ export function SidebarNavButton({
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
-    <SidebarMenuItem className={cn('flex pb-2', itemClassName)}>
+    <SidebarMenuItem className={cn('flex', itemClassName)}>
       <SidebarMenuButton
         ref={ref}
         size="lg"
@@ -80,8 +80,9 @@ export function SidebarNavButton({
         onClick={onClick}
         isActive={isActive}
         aria-current={isCurrent || undefined}
+        // The icon's scale answers the pointer, so a fill only ever means the sheet it opened
         className={cn(
-          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear data-[collapsed=true]:w-16 [&>svg]:size-5',
+          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear data-[collapsed=true]:w-16 data-[active=false]:hover:bg-transparent [&>svg]:size-5',
           className,
         )}
       >

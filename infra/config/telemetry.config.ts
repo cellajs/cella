@@ -10,6 +10,7 @@ export interface TelemetrySinkConfig {
   keySecretName: string;
 }
 
+// The same ingest `shared/src/otlp-sink.ts` names for the services; `tests/unit/app-config-registry.test.ts` holds the two together.
 export const telemetrySink: TelemetrySinkConfig = {
   endpoint: 'https://ingest.maple.dev/v1',
   keyHeader: 'x-maple-ingest-key',

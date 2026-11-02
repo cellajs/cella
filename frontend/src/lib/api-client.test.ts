@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const setDownAlert = vi.hoisted(() => vi.fn());
+
 vi.mock('~/query/offline/connectivity', () => ({ reportNetworkFailure: vi.fn(), reportReachable: vi.fn() }));
+vi.mock('~/modules/common/alerter/alert-store', () => ({ alertStore: { getState: () => ({ setDownAlert }) } }));
 
 const { ApiError } = await import('~/lib/api');
 const { createClientConfig } = await import('~/lib/api-client');
@@ -40,6 +43,22 @@ describe('API client error responses', () => {
 
     const foreign = await failWith(Response.json({ error: 'upstream' }, { status: 502 }));
     expect(foreign).toMatchObject({ status: 502, type: 'service_unavailable' });
+  });
+
+  // A sign-out during an outage said it failed and never why: it calls the SDK directly, past the query cache.
+  it('raises the down alert for a service that is down, on a call outside the query cache, and clears it once the API answers', async () => {
+    setDownAlert.mockClear();
+    await failWith(new Response('Bad Gateway', { status: 504 }));
+    expect(setDownAlert).toHaveBeenLastCalledWith(true);
+
+    // The API's own 503 for a missing setting and any other 5xx say nothing about the service as a whole.
+    setDownAlert.mockClear();
+    await failWith(Response.json({ type: 'server_error', status: 503 }, { status: 503 }));
+    await failWith(new Response('', { status: 500 }));
+    expect(setDownAlert).not.toHaveBeenCalled();
+
+    await failWith(new Response('Not Found', { status: 404 }));
+    expect(setDownAlert).toHaveBeenLastCalledWith(false);
   });
 
   // The consent page sends a 401 to sign-in: the details route answers it with its details object, which has no type.

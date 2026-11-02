@@ -13,9 +13,9 @@ export function InviteSearchField({ channel, check, list, autoFocus, onToEmail }
 
   return (
     <FormItem name="invite-people">
-      <FormLabel>{t('c:invite_mode_search')}</FormLabel>
+      <FormLabel help={t('c:invite_hint_search', { appName: appConfig.name })}>{t('c:invite_mode_search')}</FormLabel>
       <UserCombobox channel={channel} chosen={list.emails} onPick={list.addPerson} autoFocus={autoFocus} onToEmail={onToEmail} />
-      <InviteFieldLine hint={t('c:invite_hint_search', { appName: appConfig.name })} list={list} check={check} />
+      <InviteFieldLine list={list} check={check} />
     </FormItem>
   );
 }

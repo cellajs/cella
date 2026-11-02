@@ -5,7 +5,7 @@ import type { TsdocPlugin } from './types';
 
 /** The query and hash format must stay aligned with the frontend docs route and `generateOperationHash`. */
 export function buildOperationDocsUrl(method: string, path: string, tag: string): string {
-  return `${config.frontendUrl}/docs/operations?operationTag=${tag}#${generateOperationHash(method, path, [tag])}`;
+  return `${config.origin}/docs/operations?operationTag=${tag}#${generateOperationHash(method, path, [tag])}`;
 }
 
 /** Extends each generated operation description with a method/path heading, a hosted-docs link, and tags derived from its parameters and response codes. */

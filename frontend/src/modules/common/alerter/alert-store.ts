@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { isRecord } from 'shared/utils/as-record';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -6,30 +5,21 @@ import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
-/** A down alert the server's answers set; the offline alert follows the connection, in `useOfflineAlert`. */
-export type AlertKey = 'maintenance' | 'auth_unavailable';
-
-// Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKey, number> = { maintenance: 1, auth_unavailable: 0 };
-
 interface AlertStoreState {
   /** Ids of the banners the user dismissed, which stay hidden. */
   alertsSeen: string[];
-  downAlert: AlertKey | null;
-  /** Whether `DownAlert` shows the offline alert, so banners stay hidden under it too; never stored. */
-  offlineAlertShown: boolean;
+  /** Whether the last word from the server is that it is down; the offline alert follows the connection, in `useOfflineAlert`. */
+  downAlert: boolean;
 
   /** Adds one id to `alertsSeen`. */
   setAlertSeen: (alertId: string) => void;
-  setDownAlert: (downAlert: AlertKey | null) => void;
-  setOfflineAlertShown: (shown: boolean) => void;
+  setDownAlert: (downAlert: boolean) => void;
   /** Back to the initial state, on sign-out. */
   reset: () => void;
 }
 
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert' | 'offlineAlertShown'> = {
-  downAlert: appConfig.maintenance ? 'maintenance' : null,
-  offlineAlertShown: false,
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = {
+  downAlert: false,
   alertsSeen: [],
 };
 
@@ -46,16 +36,11 @@ export const useAlertStore = create<AlertStoreState>()(
             });
           },
           setDownAlert: (downAlert) => {
-            const current = get().downAlert;
-            if (downAlert && current && alertPriority[downAlert] < alertPriority[current]) return;
+            // Every API answer lands here, and each `set` writes the persisted store.
+            if (downAlert === get().downAlert) return;
 
             set((state) => {
               state.downAlert = downAlert;
-            });
-          },
-          setOfflineAlertShown: (shown) => {
-            set((state) => {
-              state.offlineAlertShown = shown;
             });
           },
           reset: () => {

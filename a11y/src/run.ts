@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
 import { appConfig } from 'shared';
+import { composeEnv, localDatabasePort, localDatabaseUrl } from 'shared/local-database';
 import { repoRoot } from './session.ts';
 
 /**
@@ -20,20 +21,20 @@ const auditArgs = process.argv.slice(2).filter((arg) => arg !== '--keep' && arg 
 /** The audit stack sits this far above the checkout's dev ports, so it starts beside a running `pnpm dev`. */
 const portShift = 70;
 const fileEnv = parseEnv(readFileSync(path.join(repoRoot, 'backend/.env'), 'utf8'));
-const databasePort = fileEnv.DB_A11Y_PORT ?? '5470';
+const databasePort = localDatabasePort('a11y');
 const compose = ['compose', '-f', 'backend/compose.yaml', '--profile', 'a11y'];
 
-/** The dev database URLs with the audit database's port. */
-const databaseUrls = Object.fromEntries(
-  ['DATABASE_URL', 'DATABASE_ADMIN_URL', 'DATABASE_CDC_URL'].flatMap((key) => {
-    const url = fileEnv[key];
-    return url ? [[key, url.replace(/:\d+\//, `:${databasePort}/`)]] : [];
-  }),
-);
+/** The audit database, as each role. */
+const databaseUrls = {
+  DATABASE_URL: localDatabaseUrl('a11y', 'runtime_role'),
+  DATABASE_ADMIN_URL: localDatabaseUrl('a11y', 'postgres'),
+  DATABASE_CDC_URL: localDatabaseUrl('a11y', 'admin_role'),
+};
 const env = {
   // The seed creates the admin named in backend/.env, so the audit signs in as that user
   ...(fileEnv.ADMIN_EMAIL ? { ADMIN_EMAIL: fileEnv.ADMIN_EMAIL } : {}),
   ...process.env,
+  ...composeEnv(),
   ...databaseUrls,
   DEV_PORT_OFFSET: String(appConfig.devPortOffset + portShift),
   // The system pages need system admin access from this machine
@@ -71,7 +72,8 @@ if (process.argv.includes('--stop')) {
   // A kept stack has no parent left to signal: its servers are found by the ports they listen on, and each takes its
   // process group down with it, the file watchers that would restart it included
   const groups = new Set<number>();
-  for (const port of Object.values(appConfig.devPorts)) {
+  const service: { port: number; internalPort?: number }[] = Object.values(appConfig.services);
+  for (const port of service.flatMap(({ port, internalPort }) => (internalPort === undefined ? [port] : [port, internalPort]))) {
     const listeners = spawnSync('lsof', ['-ti', `tcp:${port + portShift}`, '-sTCP:LISTEN'], { encoding: 'utf8' })
       .stdout.split('\n')
       .filter(Boolean);
@@ -87,7 +89,7 @@ try {
   if (!run('docker', [...compose, 'up', '-d', '--wait', 'db_a11y'])) throw new Error('The audit database did not start. Is Docker running?');
 
   // An empty volume gets the schema and the seed data once; later runs reuse it
-  const users = spawnSync('docker', ['exec', `${fileEnv.PROJECT_SLUG}_db_a11y`, 'psql', '-U', 'postgres', '-tAc', 'select count(*) from users'], {
+  const users = spawnSync('docker', ['exec', `${appConfig.appSlug}_db_a11y`, 'psql', '-U', 'postgres', '-tAc', 'select count(*) from users'], {
     encoding: 'utf8',
   });
   if (users.status !== 0 || Number(users.stdout.trim()) === 0) {

@@ -206,6 +206,9 @@ function keepPendingRows(client: QueryClient, queryKey: QueryKey, read: List, at
   return { items: [...takenBack, ...items], total: read.total + takenBack.length - hidden.size };
 }
 
+/** A reader that mounts refetches a marked list whatever the global `refetchOnMount`: the mark says the list is incomplete, and `syncStaleTime` keeps a fresh one as it is. */
+const refetchOnMount = true;
+
 /** A synced product list's options, as the module builds them, with the sync engine's read rules; a canonical list passes its `scope`. */
 export function syncedListOptions<T extends ListOptions<T>>(options: T, scope?: SyncedListScope): T;
 export function syncedListOptions<T extends PagedListOptions<T>>(options: T): T;
@@ -219,6 +222,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
     return Object.assign(
       { ...options },
       {
+        refetchOnMount,
         queryFn: async ({ client, meta, pageParam, direction }: Omit<PageReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
           const pendingAtStart = pendingRows(client, entityType);
           const page = await readPage({ client, queryKey, meta, pageParam, direction, signal: neverAborted });
@@ -233,6 +237,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
   return Object.assign(
     { ...options },
     {
+      refetchOnMount,
       queryFn: async ({ client, meta }: Omit<ListReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
         const pendingAtStart = pendingRows(client, entityType);
         const read = async () => readList({ client, queryKey, meta, signal: neverAborted });

@@ -82,7 +82,7 @@ ${unconfirmed ? `> **Draft.** ${draftNote} Those rows are marked and can still c
 
 **Product Description:** ${appConfig.description}
 
-**Contact Information:** ${appConfig.company.supportEmail}
+**Contact Information:** ${appConfig.supportEmail}
 
 **Notes:** The report covers the website, the documentation and the signed-in app at ${appConfig.frontendUrl}: ${ledger.scope.length} pages and states, each in light and dark mode.${
   ledger.contrast === 'more'

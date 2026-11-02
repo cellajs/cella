@@ -41,7 +41,7 @@ describe('MCP worker folded into the API process', () => {
     await baseApp.request('/health', { headers: defaultHeaders });
 
     const { startMcpWorker } = await import('#/modules/mcp/worker/mcp-worker-entry');
-    await startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
+    await startMcpWorker({ port: appConfig.services.mcp.port, inProcess: true });
     // The API process owns telemetry and the shutdown: a handler of the worker's own would exit the process mid-cleanup.
     expect(otel.start).not.toHaveBeenCalled();
     expect(setupGracefulShutdown).not.toHaveBeenCalled();

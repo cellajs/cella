@@ -12,6 +12,10 @@ import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { useNodeExpansion } from '~/modules/common/json-viewer/use-node-expansion';
 import { describeNode, getValueType, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
+
+// Adjacent spans leave no place to break, so each label of the row wraps as one flex item.
+const labelRowClass = tw('flex flex-wrap items-baseline');
 
 interface JsonNodeProps {
   value: unknown;
@@ -63,7 +67,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
   const customType = valueTypes.find((dataType) => dataType.is(value, path));
   if (customType) {
     return (
-      <div {...rowProps} className="whitespace-nowrap">
+      <div {...rowProps} className={labelRowClass}>
         <NodeKey {...keyProps} />
         <customType.Component value={value} path={path} />
       </div>
@@ -72,7 +76,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   if (!isRecord(value) && !Array.isArray(value)) {
     return (
-      <div {...rowProps} className="flex max-w-measure items-baseline whitespace-nowrap">
+      <div {...rowProps} className="max-w-measure">
         <NodeKey {...keyProps} />
         <PrimitiveValue value={value} type={valueType} collapseStringsAfterLength={collapseStringsAfterLength} openapiMode={openapiMode} />
       </div>
@@ -91,7 +95,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   if (entries.length === 0) {
     return (
-      <div {...rowProps} className="whitespace-nowrap">
+      <div {...rowProps} className={labelRowClass}>
         <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>{openBracket}</span>
         <SchemaLabels {...labels} />
@@ -102,7 +106,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   if (isArray && isPrimitiveArray) {
     return (
-      <div {...rowProps} className="whitespace-nowrap">
+      <div {...rowProps} className="wrap-break-word">
         <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>[</span>
         {value.map((item, index) => (
@@ -125,33 +129,40 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
         // biome-ignore lint/a11y/useKeyWithClickEvents: the whole row toggles for the mouse; the chevron button inside is the keyboard path.
         <div
           {...rowProps}
-          className={cn(
-            'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded py-px pr-1',
-            isExpandable ? 'cursor-pointer hover:bg-muted' : 'pointer-events-none',
-          )}
+          className={
+            isExpandable
+              ? cn(
+                  labelRowClass,
+                  'group/node relative -mx-1 -my-px w-fit cursor-pointer gap-x-0.5 rounded py-px hover:bg-muted',
+                  enableClipboard ? 'pe-6' : 'pr-1',
+                )
+              : labelRowClass
+          }
           onClick={isExpandable ? () => setIsExpanded((prev) => !prev) : undefined}
         >
-          {isExpandable ? (
-            // No handler of its own: its click bubbles to the row, so Enter and Space toggle the node as a mouse click does.
-            <button
-              type="button"
-              aria-expanded={isExpanded}
-              aria-label={i18n.t(isExpanded ? 'c:collapse' : 'c:expand')}
-              className="focus-effect inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-60 focus-visible:opacity-100"
-            >
-              <ChevronRightIcon className={cn('size-3.5 transition-transform', isExpanded && 'rotate-90')} />
-            </button>
-          ) : (
-            // A hidden chevron, not an empty spacer: the row's first flex item sets its baseline, as the button does on expandable rows.
-            <ChevronRightIcon className="-ml-3 size-3.5 shrink-0 opacity-0" />
-          )}
-          <NodeKey {...keyProps} />
-          <span className={jsonViewerTheme.bracket}>{openBracket}</span>
+          {/* One unit: a long path key wraps beside its chevron, and the bracket stays behind it. */}
+          <span className="flex min-w-0 items-baseline">
+            {isExpandable && (
+              // No handler of its own: its click bubbles to the row, so Enter and Space toggle the node as a mouse click does.
+              <button
+                type="button"
+                aria-expanded={isExpanded}
+                aria-label={i18n.t(isExpanded ? 'c:collapse' : 'c:expand')}
+                className="focus-effect me-0.5 inline-flex h-lh w-4 shrink-0 cursor-pointer items-center justify-center self-start rounded opacity-60 focus-visible:opacity-100"
+              >
+                <ChevronRightIcon className={cn('size-3.5 transition-transform', isExpanded && 'rotate-90')} />
+              </button>
+            )}
+            <span className="min-w-0">
+              <NodeKey {...keyProps} />
+              <span className={jsonViewerTheme.bracket}>{openBracket}</span>
+            </span>
+          </span>
           <SchemaLabels {...labels} />
           {!isExpanded && isExpandable && (
             <CollapsedPreview itemCount={schemaPropertiesCount} closeBracket={closeBracket} hiddenMatchCount={hiddenMatchCount} />
           )}
-          {enableClipboard && <CopyNodeButton value={value} />}
+          {enableClipboard && isExpandable && <CopyNodeButton value={value} />}
         </div>
       )}
       {(isExpanded || hideExpandHeader || !isExpandable) && (

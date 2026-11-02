@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { appConfig, servicePaths } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { appErrorHandler } from '#/lib/error';
@@ -8,7 +8,7 @@ import '#/lib/lens-telemetry'; // registers doba lens otel hooks
 import { app as middlewares } from '#/middlewares/app';
 
 /** The path prefixes the load balancer keeps on same-origin requests, each stripped once before routing. */
-const mountedPrefixes = ['/api', '/mcp'];
+const mountedPrefixes = [servicePaths.backend, servicePaths.mcp];
 
 /** The Fetch standard's forbidden methods: `new Request` throws on them, and no route serves them. */
 const forbiddenMethods = new Set(['CONNECT', 'TRACE', 'TRACK']);

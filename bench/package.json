@@ -13,20 +13,20 @@
   "dependencies": {
     "@inquirer/prompts": "^8.7.5",
     "nanoid": "^6.0.2",
-    "ora": "^9.4.1",
+    "ora": "^10.0.0",
     "pg": "^8.23.1",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
     "lib0": "^0.2.119",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
-    "ws": "^8.22.0",
+    "ws": "^8.22.1",
     "y-websocket": "^3.1.0",
     "yjs": "^13.6.33"
   }

@@ -30,7 +30,7 @@ describe('postMaterialize', () => {
 
     expect(result).toBe('ok');
     const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe(`http://localhost:${appConfig.devPorts.internal}/internal/yjs/materialize`);
+    expect(String(url)).toBe(`http://localhost:${appConfig.services.backend.internalPort}/internal/yjs/materialize`);
     expect(String(url).startsWith(appConfig.backendUrl)).toBe(false);
     expect(init.headers['x-yjs-relay-secret']).toBe('test-yjs-relay-secret-for-unit-tests');
     expect(init.headers).not.toHaveProperty('x-yjs-secret');

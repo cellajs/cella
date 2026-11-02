@@ -8,7 +8,7 @@ interface SupportEmailLinkProps {
 
 /** The support address as a mail link. */
 export function SupportEmailLink({ className }: SupportEmailLinkProps) {
-  const { supportEmail } = appConfig.company;
+  const { supportEmail } = appConfig;
 
   return (
     <a className={className} href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">

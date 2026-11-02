@@ -1,12 +1,12 @@
 import { existsSync } from 'node:fs';
 import { defineConfig } from 'drizzle-kit';
+import { localDatabaseUrl } from 'shared/local-database';
 
 // drizzle-kit evaluates this file in its own process, so load backend/.env here; variables already set win.
 if (existsSync('.env')) process.loadEnvFile('.env');
 
-const databaseUrl = process.env.DATABASE_URL || '';
-// Drizzle Studio and push use the admin URL, which RLS does not restrict: the postgres superuser in `.env.example`
-const databaseAdminUrl = process.env.DATABASE_ADMIN_URL || databaseUrl;
+// Drizzle Studio and push use the admin URL, which RLS does not restrict: the dev container's superuser unless the env names one.
+const databaseAdminUrl = process.env.DATABASE_ADMIN_URL || process.env.DATABASE_URL || localDatabaseUrl('dev', 'postgres');
 
 /**
  * Drizzle configuration.

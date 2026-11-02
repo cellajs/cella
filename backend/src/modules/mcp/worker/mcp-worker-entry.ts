@@ -31,7 +31,7 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
     otel.start();
     otel.verifyConnection();
     // Wait for the API to be ready (it owns migrations)
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.devPorts.api });
+    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
   }
 
   // An app of its own: folded into the API process, the API's app takes no routes once it has answered a request.

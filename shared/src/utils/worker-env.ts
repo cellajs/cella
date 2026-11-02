@@ -1,11 +1,10 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import process from 'node:process';
 import { z } from 'zod';
 
-/** The one env file for the monorepo, resolved from the worker's own CWD. Variables already in the environment win. */
+/** The one env file for the monorepo, `backend/.env`, resolved from this file. Variables already in the environment win. */
 export function loadBackendDotenv(): void {
-  const envFile = resolve('../backend/.env');
+  const envFile = new URL('../../../backend/.env', import.meta.url);
   if (existsSync(envFile)) process.loadEnvFile(envFile);
 }
 
@@ -29,7 +28,7 @@ export const workerEnvBase = z.object({
   // Build-time git SHA baked into the image, reported by `/health` and as `service.version` in telemetry.
   RELEASE_SHA: z.string().default('unknown'),
 
-  NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   DEBUG: envFlag('false'),
 });

@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { hierarchy } from 'shared';
+import { hierarchy, isChannelArchivable } from 'shared';
 import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -20,6 +20,7 @@ type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
  * Updates a membership's role, which needs `update` on its channel and neither the new nor the old role above the
  * actor's own (`assertRoleGrant`), or the member's own archive, mute and menu order. User-only: `memberships.updatedBy`
  * references `users`, so a service account never edits a membership.
+ * @throws 400 `invalid_request` when archiving a channel type whose menu section sets `archivable: false`.
  */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
   const actorId = ctx.var.user.id;
@@ -47,6 +48,10 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   const updatedType = membershipToUpdate.channelType;
 
+  if (archived && !isChannelArchivable(updatedType)) {
+    throw new AppError(400, 'invalid_request', 'warn', { entityType: updatedType, meta: { reason: 'not_archivable' } });
+  }
+
   if (role !== undefined && !hierarchy.getRoles(updatedType).includes(role)) {
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }
@@ -62,7 +67,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     for (const handedOut of [role, membershipToUpdate.role]) assertRoleGrant(ctx, { subject, role: handedOut, action: 'update' });
   }
 
-  if (archived !== undefined && archived !== membershipToUpdate.archived) {
+  if (displayOrder === undefined && archived !== undefined && archived !== membershipToUpdate.archived) {
     orderToUpdate = getArchiveMoveOrder(memberships, updatedType, archived);
   }
 

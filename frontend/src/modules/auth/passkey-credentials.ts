@@ -13,12 +13,13 @@ import type { PasskeyChallengeBody, PasskeyVerifyType } from '~/modules/auth/typ
 import { getCurrentUser } from '~/modules/user/user-store';
 
 const isDevelopment = appConfig.mode === 'development';
-const relyingPartyId = isDevelopment ? 'localhost' : appConfig.domain;
+// The host the app is served on, as the backend verifies it: a passkey never crosses hosts.
+const relyingPartyId = () => new URL(appConfig.frontendUrl).hostname;
 
 /** WebAuthn request options for a challenge, limited to the listed passkeys when there are any. */
 const requestOptions = (challenge: string, credentialIds: string[] = []): PublicKeyCredentialRequestOptionsJSON => ({
   challenge,
-  rpId: relyingPartyId,
+  rpId: relyingPartyId(),
   userVerification: 'required',
   allowCredentials: credentialIds.map((id) => ({ id, type: 'public-key', transports: ['internal'] })),
 });
@@ -58,7 +59,7 @@ export const getPasskeyRegistrationCredential = async () => {
     optionsJSON: {
       challenge,
       user: { id: userHandle, name: nameOnDevice, displayName: nameOnDevice },
-      rp: { id: relyingPartyId, name: appConfig.name },
+      rp: { id: relyingPartyId(), name: appConfig.name },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 }, // ES256
         { type: 'public-key', alg: -257 }, // RS256

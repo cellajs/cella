@@ -18,6 +18,7 @@ import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indi
 import { type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
 import { useScrollResetOnNavigate } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
+import { getHasNavigated } from '~/utils/nav-transition';
 
 export type PageTab = {
   id: string;
@@ -247,7 +248,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (!isMobile && hasStarted) firstTabRef.current?.focus();
+    if (!isMobile && hasStarted && getHasNavigated()) firstTabRef.current?.focus();
   }, [hasStarted]);
 
   const scrollToResetOnNavigate = useScrollResetOnNavigate();

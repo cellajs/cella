@@ -1,17 +1,18 @@
-import type { VariantProps } from 'class-variance-authority';
 import { AnimatePresence, motion } from 'motion/react';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Alert, AlertAction, AlertDescription, AlertTitle, type alertVariants } from '~/modules/ui/alert';
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export type AlertContextMode = 'public' | 'app';
 
-interface AlertBannerProps {
+/** An entry of the app's `alertsConfig` (`alert-config.tsx`). */
+export interface AlertBanner {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
@@ -19,29 +20,27 @@ interface AlertBannerProps {
   children: ReactNode;
   title?: TKey;
   action?: ReactNode;
-  variant?: VariantProps<typeof alertVariants>['variant'];
+  variant?: ComponentProps<typeof Alert>['variant'];
   animate?: boolean;
   contextMode?: AlertContextMode;
 }
-
-/** An entry of the app's `alertsConfig` (`alert-config.tsx`). */
-export type AlertBanner = AlertBannerProps;
 
 export function AlertBanner({
   id,
   icon: Icon,
   children,
-  className = '',
+  className,
   title,
   action,
   variant = 'default',
   animate = false,
   contextMode = 'app',
-}: AlertBannerProps) {
+}: AlertBanner) {
   const { t } = useTranslation();
   const alertsSeen = useAlertStore((state) => state.alertsSeen);
   const setAlertSeen = useAlertStore((state) => state.setAlertSeen);
-  const isDown = useAlertStore((state) => !!state.downAlert || state.offlineAlertShown);
+  const isServerDown = useAlertStore((state) => state.downAlert);
+  const isOnline = useOnlineManager();
   const publicAlertsSeen = useUIStore((state) => state.publicAlertsSeen);
   const setPublicAlertSeen = useUIStore((state) => state.setPublicAlertSeen);
 
@@ -51,13 +50,13 @@ export function AlertBanner({
     if (isPublicContext) setPublicAlertSeen(id);
     else setAlertSeen(id);
   };
-  const showAlert = !isDown && !seenAlerts.includes(id);
+  const showAlert = !isServerDown && isOnline && !seenAlerts.includes(id);
 
   const alertContent = (
     <Alert variant={variant} onClose={setAsSeen} className={className}>
       {Icon && <Icon />}
       {title && <AlertTitle>{t(title)}</AlertTitle>}
-      {children && <AlertDescription>{children}</AlertDescription>}
+      <AlertDescription>{children}</AlertDescription>
       {action && <AlertAction>{action}</AlertAction>}
     </Alert>
   );

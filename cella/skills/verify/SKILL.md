@@ -11,7 +11,7 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 - Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". Ports of another `devAppIndex` belong to other apps.
 - A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `backend/.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC worker on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
 - When you start the stack yourself, capture its stdout: `pnpm dev > <scratch>/dev-stack.log 2>&1` (background). pino writes no file, and backend errors are there.
-- Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<devPorts.cdcHealth>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
+- Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<services.cdc.port>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
 - Typecheck: `cd frontend && pnpm ts` (tsgo). Lint: `pnpm exec biome check <file>` from repo root.
 
 ## A throwaway database

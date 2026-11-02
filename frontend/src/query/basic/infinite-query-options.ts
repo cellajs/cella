@@ -37,18 +37,23 @@ export const liveItems = <T extends { deletedAt: string | null }>({ items, total
   total,
 });
 
-/** `included` parts whose absence on a row means the list was fetched without asking for them. */
+/** Parts whose absence on a row means the list was fetched without asking for them. */
 const listIncludes = ['counts', 'members'] as const;
 
 /**
  * `refetchOnMount` for a list whose cache entry it shares with lists fetched with fewer `include` parts: when
  * this one asks for counts or member previews and the cached rows lack them, it refetches while the entry is fresh.
+ * A part sits under the row's `included`, or on the row itself for a member.
  */
 export function refetchOnMountForIncluded(include: string | undefined) {
   const wanted = listIncludes.filter((part) => include?.split(',').includes(part));
   if (!wanted.length) return true;
   return ({ state }: { state: { data?: unknown } }): boolean | 'always' => {
-    const firstRow = isInfiniteQueryData<{ included?: Record<string, unknown> }>(state.data) ? state.data.pages[0]?.items[0] : undefined;
-    return firstRow && wanted.some((part) => firstRow.included?.[part] === undefined) ? 'always' : true;
+    const firstRow = isInfiniteQueryData<{ included?: Record<string, unknown>; counts?: unknown }>(state.data)
+      ? state.data.pages[0]?.items[0]
+      : undefined;
+    return firstRow && wanted.some((part) => firstRow.included?.[part] === undefined && (part !== 'counts' || firstRow.counts === undefined))
+      ? 'always'
+      : true;
   };
 }

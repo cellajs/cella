@@ -51,10 +51,10 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
   const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId });
-  const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, refetchOnMount: true, select: selectDefaultViewRows });
+  const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, select: selectDefaultViewRows });
 
   const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId, q, sort, order });
-  const filtered = useInfiniteRows({ ...queryOptions, enabled: !isDefaultView, refetchOnMount: true });
+  const filtered = useInfiniteRows({ ...queryOptions, enabled: !isDefaultView });
 
   const { isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
   const rows = isDefaultView ? canonical.data : filtered.rows;

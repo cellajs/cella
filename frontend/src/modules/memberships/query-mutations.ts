@@ -137,6 +137,13 @@ export const useWithdrawInvitationMutation = () =>
     },
   });
 
+/** A restored channel's content is not kept for offline use, so a restore needs a connection: without one this warns and answers false. */
+export const canRestoreNow = () => {
+  if (onlineManager.isOnline()) return true;
+  toastOffline();
+  return false;
+};
+
 export const useMemberUpdateMutation = () =>
   useMutation<UpdateMembershipResponse, ApiError, UpdateMembershipVariables, MemberUpdateContext>({
     mutationKey: memberQueryKeys.update,
@@ -146,10 +153,10 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const { archived } = body;
+      const { archived, displayOrder } = body;
       const myMemberships = getCachedMemberships();
       const wasArchived = myMemberships?.find((membership) => membership.id === id)?.archived;
-      if (myMemberships && archived !== undefined && archived !== wasArchived) {
+      if (myMemberships && displayOrder === undefined && archived !== undefined && archived !== wasArchived) {
         membershipInfo.displayOrder = getArchiveMoveOrder(myMemberships, channelType, archived);
       }
 

@@ -1,27 +1,11 @@
 import type { DeepPartial } from '../src/config-builder/types.ts';
-import type { config as _default } from './config.default.ts';
+import { config } from './config.default.ts';
 import { development } from './config.development.ts';
 
-/**
- * Ensure that this file does not include or use any sensitive information.
- * This file is used in the test environment and should not contain any production/staging/development secrets.
- * Use it to override default settings for testing purposes.
- * Make sure to keep it minimal and focused on the test environment (must run on localhost).
- */
+/** The development stack under a name of its own, with every service on so the suite covers each. Never a secret here. */
 export const test = {
-  mode: 'test',
-  name: 'Cella TEST',
-
-  domain: '',
-
-  frontendUrl: development.frontendUrl,
-  backendUrl: development.backendUrl,
-  backendAuthUrl: development.backendAuthUrl,
-  yjsUrl: development.yjsUrl,
-  mcpUrl: development.mcpUrl,
-  oauthUrl: development.oauthUrl,
-  services: { yjs: { enabled: true }, mcp: { enabled: true }, oauth: { enabled: true } },
-  federations: {
-    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
-  },
-} satisfies DeepPartial<typeof _default>;
+  ...development,
+  name: `${config.name} TEST`,
+  slug: `${config.slug}-test`,
+  services: { ...development.services, yjs: { enabled: true } },
+} satisfies DeepPartial<typeof config>;

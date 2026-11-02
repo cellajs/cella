@@ -2,6 +2,7 @@ import { fragmentSource, vertexSource } from '~/modules/common/morph-animation/s
 
 export type MorphVariant = 'single' | 'colony' | 'database';
 export type MorphStamp = 'square' | 'plus';
+export type MorphPalette = 'violet' | 'brand';
 
 // The grain look tolerates a low render resolution, so touch devices get a lower cap to save battery
 const maxPixelRatio = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
@@ -46,6 +47,7 @@ const uniformNames = [
   'uFizz',
   'uFizzAmount',
   'uShape',
+  'uPalette',
 ] as const;
 type UniformName = (typeof uniformNames)[number];
 
@@ -91,6 +93,7 @@ export class MorphRenderer {
   private shortSide = 0;
   private minGrain = minGrainPx;
   private stamp = 0;
+  private palette = 0;
   private overscan = 1.2;
   private dark = false;
   private paused = false;
@@ -157,6 +160,11 @@ export class MorphRenderer {
 
   setStamp(stamp: MorphStamp) {
     this.stamp = stamp === 'plus' ? 1 : 0;
+    this.redrawStill();
+  }
+
+  setPalette(palette: MorphPalette) {
+    this.palette = palette === 'brand' ? 1 : 0;
     this.redrawStill();
   }
 
@@ -297,6 +305,7 @@ export class MorphRenderer {
     gl.uniform1f(u.uDark, this.dark ? 1 : 0);
     gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (gridSpan * this.minGrain))));
     gl.uniform1i(u.uStamp, this.stamp);
+    gl.uniform1i(u.uPalette, this.palette);
     gl.uniform1f(u.uEnter, this.enter);
     gl.uniform1f(u.uFizz, this.fizzTime);
     gl.uniform1f(u.uFizzAmount, fizz);

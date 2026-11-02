@@ -58,12 +58,16 @@ interface ReorderHandleProps {
   /** `horizontal` steps with ←/→, as board panels do. */
   orientation?: 'vertical' | 'horizontal';
   onMove: (step: Step) => void;
+  /** An arrow press past either end of the list, never a held key: the list goes on elsewhere, and the caller announces the result. */
+  onMovePastEnd?: (step: Step) => void;
   /** ←/→ of a tree item: outdent (-1) or indent (1); returns the new place, or null when the item cannot go there. */
   onShift?: (direction: Step) => ReorderPosition | null;
   /** A click while the move menu is off, such as a board panel's collapse. */
   onClick?: () => void;
   /** Items ahead of the moves in the menu, such as that collapse. */
   menuItems?: ReactNode;
+  /** What a screen reader hears the arrow keys do; defaults to moving it within the list. */
+  description?: string;
   /** A grid cell's tab index, so the grid keeps one tab stop. */
   tabIndex?: number;
   className?: string;
@@ -86,9 +90,11 @@ export function ReorderHandle({
   total,
   orientation = 'vertical',
   onMove,
+  onMovePastEnd,
   onShift,
   onClick,
   menuItems,
+  description: descriptionText,
   tabIndex,
   className,
   ref,
@@ -111,7 +117,8 @@ export function ReorderHandle({
     [ref],
   );
 
-  const placedAtRef = useRef(index);
+  // Null at mount: a followed item mounting here came from another list, which is a move too
+  const placedAtRef = useRef<number | null>(null);
   useLayoutEffect(() => {
     const hasMoved = placedAtRef.current !== index;
     placedAtRef.current = index;
@@ -121,15 +128,20 @@ export function ReorderHandle({
     if (!document.activeElement || document.activeElement === document.body) grip.focus({ preventScroll: true });
     if (hasMoved) grip.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
-  useLayoutEffect(() => () => stopFollowing(id), [id]);
+  // After the commit: an item crossing to another list remounts within it, and its new handle takes focus first
+  useLayoutEffect(() => () => queueMicrotask(() => stopFollowing(id)), [id]);
 
   const announcePlace = (place: ReorderPosition) => {
     if (gripRef.current) announce(gripRef.current, t('c:success.move_position', { name, position: place.index + 1, total: place.total }));
   };
 
-  const move = (step: Step) => {
+  const move = (step: Step, isHeld = false) => {
     const target = index + step;
-    if (target < 0 || target >= total) return;
+    if (target < 0 || target >= total) {
+      if (!onMovePastEnd || isHeld) return;
+      followReorderFocus(id);
+      return onMovePastEnd(step);
+    }
     followReorderFocus(id);
     onMove(step);
     announcePlace({ index: target, total });
@@ -165,7 +177,7 @@ export function ReorderHandle({
     event.preventDefault();
     event.stopPropagation();
     event.preventBaseUIHandler?.();
-    if (step) move(step);
+    if (step) move(step, event.repeat);
     else if (direction) shift(direction);
   };
 
@@ -208,7 +220,7 @@ export function ReorderHandle({
 
   const description = (
     <span id={descriptionId} hidden>
-      {t('c:sortable.text')}
+      {descriptionText ?? t('c:sortable.text')}
     </span>
   );
 

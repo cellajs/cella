@@ -48,7 +48,7 @@ const config: StorybookConfig = {
     // The email stories render backend HTML: proxy the dev preview route so their fetch stays same-origin.
     config.server = {
       ...config.server,
-      proxy: { ...config.server?.proxy, '/api/dev/emails': { target: `http://localhost:${appConfig.devPorts.api}` } },
+      proxy: { ...config.server?.proxy, '/api/dev/emails': { target: `http://localhost:${appConfig.services.backend.port}` } },
     };
     return config;
   },

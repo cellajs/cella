@@ -66,7 +66,7 @@ export const getAdminDb = (purpose: string): DB => {
   if (env.NODB) throw new Error(`Admin database access (${purpose}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required for ${purpose}`);
   // The migrate companion bounds every admin statement, so a blocked lock fails the release with a named error.
-  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5, env.MODE === 'migrate' ? migrateSessionTimeouts : undefined);
+  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5, env.SERVICE === 'migrate' ? migrateSessionTimeouts : undefined);
   return adminConnection;
 };
 

@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import pc from 'picocolors';
-import { appConfig } from 'shared';
+import { frontendDevPort } from 'shared/utils/tool-ports';
 import { env } from '../src/env';
 
 /** How long ngrok gets to report its tunnel. */
@@ -22,8 +22,8 @@ const startTunnel = async (): Promise<string | null> => {
     return null;
   }
 
-  // The Vite dev server is the app origin (frontendUrl is the public tunnel domain, no port).
-  const port = Number(new URL(appConfig.frontendUrl).port) || appConfig.devPorts.frontend;
+  // The Vite dev server is the app origin (the public tunnel domain carries no port).
+  const port = frontendDevPort();
   const domain = new URL(env.TUNNEL_URL).hostname;
   // The token goes in as a flag: older CLIs prefer the one in their own config over NGROK_AUTHTOKEN.
   const args = ['http', String(port), `--domain=${domain}`, `--authtoken=${env.TUNNEL_AUTH_TOKEN}`, '--log=stdout', '--log-format=json'];

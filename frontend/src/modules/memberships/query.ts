@@ -11,7 +11,7 @@ import {
 import { appConfig } from 'shared';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
 
 type PendingMembershipsParams = Pick<GetPendingMembershipsData['query'], 'entityId' | 'entityType'> & GetPendingMembershipsData['path'];
 type MembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -102,7 +102,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
     ...offsetPaging(limit, (offset, signal) => fetchMembersPage(query, { tenantId, organizationId }, limit, offset, signal)),
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountForIncluded(include),
   });
 };
 

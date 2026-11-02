@@ -21,7 +21,7 @@ export function FeaturesPage() {
         <div className="relative overflow-x-clip" aria-hidden="true">
           <Suspense fallback={null}>
             <div className="pointer-events-none absolute top-232 right-[calc(50%-12rem)] -z-4 size-600 -translate-y-1/2 opacity-20 saturate-300 dark:opacity-15">
-              <MorphAnimation variant="database" still={1464} fizz={1} grid={460} overscan={1.35} stamp="plus" />
+              <MorphAnimation variant="database" palette="brand" still={1464} fizz={1} grid={460} overscan={1.35} stamp="plus" />
             </div>
           </Suspense>
         </div>

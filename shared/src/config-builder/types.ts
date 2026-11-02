@@ -1,8 +1,24 @@
+/**
+ * A boolean or number leaf as its base type. The default config's `satisfies` keeps a literal `true` or `1` where the
+ * contextual type is a union, so without this a mode file could not set the leaf to anything else, and a reader's
+ * `if (!flag)` would narrow to never.
+ */
+export type WidenScalars<T> = T extends boolean
+  ? boolean
+  : T extends number
+    ? number
+    : T extends (...args: never[]) => unknown
+      ? T
+      : T extends object
+        ? { [K in keyof T]: WidenScalars<T[K]> }
+        : T;
+
+/** What a mode file may override: any part of the default config, scalars widened. */
 export type DeepPartial<T> = T extends object
   ? {
       [P in keyof T]?: DeepPartial<T[P]>;
     }
-  : T;
+  : WidenScalars<T>;
 
 export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | 'test';
 export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
@@ -20,10 +36,12 @@ export interface FederationConfig {
    * the logo in place of the generic icon and of the federation's name; use the file the federation publishes, unaltered.
    */
   logo?: string;
-  /** OIDC issuer; endpoints come from its discovery document. Mode configs point a key at a test issuer. */
+  /** OIDC issuer; endpoints come from its discovery document. */
   issuer: string;
   /** SAML metadata feed listing the federation's institutions (entity ids, names, logos, domains); optional. */
   idpMetadataUrl?: string;
+  /** The federation's test issuer and metadata feed, which every mode but production signs in through. */
+  sandbox?: { issuer: string; idpMetadataUrl?: string };
   scopes: readonly string[];
   clientAuthMethod: 'client_secret_basic' | 'client_secret_post';
   /** The claim that names the institution; a connection accepts a list of its values. */
@@ -72,9 +90,12 @@ export interface HasFlagsConfig {
   chatSupport: boolean;
 }
 
-export interface AppServiceEndpointConfig {
-  enabled?: boolean;
-  publicUrl?: string;
+/** A service of the app: whether it runs, and the port it listens on as app number 0 (`devAppIndex` moves it). */
+export interface AppServiceConfig {
+  enabled: boolean;
+  port: number;
+  /** A second listener only the private network reaches; the backend's, for the CDC socket and the Yjs relay's routes. */
+  internalPort?: number;
 }
 
 export interface TotpConfig {
@@ -161,7 +182,6 @@ export interface CompanyConfig {
   name: string;
   shortName: string;
   email: string;
-  supportEmail: string;
   tel: string;
   streetAddress: string;
   postcode: string;
@@ -203,6 +223,8 @@ export interface MenuStructureItem<C extends string = string> {
    * refuses an invitation whose carried role outranks the inviter's own on the parent.
    */
   carryRole?: boolean;
+  /** `false`: nobody archives a membership of `entityType`, for a channel that only groups others. On by default. */
+  archivable?: boolean;
 }
 
 /** All readonly string-array config properties, grouped as one generic parameter so literal types survive. */
@@ -285,16 +307,10 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   description: string;
   keywords: string;
 
-  frontendUrl: string;
-  backendUrl: string;
-  backendAuthUrl: string;
-  yjsUrl: string;
-
-  mcpUrl: string;
-  oauthUrl: string;
+  /** The app's one origin, scheme and host; every service URL is a path under it (`servicePaths`). */
+  origin: string;
   devAppIndex: number;
-  devPorts: Record<'frontend' | 'api' | 'cdcHealth' | 'yjs' | 'mcp' | 'oauth' | 'internal' | 'jobs', number>;
-  services: Record<string, AppServiceEndpointConfig>;
+  services: Record<string, AppServiceConfig>;
   singleVM: boolean;
   aboutUrl: string;
   statusUrl: string;
@@ -305,9 +321,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   supportEmail: string;
   senderEmail: string;
   securityEmail: string;
-
-  mode: ConfigMode;
-  maintenance: boolean;
 
   has: HasFlagsConfig;
 

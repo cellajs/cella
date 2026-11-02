@@ -2,45 +2,26 @@ import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIco
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isChannelArchivable } from 'shared';
 import { env } from '~/env';
-import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { Spinner } from '~/modules/common/spinner';
-import { toastOffline } from '~/modules/common/toaster/toaster';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
-import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { canMove } from '~/modules/navigation/menu-sheet/helpers/can-move';
 import { canMute } from '~/modules/navigation/menu-sheet/helpers/can-mute';
-import { menuItemOrder } from '~/modules/navigation/menu-sheet/helpers/menu-item-order';
-import { menuListOpenMs } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
+import type { MenuRowMoves } from '~/modules/navigation/menu-sheet/helpers/use-menu-row-moves';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
+import { Button } from '~/modules/ui/button';
+import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const avatarBoxClass = tw(
   'relative z-2 mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1',
 );
-
-interface MembershipFlagButtonProps {
-  icon: IconComponent;
-  title: string;
-  onClick: () => void;
-}
-
-function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButtonProps) {
-  return (
-    <button
-      type="button"
-      className="link-decoration active:link-decoration-strong focus-effect focus-inset active:press -mx-1 -my-0.5 inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded-sm px-1 font-medium text-foreground-soft text-xs leading-3 transition-colors hover:text-foreground hover:underline"
-      onClick={onClick}
-    >
-      <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
-      {title}
-    </button>
-  );
-}
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
@@ -51,36 +32,17 @@ interface MenuSheetItemEditProps {
   icon?: IconComponent;
   /** It mounted by moving here from the other list, so it travels above the rows it passes. */
   isArriving?: boolean;
-  /** Runs before it is archived; true when the move has to wait, for the archived list to open or its submenu to fold. */
-  onArchive?: () => boolean;
+  moves: MenuRowMoves;
 }
 
-export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArriving = false, onArchive }: MenuSheetItemEditProps) {
+export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArriving = false, moves }: MenuSheetItemEditProps) {
   const { t } = useTranslation();
-  const isOnline = useOnlineManager();
-
-  const { mutate: updateMembership, status } = useMemberUpdateMutation();
   const [isTravelling, setIsTravelling] = useState(isArriving);
 
-  const toggleMembershipFlag = (key: 'archived' | 'muted') => {
-    if (key === 'muted') return updateMembership(buildMembershipUpdate(item, { muted: !item.membership.muted }));
-    if (item.membership.archived && !isOnline) return toastOffline();
-
-    const update = buildMembershipUpdate(item, { archived: !item.membership.archived });
-    // One step at a time: a closed archive opens and a submenu folds before the row travels
-    if (!item.membership.archived && onArchive?.()) setTimeout(() => updateMembership(update), menuListOpenMs);
-    else updateMembership(update);
-  };
-
+  const { archived, muted } = item.membership;
+  const isArchivable = isChannelArchivable(item.entityType);
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
-  const isSortable = !item.membership.archived && siblings.length > 1;
-
-  const move = (step: -1 | 1) => {
-    const target = siblings[index + step];
-    if (!target) return;
-    const displayOrder = menuItemOrder(siblings, item, target, step < 0 ? 'top' : 'bottom');
-    updateMembership(buildMembershipUpdate(item, { displayOrder }));
-  };
+  const isMovable = canMove(item, siblings);
 
   const avatar = (
     <EntityAvatar
@@ -102,31 +64,41 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       layoutId={`sheet-menu-item-${item.id}`}
       onLayoutAnimationComplete={() => setIsTravelling(false)}
       data-subitem={isSubitem}
-      data-archived={item.membership.archived}
+      data-archived={archived}
       // The ghost button's hover tint (8% foreground) mixed into the fill, opaque so the grip box can repaint it. The fill
       // is muted/70 on the card made opaque, so a row travelling past covers the rows under it.
       className={cn(
         'group/options-item relative flex h-12 w-full items-center pr-2 [--hover-fill:color-mix(in_oklab,var(--muted),var(--foreground)_8%)] before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-(--hover-fill) data-[subitem=true]:h-11',
-        isSortable && 'cursor-grab',
+        isMovable && 'cursor-grab',
         isTravelling && 'z-3',
       )}
     >
       {/* Drawn per row, so the dots travel with it while a move animates. The gap ends at this avatar 0.625rem down and
           starts 0.5rem up below the parent's avatar, 0.625rem up below another sub-row's. */}
-      {isSubitem && !item.membership.archived && <SubmenuConnector className={index === 0 ? '-top-2 h-4.5' : '-top-2.5 h-5'} />}
-      {status === 'pending' && isOnline && (
+      {isSubitem && !archived && <SubmenuConnector className={index === 0 ? '-top-2 h-4.5' : '-top-2.5 h-5'} />}
+      {moves.isSaving && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
         </div>
       )}
-      {isSortable ? (
-        // A pointer drags the whole row (draggable-item.tsx); the handle gives the keyboard and the move menu the same reorder
+      {isMovable ? (
+        // A pointer drags the whole row (draggable-item.tsx); the handle gives the keyboard and the move menu the same moves
         <ReorderHandle
           id={item.id}
           name={item.name}
           index={index}
           total={siblings.length}
-          onMove={move}
+          onMove={moves.move}
+          onMovePastEnd={isArchivable ? moves.moveAcross : undefined}
+          menuItems={
+            isArchivable && (
+              <DropdownMenuItem onClick={moves.crossArchive}>
+                {archived ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
+                {archived ? t('c:restore') : t('c:archive')}
+              </DropdownMenuItem>
+            )
+          }
+          description={isArchivable ? t(archived ? 'c:sortable_archived_menu_row.text' : 'c:sortable_menu_row.text') : undefined}
           className={cn(
             avatarBoxClass,
             // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset
@@ -145,26 +117,21 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <span className={avatarBoxClass}>{avatar}</span>
       )}
 
-      {/* Not a clipping box: focus scrolls one to reveal a button whose box reaches past it */}
-      <div className="relative min-w-0 grow text-left">
-        <div className="truncate text-md leading-5 group-data-[archived=true]/options-item:opacity-70">
-          {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
-        </div>
-        <div className="flex items-center gap-2">
-          <MembershipFlagButton
-            icon={item.membership.archived ? ArchiveRestoreIcon : ArchiveIcon}
-            title={item.membership.archived ? t('c:restore') : t('c:archive')}
-            onClick={() => toggleMembershipFlag('archived')}
-          />
-          {canMute(item) && (
-            <MembershipFlagButton
-              icon={item.membership.muted ? BellIcon : BellOffIcon}
-              title={item.membership.muted ? t('c:unmute') : t('c:mute')}
-              onClick={() => toggleMembershipFlag('muted')}
-            />
-          )}
-        </div>
+      <div className="relative min-w-0 grow truncate text-left text-md leading-5 group-data-[archived=true]/options-item:opacity-70">
+        {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
+      {canMute(item) && (
+        <TooltipButton toolTipContent={muted ? t('c:unmute') : t('c:mute')} side="top">
+          <Button
+            variant={muted ? 'outline' : 'ghost'}
+            size="icon"
+            className={cn('relative size-8 shrink-0 group-data-[subitem=true]/options-item:size-7', !muted && 'text-faint-foreground')}
+            onClick={moves.toggleMuted}
+          >
+            {muted ? <BellOffIcon className="size-4" /> : <BellIcon className="size-4" />}
+          </Button>
+        </TooltipButton>
+      )}
     </motion.div>
   );
 }

@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { drizzleStudioPort, storybookPort } from 'shared/utils/tool-ports';
 import { toggleReactScan, toggleSyncDevtools } from '~/modules/common/devtools/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -8,19 +8,15 @@ interface DebugDropdownProps {
   className?: string;
 }
 
-// Drizzle Studio port is derived from the backend port + 983 (see backend/scripts/drizzle-studio/port.ts).
-const drizzleStudioPort = Number(new URL(appConfig.backendUrl).port) + 983;
-const drizzleStudioUrl = `https://local.drizzle.studio?port=${drizzleStudioPort}`;
-
-// Storybook port is derived from the frontend port + 3006 (see frontend/.storybook/start-storybook.ts).
-const storybookPort = (Number(new URL(appConfig.frontendUrl).port) || appConfig.devPorts.frontend) + 3006;
+const drizzleStudioUrl = `https://local.drizzle.studio?port=${drizzleStudioPort()}`;
+const storybookUrl = `http://localhost:${storybookPort()}/`;
 
 // The library panels open through their own toggle buttons, which tailwind.css hides
 const clickHidden = (selector: string) => document.querySelector<HTMLElement>(selector)?.click();
 
 const debugOptions = [
   { id: 'drizzle-studio', icon: '💦', onSelect: () => window.open(drizzleStudioUrl, '_self') },
-  { id: 'storybook', icon: '📖', onSelect: () => window.open(`http://localhost:${storybookPort}/`, '_self') },
+  { id: 'storybook', icon: '📖', onSelect: () => window.open(storybookUrl, '_self') },
   { id: 'tanstack-router', icon: '🌴', onSelect: () => clickHidden('.TanStackRouterDevtools > button') },
   { id: 'react-query', icon: '📡', onSelect: () => clickHidden('.tsqd-parent-container .tsqd-open-btn') },
   { id: 'react-scan', icon: '⏱️', onSelect: toggleReactScan },

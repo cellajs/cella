@@ -1,8 +1,8 @@
 import { createHmac } from 'node:crypto';
-import { modeSecret } from '#/env';
+import { serviceSecret } from '#/env';
 
 /** A keyed, truncated hash: the same input always gives the same 32 hex characters, which the tables store. */
-const pseudonym = (input: string): string => createHmac('sha256', modeSecret('PII_HASH_SECRET')).update(input).digest('hex').slice(0, 32);
+const pseudonym = (input: string): string => createHmac('sha256', serviceSecret('PII_HASH_SECRET')).update(input).digest('hex').slice(0, 32);
 
 /** Bound to the user, so a table leak cannot correlate one IP across users. Backs MFA trust checks. */
 export const hashIpForUser = (ip: string, userId: string): string => {

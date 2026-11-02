@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
-import { deriveInfra } from '../lib/naming';
+import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { menuPath } from '../lib/operator-actions';
 import {
   classifyPrincipal,
@@ -79,7 +79,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
   try {
     hasDomain = deriveInfra(ctx.appConfig).hasDomain;
   } catch {
-    hasDomain = Boolean(ctx.appConfig.domain && ctx.appConfig.domain !== 'localhost');
+    hasDomain = hasDeployDomain(ctx.appConfig);
   }
 
   let memo: Promise<ScalewayFacts> | undefined;

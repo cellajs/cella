@@ -1,14 +1,16 @@
 import { hierarchy } from './config/config.default.ts';
 
 export { hierarchy, roles } from './config/config.default.ts';
-export { appConfig, urlEnvNames, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
+export { appConfig, originEnvName, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
 export { type ConfigSwitch, isStrategyEnabled, isSwitchOn } from './src/config-builder/config-switch.ts';
+export { authPath, servicePaths } from './src/config-builder/service-paths.ts';
 export type { ConfigMode } from './src/config-builder/types.ts';
 
 // The app singleton's own arrow fields, so binding survives destructuring. Test mocks replacing
 // `hierarchy` must override these from the same synthetic instance.
 export const { isChannel, isProduct } = hierarchy;
 
+export { isChannelArchivable } from './src/channel-archivable.ts';
 export type { EntityHierarchy, ResolvedAncestor } from './src/config-builder/entity-hierarchy.ts';
 export {
   createEntityHierarchy,

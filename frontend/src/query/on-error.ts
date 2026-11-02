@@ -1,7 +1,6 @@
 import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
 import { ApiError, tearsDownSession } from '~/lib/api';
-import { alertStore } from '~/modules/common/alerter/alert-store';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -47,15 +46,8 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   if (isNetworkError(error)) return;
 
   if (error instanceof ApiError) {
-    const isCasualSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
-
-    // Maintenance mode: its banner says the service is down and lies over the toast stack, so no toast follows
-    const isDown = [503, 502].includes(error.status);
-    if (isDown) alertStore.getState().setDownAlert('maintenance');
-    else if (error.status === 500 && isCasualSessionAttempt) return alertStore.getState().setDownAlert('auth_unavailable');
-
-    // A /me or /me/menu probe without a valid session shows no error.
-    if (isCasualSessionAttempt && error.status === 401) return;
+    // A /me probe without a valid session shows no error.
+    if (error.path === '/me' && error.status === 401) return;
 
     // The console line with requestId is for developers; Maple's fetch span already records the status and joins the backend trace.
     if (error.status >= 500) {
@@ -64,7 +56,8 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
     // A query or mutation with a local toast opts out through `meta`.
     const suppress = meta?.suppressGlobalErrorToast;
-    const skipToast = isDown || (typeof suppress === 'function' ? suppress(error) : suppress === true);
+    // The API client raised the down alert for a service that is down; it lies over the toast stack, so no toast follows.
+    const skipToast = error.type === 'service_unavailable' || (typeof suppress === 'function' ? suppress(error) : suppress === true);
 
     if (!skipToast) {
       const { title, message } = getErrorInfo({ error });

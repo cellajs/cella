@@ -6,37 +6,21 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-export const alertVariants = cva(
+const alertVariants = cva(
   'group/alert relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 sm:has-[>[data-slot=alert-action]]:grid-cols-[auto_1fr_auto] [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
   {
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
-        brand: 'intent-brand',
-        destructive: 'intent-destructive',
-        success: 'intent-success',
-        info: 'intent-info',
+        destructive: 'intent-destructive soft-bg soft-border soft-text',
+        success: 'intent-success soft-bg soft-border soft-text',
+        // Info tints the surface and the icon only: its copy reads at body-text contrast, where a status alert tints its copy too.
+        info: 'intent-info soft-bg soft-border text-foreground *:data-[slot=alert-description]:text-foreground-soft [&>svg]:text-info',
         plain: 'border-primary/20 bg-background/80 text-primary',
-        secondary: 'bg-secondary text-secondary-foreground',
-        warning: 'intent-warning',
+        warning: 'intent-warning soft-bg soft-border soft-text',
       },
-      soft: { true: '', false: '' },
     },
-    compoundVariants: [
-      { variant: ['brand', 'destructive', 'success', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },
-      // Info tints the surface and the icon only: its copy reads at body-text contrast, where a status alert tints its copy too.
-      {
-        variant: 'info',
-        soft: true,
-        className: 'soft-bg soft-border text-foreground *:data-[slot=alert-description]:text-foreground-soft [&>svg]:text-info',
-      },
-      { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground' },
-      { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground' },
-      { variant: 'success', soft: false, className: 'bg-success text-success-foreground' },
-      { variant: 'info', soft: false, className: 'bg-info text-info-foreground' },
-      { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground' },
-    ],
-    defaultVariants: { variant: 'default', soft: true },
+    defaultVariants: { variant: 'default' },
   },
 );
 
@@ -58,7 +42,6 @@ function AlertClose({ onClose, className }: { onClose: () => void; className?: s
 export function Alert({
   className,
   variant,
-  soft,
   onClose,
   children,
   ...props
@@ -68,7 +51,7 @@ export function Alert({
       <div
         data-slot="alert"
         role="alert"
-        className={cn(alertVariants({ variant, soft }), onClose && 'pr-12 sm:has-[>[data-slot=alert-action]]:pr-4', className)}
+        className={cn(alertVariants({ variant }), onClose && 'pr-12 sm:has-[>[data-slot=alert-action]]:pr-4', className)}
         {...props}
       >
         {onClose && (

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv, promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { modeSecretNames } from '#/env-mode-secrets';
+import { serviceSecretNames } from '#/env-service-secrets';
 
 const backendDir = fileURLToPath(new URL('..', import.meta.url));
 
@@ -31,7 +31,7 @@ const modeBound = {
  * secret not given is set empty, which counts as absent and keeps a developer's backend/.env from filling it in.
  */
 function loadEnv(vars: Record<string, string>) {
-  const absent = Object.fromEntries(modeSecretNames.map((name) => [name, '']));
+  const absent = Object.fromEntries(serviceSecretNames.map((name) => [name, '']));
   const result = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', "await import('./src/env.ts')"], {
     cwd: backendDir,
     env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', ...absent, ...vars },
@@ -49,14 +49,14 @@ function loadEnv(vars: Record<string, string>) {
 describe('env schema per process mode', () => {
   it('must not require the Yjs signing key, the relay, CDC or unsubscribe secrets to boot the authorization server', () => {
     // The pepper it does read: its client metadata fetches count per IP, under the IP's pseudonym.
-    const { status, output } = loadEnv({ MODE: 'oauth', ...common, PII_HASH_SECRET: modeBound.PII_HASH_SECRET });
+    const { status, output } = loadEnv({ SERVICE: 'oauth', ...common, PII_HASH_SECRET: modeBound.PII_HASH_SECRET });
     expect(output).not.toContain('Invalid environment variables');
     expect(status).toBe(0);
   });
 
   it('must not require the Yjs signing key, the relay or CDC secret to boot the MCP server', () => {
     const { status, output } = loadEnv({
-      MODE: 'mcp',
+      SERVICE: 'mcp',
       ...common,
       UNSUBSCRIBE_SECRET: modeBound.UNSUBSCRIBE_SECRET,
       PII_HASH_SECRET: modeBound.PII_HASH_SECRET,
@@ -67,11 +67,11 @@ describe('env schema per process mode', () => {
 
   it('must not boot the API without the key that signs Yjs tokens (positive control)', () => {
     const { YJS_TOKEN_PRIVATE_KEY: _, ...withoutSigningKey } = modeBound;
-    const refused = loadEnv({ MODE: 'api', ...common, ...withoutSigningKey });
+    const refused = loadEnv({ SERVICE: 'api', ...common, ...withoutSigningKey });
     expect(refused.status).not.toBe(0);
     expect(refused.output).toContain('YJS_TOKEN_PRIVATE_KEY');
 
-    expect(loadEnv({ MODE: 'api', ...common, ...modeBound }).status).toBe(0);
+    expect(loadEnv({ SERVICE: 'api', ...common, ...modeBound }).status).toBe(0);
   });
 });
 
@@ -85,9 +85,10 @@ const strong = () => randomBytes(24).toString('base64url');
  * @returns Whether it loaded, and what it printed.
  */
 const boot = async (mode: 'production' | 'development' | 'tunnel', overrides: Record<string, string>) => {
-  // Vitest sets VITEST, and MODE for its own use.
-  const { VITEST: _vitest, MODE: _mode, ...inherited } = process.env;
-  const env = { ...inherited, NODE_ENV: mode, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
+  // Vitest sets VITEST, which would skip the validation. A tunnel is a development build in another config mode.
+  const { VITEST: _vitest, ...inherited } = process.env;
+  const nodeEnv = mode === 'tunnel' ? 'development' : mode;
+  const env = { ...inherited, NODE_ENV: nodeEnv, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
   try {
     const script = "import('./src/env.ts').then(() => console.info('env loaded'))";
     const { stdout } = await promisify(execFile)(tsx, ['-e', script], { cwd: backendDir, env });

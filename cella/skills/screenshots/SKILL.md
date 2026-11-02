@@ -19,7 +19,7 @@ state and judging the result is this skill's job, and the driver cannot do it: r
 - A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
 - One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
 - `START= node ...` attaches to a stack that already answers. Use it whenever another checkout already runs a stack
-  on the database in `backend/.env` (check: `lsof -tiTCP:<devPorts.api> -sTCP:LISTEN`): a second CDC worker there only waits for
+  on the database in `backend/.env` (check: `lsof -tiTCP:<services.backend.port> -sTCP:LISTEN`): a second CDC worker there only waits for
   the slot the running one holds.
 - The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
   table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.
@@ -34,6 +34,10 @@ dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway 
 [A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
 `START= node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
 origin it shoots: it must be the shifted one.
+
+That stack starts no relay, so a shot of a collaborative description reads "Connecting...": start `src/yjs-worker.ts` in
+`yjs/` through the same exports. An app's seed can be heavy and a second stack slows the first, so shoot one app at a
+time, and shoot its tables with a wait for what they fill in last (`membersFilled`, `tidyTable`).
 
 ## Look at every image before you keep it
 

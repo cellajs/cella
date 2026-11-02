@@ -25,8 +25,12 @@ import { placeholderColorClass } from '~/utils/placeholder-color-class';
 /** The app runs installed, in its own window without browser controls. */
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
 
-/** An upload button over an image that is already set; one for a missing image stays visible as an invitation. */
-const revealOnCoverHover = 'opacity-0 pointer-coarse:opacity-100 max-sm:opacity-100 focus-visible:opacity-100 group-hover/cover:opacity-100';
+/** An upload button shows when the cover area is hovered or the button has keyboard focus; a phone or a touch screen, with no hover, always shows it. */
+const revealOnCoverHover =
+  'opacity-0 transition-opacity duration-300 pointer-coarse:opacity-100 max-sm:opacity-100 focus-visible:opacity-100 group-hover/cover:opacity-100';
+
+/** Frosted fill of an upload button, the same as the bar behind the name. */
+const frostedButton = 'bg-background/50 backdrop-blur-xs hover:bg-background/75 dark:bg-background/75';
 
 export function AccountSheet() {
   const { t } = useTranslation();
@@ -107,15 +111,14 @@ export function AccountSheet() {
           aria-label={profileLabel}
           onClick={openProfile}
           className={cn(
-            'block h-64 w-full bg-center bg-cover transition-colors duration-300 max-sm:h-40',
+            'block h-56 w-full bg-center bg-cover transition-colors duration-300 max-sm:h-44',
             !user.bannerUrl && placeholderColorClass(user.id),
           )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         />
-        <div className="mask-[linear-gradient(to_bottom,transparent,black_60%)] pointer-events-none absolute inset-x-0 bottom-0 h-44 backdrop-blur-md max-sm:h-28" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-linear-to-b from-transparent via-40% via-card/70 to-65% to-card max-sm:h-28" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-3">
-          <div className="relative">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-22 bg-background/50 px-3 pt-12.5 text-center backdrop-blur-xs dark:bg-background/75">
+          {/* The avatar rises by half its size to sit centered on the bar's edge */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
@@ -125,14 +128,11 @@ export function AccountSheet() {
             </motion.div>
             {appConfig.has.uploadEnabled && (
               <Button
-                variant="outline"
+                variant="outline-ghost"
                 size="icon"
                 aria-label={pictureLabel}
                 onClick={uploadPicture}
-                className={cn(
-                  'pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full transition-opacity max-sm:size-8',
-                  user.thumbnailUrl && revealOnCoverHover,
-                )}
+                className={cn('pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full max-sm:size-8', frostedButton, revealOnCoverHover)}
               >
                 <CameraIcon className="size-3.5" />
               </Button>
@@ -145,10 +145,7 @@ export function AccountSheet() {
             variant="outline-ghost"
             size="xs"
             onClick={uploadCover}
-            className={cn(
-              'absolute top-2.5 right-2.5 bg-background/50 backdrop-blur-xs transition-opacity hover:bg-background/75 max-sm:size-10 dark:bg-background/75',
-              user.bannerUrl && revealOnCoverHover,
-            )}
+            className={cn('absolute top-2.5 right-2.5 max-sm:size-10', frostedButton, revealOnCoverHover)}
           >
             <ImageUpIcon />
             <span className="max-sm:sr-only">{coverLabel}</span>

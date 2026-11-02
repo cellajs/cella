@@ -3,7 +3,7 @@ import { isoCBOR } from '@simplewebauthn/server/helpers';
 import { appConfig } from 'shared';
 
 /** The relying party ID the backend verifies against (`passkeys/operations/passkey-challenges.ts`). */
-const appRpId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
+const appRpId = new URL(appConfig.frontendUrl).hostname;
 
 const sha256 = (data: string | Buffer) => createHash('sha256').update(data).digest();
 

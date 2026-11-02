@@ -24,14 +24,9 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       INTERNAL_PORT: '4005'
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
+      APP_ORIGIN: ${APP_ORIGIN}
       RUN_MIGRATIONS_ON_BOOT: 'false'
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
-      CDC_HEALTH_PORT: '4001'
-      YJS_PORT: '4002'
-      MCP_URL: ${MCP_URL}
-      OAUTH_URL: ${OAUTH_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
       interval: '5s'
@@ -68,10 +63,9 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      MODE: migrate
+      SERVICE: migrate
       PG_CRON_DATABASE: rdb
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
+      APP_ORIGIN: ${APP_ORIGIN}
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
@@ -87,8 +81,7 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      CDC_HEALTH_PORT: '4001'
+      APP_ORIGIN: ${APP_ORIGIN}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
       interval: '5s'
@@ -123,9 +116,8 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      BACKEND_URL: ${BACKEND_URL}
+      APP_ORIGIN: ${APP_ORIGIN}
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
-      YJS_PORT: '4002'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
       interval: '5s'
@@ -164,11 +156,8 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      MODE: mcp
-      PORT: '4003'
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      MCP_URL: ${MCP_URL}
+      SERVICE: mcp
+      APP_ORIGIN: ${APP_ORIGIN}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: '5s'
@@ -189,8 +178,6 @@ services:
       pathPrefix: /mcp
       reusesImageOf: backend
       coHosted: true
-      bindings:
-        MCP_URL: '@{self.url}'
   oauth:
     image: ${REGISTRY}/backend:${OAUTH_TAG:-latest}
     profiles: [oauth]
@@ -205,11 +192,8 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      MODE: oauth
-      PORT: '4004'
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      OAUTH_URL: ${OAUTH_URL}
+      SERVICE: oauth
+      APP_ORIGIN: ${APP_ORIGIN}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
       interval: '5s'
@@ -230,8 +214,6 @@ services:
       pathPrefix: /oauth
       reusesImageOf: backend
       coHosted: true
-      bindings:
-        OAUTH_URL: '@{self.url}'
   jobs:
     image: ${REGISTRY}/backend:${JOBS_TAG:-latest}
     profiles: [jobs]
@@ -246,10 +228,8 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      MODE: jobs
-      PORT: '4006'
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
+      SERVICE: jobs
+      APP_ORIGIN: ${APP_ORIGIN}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4006/health']
       interval: '5s'

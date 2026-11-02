@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
-import { modeSecrets } from '../../../backend/src/env-mode-secrets';
+import { serviceSecrets } from '../../../backend/src/env-service-secrets';
 import { appServices } from '../../config/services.config';
 import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '../../lib/runtime-secrets';
 
@@ -139,8 +139,8 @@ describe('runtime secret schema alignment', () => {
     }
   });
 
-  // The backend image serves each of these as its own VM under split-VM; the MODE its env names picks the process, and
-  // a release companion runs one more process (its own MODE) on the same VM with the same secrets.
+  // The backend image serves each of these as its own VM under split-VM; the SERVICE its env names picks the process, and
+  // a release companion runs one more process (its own SERVICE) on the same VM with the same secrets.
   const backendImageModes = runtimeSecretConsumers
     .filter((slug) => {
       const cfg = appServices[slug];
@@ -150,17 +150,17 @@ describe('runtime secret schema alignment', () => {
       const cfg = appServices[slug];
       const env: Readonly<Record<string, string>> = 'env' in cfg ? cfg.env : {};
       const releaseEnv: Readonly<Record<string, string>> = ('release' in cfg && cfg.release?.env) || {};
-      return [slug, [env.MODE ?? 'api', ...(releaseEnv.MODE ? [releaseEnv.MODE] : [])]] as const;
+      return [slug, [env.SERVICE ?? 'api', ...(releaseEnv.SERVICE ? [releaseEnv.SERVICE] : [])]] as const;
     });
 
   it('delivers a mode-bound secret to exactly the backend-image VMs whose processes read it', () => {
     expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth', 'jobs']);
     for (const [service, vmModes] of backendImageModes) {
       const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
-      for (const [envVar, modes] of Object.entries(modeSecrets)) {
+      for (const [envVar, modes] of Object.entries(serviceSecrets)) {
         const reads = modes.some((readingMode) => vmModes.includes(readingMode));
         // Missing, a process's env schema refuses to boot; extra, the VM holds a key none of its processes reads.
-        expect(delivered.has(envVar), `${service} (MODE=${vmModes.join('+')}) and ${envVar}`).toBe(reads);
+        expect(delivered.has(envVar), `${service} (SERVICE=${vmModes.join('+')}) and ${envVar}`).toBe(reads);
       }
     }
   });

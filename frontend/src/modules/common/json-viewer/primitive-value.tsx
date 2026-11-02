@@ -9,8 +9,6 @@ import { tw } from '~/utils/tw';
 const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidden">"</span>;
 
 const baseClass = tw('wrap-break-word whitespace-pre-line');
-// The row sets where it breaks. A deep row on a phone scrolls sideways before its text gets narrower than this.
-const stringClass = cn(baseClass, 'min-w-24');
 
 interface InlinePrimitiveValueProps {
   value: unknown;
@@ -69,13 +67,13 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
           {quote}
         </>
       );
-      if (!shouldTruncate) return <span className={stringClass}>{text}</span>;
+      if (!shouldTruncate) return <span className={baseClass}>{text}</span>;
 
       const toggle = () => setIsExpanded((prev) => !prev);
       return (
         // biome-ignore lint/a11y/useSemanticElements: text inside a real button cannot be selected to copy, so the string stays a span.
         <span
-          className={cn(stringClass, 'focus-effect cursor-pointer rounded')}
+          className={cn(baseClass, 'focus-effect cursor-pointer rounded')}
           role="button"
           tabIndex={0}
           aria-expanded={isExpanded}

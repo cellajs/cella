@@ -141,7 +141,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
  * Assemble the full `ComposeFile` from the app's service registry. Each service is one app block binding the host
  * port directly; zero-downtime overlap happens at the load balancer between VM generations, not inside the VM.
  * A `release` step additionally emits a one-shot companion run at the new generation's boot before the app starts.
- * `processIdentityEnv` names the env keys selecting a container's process identity (which worker/mode, which port);
+ * `processIdentityEnv` names the env keys selecting a container's process identity (which service, which port);
  * they are never folded from a co-hosted worker into the singleVM host.
  */
 export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {

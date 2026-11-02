@@ -33,6 +33,8 @@ if (format === 'webp' && spawnSync('cwebp', ['-version']).status !== 0)
 const BOOT_MS = 5 * 60_000;
 // The first signed-in page of a dev server compiles most of the app on demand
 const PAGE_MS = 120_000;
+// The nav bar's first button shows the logo for three seconds after mount (`AppNavLoader`): every shot waits it out, so a pair never differs by it
+const INTRO_MS = 3200;
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 const answers = (url, accept) =>
   fetch(url).then(
@@ -66,6 +68,20 @@ async function settle(page, quiet = 400, cap = 5000) {
   );
   // A navigation during the wait tears down the page's script context
   await waited.catch(() => page.waitForTimeout(quiet));
+}
+
+/**
+ * Resolves once no spinner has shown for `quiet` ms, or after `cap` ms. `settle` sees only the DOM, and a slow API can
+ * leave that unchanged for longer than its quiet time, so a page whose rows and counts are still on their way passes it.
+ */
+async function spinnersGone(page, quiet = 1000, cap = 45_000) {
+  const deadline = Date.now() + cap;
+  let since = Date.now();
+  while (Date.now() < deadline) {
+    if (await page.locator('.animate-spin').count()) since = Date.now();
+    else if (Date.now() - since >= quiet) return;
+    await page.waitForTimeout(100);
+  }
 }
 
 /**
@@ -202,6 +218,8 @@ try {
           await page.goto(`${base}${resolvePath(shot.path)}`, { waitUntil: 'domcontentloaded', timeout: PAGE_MS });
           await page.locator('main').first().waitFor({ timeout: PAGE_MS });
           await settle(page);
+          await page.waitForTimeout(INTRO_MS);
+          await spinnersGone(page);
           await shot.open?.(page);
           await settle(page);
           // A click in `open` leaves the control focused and the pointer over it: neither belongs in a marketing shot.
@@ -210,6 +228,7 @@ try {
           await page.mouse.move(device.width - 1, 0);
           await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
           await settle(page, 200, 1000);
+          await spinnersGone(page, 1500);
 
           mkdirSync(dirname(path), { recursive: true });
           writeShot(await page.screenshot({ animations: 'disabled', caret: 'hide', scale: 'device' }), path);

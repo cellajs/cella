@@ -39,14 +39,14 @@ const main = async () => {
   }
 
   if (env.RUN_MIGRATIONS_ON_BOOT) {
-    // The only API path that touches the admin credential; production runs migrations as MODE=migrate.
+    // The only API path that touches the admin credential; production runs migrations as SERVICE=migrate.
     const { migrateDatabase } = await import('../scripts/db/migrate-database');
     console.info(`${timestamp()} [startup] Running migrations...`);
     await migrateDatabase('boot-time migrations (RUN_MIGRATIONS_ON_BOOT)');
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
   } else {
-    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
+    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as SERVICE=migrate)`);
   }
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
@@ -79,12 +79,12 @@ const main = async () => {
       if (appConfig.services.mcp.enabled) {
         const mcp = await import('#/modules/mcp/worker/mcp-worker-entry');
         stops.push(mcp.shutdownMcpWorker);
-        await mcp.startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
+        await mcp.startMcpWorker({ port: appConfig.services.mcp.port, inProcess: true });
       }
       if (appConfig.services.oauth.enabled) {
         const oauth = await import('#/modules/oauth-server/worker/oauth-worker-entry');
         stops.push(oauth.shutdownOauthWorker);
-        await oauth.startOauthWorker({ port: appConfig.devPorts.oauth, inProcess: true });
+        await oauth.startOauthWorker({ port: appConfig.services.oauth.port, inProcess: true });
       }
       // The folded jobs worker needs no port: this process's /health carries the jobs component.
       if (appConfig.services.jobs.enabled) await (await import('#/lib/jobs-worker')).startJobsWorker({ inProcess: true });

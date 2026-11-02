@@ -84,7 +84,7 @@ jobs:
       - name: Run lens checks (append-only / collision / expand-before-contract / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
-      # knip loads the vitest configs, which read DB_TEST_PORT from backend/.env
+      # knip loads the vitest configs, and the backend env loader wants the secrets of backend/.env
       - name: Check for unused files and dependencies
         run: |
           cp ./backend/.env.example ./backend/.env
@@ -169,7 +169,7 @@ jobs:
 
   # The test suites against PostgreSQL, one job per suite, so the release PR waits for the longest one. Heavy: runs on
   # the release PR, and in an app on the upgrade PR (`cella/upgrade/<stamp>`, the branch `pnpm cella upgrade` opens), where
-  # upstream changes first meet the app's code. Each job starts the `db_test` compose container (DB_TEST_PORT) and
+  # upstream changes first meet the app's code. Each job starts the `db_test` compose container and
   # applies migrations in the Vitest global setup, so it needs no service container.
   test:
     # Same-repo branch only: release-please and the upgrade push their branches into this
