@@ -1,7 +1,7 @@
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
-import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
+import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, writeKeepingMark } from '~/query/basic/cache-mutations';
 import {
   type EntityQueryKeys,
@@ -118,50 +118,55 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
 }
 
 /**
- * Applies server truth to detail and list caches: tombstones remove, new rows enter only home lists. Each cached list row
- * guards its Yjs-owned fields against itself; the detail and rows new to a list guard against `reference`.
- * Returns true when every list lacked the row, so the caller can invalidate opaque filtered lists once.
+ * Applies server rows of one type and organization to detail and list caches, writing each list once: tombstones remove,
+ * new rows enter only home lists, a row with a pending mutation is skipped, and only a cached detail is written, since a
+ * detail read without one starts from the list copy. Each cached list row guards its Yjs-owned fields against itself; a
+ * detail and rows new to a list guard against `referenceOf`, read before any write.
+ * @returns The rows every list lacked, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerEntity(
+function applyServerRows(
   entityType: string,
-  entity: ItemData,
+  rows: ItemData[],
   keys: EntityQueryKeys,
   organizationId: string | null,
-  reference: ItemData | undefined,
-): boolean {
-  if (isSoftDeleted(entity)) {
-    removeEntity(entityType, entity.id, organizationId ?? undefined);
+  referenceOf: (row: ItemData) => ItemData | undefined = (row) => findInCache(entityType, row.id),
+): ItemData[] {
+  const tombstones = rows.filter(isSoftDeleted);
+  const live = rows.filter((row) => {
+    if (isSoftDeleted(row)) return false;
+    if (!hasPendingMutationForEntity(entityType, row.id)) return true;
+    console.debug(`[CacheOps] Skipping remote apply for ${entityType}:${row.id}, has pending mutation`);
     return false;
+  });
+  const references = new Map(live.map((row) => [row.id, referenceOf(row)]));
+
+  for (const { id } of tombstones) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
+  for (const row of live) {
+    const guarded = guardYjsOwnedFields(entityType, row, references.get(row.id));
+    writeKeepingMark<ItemData>(queryClient, keys.detail.byId(row.id), (old) => old && { ...old, ...guarded });
   }
 
-  // Preserve optimistic state; the mutation's onSuccess reconciles the cache when it settles.
-  if (hasPendingMutationForEntity(entityType, entity.id)) {
-    console.debug(`[CacheOps] Skipping remote apply for ${entityType}:${entity.id}, has pending mutation`);
-    return false;
-  }
-
-  const routedEntity: RoutableItemData = { ...entity, entityType, organizationId: organizationId ?? undefined };
-  const guarded = guardYjsOwnedFields(entityType, entity, reference);
-
-  writeKeepingMark<ItemData>(queryClient, keys.detail.byId(entity.id), (old) => (old ? { ...old, ...guarded } : guarded));
-
-  const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
-
+  const route = (row: ItemData): RoutableItemData => ({ ...row, entityType, organizationId: organizationId ?? undefined });
   // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
-  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, {
+  const { seen, spliced, sawFilteredList } = spliceEntitiesIntoListCaches(queryClient, [...tombstones, ...live].map(route), {
+    isRemoved: isSoftDeleted,
     removeOnParentChannelChange: true,
-    rowFor: (cachedItem) => guardYjsOwnedFields(entityType, routedEntity, cachedItem ?? reference),
+    rowFor: (entity, cachedItem) => guardYjsOwnedFields(entityType, entity, cachedItem ?? references.get(entity.id)),
   });
 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
-  if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
-    console.warn(
-      `[CacheOps] New ${entityType} row ${entity.id} reached no list cache: ` +
-        `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
-    );
+  if (organizationId && !sawFilteredList) {
+    for (const row of live) {
+      const homeChannelId = resolveHomeChannelId(entityType, route(row));
+      if (!homeChannelId || seen.has(row.id) || spliced.has(row.id)) continue;
+      console.warn(
+        `[CacheOps] New ${entityType} row ${row.id} reached no list cache: ` +
+          `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
+      );
+    }
   }
 
-  return !seen;
+  return live.filter((row) => !seen.has(row.id));
 }
 
 /** Fetches one entity through registered query defaults and applies it to caches, falling back to list invalidation. Stream org and tenant IDs pass through meta for path resolution. */
@@ -173,7 +178,7 @@ export async function fetchEntityAndUpdateList(
   organizationId: string,
   tenantId: string | null,
 ): Promise<void> {
-  // Don't even fetch for entities with pending mutations; applyServerEntity re-checks on apply.
+  // Don't even fetch for entities with pending mutations; applyServerRows re-checks on apply.
   if (hasPendingMutationForEntity(entityType, entityId)) {
     console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId}, has pending mutation`);
     return;
@@ -192,7 +197,7 @@ export async function fetchEntityAndUpdateList(
 
     // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
     const listCopy = findInCache<ItemData>(entityType, (item) => item.id === entityId);
-    applyServerEntity(entityType, entity, keys, organizationId, listCopy ?? cached);
+    applyServerRows(entityType, [entity], keys, organizationId, () => listCopy ?? cached);
     // The change says create: active filtered lists refetch to place the new row.
     if (action === 'create') invalidateFilteredLists(entityType, keys.list.org(organizationId), [entity]);
   } catch {
@@ -255,11 +260,7 @@ export async function fetchRangeAndPatch(
       return failedRange('unsupported');
     }
 
-    const newRows: ItemData[] = [];
-    for (const entity of items) {
-      const cached = findInCache<ItemData>(entityType, entity.id);
-      if (applyServerEntity(entityType, entity, keys, organizationId, cached)) newRows.push(entity);
-    }
+    const newRows = applyServerRows(entityType, items, keys, organizationId);
 
     // Filtered lists filter on the server, so one invalidation per flush lets the active ones refetch and place new rows.
     if (newRows.length && organizationId) invalidateFilteredLists(entityType, keys.list.org(organizationId), newRows);

@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { changeListData, writeKeepingMark } from '~/query/basic/cache-mutations';
+import { type ListChanges, writeKeepingMark, writeListChanges } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -32,51 +32,62 @@ function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean 
 }
 
 export interface SpliceResult {
-  /** The row was already present in at least one scanned list cache. */
-  seen: boolean;
-  /** The row was newly inserted into its canonical home list. */
-  spliced: boolean;
+  /** Rows already present in at least one scanned list cache, by id. */
+  seen: Set<string>;
+  /** Rows newly inserted into their canonical home list, by id. */
+  spliced: Set<string>;
   /** At least one filtered list was scanned. Its server-side filter cannot be replicated locally, so callers invalidate those separately. */
   sawFilteredList: boolean;
 }
 
 /**
- * Applies an entity across org list caches by canonical-home placement: existing rows update in place, unknown rows enter only an unfiltered home list.
- * A parent move removes the cached row when `removeOnParentChannelChange` is set; `rowFor` builds each list's row from its cached copy.
+ * Applies rows of one entity type and organization, with distinct ids, across its list caches by canonical-home placement,
+ * writing each list once: existing rows update in place, unknown rows enter only an unfiltered home list, and a row that
+ * `isRemoved` matches leaves every list. A parent move removes the cached row when `removeOnParentChannelChange` is set;
+ * `rowFor` builds each list's row from its cached copy.
  */
-export function spliceEntityIntoListCaches(
+export function spliceEntitiesIntoListCaches(
   queryClient: QueryClient,
-  entity: RoutableItemData,
-  options: { removeOnParentChannelChange?: boolean; rowFor?: (cachedItem: ItemData | undefined) => ItemData } = {},
+  entities: RoutableItemData[],
+  options: {
+    isRemoved?: (entity: RoutableItemData) => boolean;
+    removeOnParentChannelChange?: boolean;
+    rowFor?: (entity: RoutableItemData, cachedItem: ItemData | undefined) => ItemData;
+  } = {},
 ): SpliceResult {
-  const { removeOnParentChannelChange = false, rowFor } = options;
-  const { entityType, organizationId = null } = entity;
-  const keys = getEntityQueryKeys(entityType);
-  const homeChannelId = resolveHomeChannelId(entityType, entity);
+  const { isRemoved, removeOnParentChannelChange = false, rowFor = (entity) => entity } = options;
+  const result: SpliceResult = { seen: new Set(), spliced: new Set(), sawFilteredList: false };
+  const [first] = entities;
+  if (!first) return result;
 
-  let seen = false;
-  let spliced = false;
-  let sawFilteredList = false;
+  const { entityType, organizationId = null } = first;
+  const keys = getEntityQueryKeys(entityType);
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
+  const homed = entities.map((entity) => ({ entity, homeChannelId: resolveHomeChannelId(entityType, entity) }));
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    sawFilteredList ||= queryKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null);
+    result.sawFilteredList ||= queryKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null);
 
     if (!isQueryData<ItemData>(queryData) && !isInfiniteQueryData<ItemData>(queryData)) continue;
-    const cachedItem = getQueryItems(queryData).find((item) => item.id === entity.id);
+    const cachedItems = new Map(getQueryItems(queryData).map((item) => [item.id, item]));
+    const changes: ListChanges = { remove: [], update: [], create: [] };
 
-    if (removeOnParentChannelChange && cachedItem && hasParentChannelChanged(cachedItem, entity)) {
-      changeListData(queryKey, [entity], 'remove');
-      continue;
+    for (const { entity, homeChannelId } of homed) {
+      const cachedItem = cachedItems.get(entity.id);
+      if (isRemoved?.(entity) || (removeOnParentChannelChange && cachedItem && hasParentChannelChanged(cachedItem, entity))) {
+        changes.remove.push(entity);
+      } else if (cachedItem) {
+        result.seen.add(entity.id);
+        changes.update.push(rowFor(entity, cachedItem));
+      } else if (organizationId && homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId)) {
+        result.spliced.add(entity.id);
+        changes.create.push(rowFor(entity, undefined));
+      }
     }
-
-    const isHomeList = !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
-    seen ||= !!cachedItem;
-    spliced ||= !cachedItem && isHomeList;
-    changeListData(queryKey, [rowFor ? rowFor(cachedItem) : entity], cachedItem || !isHomeList ? 'update' : 'create');
+    writeListChanges(queryKey, changes);
   }
 
-  return { seen, spliced, sawFilteredList };
+  return result;
 }
 
 /**
@@ -85,7 +96,7 @@ export function spliceEntityIntoListCaches(
  */
 export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
   for (const entity of entities) {
-    spliceEntityIntoListCaches(queryClient, entity);
+    spliceEntitiesIntoListCaches(queryClient, [entity]);
     writeKeepingMark<ItemData>(queryClient, getEntityQueryKeys(entity.entityType).detail.byId(entity.id), (cached) => cached && entity);
   }
 }

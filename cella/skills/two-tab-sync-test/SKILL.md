@@ -64,7 +64,7 @@ Decision rule: **no console change line and the API's `cdc` component is not hea
 
 `Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed ([Client](../../CLIENT.md#cold-start-to-live)). `viewing=true` marks a tab on the org route, which fetches at once. Chromium throttles a hidden tab's timers to about 1s, so use generous assert windows.
 
-Creates not propagating: check the `applyServerEntity` applicator in `cache-ops.ts` first.
+Creates not propagating: check the `applyServerRows` applicator in `cache-ops.ts` first.
 
 ## Reading the evidence: descriptions
 

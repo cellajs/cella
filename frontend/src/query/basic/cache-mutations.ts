@@ -109,6 +109,26 @@ export function changeListData(queryKey: QueryKey, items: ItemData[], action: Qu
   );
 }
 
+/** The rows one write takes out of a list, changes in it and puts into it. */
+export interface ListChanges {
+  remove: ItemData[];
+  update: ItemData[];
+  create: ItemData[];
+}
+
+/**
+ * Writes many rows of distinct ids into one list at once, each as {@link changeListData} would write it alone: new rows
+ * enter in turn, so where they are prepended the last one leads.
+ */
+export function writeListChanges(queryKey: QueryKey, { remove, update, create }: ListChanges): void {
+  writeKeepingMark<BaseQueryItem<ItemData>>(queryClient, queryKey, (data) => {
+    if (!data) return data;
+    const insertOrder = isInfiniteQueryData(data) ? getQueryKeySortOrder(queryKey) : undefined;
+    const kept = changeListItems(changeListItems(data, remove, 'remove'), update, 'update');
+    return changeListItems(kept, insertOrder === 'asc' ? create : create.toReversed(), 'create', insertOrder);
+  });
+}
+
 function changeMatchingLists(queryKey: QueryKey, items: ItemData[], action: QueryDataAction) {
   forEachListQuery(queryKey, (key) => changeListData(key, items, action));
 }

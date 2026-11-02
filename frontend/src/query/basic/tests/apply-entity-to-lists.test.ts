@@ -25,7 +25,7 @@ vi.mock('shared', async (importOriginal) => {
 
 // changeListData writes through the module-singleton queryClient, so tests use that instance.
 const { queryClient } = await import('~/query/query-client');
-const { spliceEntityIntoListCaches } = await import('~/query/basic/apply-entity-to-lists');
+const { spliceEntitiesIntoListCaches } = await import('~/query/basic/apply-entity-to-lists');
 
 const orgId = 'org-1';
 
@@ -56,28 +56,28 @@ const row = (id: string, extra: Record<string, unknown> = {}): OrgRoutableItemDa
   ...extra,
 });
 
-describe('spliceEntityIntoListCaches: canonical-home policy', () => {
+describe('spliceEntitiesIntoListCaches: canonical-home policy', () => {
   afterEach(() => queryClient.clear());
 
   it('puts a new row into its canonical home list only, never a filtered list, and updates a row in every list that holds it', () => {
     queryClient.setQueryData(homeKey, { items: [], total: 0 });
     queryClient.setQueryData(filteredKey, { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0 }] });
 
-    const inserted = spliceEntityIntoListCaches(queryClient, row('a'));
+    const inserted = spliceEntitiesIntoListCaches(queryClient, [row('a')]);
 
     const home = () => queryClient.getQueryData<{ items: ItemData[]; total: number }>(homeKey);
     const filtered = () => queryClient.getQueryData<{ pages: { items: ItemData[]; total: number }[] }>(filteredKey);
     expect(home()).toMatchObject({ items: [{ id: 'a' }], total: 1 });
     // The search list did not gain the row: its server-side filter cannot be checked here.
     expect(filtered()?.pages[0]).toEqual({ items: [], total: 0 });
-    expect(inserted).toMatchObject({ seen: false, spliced: true, sawFilteredList: true });
+    expect(inserted).toEqual({ seen: new Set(), spliced: new Set(['a']), sawFilteredList: true });
 
     // Once the search list holds the row too, an update reaches both, without an insert or a total drift.
     queryClient.setQueryData(filteredKey, { pages: [{ items: [row('a', { name: 'old' })], total: 1 }], pageParams: [{ page: 0 }] });
-    const updated = spliceEntityIntoListCaches(queryClient, row('a', { name: 'new' }));
+    const updated = spliceEntitiesIntoListCaches(queryClient, [row('a', { name: 'new' })]);
 
     expect(home()).toMatchObject({ items: [{ id: 'a', name: 'new' }], total: 1 });
     expect(filtered()?.pages[0]).toMatchObject({ items: [{ id: 'a', name: 'new' }], total: 1 });
-    expect(updated.seen).toBe(true);
+    expect(updated.seen).toEqual(new Set(['a']));
   });
 });

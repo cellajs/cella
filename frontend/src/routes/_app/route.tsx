@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { ApiError } from '~/lib/api';
-import { meQueryOptions } from '~/modules/me/query';
+import { meQueryOptions, myMembershipsQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { userStore } from '~/modules/user/user-store';
@@ -39,6 +39,8 @@ export const Route = createFileRoute('/_app')({
 
     // Catchup needs the rehydrated cursor and the restored cache: a list not restored yet counts as uncached, its gap skipped for good.
     await localUserStorageReady();
+    // Catchup declares a view per organization of the cached memberships, so a fresh profile reads them first; the loader reports a failure.
+    await queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 'static' }).catch(() => {});
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();
     // Only a 401 ends the session. A network failure or 5xx keeps the stream: disconnect() also drops its visibility and

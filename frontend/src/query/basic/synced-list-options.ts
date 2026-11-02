@@ -151,7 +151,7 @@ function markOnceCached(client: QueryClient, queryHash: string, list: List): voi
 
 /**
  * Reads a canonical list and merges the changes the scope's cursor moved past while it ran, whose patches the read's result
- * overwrites. The range starts at the cursor the read started at, 0 in a first session.
+ * overwrites. The range starts at the cursor the read started at, 0 before the scope's first catchup.
  * @throws {OverlappedChangesError} When the overlapped changes cannot be read and the list has data, which the failed read keeps.
  */
 async function readAgainstDeltas(client: QueryClient, read: () => Promise<List>, queryKey: QueryKey, scope: SyncedListScope): Promise<List> {
