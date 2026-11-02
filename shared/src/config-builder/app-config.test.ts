@@ -65,6 +65,45 @@ describe('appConfig service dependencies', () => {
   });
 });
 
+describe('appConfig devAppIndex', () => {
+  const useIndex = (devAppIndex: number) =>
+    vi.doMock('../../config/config.default.ts', async (original) => {
+      const { config } = await original<typeof import('../../config/config.default.ts')>();
+      return { config: { ...config, devAppIndex } };
+    });
+
+  afterEach(() => vi.doUnmock('../../config/config.default.ts'));
+
+  it('moves the frontend and its URLs by one, the services by ten and leaves production alone', async () => {
+    const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
+    const baseProduction = await loadAppConfig({ APP_MODE: 'production' });
+    useIndex(2);
+    const app = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
+    expect(app.devPorts.frontend).toBe(base.devPorts.frontend + 2);
+    expect(new URL(app.frontendUrl).port).toBe(String(Number(new URL(base.frontendUrl).port) + 2));
+    expect(new URL(app.yjsUrl).port).toBe(new URL(app.frontendUrl).port);
+    expect(app.devPorts.api).toBe(base.devPorts.api + 20);
+    expect(app.devPorts.jobs).toBe(base.devPorts.jobs + 20);
+    const worktree = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100' });
+    expect(worktree.devPorts.api).toBe(base.devPorts.api + 120);
+    expect((await loadAppConfig({ APP_MODE: 'production' })).devPorts).toEqual(baseProduction.devPorts);
+  });
+
+  it.each([
+    ['index 4', { index: 4, offset: '0' }],
+    ['the hand offset of 40', { index: 0, offset: '40' }],
+    ['index 9 in the first worktree block', { index: 9, offset: '100' }],
+  ])('refuses a port that fetch refuses: %s', async (_, { index, offset }) => {
+    useIndex(index);
+    await expect(loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: offset })).rejects.toThrow(/one fetch refuses/);
+  });
+
+  it('refuses an index outside 0-9', async () => {
+    useIndex(10);
+    await expect(loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' })).rejects.toThrow(/Invalid config devAppIndex/);
+  });
+});
+
 describe('appConfig dev port offset', () => {
   const port = (url: string) => Number(new URL(url).port);
 

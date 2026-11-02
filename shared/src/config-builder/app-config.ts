@@ -51,6 +51,18 @@ for (const [name, overrides] of typedEntries(configModes)) {
 // The type comes from the default config so literal types survive for Drizzle v1 strict enum typing.
 const merged = mergeDeep(structuredClone(defaultConfig), configModes[mode]);
 
+const isLocalMode = mode === 'development' || mode === 'tunnel' || mode === 'test';
+
+// A second app runs its stack beside the first. A person switches apps by the frontend port's last digit, and the
+// services keep ten ports each, so the seven of one app never reach the next.
+if (isLocalMode) {
+  const index = merged.devAppIndex;
+  if (!Number.isInteger(index) || index < 0 || index > 9)
+    throw new Error(`Invalid config devAppIndex "${index}": must be a whole number from 0 to 9.`);
+  for (const [service, port] of typedEntries(merged.devPorts)) merged.devPorts[service] = port + (service === 'frontend' ? index : index * 10);
+  for (const [key] of typedEntries(urlEnvNames)) merged[key] = shiftLocalPort(merged[key], index);
+}
+
 // A second checkout of the app runs its stack beside the first: `devPorts` and the localhost URL
 // family move together by one offset. The env URL overrides below are taken as given.
 const devPortOffset = mode === 'development' || mode === 'tunnel' ? resolveDevPortOffset() : 0;
@@ -62,6 +74,15 @@ if (devPortOffset) {
     const shifted = shiftLocalPort(merged[key], devPortOffset);
     if (shifted !== merged[key]) shiftedHosts.set(new URL(shifted).host, new URL(merged[key]).host);
     merged[key] = shifted;
+  }
+}
+
+// The Fetch standard's bad ports in reach of these blocks: browsers and Node's fetch refuse them, and the Yjs relay dials `internal` with fetch.
+const refusedPorts: number[] = [4045, 4190];
+if (isLocalMode) {
+  for (const [service, port] of typedEntries(merged.devPorts)) {
+    if (refusedPorts.includes(port))
+      throw new Error(`Dev port ${port} of ${service} is one fetch refuses: pick another devAppIndex or DEV_PORT_OFFSET.`);
   }
 }
 
@@ -114,7 +135,7 @@ s3.publicCDNUrl ??= `https://${s3.publicBucket}.${s3.host}`;
 s3.privateCDNUrl ??= `https://${s3.privateBucket}.${s3.host}`;
 
 /**
- * The runtime config: the default config, then the mode config `APP_MODE` (or `NODE_ENV`) names, the dev port offset
- * and the env URL overrides, with `services.<slug>.publicUrl` and the S3 bucket names and CDN URLs derived.
+ * The runtime config: the default config, then the mode config `APP_MODE` (or `NODE_ENV`) names, the app's dev ports,
+ * the dev port offset and the env URL overrides, with `services.<slug>.publicUrl` and the S3 bucket names and CDN URLs derived.
  */
 export const appConfig = { ...merged, services, devPortOffset } as Config;

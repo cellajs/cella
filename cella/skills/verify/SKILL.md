@@ -7,8 +7,8 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 ## Launch
 
-- Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves http://localhost:3000; a linked git worktree runs on ports of its own, which Vite prints ([Dev ports](../../../shared/README.md#dev-ports)). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
-- Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". 3020/4020 and the like belong to other apps (projectcampus).
+- Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves `appConfig.frontendUrl`, http://localhost:3000 for app number 0; a linked git worktree runs on ports of its own, which Vite prints ([Dev ports](../../../shared/README.md#dev-ports)). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
+- Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". Ports of another `devAppIndex` belong to other apps.
 - A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `backend/.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC worker on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
 - When you start the stack yourself, capture its stdout: `pnpm dev > <scratch>/dev-stack.log 2>&1` (background). pino writes no file, and backend errors are there.
 - Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<devPorts.cdcHealth>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
@@ -16,20 +16,20 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 ## A throwaway database
 
-Clean seeded data, or a branch with migrations, beside the stack you already run. Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 40 and port 5440 are free: `pnpm a11y:run` takes 70 and 5470, and linked worktrees take the hundreds.
+Clean seeded data, or a branch with migrations, beside the stack you already run. Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free: `pnpm a11y:run` takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
 
 ```sh
 # The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml
 docker run -d --name scratch_db -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:5440:5432 <image> -c wal_level=logical -c shared_preload_libraries=pg_cron -c cron.database_name=postgres
 
-export DEV_PORT_OFFSET=40 ADMIN_EMAIL=admin-test@cellajs.com SYSTEM_ADMIN_IP_ALLOWLIST='*'
+export DEV_PORT_OFFSET=50 ADMIN_EMAIL=admin-test@cellajs.com SYSTEM_ADMIN_IP_ALLOWLIST='*'
 export DATABASE_URL=postgres://runtime_role:dev_password@0.0.0.0:5440/postgres
 export DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5440/postgres
 export DATABASE_CDC_URL=postgres://admin_role:dev_password@0.0.0.0:5440/postgres
 
 pnpm seed                                                                  # migrates, then seeds
-(cd backend && NODE_ENV=development pnpm exec tsx src/main.ts) &            # the API, 40 ports up
-(cd frontend && NODE_ENV=development pnpm exec vite --mode development) &   # the app, 40 ports up
+(cd backend && NODE_ENV=development pnpm exec tsx src/main.ts) &            # the API, 50 ports up
+(cd frontend && NODE_ENV=development pnpm exec vite --mode development) &   # the app, 50 ports up
 ```
 
 - Every command runs with those exports: `pnpm seed` without them seeds the database you work in. An agent's shell keeps no exports between calls, so put them in a wrapper script that ends in `exec "$@"` and run each command through it.
