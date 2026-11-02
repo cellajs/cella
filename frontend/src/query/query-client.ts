@@ -1,5 +1,6 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
+import { productTypeOf } from '~/query/cache-migration';
 import { quarantineFailedSync } from '~/query/offline/failed-sync';
 import { mutationIdOf } from '~/query/offline/mutation-variables';
 import { mutationRetry } from '~/query/offline/network-retry';
@@ -96,14 +97,17 @@ export const queryClient: QueryClient =
     },
   });
 
-/** Offline, no query goes stale by age; back online, every query goes stale and the mounted ones refetch in the background. */
+/**
+ * Offline, no query goes stale by age. Back online, every query but the synced product ones is marked and the mounted
+ * ones refetch in the background: a product list is the sync engine's, whose catchup fetches what a dropped stream missed.
+ */
 function applyOnlineState(online: boolean): void {
   console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
   const staleTime = online ? defaultStaleTime : offlineStaleTime;
   // setDefaultOptions replaces every default: the mutation defaults carry the offline retry and pause.
   const defaults = queryClient.getDefaultOptions();
   queryClient.setDefaultOptions({ ...defaults, queries: { ...defaults.queries, staleTime } });
-  if (online) queryClient.invalidateQueries({ refetchType: 'active' });
+  if (online) queryClient.invalidateQueries({ refetchType: 'active', predicate: ({ queryKey }) => !productTypeOf(queryKey) });
 }
 
 // Subscribed once per page load; the HMR-preserved client keeps its subscription.

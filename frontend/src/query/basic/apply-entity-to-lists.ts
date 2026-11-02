@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { changeListData } from '~/query/basic/cache-mutations';
+import { changeListData, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
@@ -86,6 +86,6 @@ export function spliceEntityIntoListCaches(
 export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
   for (const entity of entities) {
     spliceEntityIntoListCaches(queryClient, entity);
-    queryClient.setQueryData<ItemData>(getEntityQueryKeys(entity.entityType).detail.byId(entity.id), (cached) => cached && entity);
+    writeKeepingMark<ItemData>(queryClient, getEntityQueryKeys(entity.entityType).detail.byId(entity.id), (cached) => cached && entity);
   }
 }

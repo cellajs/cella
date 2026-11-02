@@ -24,7 +24,7 @@ import { registerDescriptionDerivation } from '~/modules/common/blocknote/descri
 import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
-import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
+import { cacheRemove, cacheUpdate, cancelKeepingMark, removeDetailQueriesById, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -79,7 +79,7 @@ const invalidateOrgLists = (queryClient: QueryClient, organizationId: string) =>
 const patchCachedAttachment = (queryClient: QueryClient, organizationId: string, row: Attachment, ops: UpdateAttachmentVars['ops']) => {
   const patched = { ...row, ...ops, updatedAt: new Date().toISOString() };
   cacheUpdate(keys.list.org(organizationId), [patched]);
-  queryClient.setQueryData(keys.detail.byId(row.id), patched);
+  writeKeepingMark(queryClient, keys.detail.byId(row.id), () => patched);
 };
 
 type AttachmentsListParams = AttachmentFilters & {
@@ -170,7 +170,7 @@ export const attachmentCreateOptions = (
   meta: { suppressGlobalErrorToast: true },
   onMutate: async ({ tenantId, organizationId, data }) => {
     const orgKey = keys.list.org(organizationId);
-    await queryClient.cancelQueries({ queryKey: orgKey });
+    await cancelKeepingMark(queryClient, orgKey);
     const optimisticAttachments = data.map((attachment) => createOptimisticEntity(zAttachment, { ...attachment, tenantId, organizationId }));
     insertEntitiesIntoHome(queryClient, optimisticAttachments);
     return { optimisticAttachments };
@@ -199,8 +199,8 @@ const attachmentUpdateOptions = (
   mutationFn: updateAttachmentMutationFn,
   meta: { suppressGlobalErrorToast: true },
   onMutate: async ({ organizationId, id, ops }) => {
-    await queryClient.cancelQueries({ queryKey: keys.list.org(organizationId) });
-    await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
+    await cancelKeepingMark(queryClient, keys.list.org(organizationId));
+    await cancelKeepingMark(queryClient, keys.detail.byId(id));
 
     const previousAttachment = findAttachmentInCache(id);
     if (previousAttachment) patchCachedAttachment(queryClient, organizationId, previousAttachment, ops);
@@ -212,7 +212,7 @@ const attachmentUpdateOptions = (
     handleError('update', error);
     if (context?.previousAttachment) {
       cacheUpdate(keys.list.org(variables.organizationId), [context.previousAttachment]);
-      queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
+      writeKeepingMark(queryClient, keys.detail.byId(context.previousAttachment.id), () => context.previousAttachment);
     }
   },
   onSuccess: (updatedAttachment, variables) => {
@@ -244,7 +244,7 @@ const attachmentDeleteOptions = (
     const orgKey = keys.list.org(organizationId);
     const attachmentIds = rows.map((row) => row.id);
     removePendingMutations(queryClient, keys.update, attachmentIds);
-    await queryClient.cancelQueries({ queryKey: orgKey });
+    await cancelKeepingMark(queryClient, orgKey);
     cacheRemove(orgKey, rows);
     removeDetailQueriesById(queryClient, keys.detail.base, attachmentIds);
     return { deletedAttachments: rows };

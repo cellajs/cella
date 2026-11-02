@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { QueryClient } from '@tanstack/react-query';
-import { type PersistedClient, persistQueryClientRestore } from '@tanstack/react-query-persist-client';
+import { type PersistedClient, persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => {
@@ -219,6 +219,72 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
         .getAll()
         .map(({ state }) => state.variables),
     ).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
+  });
+
+  const save = async (queryClient: QueryClient) => {
+    await persistQueryClientSave({ queryClient, persister, dehydrateOptions: persistOptions.dehydrateOptions });
+    await persister.flush();
+  };
+  const reload = async () => {
+    const queryClient = new QueryClient();
+    await persistQueryClientRestore({ ...persistOptions, queryClient });
+    return queryClient;
+  };
+
+  // The mark never reached disk: a list marked for a refetch came back from a reload as fresh, a product list and a bundled one alike.
+  it('restores a query marked for a refetch as marked', async () => {
+    const queryClient = new QueryClient();
+    const keys = [
+      ['task', 'list', 'org-1'],
+      ['organization', 'list'],
+    ];
+    for (const key of keys) queryClient.setQueryData(key, [{ id: 'a' }]);
+    await save(queryClient);
+    await queryClient.invalidateQueries({ refetchType: 'none' });
+    await save(queryClient);
+
+    const reloaded = await reload();
+    expect(keys.map((key) => reloaded.getQueryState(key)?.isInvalidated)).toEqual([true, true]);
+  });
+
+  // A failed refetch dropped the stored copy: one offline cold boot lost the memberships, and the next showed the root error page.
+  it('keeps the last data of a query whose refetch got no response, restored marked, and drops it on a 404', async () => {
+    const queryClient = new QueryClient();
+    const offlineKey = ['me', 'memberships'];
+    const goneKey = ['organization', 'detail', 'o1'];
+    for (const key of [offlineKey, goneKey]) await queryClient.query({ queryKey: key, queryFn: async () => ({ items: [{ id: 'm1' }] }) });
+    const { dataUpdatedAt } = queryClient.getQueryState(offlineKey)!;
+    await save(queryClient);
+    const fail = (error: Error) => () => Promise.reject(error);
+    await queryClient.query({ queryKey: offlineKey, queryFn: fail(new TypeError('Failed to fetch')), staleTime: 0, retry: false }).catch(() => {});
+    await queryClient
+      .query({ queryKey: goneKey, queryFn: fail(Object.assign(new Error('gone'), { status: 404 })), staleTime: 0, retry: false })
+      .catch(() => {});
+    await save(queryClient);
+
+    const reloaded = await reload();
+    expect(reloaded.getQueryState(offlineKey)).toMatchObject({
+      status: 'success',
+      error: null,
+      data: { items: [{ id: 'm1' }] },
+      dataUpdatedAt,
+      isInvalidated: true,
+    });
+    expect(reloaded.getQueryState(goneKey)).toBeUndefined();
+  });
+
+  // Discarding a cache that failed to hydrate deleted the queue of every tab, open tabs included.
+  it("keeps every tab's queued writes when it discards the cache", async () => {
+    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
+    await persister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [makeQuery('["me"]', 'me', 200)], mutations } });
+    await persister.flush();
+    const db = getLocalUserDb()!;
+    await db.meta.put({ key: 'rq:mut:open-tab', timestamp: Date.now(), buster: '', mutations, bundledQueries: [] });
+
+    await persister.removeClient();
+
+    expect((await db.meta.get('rq'))?.bundledQueries).toEqual([]);
+    expect((await db.meta.where('key').startsWith('rq:mut:').toArray()).map(({ mutations }) => mutations?.length)).toEqual([1, 1]);
   });
 });
 

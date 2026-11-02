@@ -2,7 +2,7 @@ import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
-import { cacheRemove } from '~/query/basic/cache-mutations';
+import { cacheRemove, writeKeepingMark } from '~/query/basic/cache-mutations';
 import {
   type EntityQueryKeys,
   getEntityQueryKeys,
@@ -182,10 +182,7 @@ function applyServerEntity(
   const routedEntity: RoutableItemData = { ...entity, entityType, organizationId: organizationId ?? undefined };
   const guarded = guardYjsOwnedFields(entityType, entity, reference);
 
-  queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
-    if (!old) return guarded;
-    return { ...old, ...guarded };
-  });
+  writeKeepingMark<ItemData>(queryClient, keys.detail.byId(entity.id), (old) => (old ? { ...old, ...guarded } : guarded));
 
   const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
 

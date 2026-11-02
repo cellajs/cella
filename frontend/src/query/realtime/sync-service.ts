@@ -2,7 +2,9 @@ import type { FetchInfiniteQueryOptions, FetchQueryOptions, QueryKey } from '@ta
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import type { ApiError } from '~/lib/api';
 import type { UserMenuItem } from '~/modules/me/types';
+import { productTypeOf } from '~/query/cache-migration';
 import { queryClient } from '~/query/query-client';
+import { isOpaqueScope } from '~/query/realtime/catchup-processor';
 import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
 import { waitFor } from '~/utils/wait-for';
 
@@ -46,9 +48,10 @@ export async function runSyncService(signal: AbortSignal): Promise<void> {
 }
 
 /**
- * Seeds the offline cache for one menu item. `staleTime: 'static'` fetches a cold entry and leaves a cached one
- * alone whatever its age or invalidation state, because freshness here is the sync engine's job: catchup patches
- * these lists from CDC deltas, and a full list GET would race that work.
+ * Seeds the offline cache for one menu item. A product list reads on its own stale time: it fetches when it is cold or
+ * marked for a refetch, and a fresh one is left to catchup. Any other query, and a product list of an `opaque` scope,
+ * reads with `staleTime: 'static'`, which fetches only a cold entry: a list that goes stale by time, such as the members
+ * list, or one every catchup marks would otherwise fetch again on every stream-live event.
  */
 async function syncMenuItem(item: UserMenuItem): Promise<void> {
   if (item.membership.archived) return;
@@ -65,8 +68,10 @@ async function syncMenuItem(item: UserMenuItem): Promise<void> {
   await Promise.allSettled(
     queries.map(async (source) => {
       // The queries differ in key and data types, which no single options type holds: one cast to the call shapes, the `in` check picks the call.
-      const cacheFirst = { ...source, staleTime: 'static' } as SyncInfiniteCall | SyncSingleCall;
-      return isInfiniteCall(cacheFirst) ? await queryClient.infiniteQuery(cacheFirst) : await queryClient.query(cacheFirst);
+      const productType = productTypeOf(source.queryKey);
+      const ownFreshness = productType && !isOpaqueScope(organizationId, productType);
+      const options = (ownFreshness ? source : { ...source, staleTime: 'static' }) as SyncInfiniteCall | SyncSingleCall;
+      return isInfiniteCall(options) ? await queryClient.infiniteQuery(options) : await queryClient.query(options);
     }),
   );
 }

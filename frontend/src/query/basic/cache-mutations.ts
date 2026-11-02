@@ -1,9 +1,48 @@
-import type { QueryClient, QueryFilters, QueryKey } from '@tanstack/react-query';
+import type { QueryClient, QueryFilters, QueryKey, SetDataOptions } from '@tanstack/react-query';
 import { getQueryKeySortOrder } from '~/query/basic/get-query-key-sort-order';
 import { forEachListQuery, getQueryItems, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import type { ItemData, QueryDataAction } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem } from '~/query/types';
+
+/**
+ * Writes one cached query, keeping its refetch mark: `setQueryData` would clear `isInvalidated`, but a cache write is no
+ * read of the server, so only a refetch clears the mark. Query code and the modules of synced products write through
+ * here (`pnpm style`).
+ * @param update - Returns the next data; the same data or undefined writes nothing, and leaves the timestamp as it was.
+ */
+export function writeKeepingMark<T>(
+  client: QueryClient,
+  queryKey: QueryKey,
+  update: (data: T | undefined) => T | undefined,
+  options?: SetDataOptions,
+): void {
+  const query = client.getQueryCache().get(client.defaultQueryOptions({ queryKey }).queryHash);
+  const marked = query?.state.isInvalidated ?? false;
+  const written = client.setQueryData<T>(
+    queryKey,
+    (data) => {
+      const next = update(data);
+      return next === data ? undefined : next;
+    },
+    options,
+  );
+  if (written !== undefined && marked) query?.invalidate();
+}
+
+/**
+ * Cancels the reads of the queries under `queryKey` before an optimistic write, keeping their refetch marks. A cancel
+ * restores the state of the last write, unmarked, so each query that was marked or reading is marked again: a read
+ * that was cancelled wanted fresh data.
+ */
+export async function cancelKeepingMark(client: QueryClient, queryKey: QueryKey): Promise<void> {
+  const owed = client
+    .getQueryCache()
+    .findAll({ queryKey })
+    .filter(({ state }) => state.isInvalidated || state.fetchStatus !== 'idle');
+  await client.cancelQueries({ queryKey });
+  for (const query of owed) query.invalidate();
+}
 
 /** One page's items after the action: a create appends when `insertOrder` is 'asc', else prepends. */
 function changePageItems<T extends ItemData>(pageItems: T[], changedItems: T[], action: QueryDataAction, insertOrder?: 'asc' | 'desc') {
@@ -48,7 +87,8 @@ function changeListItems(data: BaseQueryItem<ItemData>, items: ItemData[], actio
 
 /** A paged list takes new rows in the createdAt order its key names, newest first by default; a flat list prepends them. */
 export function changeListData(queryKey: QueryKey, items: ItemData[], action: QueryDataAction): void {
-  queryClient.setQueryData<BaseQueryItem<ItemData>>(
+  writeKeepingMark<BaseQueryItem<ItemData>>(
+    queryClient,
     queryKey,
     (data) => data && changeListItems(data, items, action, isInfiniteQueryData(data) ? getQueryKeySortOrder(queryKey) : undefined),
   );

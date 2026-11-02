@@ -1,6 +1,6 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { asRecord } from 'shared/utils/as-record';
-import { cacheUpdate } from '~/query/basic/cache-mutations';
+import { cacheUpdate, writeKeepingMark } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 
 /**
@@ -38,5 +38,5 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
 export function writeEntityToCache<T extends ItemData>(options: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {
   const { entity, listKey, detailKey, queryClient } = options;
   cacheUpdate(listKey, [entity]);
-  queryClient.setQueryData<T>(detailKey, (old) => old && { ...old, ...entity });
+  writeKeepingMark<T>(queryClient, detailKey, (old) => old && { ...old, ...entity });
 }

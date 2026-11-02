@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { deriveDescriptionFields } from '~/modules/common/blocknote/description-derivation';
-import { cacheUpdate } from '~/query/basic/cache-mutations';
+import { cacheUpdate, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import type { ItemData } from '~/query/basic/types';
@@ -24,7 +24,7 @@ export function patchCollaborativeDescription(
 ): void {
   const keys = getEntityQueryKeys(entityType);
   const patch = { description, ...deriveDescriptionFields(entityType, description), ...extra, updatedAt: new Date().toISOString() };
-  queryClient.setQueryData<ItemData>(keys.detail.byId(entity.id), (old) => (old ? { ...old, ...patch } : undefined));
+  writeKeepingMark<ItemData>(queryClient, keys.detail.byId(entity.id), (old) => old && { ...old, ...patch });
   const cached = findInCache<ItemData>(entityType, entity.id);
   if (cached) cacheUpdate(keys.list.org(entity.organizationId), [{ ...cached, ...patch }]);
 }

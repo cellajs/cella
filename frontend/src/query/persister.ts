@@ -2,6 +2,7 @@ import type { DehydratedState, Query } from '@tanstack/react-query';
 import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
+import { isRecord } from 'shared/utils/as-record';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
@@ -19,8 +20,31 @@ const inCurrentShape = (mutations: DehydratedMutation[]): DehydratedMutation[] =
 const sessionIdStorageKey = `${appConfig.slug}-tab-session-id`;
 const orphanMaxAgeMs = 2 * 60 * 60 * 1000;
 
-/** What the persister writes: a query that succeeded and does not opt out through `meta: { persist: false }` (a bearer token, another account's data). */
-export const shouldPersistQuery = (query: Query): boolean => query.state.status === 'success' && query.meta?.persist !== false;
+/** A failure that says nothing of the data: no response, as offline, a server error, a timeout or a rate limit. Another 4xx, such as a 403 or 404, may say it is gone. */
+function isTransientFailure(error: unknown): boolean {
+  const status = isRecord(error) ? error.status : undefined;
+  return typeof status !== 'number' || status >= 500 || status === 408 || status === 429;
+}
+
+/**
+ * What the persister writes: a query that holds data the server gave and does not opt out through `meta: { persist: false }`
+ * (a bearer token, another account's data). A refetch that failed transiently keeps the stored copy (`storedState`).
+ */
+export const shouldPersistQuery = ({ state, meta }: Query): boolean =>
+  (state.status === 'success' || (state.status === 'error' && state.data !== undefined && isTransientFailure(state.error))) &&
+  meta?.persist !== false;
+
+/**
+ * The state a query is stored with: a transient failure is stored as the read it failed to replace, marked for a refetch, since
+ * an error state restored with data would show the error with no refetch on mount.
+ */
+function storedState(state: DehydratedQuery['state']): DehydratedQuery['state'] {
+  if (state.status !== 'error') return state;
+  return { ...state, status: 'success', error: null, fetchStatus: 'idle', fetchFailureCount: 0, fetchFailureReason: null, isInvalidated: true };
+}
+
+/** What a stored query is diffed by: its data timestamp and its refetch mark. */
+const versionOf = ({ dataUpdatedAt, isInvalidated }: DehydratedQuery['state']) => `${dataUpdatedAt}:${isInvalidated}`;
 
 function getTabSessionId(): string {
   let id = sessionStorage.getItem(sessionIdStorageKey);
@@ -61,17 +85,8 @@ async function liveTabSessionIds(): Promise<Set<string> | null> {
   }
 }
 
-/** Delete a scope's queries, its meta record and every tab's mutation record; call it inside a `queries` and `meta` transaction. */
-async function deleteScope(db: LocalUserDatabase, scope: string): Promise<void> {
-  const ids = await db.queries.where('scope').equals(scope).primaryKeys();
-  await db.queries.bulkDelete(ids);
-  await db.meta.delete(scope);
-  const mutationKeys = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).primaryKeys();
-  await db.meta.bulkDelete(mutationKeys);
-}
-
-/** What the bundled queries are diffed by: each query's hash and data timestamp. */
-const snapshotOf = (queries: DehydratedQuery[]) => JSON.stringify(queries.map(({ queryHash, state }) => [queryHash, state.dataUpdatedAt]));
+/** What the bundled queries are diffed by: each query's hash and version. */
+const snapshotOf = (queries: DehydratedQuery[]) => JSON.stringify(queries.map(({ queryHash, state }) => [queryHash, versionOf(state)]));
 
 /** One IndexedDB write per interval: the latest snapshot wins. */
 const persistThrottleMs = 1000;
@@ -87,8 +102,8 @@ const trackerResets: Array<() => void> = [];
  */
 export function createIDBPersister(scope: string) {
   const tabMutationKey = `${mutationRecordPrefix(scope)}${tabSessionId}`;
-  /** queryHash to last persisted dataUpdatedAt, product queries only. */
-  const lastPersistedAt = new Map<string, number>();
+  /** queryHash to the last persisted `versionOf`, product queries only. */
+  const lastPersistedVersion = new Map<string, string>();
   /** Snapshot of the last persisted bundled queries, for diffing. */
   let lastBundledSnapshot = '';
   /** Snapshot of this tab's last persisted paused mutations, for diffing. */
@@ -101,7 +116,7 @@ export function createIDBPersister(scope: string) {
   let restoredEpoch = 0;
 
   function resetTracker() {
-    lastPersistedAt.clear();
+    lastPersistedVersion.clear();
     lastBundledSnapshot = '';
     lastMutationsSnapshot = '';
   }
@@ -110,12 +125,10 @@ export function createIDBPersister(scope: string) {
     epoch++;
   });
 
-  async function clearScope(db: LocalUserDatabase) {
-    await db.transaction('rw', db.queries, db.meta, () => deleteScope(db, scope));
-    resetTracker();
-  }
-
-  /** Clear incompatible query data while retaining queued mutations, then advance cache version. */
+  /**
+   * Deletes the scope's queries and advances its cache version. The meta record keeps its lens pointer and every tab's
+   * queue stays, live tabs' included: a restore reads a queue only through that record, and migrates it from that pointer.
+   */
   async function bustQueriesKeepMutations(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, async () => {
       const ids = await db.queries.where('scope').equals(scope).primaryKeys();
@@ -203,8 +216,9 @@ export function createIDBPersister(scope: string) {
       const productQueries: DehydratedQuery[] = [];
       const bundledQueries: DehydratedQuery[] = [];
       for (const query of queries) {
-        if (productTypeOf(query.queryKey)) productQueries.push(query);
-        else bundledQueries.push(query);
+        const stored = { ...query, state: storedState(query.state) };
+        if (productTypeOf(query.queryKey)) productQueries.push(stored);
+        else bundledQueries.push(stored);
       }
 
       const upserts: PersistedQueryRecord[] = [];
@@ -212,11 +226,11 @@ export function createIDBPersister(scope: string) {
 
       for (const { queryHash, queryKey, state } of productQueries) {
         currentHashes.add(queryHash);
-        if (lastPersistedAt.get(queryHash) === state.dataUpdatedAt) continue;
+        if (lastPersistedVersion.get(queryHash) === versionOf(state)) continue;
         upserts.push({ id: `${scope}:${queryHash}`, scope, queryHash, queryKey, state, dataUpdatedAt: state.dataUpdatedAt });
       }
 
-      const removedHashes = [...lastPersistedAt.keys()].filter((hash) => !currentHashes.has(hash));
+      const removedHashes = [...lastPersistedVersion.keys()].filter((hash) => !currentHashes.has(hash));
       const removals = removedHashes.map((hash) => `${scope}:${hash}`);
 
       const bundledSnapshot = snapshotOf(bundledQueries);
@@ -256,8 +270,8 @@ export function createIDBPersister(scope: string) {
         });
         // The trackers follow a committed write to the database still bound, so the next flush retries a failed one.
         if (getLocalUserDb() === db) {
-          for (const { queryHash, dataUpdatedAt } of upserts) lastPersistedAt.set(queryHash, dataUpdatedAt);
-          for (const hash of removedHashes) lastPersistedAt.delete(hash);
+          for (const { queryHash, state } of upserts) lastPersistedVersion.set(queryHash, versionOf(state));
+          for (const hash of removedHashes) lastPersistedVersion.delete(hash);
           lastBundledSnapshot = bundledSnapshot;
           lastMutationsSnapshot = mutationsSnapshot;
         }
@@ -331,7 +345,7 @@ export function createIDBPersister(scope: string) {
         }
 
         const productRecords = await db.queries.where('scope').equals(scope).toArray();
-        for (const { queryHash, dataUpdatedAt } of productRecords) lastPersistedAt.set(queryHash, dataUpdatedAt);
+        for (const { queryHash, state } of productRecords) lastPersistedVersion.set(queryHash, versionOf(state));
 
         const bundledQueries = meta.bundledQueries ?? [];
         // Seed the snapshot the next write diffs against.
@@ -378,6 +392,7 @@ export function createIDBPersister(scope: string) {
     /** False from a reset until a restore that started after it completes. */
     isRestored: () => restoredEpoch === epoch,
 
+    /** `persistQueryClientRestore` discards a cache that fails to hydrate through this: the queries go, the queues stay. */
     removeClient: async () => {
       const db = getLocalUserDb();
       if (!db) {
@@ -385,7 +400,7 @@ export function createIDBPersister(scope: string) {
         return;
       }
       try {
-        await clearScope(db);
+        await bustQueriesKeepMutations(db);
       } catch (error) {
         console.error('[QueryPersister] Failed to remove client:', error);
       }

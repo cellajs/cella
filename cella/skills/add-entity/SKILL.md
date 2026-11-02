@@ -140,7 +140,9 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     `CreateVariables`, `UpdateVariables` and `DeleteVariables` (`~/query/offline/mutation-variables`),
     the stx built when the edit is made (`createStxForCreate`, `createStxForUpdate`,
     `createStxForDelete`) and passed in the variables. `squashIntoPendingCreate` gets the keys of
-    the create item schema.
+    the create item schema. They write and cancel through `~/query/basic/cache-mutations`
+    (`cacheUpdate`, `cacheRemove`, `writeKeepingMark` for a detail, `cancelKeepingMark` in
+    `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark.
   - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
     row refetches only the lists it can belong to. A column the server stamps when another one is
