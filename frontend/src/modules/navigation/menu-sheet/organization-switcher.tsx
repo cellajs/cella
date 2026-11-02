@@ -10,6 +10,7 @@ import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
+import { menuColumnsClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
@@ -143,7 +144,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
         variant="ghost"
         onClick={openMenu}
         aria-label={t('c:switch_organization', { name: organization.name })}
-        className="h-12 w-full justify-start gap-3 px-3 text-md data-dropdowner-active:bg-muted"
+        className={cn('h-12 w-full justify-start border-0 text-md data-dropdowner-active:bg-muted', menuColumnsClass)}
       >
         <EntityAvatar
           className="size-8 shrink-0"

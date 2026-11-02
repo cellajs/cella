@@ -57,7 +57,6 @@ export const footerSections = [
   },
   {
     title: 'c:documentation',
-    hideOnMobile: true,
     links: [
       { title: 'c:getting_started', href: '/docs/page/quickstart' },
       { title: 'c:docs.api_reference', href: '/docs/operations' },
@@ -68,7 +67,7 @@ export const footerSections = [
     title: 'c:connect',
     links: [{ title: 'c:contact_us', href: '/contact' }, ...socials],
   },
-] satisfies { title: TKey; hideOnMobile?: boolean; links: FooterLinkProps[] }[];
+] satisfies { title: TKey; links: FooterLinkProps[] }[];
 
 // Legal
 

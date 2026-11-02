@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { SearchIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Logo } from '~/modules/common/logo';
+import { LogoMark } from '~/modules/common/logo-art';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
@@ -20,7 +20,7 @@ export function DocsSidebar() {
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <SidebarContent className="min-h-dvh flex-none overflow-visible bg-card pt-2 pb-12">
+    <SidebarContent className="min-h-dvh flex-none overflow-visible pt-2 pb-12">
       <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 bg-card" />
 
       <div className="my-2 flex items-center gap-2 px-4 pt-2">
@@ -31,7 +31,7 @@ export function DocsSidebar() {
             className="focus-effect active:press ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105"
             onClick={closeSidebarSheetAndNavigate}
           >
-            <Logo iconOnly className="h-8 w-auto" title={null} />
+            <LogoMark className="size-7" />
           </Link>
         </TooltipButton>
         <div aria-hidden="true" className="h-6 w-px bg-foreground/15 more-contrast:bg-foreground/40" />

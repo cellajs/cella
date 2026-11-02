@@ -7,7 +7,6 @@ import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
 import { useIsAboutPage } from '~/modules/marketing/use-is-about-page';
-import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const currentYear = new Date().getFullYear();
@@ -34,7 +33,7 @@ function FooterLink({ title, href }: FooterLinkProps) {
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noreferrer' : undefined}
       draggable={false}
-      className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
+      className="focus-effect link-decoration active:link-decoration-strong rounded-sm box-decoration-clone p-1 transition hover:underline"
     >
       {t(title)}
     </Link>
@@ -46,9 +45,9 @@ function FooterLinks() {
 
   return (
     <nav>
-      <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+      <ul className="columns-2 gap-8 sm:grid sm:columns-auto sm:grid-cols-3">
         {footerSections.map((section) => (
-          <li key={section.title} className={cn(section.hideOnMobile && 'max-sm:hidden')}>
+          <li key={section.title} className="break-inside-avoid max-sm:mb-8 max-sm:last:mb-0">
             <div className={headingClass}>{t(section.title)}</div>
 
             <ul className={textClass}>
@@ -93,7 +92,7 @@ export function MarketingFooter() {
           className="focus-effect active:press mt-12 rounded-sm p-1 transition-transform sm:hover:scale-105"
           aria-label={t('c:go_to_about')}
         >
-          <Logo textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
+          <Logo size="xl" textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
         </Link>
 
         <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">

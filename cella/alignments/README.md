@@ -57,7 +57,7 @@ Ship the alignment in the same PR as the breaking change:
    the `--hints` array that answers drizzle's rename-or-create questions (a `create` hint for every
    new table or column in a diff that also drops one), and `data.sql`, the hand-written
    statements, each under a comment that says where it goes in the generated migration.
-5. A change to an app-owned path that template code reads from (a pinned file, `logo.tsx`,
+5. A change to an app-owned path that template code reads from (a pinned file, `logo-art.tsx`,
    `backend/drizzle`) is a breaking change for apps even when nothing else moves: the app's copy
    never updates. `pnpm style` asks for the alignment; `Alignment: none, <reason>` in a commit
    message answers it when apps have nothing to do.
