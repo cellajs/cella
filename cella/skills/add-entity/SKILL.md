@@ -136,15 +136,23 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     Without the registration the first stream event for the type throws.
   - The canonical options (one list per parent channel, which sync keeps fresh), the list options
     and the detail options. The list fetches end in `.then(liveItems)`, which types their rows.
+    Both list options are wrapped in `syncedListOptions` (`~/query/basic/synced-list-options`), so a
+    list read keeps rows with a pending mutation as cached and runs on when the screen that started it
+    leaves. The canonical one also passes its scope, `organizationId` and `tenantId`, plus the home
+    `channelId` for a product homed below the organization, and its read merges the changes it overlapped.
   - Create, update and delete mutations: placeholders from `createOptimisticEntity`, variables typed
     `CreateVariables`, `UpdateVariables` and `DeleteVariables` (`~/query/offline/mutation-variables`),
     the stx built when the edit is made (`createStxForCreate`, `createStxForUpdate`,
     `createStxForDelete`) and passed in the variables. `squashIntoPendingCreate` gets the keys of
-    the create item schema.
+    the create item schema. They write and cancel through `~/query/basic/cache-mutations`
+    (`cacheUpdate`, `cacheRemove`, `writeKeepingMark` for a detail, `cancelKeepingMark` in
+    `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
+    update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
+    stamps when another one is written goes in its `derivedKeys`, a key the response stubs in its
+    `skipKeys`.
   - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
-    row refetches only the lists it can belong to. A column the server stamps when another one is
-    written goes in `derivedKeys` of `mergeServerResponse`.
+    row refetches only the lists it can belong to.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
   description, product: { entityType: '<name>' } })`, with `import '~/modules/<name>/query'` at the top,
   so the mutation defaults exist before the cache restore.

@@ -1,5 +1,6 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { ApiError as ApiErrorPayload } from 'sdk';
+import { isSessionLost } from 'shared/utils/session-lost';
 
 export const clientConfig = {
   // OTel FetchInstrumentation drops the init argument when the input is a Request, so credentials go on the Request.
@@ -36,13 +37,19 @@ export class ApiError extends Error implements ApiErrorInit {
   }
 }
 
+/** What a load balancer or proxy answers while the API behind it is down or too slow, as during a deploy. */
+export const gatewayStatuses: ReadonlySet<number> = new Set([502, 503, 504]);
+
+/** Whether the global error handler signs the tab out over this refusal: a lost session's 401, except on an auth page. */
+export const tearsDownSession = (error: ApiError): boolean => isSessionLost(error) && !location.pathname.startsWith('/auth/');
+
 /**
  * The error for a response without the API's error body, as a proxy or load balancer sends one. A gateway status
  * (502, 503, 504) reads as the service being unavailable and any other 5xx as a server error; a 4xx gets no type, so
  * it is described by what its status means.
  */
 const apiErrorFromStatus = (status: number) => {
-  const type = [502, 503, 504].includes(status) ? 'service_unavailable' : status >= 500 ? 'server_error' : undefined;
+  const type = gatewayStatuses.has(status) ? 'service_unavailable' : status >= 500 ? 'server_error' : undefined;
   return new ApiError({ status: status as ApiErrorInit['status'], type, severity: status >= 500 ? 'error' : 'warn' });
 };
 

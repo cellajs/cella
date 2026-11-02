@@ -1,4 +1,5 @@
-import { HeadContent, Outlet } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { HeadContent, Outlet, useRouter } from '@tanstack/react-router';
 import { configure } from 'onedollarstats';
 import { Suspense, useEffect } from 'react';
 import { appConfig } from 'shared';
@@ -17,8 +18,22 @@ function NoChatSupport() {
 }
 
 export function Root() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const isOnline = useOnlineManager();
   useCutTextTitle();
+
+  // An error is not kept across navigations: a route that mounts a failed query again reads again.
+  useEffect(
+    () =>
+      router.subscribe('onBeforeRouteMount', () =>
+        queryClient.removeQueries({
+          predicate: (query) =>
+            query.state.status === 'error' && query.state.data === undefined && query.state.fetchStatus === 'idle' && query.getObserversCount() === 0,
+        }),
+      ),
+    [router, queryClient],
+  );
 
   const GleapSupport = useLazyComponent(
     () => (appConfig.has.chatSupport && isOnline ? loadChatSupport() : Promise.resolve({ GleapSupport: NoChatSupport })),

@@ -1,13 +1,16 @@
 import { isInfiniteQueryData } from '~/query/basic/mutate-query';
 import type { PageParams, QueryData } from '~/query/types';
 
+/** The rows the server sent for a page, the ones it hides included, which offsets into the server's list count. */
+const sentCount = (page: QueryData<unknown>) => page.items.length + (page.hiddenIds?.length ?? 0);
+
 /** Pages any `{ items, total }` response until all are fetched. staleTime is omitted so it inherits the global default from query-client.ts. */
 export const baseInfiniteQueryOptions = {
   initialPageParam: { page: 0, offset: 0 },
   getNextPageParam: (lastPage: QueryData<unknown>, allPages: QueryData<unknown>[]): PageParams | undefined => {
     // An empty page ends the list whatever `total` claims, so a drifted total cannot re-request one offset in a loop.
-    if (lastPage.items.length === 0) return undefined;
-    const fetchedCount = allPages.reduce((count, page) => count + page.items.length, 0);
+    if (sentCount(lastPage) === 0) return undefined;
+    const fetchedCount = allPages.reduce((count, page) => count + sentCount(page), 0);
     if (fetchedCount >= lastPage.total) return undefined;
     return { page: allPages.length, offset: fetchedCount };
   },

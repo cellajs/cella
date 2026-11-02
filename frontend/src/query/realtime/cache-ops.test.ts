@@ -87,6 +87,38 @@ describe('realtime cache ops', () => {
     expect(ids(keys.list.home('org-1', 'project-2'))).toEqual([]);
   });
 
+  it('applies each row of one range by its own rule: a rename in place, a tombstone out, a move to its new home, new rows in turn', async () => {
+    const keys = createEntityKeys<Record<string, never>>(TASK);
+    const task = (id: string, seq: number, extra: Record<string, unknown> = {}) => ({
+      id,
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      seq,
+      ...extra,
+    });
+    registerEntityQueryKeys(TASK, keys, async () => ({
+      items: [
+        task('task-1', 5, { name: 'renamed' }),
+        task('task-2', 6, { deletedAt: '2026-06-16T20:00:00.000Z' }),
+        task('task-3', 7, { projectId: 'project-2' }),
+        task('task-4', 8),
+        task('task-5', 9),
+      ],
+      total: 5,
+    }));
+    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [task('task-1', 1), task('task-2', 2), task('task-3', 3)], total: 3 });
+    queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 9 }, keys);
+
+    const list = (projectId: string) =>
+      queryClient.getQueryData<{ items: { id: string; name?: string }[]; total: number }>(keys.list.home('org-1', projectId));
+    expect(list('project-1')?.items.map(({ id }) => id)).toEqual(['task-5', 'task-4', 'task-1']);
+    expect(list('project-1')?.items[2]?.name).toBe('renamed');
+    expect(list('project-1')?.total).toBe(3);
+    expect(list('project-2')).toMatchObject({ items: [{ id: 'task-3' }], total: 1 });
+  });
+
   it('updates a cached row in place without invalidating filtered lists', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => ({

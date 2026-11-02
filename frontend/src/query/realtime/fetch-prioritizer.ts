@@ -259,7 +259,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     // The org id is the fallback home for rows without ancestor ids.
     publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
   } else {
-    // Overflow, unsupported, or exhausted retries: the list refetch owns recovery, and the watermark advances to prevent a fetch loop.
+    // Overflow, unsupported, or exhausted retries: the watermark advances to prevent a fetch loop, and the refetch mark recovers
+    // the lists, at once on screen, else when opened or read by the sync service.
     const anyViewing = entries.some((entry) => isViewingChannel(organizationId, entry.channelId));
     cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });

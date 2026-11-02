@@ -9,8 +9,8 @@ import { getLocalUserDb, subscribeLocalUserChange } from '~/query/local-user-db'
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { startConnectivity } from '~/query/offline/connectivity';
 import { persistOptions } from '~/query/persister';
-import { markCacheRestored, markReplayingMutations, queryClient } from '~/query/query-client';
-import { waitForActiveCatchup } from '~/query/realtime/stream-manager';
+import { markCacheRestored, queryClient } from '~/query/query-client';
+import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
 const loadUploadService = () => import('~/modules/attachment/offline/upload-service');
@@ -77,11 +77,12 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
       onSuccess={() => {
         markCacheRestored();
         warnMutationsWithoutDefaults(queryClient);
-        // Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup.
-        waitForActiveCatchup().then(() => {
-          markReplayingMutations();
-          return queryClient.resumePausedMutations();
-        });
+        resumeRestoredMutations();
+      }}
+      // A failed restore releases the routes that wait for it too, and the queue it hydrated before the failure replays after catchup.
+      onError={() => {
+        markCacheRestored();
+        resumeRestoredMutations();
       }}
     >
       {children}

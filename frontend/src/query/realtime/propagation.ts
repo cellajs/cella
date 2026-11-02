@@ -1,6 +1,7 @@
 import type { StreamChange } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { forEachListQuery, mapListItems } from '~/query/basic/mutate-query';
@@ -45,15 +46,13 @@ function patchHostCaches(
 
   forEachListQuery(keys.list.base, (queryKey, data) => {
     const patched = mapListItems(data, (items) => patchItems(items, hostColumn, updateSet, removeSet, freshEmbedded));
-    if (patched !== data) queryClient.setQueryData(queryKey, patched);
+    writeKeepingMark(queryClient, queryKey, () => patched);
   });
 
   for (const [queryKey, host] of queryClient.getQueriesData<ItemData>({ queryKey: keys.detail.base })) {
     if (!host) continue;
     const patched = patchSingleHost(host, hostColumn, updateSet, removeSet, freshEmbedded);
-    if (patched !== host) {
-      queryClient.setQueryData(queryKey, patched);
-    }
+    writeKeepingMark(queryClient, queryKey, () => patched);
   }
 }
 

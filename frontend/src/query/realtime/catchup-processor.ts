@@ -25,6 +25,12 @@ function refetchSyncedQueries(): void {
   }, Math.random() * generationRefetchSpreadMs);
 }
 
+/** The `${organizationId}:${entityType}` scopes the last catchup answered `opaque`: every connection marks their lists again. */
+const opaqueScopes = new Set<string>();
+
+/** Whether the last catchup answered this scope `opaque`, so the sync service leaves its marked lists to be read when opened. */
+export const isOpaqueScope = (organizationId: string, entityType: string): boolean => opaqueScopes.has(`${organizationId}:${entityType}`);
+
 /**
  * Readable views fetch their gap when their frontier advances; other statuses expose no summaries.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
@@ -40,6 +46,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   if (newGeneration || awayTooLong) refetchSyncedQueries();
   syncState.markCaughtUp();
   let hadGap = false;
+  opaqueScopes.clear();
 
   if (views?.length) {
     if (!baselineOnly) resetFetchPrioritizer();
@@ -62,7 +69,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const keys = getEntityQueryKeys(entityType);
 
       if (answer.status === 'opaque') {
-        // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, background lists follow their mount policy.
+        opaqueScopes.add(`${organizationId}:${entityType}`);
+        // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
         if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
         }
@@ -73,9 +81,10 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const frontier = answer.frontiers?.[entityType] ?? 0;
       const clientCursor = syncState.getOrgSeq(organizationId, entityType);
 
-      // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it refetches.
+      // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it
+      // refetches, unless the frontier is 0: no change exists that the read could have missed.
       if (baselineOnly || clientCursor === 0) {
-        if (hasAnyCachedList(keys, organizationId)) {
+        if (frontier > 0 && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
           console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
         }
@@ -88,7 +97,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
       const tenantId = getTenantIdForOrg(organizationId);
 
-      // Nothing cached means nothing to patch and mount hydration fetches fresh, so advance to stop the window being re-offered forever.
+      // A connection waits for the bound database's restore, so no list of this scope is on disk either: the next read fetches it whole.
       if (!hasAnyCachedList(keys, organizationId)) {
         syncState.setOrgSeq(organizationId, entityType, frontier);
         console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip range fetch`);
@@ -157,7 +166,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   const membershipChannelsBefore = membershipChannelKeys();
   membershipOps.invalidateChannelList(null);
   await membershipOps.fetchMemberships();
-  membershipOps.refreshMe();
 
   // Remove org product caches after membership loss so surviving rows refetch under current permissions; the org prefix covers home and filtered lists.
   const membershipChannelsAfter = membershipChannelKeys();
@@ -207,6 +215,7 @@ function processRegisteredViewAnswer(
   };
 
   if (answer.status === 'opaque') {
+    for (const entityType of view.entityTypes) opaqueScopes.add(`${view.organizationId}:${entityType}`);
     invalidateTypes();
     console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
     return;

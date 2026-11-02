@@ -1,11 +1,8 @@
 import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
-import { apiErrorFromResponse, clientConfig } from '~/lib/api';
+import { apiErrorFromResponse, clientConfig, gatewayStatuses } from '~/lib/api';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
-
-/** What a load balancer or proxy answers while the API behind it is down or too slow. */
-const gatewayStatuses = new Set([502, 503, 504]);
 
 /**
  * Runtime config for the generated API client (SDK output in /sdk/gen/).

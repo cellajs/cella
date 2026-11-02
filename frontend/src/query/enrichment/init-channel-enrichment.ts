@@ -1,6 +1,7 @@
 import type { Query } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
 import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
 import { getCachedInvitedIds, getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
 import { enrichWithInvitation, enrichWithMembership } from '~/query/enrichment/membership';
@@ -83,7 +84,7 @@ function buildSlugMap(entityType: ChannelEntityType): Map<string, string> {
 function setCacheData(queryKey: Query['queryKey'], data: unknown) {
   isEnriching = true;
   try {
-    queryClient.setQueryData(queryKey, data);
+    writeKeepingMark(queryClient, queryKey, () => data);
   } finally {
     isEnriching = false;
   }

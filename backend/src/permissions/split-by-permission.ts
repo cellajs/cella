@@ -30,6 +30,18 @@ export const splitByPermission = async (
   entityType: ChannelEntityType | ProductEntityType,
   ids: string[],
 ) => {
+  const split = await partitionByPermission(ctx, action, entityType, ids);
+  if (!split.allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
+  return split;
+};
+
+/** {@link splitByPermission} without the refusal: `allowedIds` may be empty. */
+export const partitionByPermission = async (
+  ctx: ActorContext,
+  action: EntityActionType,
+  entityType: ChannelEntityType | ProductEntityType,
+  ids: string[],
+) => {
   // Resolve entities (createdBy included for the owner relation).
   const resolved = await tenantReadUnlessInTransaction(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }));
   const entities = resolved.filter((entity) => inRequestScope(ctx, entity) && draftShowsTo(ctx, entityType, entity));
@@ -49,8 +61,6 @@ export const splitByPermission = async (
     if (!allowed.has(stored)) rejectedIds.push(id);
     else if (!allowedIds.includes(stored)) allowedIds.push(stored);
   }
-
-  if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
   return { allowedIds, rejectedIds };
 };

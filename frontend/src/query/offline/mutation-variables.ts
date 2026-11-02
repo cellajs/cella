@@ -32,10 +32,17 @@ export function queuedUpdateOf(variables: unknown): { id: string; ops: Row; fiel
   return { id: variables.id, ops: isRecord(variables.ops) ? variables.ops : {}, fieldTimestamps };
 }
 
+const idsIn = (rows: Row[]): string[] => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
+
 /** The ids of the rows a queued mutation creates, changes or deletes. */
 export function entityIdsOf(variables: unknown): string[] {
   if (!isRecord(variables)) return [];
-  return [variables, ...rowsIn(variables.data), ...rowsIn(variables.rows)].flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
+  return idsIn([variables, ...rowsIn(variables.data), ...rowsIn(variables.rows)]);
+}
+
+/** The ids of the rows a queued delete removes: the `rows` of {@link DeleteVariables}. */
+export function deletedIdsOf(variables: unknown): string[] {
+  return isRecord(variables) ? idsIn(rowsIn(variables.rows)) : [];
 }
 
 /** Rewrites variables a bundle of an older version queued into the shape the mutation reads now; null when it cannot. */
@@ -80,6 +87,13 @@ export function mutationIdOf(variables: unknown): string | undefined {
     if (isRecord(holder) && isRecord(holder.stx) && typeof holder.stx.mutationId === 'string') return holder.stx.mutationId;
   }
   return undefined;
+}
+
+/** Whether queued variables, alone or once per item of a batch, carry the `replayed` stx flag a pause sets: what their mutation sends is a replay. */
+export function isReplayed(variables: unknown): boolean {
+  return (Array.isArray(variables) ? variables : [variables]).some(
+    (holder) => isRecord(holder) && isRecord(holder.stx) && holder.stx.replayed === true,
+  );
 }
 
 /**

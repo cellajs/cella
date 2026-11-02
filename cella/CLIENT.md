@@ -43,19 +43,21 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
 
 - **Channel entity lists and details**: plain queries, refetched on membership signals.
 - **Canonical product lists**: one flat, complete list per [home channel](./SYNC_ENGINE.md#selective-sync), patched by live updates. Components narrow it with `select()`.
-- **Filtered product lists**: server-side search and sort results under their own keys. They are invalidated, not patched. A new row skips the lists it cannot belong to when its entity declares equality filter keys.
+- **Filtered product lists**: server-side search and sort results under their own keys. They are marked for a refetch, not patched. A new row skips the lists it cannot belong to when its entity declares equality filter keys.
 - **Session queries**: `me`, memberships, invites, unseen counts.
 
-Each entity module registers its query keys and range fetch once in its `query.ts`, so generic cache and realtime code never import entity modules. Staleness follows the stream. Sync deliveries are plain cache writes: upserts or invalidations.
+Each entity module registers its query keys and range fetch once in its `query.ts`, so generic cache and realtime code never import entity modules. Staleness follows the stream. Sync deliveries are plain cache writes: upserts, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list they cannot patch.
+
+A cache write keeps a mark: one that changes nothing writes nothing, and a real write, or a mutation that cancels a running read, marks the query again. A synced list read belongs to the cache, not to the screen that started it: a screen that leaves never aborts it.
 
 ### Imperative reads
 
 `queryClient.query()` and `queryClient.infiniteQuery()` are the only imperative read methods; TanStack Query deprecates the older ones.
 
-- **Cache-first**, for route guards and offline cache seeding: `query({ ...options, staleTime: 'static' })`. Only a cold entry fetches; a cached one comes back whatever its age or invalidation state.
+- **Cache-first**, for route guards and for seeding channel and session queries: `query({ ...options, staleTime: 'static' })`. Only a cold entry fetches; a cached one comes back whatever its age or refetch mark.
 - **The query's own freshness**: `query(options)`, awaited, or fired and forgotten as `void query(options).catch(() => {})`.
 
-`staleTime: 'static'` is not `Infinity`: `'static'` ignores invalidation too.
+`staleTime: 'static'` is not `Infinity`: `'static'` ignores the refetch mark too.
 
 ## Subscribers
 
@@ -67,7 +69,7 @@ Cache subscribers, not extra stores:
 
 ## Mutations
 
-A mutation, declared in its entity's query module, patches every cached query holding the row, sends the request, then merges the row the server stored. On error it rolls back. Queries and mutations run in `offlineFirst` network mode.
+A mutation, declared in its entity's query module, patches every cached query holding the row, sends the request, then takes the row the server stored. On error it rolls back. Queries and mutations run in `offlineFirst` network mode.
 
 ## Files and blobs
 
@@ -75,7 +77,7 @@ An attachment row is an ordinary product in the query cache, while its bytes liv
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten. Paused mutations are persisted too. Opt out with `meta: { persist: false }`.
+The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten, and every stored query keeps its refetch mark. A query whose refetch got no response or a server error keeps its last data on disk, restored marked. Paused mutations are persisted too, and a replay until it settles: one cut off by a closed tab is sent again. A mutation without `stx` is never a replay: it is neither stored while it runs nor quarantined. Opt out with `meta: { persist: false }`.
 
 Every user works offline: all tabs share one cache that survives tab and browser restarts, and sign-out deletes it with the rest of the per-user database. Two version stamps guard every restore. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
 
@@ -102,5 +104,5 @@ Boot order, cached data first:
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
 2. The app route waits until the per-user database is bound and its stores hydrated, sync cursor included.
 3. The persister restores the cache scope.
-4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it, and at once whenever the app comes back online or regains focus.
-5. Route loaders fill the current view. A background fill then loads each list not cached yet, the current organization's first, then the other organizations'. From then on catchup keeps them fresh.
+4. Once the restore is done, the app reads the memberships, from the restored cache or on a fresh profile from the server, so the first catchup declares every organization. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it, and at once whenever the app comes back online or regains focus.
+5. Route loaders fill the current view. A background fill then loads each list not cached yet and each synced product list marked for a refetch, the current organization's first, then the other organizations'. From then on catchup keeps them fresh.

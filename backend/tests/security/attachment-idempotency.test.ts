@@ -1,5 +1,5 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
-import { createAttachments } from 'sdk';
+import { createAttachments, deleteAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -21,11 +21,11 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 type Created = { data: { id: string; createdBy: { id: string } | null }[]; rejectedIds: string[] };
 
 /**
- * A create names its rows by client-chosen ids, and a replay answers with the rows the first attempt wrote, before the
- * CDC worker has seen them (the suite runs without it). Row ids and mutation ids travel in sync payloads, so another
- * member can learn them: a replay by them must never return someone else's rows.
+ * A replayed create answers with the rows its first attempt wrote, before the CDC worker saw them (the suite runs without
+ * it), and a resent delete as its first attempt did. Row and mutation ids travel in sync payloads, so another member can
+ * learn them: their replay must never return someone else's rows, nor count someone else's delete as theirs.
  */
-describe('Idempotent attachment creates', async () => {
+describe('Idempotent attachment creates and deletes', async () => {
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
@@ -54,6 +54,16 @@ describe('Idempotent attachment creates', async () => {
     });
     const created = data as Created | undefined;
     return { status: response.status, body: error, data: created?.data ?? [], rejectedIds: created?.rejectedIds ?? [] };
+  };
+
+  /** A delete of `ids`, sent as the sync mutation `mutationId`. */
+  const remove = async (as: { sessionCookie: string }, ids: string[], mutationId: string) => {
+    const { data, response } = await call(deleteAttachments, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      body: { ids, stx: { mutationId, sourceId: 'idempotency-test' } },
+      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
+    });
+    return { status: response.status, rejectedIds: (data as { rejectedIds?: string[] } | undefined)?.rejectedIds };
   };
 
   const storedRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
@@ -251,5 +261,30 @@ describe('Idempotent attachment creates', async () => {
     const { status, data } = await create(owner, batch);
     expect(status).toBe(200);
     expect(data.map((row) => row.id).sort()).toEqual(batch.map((item) => item.id).sort());
+  });
+
+  // A delete whose answer was lost is sent again: the rows it deleted no longer resolve, so it was refused with a 403,
+  // and the client put them back and quarantined a delete that had happened.
+  it('answers a delete sent again as its first attempt, refusing a row another delete removed both times', async () => {
+    const [removedBefore, removedNow] = [generateId(), generateId()];
+    for (const id of [removedBefore, removedNow]) expect((await create(owner, bodyFor(id, generateId()))).status).toBe(201);
+    expect((await remove(owner, [removedBefore], generateId())).status).toBe(200);
+
+    const mutationId = generateId();
+    const first = await remove(owner, [removedBefore, removedNow], mutationId);
+    expect(first).toEqual({ status: 200, rejectedIds: [removedBefore] });
+    expect(await remove(owner, [removedBefore, removedNow], mutationId)).toEqual(first);
+    expect((await storedRow(removedNow))?.deletedAt).not.toBeNull();
+  });
+
+  it("must not count another member's delete as the caller's via its mutation id", async () => {
+    const id = generateId();
+    expect((await create(owner, bodyFor(id, generateId()))).status).toBe(201);
+    const mutationId = generateId();
+    expect((await remove(owner, [id], mutationId)).status).toBe(200);
+
+    // The same delete from a member who learned its mutation id: the row is gone and was not theirs to delete.
+    const { status } = await remove(other, [id], mutationId);
+    expect(status).toBe(403);
   });
 });

@@ -90,7 +90,7 @@ The server caches enriched product detail responses briefly. A write of the row 
 | Status | Meaning | Client behavior |
 | --- | --- | --- |
 | `ok` | Every prefix is proven for the requested depth | Use frontiers, counts, and range fetches |
-| `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers. Refetch cached active lists. |
+| `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers. Refetch the cached lists on screen and mark the others: every connection marks them again, so they refetch when opened and the background fill leaves them. |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
 
 The client derives its views from the user's memberships and the policy matrix. Apps declare none by hand.
@@ -99,11 +99,11 @@ The client derives its views from the user's memberships and the policy matrix. 
 
 ### Changes
 
-A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only invalidates (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`. A change counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
+A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only marks the lists for a refetch (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`. A change counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier and count, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there.
+Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier and count, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
 
 ### SSE wire
 
@@ -117,7 +117,9 @@ Apps derive per-user state from `query/realtime/sync-events.ts`, never from queu
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream, a delivery shortfall or an absent CDC worker lets them go stale with time until a clean catchup ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, also when the app comes back online. A failed stream, a delivery shortfall or an absent CDC worker lets them go stale with time until a clean catchup ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
+
+A list the engine cannot patch whole, such as one a range overflowed or a filtered list a new row may belong to, carries a **refetch mark**: it refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. The mark outlives later patches and a reload, and only that refetch clears it. A full read of a canonical list merges the range announced while it ran before it is cached.
 
 ### Unseen tracking
 
@@ -138,7 +140,7 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 ## Writes
 
-A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once. Paused edits replay after the first catchup attempt, or once the stream stops reconnecting. Online writes never wait.
+A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once, except a gateway's answer to a replay, as during a deploy: the replay stays queued and is sent again until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt, or once the stream stops reconnecting; an edit paused in the open page resumes as soon as the app is back online or regains focus. Online writes never wait.
 
 ### Merge metadata
 
@@ -150,11 +152,11 @@ An online write is ordered by arrival: the server stamps it with a fresh server 
 
 Paused mutations persist to IndexedDB and survive a reload, so their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue, and a tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation waits until it settles, and a refused delete puts its rows back. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
+A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. A list read that starts or ends while a row has a pending mutation keeps the row as cached, the stored row once the mutation settled. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
-A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed.
+A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed. A replay that meets a lost session stays queued for the same user's next sign-in.
 
-A replayed create is idempotent by its row ids. Update and delete have no such check.
+A replayed create is idempotent by its row ids, and a replayed delete by its mutation id: the rows an earlier attempt of it deleted count as deleted, not refused. An update has no such check.
 
 ## Resilience
 
@@ -162,7 +164,7 @@ The REST API and the database work whatever the CDC worker does: it records each
 
 ### REST fallback
 
-Losing the stream costs live updates and nothing else: synced queries go stale with time, so lists refetch when opened. A stream counts as down when it errors, ends or falls silent. The client reconnects with backoff, and at once when the app is back online. The next catchup fetches what its cursors miss. A range fetch that keeps failing, or returns fewer rows than announced, is given up and its lists invalidated.
+Losing the stream costs live updates and nothing else: synced queries go stale with time, so lists refetch when opened. A stream counts as down when it errors, ends or falls silent. The client reconnects with backoff, and at once when the app is back online. The next catchup fetches what its cursors miss. A range fetch that keeps failing, or returns fewer rows than announced, is given up and its lists marked for a full refetch.
 
 ### What happens when
 
@@ -178,7 +180,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
-A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache, the lists on screen first.
+A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache: the lists on screen at once, the others through their [refetch mark](#freshness).
 
 ### Multiple tabs
 

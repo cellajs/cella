@@ -287,7 +287,11 @@ describe('the gate that paused writes wait on', () => {
     manager.disconnect();
   });
 
-  it('opens once a stream that fails in transport gives up, and stays closed while it reconnects', async () => {
+  // A server error frame reconnected without counting a failure, so a server that kept ending the stream that way held the gate for good.
+  it.each([
+    ['in transport', (stream?: FakeEventSource) => stream?.onerror?.()],
+    ['by a server error frame', (stream?: FakeEventSource) => stream?.emitServerError('access_changed')],
+  ])('opens once a stream that keeps failing %s gives up, and stays closed while it reconnects', async (_how, fail) => {
     vi.useFakeTimers();
     vi.resetModules();
     const fresh = await import('~/query/realtime/stream-manager');
@@ -305,7 +309,7 @@ describe('the gate that paused writes wait on', () => {
       released = true;
     });
     // The stream opens and fails before its offset event, so no catchup runs.
-    const failStream = () => FakeEventSource.instances.at(-1)?.onerror?.();
+    const failStream = () => fail(FakeEventSource.instances.at(-1));
 
     await manager.connect();
     failStream();
@@ -319,6 +323,43 @@ describe('the gate that paused writes wait on', () => {
     failStream();
     await vi.advanceTimersByTimeAsync(0);
     expect(released).toBe(true);
+    manager.disconnect();
+  });
+
+  it('must not open before catchup when the tab wins leadership while it connects, which reconnects it', async () => {
+    vi.resetModules();
+    const fresh = await import('~/query/realtime/stream-manager');
+    const coordinator = await import('~/query/realtime/tab-coordinator');
+    // The election this tab waits on in connect() makes it the leader.
+    leaderControl.setLeader(false);
+    vi.mocked(coordinator.initTabCoordinator).mockImplementationOnce(async () => leaderControl.setLeader(true));
+    let finishCatchup = () => {};
+    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
+      endpoint: 'http://api.test/stream',
+      withCredentials: false,
+      useTabCoordination: true,
+      fetchAndProcessCatchup: () =>
+        new Promise((resolve) => {
+          finishCatchup = () => resolve('c1');
+        }),
+      processLeaderCatchup: () => Promise.resolve(),
+      processChange: () => {},
+      processSignal: () => {},
+    });
+    const released = () => Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)]);
+
+    await manager.connect();
+    await tick();
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(await released()).toBe(false);
+
+    FakeEventSource.instances[0].emit('offset', '100');
+    await tick();
+    expect(await released()).toBe(false);
+
+    finishCatchup();
+    await tick();
+    expect(await released()).toBe(true);
     manager.disconnect();
   });
 });

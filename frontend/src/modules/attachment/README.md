@@ -13,7 +13,7 @@ Transloadit produces up to four cloud objects per file, stored as one `keys` map
 
 | Layer | File | Responsibility |
 | --- | --- | --- |
-| Query | `query.ts` | One canonical flat query per org (`attachmentsCanonicalOptions`) kept fresh by sync: the org home list, or a filtered key that sync invalidates where attachments live below the organization; the table's default view is a `select` on it; any other filter/sort switches to a server-filtered infinite query. `useGroupAttachments` derives upload groups (`groupId`) from it. |
+| Query | `query.ts` | One canonical flat query per org (`attachmentsCanonicalOptions`) kept fresh by sync: the org home list, or a filtered key that sync marks for a refetch where attachments live below the organization; the table's default view is a `select` on it; any other filter/sort switches to a server-filtered infinite query. `useGroupAttachments` derives upload groups (`groupId`) from it. |
 | Mutations | `query-mutations.ts` | Optimistic hooks with rollback; mutation functions live apart from hooks so persisted offline mutations replay identically after reload (`tests/attachment-replay.test.ts`). |
 | Offline schema | `offline/attachments-db.ts` | Schema; resolves tables from the active `localUserDb` (throws while signed out: guard with `getLocalUserDb()`). |
 | Blob storage | `offline/storage-service.ts` (`attachmentStorage`) | Blob CRUD; variant fallback chains (display `converted → original → raw`, previews `preview → original → raw`, thumbnails `thumbnail → preview → original → raw`); raw-blob eviction once a durable variant exists; trimming the evictable blobs (downloads, and uploads already in the cloud) to the offline files tier. |

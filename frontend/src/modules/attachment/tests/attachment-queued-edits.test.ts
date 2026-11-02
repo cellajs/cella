@@ -170,6 +170,27 @@ describe('a remote change of a row with a pending mutation', () => {
     expect(queryClient.getQueryState(homeKey)?.isInvalidated).toBe(true);
   });
 
+  // The settle took only the fields the edit changed, so the remote edit of another field was gone for good.
+  it('shows a remote edit of another field, kept from the cache while an edit was queued, once that edit settles', async () => {
+    seedHomeList([attachment('att-1', { contentType: 'image/png' })]);
+    goOffline(updateAttachment);
+    hooks().update.mutate({ id: 'att-1', ops: { name: 'Renamed offline' } });
+    await vi.waitFor(() => expect(queued('update')).toHaveLength(1));
+
+    getAttachments.mockResolvedValue({ items: [attachment('att-1', { contentType: 'application/pdf' })], total: 1 });
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
+    expect(homeList()).toMatchObject([{ name: 'Renamed offline', contentType: 'image/png' }]);
+
+    // The server stores the edit over the remote one and answers the stored row.
+    updateAttachment.mockImplementation(async ({ body }) =>
+      attachment('att-1', { contentType: 'application/pdf', ...(body as { ops: Partial<Attachment> }).ops }),
+    );
+    await goOnline();
+    await settled('update');
+
+    expect(homeList()).toMatchObject([{ name: 'Renamed offline', contentType: 'application/pdf' }]);
+  });
+
   it('keeps the optimistic row of a queued create when a range fetch names its id', async () => {
     seedHomeList();
     goOffline(createAttachments);

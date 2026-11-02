@@ -18,7 +18,6 @@ defineFrontendModule({
       // One of the user's own memberships: its channel lists, its memberships and the permissions they grant.
       for (const channelType of appConfig.channelEntityTypes) membershipOps.invalidateChannelList(channelType);
       membershipOps.invalidateMemberships();
-      membershipOps.refreshMe();
 
       // A membership in an organization the stream never registered on: reconnect to register there.
       if (organizationId && !syncStore.getState().orgs[organizationId]) appStreamManager.reconnect();

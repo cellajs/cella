@@ -22,6 +22,10 @@ const refreshIdentityCaches = async () => {
   queryClient.removeQueries({ queryKey: meKeys.all });
   queryClient.removeQueries({ queryKey: meKeys.memberships });
   await getAndSetMe();
+  // Ending an impersonation binds the admin's database again, and its catchup waits for the restore. Lazy: a static import
+  // would start the per-user storage lifecycle in every importer of the me query.
+  const { localUserStorageReady } = await import('~/query/local-user-storage');
+  await localUserStorageReady();
   appStreamManager.reconnect();
 };
 

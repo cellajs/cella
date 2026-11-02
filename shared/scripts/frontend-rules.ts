@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
 import { type Finding, isFrontendSource, lineColumn, repoRoot } from './repo-files.ts';
@@ -193,6 +193,53 @@ function checkMemoDependencies(node: ts.Node, report: Report): void {
   }
 }
 
+/** The cache calls that clear a query's refetch mark, each with the helper in `~/query/basic/cache-mutations` that keeps it. */
+const markKeepers: Record<string, string> = {
+  setQueryData: 'writeKeepingMark',
+  setQueriesData: 'writeKeepingMark',
+  cancelQueries: 'cancelKeepingMark',
+};
+
+/** The calls in `sourceFile` that clear a refetch mark, and whether it registers a range fetch, which only a synced product does. */
+function markCalls(sourceFile: ts.SourceFile) {
+  const calls: Array<{ node: ts.CallExpression; name: string }> = [];
+  let registersRangeFetch = false;
+  sourceFile.forEachChild(function visit(node) {
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : '';
+      if (Object.hasOwn(markKeepers, name)) calls.push({ node, name });
+      registersRangeFetch ||= name === 'registerEntityQueryKeys' && node.arguments.length > 2;
+    }
+    node.forEachChild(visit);
+  });
+  return { calls, registersRangeFetch };
+}
+
+const productModuleFolders = new Map<string, boolean>();
+
+/** Whether `file` lies in a module folder whose `query.ts` registers a range fetch. */
+function inProductModule(file: string): boolean {
+  const folder = /^frontend\/src\/modules\/[^/]+\//.exec(file)?.[0];
+  if (!folder) return false;
+  if (!productModuleFolders.has(folder)) {
+    const queryFile = `${folder}query.ts`;
+    const source = existsSync(join(repoRoot, queryFile)) ? readFileSync(join(repoRoot, queryFile), 'utf8') : '';
+    productModuleFolders.set(folder, markCalls(ts.createSourceFile(queryFile, source, ts.ScriptTarget.Latest)).registersRangeFetch);
+  }
+  return productModuleFolders.get(folder) === true;
+}
+
+/** Query code and the module of a synced product write and cancel through the helpers that keep a query's refetch mark. */
+function checkProductCacheWrite(file: string, sourceFile: ts.SourceFile, report: Report): void {
+  if (file === 'frontend/src/query/basic/cache-mutations.ts') return;
+  const { calls, registersRangeFetch } = markCalls(sourceFile);
+  if (!calls.length || !(file.startsWith('frontend/src/query/') || registersRangeFetch || inProductModule(file))) return;
+  for (const { node, name } of calls) {
+    report(node, 'product-cache-write', `${name} clears the refetch mark; call ${markKeepers[name]} from ~/query/basic/cache-mutations`);
+  }
+}
+
 /** The zustand stores the frontend creates, read from every frontend file so a path-limited run still knows them. */
 export function frontendStores(files: string[]): Set<string> {
   const stores = new Set<string>();
@@ -215,6 +262,7 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   }
   checkReorderGrip(file, sourceFile, report);
   checkFormResolver(file, sourceFile, report);
+  checkProductCacheWrite(file, sourceFile, report);
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);

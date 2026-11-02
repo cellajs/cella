@@ -1,5 +1,6 @@
 import type { DefaultError, FetchQueryOptions, QueryKey } from '@tanstack/react-query';
 import { onlineManager } from '@tanstack/react-query';
+import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { queryClient } from '~/query/query-client';
 import { redirectOnMissing } from '~/utils/redirect-on-missing';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
@@ -53,7 +54,7 @@ export async function resolveChannelBySlug<
     // The list row seeds the detail so the cache-first read below returns at once. A list row is no detail (no counts), so
     // the seed is stamped never fetched and revalidated below whatever the navigation: observers do not refetch on mount.
     const seeded = !queryClient.getQueryData<T>(options.queryKey);
-    if (seeded) queryClient.setQueryData<T>(options.queryKey, cached, { updatedAt: 0 });
+    if (seeded) writeKeepingMark<T>(queryClient, options.queryKey, () => cached, { updatedAt: 0 });
 
     // `staleTime: 'static'` returns a cached entry at once whatever its age; the plain read refetches a stale one behind the
     // resolved navigation, online only, so an offline entry never leaves the detail query in an error state.
@@ -70,7 +71,7 @@ export async function resolveChannelBySlug<
   } else if (isOnline) {
     // Fetched through the query cache for its error handling; a key per call and gcTime 0 leave no slug-keyed entry behind.
     const fetched = await queryClient.query({ queryKey: ['slug-fetch', crypto.randomUUID()], queryFn: fetchBySlug, gcTime: 0 });
-    queryClient.setQueryData<T>(detailQueryOptions(fetched.id).queryKey, fetched);
+    writeKeepingMark<T>(queryClient, detailQueryOptions(fetched.id).queryKey, () => fetched);
     entity = fetched;
   }
 

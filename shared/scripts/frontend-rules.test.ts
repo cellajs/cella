@@ -121,3 +121,23 @@ describe('reorder-grip', () => {
     expect(found(gripImport, 'frontend/src/modules/common/data-table/row-drag-preview.tsx')).toEqual([]);
   });
 });
+
+describe('product-cache-write', () => {
+  const found = (path: string, source: string) => frontendFindings(path, source, new Set()).map(({ rule }) => rule);
+  const write = 'queryClient.setQueryData(keys.detail.byId(id), row);';
+  const cancel = 'await queryClient.cancelQueries({ queryKey: keys.list.org(organizationId) });';
+  const registration = (args: string) => `registerEntityQueryKeys(${args});\n${write}`;
+
+  it('reports a direct write or cancel in query code and in the module of a synced product, which registers a range fetch', () => {
+    expect(found('frontend/src/query/realtime/example.ts', write)).toEqual(['product-cache-write']);
+    expect(found('frontend/src/modules/task/query.ts', registration("'task', keys, rangeFetch"))).toEqual(['product-cache-write']);
+    // The attachment module's query.ts on disk registers one.
+    expect(found('frontend/src/modules/attachment/query-mutations.ts', cancel)).toEqual(['product-cache-write']);
+  });
+
+  it('accepts the helpers themselves, and a channel module', () => {
+    expect(found('frontend/src/query/basic/cache-mutations.ts', `${write}\n${cancel}`)).toEqual([]);
+    expect(found('frontend/src/modules/organization/query.ts', registration("'organization', keys"))).toEqual([]);
+    expect(found('frontend/src/modules/organization/organization-page.tsx', cancel)).toEqual([]);
+  });
+});

@@ -7,7 +7,9 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
+import { subscribeLocalUserChange } from '~/query/local-user-db';
 import { reportReachable } from '~/query/offline/connectivity';
+import { queryClient } from '~/query/query-client';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
@@ -41,6 +43,8 @@ const minUptimeMs = 10_000;
 const healthUrl = `${appConfig.backendUrl}/auth/health`;
 /** Live changes buffered while catchup runs. */
 const changeBufferCap = 500;
+/** A catchup, request and processing together, that takes longer fails: three in a row open the circuit for its cooldown. */
+const catchupTimeoutMs = 60_000;
 /** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
 const streamSilenceMs = 75_000;
 /** What a ping of the app stream carries while the server's CDC worker has not been reading for a minute. */
@@ -50,7 +54,8 @@ interface StreamConfig {
   endpoint: string;
   withCredentials: boolean;
   useTabCoordination: boolean;
-  fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
+  /** `signal` aborts once the round outlasts its bound: a late answer then reaches neither the followers nor this tab's cache. */
+  fetchAndProcessCatchup: (cursor: string | null, signal: AbortSignal) => Promise<string | null>;
   /** A follower's side of catchup: process the answer the leader passed on. */
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
   processChange: (change: StreamChange) => void;
@@ -91,11 +96,18 @@ function createStreamStore(name: string) {
   );
 }
 
-/** Page-lifetime gate the query provider awaits before replaying paused mutations against restored cache state. */
+/** The gate a restored queue awaits before it replays against reconciled cache state. */
 let initialCatchupResolve: (() => void) | null = null;
-const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
-  initialCatchupResolve = resolve;
-});
+let initialCatchupGate: Promise<void>;
+
+/** Closes the gate unless it is closed: at page load, and for a user's database bound later, whose restored queue waits for that user's first catchup. */
+function closeInitialCatchupGate() {
+  if (initialCatchupResolve) return;
+  initialCatchupGate = new Promise<void>((resolve) => {
+    initialCatchupResolve = resolve;
+  });
+}
+closeInitialCatchupGate();
 
 /** Opens the gate; any later call does nothing. */
 function resolveInitialCatchupGate() {
@@ -213,7 +225,7 @@ export class StreamManager {
         const currentCursor = useTabCoordination ? syncStore.getState().cursor : this.store.getState().cursor;
 
         console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
-        const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
+        const newCursor = await this.boundedCatchup(currentCursor);
         if (signal.aborted || this.eventSource !== eventSource) return;
 
         if (newCursor) {
@@ -249,6 +261,23 @@ export class StreamManager {
       // Catchup failed while SSE is open: close it, the reconnect cycle re-runs both phases.
       this.closeEventSource();
       this.handleCatchupFailure(error);
+    }
+  }
+
+  /** The catchup of one round, failed and aborted once it takes longer than `catchupTimeoutMs`, so the gate paused writes wait on cannot stay closed. */
+  private async boundedCatchup(cursor: string | null): Promise<string | null> {
+    const round = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const expiry = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        round.abort();
+        reject(new Error(`Catchup took longer than ${catchupTimeoutMs / 1000}s`));
+      }, catchupTimeoutMs);
+    });
+    try {
+      return await Promise.race([this.config.fetchAndProcessCatchup(cursor, round.signal), expiry]);
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -377,14 +406,12 @@ export class StreamManager {
       try {
         const payload: { code?: string; message?: string } = JSON.parse(event.data);
         const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
+        // Any other end fails the stream as a transport error does, so a server that keeps ending it before catchup opens the circuit.
+        if (!permanent) return this.handleStreamFailure(`Server stream error: ${payload.code}`);
         console.debug(`[${this.name}] Server stream error:`, payload);
         this.closeEventSource();
         this.store.getState().setState('error');
-        if (permanent) {
-          this.openCircuit(`server error: ${payload.code}`, true);
-        } else {
-          this.scheduleReconnect();
-        }
+        this.openCircuit(`server error: ${payload.code}`, true);
       } catch {
         // Malformed payload, let onerror handle the eventual transport close.
       }
@@ -581,10 +608,15 @@ export class StreamManager {
   }
 
   disconnect() {
+    this.stop();
+    resolveInitialCatchupGate();
+  }
+
+  /** Closes the stream and its reconnect handlers, and leaves the gate to the caller. */
+  private stop() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
     this.stopOnlineReconnect();
-    resolveInitialCatchupGate();
 
     this.buffering = false;
     this.bufferOverflowed = false;
@@ -616,9 +648,10 @@ export class StreamManager {
     this.currentBackoff = initialBackoffMs;
   }
 
+  /** The connect that follows opens the gate, on its catchup, its failure or an open circuit, or at once in a follower. */
   reconnect() {
     this.resetCircuitBreaker();
-    this.disconnect();
+    this.stop();
     this.connect();
   }
 }
@@ -641,11 +674,12 @@ export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
-  fetchAndProcessCatchup: async (cursor) => {
+  fetchAndProcessCatchup: async (cursor, signal) => {
     // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
     const views = toCatchupViews(syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes()));
-    const response = await postAppCatchup({ body: { cursor: cursor ?? undefined, views: views.length > 0 ? views : undefined } });
+    const response = await postAppCatchup({ body: { cursor: cursor ?? undefined, views: views.length > 0 ? views : undefined }, signal });
+    signal.throwIfAborted();
     const baselineOnly = !cursor;
     // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing fails.
     if (isLeader()) broadcastCatchup(response, baselineOnly);
@@ -689,7 +723,22 @@ onSyncHealth((health) => {
   applySyncHealth(health);
 });
 
-/** Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up. Safe to call before any stream connects. */
+/**
+ * Resolves once a leader's catchup completes after page load or a sign-in, or fails; at once in a follower tab; and when
+ * the stream gives up or disconnects. A reconnect opens nothing itself. Safe to call before any stream connects.
+ */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }
+
+/** Resumes a restored queue after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list. */
+export function resumeRestoredMutations(): void {
+  void waitForActiveCatchup().then(() => queryClient.resumePausedMutations());
+}
+
+// A sign-in closes the gate for the queue it restores, and clears the circuit the lost session's 401 left open.
+subscribeLocalUserChange((userId) => {
+  if (!userId) return;
+  closeInitialCatchupGate();
+  appStreamManager.resetCircuitBreaker();
+});
