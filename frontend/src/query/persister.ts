@@ -95,13 +95,20 @@ export function createIDBPersister(scope: string) {
   let lastMutationsSnapshot = '';
   let pendingClient: PersistedClient | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by `resetPersisters`: memory from then on holds none of the stored cache until a restore reads it. */
+  let epoch = 0;
+  /** The epoch whose restore completed; flushes write only in it. */
+  let restoredEpoch = 0;
 
   function resetTracker() {
     lastPersistedAt.clear();
     lastBundledSnapshot = '';
     lastMutationsSnapshot = '';
   }
-  trackerResets.push(resetTracker);
+  trackerResets.push(() => {
+    resetTracker();
+    epoch++;
+  });
 
   async function clearScope(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, () => deleteScope(db, scope));
@@ -177,6 +184,8 @@ export function createIDBPersister(scope: string) {
 
     const db = getLocalUserDb();
     if (!db) return;
+    // A teardown's cleared cache, with the database still bound, or a rebind's unrestored one would delete the stored queue.
+    if (restoredEpoch !== epoch) return;
 
     try {
       // Another tab may have migrated the store forward since this bundle booted; the broadcast can lose the race to the first write.
@@ -285,9 +294,16 @@ export function createIDBPersister(scope: string) {
     restoreClient: async (): Promise<PersistedClient | undefined> => {
       const db = getLocalUserDb();
       if (!db) return undefined;
+      const startedIn = epoch;
+      // A reset while this read ran cleared the memory it would fill: the restore that follows the reset reads again.
+      const restored = (client?: PersistedClient) => {
+        if (epoch !== startedIn) return undefined;
+        restoredEpoch = epoch;
+        return client;
+      };
       try {
         let meta = await db.meta.get(scope);
-        if (!meta) return undefined;
+        if (!meta) return restored();
 
         // A clientCacheVersion mismatch wipes cached query data but keeps queued mutations; a missing version seeds without wiping.
         const versionChanged = (meta.clientCacheVersion ?? appConfig.clientCacheVersion) !== appConfig.clientCacheVersion;
@@ -347,17 +363,20 @@ export function createIDBPersister(scope: string) {
 
         const mutations = inCurrentShape([...(meta.mutations ?? []), ...tabMutations]);
 
-        return {
+        return restored({
           timestamp: meta.timestamp,
           buster: meta.buster,
           clientState: { queries: allQueries, mutations },
-        };
+        });
       } catch (error) {
         console.error('[QueryPersister] Failed to restore client:', error);
         reportCriticalError('persister.restore_failed', error);
         return undefined;
       }
     },
+
+    /** False from a reset until a restore that started after it completes. */
+    isRestored: () => restoredEpoch === epoch,
 
     removeClient: async () => {
       const db = getLocalUserDb();
@@ -371,7 +390,7 @@ export function createIDBPersister(scope: string) {
         console.error('[QueryPersister] Failed to remove client:', error);
       }
     },
-  } satisfies Persister & { flush: () => Promise<void> };
+  } satisfies Persister & { flush: () => Promise<void>; isRestored: () => boolean };
 }
 
 /** The cache of every tab: scope `rq`, survives browser restart until sign-out deletes the per-user database. */
@@ -394,7 +413,7 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 // The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
 onPageHide(() => void persister.flush());
 
-/** Reset persister change trackers (called on a local user rebind so they match the freshly bound DB). */
+/** Forgets what the persisters wrote and stops their writes until the next restore: on a rebind, and before a teardown clears the cache. */
 export function resetPersisters(): void {
   for (const reset of trackerResets) reset();
 }

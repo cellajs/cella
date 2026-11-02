@@ -7,7 +7,9 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
+import { subscribeLocalUserChange } from '~/query/local-user-db';
 import { reportReachable } from '~/query/offline/connectivity';
+import { markReplayingMutations, queryClient } from '~/query/query-client';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
@@ -91,11 +93,18 @@ function createStreamStore(name: string) {
   );
 }
 
-/** Page-lifetime gate the query provider awaits before replaying paused mutations against restored cache state. */
+/** The gate a restored queue awaits before it replays against reconciled cache state. */
 let initialCatchupResolve: (() => void) | null = null;
-const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
-  initialCatchupResolve = resolve;
-});
+let initialCatchupGate: Promise<void>;
+
+/** Closes the gate unless it is closed: at page load, and for a user's database bound later, whose restored queue waits for that user's first catchup. */
+function closeInitialCatchupGate() {
+  if (initialCatchupResolve) return;
+  initialCatchupGate = new Promise<void>((resolve) => {
+    initialCatchupResolve = resolve;
+  });
+}
+closeInitialCatchupGate();
 
 /** Opens the gate; any later call does nothing. */
 function resolveInitialCatchupGate() {
@@ -581,10 +590,15 @@ export class StreamManager {
   }
 
   disconnect() {
+    this.stop();
+    resolveInitialCatchupGate();
+  }
+
+  /** Closes the stream and its reconnect handlers, and leaves the gate to the caller. */
+  private stop() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
     this.stopOnlineReconnect();
-    resolveInitialCatchupGate();
 
     this.buffering = false;
     this.bufferOverflowed = false;
@@ -616,9 +630,10 @@ export class StreamManager {
     this.currentBackoff = initialBackoffMs;
   }
 
+  /** The connect that follows opens the gate, on its catchup, its failure or an open circuit, or at once in a follower. */
   reconnect() {
     this.resetCircuitBreaker();
-    this.disconnect();
+    this.stop();
     this.connect();
   }
 }
@@ -689,7 +704,25 @@ onSyncHealth((health) => {
   applySyncHealth(health);
 });
 
-/** Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up. Safe to call before any stream connects. */
+/**
+ * Resolves once a leader's catchup completes after page load or a sign-in, or fails; at once in a follower tab; and when
+ * the stream gives up or disconnects. A reconnect opens nothing itself. Safe to call before any stream connects.
+ */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }
+
+/** Resumes a restored queue after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list. */
+export function resumeRestoredMutations(): void {
+  void waitForActiveCatchup().then(() => {
+    markReplayingMutations();
+    return queryClient.resumePausedMutations();
+  });
+}
+
+// A sign-in closes the gate for the queue it restores, and clears the circuit the lost session's 401 left open.
+subscribeLocalUserChange((userId) => {
+  if (!userId) return;
+  closeInitialCatchupGate();
+  appStreamManager.resetCircuitBreaker();
+});

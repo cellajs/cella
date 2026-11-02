@@ -37,7 +37,7 @@ export const Route = createFileRoute('/_app')({
       }
     }
 
-    // The stream needs localUserDb open and the sync store rehydrated for a valid cursor, else catchup resyncs from `now`.
+    // Catchup needs the rehydrated cursor and the restored cache: a list not restored yet counts as uncached, its gap skipped for good.
     await localUserStorageReady();
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();

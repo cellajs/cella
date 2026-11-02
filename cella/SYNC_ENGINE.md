@@ -103,7 +103,7 @@ A change frame announces one row or a range of rows to fetch and patch into the 
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier and count, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there.
+Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier and count, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there.
 
 ### SSE wire
 

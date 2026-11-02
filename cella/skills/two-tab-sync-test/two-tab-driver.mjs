@@ -99,7 +99,8 @@ async function deleteRowInTab(page, tab, name) {
   await row.locator('[aria-label="Select"]').click();
   await page.getByRole('button', { name: /delete/i }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: /^delete$/i }).click();
+  // The confirm button names what goes: "Delete attachment".
+  await dialog.getByRole('button', { name: /^delete\b/i }).click();
   log(tab, 'action', { did: 'delete', name });
 }
 

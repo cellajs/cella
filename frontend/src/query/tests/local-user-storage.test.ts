@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import '~/query/tests/query-client-env';
 import { MutationObserver, onlineManager } from '@tanstack/react-query';
+import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -11,8 +12,10 @@ vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload },
 
 const { userStore, userStorageKey } = await import('~/modules/user/user-store');
 const { getLocalUserDb } = await import('~/query/local-user-db');
-const { queryClient } = await import('~/query/query-client');
-await import('~/query/local-user-storage');
+const { markCacheRestored, queryClient } = await import('~/query/query-client');
+const { persister, persistOptions } = await import('~/query/persister');
+const { localUserStorageReady } = await import('~/query/local-user-storage');
+const { teardownUserState } = await import('~/utils/teardown-user-state');
 
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
 const admin = { id: 'admin-1', email: 'admin@example.test' };
@@ -87,5 +90,54 @@ describe('the per-user database follows who is signed in', () => {
     await vi.waitFor(() => expect(reload).toHaveBeenCalledOnce());
     expect(getLocalUserDb()).toBeNull();
     expect(await Dexie.exists(dbName(target.id))).toBe(true);
+  });
+
+  it('must not lose the writes a lost session left queued when the same user signs in again on the page: they return to memory and stay stored', async () => {
+    /** What the provider's cache subscription writes after a cache change, without the write throttle. */
+    const persistCache = async () => {
+      await persistQueryClientSave({ queryClient, persister, dehydrateOptions: persistOptions.dehydrateOptions });
+      await persister.flush();
+    };
+    const storedQueue = async () =>
+      (await getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray()).flatMap(({ mutations }) =>
+        mutations.map(({ state }) => state.variables),
+      );
+    const pausedInMemory = () =>
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .filter(({ state }) => state.isPaused)
+        .map(({ state }) => state.variables);
+
+    // The page's first restore is done; signing in restores the user's empty database, then an edit made offline pauses and is stored.
+    userStore.setState({ user: target as never, impersonator: null });
+    markCacheRestored();
+    await localUserStorageReady();
+    onlineManager.setOnline(false);
+    new MutationObserver<unknown, Error, { name: string }>(queryClient, {
+      mutationKey: ['thing', 'queued'],
+      retryDelay: 0,
+      mutationFn: async () => {
+        if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
+      },
+    })
+      .mutate({ name: 'offline edit' })
+      .catch(() => {});
+    await vi.waitFor(() => expect(pausedInMemory()).toHaveLength(1));
+    await persistCache();
+    expect(await storedQueue()).toEqual([{ name: 'offline edit' }]);
+
+    // The session is lost: the cache is cleared and the database closes, kept on disk.
+    await teardownUserState(false);
+    expect(queryClient.getMutationCache().getAll()).toEqual([]);
+
+    // Signing in again binds the same database with no reload, and the first cache write comes before any restore.
+    userStore.setState({ user: target as never, impersonator: null });
+    queryClient.setQueryData(['thing', 'after-sign-in'], { id: 1 });
+    await persistCache();
+    await localUserStorageReady();
+
+    expect(await storedQueue()).toEqual([{ name: 'offline edit' }]);
+    expect(pausedInMemory()).toEqual([{ name: 'offline edit' }]);
   });
 });

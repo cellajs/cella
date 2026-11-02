@@ -321,6 +321,43 @@ describe('the gate that paused writes wait on', () => {
     expect(released).toBe(true);
     manager.disconnect();
   });
+
+  it('must not open before catchup when the tab wins leadership while it connects, which reconnects it', async () => {
+    vi.resetModules();
+    const fresh = await import('~/query/realtime/stream-manager');
+    const coordinator = await import('~/query/realtime/tab-coordinator');
+    // The election this tab waits on in connect() makes it the leader.
+    leaderControl.setLeader(false);
+    vi.mocked(coordinator.initTabCoordinator).mockImplementationOnce(async () => leaderControl.setLeader(true));
+    let finishCatchup = () => {};
+    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
+      endpoint: 'http://api.test/stream',
+      withCredentials: false,
+      useTabCoordination: true,
+      fetchAndProcessCatchup: () =>
+        new Promise((resolve) => {
+          finishCatchup = () => resolve('c1');
+        }),
+      processLeaderCatchup: () => Promise.resolve(),
+      processChange: () => {},
+      processSignal: () => {},
+    });
+    const released = () => Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)]);
+
+    await manager.connect();
+    await tick();
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(await released()).toBe(false);
+
+    FakeEventSource.instances[0].emit('offset', '100');
+    await tick();
+    expect(await released()).toBe(false);
+
+    finishCatchup();
+    await tick();
+    expect(await released()).toBe(true);
+    manager.disconnect();
+  });
 });
 
 describe('StreamManager server-sent errors', () => {

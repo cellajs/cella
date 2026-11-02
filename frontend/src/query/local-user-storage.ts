@@ -1,3 +1,4 @@
+import { persistQueryClientRestore } from '@tanstack/react-query-persist-client';
 import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { boardStore } from '~/modules/common/board/board-store';
@@ -6,8 +7,17 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { userStorageKey, userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, notifyLocalUserChange } from '~/query/local-user-db';
-import { resetPersisters } from '~/query/persister';
+import {
+  bindLocalUserDb,
+  closeLocalUserDb,
+  deletedElsewhereListeners,
+  getLocalUserDb,
+  type LocalUserDatabase,
+  notifyLocalUserChange,
+} from '~/query/local-user-db';
+import { persister, persistOptions, resetPersisters } from '~/query/persister';
+import { cacheRestored, queryClient } from '~/query/query-client';
+import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
 import { clearUserState, teardownUserState } from '~/utils/teardown-user-state';
 
@@ -43,11 +53,25 @@ async function hydrateAll(): Promise<void> {
   await Promise.all(localUserStores.map((store) => store.persist.rehydrate()));
 }
 
+/**
+ * The provider restores the query cache once per page. A database bound after it read, as when the same user signs in
+ * again after a lost session, restores here, the writes that session left queued included.
+ */
+async function restoreQueryCache(db: LocalUserDatabase): Promise<void> {
+  await cacheRestored;
+  if (getLocalUserDb() !== db || persister.isRestored()) return;
+  await persistQueryClientRestore({ ...persistOptions, queryClient }).catch((error) => console.error('[QueryPersister] Restore failed:', error));
+  resumeRestoredMutations();
+}
+
 function bindLocalUser(userId: string): void {
   boundUserId = userId;
-  bindLocalUserDb(userId);
+  const previous = getLocalUserDb();
+  const db = bindLocalUserDb(userId);
+  // A second evaluation of this module, as on an HMR update, finds the database bound and its cache in memory.
+  if (db === previous) return;
   resetPersisters();
-  readyPromise = hydrateAll();
+  readyPromise = Promise.all([hydrateAll(), restoreQueryCache(db)]).then(() => {});
 }
 
 function unbind(): void {
@@ -68,7 +92,7 @@ function reconcileLocalUser(): void {
   notifyLocalUserChange(boundUserId);
 }
 
-/** Resolves once `localUserDb` is open and all local user stores have rehydrated for the current user. */
+/** Resolves once `localUserDb` is open for the current user, all local user stores have rehydrated and the query cache is restored from it. */
 export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }

@@ -115,7 +115,7 @@ if (!import.meta.hot?.data?.listenersAttached) {
 }
 
 let resolveCacheRestored: () => void;
-/** Resolves once PersistQueryClientProvider has restored the persisted cache. */
+/** Resolves once PersistQueryClientProvider's restore at boot finished or failed. */
 export const cacheRestored: Promise<void> = import.meta.hot?.data?.cacheRestored ?? new Promise<void>((resolve) => (resolveCacheRestored = resolve));
 export function markCacheRestored() {
   resolveCacheRestored();

@@ -76,9 +76,11 @@ export const meKeys = {
 /** Never persisted: the guards read it as `static`, so a stored entry would pass a session revoked between visits and skip the store write. */
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, meta: { persist: false } });
 
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth() });
+// A mount past the stale time refetches: a session, passkey or connected app added elsewhere must show.
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
 
-export const meConnectedAppsQueryOptions = () => queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
+export const meConnectedAppsQueryOptions = () =>
+  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps(), refetchOnMount: true });
 
 export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 

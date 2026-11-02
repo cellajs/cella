@@ -88,7 +88,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
       const tenantId = getTenantIdForOrg(organizationId);
 
-      // Nothing cached means nothing to patch and mount hydration fetches fresh, so advance to stop the window being re-offered forever.
+      // A connection waits for the bound database's restore, so no list of this scope is on disk either: the next read fetches it whole.
       if (!hasAnyCachedList(keys, organizationId)) {
         syncState.setOrgSeq(organizationId, entityType, frontier);
         console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip range fetch`);

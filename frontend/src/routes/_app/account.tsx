@@ -28,6 +28,10 @@ export const Route = createFileRoute('/_app/account')({
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },
-  loader: () => queryClient.query({ ...meAuthQueryOptions(), staleTime: 'static' }),
+  // The stored entry paints at once and revalidates behind it.
+  loader: async () => {
+    await queryClient.query({ ...meAuthQueryOptions(), staleTime: 'static' });
+    void queryClient.query(meAuthQueryOptions()).catch(() => {});
+  },
   component: withSuspenseSpinner(AccountPage),
 });
