@@ -64,9 +64,13 @@ const oauthProviders = {
   },
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
-/** Sends the browser to the provider with a fresh `state`, plus a PKCE verifier and a nonce for a `pkce` provider. */
+/**
+ * Sends the browser to the provider with a fresh `state`, plus a PKCE verifier and a nonce for a `pkce` provider.
+ * @throws AppError 503 `oauth_not_configured` when the environment has no client id and secret for the provider.
+ */
 export const startOAuth = async (ctx: OAuthStartContext, provider: BaseOAuthProviders) => {
   const { client, scopes, pkce } = oauthProviders[provider];
+  if (!client.configured) throw new AppError(503, 'oauth_not_configured', 'warn', { meta: { strategy: provider } });
   const state = generateRandomState();
   const flow = pkce ? { codeVerifier: generateRandomCodeVerifier(), nonce: generateRandomNonce() } : undefined;
   const url = await client.createAuthorizationURL(state, scopes, flow);

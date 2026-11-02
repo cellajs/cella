@@ -365,6 +365,18 @@ const viteConfig = {
   optimizeDeps: { exclude: ['sdk', 'react-scan'] },
   clearScreen: false,
   plugins: [
+    // The app answers only at `frontendUrl`: the loopback address the server binds is another origin to the API's absolute URLs.
+    {
+      name: 'print-frontend-url',
+      apply: 'serve',
+      configureServer(server) {
+        const printUrls = server.printUrls.bind(server);
+        server.printUrls = () => {
+          if (server.resolvedUrls) server.resolvedUrls.local = [`${appConfig.frontendUrl}/`];
+          printUrls();
+        };
+      },
+    },
     // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
     tanstackRouter(routerOptions),
     // Compile content and repository Markdown to React before the React plugin.

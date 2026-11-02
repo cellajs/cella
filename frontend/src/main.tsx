@@ -30,8 +30,9 @@ import { initViewportObserver } from '~/utils/viewport-observer';
 
 client.setConfig(createClientConfig());
 // An error after an ok response is the SDK's response check refusing the body: report it, then rethrow it unchanged.
+// A TypeError is the body's read failing, as when a navigation cuts it off.
 client.interceptors.error.use((error, response, request) => {
-  if (response?.ok) reportRejectedResponse(error, request ? new URL(request.url).pathname : '', response.status);
+  if (response?.ok && !(error instanceof TypeError)) reportRejectedResponse(error, request ? new URL(request.url).pathname : '', response.status);
   // A refused body or a server error can mean a newer release is out: look for it now, not at the next periodic check.
   // A failed status reaches here as the ApiError the client's fetch threw, with no response.
   if (response?.ok || (error instanceof ApiError && error.status >= 500)) void checkForUpdate();

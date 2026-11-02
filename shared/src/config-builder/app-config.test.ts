@@ -75,6 +75,7 @@ describe('appConfig devAppIndex', () => {
   afterEach(() => vi.doUnmock('../../config/config.default.ts'));
 
   it('moves the frontend and its URLs by one, the services by ten and leaves production alone', async () => {
+    useIndex(0); // An app's own number would otherwise count twice
     const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
     const baseProduction = await loadAppConfig({ APP_MODE: 'production' });
     useIndex(2);

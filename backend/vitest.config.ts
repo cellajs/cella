@@ -43,6 +43,13 @@ export default defineConfig({
       PII_HASH_SECRET: 'test-pii-hash-secret-min16',
       DATA_ENCRYPTION_KEY: 'test-data-encryption-key-minimum-32-chars',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
+      // A sign-in start refuses a provider without keys; the round trip itself never leaves the test process.
+      GITHUB_CLIENT_ID: 'test-github-client-id',
+      GITHUB_CLIENT_SECRET: 'test-github-client-secret',
+      GOOGLE_CLIENT_ID: 'test-google-client-id',
+      GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
+      MICROSOFT_CLIENT_ID: 'test-microsoft-client-id',
+      MICROSOFT_CLIENT_SECRET: 'test-microsoft-client-secret',
       // Presigning is pure local computation, so dummy credentials produce a signable URL.
       // Set here so tests never depend on the S3 keys a developer happens to have in .env.
       S3_ACCESS_KEY_ID: 'test-s3-access-key-id',
