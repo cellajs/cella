@@ -78,8 +78,7 @@ export function DocsLayout() {
     triggerRef,
     title: t('c:docs'),
     headerClassName: 'hidden',
-    // shadow-card colors the drawer's overdrag bleed like the card-colored sidebar
-    className: tw('w-72 p-0 data-[swipe-direction=left]:shadow-card'),
+    className: tw('w-72 p-0 [--sheet-bg:var(--card)]'),
     closeSheetOnRouteChange: false,
     keepMounted: true,
   };
@@ -123,7 +122,7 @@ export function DocsLayout() {
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       {isDesktop ? (
-        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
+        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-card focus-view:hidden">
           <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
           {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
           <div

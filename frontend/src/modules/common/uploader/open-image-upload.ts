@@ -11,10 +11,12 @@ interface ImageUploadOptions {
   /** The uploader dialog's title. */
   title: string;
   onUploaded: (url: string) => void;
+  /** Offers to delete the current image from the dialog; omit it when there is no image or the caller has its own delete button. */
+  onDelete?: () => void;
 }
 
 /** Opens the uploader for one image, cropped as its template says, and hands over the image's public URL. */
-export const openImageUpload = ({ templateId, organizationId, title, onUploaded }: ImageUploadOptions) => {
+export const openImageUpload = ({ templateId, organizationId, title, onUploaded, onDelete }: ImageUploadOptions) => {
   if (!onlineManager.isOnline()) return toastOffline();
 
   const [resultStep] = uploadTemplates[templateId].use;
@@ -27,6 +29,12 @@ export const openImageUpload = ({ templateId, organizationId, title, onUploaded 
       if (key) onUploaded(getPublicFileUrl(key));
       uploader.getState().remove();
     },
+    onDeleteImage:
+      onDelete &&
+      (() => {
+        onDelete();
+        uploader.getState().remove();
+      }),
     title,
   });
 };

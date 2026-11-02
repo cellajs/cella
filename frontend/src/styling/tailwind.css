@@ -93,6 +93,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-foreground-soft: var(--foreground-soft);
+  --color-panel-edge: var(--panel-edge);
   --color-faint-foreground: var(--faint-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -270,12 +271,12 @@
   border-color: color-mix(in srgb, var(--intent-color) 40%, var(--background));
 }
 
-/* A card in a long list, such as a board, rests at prose body strength so a full list reads calmly, and comes up to full
-   under the pointer or with focus inside. An app sets it only while the card is idle (collapsed, not current). The
-   `:root &` bump outranks Card's `text-card-foreground`; the transition stays with the card, which may have its own. */
+/* A card in a long list, such as a board, rests one step below full strength, so a title still leads the card, and comes
+   up to full under the pointer or with focus inside. An app sets it only while the card is idle (collapsed, not current).
+   The `:root &` bump outranks Card's `text-card-foreground`; the transition stays with the card, which may have its own. */
 @utility resting-text {
   :root & {
-    color: var(--foreground-soft);
+    color: var(--foreground-rest);
   }
   @media (hover: hover) {
     :root &:hover {
@@ -284,6 +285,20 @@
   }
   :root &:focus-within {
     color: var(--foreground);
+  }
+}
+
+/* An avatar's color names who or what it is, which a dense list seldom needs: at rest it is grey. A photo turns grayscale.
+   An app applies it through a variant that lifts it on hover and focus, such as `group-[:not(:hover,:focus-visible)]:`. */
+@utility resting-avatar {
+  & [data-slot="avatar-fallback"] {
+    background-color: var(--avatar-rest);
+  }
+  & [data-slot="avatar-fallback"] > div {
+    color: var(--avatar-rest-foreground);
+  }
+  & [data-slot="avatar-image"] {
+    filter: grayscale(1);
   }
 }
 
@@ -353,6 +368,56 @@
   @media (pointer: coarse) {
     transform: none;
     opacity: 0.7;
+  }
+}
+
+/* In a FormActions row on a phone, the two wrappers of a button that slides in from the row's edge and pushes the submit
+   button narrower. The fr track animates to the button's own width; closed, the margin takes back the row's gap. The
+   inner wrapper clips, its 4px of padding keeps the focus ring inside the clip, and matching margins keep it out of the layout. */
+@utility form-actions-reveal {
+  &,
+  & > * {
+    display: contents;
+  }
+
+  @variant max-sm {
+    @variant in-data-form-actions {
+      display: grid;
+      grid-template-columns: 0fr;
+      margin: -0.25rem -0.25rem -0.25rem -0.75rem;
+      opacity: 0;
+      transition:
+        grid-template-columns 160ms cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 160ms cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 100ms linear,
+        visibility 160ms;
+
+      &[data-open] {
+        grid-template-columns: 1fr;
+        margin-left: -0.25rem;
+        opacity: 1;
+        transition:
+          grid-template-columns 220ms cubic-bezier(0.32, 0.72, 0, 1),
+          margin-left 220ms cubic-bezier(0.32, 0.72, 0, 1),
+          opacity 120ms linear;
+      }
+
+      & > * {
+        display: flex;
+        overflow: hidden;
+        min-width: 0;
+        padding: 0.25rem;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &,
+        &[data-open] {
+          transition:
+            opacity 120ms linear,
+            visibility 120ms;
+        }
+      }
+    }
   }
 }
 
@@ -511,6 +576,8 @@
     --foreground: oklch(0.2067 0.01 285.49);
     /* Reading: running text, prose body and resting cards. */
     --foreground-soft: oklch(0.37 0.013 285.8);
+    /* Resting: a card in a long list (resting-text), between content and reading. */
+    --foreground-rest: oklch(0.28 0.012 285.6);
     /* Support: group labels, column headers, keys, descriptions, metadata. */
     --muted-foreground: oklch(0.4571 0.0112 285.63);
     /* Hint: placeholders, empty states, counts, separators, the required star. */
@@ -537,6 +604,11 @@
     /* --input edges what a person acts on (a field, button, link tile, toggle); --border frames or divides content.
        One resting edge: a field is outlined no more strongly than an outline button. Increased contrast raises both. */
     --input: oklch(0.83 0.005 285.75);
+    /* The frame of a board panel, a step over --border so a panel holds its shape beside its neighbours. */
+    --panel-edge: oklch(0.88 0.005 285.75);
+    /* An avatar at rest (resting-avatar). */
+    --avatar-rest: oklch(0.92 0.004 286.32);
+    --avatar-rest-foreground: oklch(0.442 0.017 285.786);
     /* What --border, --input, --sidebar-border and --edge-overlay become under increased contrast, and what --input-hover
        is otherwise. Never used by a class: those tokens are what components read, this only holds the raised value. */
     --edge-raised: oklch(0.64 0.005 285.75);
@@ -589,6 +661,7 @@
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
     --foreground-soft: oklch(0.871 0.006 286.3);
+    --foreground-rest: oklch(0.92 0.003 286);
     --muted-foreground: oklch(0.72 0.0128 285.86);
     /* 4.5:1 on --muted, --secondary and --accent too, where a highlighted row puts a hint. */
     --faint-foreground: oklch(0.68 0.0128 285.86);
@@ -607,6 +680,9 @@
     --destructive-foreground: oklch(0.1963 0.0092 285.53);
     --border: oklch(0.27 0.011 285.63);
     --input: oklch(0.36 0.011 285.63);
+    --panel-edge: oklch(0.32 0.011 285.63);
+    --avatar-rest: oklch(0.37 0.013 285.805);
+    --avatar-rest-foreground: oklch(0.871 0.006 286.286);
     --edge-raised: oklch(0.54 0.011 285.63);
     --edge-overlay: oklch(1 0 0 / 0.06);
     --ring: oklch(0.86 0.0096 285.72);
@@ -644,6 +720,9 @@
       --edge-overlay: var(--edge-raised);
       --edge-floating: 30%;
       --foreground-soft: var(--foreground);
+      --foreground-rest: var(--foreground);
+      --panel-edge: var(--edge-raised);
+      --avatar-rest-foreground: var(--foreground);
       --faint-foreground: var(--muted-foreground);
       --link-decoration: 65%;
       --link-decoration-strong: 100%;
@@ -659,6 +738,9 @@
     --edge-overlay: var(--edge-raised);
     --edge-floating: 30%;
     --foreground-soft: var(--foreground);
+    --foreground-rest: var(--foreground);
+    --panel-edge: var(--edge-raised);
+    --avatar-rest-foreground: var(--foreground);
     --faint-foreground: var(--muted-foreground);
     --link-decoration: 65%;
     --link-decoration-strong: 100%;

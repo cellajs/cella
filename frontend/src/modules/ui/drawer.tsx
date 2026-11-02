@@ -65,7 +65,8 @@ export function DrawerContent({
         <DrawerPrimitive.Popup
           data-slot="drawer-content"
           className={cn(
-            'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-hidden',
+            // The sheet's color sits on the scroller, which a bounce reveals. A caller sets `--sheet-bg`, not a fill on its content.
+            'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-(--sheet-bg) [--sheet-bg:var(--background)] focus-visible:outline-hidden',
             'transition-discrete transition-transform duration-300 ease-out will-change-transform',
             'data-swiping:select-none data-swiping:transition-none!',
             // Sizing by swipe direction (Viewport flex handles placement)
@@ -74,11 +75,12 @@ export function DrawerContent({
             'data-[swipe-direction=right]:w-[95vw] data-[swipe-direction=right]:lg:max-w-4xl',
             'data-[swipe-direction=left]:w-[95vw] data-[swipe-direction=left]:lg:max-w-4xl',
             // Bleed: a swipe away from the close direction lifts the popup off its screen edge (damped, ~30px).
-            // A background-colored shadow on that edge fills the gap without touching layout or scroll.
-            'data-[swipe-direction=down]:shadow-[0_3rem_0_var(--color-background)]',
-            'data-[swipe-direction=up]:shadow-[0_-3rem_0_var(--color-background)]',
-            'data-[swipe-direction=right]:shadow-[3rem_0_0_var(--color-background)]',
-            'data-[swipe-direction=left]:shadow-[-3rem_0_0_var(--color-background)]',
+            // A sheet-colored shadow on that edge fills the gap without touching layout or scroll. A caller's own shadow goes
+            // in `--sheet-edge-shadow`, as a `shadow-*` class would replace the fill.
+            'data-[swipe-direction=down]:shadow-[0_3rem_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
+            'data-[swipe-direction=up]:shadow-[0_-3rem_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
+            'data-[swipe-direction=right]:shadow-[3rem_0_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
+            'data-[swipe-direction=left]:shadow-[-3rem_0_0_var(--sheet-bg),var(--sheet-edge-shadow,0_0_#0000)]',
             // Position at rest and while dragged, from Base UI's snap-point and swipe variables.
             'data-[swipe-direction=down]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
             'data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
@@ -103,7 +105,7 @@ export function DrawerContent({
           {...props}
         >
           {/* Drag handle outside Content, with no data-swipe-ignore, so mouse/pointer swipe works here. Hidden on left/right. */}
-          <div className="sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden group-data-[swipe-direction=down]/drawer-content:py-2 group-data-[swipe-direction=up]/drawer-content:py-2">
+          <div className="sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-(--sheet-bg) active:cursor-grabbing group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden group-data-[swipe-direction=down]/drawer-content:py-2 group-data-[swipe-direction=up]/drawer-content:py-2">
             <div className="h-1 w-20 rounded-full bg-muted" />
           </div>
           {/* shrink-0 keeps flex from collapsing Content, so the popup scrolls it. Content, not the popup, is the sheet layer:
@@ -123,7 +125,7 @@ export function DrawerHeader({ className, sticky, ...props }: React.ComponentPro
       data-slot="drawer-header"
       className={cn(
         'flex flex-col gap-0.5 p-4 pb-6 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-1.5 md:text-left',
-        sticky && 'sticky top-0 z-20 bg-background',
+        sticky && 'sticky top-0 z-20 bg-(--sheet-bg)',
         className,
       )}
       {...props}

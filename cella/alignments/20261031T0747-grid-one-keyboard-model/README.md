@@ -11,7 +11,7 @@ Drop `cellSelectionMode`, `rowSelectionMode` and the range props from `DataGrid`
 
 ## What & why
 
-The grid had three cell modes, three row modes and a `readOnly` flag, and only two combinations were in use. Every grid now has one Tab stop: arrows move between cells, Tab leaves, and the ring marks keyboard focus only. Row selection is the checkbox column. `CellRange`, `CellSelectionMode` and `RowSelectionMode` are gone.
+The grid had three cell modes, three row modes and a `readOnly` flag, and only two combinations were in use. Every grid now has one Tab stop: arrows move between cells and Tab leaves. Row selection is the checkbox column. `CellRange`, `CellSelectionMode` and `RowSelectionMode` are gone.
 
 ## Blast radius
 

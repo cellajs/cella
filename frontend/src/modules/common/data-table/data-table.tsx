@@ -140,12 +140,21 @@ export function DataTable<TData>({
   // A fresh `{ renderRow, renderCell }` literal each render would invalidate Row's memo.
   const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
-  const edits = useEditStatus(rows ?? [], rowKeyGetter, onRowsChange);
+  const sortKey = JSON.stringify(gridProps.sortColumns);
+  const [loaded, setLoaded] = useState({ rows, sortKey });
+  if (rows && !isLoading && (loaded.rows !== rows || loaded.sortKey !== sortKey)) setLoaded({ rows, sortKey });
+
+  // A sort that has to load keeps the old rows: the skeleton would unmount the grid, and keyboard focus and the current cell with it.
+  const isLoadingRows = isLoading || !rows;
+  const keepsRows = isLoadingRows && !error && loaded.sortKey !== sortKey && !!loaded.rows?.length;
+  const shownRows = keepsRows ? loaded.rows : rows;
+
+  const edits = useEditStatus(shownRows ?? [], rowKeyGetter, onRowsChange);
 
   const frameClass = cn('mb-4 size-full md:mb-8', className);
 
   // A failed first load has no rows, so the skeleton shows only while no error is known.
-  if ((isLoading || !rows) && !error) {
+  if (isLoadingRows && !keepsRows && !error) {
     return (
       <div className={frameClass}>
         <DataTableSkeleton
@@ -158,7 +167,7 @@ export function DataTable<TData>({
     );
   }
 
-  if (!rows?.length) {
+  if (!shownRows?.length) {
     return (
       <div className={frameClass}>
         {error ? (

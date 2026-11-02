@@ -10,6 +10,8 @@ interface CommonUploadData {
   /** The dialog's title; without one the dialog is named "Upload" for screen readers only. */
   title?: string;
   description?: string;
+  /** Replaces the description with a link that deletes the image being changed. */
+  onDeleteImage?: () => void;
 }
 
 type UploadData =

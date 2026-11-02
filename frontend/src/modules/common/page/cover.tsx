@@ -13,15 +13,16 @@ export interface PageCoverProps {
   url?: string | null;
   organizationId?: string;
   onCoverUpdate?: (bannerKey: string) => void;
+  onCoverDelete?: () => void;
 }
 
-function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: PageCoverProps) {
+function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCoverDelete }: PageCoverProps) {
   const { t } = useTranslation();
   // A fresh upload shows at once and holds until `url` moves: to the saved cover, or to one written elsewhere
   const [upload, setUpload] = useState<{ url: string; replaces: PageCoverProps['url'] } | null>(null);
   const coverUrl = upload && upload.replaces === url ? upload.url : url;
 
-  const uploadLabel = t('c:upload_resource', { resource: t('c:cover') });
+  const uploadLabel = t(coverUrl ? 'c:change_resource' : 'c:upload_resource', { resource: t('c:cover') });
 
   const openUploadDialog = () => {
     openImageUpload({
@@ -32,6 +33,14 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: Pa
         setUpload({ url: bannerUrl, replaces: url });
         onCoverUpdate?.(bannerUrl);
       },
+      onDelete:
+        coverUrl && onCoverDelete
+          ? () => {
+              // Else a cover uploaded over no cover shows again once `url` is back to null
+              setUpload(null);
+              onCoverDelete();
+            }
+          : undefined,
     });
   };
 

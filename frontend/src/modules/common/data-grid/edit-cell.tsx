@@ -1,6 +1,6 @@
 import { useEffectEvent, useLayoutEffect, useRef } from 'react';
 import type { CellKeyboardEvent, CellRendererProps, EditCellKeyDownArgs, Maybe, Omit, RenderEditCellProps } from './types';
-import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
+import { bodyCellFocusRing, createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
@@ -122,6 +122,7 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
   const { cellClass } = column;
   const className = getCellClassname(
     column,
+    bodyCellFocusRing,
     'rdg-editor-container',
     !column.editorOptions?.displayCellContent && cellEditingClassname,
     typeof cellClass === 'function' ? cellClass(row) : cellClass,

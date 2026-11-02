@@ -1,8 +1,8 @@
 import { PencilIcon } from 'lucide-react';
-import { type FocusEvent, type KeyboardEvent, type MouseEvent, memo } from 'react';
+import { type MouseEvent, memo } from 'react';
 import { useRovingTabIndex } from './hooks';
 import type { CalculatedColumn, CellMouseEventHandler, CellRendererProps, MergedSlots, TileSide } from './types';
-import { cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
+import { bodyCellFocusRing, cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
 function Cell<R, SR>({
   column,
@@ -33,7 +33,7 @@ function Cell<R, SR>({
   // Explicit cursor so the hover affordance matches the editor: I-beam for free text, pointer for pickers.
   const editorCursor = isEditable ? (column.editorOptions?.editorType === 'select' ? 'cursor-pointer' : 'cursor-text') : undefined;
 
-  className = getCellClassname(column, editorCursor, typeof cellClass === 'function' ? cellClass(row) : cellClass, className);
+  className = getCellClassname(column, bodyCellFocusRing, editorCursor, typeof cellClass === 'function' ? cellClass(row) : cellClass, className);
 
   const effectiveTabIndex = column.focusable === false ? -1 : tabIndex;
 
@@ -54,8 +54,6 @@ function Cell<R, SR>({
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
     // Focus without scrolling so the cell's scroll margin cannot jump the page; the mousedown default must stay for row drag.
     event.currentTarget.focus({ preventScroll: true });
-    // Script focus matches :focus-visible in Chromium even from a click, so the ring's selector excludes this marker.
-    event.currentTarget.setAttribute('data-pointer-focus', '');
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
       selectCell({ rowIdx, idx: column.idx });
@@ -79,14 +77,6 @@ function Cell<R, SR>({
     handleMouseEvent(event, onCellContextMenu);
   }
 
-  function handleBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.removeAttribute('data-pointer-focus');
-  }
-
-  function handleKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
-    event.currentTarget.removeAttribute('data-pointer-focus');
-  }
-
   function handleRowChange(newRow: R) {
     onRowChange(column, rowIdx, newRow);
   }
@@ -106,8 +96,6 @@ function Cell<R, SR>({
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       onFocus={onFocus}
-      onBlur={handleBlur}
-      onKeyDownCapture={handleKeyDownCapture}
       {...props}
     >
       {column.mergedSlots != null ? (

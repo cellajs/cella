@@ -6,6 +6,7 @@ export {
   ChannelTileDescription,
   ChannelTileFooter,
   ChannelTileHeading,
+  ChannelTileMemberCount,
   ChannelTileMembers,
   ChannelTileMembership,
   ChannelTileParentChip,

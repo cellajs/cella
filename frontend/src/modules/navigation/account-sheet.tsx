@@ -1,18 +1,22 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { LogOutIcon, RefreshCwIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { CameraIcon, ImageUpIcon, LogOutIcon, RefreshCwIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toastOffline } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
+import { openImageUpload } from '~/modules/common/uploader/open-image-upload';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
 import { navigationStore } from '~/modules/navigation/navigation-store';
+import { Button } from '~/modules/ui/button';
+import { useUpdateUser } from '~/modules/user/query';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
@@ -20,6 +24,9 @@ import { placeholderColorClass } from '~/utils/placeholder-color-class';
 
 /** The app runs installed, in its own window without browser controls. */
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
+
+/** An upload button over an image that is already set; one for a missing image stays visible as an invitation. */
+const revealOnCoverHover = 'opacity-0 pointer-coarse:opacity-100 max-sm:opacity-100 focus-visible:opacity-100 group-hover/cover:opacity-100';
 
 export function AccountSheet() {
   const { t } = useTranslation();
@@ -31,6 +38,7 @@ export function AccountSheet() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { mutate: updateUser } = useUpdateUser(user.id);
 
   const frameRef = useRef<HTMLDivElement>(null);
   const { hasStarted } = useMountedState();
@@ -60,31 +68,95 @@ export function AccountSheet() {
     Promise.allSettled([queryClient.invalidateQueries(), router.invalidate()]);
   };
 
+  const profileLabel = t('c:view_resource', { resource: t('c:profile') });
+  const coverLabel = t(user.bannerUrl ? 'c:change_resource' : 'c:upload_resource', { resource: t('c:cover') });
+  const pictureLabel = t(user.thumbnailUrl ? 'c:change_resource' : 'c:upload_resource', { resource: t('c:profile_picture') });
+
+  const uploadCover = () =>
+    openImageUpload({
+      templateId: 'cover',
+      title: coverLabel,
+      onUploaded: (bannerUrl) => updateUser({ bannerUrl }, { onSuccess: () => toaster.success(t('c:success.upload_cover')) }),
+      onDelete: user.bannerUrl
+        ? () => updateUser({ bannerUrl: null }, { onSuccess: () => toaster.success(t('c:success.delete_resource', { resource: t('c:cover') })) })
+        : undefined,
+    });
+
+  const uploadPicture = () =>
+    openImageUpload({
+      templateId: 'avatar',
+      title: pictureLabel,
+      onUploaded: (thumbnailUrl) =>
+        updateUser({ thumbnailUrl }, { onSuccess: () => toaster.success(t('c:success.update_resource', { resource: t('c:profile_picture') })) }),
+      onDelete: user.thumbnailUrl
+        ? () =>
+            updateUser(
+              { thumbnailUrl: null },
+              { onSuccess: () => toaster.success(t('c:success.delete_resource', { resource: t('c:profile_picture') })) },
+            )
+        : undefined,
+    });
+
   return (
     <NavSheetFrame ref={frameRef} panels>
-      <div className="px-3 pt-3">
-        <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
-      </div>
-      <button type="button" tabIndex={-1} onClick={openProfile} className="mt-3 w-full">
-        <div
+      <h2 className="sr-only">{t('c:account')}</h2>
+      <div className="group/cover relative">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={profileLabel}
+          onClick={openProfile}
           className={cn(
-            'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-colors duration-300',
+            'block h-64 w-full bg-center bg-cover transition-colors duration-300 max-sm:h-40',
             !user.bannerUrl && placeholderColorClass(user.id),
           )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="absolute top-6 left-1/2 -ml-10"
-          >
-            <EntityAvatar className="size-20 ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
-          </motion.div>
+        />
+        <div className="mask-[linear-gradient(to_bottom,transparent,black_60%)] pointer-events-none absolute inset-x-0 bottom-0 h-44 backdrop-blur-md max-sm:h-28" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-linear-to-b from-transparent via-40% via-card/70 to-65% to-card max-sm:h-28" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-3">
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <EntityAvatar className="size-20 ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+            </motion.div>
+            {appConfig.has.uploadEnabled && (
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={pictureLabel}
+                onClick={uploadPicture}
+                className={cn(
+                  'pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full transition-opacity max-sm:size-8',
+                  user.thumbnailUrl && revealOnCoverHover,
+                )}
+              >
+                <CameraIcon className="size-3.5" />
+              </Button>
+            )}
+          </div>
+          <p className="max-w-full truncate font-semibold text-base">{user.name}</p>
         </div>
-      </button>
-      <div className="mt-3 flex flex-col gap-1 px-3 max-sm:mt-4">
-        <NavSheetRow icon={UserRoundIcon} id="btn-profile" label={t('c:view_resource', { resource: t('c:profile') })} onClick={openProfile} />
+        {appConfig.has.uploadEnabled && (
+          <Button
+            variant="outline-ghost"
+            size="xs"
+            onClick={uploadCover}
+            className={cn(
+              'absolute top-2.5 right-2.5 bg-background/50 backdrop-blur-xs transition-opacity hover:bg-background/75 max-sm:size-10 dark:bg-background/75',
+              user.bannerUrl && revealOnCoverHover,
+            )}
+          >
+            <ImageUpIcon />
+            <span className="max-sm:sr-only">{coverLabel}</span>
+          </Button>
+        )}
+      </div>
+      <div className="mt-3 flex flex-col gap-1 px-3">
+        <NavSheetRow icon={UserRoundIcon} id="btn-profile" label={profileLabel} onClick={openProfile} />
         <NavSheetRow isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:account_settings')} to="/account" />
         {isSystemAdmin && <NavSheetRow isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />}
         {isInstalledApp() && <NavSheetRow icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}

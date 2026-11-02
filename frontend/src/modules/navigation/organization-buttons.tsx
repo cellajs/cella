@@ -47,7 +47,12 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
     >
       <EntityAvatar
         // An outline, not a ring: its offset stays transparent over the button's hover and open fills
-        className={cn('size-8 shrink-0 transition-transform group-hover:scale-110', isCurrent && 'outline-2 outline-primary outline-offset-2')}
+        className={cn(
+          'size-8 shrink-0 transition-transform group-hover:scale-110',
+          isCurrent && 'outline-2 outline-primary outline-offset-2',
+          // Only the organization you are in, or are opening, shows its color
+          !isCurrent && !isActive && 'group-[:not(:hover,:focus-visible)]:resting-avatar',
+        )}
         type={organization.entityType}
         id={organization.id}
         name={organization.name}
@@ -105,7 +110,7 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: SidebarOrga
   const isFullMenuOpen = navSheetOpen === 'menu' && !navSheetOrganizationId;
 
   return (
-    <SidebarMenu className="no-scrollbar min-h-0 gap-1 overflow-y-auto">
+    <SidebarMenu className="no-scrollbar min-h-0 gap-0 overflow-y-auto">
       {sortAndFilterMenu(organizations, false).map((organization) => {
         const isActive = navSheetOpen === 'menu' && navSheetOrganizationId === organization.id;
         return (

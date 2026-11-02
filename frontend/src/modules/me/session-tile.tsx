@@ -76,7 +76,8 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       }
       meta={
         <>
-          {session.ipCountry && <CountryFlag countryCode={session.ipCountry} className="mr-1.5 align-[-1px]" />}
+          {/* object-cover fills the box, so the radius rounds the flag and not the space around it */}
+          {session.ipCountry && <CountryFlag countryCode={session.ipCountry} height={11} className="mr-1.5 rounded-xs object-cover align-[-1px]" />}
           {when}
         </>
       }

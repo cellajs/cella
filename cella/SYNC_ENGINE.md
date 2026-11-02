@@ -39,7 +39,7 @@ The stream carries two kinds of frame. Both are announcements: what a frame poin
 
 | | Change | Signal |
 | --- | --- | --- |
-| About | A product row | A fact of a registered type, such as `membership.changed` |
+| About | A `product` row | A fact of a registered type, such as `membership.changed` |
 | Made by | The CDC worker, from a committed row | API code after its commit, or the CDC worker from a tracked table |
 | Sent to | Subscribers who may read the row | One user, or the readers of a subject |
 | Missed while away | Catchup fetches the sequence gap | Catchup compares a **versioned** signal's version and runs its handler once; an **ephemeral** one is gone |

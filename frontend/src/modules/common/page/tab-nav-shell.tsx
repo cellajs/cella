@@ -18,15 +18,17 @@ export const tabNavItemClass = tw(
 
 interface TabNavLabelProps {
   label: TKey;
+  icon?: ReactNode;
 }
 
 /** A tab's label, shortened in the middle past 20 characters. */
-export function TabNavLabel({ label }: TabNavLabelProps) {
+export function TabNavLabel({ label, icon }: TabNavLabelProps) {
   const { t } = useTranslation();
   const text = t(label);
   const shortText = truncateMiddle(text, 20);
   return (
-    <span className="group-active/tab:press block" title={shortText === text ? undefined : text}>
+    <span className={cn('group-active/tab:press block', icon && 'flex items-center gap-1.5')} title={shortText === text ? undefined : text}>
+      {icon}
       {shortText}
     </span>
   );

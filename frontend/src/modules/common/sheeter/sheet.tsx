@@ -4,6 +4,7 @@ import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus } from '~/modules/common/overlay-store-helpers';
 import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { type InternalSheet, navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { uploader } from '~/modules/common/uploader/use-uploader';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
@@ -53,8 +54,8 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
     }
 
     if (eventDetails.reason === 'outside-press') {
-      // An outside press on a dropdown or dialog must not close the sheet
-      if (isDropdownOpen() || dialoger.getState().dialogs.some((dialog) => dialog.open)) return;
+      // An outside press on a dropdown or dialog must not close the sheet, the uploader's dialog included: it isn't in the dialoger
+      if (isDropdownOpen() || uploader.getState().uploadData || dialoger.getState().dialogs.some((dialog) => dialog.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
       if (sheet.id === navSheetId) {

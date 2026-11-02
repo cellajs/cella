@@ -7,6 +7,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
+import { canMute } from '~/modules/navigation/menu-sheet/helpers/can-mute';
 import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
@@ -69,7 +70,7 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
           name={item.name}
           url={item.thumbnailUrl}
         />
-        {item.membership.muted && (
+        {item.membership.muted && canMute(item) && (
           <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg bg-card opacity-80">
             <BellOffIcon className="size-2.5" strokeWidth={2} />
           </span>

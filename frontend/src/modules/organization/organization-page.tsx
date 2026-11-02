@@ -41,6 +41,13 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
     );
   };
 
+  const deleteCover = () => {
+    mutate(
+      { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl: null } },
+      { onSuccess: () => toaster.success(t('c:success.delete_resource', { resource: t('c:cover') })) },
+    );
+  };
+
   return (
     <>
       <PageHeader
@@ -48,6 +55,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
         organizationId={organization.id}
         canUpdate={canUpdate}
         onCoverUpdate={updateCover}
+        onCoverDelete={deleteCover}
         panel={
           organization.membership && (
             <Suspense>

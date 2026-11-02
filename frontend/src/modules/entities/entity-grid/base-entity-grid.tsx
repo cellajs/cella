@@ -22,7 +22,7 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   entities?: TEntity[];
   /** Renders one tile; a grid passes its own props through the closure, and tiles keep their identity when those change. */
   renderTile: (entity: TEntity) => ReactNode;
-  /** Approximate height of each tile in px while loading (default: 180, a banner ChannelTile). */
+  /** Approximate height of each tile in px while loading (default: 215, a banner ChannelTile). */
   skeletonHeight?: number;
   isLoading: boolean;
   isFetching: boolean;
@@ -42,7 +42,7 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
 // Total subscriptions need a key unconditionally; this one never matches a cached list.
 const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
-function EntityGridSkeleton({ tileHeight = 180 }: { tileHeight?: number }) {
+function EntityGridSkeleton({ tileHeight = 215 }: { tileHeight?: number }) {
   const { hasStarted } = useMountedState();
 
   return (

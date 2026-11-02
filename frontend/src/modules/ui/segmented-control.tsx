@@ -1,3 +1,4 @@
+import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { Radio } from '@base-ui/react/radio';
 import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -81,6 +82,26 @@ export function SegmentedControl<Value>({
 
 export function SegmentedControlItem({ className, ...props }: Radio.Root.Props) {
   return <Radio.Root data-slot="segmented-control-item" className={cn(segmentClassName, className)} {...props} />;
+}
+
+/** The same control among the rows of a dropdown menu: arrow keys walk on to the other rows and Enter picks, where a radio group would keep them and change the choice. */
+export function SegmentedMenuGroup({ className, size, children, ...props }: MenuPrimitive.RadioGroup.Props & VariantProps<typeof trackVariants>) {
+  return (
+    <MenuPrimitive.RadioGroup data-slot="segmented-menu-group" className={cn(trackVariants({ size }), className)} {...props}>
+      {children}
+      <SegmentedPill />
+    </MenuPrimitive.RadioGroup>
+  );
+}
+
+export function SegmentedMenuItem({ className, ...props }: MenuPrimitive.RadioItem.Props) {
+  return (
+    <MenuPrimitive.RadioItem
+      data-slot="segmented-menu-item"
+      className={cn(segmentClassName, 'outline-hidden focus:bg-input/40', className)}
+      {...props}
+    />
+  );
 }
 
 /** The same control for options that are routes: each child is a `<Link>` with `segmentClassName`, its active one `aria-current="page"`. */

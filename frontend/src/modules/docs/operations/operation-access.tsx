@@ -118,7 +118,7 @@ export function OperationAccess({ operation }: { operation: GenOperationSummary 
               </ExplainedValue>
               {tool.approvalRequired && (
                 <ExplainedValue item={approvalValue} enabled={!helpOpen}>
-                  <Badge variant="outline" className="border-warning text-warning">
+                  <Badge variant="outline" className="border-foreground">
                     {approvalValue.name}
                   </Badge>
                 </ExplainedValue>

@@ -31,6 +31,13 @@ export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1
   };
 }
 
+/** A body cell rings while focus is in it, clicked or not: arrow keys continue from there. */
+export const bodyCellFocusRing = 'focus-ring:focus-within:outline-2 focus-ring:focus-within:outline-solid';
+
+/** A header click sorts and moves no cell, so only the keyboard rings a header. */
+export const headerCellFocusRing =
+  'focus-ring:focus-visible:outline-2 focus-ring:focus-visible:outline-solid focus-ring:has-focus-visible:outline-2 focus-ring:has-focus-visible:outline-solid';
+
 export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extraClasses: Parameters<typeof cn>): string {
   const wrapLines = resolveWrapTextLines(column.wrapText);
   // Hosts with merged slots clamp only the main-content wrapper: display:-webkit-box on a slot wrapper breaks its flex layout.
@@ -47,12 +54,7 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden border-t-[0.05rem] border-border ${textOverflow}`,
     'sm:group-hover/row:bg-muted/50',
-    // The ring marks keyboard focus, on the cell or a control in it: a click on a read-only cell shows nothing.
-    'focus-ring:not-data-pointer-focus:focus-visible:outline-2 focus-ring:not-data-pointer-focus:focus-visible:outline-solid',
-    'focus-ring:not-data-pointer-focus:has-focus-visible:outline-2 focus-ring:not-data-pointer-focus:has-focus-visible:outline-solid',
     'outline-ring -outline-offset-2',
-    '[&:not([aria-readonly=true])]:aria-selected:bg-accent/60',
-    'max-xs:aria-selected:bg-transparent',
     { 'rdg-cell-frozen sticky z-1': column.frozen },
     ...extraClasses,
   );

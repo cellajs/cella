@@ -17,6 +17,9 @@ interface NavItemButtonProps {
 
 export const navIconStrokeWidth = 1.8;
 
+/** The button's 4px inset from the sidebar edge, plus a 4px gap outside it. */
+const tooltipSideOffset = 8;
+
 /** A nav icon's classes; larger below sm, where the bottom bar shows them. */
 export const navItemIconClass = tw('size-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5');
 
@@ -73,7 +76,7 @@ export function SidebarNavButton({
         ref={ref}
         size="lg"
         data-collapsed={isCollapsed}
-        tooltip={{ children: label, hidden: !showTooltip }}
+        tooltip={{ children: label, hidden: !showTooltip, sideOffset: tooltipSideOffset }}
         onClick={onClick}
         isActive={isActive}
         aria-current={isCurrent || undefined}

@@ -44,8 +44,8 @@ export const SelectColumn: Column<any, any> = {
   minWidth: 35,
   maxWidth: 35,
   // The checkbox draws its own ring
-  cellClass: 'rdg-cell-checkbox focus-ring:not-data-pointer-focus:has-focus-visible:outline-hidden',
-  headerCellClass: 'rdg-cell-checkbox focus-ring:not-data-pointer-focus:has-focus-visible:outline-hidden',
+  cellClass: 'rdg-cell-checkbox focus-ring:has-focus:outline-hidden',
+  headerCellClass: 'rdg-cell-checkbox focus-ring:has-focus-visible:outline-hidden',
   renderHeaderCell(props) {
     return <HeaderRenderer {...props} />;
   },
