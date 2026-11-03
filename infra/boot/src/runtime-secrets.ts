@@ -3,6 +3,9 @@ import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like';
 import { retry } from '../../lib/utils/retry';
 import { writeFileMode } from './fs-utils';
 
+/** Ceiling on one fetch of the env file, a few kilobytes: a stalled one fails and is retried. */
+const fetchAttemptTimeoutSeconds = 60;
+
 /** The values of an env file, one `NAME=value` per line, so the boot runner redacts each wherever it shows up. */
 export function envFileValues(content: string): string[] {
   return content
@@ -27,7 +30,7 @@ export async function fetchRuntimeEnv(opts: {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   const content = await retry(
     async () => {
-      const res = await fetchImpl(opts.url, { method: 'GET' });
+      const res = await fetchImpl(opts.url, { method: 'GET', signal: AbortSignal.timeout(fetchAttemptTimeoutSeconds * 1000) });
       if (!res.ok) throw new Error(`the env file's link answered ${res.status}`);
       return res.text();
     },

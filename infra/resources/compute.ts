@@ -12,7 +12,7 @@ import { composeConfig, type ServiceName } from '../compose/compose';
 import { sizing } from '../config/sizing';
 import { BOOT_IMAGE_NAME, imageRepositoryOf } from '../lib/deploy/release-archives';
 import { BOOT_ACCOUNT_LINK_SECONDS, MACHINE_FETCH_LINK_SECONDS, type ReleasePlan, readReleasePlan } from '../lib/deploy/release-plan';
-import { bucketPresigner } from '../lib/scaleway/presign';
+import { bucketPresigner, type Presigner } from '../lib/scaleway/presign';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import type { ServiceDefinition } from '../lib/services';
 import { naming, projectId, region, tags, zone, zones } from '../pulumi-context';
@@ -60,13 +60,19 @@ function archivesOf(startServices: readonly string[]): string[] {
   return [...new Set(startServices.map((slug) => imageRepositoryOf(composeConfig.services[slug]?.image ?? '')))];
 }
 
-// Signed with this run's own key: the deploy key in a deploy, which reads and writes the objects the links name.
-const presigner = bucketPresigner({
-  region,
-  bucket: naming.bootDiagBucket,
-  accessKey: projectAccessKey(process.env.SCW_ACCESS_KEY ?? '', projectId),
-  secretKey: process.env.SCW_SECRET_KEY ?? '',
-});
+let presigner: Promise<Presigner> | undefined;
+
+/**
+ * The signer of a new machine's links, made at the first link: the deploy key in a deploy, which reads and writes the objects they name. An
+ * apply or a preview makes no machine of a new release, so it loads no signer and signs nothing with the operator key.
+ */
+const deployPresigner = (): Promise<Presigner> =>
+  (presigner ??= bucketPresigner({
+    region,
+    bucket: naming.bootDiagBucket,
+    accessKey: projectAccessKey(process.env.SCW_ACCESS_KEY ?? '', projectId),
+    secretKey: process.env.SCW_SECRET_KEY ?? '',
+  }));
 
 /** What a machine's user data names: the boot runner's archive and the links to its env file, its boot account and the app's archives. */
 interface MachineLinks {
@@ -79,7 +85,7 @@ interface MachineLinks {
  * the user data it booted with (ignoreChanges below), so it gets the objects' plain addresses and no link.
  */
 async function machineLinks(plan: ReleasePlan | undefined, service: ServiceConfig, sha: string, registry: string): Promise<MachineLinks> {
-  const sign = plan?.release === sha ? await presigner : undefined;
+  const sign = plan?.release === sha ? await deployPresigner() : undefined;
   const unsigned = (key: string) => `https://${naming.bootDiagBucket}.s3.${region}.scw.cloud/${key}`;
   const get = (key: string) => (sign ? sign.get(key, MACHINE_FETCH_LINK_SECONDS) : unsigned(key));
   const archive = async (name: string): Promise<ReleaseArchive> => {

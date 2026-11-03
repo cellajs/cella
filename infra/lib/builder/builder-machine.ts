@@ -17,6 +17,12 @@ export interface BuilderValues {
  */
 export type BuilderLinks = Record<string, string>;
 
+/**
+ * Where the builder writes the release's archives before it uploads them: its disk, which holds them, and not `/run`, a tmpfs in memory.
+ * The script names the same folder, as no dollar-brace may appear in it.
+ */
+export const BUILDER_ARCHIVE_DIR = '/var/lib/release/images';
+
 /** Where the builder reports, in the boot-diagnostics bucket: `step`, `log` and `result` (`ok` or `failed`). */
 export function builderReportPrefix(sha: string): string {
   return `boot-diag/builder/${sha}/`;
@@ -31,7 +37,7 @@ set -a; . /etc/builder.env; set +a
 export HOME=/root GIT_TERMINAL_PROMPT=0
 LOG=/var/log/builder.log
 exec >>"$LOG" 2>&1
-link() { awk -F '	' -v name="$1" '$1 == name { print $2 }' /etc/builder-links.tsv; }
+link() { awk -F '\t' -v name="$1" '$1 == name { print $2 }' /etc/builder-links.tsv; }
 put() {
   url=$(link "$1")
   [ -n "$url" ] || { echo "no link for $1"; return 1; }
@@ -75,12 +81,13 @@ git -C /build checkout -q FETCH_HEAD
 
 # A BuildKit container: the docker driver writes no archive per target. Its image by digest, as it runs every build: a BuildKit bump takes
 # the index digest that 'docker buildx imagetools inspect moby/buildkit:<version>' prints.
-docker buildx create --use --name release --driver docker-container   --driver-opt image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea >/dev/null
+docker buildx create --use --name release --driver docker-container \
+  --driver-opt image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea >/dev/null
 
 step build
 # The frontend builds on a copy made before anything runs: the app's dependencies reach neither the images' source nor the boot bundle.
 if [ -n "$FRONTEND" ]; then cp -a /build /frontend; fi
-mkdir -p /run/images
+mkdir -p /var/lib/release/images
 docker buildx bake --file /etc/builder-bake.json services &
 SERVICES=$!
 # Keyless containers: the engine's workspace builds the boot bundle in the checkout, the app's the frontend in its copy.
@@ -96,21 +103,20 @@ wait "$BOOT"
 step archives
 # The manifest goes last: once it is there, every archive it names is.
 IMAGES=''
-for archive in /run/images/*.tar; do
+for archive in /var/lib/release/images/*.tar; do
   name=$(basename "$archive" .tar)
   put "image:$name" "$archive"
   if [ -n "$IMAGES" ]; then IMAGES="$IMAGES,"; fi
-  IMAGES="$IMAGES"$name":$(digest "$archive")"
+  IMAGES="$IMAGES\"$name\":$(digest "$archive")"
 done
 FRONTEND_DIGEST=''
 if [ -n "$FRONTEND" ]; then
   # Plain files and folders only, in the format the deploy reads; it refuses any other entry.
-  tar --format=ustar -C /frontend/frontend/dist -cf /run/frontend.tar .
-  put frontend /run/frontend.tar
-  FRONTEND_DIGEST=","frontend":$(digest /run/frontend.tar)"
+  tar --format=ustar -C /frontend/frontend/dist -cf /var/lib/release/frontend.tar .
+  put frontend /var/lib/release/frontend.tar
+  FRONTEND_DIGEST=",\"frontend\":$(digest /var/lib/release/frontend.tar)"
 fi
-printf '{"release":"%s","images":{%s}%s}
-' "$SHA" "$IMAGES" "$FRONTEND_DIGEST" > /run/manifest.json
+printf '{"release":"%s","images":{%s}%s}\n' "$SHA" "$IMAGES" "$FRONTEND_DIGEST" > /run/manifest.json
 put manifest /run/manifest.json
 
 finish ok

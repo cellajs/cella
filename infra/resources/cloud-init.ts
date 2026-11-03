@@ -121,7 +121,8 @@ const bootEnvContent = (p: CloudInitParams): string =>
   `BOOT_IMAGE=${p.bootImage.image}\nBOOT_ARCHIVE_SHA256=${p.bootImage.sha256}\nBOOT_ARCHIVE_URL=${p.bootImage.url}`;
 
 /**
- * Load the boot runner from its archive when the daemon lacks it, refusing an archive whose sha256 differs, then run it. It drives the host
+ * Load the boot runner from its archive when the daemon lacks it, refusing an archive whose sha256 differs, then run it. Each attempt at the
+ * archive ends within 240 s, so a stalled transfer is retried. It drives the host
  * Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the
  * daemon mounts. The boot log is mounted read-only for the diagnostics upload; `touch` first, because Docker creates a missing bind source as
  * a directory. The unit runs it at every boot, so the rule that keeps app containers off the metadata service is set here, before any
@@ -135,7 +136,7 @@ set -uo pipefail
 iptables -I DOCKER-USER -d ${metadataAddress} -j DROP || exit 1
 if ! docker image inspect "$BOOT_IMAGE" >/dev/null 2>&1; then
   mkdir -p /opt/app/images
-  curl -fsS --retry 5 --retry-all-errors -o /opt/app/images/boot-runner.tar "$BOOT_ARCHIVE_URL" || { echo "the boot runner archive could not be fetched"; exit 1; }
+  curl -fsS --max-time 240 --retry 5 --retry-all-errors -o /opt/app/images/boot-runner.tar "$BOOT_ARCHIVE_URL" || { echo "the boot runner archive could not be fetched"; exit 1; }
   if ! echo "$BOOT_ARCHIVE_SHA256  /opt/app/images/boot-runner.tar" | sha256sum -c --status; then
     rm -f /opt/app/images/boot-runner.tar
     echo "the boot runner archive differs from its digest: refused"

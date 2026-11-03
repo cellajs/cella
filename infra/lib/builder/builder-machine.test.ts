@@ -1,6 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BUILDER_SCRIPT, type BuilderValues, bootBundleScript, builderCloudConfig, frontendScript } from './builder-machine';
+import { parseReleaseManifest } from '../deploy/release-archives';
+import { BUILDER_ARCHIVE_DIR, BUILDER_SCRIPT, type BuilderValues, bootBundleScript, builderCloudConfig, frontendScript } from './builder-machine';
 
 const values: BuilderValues = {
   SHA: 'a'.repeat(40),
@@ -60,6 +64,35 @@ describe('the builder machine', () => {
     expect(holding(links.step)).toEqual(['/etc/builder-links.tsv']);
     for (const path of ['/etc/builder.env', '/etc/builder-links.tsv'])
       expect(files.find((file) => file.startsWith(path))).toContain("permissions: '0600'");
+  });
+
+  it('writes a manifest the deploy parses, its archives on the disk and not in the memory of /run', () => {
+    // Staging could not have shipped it: a manifest with unquoted image names is no JSON, so every deploy of the sha failed its build.
+    const lines = BUILDER_SCRIPT.split('\n');
+    const digest = lines.slice(lines.indexOf('digest() {'), lines.indexOf('digest() {') + 3);
+    const manifest = lines.slice(lines.indexOf("IMAGES=''"), lines.findIndex((line) => line.startsWith('printf \'{"release"')) + 1);
+    expect(lines).toContain(`mkdir -p ${BUILDER_ARCHIVE_DIR}`);
+    const dir = mkdtempSync(join(tmpdir(), 'builder-'));
+    mkdirSync(join(dir, 'images'));
+    for (const name of ['backend', 'infra-boot']) writeFileSync(join(dir, 'images', `${name}.tar`), name);
+    // The tools the digest names, as the builder's Linux has them; put and tar are the builder's calls, not the manifest's.
+    const tools = [
+      'put() { :; }',
+      'tar() { touch "$5"; }',
+      `sha256sum() { echo "${'a'.repeat(64)}  $1"; }`,
+      `md5sum() { echo "${'b'.repeat(32)}  $1"; }`,
+      'stat() { echo 10; }',
+    ];
+    const script = [`SHA=${'c'.repeat(40)}`, 'FRONTEND=1', ...tools, ...digest, ...manifest]
+      .join('\n')
+      .replaceAll(BUILDER_ARCHIVE_DIR, join(dir, 'images'))
+      .replaceAll('/var/lib/release/', `${dir}/`)
+      .replaceAll('/run/', `${dir}/`);
+    const run = spawnSync('bash', ['-eo', 'pipefail'], { input: script, encoding: 'utf8' });
+    expect(run.stderr).toBe('');
+    const parsed = parseReleaseManifest(readFileSync(join(dir, 'manifest.json'), 'utf8'), 'c'.repeat(40));
+    expect(Object.keys(parsed.images).sort()).toEqual(['backend', 'infra-boot']);
+    expect(parsed.frontend).toEqual({ sha256: 'a'.repeat(64), md5: 'b'.repeat(32), bytes: 10 });
   });
 
   it('builds the boot bundle with the engine only, apart from the frontend', () => {

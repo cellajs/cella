@@ -184,6 +184,7 @@ export async function runDeploy(
   const work = await mkdtemp(join(tmpdir(), 'deploy-'));
   const envsFile = join(work, 'envs.json');
   let envsWritten = false;
+  let linksCleared = false;
   let outcome: 'ok' | 'error' = 'ok';
   let failure: unknown;
   try {
@@ -300,9 +301,10 @@ export async function runDeploy(
       throw err;
     }
     // Each new machine fetched its env file and archives: once its boot account arrived, its user data keeps no link and its env file goes.
-    await step('Take the links off the new machines', () =>
-      fx.task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile]),
-    );
+    await step('Take the links off the new machines', async () => {
+      await fx.task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile]);
+      linksCleared = true;
+    });
 
     await step('Verify public versions', async () => {
       // Every LB-exposed service, not just the VM-owning rollout rows: co-hosted and collocated followers are repointed by cutover without their own version probe.
@@ -338,8 +340,8 @@ export async function runDeploy(
     failure = err;
     throw err;
   } finally {
-    // Whatever stopped the run, no env file outlives it and no machine of it keeps a link.
-    if (envsWritten) {
+    // Whatever stopped the run before its step did, no env file outlives it and no machine of it keeps a link.
+    if (envsWritten && !linksCleared) {
       await fx
         .task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile, '--no-wait'])
         .catch((err) => say(`[deploy] the links stay until they end, the env files until the bucket's rule: ${errorMessage(err)}`));

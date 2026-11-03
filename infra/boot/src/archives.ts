@@ -12,9 +12,12 @@ import type { ReleaseArchive } from './plan';
 /** Ceiling on one `docker load` of an archive: the backend image loads in well under a minute. */
 const loadTimeoutSeconds = 600;
 
+/** Ceiling on one fetch of an archive, body included: a stalled transfer fails and is retried. A cold backend archive takes well under a minute. */
+const fetchAttemptTimeoutSeconds = 240;
+
 /** Fetch one archive to `path`, returning the sha256 of what arrived. */
 async function download(url: string, path: string): Promise<string> {
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(fetchAttemptTimeoutSeconds * 1000) });
   if (!res.ok || !res.body) throw new Error(`the archive's link answered ${res.status}`);
   const hash = createHash('sha256');
   const hashing = new Transform({

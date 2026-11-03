@@ -2,7 +2,14 @@ import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { type BuilderLinks, bootBundleScript, builderCloudConfig, builderReportPrefix, frontendScript } from '../lib/builder/builder-machine';
+import {
+  BUILDER_ARCHIVE_DIR,
+  type BuilderLinks,
+  bootBundleScript,
+  builderCloudConfig,
+  builderReportPrefix,
+  frontendScript,
+} from '../lib/builder/builder-machine';
 import { readUstar, writeArchiveFiles } from '../lib/deploy/frontend-archive';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
 import {
@@ -106,7 +113,13 @@ export async function buildRelease(
   // Under the stack lock, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
   // whether or not this release needs a build.
   for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
-  let manifest = await fx.manifest();
+  // A manifest that cannot be parsed names no archive: the release is built again, and the build overwrites it.
+  const readManifest = () =>
+    fx.manifest().catch((error: unknown) => {
+      log(`[build] the manifest of ${opts.sha.slice(0, 10)} cannot be read (${errorMessage(error)}): it counts as missing`);
+      return undefined;
+    });
+  let manifest = await readManifest();
   const missing = await missingParts(opts, fx, manifest);
 
   let outcome: 'present' | 'built' = 'present';
@@ -132,7 +145,7 @@ export async function buildRelease(
     } finally {
       for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}`);
     }
-    manifest = await fx.manifest();
+    manifest = await readManifest();
     const still = await missingParts(opts, fx, manifest);
     if (still.length > 0) throw new Error(`the builder reported a build, and the bucket lacks ${still.join(', ')} of it`);
   } else {
@@ -385,7 +398,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             releaseSha: sha,
             nodeVersion,
             context: '/build',
-            archiveDir: '/run/images',
+            archiveDir: BUILDER_ARCHIVE_DIR,
           }),
           boot: bootBundleScript(pnpmVersion),
           frontend: frontendBucket ? frontendScript(pnpmVersion) : '',

@@ -11,14 +11,26 @@ const manifest: ReleaseManifest = { release: sha, images: { backend: digest, 'in
 
 /** `earlier`: the result an earlier build of the commit left under its prefix an hour before, served with its step and log for two polls. */
 function fake(
-  opts: { present?: boolean; result?: string; never?: boolean; step?: string; outOfStock?: string; earlier?: string; mismatch?: string } = {},
+  opts: {
+    present?: boolean;
+    result?: string;
+    never?: boolean;
+    step?: string;
+    outOfStock?: string;
+    earlier?: string;
+    mismatch?: string;
+    unparsable?: boolean;
+  } = {},
 ) {
   const ops: string[] = [];
   let built = false;
   let published = false;
   let polls = 0;
   const fx: BuildEffects = {
-    manifest: async () => (opts.present || built ? manifest : undefined),
+    manifest: async () => {
+      if (opts.unparsable && !built) throw new SyntaxError('Unexpected token b in JSON at position 33');
+      return opts.present || built ? manifest : undefined;
+    },
     archiveMatches: async (key) => !(opts.mismatch && key.includes(opts.mismatch) && !built),
     links: async (archives) => {
       ops.push('links');
@@ -84,6 +96,12 @@ describe('buildRelease', () => {
 
   it('must not trust an archive that is not the one its manifest names: the release is built again', async () => {
     const { fx, ops } = fake({ present: true, mismatch: 'images/backend.tar' });
+    expect((await buildRelease(options(), fx)).outcome).toBe('built');
+    expect(ops).toContain('start:app-builder-cccccccccc@nl-ams-1');
+  });
+
+  it('builds a release again whose manifest cannot be parsed, and does not end the deploy on it', async () => {
+    const { fx, ops } = fake({ present: true, unparsable: true });
     expect((await buildRelease(options(), fx)).outcome).toBe('built');
     expect(ops).toContain('start:app-builder-cccccccccc@nl-ams-1');
   });

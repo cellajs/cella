@@ -95,10 +95,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       setUserData: async (serverId, text) => {
         await call('PATCH', `${instance}/${serverId}/user_data/cloud-init`, text);
       },
+      // A version an earlier attempt deleted is gone as asked.
       deleteEnv: async (env) => {
-        await s3.send(
-          new DeleteObjectCommand({ Bucket: naming.bootDiagBucket, Key: env.env, ...(env.envVersion ? { VersionId: env.envVersion } : {}) }),
-        );
+        const version = env.envVersion ? { VersionId: env.envVersion } : {};
+        await s3.send(new DeleteObjectCommand({ Bucket: naming.bootDiagBucket, Key: env.env, ...version })).catch((error: unknown) => {
+          if ((error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode !== 404) throw error;
+        });
       },
       sleep: (ms) => new Promise((done) => setTimeout(done, ms)),
       log: (message) => console.info(message),

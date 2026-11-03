@@ -65,6 +65,8 @@ describe('renderCloudInit', () => {
     const check = lines.findIndex((line) => line.includes('sha256sum -c --status'));
     expect(check).toBeGreaterThan(-1);
     expect(lines[check]).toContain('"$BOOT_ARCHIVE_SHA256  /opt/app/images/boot-runner.tar"');
+    // A stalled transfer must not hold the boot: each attempt ends and is retried.
+    expect(lines.find((line) => line.includes('"$BOOT_ARCHIVE_URL"'))).toMatch(/curl -fsS --max-time \d+ --retry/);
     expect(lines.slice(check + 1, check + 5)).toContain('    exit 1');
     expect(check).toBeLessThan(lines.findIndex((line) => line.includes('docker load')));
     expect(lines.findIndex((line) => line.includes('docker load'))).toBeLessThan(lines.findIndex((line) => line.startsWith('exec docker run')));

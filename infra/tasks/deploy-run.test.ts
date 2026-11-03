@@ -154,8 +154,6 @@ describe('runDeploy sequencing', () => {
       'task:smoke',
       // The displaced generations are reaped once smoke passed, under the same lock.
       'update:production',
-      // No env file outlives the run, and no machine keeps a link.
-      'task:clear-machine-links:no-wait',
       'lease:release',
     ];
     let cursor = -1;
@@ -220,6 +218,7 @@ describe('runDeploy sequencing', () => {
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
     expect(records.at(-1)?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
+    // No env file outlives the run, and no machine of it keeps a link.
     expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
   });
 
@@ -231,14 +230,16 @@ describe('runDeploy sequencing', () => {
     expect(build[build.indexOf('--dist') + 1]).toBe('');
     expect(ops).not.toContain('publish-entry');
     expect(ops).toContain('task:smoke');
-    expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
+    // The links went at their step, after the rollout: the end of the run clears nothing again.
+    expect(ops.filter((op) => op.startsWith('task:clear-machine-links'))).toEqual(['task:clear-machine-links']);
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('publishes and smoke-tests the entry files the build wrote', async () => {
