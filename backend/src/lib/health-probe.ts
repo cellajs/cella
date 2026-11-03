@@ -1,21 +1,15 @@
 import { appConfig } from 'shared';
 import type { ProbeResult } from '#/lib/health-helpers';
+import { TTLCache } from '#/lib/ttl-cache';
 
 /** Probes siblings over their real network path; short caching keeps it cheap and the timeout bounds a stall. */
 const probeTimeoutMs = 2_000;
-const probeCacheTtlMs = 10_000;
 
-const cache = new Map<string, { at: number; result: ProbeResult }>();
+/** One entry per probed worker URL. */
+const probeCache = new TTLCache<ProbeResult>({ maxSize: 3, defaultTtl: 10_000 });
 
-/** Probes a sibling worker's `/health?depth=full`, answering from a per-URL cache for `probeCacheTtlMs`. */
-export async function probeWorker(baseUrl: string): Promise<ProbeResult> {
-  const cached = cache.get(baseUrl);
-  if (cached && Date.now() - cached.at < probeCacheTtlMs) return cached.result;
-
-  const result = await runProbe(baseUrl);
-  cache.set(baseUrl, { at: Date.now(), result });
-  return result;
-}
+/** Probes a sibling worker's `/health?depth=full`, answering from a per-URL cache for 10 s; concurrent callers share one probe. */
+export const probeWorker = (baseUrl: string): Promise<ProbeResult> => probeCache.load(baseUrl, () => runProbe(baseUrl));
 
 async function runProbe(baseUrl: string): Promise<ProbeResult> {
   const startedAt = Date.now();
@@ -48,23 +42,15 @@ function extractYjsDetails(body: Record<string, unknown>): Record<string, unknow
   };
 }
 
-/** Curate the mcp worker's envelope (its own `mcp` self-component) into details. */
-function extractMcpDetails(body: Record<string, unknown>): Record<string, unknown> {
-  const components = body.components as Record<string, { details?: Record<string, unknown> }> | undefined;
-  const mcpDetails = components?.mcp?.details;
-  if (mcpDetails) return mcpDetails;
-  return { mode: body.mode ?? null };
-}
-
 /** Curate the oauth worker's envelope into the status of each of its checks (database, signing key, invalidation). */
 function extractOauthDetails(body: Record<string, unknown>): Record<string, unknown> {
   const components = (body.components ?? {}) as Record<string, { status?: string }>;
   return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, component.status ?? null]));
 }
 
-/** The sibling workers the api process probes, in the order the health response lists them, each with how its body reads. */
+/** The sibling workers the api process probes, in the order the health response lists them; the mcp worker's status is its whole answer. */
 export const probedWorkers = [
   { name: 'yjs', url: appConfig.yjsUrl, details: extractYjsDetails },
-  { name: 'mcp', url: appConfig.mcpUrl, details: extractMcpDetails },
+  { name: 'mcp', url: appConfig.mcpUrl, details: () => ({}) },
   { name: 'oauth', url: appConfig.oauthUrl, details: extractOauthDetails },
 ] as const;

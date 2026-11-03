@@ -25,8 +25,8 @@ export const sendAccountSecurityEmail = (
 
 const perUserLimits = { points: 1, duration: 60 * 60 };
 const perTypeLimits = { points: 20, duration: 60 * 60 };
-const inboxMailsPerUser = getRateLimiterInstance({ keyPrefix: 'securityInboxMailUser', ...perUserLimits, inMemoryBlock: false });
-const inboxMailsPerType = getRateLimiterInstance({ keyPrefix: 'securityInboxMailType', ...perTypeLimits, inMemoryBlock: false });
+const inboxMailsPerUser = getRateLimiterInstance({ keyPrefix: 'securityInboxMailUser', ...perUserLimits });
+const inboxMailsPerType = getRateLimiterInstance({ keyPrefix: 'securityInboxMailType', ...perTypeLimits });
 
 /** Whether a mail `raisedBy` raised may go: the user's own budget first, so one user cannot spend the ceiling. */
 const inboxHasRoom = async (type: AccountSecurityType, raisedBy: string) => {

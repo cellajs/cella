@@ -22,14 +22,14 @@ const long: BucketLimits = { points: 100, duration: threeWeeks, blockDuration: t
  */
 const tiers: Tier[] = [
   {
-    store: getRateLimiterInstance({ ...hourly, keyPrefix: 'totpAccount', inMemoryBlock: false }),
+    store: getRateLimiterInstance({ ...hourly, keyPrefix: 'totpAccount' }),
     limits: hourly,
     counts: 'fail',
     resetsOnSuccess: true,
   },
   slowTier('totpAccount'),
   {
-    store: getRateLimiterInstance({ ...long, keyPrefix: 'totpAccount:long', inMemoryBlock: false }),
+    store: getRateLimiterInstance({ ...long, keyPrefix: 'totpAccount:long' }),
     limits: long,
     counts: 'fail',
     resetsOnSuccess: false,

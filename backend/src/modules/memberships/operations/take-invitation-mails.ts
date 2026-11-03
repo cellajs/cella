@@ -10,10 +10,10 @@ const addressLimits = { points: 1, duration: day };
  * first and keep a real invitation from going out; it holds the address, not the row, so withdrawing and inviting again
  * stays inside it.
  */
-const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits, inMemoryBlock: false });
+const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits });
 
 /** A tenant's invitation mails a day, against its `invitationMailsPerDay` restriction, so admin accounts do not multiply it. */
-const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day, inMemoryBlock: false });
+const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day });
 
 const addressKey = (tenantId: string, email: string) => subjectSegment('tenantId', tenantId) + subjectSegment('email', email);
 

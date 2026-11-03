@@ -12,7 +12,7 @@ import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../.
 
 const addressMailLimits = { points: 1, duration: 60 * 60 * 24 };
 /** One mail per address a day from the form, whatever its type: anyone may type anyone's address into it. */
-const addressMails = getRateLimiterInstance({ keyPrefix: 'requestFormMail', ...addressMailLimits, inMemoryBlock: false });
+const addressMails = getRateLimiterInstance({ keyPrefix: 'requestFormMail', ...addressMailLimits });
 const mayMail = async (email: string) => (await reserveAttempt(addressMails, subjectSegment('email', email), addressMailLimits)).granted;
 
 type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;

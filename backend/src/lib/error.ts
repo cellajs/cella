@@ -215,9 +215,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   if (traced instanceof Error) ctx.error = traced;
 
   // A navigation's refusal answers with a redirect to its error page, whatever refused it; tests read the JSON body.
-  const errorPagePath = clientError.meta?.errorPagePath ?? ctx.var.errorPagePath;
   if (clientError.willRedirect || (ctx.var.errorPagePath !== undefined && appConfig.mode !== 'test')) {
-    const redirectUrl = new URL(errorPagePath || '/error', appConfig.frontendUrl);
+    const redirectUrl = new URL(ctx.var.errorPagePath || '/error', appConfig.frontendUrl);
     redirectUrl.searchParams.set('error', clientError.type);
     redirectUrl.searchParams.set('severity', clientError.severity);
     if (clientError.meta?.tokenId) redirectUrl.searchParams.set('tokenId', clientError.meta.tokenId);

@@ -30,19 +30,9 @@ describe('worstStatus', () => {
 });
 
 describe('rollupStatus', () => {
-  const critical = new Set(['api', 'database']);
-
-  it('is healthy when all components are healthy', () => {
-    expect(rollupStatus({ api: { status: 'healthy' }, yjs: { status: 'healthy' } }, critical)).toBe('healthy');
-  });
-
-  it('lets a critical component drive unhealthy', () => {
-    expect(rollupStatus({ database: { status: 'unhealthy' } }, critical)).toBe('unhealthy');
-  });
-
-  it('caps a non-critical unhealthy component at degraded', () => {
-    expect(rollupStatus({ cdc: { status: 'unhealthy' } }, critical)).toBe('degraded');
-    expect(rollupStatus({ yjs: { status: 'unhealthy' }, mcp: { status: 'unhealthy' } }, critical)).toBe('degraded');
+  it('lets an unhealthy worker make the rollup unhealthy, as the smoke step grades it', () => {
+    expect(rollupStatus({ api: { status: 'healthy' }, cdc: { status: 'unhealthy' }, jobs: { status: 'degraded' } })).toBe('unhealthy');
+    expect(rollupStatus({ api: { status: 'healthy' }, jobs: { status: 'degraded' } })).toBe('degraded');
   });
 });
 

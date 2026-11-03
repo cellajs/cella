@@ -16,7 +16,7 @@ const slowLimits: BucketLimits = { points: 100, duration: 60 * 60 * 24, blockDur
  * @param keyPrefix - The budget's prefix; this bucket lives under `<keyPrefix>:slow`.
  */
 export const slowTier = (keyPrefix: string): Tier => ({
-  store: getRateLimiterInstance({ ...slowLimits, keyPrefix: `${keyPrefix}:slow`, inMemoryBlock: false }),
+  store: getRateLimiterInstance({ ...slowLimits, keyPrefix: `${keyPrefix}:slow` }),
   limits: slowLimits,
   counts: 'fail',
   resetsOnSuccess: false,

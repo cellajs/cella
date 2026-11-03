@@ -24,22 +24,21 @@ describe('Health endpoint', () => {
     expect(text).toBe('');
   });
 
-  it('GET /health?depth=full returns full diagnostics', async () => {
+  it('GET /health?depth=full returns full diagnostics, as a 503 while a worker is unhealthy', async () => {
     const res = await fetchHealth('?depth=full');
     const body = (await res.json()) as Record<string, any>;
     const components = body.components as Record<string, any>;
 
-    expect(res.status).toBe(200);
+    // No CDC worker connects in tests.
+    expect(components.cdc).toMatchObject({ status: 'unhealthy', reason: 'worker_disconnected' });
+    expect(body.status).toBe('unhealthy');
+    expect(res.status).toBe(503);
     expect(res.headers.get('cache-control')).toContain('max-age=5');
-    expect(body).toHaveProperty('status');
     expect(body).toHaveProperty('uptime');
-    expect(body).toHaveProperty('components');
     expect(components).toHaveProperty('api');
     expect(components).toHaveProperty('database');
-    expect(components).toHaveProperty('cdc');
     expect(components).toHaveProperty('jobs');
     expect(['healthy', 'degraded']).toContain(components.jobs.status);
-    expect(['healthy', 'degraded', 'unhealthy']).toContain(body.status);
     expect(['healthy', 'unhealthy']).toContain(components.database.status);
     expect(components.api.details).toHaveProperty('heapUsedMb');
     expect(components.api.details).toHaveProperty('heapTotalMb');
