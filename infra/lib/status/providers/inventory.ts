@@ -6,7 +6,7 @@ import { actionCommand } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
-import { DURABLE_KEY_HOURS, organizationIdOfKey } from '../../scaleway/operator-identity';
+import { durableKeyLife, organizationIdOfKey } from '../../scaleway/operator-identity';
 import { appPrincipalNames } from '../../scaleway/principals';
 import { scwFetch } from '../../scaleway/scw-fetch';
 import { type CheckBuilder, check, probed } from '../check';
@@ -122,9 +122,8 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
     const name = nameOf.get(id) ?? id;
     if (name === expect.operator) {
       for (const key of keys) {
-        if (!key.expires_at || Date.parse(key.expires_at) - now > DURABLE_KEY_HOURS * 3_600_000) {
+        if (durableKeyLife({ expiresAt: key.expires_at ?? undefined }, now))
           found.operatorKeys.push(`${name} holds a key that outlives a day: ${describe(key)}`);
-        }
       }
     } else if (expect.oneKey.includes(name) && keys.length > 1) {
       found.keys.push(`${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`);

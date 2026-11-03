@@ -2,8 +2,9 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
-import { actionCommand, menuPath } from '../../lib/operator-actions';
+import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -14,7 +15,7 @@ import { syncDeployTelemetryKey } from '../../lib/telemetry/sink-key';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
+import { admitOperatorToBuckets, memberShutOut } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
@@ -278,11 +279,25 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
 /**
  * Admit the operator to bucket policies written before it, before anything of the run reads the state (tasks/admit-operator-buckets.ts):
- * nothing when it is admitted already. Ends the action when the policies shut it out and nothing can let it in.
+ * nothing when it is admitted already. Ends the action when the policies shut it out and nothing can let it in. A member of the operators
+ * group joins the policies at the next apply, which runs on a key they admit: a member they shut out is told so, before the bare 403.
  */
 export async function admitOperatorOrExit(context: InfraContext, key: { accessKey: string; secretKey: string }): Promise<void> {
   const operator = await describeKey(key).catch(() => undefined);
-  if (operator?.bearer !== 'application') return;
+  if (!operator) return;
+  if (operator.bearer !== 'application') {
+    const names = appPrincipalNames(context.appConfig.appSlug);
+    const shutOut = await memberShutOut({
+      appConfig: context.appConfig,
+      projectId: context.projectId,
+      member: { ...key, userId: operator.bearerId },
+    }).catch(() => false);
+    if (!shutOut) return;
+    console.error(
+      `${warningMark} The bucket policies of ${context.environment} do not name ${operator.name} yet: the first "${actionLabel('apply')}" since you joined '${names.operators}' runs on a key of '${names.operator}', or of a member they name, and writes you in. Paste that key.`,
+    );
+    endAction(1);
+  }
   try {
     const admitted = await admitOperatorToBuckets({
       appConfig: context.appConfig,

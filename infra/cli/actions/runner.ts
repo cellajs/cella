@@ -13,13 +13,14 @@ import { createApiKey, deleteApiKey, listApiKeys, resolveApplicationIdByName } f
 import { removeMachines, type ScwServer } from '../../lib/scaleway/machines';
 import { RUNNER_PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions';
 import { extendPolicyReach, readPolicy } from '../../lib/scaleway/policy-reach';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { type PolicyRule, provisionScopedKey } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { type ScwAuth, scwFetch, scwSend } from '../../lib/scaleway/scw-fetch';
 import { changeMark, checkMark, crossMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
-import { extendOperatorReach } from '../../tasks/setup-operators';
+import { durableKeyRevokeNotice, extendOperatorReach } from '../../tasks/setup-operators';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { acquireIdentityKey, acquireOperatorKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
@@ -190,12 +191,17 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
       );
     }
 
-    const operator = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
-    if (operator === 'absent') {
-      console.warn(`${warningMark} The app has no operator yet: \`${actionCommand('operator-key')}\` makes it, then run this again.`);
-    } else {
-      console.info(`  ${operator === 'extended' ? changeMark : checkMark} The operator reaches '${name}'.`);
+    const operators = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
+    const names = appPrincipalNames(appConfig.appSlug);
+    for (const [principal, outcome] of [
+      [names.operator, operators.application],
+      [names.operators, operators.group],
+    ] as const) {
+      if (outcome === 'absent')
+        console.warn(`${warningMark} The app has no '${principal}' yet: \`${actionCommand('operator-key')}\` makes it, then run this again.`);
+      else console.info(`  ${outcome === 'extended' ? changeMark : checkMark} '${principal}' reaches '${name}'.`);
     }
+    if (operators.conditionDropped) console.warn(`${warningMark} ${durableKeyRevokeNotice(names)}`);
     writeRunnerFile({ projectId: project.id, release: file?.release ?? checkoutCommit(), environments });
   } finally {
     await ownerKey.release();

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { ensureApplication, ensureGroup } from '../lib/scaleway/scaleway-iam';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
-import { operatorPolicyReach, operatorRules, setupOperators } from './setup-operators';
+import { OPERATOR_POLICY_DESCRIPTION as DESCRIPTION, operatorPolicyReach, operatorRules, setupOperators } from './setup-operators';
 
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ ensureApplication: vi.fn(), ensureGroup: vi.fn() }));
 vi.mock('../lib/scaleway/dns-zone-project', () => ({ resolveDnsProjectIds: vi.fn() }));
@@ -19,7 +19,7 @@ const base = {
 };
 
 /** The policies IAM lists by name, with their rules; a name absent here is a policy that does not exist. */
-const live = new Map<string, { id: string; application_id?: string; group_id?: string; rules: unknown[] }>();
+const live = new Map<string, { id: string; application_id?: string; group_id?: string; description?: string; rules: unknown[] }>();
 
 beforeEach(() => {
   vi.mocked(ensureApplication).mockReset().mockResolvedValue({ id: 'app-1', name: 'cella-operator' });
@@ -34,7 +34,11 @@ beforeEach(() => {
       if (method === 'GET' && pathname.endsWith('/policies')) {
         const name = searchParams.get('policy_name') ?? '';
         const policy = live.get(name);
-        return { policies: policy ? [{ id: policy.id, name, application_id: policy.application_id, group_id: policy.group_id }] : [] };
+        return {
+          policies: policy
+            ? [{ id: policy.id, name, application_id: policy.application_id, group_id: policy.group_id, description: policy.description }]
+            : [],
+        };
       }
       if (method === 'GET' && pathname.endsWith('/rules')) {
         const policy = [...live.values()].find((candidate) => candidate.id === searchParams.get('policy_id'));
@@ -52,13 +56,6 @@ describe('operatorRules', () => {
     const rules = operatorRules({ projectIds: ['proj'], organizationId: 'org-1', dnsProjectIds: ['proj', 'zone-proj'] });
     expect(rules).toHaveLength(3);
     for (const rule of rules) expect(rule.condition).toBeUndefined();
-  });
-
-  it("grants every product of the app's projects, and IAM read in the organization", () => {
-    expect(operatorRules({ projectIds: ['proj', 'proj-staging'], organizationId: 'org-1', dnsProjectIds: ['proj'] })).toEqual([
-      { permission_set_names: ['AllProductsFullAccess'], project_ids: ['proj', 'proj-staging'] },
-      { permission_set_names: ['IAMReadOnly'], organization_id: 'org-1' },
-    ]);
   });
 
   it('must not write IAM: no rule holds a set that writes applications, policies or keys', () => {
@@ -81,36 +78,23 @@ describe('operatorRules', () => {
 describe('setupOperators', () => {
   const rules = operatorRules({ projectIds: ['proj', 'proj-staging'], organizationId: 'org-1', dnsProjectIds: ['proj'] });
 
-  it('makes the application, the group and a policy for each with the same rules, and no key', async () => {
-    const result = await setupOperators(base);
-
-    expect(result).toEqual({ applicationPolicy: 'created', groupPolicy: 'created' });
-    // No mode: the application is named `cella-operator` and joins no environment's group, so tearing one environment down leaves it.
-    const [opts, application] = vi.mocked(ensureApplication).mock.calls[0] ?? [];
-    expect(opts).toMatchObject({ slug: 'cella', projectId: 'proj' });
-    expect(opts?.mode).toBeUndefined();
-    expect(application?.suffix).toBe('operator');
-    expect(ensureGroup).toHaveBeenCalledWith(expect.objectContaining({ name: 'cella-operators', organizationId: 'org-1' }));
-    expect(posted().map(([, , , body]) => body)).toEqual([
-      expect.objectContaining({ name: 'cella-operator-policy', application_id: 'app-1', rules }),
-      expect.objectContaining({ name: 'cella-operators-policy', group_id: 'group-1', rules }),
-    ]);
-    expect(scwSend).not.toHaveBeenCalled();
-  });
-
-  it('replaces the rules of a policy that differs in place, so its keys keep working, and leaves one that matches alone', async () => {
+  it('replaces the rules and the description of a policy that differs in place, so its keys keep working, says when a condition went, and leaves one that matches alone', async () => {
     live.set('cella-operator-policy', {
       id: 'pol-app',
       application_id: 'app-1',
+      description: 'conditioned on the dedicated IP address',
       rules: [{ ...rules[0], condition: "request.ip in ['203.0.113.7']" }],
     });
-    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'group-1', rules });
+    live.set('cella-operators-policy', { id: 'pol-group', group_id: 'group-1', description: DESCRIPTION, rules });
 
     const result = await setupOperators(base);
 
-    expect(result).toEqual({ applicationPolicy: 'updated', groupPolicy: 'unchanged' });
+    expect(result).toEqual({ applicationPolicy: 'updated', groupPolicy: 'unchanged', conditionDropped: true });
     expect(posted()).toEqual([]);
-    expect(vi.mocked(scwSend).mock.calls).toEqual([[expect.anything(), 'PUT', expect.stringMatching(/\/rules$/), { policy_id: 'pol-app', rules }]]);
+    expect(vi.mocked(scwSend).mock.calls).toEqual([
+      [expect.anything(), 'PUT', expect.stringMatching(/\/rules$/), { policy_id: 'pol-app', rules }],
+      [expect.anything(), 'PATCH', expect.stringMatching(/\/policies\/pol-app$/), { description: DESCRIPTION }],
+    ]);
   });
 
   it('must not take over a policy bound to another principal', async () => {

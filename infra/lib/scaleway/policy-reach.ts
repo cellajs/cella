@@ -31,6 +31,7 @@ export function policyReach(rules: readonly LiveRule[], projectSets: readonly st
 /** A policy as IAM lists it: bound to exactly one of an application, a group or a user. */
 export interface LivePolicy {
   id: string;
+  description?: string;
   rules: LiveRule[];
   application_id?: string;
   group_id?: string;

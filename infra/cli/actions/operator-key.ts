@@ -1,12 +1,11 @@
 import { confirm } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
-import { readPolicy } from '../../lib/scaleway/policy-reach';
 import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { operatorPolicyReach, setupOperators } from '../../tasks/setup-operators';
+import { type OperatorsResult, setupOperators } from '../../tasks/setup-operators';
 import { endAction, type InfraContext } from '../shared';
 import { oneDayKeyHowto } from './operator-unlock';
 import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
@@ -20,23 +19,24 @@ export function operatorReach(mode: string, projectId: string, others: ReadonlyM
  * Write the app's operators with an Owner key the caller holds: the operator application, the operators group and a policy for each, over
  * `reach` and every project the operator policy reaches today (the runner's among them, which no environment file on this machine names).
  */
-async function writeOperators(context: InfraContext, ownerKey: OwnerKey, reach: ReadonlyArray<{ mode: string; projectId: string }>): Promise<void> {
+async function writeOperators(
+  context: InfraContext,
+  ownerKey: OwnerKey,
+  reach: ReadonlyArray<{ mode: string; projectId: string }>,
+): Promise<OperatorsResult> {
   const { appConfig, projectId } = context;
-  const names = appPrincipalNames(appConfig.appSlug);
-  const today = await readPolicy({ secretKey: ownerKey.secretKey }, ownerKey.organizationId, `${names.operator}-policy`);
-  const projectIds = [...new Set([...reach.map((entry) => entry.projectId), ...(today ? operatorPolicyReach(today.rules).projectIds : [])])];
   try {
-    await setupOperators({
+    return await setupOperators({
       callerSecretKey: ownerKey.secretKey,
       organizationId: ownerKey.organizationId,
       projectId,
-      projectIds,
+      projectIds: reach.map((entry) => entry.projectId),
       slug: appConfig.appSlug,
       dnsZone: deriveInfra(appConfig).dnsZone,
     });
   } catch (error) {
     console.error(`${crossMark} The operators were not set up: ${errorMessage(error)}`);
-    endAction(1);
+    return endAction(1);
   }
 }
 
@@ -76,14 +76,15 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
 
 /**
  * Make sure the app's operators reach this environment, at an Owner moment: the application, the group and both policies are written as
- * declared, with this environment's project added to the projects they reach today, so a key of either keeps working. An app without
- * operators gets them, and the person then makes a one-day key in the console for the operator part that follows.
+ * declared, with this environment's project added to the projects they reach today, so a key of either keeps working. An app that gets
+ * them here, or a policy of them, is told that the operator part asks for a one-day key next, made in the console.
  */
 export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<void> {
   const names = appPrincipalNames(context.appConfig.appSlug);
-  const existed = await readPolicy({ secretKey: ownerKey.secretKey }, ownerKey.organizationId, `${names.operator}-policy`);
-  if (!existed) console.info(`  The app has no operators yet: '${names.operator}' and '${names.operators}' are made now.`);
-  await writeOperators({ ...context, projectId }, ownerKey, operatorReach(context.environment, projectId, projectsOfOtherModes(context.environment)));
+  const reach = operatorReach(context.environment, projectId, projectsOfOtherModes(context.environment));
+  const result = await writeOperators({ ...context, projectId }, ownerKey, reach);
   console.info(`  ${checkMark} '${names.operator}' and '${names.operators}' reach ${context.environment}.`);
-  if (!existed) console.info(`  ${pc.bold('The operator part asks for a key next.')} ${oneDayKeyHowto(names)}`);
+  if (result.applicationPolicy === 'created' || result.groupPolicy === 'created') {
+    console.info(`  ${pc.bold('The operator part asks for a key next.')} ${oneDayKeyHowto(names)}`);
+  }
 }

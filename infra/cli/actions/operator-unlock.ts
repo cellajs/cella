@@ -40,29 +40,40 @@ export function refusalLines(opts: { status: number | undefined; detail: string;
   ];
 }
 
+/** What a described key may unlock: the session in its organization, or nothing, with the reason. */
+type BearerVerdict = { organizationId: string } | { refusal: string };
+
 /**
- * Why a described key cannot unlock the session, or undefined when it can: it is the operator application's or a user's who is in the
- * operators group, and it ends within a day (`durableKeyLife`). The group is read with the key itself, which the group's policy lets it do.
+ * Whether a described key unlocks the session: it is the operator application's or a user's who is in the operators group, and it ends
+ * within a day (`durableKeyLife`). The group is read with the key itself, which the group's policy lets it do.
  */
-async function bearerRefusal(desc: KeyDescription, pair: KeyPair, names: AppPrincipalNames): Promise<string | undefined> {
+async function bearerVerdict(desc: KeyDescription, pair: KeyPair, names: AppPrincipalNames): Promise<BearerVerdict> {
   const { organizationId } = desc;
-  if (!organizationId) return `${pair.accessKey} names no organization.`;
+  if (!organizationId) return { refusal: `${pair.accessKey} names no organization.` };
   if (desc.bearer === 'application') {
-    if (desc.name !== names.operator) return `${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. ${oneDayKeyHowto(names)}`;
+    if (desc.name !== names.operator) {
+      return { refusal: `${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. ${oneDayKeyHowto(names)}` };
+    }
   } else {
     const group = await findGroup(pair.secretKey, organizationId, names.operators).catch(() => undefined);
     if (!group) {
-      return `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: \`${actionCommand('operator-key')}\`.`;
+      return {
+        refusal: `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: \`${actionCommand('operator-key')}\`.`,
+      };
     }
     if (!(group.user_ids ?? []).includes(desc.bearerId)) {
-      return `${desc.name} is no member of '${names.operators}': the organization Owner adds members in the console (IAM → Groups → ${names.operators}), or paste a key of '${names.operator}'.`;
+      return {
+        refusal: `${desc.name} is no member of '${names.operators}': the organization Owner adds members in the console (IAM → Groups → ${names.operators}), or paste a key of '${names.operator}'.`,
+      };
     }
   }
   const life = durableKeyLife(desc);
   if (life) {
-    return `${pair.accessKey} would work ${life}, and a key that leaks must die within the day, so the session refuses it. ${oneDayKeyHowto(names)}`;
+    return {
+      refusal: `${pair.accessKey} would work ${life}, and a key that leaks must die within the day, so the session refuses it. ${oneDayKeyHowto(names)}`,
+    };
   }
-  return undefined;
+  return { organizationId };
 }
 
 /** Print why the key pasted at the prompt failed, drop it from the session, and end the action. */
@@ -106,15 +117,15 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
   } catch (error) {
     return endOnRefusal(names, error);
   }
-  const refusal = await bearerRefusal(desc, pair, names);
-  if (refusal || !desc.organizationId) {
+  const verdict = await bearerVerdict(desc, pair, names);
+  if ('refusal' in verdict) {
     forgetOperatorKey();
-    console.error(`${crossMark} ${refusal}`);
+    console.error(`${crossMark} ${verdict.refusal}`);
     return endAction(1);
   }
   rememberOperatorKey(pair);
   await moveSecretsOutOfPrefix(stack, pair.secretKey);
-  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId };
+  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: verdict.organizationId };
 }
 
 /** The projects whose secrets this run has moved out of their environment's prefix. */
