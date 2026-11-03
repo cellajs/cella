@@ -3,7 +3,6 @@ import type { ServiceName } from './compose/compose';
 import { engineConfig as appConfig } from './config/engine-config';
 import { deriveInfra } from './lib/naming';
 import { serviceEndpoints } from './lib/services';
-import type { Environment } from './lib/stack/bootstrap-stack-state';
 
 /**
  * Stack identity and derived addressing, shared by every resource module. The
@@ -36,12 +35,10 @@ if (!derived.hasDomain) {
 // Exposed here so resource modules import mode from one place.
 export const mode = appConfig.mode;
 
-// Deploys only target production/staging; narrow once to a typed Environment so
-// downstream sizing/config lookups don't need per-call assertions.
+// Deploys only target production/staging.
 if (mode !== 'production' && mode !== 'staging') {
   throw new Error(`Pulumi deploys only support 'production' or 'staging' (got '${mode}').`);
 }
-export const deployMode: Environment = mode;
 
 // Per-service public endpoints (host + URL), derived from the service registry by slug.
 const endpointBySlug = new Map(serviceEndpoints(appConfig).map((e) => [e.slug, e]));
