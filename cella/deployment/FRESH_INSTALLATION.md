@@ -52,7 +52,7 @@ The **operator part** runs on the one-day operator key you paste ([Operator key]
 1. Generates the Pulumi passphrase, shows it once and waits until you confirm it is in your password manager. Later runs fetch it from Secret Manager, and your copy restores that one if it is lost.
 2. Asks for the admin email and the mail key, both optional here: **Manage runtime secrets** sets them later.
 3. Creates state storage and initializes Pulumi.
-4. Offers the first apply: the database, the network, the load balancer with its DNS records and certificates, and the main job the runner (step 4) starts, but no machine yet. Once that `up` made the registry, it builds the engine image from your checkout, pushes it and runs a second `up` that points the main job at it. It stores the values step 2 asked for.
+4. Offers the first apply: the database, the network, the load balancer with its DNS records and certificates, and the registry, but no machine yet. Once that `up` made the registry, it builds the engine image from your checkout, pushes it and runs a second `up` that makes the main job the runner (step 4) starts, on that image. It stores the values step 2 asked for.
 
 A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operators' reach, and its operator part asks for a one-day operator key. A setup of an environment torn down before runs in the project its teardown left in `infra/.env.<mode>` and adopts what it kept, the upload buckets, the boot-diag bucket and the keys that protect stored data, before its first apply ([Teardown](./RUNBOOKS.md#teardown)).
 

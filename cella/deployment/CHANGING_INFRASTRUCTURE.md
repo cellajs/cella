@@ -15,7 +15,7 @@ deletes the machines and changes none of it. Every pull request says which appli
 
 - the database, the VPC and the private network
 - each machine role's two reserved addresses, and the security groups its machines are made in
-- the load balancer with its pools, their servers and their health checks: enabling a service with a load balancer route, or a change of `singleVM`, takes an apply first
+- the load balancer with its pools, the addresses they list and their health checks: enabling a service with a load balancer route, or a change of `singleVM`, takes an apply first
 - buckets and their policies
 - secret containers and their versions
 - DNS records
@@ -34,7 +34,7 @@ A deploy reads what the last apply made, the reserved addresses by their tags an
 
 ## What needs an apply
 
-A deploy runs the engine the last **Review & apply changes** built, and holds every release against the description that engine carries: every registry under [config/](../../infra/config), the engine's fields of the app config (domain, origin, buckets, enabled services, `singleVM`), the boot plan's contract version, and the Node, pnpm and repository the root `package.json` names. The agent a machine runs is built from the release and its boot plan written by the applied engine, so a change to what the agent reads from a machine's user data, the boot plan or the manifest, bumps `supportedSchemaVersion` in [infra/agent/src/plan.ts](../../infra/agent/src/plan.ts): such a release ends apply needed until its engine is applied. A release whose description is the applied one deploys without an apply. One that changes it ends **apply needed** until an apply from a checkout that has the change publishes it, and that apply starts it again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only the engine's code (`infra/lib`, `infra/tasks`, `infra/resources`) deploys on the applied engine, and its own engine runs from the next apply on. The database access actions and the seed run an `up` that keeps the main job's image, and refuse to run while no apply has published one, as that `up` would delete the main job.
+A deploy runs the engine the last **Review & apply changes** built, and holds every release against the description that engine carries: every registry under [config/](../../infra/config), the engine's fields of the app config (domain, origin, buckets, enabled services, `singleVM`), the boot plan's contract version, and the Node, pnpm and repository the root `package.json` names. A release whose description is the applied one deploys without an apply. One that changes it ends **apply needed** until an apply from a checkout that has the change publishes it, and that apply starts it again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only the engine's code (`infra/lib`, `infra/tasks`, `infra/resources`) deploys on the applied engine, and its own engine runs from the next apply on. The database access actions and the seed run an `up` that keeps the main job's image, and refuse to run while no apply has published one, as that `up` would delete the main job.
 
 ## Pull request check
 
