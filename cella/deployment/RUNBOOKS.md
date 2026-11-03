@@ -5,8 +5,8 @@ This document collects the procedures for a running deployment: a failed or bloc
 ### TL;DR
 
 Machines take no logins, so every procedure runs through the Infra CLI or the Scaleway console. Resetting the database
-is a hard outage, for pre-production or a planned stop. A teardown deletes every resource to stop billing; a clean
-slate only resets the stack's tracking.
+is a hard outage, for pre-production or a planned stop. A teardown deletes everything that runs or costs and keeps what
+cannot be made again, which a setup adopts; a clean slate deletes that too.
 
 ## Debug a failed deploy
 
@@ -123,14 +123,33 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values. Then drop the environment from `infra/runner.json`, **Replace the runner**, and remove `infra/.env.<mode>`.
+`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>` and for an Owner API key that expires within a day, and nothing else: the Owner key holds every right, so the one key deletes the resources and the identities. It refuses a key the bucket policies do not name, before it touches anything: your user joins `<app>-operators`, and the next **Review & apply changes** names you.
 
-> **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
+It deletes the machines, the load balancer with its address, the DNS records, the private network, the security groups, the database, the main job, the registry namespace, every secret container but the keys that protect stored data, and the environment's identities: the deploy and uploads applications with their policies and keys, and the `<slug>-<mode>` group. The app's operators, observer and runner stay: they serve the other environments.
+
+Before the database goes, it writes a **final dump** into the private uploads bucket, under `dumps/<mode>/<time>`, from a backup Scaleway makes and keeps a few days. When the dump fails, nothing is deleted. A write the app takes after the dump is lost, so stop traffic first.
+
+It keeps, with their contents: the two upload buckets, the boot-diag bucket with the run records, the state bucket, and the `data-encryption-key` and `pii-hash-secret` containers in `/runtime/`, without which the dump's encrypted and hashed fields no longer read. Each kept bucket keeps its policy. Third-party keys go with the other secrets: a setup again asks for them.
+
+The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`, drop the environment from `infra/runner.json` and **Replace the runner**. A setup again (`pnpm infra --mode <mode>`) runs in the same project and adopts what was kept before its first apply, so that apply changes nothing about them.
+
+## Restore the final dump
+
+The dump is the file Scaleway exports from a backup, a `pg_dump` archive. Download it with a key the private bucket admits (the operator key, or the console: Object Storage → the private bucket → `dumps/`), open the database ([Open the database](#open-the-database)) and restore it as the admin role:
+
+```bash
+pg_restore --no-owner --no-privileges --dbname "<admin connection string>" <file>
+```
+
+A dump restored into a setup again reads its encrypted fields only with the kept `data-encryption-key` and `pii-hash-secret`. Delete the accounts deleted after the dump as in [Restore a backup](#restore-a-backup).
 
 ## Clean slate
 
-1. `rm infra/Pulumi.<mode>.yaml`
-2. (optional) Scaleway console → Object Storage → delete bucket `<slug>-pulumi-state` (names stay reserved for several hours).
-3. (optional) Revoke the Owner API key you pasted, in the Scaleway console.
-4. (optional) Delete IAM application `<slug>-<mode>-ci-deploy` and its policy.
-5. Re-run: `pnpm infra`
+To leave nothing of a torn-down environment, delete in the console what the teardown kept:
+
+1. Object Storage: the two upload buckets, the boot-diag bucket and `<slug>-pulumi-state`, emptied first. Bucket names stay reserved for several hours.
+2. Secret Manager, the environment's project: `data-encryption-key` and `pii-hash-secret` in `/runtime/`. With them goes every encrypted field of the final dump.
+3. The `SCW_PROJECT_ID` line of `infra/.env.<mode>`, and the project itself if nothing else lives in it.
+4. Revoke the Owner API key you pasted.
+
+The next `pnpm infra --mode <mode>` then sets the environment up from nothing.
