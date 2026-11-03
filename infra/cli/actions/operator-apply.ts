@@ -101,6 +101,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
   // The state side names this project: the operator key is made in one environment's project and serves them all.
   const stateKey = stateKeyOf(operator, projectId);
+  const stateS3 = await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey);
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateKey.accessKey,
@@ -120,8 +121,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   const changesSinceReview = async (reviewed: ReviewedPlan): Promise<string[]> => {
     if (reviewed.checkpoint === undefined) return ['the state bucket could not be read when it was made'];
     try {
-      const s3 = await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey);
-      const checkpoint = await readObjectEtag(s3, stateBucket(appConfig.slug), checkpointKey(stack));
+      const checkpoint = await readObjectEtag(stateS3, stateBucket(appConfig.slug), checkpointKey(stack));
       return checkpoint === reviewed.checkpoint ? [] : ['the Pulumi state changed'];
     } catch (error) {
       return [`the state bucket could not be read (${errorMessage(error)})`];
@@ -159,7 +159,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
           stack,
           secretKey: operator.secretKey,
           projectId,
-          s3: await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey),
+          s3: stateS3,
           env,
           log: (message) => console.info(pc.dim(message)),
         });

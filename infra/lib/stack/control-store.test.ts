@@ -131,17 +131,19 @@ describe('rotations', () => {
 });
 
 describe('readObjectEtag', () => {
-  it('must not let an unreadable checkpoint pass for an unchanged one: only a 404 reads as none, any other failure throws', async () => {
+  it('must not let an unreadable checkpoint pass for an unchanged one: one HEAD of the given object, no body, and a refused read throws', async () => {
+    const sent: Array<{ command: string; input: unknown }> = [];
     const head = (error?: Error) => ({
-      send: async () => {
+      send: async (command: unknown) => {
+        const sentCommand = command as { constructor: { name: string }; input: unknown };
+        sent.push({ command: sentCommand.constructor.name, input: sentCommand.input });
         if (error) throw error;
         return { ETag: '"aaa"' };
       },
     });
-    expect(await readObjectEtag(head(), 'state', 'checkpoint')).toBe('"aaa"');
-    expect(await readObjectEtag(head(Object.assign(new Error('not found'), { name: 'NotFound' })), 'state', 'checkpoint')).toBeNull();
-    await expect(readObjectEtag(head(Object.assign(new Error('access denied'), { name: 'AccessDenied' })), 'state', 'checkpoint')).rejects.toThrow(
-      'access denied',
-    );
+    expect(await readObjectEtag(head(), 'state', '.pulumi/stacks/infra/production.json')).toBe('"aaa"');
+    expect(sent).toEqual([{ command: 'HeadObjectCommand', input: { Bucket: 'state', Key: '.pulumi/stacks/infra/production.json' } }]);
+    const denied = Object.assign(new Error('access denied'), { name: 'AccessDenied' });
+    await expect(readObjectEtag(head(denied), 'state', '.pulumi/stacks/infra/production.json')).rejects.toThrow('access denied');
   });
 });

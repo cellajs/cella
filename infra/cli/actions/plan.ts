@@ -95,7 +95,7 @@ export async function reviewPlan(
     }
   }
 
-  // Read before the plan runs, so an apply that lands while Pulumi computes it counts as a change too.
+  // Read before the plan runs, so an apply whose `up` completes and writes the checkpoint while the preview runs counts as a change too.
   const checkpoint = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
     .then((s3) => readObjectEtag(s3, stateBucket(appConfig.slug), checkpointKey(stack)))
     .catch(() => undefined);
