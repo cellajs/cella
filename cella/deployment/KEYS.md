@@ -52,7 +52,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 
 **Machines and the builder hold no key.** A machine's user data carries its boot plan, its manifest and links the deploy signed: one to fetch its env file, one per image archive it loads, one to upload its boot account. A link names one object and ends within the hour; once the boot account arrived, the deploy rewrites the user data without them and deletes the env file. The manifest holds no secret: the role, the release and the drain order the agent reads. The builder writes each archive, the frontend's archive, the manifest and its reports through links the same way.
 
-**The Pulumi passphrase** encrypts the stack's secret outputs in the state bucket. A first setup shows it once, for your password manager; from then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost. Only the operator reads the state, which holds no machine, so a leaked passphrase opens nothing.
+**The Pulumi passphrase** encrypts the stack's secret outputs in the state bucket. A first setup shows it once, for your password manager; from then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost. Only the operator reads the state, which holds no machine and no secret value, so a leaked passphrase opens nothing.
 
 On an operator machine `infra/.env.<mode>` holds the observer key and nothing a change needs: the CLI reads no privileged key and no passphrase from a file or the environment, so nothing on the machine changes infrastructure with nobody at the prompt.
 
