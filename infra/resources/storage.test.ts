@@ -124,6 +124,18 @@ describe('storage module', () => {
     expect(Statement.length).toBeLessThanOrEqual(10);
   });
 
+  it('must not let a leaked deploy key read a final dump: it reaches only the prefixes a deploy reads and writes', () => {
+    type Statement = { Sid: string; Resource: string[] };
+    const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);
+    const { Statement } = JSON.parse(String(h.resources.find((r) => r.name === 'boot-diag-policy')?.inputs.policy)) as { Statement: Statement[] };
+    const deploy = Statement.find((statement) => statement.Sid === 'DeployAccess');
+    expect(deploy?.Resource.filter((resource) => resource !== bucket)).toEqual(
+      ['releases/', 'env/', 'boot-diag/', 'runs/', 'control/'].map((prefix) => `${bucket}/${prefix}*`),
+    );
+    const objects = deploy?.Resource.filter((resource) => resource !== bucket) ?? [];
+    expect(objects.some((resource) => `${bucket}/dumps/staging/x.dump`.startsWith(resource.replace(/\*$/, '')))).toBe(false);
+  });
+
   it('expires env files and their versions within a day, and release archives with the records', () => {
     const rules = (h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.lifecycleRules as any[]) ?? [];
     expect(rules.find((rule) => rule.id === 'expire-env')).toMatchObject({
