@@ -17,6 +17,7 @@ export interface JsonViewerContextValue {
   hideDescriptions: boolean;
   openapiMode?: 'spec' | 'schema';
   renderRef?: (ref: string) => ReactNode;
+  renderDescription?: (text: string) => ReactNode;
 }
 
 export const JsonViewerContext = createContext<JsonViewerContextValue | null>(null);

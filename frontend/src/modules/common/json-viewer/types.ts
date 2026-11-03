@@ -44,4 +44,6 @@ export interface JsonViewerProps {
   hideDescriptions?: boolean;
   /** Schema mode: renders a `ref` label and an `extendsRef` value from the full `$ref`, such as a link (default: the schema name) */
   renderRef?: (ref: string) => ReactNode;
+  /** Schema mode: renders the text of a description, which reads as a prose line under its field (default: the text) */
+  renderDescription?: (text: string) => ReactNode;
 }
