@@ -87,3 +87,13 @@ describe('postgresManaged public endpoint ACL', () => {
     expect(rules?.map((rule) => rule.ip)).toEqual(['203.0.113.7/32', '198.51.100.0/24']);
   });
 });
+
+describe('postgresManaged secret declarations', () => {
+  it('declares no secret for a role no service reads, so an app without a cdc service still loads', async () => {
+    const { buildRuntimeSecrets, validateRuntimeSecrets } = await import('../../lib/runtime-secrets');
+    const store = postgresManaged({ secretConsumers: { runtime: ['backend'], admin: ['backend'], cdc: [], ca: ['backend'] } });
+    const secrets = buildRuntimeSecrets({ primary: store }, {});
+    expect(secrets.map((secret) => secret.id)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseSslCa']);
+    expect(() => validateRuntimeSecrets(secrets, new Set(['backend']))).not.toThrow();
+  });
+});

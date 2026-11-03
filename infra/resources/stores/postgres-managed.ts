@@ -4,7 +4,7 @@ import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretC
 
 /** Configuration for a managed Scaleway PostgreSQL store. */
 export interface PostgresManagedConfig {
-  /** Services consuming each role's DSN and the instance CA. The store owns these secret declarations. */
+  /** Services consuming each role's DSN and the instance CA. The store owns these secret declarations; an empty list declares none. */
   secretConsumers: { runtime: readonly string[]; admin: readonly string[]; cdc: readonly string[]; ca: readonly string[] };
 }
 
@@ -21,7 +21,7 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
     settings: config,
 
     secrets(): StoreSecretContribution[] {
-      return [
+      const contributions: StoreSecretContribution[] = [
         {
           id: 'databaseUrlRuntime',
           secretName: 'database-url-runtime',
@@ -63,6 +63,8 @@ export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner
           services: consumers.ca,
         },
       ];
+      // A secret no service reads fails validateRuntimeSecrets, so an app without a cdc service passes `cdc: []`.
+      return contributions.filter((contribution) => contribution.services.length > 0);
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
