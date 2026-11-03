@@ -45,6 +45,8 @@ export interface SwitchRequest {
   envs: readonly MachineEnv[];
   /** Each role as it switches, so a failed run still names its new machines. */
   switched: SwitchResult[];
+  /** Each stop-first role's new machine a failed switch kept. */
+  kept: SwitchResult[];
 }
 
 /** One executed step. Steps run in-process via `task`. */
@@ -168,6 +170,7 @@ export async function runDeploy(
   const envsFile = join(work, 'envs.json');
   const machinesFile = join(work, 'machines.json');
   const switched: SwitchResult[] = [];
+  const kept: SwitchResult[] = [];
   let envsWritten = false;
   let linksCleared = false;
   let unchanged = false;
@@ -249,7 +252,7 @@ export async function runDeploy(
         await step('Switch machines', async () => {
           const envs = JSON.parse(await fx.readFile(envsFile)) as MachineEnv[];
           if (!manifest || !live) throw new Error('the switch runs after the build');
-          await fx.switchMachines({ stack, roles: live.roles, pending, record: live.record, target, manifest, envs, switched });
+          await fx.switchMachines({ stack, roles: live.roles, pending, record: live.record, target, manifest, envs, switched, kept });
         });
       } catch (err) {
         telemetry?.event(deployEvents.switchFailed, { error: errorMessage(err) }, { severity: 'error' });
@@ -270,7 +273,11 @@ export async function runDeploy(
         }
         throw err;
       } finally {
-        await writeFile(machinesFile, JSON.stringify(switched.map(({ role, machine }) => ({ role, machine }))), { mode: 0o600 });
+        const made = [
+          ...switched.map(({ role, machine }) => ({ role, machine })),
+          ...kept.map(({ role, machine }) => ({ role, machine, kept: true })),
+        ];
+        await writeFile(machinesFile, JSON.stringify(made), { mode: 0o600 });
       }
       // Each new machine fetched its env file and archives: once its boot account arrived, its user data keeps no link and its env file goes.
       await step('Take the links off the new machines', async () => {
@@ -555,7 +562,14 @@ function createRealEffects(): DeployEffects {
         log: (message) => console.info(message),
       });
       await switchMachines(
-        { roles: request.roles, pending: request.pending, record: request.record, target: request.target, switched: request.switched },
+        {
+          roles: request.roles,
+          pending: request.pending,
+          record: request.record,
+          target: request.target,
+          switched: request.switched,
+          kept: request.kept,
+        },
         effects,
       );
     },

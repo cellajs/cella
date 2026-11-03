@@ -46,4 +46,25 @@ describe('clearMachineLinks', () => {
     expect(left).toContain('"releaseSha": "abc"');
     expect(deleted).toEqual(['env/backend-abc.env@v1']);
   });
+
+  it('must not delete the env file of a machine a failed stop-first switch kept: its boot would fail on a missing file', async () => {
+    const deleted: string[] = [];
+    const env = { service: 'cdc', env: 'env/cdc-abc.env', bootAccount: 'boot-diag/cdc-x-boot.log' };
+    await clearMachineLinks(
+      [env],
+      [{ role: 'cdc', machine: 'srv-2', kept: true }],
+      {
+        accountArrived: async () => false,
+        userData: async () => userData,
+        setUserData: async () => {
+          throw new Error('the kept machine keeps its links');
+        },
+        deleteEnv: async (removed) => void deleted.push(removed.env),
+        sleep: async () => {},
+        log: () => {},
+      },
+      { waitMs: 0 },
+    );
+    expect(deleted).toEqual([]);
+  });
 });

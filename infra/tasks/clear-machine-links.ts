@@ -8,10 +8,11 @@ import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 import type { MachineEnv } from './compose-env';
 
-/** A machine a deploy made, by its role. */
+/** A machine a deploy made, by its role; `kept` when a failed stop-first switch left it, perhaps still booting. */
 export interface MadeMachine {
   role: string;
   machine: string;
+  kept?: boolean;
 }
 
 /** What clearing a release's links does outside this module, so a test passes its own. */
@@ -29,8 +30,9 @@ export interface ClearLinksEffects {
 /**
  * Take the links out of each new machine's cloud-init once its boot account arrived, and delete every env file of the run: the machine
  * fetched what it needs, and the metadata service then serves its plan and manifest and nothing that fetches or writes. With `waitMs` 0, as
- * at the end of a run, it waits for no account. A machine that is gone, a user data that cannot be read, an env file already deleted is
- * said and passed over. Returns the roles cleared.
+ * at the end of a run, it waits for no account. A kept machine keeps both, as its boot may still fetch them: its links end within minutes
+ * and its env file goes by the bucket's rule within a day. A machine that is gone, a user data that cannot be read, an env file already
+ * deleted is said and passed over. Returns the roles cleared.
  */
 export async function clearMachineLinks(
   envs: readonly MachineEnv[],
@@ -41,6 +43,10 @@ export async function clearMachineLinks(
   const cleared: string[] = [];
   const deadline = Date.now() + opts.waitMs;
   for (const env of envs) {
+    if (machines.some((entry) => entry.role === env.service && entry.kept)) {
+      fx.log(`[links] ${env.service}: its machine was kept for its boot, so its links and ${env.env} stay until they end`);
+      continue;
+    }
     const made = machines.filter((entry) => entry.role === env.service);
     while (made.length > 0 && opts.waitMs > 0 && Date.now() < deadline && !(await fx.accountArrived(env.bootAccount).catch(() => false))) {
       await fx.sleep(opts.pollMs ?? 5_000);

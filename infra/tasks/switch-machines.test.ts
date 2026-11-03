@@ -93,8 +93,14 @@ describe('a switch', () => {
 
   it('drains and deletes a stop-first role first (one replication slot), and keeps the new one for its account when it fails', async () => {
     const { fx, ops } = fake({ serves: 'failed' });
-    await expect(switchRole({ role: roleOf('cdc'), live: live(), target }, fx)).rejects.toThrow(/stays for its boot account/);
+    const kept: SwitchResult[] = [];
+    const record = { schemaVersion: 1 as const, roles: { cdc: live() } };
+    await expect(switchMachines({ roles: [roleOf('cdc')], pending: ['cdc'], record, target, switched: [], kept }, fx)).rejects.toThrow(
+      /stays for its boot account/,
+    );
     expect(ops).toEqual(['drain old', 'remove old', 'record cdc none', 'boot cdc b', 'serving? cdc b']);
+    // The run's end keeps its links and env file: its boot may still need them.
+    expect(kept).toEqual([{ role: 'cdc', slot: 'b', machine: 'new-cdc-b-1' }]);
   });
 
   it("deletes a machine on the idle slot that a dead run left, before it boots there: the slot's address is free again", async () => {
@@ -128,6 +134,7 @@ describe('every switch of a deploy', () => {
         record: { schemaVersion: 1, roles: { backend: live({ machine: 'b0' }), frontend: live({ machine: 'f0' }), yjs: live({ machine: 'y0' }) } },
         target,
         switched,
+        kept: [],
       },
       fx,
     );
@@ -144,7 +151,10 @@ describe('every switch of a deploy', () => {
       roleOf('backend', { role: 'yjs', primary: false }),
       roleOf('backend', { role: 'mcp', primary: false }),
     ];
-    await switchMachines({ roles, pending: roles.map((role) => role.role), record: { schemaVersion: 1, roles: {} }, target, switched: [] }, fx);
+    await switchMachines(
+      { roles, pending: roles.map((role) => role.role), record: { schemaVersion: 1, roles: {} }, target, switched: [], kept: [] },
+      fx,
+    );
     expect(concurrent()).toBe(1);
   });
 });

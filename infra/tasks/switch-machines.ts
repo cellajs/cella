@@ -72,6 +72,16 @@ export interface SwitchResult {
   machine: string;
 }
 
+/** A switch that failed after its stop-first role lost the old machine: the new one stays, still booting perhaps, with its env file. */
+export class KeptMachineError extends Error {
+  constructor(
+    message: string,
+    readonly kept: SwitchResult,
+  ) {
+    super(message);
+  }
+}
+
 /**
  * Take a machine out of service and delete it: drain it, wait until no pool routes to it, let it keep its connections for the role's drain
  * seconds and stop its containers, then delete it.
@@ -112,7 +122,13 @@ export async function switchRole(plan: { role: MachineRole; live?: LiveRole; tar
   const outcome = await fx.serving(role, slot);
   if (outcome !== 'serving') {
     const how = outcome === 'failed' ? 'its boot failed' : `it did not serve within ${SERVING_TIMEOUT_SECONDS} s`;
-    if (stopFirst) throw new Error(`${name}: ${how} on slot ${slot}; the old machine is gone, so the new one stays for its boot account`);
+    if (stopFirst) {
+      throw new KeptMachineError(`${name}: ${how} on slot ${slot}; the old machine is gone, so the new one stays for its boot account`, {
+        role: name,
+        slot,
+        machine,
+      });
+    }
     await fx.remove(machine).catch((error: unknown) => fx.log(`[switch ${name}] ${machine} could not be deleted: ${errorMessage(error)}`));
     throw new Error(`${name}: ${how} on slot ${slot}; the new machine is deleted${live ? ` and slot ${live.slot} keeps serving` : ''}`);
   }
@@ -126,11 +142,19 @@ export async function switchRole(plan: { role: MachineRole; live?: LiveRole; tar
  * Switch every role that does not serve the target: the primary first and alone, as its release companion migrates before any other role
  * starts the new release, then every other one concurrently. A role whose switch failed keeps what it served, and the others finish.
  * Machines of a role the registry no longer declares are drained and deleted once every role switched. Each switched role goes to
- * `switched` as it switches, so a failed run still names the new machines.
+ * `switched` as it switches and each kept one to `kept`, so a failed run still names the new machines.
  * @throws listing every role that failed
  */
 export async function switchMachines(
-  opts: { roles: readonly MachineRole[]; pending: readonly string[]; record: LiveRecord; target: DeployTarget; switched: SwitchResult[] },
+  opts: {
+    roles: readonly MachineRole[];
+    pending: readonly string[];
+    record: LiveRecord;
+    target: DeployTarget;
+    switched: SwitchResult[];
+    /** Each stop-first role's new machine a failed switch kept. */
+    kept: SwitchResult[];
+  },
   effects: SwitchEffects,
 ): Promise<void> {
   // Roles switch concurrently and each writes the live record: one write at a time, so none loses a race after its machine serves.
@@ -144,7 +168,12 @@ export async function switchMachines(
     },
   };
   const one = async (role: MachineRole) => {
-    opts.switched.push(await switchRole({ role, live: opts.record.roles[role.role], target: opts.target }, fx));
+    try {
+      opts.switched.push(await switchRole({ role, live: opts.record.roles[role.role], target: opts.target }, fx));
+    } catch (error) {
+      if (error instanceof KeptMachineError) opts.kept.push(error.kept);
+      throw error;
+    }
   };
   const pending = opts.roles.filter((role) => opts.pending.includes(role.role));
   const primary = pending.find((role) => role.primary);
