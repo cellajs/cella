@@ -26,6 +26,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   process.env.SCW_DEFAULT_ORGANIZATION_ID = ORGANIZATION;
   // The program sends a key with its IPAM read; keylessFetch answers that read itself, so this word goes nowhere.
   process.env.SCW_SECRET_KEY = 'keyless';
+  // One digest for every render, so the main job compares on its script and env: the image an apply builds is no code of the change.
+  process.env.INFRA_ENGINE_IMAGE = `rg.keyless/engine/infra-engine@sha256:${'0'.repeat(64)}`;
 
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
@@ -37,10 +39,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const rendered = installKeylessMocks(pulumi, { project: 'infra', stack: mode, preview: false });
   await import('../resources/program');
   await settleRender(rendered);
+  const { appDescriptionHash } = await import('../lib/deploy/app-description');
 
   const footprint: PrivilegedFootprint = {
     environment: mode,
     identities: declaredIdentities(appConfig, { projectId: PROJECT, organizationId: ORGANIZATION }),
+    description: await appDescriptionHash(),
     resources: rendered
       .map(({ type, name, inputs }) => ({ type, name, inputs }))
       .sort((a, b) => `${a.type} ${a.name}`.localeCompare(`${b.type} ${b.name}`)),
