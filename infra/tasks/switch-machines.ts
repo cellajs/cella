@@ -1,4 +1,5 @@
 import { composeConfig } from '../compose/compose';
+import { generalConfig } from '../config/general.config';
 import { accountFailed } from '../lib/deploy/boot-accounts';
 import type { DeployTarget, LiveRecord, LiveRole } from '../lib/deploy/live-record';
 import { MANIFEST_KEY, renderMachineUserData, renderManifest } from '../lib/deploy/machine-user-data';
@@ -11,7 +12,6 @@ import {
   instanceTypeOf,
   isRouted,
   type MachineRole,
-  machineImage,
   machineName,
   otherSlot,
   type Slot,
@@ -293,7 +293,7 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
       const server = await createMachine(auth, ctx.zone, {
         name: machineName(ctx.naming.resource, role.role, slot),
         type: instanceTypeOf(own, ctx.mode),
-        image: machineImage(ctx.mode),
+        image: generalConfig.compute.image,
         projectId: ctx.projectId,
         securityGroupId,
         tags: ['machine', `role=${role.role}`, `slot=${slot}`, `sha=${ctx.sha}`],

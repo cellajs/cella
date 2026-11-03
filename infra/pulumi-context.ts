@@ -9,8 +9,8 @@ import type { Environment } from './lib/stack/bootstrap-stack-state';
  * Stack identity and derived addressing, shared by every resource module. The
  * stack NAME is the config mode (index.ts derives APP_MODE from it before any
  * module loads the shared appConfig); everything else here is a pure derivation
- * of that identity. Provider lookups, secret reads, and sizing live with their
- * consumers (identities.ts, config/sizing.ts).
+ * of that identity. Provider lookups and secret reads live with their
+ * consumers (identities.ts).
  */
 const stackName = pulumi.getStack().split('/').pop() ?? '';
 

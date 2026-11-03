@@ -1,4 +1,4 @@
-import type { PerMode } from '../lib/general-config';
+import type { Environment } from '../lib/stack/bootstrap-stack-state';
 
 /** How a role's machine is replaced: `start-first` serves the new one beside the old behind the LB; `stop-first` releases a singleton resource before the new one boots. */
 export type ReplacementStrategy = 'start-first' | 'stop-first';
@@ -73,7 +73,7 @@ export interface ServiceMeta {
   /** Under `appConfig.singleVM`, `'host'` runs this service as a second container on the host VM. */
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box. */
-  instanceType: PerMode<string>;
+  instanceType: string | Partial<Record<Environment, string>>;
   /** This service signs S3 requests with the uploads key, which its env file carries (REQ-20). */
   s3Access?: boolean;
   /** Deploy-time env bindings resolved into a machine's static env; see {@link AppServiceConfig.bindings}. */
@@ -177,7 +177,7 @@ export interface AppServiceConfig {
    */
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box, there is no fleet-wide fallback. A single type for all modes, or a per-mode map. */
-  instanceType: PerMode<string>;
+  instanceType: string | Partial<Record<Environment, string>>;
   /** Service-specific environment variables. Merged after the standard env so it can override it; do not repeat the engine-injected `NODE_ENV`/`APP_MODE`/`TZ`. */
   env?: Readonly<Record<string, string>>;
   /**

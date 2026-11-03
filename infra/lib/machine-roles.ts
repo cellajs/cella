@@ -2,8 +2,6 @@ import type { ServiceName } from '../compose/compose';
 import { AGENT_PORT_OFFSET } from '../compose/infrastructure';
 import type { ReplacementStrategy } from '../compose/types';
 import type { EngineConfig } from '../config/engine-config';
-import { generalConfig } from '../config/general.config';
-import { type PerMode, resolvePerMode } from './general-config';
 import { carriedServices, deployedServices, type ServiceDefinition, services } from './services';
 import type { Environment } from './stack/bootstrap-stack-state';
 
@@ -106,14 +104,11 @@ export function slotOfMachine(resource: (suffix: string) => string, role: string
 
 /** A role's machine type, from its registry entry. */
 export function instanceTypeOf(role: Pick<ServiceDefinition, 'slug' | 'instanceType'>, mode: Environment): string {
-  const size: PerMode<string> = role.instanceType;
+  const size = role.instanceType;
   const resolved = typeof size === 'string' ? size : size[mode];
   if (resolved === undefined) throw new Error(`Service '${role.slug}' has no instanceType for mode '${mode}' in config/services.config.ts.`);
   return resolved;
 }
-
-/** The marketplace image or image id every machine boots from. */
-export const machineImage = (mode: Environment): string => resolvePerMode(generalConfig.compute.image, mode);
 
 /** The compose services the agent starts on a role's machine: its own, and on the single-process host each collocated container. */
 export function startServicesOf(role: Pick<MachineRole, 'role' | 'services'>): [ServiceName, ...ServiceName[]] {

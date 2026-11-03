@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { sizing } from '../config/sizing';
+import { generalConfig } from '../config/general.config';
 import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
@@ -89,7 +89,7 @@ const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
 const kept = { retainOnDelete: true };
 
 // Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
-const assetRetentionDays = sizing.assetRetentionDays;
+const assetRetentionDays = generalConfig.assets.retentionDays;
 
 // Frontend static files bucket, only when a default-route service exists to serve it.
 

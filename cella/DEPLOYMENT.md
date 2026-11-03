@@ -186,7 +186,7 @@ The load balancer, its pools, the reserved addresses they list, its DNS records 
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](../infra/config). Each field is a single value or a per-mode map (`{ production: …, staging: … }`). Every file there is part of the applied description: a release that changes one deploys once **Review & apply changes** ran from a checkout that has the change, and ends apply needed until then.
+All tunable infra config lives in committed, type-checked files under [config/](../infra/config). Each field is a single value; a service's `instanceType` may also be a per-mode map (`{ production: …, staging: … }`). Every file there is part of the applied description: a release that changes one deploys once **Review & apply changes** ran from a checkout that has the change, and ends apply needed until then.
 
 | File | Owns | Applied by |
 | --- | --- | --- |

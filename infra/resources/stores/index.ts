@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { sizing } from '../../config/sizing';
+import { generalConfig } from '../../config/general.config';
 import { appStores } from '../../config/stores.config';
 import type { ProvisionContext, StoreOutputs } from '../../lib/stores';
 import { isProduction, naming, region, zone } from '../../pulumi-context';
@@ -14,7 +14,7 @@ const provisionContext: ProvisionContext = {
   region,
   zone,
   isProduction,
-  sizing: { dbNodeType: sizing.dbNodeType, dbVolumeSize: sizing.dbVolumeSize },
+  sizing: { dbNodeType: generalConfig.database.nodeType, dbVolumeSize: generalConfig.database.volumeSizeGb },
   privateNetworkId,
 };
 
