@@ -34,29 +34,19 @@ interface LoadBalancerOutputs {
   lbPrivateAddress: pulumi.Output<string>;
 }
 
+/** The shortest check the API takes: a server whose check fails leaves the pool about a second and a half later (M1). */
+const shortestCheck = { healthCheckDelay: '1s', healthCheckTimeout: '1s', healthCheckMaxRetries: 2, healthCheckTransientDelay: '0.5s' };
+
 /**
  * A pool's health check. It asks the machine's agent, which answers 200 only while the service serves the release the machine was made for
- * and is not draining; at the shortest check the API takes, the load balancer stops routing to a server about a second and a half after
- * its answer turned 503 (M1), so a deploy moves traffic by health and never edits a pool. While a migration keeps legacy machines in the
- * pools, which run no agent, every pool asks the service's own health path, which both kinds of machine answer.
+ * and is not draining, so a deploy moves traffic by health and never edits a pool. While a migration keeps legacy machines in the pools,
+ * which run no agent, every pool asks the service's own health path, which both kinds of machine answer: a legacy machine leaves its pool
+ * only once its app stops, as the deploy powers it off.
  */
 function healthCheck(service: ServiceDefinition) {
-  if (Object.keys(legacyServers).length > 0) {
-    return {
-      healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
-      healthCheckDelay: '3s',
-      healthCheckTimeout: '2s',
-      healthCheckMaxRetries: 2,
-    };
-  }
-  return {
-    healthCheckPort: agentPort(service.slug),
-    healthCheckHttp: { uri: agentHealthPath(service.slug), code: 200 },
-    healthCheckDelay: '1s',
-    healthCheckTimeout: '1s',
-    healthCheckMaxRetries: 2,
-    healthCheckTransientDelay: '0.5s',
-  };
+  if (Object.keys(legacyServers).length > 0)
+    return { healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus }, ...shortestCheck };
+  return { healthCheckPort: agentPort(service.slug), healthCheckHttp: { uri: agentHealthPath(service.slug), code: 200 }, ...shortestCheck };
 }
 
 /** Provision the LB + DNS + certs + backends/frontends and return the outputs. */

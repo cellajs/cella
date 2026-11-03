@@ -15,7 +15,7 @@ A deploy no longer runs Pulumi: it reads `control/<mode>/live.json` in the boot-
 
 ## Blast radius
 
-Every app with a deployed environment: one Owner moment, two applies and a deploy each. No database, cache or lens change. The first deploy deletes each program machine once its new one serves; the pools still check the app path then, so a few seconds of failures are possible.
+Every app with a deployed environment: one Owner moment, two applies and a deploy each. No database, cache or lens change. The first deploy deletes each program machine once its new one serves, with about two seconds of failed requests on it (step 5).
 
 ## Run
 
@@ -27,7 +27,7 @@ No script: manual. The apply carries the move itself (`infra/tasks/retire-progra
 2. Let the environment's target move to a commit with this change (staging: the merge; production: the release tag). Its first run fails at "Switch machines" with "an apply reserves it", and the program's machines keep serving.
 3. `pnpm infra identity --mode <env>` with an Owner API key: `<slug>-<mode>-ci-deploy-policy` gets `LoadBalancersReadOnly` and `IPAMReadOnly` and loses its organization rule.
 4. `pnpm infra apply --mode <env>`: once you confirm the plan, it sets `bootstrap:legacyServers` to the pools' current servers, names each program machine in the live record on slot b, copies the rotations beside it and takes the machines out of the state, live, then shows the plan again for a second yes. Its `up` reserves `<slug>-<mode>-<role>-a` and `-b`, lists them in the pools beside the legacy addresses, makes the role security groups, drops the deploy key from the state bucket policy and the passphrase from the main job.
-5. `pnpm infra start-deploy --mode <env>`: each role boots on slot a beside its program machine, then drains and deletes that one.
+5. `pnpm infra start-deploy --mode <env>`: each role boots on slot a beside its program machine, then deletes that one. A program machine runs no agent, so it leaves its pools only once its app stops at the power-off: requests that reach it in those two seconds or so fail, and its WebSockets reconnect.
 6. `pnpm infra apply --mode <env>` again: it deletes any program machine left, releases their addresses and flexible IPs, removes `bootstrap:legacyServers`, and the pools then list the reserved addresses alone, checked by the agent.
 7. Commit `infra/Pulumi.<env>.yaml` once step 6 removed the key.
 8. A half-done move: after step 4 the program's machines serve and the next deploy, by the runner or by hand, does step 5; after step 5 the pools keep dead legacy addresses and the app-path check, which step 6 ends. Between the steps nothing goes down.

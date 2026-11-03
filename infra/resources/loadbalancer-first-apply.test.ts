@@ -33,8 +33,8 @@ describe('the pools of a migration from machines the program made', () => {
     expect(pools.get('backend-lb-backend')?.serverIps).toEqual([...reserved('backend'), '10.0.0.41']);
     expect(pools.get('backend-internal-lb-backend')?.serverIps).toEqual([...reserved('backend'), '10.0.0.41']);
     expect(pools.get('frontend-lb-backend')?.serverIps).toEqual([...reserved('backend'), '10.0.0.41']);
-    // A legacy machine runs no agent: the agent's port would mark it down at the apply.
-    expect(pools.get('backend-lb-backend')).toMatchObject({ healthCheckHttp: { uri: '/health', code: 204 } });
+    // A legacy machine runs no agent: the agent's port would mark it down at the apply. The shortest check keeps its power-off short.
+    expect(pools.get('backend-lb-backend')).toMatchObject({ healthCheckHttp: { uri: '/health', code: 204 }, healthCheckDelay: '1s' });
     expect(pools.get('backend-lb-backend')?.healthCheckPort).toBeUndefined();
 
     vi.unstubAllGlobals();
