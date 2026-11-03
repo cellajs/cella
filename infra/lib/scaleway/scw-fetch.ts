@@ -12,7 +12,7 @@ export function carriesSecretValues(url: string): boolean {
 
 const REDACTED = '[redacted: secret-bearing endpoint]';
 
-// A rejected fetch is a transient network failure (an HTTP error status resolves), so one runner blip must not fail a deploy preflight.
+// A rejected fetch is a transient network failure (an HTTP error status resolves), so one network blip must not fail a deploy's read.
 const networkAttempts = 3;
 const networkRetryDelayMs = 2000;
 

@@ -40,7 +40,7 @@ const humanAccess = (bucketName: pulumi.Input<string>) =>
 
 /**
  * The deploy key's access on a bucket policy: objects only, under `prefix` when given (the frontend's files, GeoIP data, boot diagnostics). A
- * bucket's configuration and its policy are the apply's, a privileged change the deploy stops on, and no version is deleted, so on a
+ * bucket's configuration and its policy are the apply's, and no version is deleted, so on a
  * versioned bucket a leaked deploy key can delete objects but not their history. Policies are deny-by-default, so a bucket without this
  * statement, the private uploads bucket, is out of the deploy key's reach.
  */

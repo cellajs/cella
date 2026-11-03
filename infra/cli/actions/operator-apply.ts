@@ -9,8 +9,8 @@ import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
-import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
+import { makeControlClient, readObjectEtag, stateBucket } from '../../lib/stack/control-store';
+import { checkpointKey } from '../../lib/stack/pending-operations';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { exitCodeOf } from '../../lib/utils/child-exit';
@@ -118,10 +118,11 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
   /** Why a plan confirmed before the lock may no longer hold; empty when the state it was computed from stands. A state that cannot be compared counts as changed. */
   const changesSinceReview = async (reviewed: ReviewedPlan): Promise<string[]> => {
-    if (!reviewed.basis) return ['the state bucket could not be read when it was made'];
+    if (reviewed.checkpoint === undefined) return ['the state bucket could not be read when it was made'];
     try {
       const s3 = await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey);
-      return planBasisChanges(reviewed.basis, await readPlanBasis(s3, stateBucket(appConfig.slug), stack));
+      const checkpoint = await readObjectEtag(s3, stateBucket(appConfig.slug), checkpointKey(stack));
+      return checkpoint === reviewed.checkpoint ? [] : ['the Pulumi state changed'];
     } catch (error) {
       return [`the state bucket could not be read (${errorMessage(error)})`];
     }

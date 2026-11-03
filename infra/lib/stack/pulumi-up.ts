@@ -144,10 +144,10 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     }
     const denied = deniedResource(stderrBuf);
     if (denied) {
-      // A deploy stops at its preflight before any resource the apply owns, so a denial is a set the run's key lacks, or the apply's change.
+      // Only an apply, a setup or a teardown runs Pulumi, so a denial is a set the operator key lacks.
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the key of this run may not write ${pc.cyan(denied)}.`);
       console.error(
-        `  A change the apply owns runs on the operator key (${pc.cyan(actionCommand('apply'))}). A set the deploy key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('identity'))} writes it.`,
+        `  An apply runs on the operator key (${pc.cyan(actionCommand('apply'))}). A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operator-key'))} writes it.`,
       );
     }
   }

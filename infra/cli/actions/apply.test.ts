@@ -35,7 +35,7 @@ const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
 const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
-const reviewed = { passphrase: 'correct horse', basis: { checkpoint: '"aaa"', control: '"bbb"' } };
+const reviewed = { passphrase: 'correct horse', checkpoint: '"aaa"' };
 const engine = { image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`, imageDigest: `sha256:${'1'.repeat(64)}` };
 
 beforeEach(() => {

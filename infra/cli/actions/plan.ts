@@ -4,8 +4,8 @@ import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
-import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
-import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
+import { makeControlClient, readObjectEtag, stateBucket } from '../../lib/stack/control-store';
+import { checkpointKey } from '../../lib/stack/pending-operations';
 import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -33,14 +33,16 @@ export function askToApply(environment: string): Promise<boolean> {
 export interface ReviewedPlan {
   /** The passphrase verified for the plan, so the apply does not ask for it again. */
   passphrase: string;
-  /** What the plan was computed from. Undefined when the state bucket could not be read: the apply then plans again under the lock. */
-  basis?: PlanBasis;
+  /**
+   * The etag of the stack's checkpoint the plan was computed from, null when there was none: every `up` changes it, and a preview writes
+   * none. Undefined when the state bucket could not be read: the apply then plans again under the lock.
+   */
+  checkpoint?: string | null;
 }
 
 /**
  * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the operator apply builds
- * (organization id, privileged marker). A deploy applies only the part of such a diff that is not privileged, and stops while a privileged
- * change is pending. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
+ * (organization id). Nothing is locked or written: the returned checkpoint lets the apply tell whether the plan still holds once it is.
  */
 export async function reviewPlan(
   context: InfraContext,
@@ -93,9 +95,9 @@ export async function reviewPlan(
     }
   }
 
-  // Read before the plan runs, so a deploy that lands while Pulumi computes it counts as a change too.
-  const basis = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
-    .then((s3) => readPlanBasis(s3, stateBucket(appConfig.slug), stack))
+  // Read before the plan runs, so an apply that lands while Pulumi computes it counts as a change too.
+  const checkpoint = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
+    .then((s3) => readObjectEtag(s3, stateBucket(appConfig.slug), checkpointKey(stack)))
     .catch(() => undefined);
 
   const status = showPlan(env, stack);
@@ -103,8 +105,6 @@ export async function reviewPlan(
     console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env) and the passphrase.`);
     endAction(status);
   }
-  console.info(
-    `\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code; a deploy stops on any privileged change in it.')}`,
-  );
-  return { passphrase, basis };
+  console.info(`\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code.')}`);
+  return { passphrase, checkpoint };
 }

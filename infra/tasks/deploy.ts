@@ -15,7 +15,7 @@ const { deployFailureHint, main } = await import('./deploy-run');
 await main(argv).catch(async (err: unknown) => {
   const { failWithHint } = await import('../lib/utils/cli-output');
   const { ExitCodeError } = await import('../lib/utils/errors');
-  // A deploy that stopped on an owed privileged change keeps the preflight's code, so the main job can tell blocked from failed.
+  // A run that ended blocked or apply needed keeps its exit code, so the main job can tell it from a failure.
   failWithHint(err instanceof Error ? err.message : String(err), deployFailureHint(err, mode), err instanceof ExitCodeError ? err.exitCode : 1);
 });
 

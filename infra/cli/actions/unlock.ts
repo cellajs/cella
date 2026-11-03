@@ -52,7 +52,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
 
   await resolveVerifiedPassphrase(context.stackYaml);
 
-  // The operator key, as Apply locks with: the boot-diag bucket's control objects admit the operator, the observer (read) and the deploy key.
+  // The operator key, as Apply locks with: the lease in the boot-diag bucket admits the operator, the observer (read) and the deploy key.
   const { state: key } = await operatorKeys(context);
 
   const s3 = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey);
