@@ -426,7 +426,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `deleted-storage` and `replaced-images`: a sweep or release deleting a key a live row, a seed or another holder names.
   - A missing storage key in the bucket is refused (`storedFileSize` HEADs every variant, 400 `missing_object`). Signed upload params expire in 15 minutes with a nonce per token; the token route is limited per user (`limiters.ts`).
 - **Asks:** a presigned URL for another tenant's key; a key with `..`; a file declared `text/html` on the public bucket; what the bucket origin shares with the app origin (with C4).
-- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. A product cache serving a deleted attachment belongs to C8. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
+- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. A product cache serving a deleted attachment belongs to C8. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder's links belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
 
 ### C7 Request parsing, routing and cross-site differentials
 - **Gain:** guard bypass, reaching internal routes.
@@ -640,7 +640,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`, F2 line on build machine keys, G1, G12), cited and not redone.
   - The workspace settings, the audit and cella#1549.
 - **Asks:** an inventory of code that runs from the network at install, build, CI and in the browser, and what a compromised package in each tier reaches (the infra review's F2 line).
-- **Not this class:** dev server exposure, Storybook and `.env` on disk belong to F2. Build-machine keys and deploy key handling belong to the infra review (F3). CSP `connect-src` breadth for exfiltration after XSS belongs to C4; here only the third-party script cover is counted.
+- **Not this class:** dev server exposure, Storybook and `.env` on disk belong to F2. The builder's links and deploy key handling belong to the infra review (F3). CSP `connect-src` breadth for exfiltration after XSS belongs to C4; here only the third-party script cover is counted.
 
 ### F2 Dev-time exposure
 - **Gain:** a developer laptop, which the infra review rates as the observer and operator keys (F6, F7).

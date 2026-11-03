@@ -143,12 +143,12 @@ describe('previewFailureMessage', () => {
         {
           severity: 'error',
           message:
-            "error: Running program '/infra/index.ts' failed with an unhandled exception:\n\nError: compute: planning a NEW backend generation without INFRA_GENERATION_KEYS_FILE\n    at createGenerationVm (compute.ts:1:5843)\n    at more",
+            "error: Running program '/infra/index.ts' failed with an unhandled exception:\n\nError: compute: planning a NEW backend generation without INFRA_RELEASE_PLAN_FILE\n    at createGenerationVm (compute.ts:1:5843)\n    at more",
         },
       ],
     });
     const message = previewFailureMessage(1, stdout, sdkWarnings);
-    expect(message).toContain('planning a NEW backend generation without INFRA_GENERATION_KEYS_FILE');
+    expect(message).toContain('planning a NEW backend generation without INFRA_RELEASE_PLAN_FILE');
     expect(message).not.toContain('checksum');
     expect(message).not.toContain('at more');
   });

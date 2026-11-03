@@ -46,7 +46,7 @@ export type TaskName =
   | 'geoip-refresh'
   | 'smoke';
 
-/** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select, docker login). */
+/** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select). */
 export interface DeployEffects {
   /** Create the deploy emitter (OTLP config resolution may hit Secret Manager). */
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;

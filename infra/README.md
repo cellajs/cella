@@ -16,7 +16,7 @@ The EU has great cloud providers; what it lacks is an easy way to deploy within 
 
 **Releases can't break what is running.** Fresh servers per release.
 
-**Secure by default.** No machine logins, and each key does one kind of work.
+**Secure by default.** No machine logins, no key on a machine, and each key does one kind of work.
 
 **Observable.** One record per deploy, read with a read-only key; an OpenTelemetry trace too when a sink key is set.
 
@@ -46,11 +46,11 @@ Three rules:
 
 ## Security boundaries
 
-- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
+- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy, image or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
 - **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes a one-day operator key, refused on the same rule.
-- **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the deploy writes that key into the cloud-init of the machines that run the service.
+- **No machine holds a key.** The deploy composes each machine's env file from the values its services consume and hands the machine links that end within minutes: to that file, to the release's archives, whose digests it refuses to differ, and to the upload of its boot account. Once the machine booted, the deploy takes the links off its user data and deletes the file.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
-- **Builds hold no key where the app's code runs.**
+- **The builder holds no key.** It writes the release's archives and its reports through links, and the app's code runs there in containers that reach no machine metadata.
 
 ## Observability
 
@@ -68,7 +68,7 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
@@ -135,7 +135,10 @@ One name per concept across code and docs:
 | **runner** | The app's small machine that starts a deploy when an environment's target moves. |
 | **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
-| **builder** | A machine a deploy makes to build a release not built yet, deleted after. |
+| **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links and holds no key. |
+| **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
+| **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |
+| **link** | A presigned Object Storage URL the deploy key signs: one call on one object, until it ends within minutes. |
 | **rollout** | The two-wave fleet-moving phase of a deploy. |
 | **generation** | One immutable service VM at one content-addressed `genId`. |
 | **wave** | One stack update's services, cut over concurrently; 1 = primary, 2 = the rest. |
@@ -149,9 +152,8 @@ One name per concept across code and docs:
 | **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **privileged** | A resource only an apply on the operator key changes. |
-| **boot runner** | The `infra-boot` container run at every boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |
-| **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
-| **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |
-| **boot account** | The boot log a VM uploads to the boot-diag bucket at the end of every boot. |
+| **boot runner** | The `infra-boot` container run at every boot ([boot/](boot/)): fetch the env file, load the archives, start compose with its migrate companion, report. |
+| **boot plan** | JSON cloud-init writes for the boot runner: service, compose and static env files, links, trace context; no key and no secret value. |
+| **boot account** | The boot log a VM uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives cutovers and no public pool reaches. |
 | **engine config** | The app description [config/engine-config.ts](config/engine-config.ts) injects; defaults to `appConfig`. |

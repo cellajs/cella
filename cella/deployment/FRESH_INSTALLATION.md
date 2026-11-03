@@ -41,7 +41,7 @@ pnpm infra
 The first setup has two parts. The **Owner moment** runs on the Owner API key you paste:
 
 1. Picks or creates the Scaleway project (prerequisite 3).
-2. Creates the machine and deploy identities with their policies and keys, and stores each machine identity's standing key in the environment's `/deploy/` secret folder.
+2. Creates the deploy and uploads identities with their policies and keys, and stores the uploads key in the environment's `/runtime/` secret folder.
 3. Lets the app's operators reach this environment. The app's first environment makes the `<app>-operator` application and the `<app>-operators` group, each with a policy; a later one adds its project to both, and their keys keep working. No key is made: you make a one-day key of the application in the console when the operator part asks for it (IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration).
 4. Does the same for the app's observer, whose read-only key works from any address, and writes that key to `infra/.env.<mode>` on this machine.
 5. Offers to **revoke the Owner API key you pasted**. Decline when you set up the runner next (step 4): it needs the key again.
@@ -67,7 +67,7 @@ A second environment of the same app runs the same two parts: its Owner moment a
 
 ## 5. Sign in as first admin
 
-Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Verify runtime secrets are deliverable", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
+Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Compose runtime env", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
 2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.

@@ -262,7 +262,8 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
         // Every zone of the region: a machine an intruder made in another zone of the project is still the project's. The observer key reads
-        // no machine, as user data holds the machine's keys; a listing that fails leaves the machines unread and the other checks standing.
+        // no machine, as user data holds links to the env file until the deploy strips them; a listing that fails leaves the machines unread
+        // and the other checks standing.
         operatorSecretKey
           ? Promise.all(
               zones.map((zone) =>

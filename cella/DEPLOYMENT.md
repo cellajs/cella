@@ -7,7 +7,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 Publishing a release starts an automatic deployment: it creates new servers for that exact version,
 checks them, moves traffic without downtime and removes the old servers.
 [Pulumi](https://www.pulumi.com/) manages the cloud resources, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
-Setup, deploys and running servers each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need.
+Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need, and servers hold none: they fetch the release and their secrets through links that end within minutes.
 
 ## Overview
 
@@ -49,7 +49,7 @@ Resources and traffic flow:
 
 - **Load balancer:** the only public way to the machines. Every routed service shares the app origin under its own path prefix, so the API needs no CORS.
 - **Internal listener:** the backend's second port, for the CDC socket and the Yjs relay's materialize route. Only a private load balancer frontend that admits the private network reaches it.
-- **VMs:** all inbound traffic is dropped, SSH included. A machine pulls each image by the digest its tag had when the deploy planned it, so a later push under that tag changes nothing it runs.
+- **VMs:** all inbound traffic is dropped, SSH included. A machine loads each image from the release's archive and refuses one whose digest differs from the one the deploy put in its plan, so nothing written to the bucket later changes what it runs. It never reaches a registry.
 - **Placement:** every service gets its own VM, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend VM. The oauth, mcp and jobs workers and the migrate companion run the backend image as a `SERVICE` of their own.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only, with logical replication on for the CDC worker. A break-glass action exposes it for a while ([Runbooks](./deployment/RUNBOOKS.md)).
@@ -108,7 +108,7 @@ One small machine per app starts its deploys. Once a minute, for every environme
 
 ### Run records
 
-Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every machine also uploads a **boot account** at the end of every boot: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed rollout's record names each new machine's account.
+Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every new machine also uploads a **boot account** at the end of its first boot, through its link: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed rollout's record names each new machine's account.
 
 **Show runs** (`pnpm infra runs`, observer key) lists the last ten runs and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
 
@@ -116,7 +116,7 @@ Records, boot accounts and Scaleway's job runs are kept for 60 days, and the buc
 
 ### The builder
 
-When the registry lacks one of the release's images, or the frontend bucket its files, the deploy makes a builder machine that fetches the commit, builds them and is deleted when the build ends. The app's code runs there only in containers that hold no key and reach no machine metadata, and the engine's own code uploads the frontend files from their read-only output. Images and files carry a build epoch derived from the builder key, so after **Rotate keys** nothing pushed before counts as built and the release is built again. Every base image, and BuildKit itself, is pinned by digest, so a tag moved on Docker Hub changes no build; a Node, Caddy or BuildKit bump refreshes its digest.
+When the boot-diag bucket lacks the release's manifest, or an archive the manifest names, the deploy makes a builder machine that fetches the commit, builds every image and the frontend, and is deleted when the build ends. The builder holds no Scaleway key: it writes each image as an archive Docker loads, the frontend's files as one archive, and last the manifest with each archive's digest, all under `releases/<sha>/` through links the deploy signed before it made the machine, and reports its steps the same way. The deploy checks every archive against the manifest, then uploads the frontend files from their archive with its own key, refusing any entry but a plain file inside the build's output. The app's code runs on the builder only in containers that reach no machine metadata. Every base image, and BuildKit itself, is pinned by digest, so a tag moved on Docker Hub changes no build; a Node, Caddy or BuildKit bump refreshes its digest. Archives are kept 60 days; a rollback to an older release builds it again.
 
 ## Deploy flow
 
@@ -125,14 +125,19 @@ The runner sees a new target and starts a run of the main job
         ↓
 Check identities: they must be as declared
         ↓
-Stack lock + preflight: no privileged change or required secret may be owed
+Stack lock + preflight: no privileged change may be owed
         ↓
-Release not built yet: a builder machine builds the images
-and the frontend files, then is deleted
+Each machine's env file, from the runtime folder:
+a required value that is missing ends the run blocked
+        ↓
+Release not built yet: a builder machine writes the archives
+and the frontend files through links, then is deleted
         ↓
 Wave 1: provision + cut over the primary service (backend)
         ↓
 Wave 2: provision every other service, cut over concurrently
+        ↓
+The new machines' links and env files go once they booted
         ↓
 Verify every public service serves the expected release
         ↓
@@ -142,7 +147,7 @@ Publish the frontend entry files + smoke checks
 Remove every displaced generation
 ```
 
-The primary service owns migrations: the migrate companion runs at the boot of its new generation, before the app starts. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
+The primary service owns migrations: the migrate companion runs at the boot of its new generation, before the app starts, as the app's Compose dependency that must exit 0. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
 
 ## Rollout strategies
 
@@ -156,12 +161,12 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 ## Runtime secret delivery
 
-At every boot the boot runner reads the machine's runtime secrets from Secret Manager, with each service's own key, into its compose env file.
+Each value has one container in the runtime folder, which only the deploy key reads. Before it builds anything, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run.
 
-- **The Pulumi state holds no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase, as do the service keys each machine's user data carries.
-- **A deploy writes no secret of the app's.** An apply makes and copies every value, so a secret added to the registry reaches the stack through **Review & apply changes**. Before it makes any machine, the deploy checks that every required copy holds a value. A missing one ends the run blocked, and storing it in **Manage runtime secrets** starts the target again.
+- **The Pulumi state holds no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
+- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine exists, and storing it in **Manage runtime secrets** starts the target again.
+- **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value reaches the machines the next deploy makes: a new release, or a rotation.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
-- **A missing required secret stops the boot**, so a machine never crash-loops behind a 502.
 
 ## Load balancer and DNS
 

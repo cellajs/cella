@@ -1,6 +1,7 @@
 # check=skip=InvalidDefaultArgInFrom
 # Boot runner: runs at VM first-boot via `docker run` to bring a service's
-# Docker Compose stack up. It ships as a normal registry image pulled at boot.
+# Docker Compose stack up. It ships as an archive of the release, which the
+# launcher checks against its digest and loads at the first boot.
 #
 # It drives the HOST Docker daemon through the mounted socket
 # (/var/run/docker.sock), so it needs the docker CLI + compose plugin. The runner

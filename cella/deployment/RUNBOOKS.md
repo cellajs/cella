@@ -13,13 +13,13 @@ slate only resets the stack's tracking.
 Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error. A cutover that times out waiting for the new version means the app never served it: almost always a crash at boot, not the load balancer.
 
 1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report: the boot phases, the migrate companion's output and a crashed container's output. "No account" means the boot runner never finished; then the machine's serial console (Scaleway console → Instances → the machine → Console) shows how far it got, up to `BOOT FAILED (exit N)`.
-2. **Reproduce locally.** Pull the exact image tag and `docker run` it with a minimal valid environment: a failing import (`ERR_MODULE_NOT_FOUND`) shows in seconds. On macOS, where the keychain refuses to save a `docker login`, use a throwaway `--config` folder with a base64 `auth`.
+2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` of the boot-diag bucket, and `docker run` it with a minimal valid environment: a failing import (`ERR_MODULE_NOT_FOUND`) shows in seconds.
 3. **Check the usual causes:**
    - a package the image lacks: `pnpm boot:check` catches one missing from `dependencies`
    - a secret value of several lines ([Runtime secret delivery](../DEPLOYMENT.md#runtime-secret-delivery))
    - an image older than a change to the database or the secrets it expects
    - node-postgres checking the TLS hostname against the IP it dialed
-   - a service key without `SecretManagerSecretAccess` on its folder: a 403 while hydrating
+   - a link that ended before the machine fetched it: a 403 at `fetch-env` or `load-images`, when the machine took longer than the link's minutes to boot
    - an instance-type quota too low for a new machine beside the old one
 
 ## A blocked deploy
@@ -77,7 +77,7 @@ The worker makes a new slot when it starts again, and every client refetches onc
 
 ## Seed the admin by hand
 
-A wrong admin email is fixed in **Manage runtime secrets**, then by rebooting the backend machine ([Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**): its boot seeds the admin while the users table is empty.
+A wrong admin email is fixed in **Manage runtime secrets**, then by a deploy that makes a new backend machine, such as **Rotate secrets**: a machine keeps the env file it booted with, and the new one's boot seeds the admin while the users table is empty.
 
 On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and seed with the printed connection string:
 

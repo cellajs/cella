@@ -15,7 +15,7 @@ import { createLbGetServers, createLbSetServers } from './cutover';
 import type { RolloutRuntime } from './rollout';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
-// Cold-boot budget: a fresh VM generation pulls its image, runs migrate, and
+// Cold-boot budget: a fresh VM generation loads its archives, runs migrate, and
 // starts the app before it serves the new SHA (~110s observed). The gate must
 // outlast that, so keep a generous attempt count (120 * 3s = 360s).
 const deployHealthAttempts = 120;
