@@ -607,9 +607,6 @@ importers:
       i18next-browser-languagedetector:
         specifier: ^8.2.4
         version: 8.2.4
-      i18next-http-backend:
-        specifier: ^4.0.7
-        version: 4.0.7
       immer:
         specifier: ^11.2.9
         version: 11.2.9
@@ -5649,10 +5646,6 @@ packages:
 
   i18next-browser-languagedetector@8.2.4:
     resolution: {integrity: sha512-n6zWTCD8plrPN6gotXNXf0qdM2cORZqZ6ypJA4aIXZkEa45Ds2BVlrZfFItD+XQWP3yAgWxV+euldyN+2utk0Q==}
-
-  i18next-http-backend@4.0.7:
-    resolution: {integrity: sha512-SQy3OPy66YzumNJ43boHDBtzzMISnoPhQ0Zqjetk+luW74Tok8Ez9ujJJbJHKSHkG5sjDGldHznjuPtSxBwvuw==}
-    engines: {node: '>=18'}
 
   i18next@26.6.0:
     resolution: {integrity: sha512-jpb1n5386s9mbBLNF6tSNIVhbBUUNiNeDyjWte+uxHP/Wr+CEy7WBM8q29TkfQ46VbwKeJFYdQJK3pSUhLp4CQ==}
@@ -12611,8 +12604,6 @@ snapshots:
   i18next-browser-languagedetector@8.2.4:
     dependencies:
       '@babel/runtime': 7.29.10
-
-  i18next-http-backend@4.0.7: {}
 
   i18next@26.6.0(typescript@6.0.3):
     optionalDependencies:

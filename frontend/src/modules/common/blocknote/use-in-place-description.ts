@@ -96,6 +96,8 @@ export function useInPlaceDescription({
   holdOnExit = true,
   cursorAtPoint = false,
 }: UseInPlaceDescriptionOptions): InPlaceDescription {
+  // Reads and writes refs during render, so the editor hands over to the static view within one render.
+  'use no memo';
   const [wasEditing, setWasEditing] = useState(editing);
   const [holding, setHolding] = useState(false);
   const [handoff, setHandoff] = useState<Handoff | null>(null);

@@ -92,3 +92,15 @@ export function remarkLinkRepoPaths(options: RepoLinkOptions) {
     walk(tree, false);
   };
 }
+
+/**
+ * Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view already renders the frontmatter
+ * title as h1: drop the leading h1 when such a file is compiled as page content. Content-root files have no h1.
+ */
+export function remarkStripRepoDocH1() {
+  return (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
+    if (!file.path || file.path.includes('/src/content/docs/')) return;
+    const index = tree.children.findIndex((node) => node.type === 'heading');
+    if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
+  };
+}
