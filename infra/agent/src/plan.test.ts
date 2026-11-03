@@ -10,7 +10,7 @@ const archive = { name: 'backend', image: 'rg.nl-ams.scw.cloud/ns/backend:abc123
 
 function plan(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    schemaVersion: 2,
+    schemaVersion: 3,
     service: 'backend',
     profile: 'backend',
     services: ['backend'],
@@ -19,19 +19,19 @@ function plan(overrides: Record<string, unknown> = {}): string {
     links: { env: link, bootAccount: link, archives: [archive] },
     bootDiagnostics: { logFile: '/var/log/infra-boot.log' },
     docker: { composeFile: '/opt/app/compose.yml' },
-    files: { compose: 'services: {}', env: 'BACKEND_TAG=abc' },
+    agent: { ports: [{ service: 'backend', agentPort: 9000, port: 4000 }], drainSeconds: 10 },
     timeouts: { privateNetworkSeconds: 150, fetchAttempts: 2, fetchRetrySeconds: 1, composeWaitSeconds: 240 },
     ...overrides,
   });
 }
 
 describe('parseBootPlanJson', () => {
-  it('parses a valid schema-v2 boot plan', () => {
+  it('parses a valid schema-v3 boot plan', () => {
     expect(parseBootPlanJson(plan()).links.archives).toEqual([archive]);
   });
 
   it('rejects unsupported schema and image contract, and the fields of a plan that carried keys', () => {
-    expect(() => parseBootPlanJson(plan({ schemaVersion: 1 }))).toThrow(/unsupported schemaVersion/);
+    expect(() => parseBootPlanJson(plan({ schemaVersion: 2 }))).toThrow(/unsupported schemaVersion/);
     expect(() => parseBootPlanJson(plan({ imageContract: 'docker-only' }))).toThrow(/unsupported imageContract/);
     expect(() => parseBootPlanJson(plan({ credentials: { scwSecretKeyFile: '/etc/cella/scw-secret-key' } }))).toThrow(/unknown top-level field/);
   });

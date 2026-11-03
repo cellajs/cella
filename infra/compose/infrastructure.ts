@@ -142,7 +142,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
 }
 
 /** The agent's compose service, which every machine runs beside its app (agent/): the launcher starts it, and it starts the rest. */
-export const AGENT_SERVICE = 'infra-agent';
+const AGENT_SERVICE = 'infra-agent';
 
 /**
  * The agent: on the host network, where it answers the load balancer on each service's agent port and reads its manifest from the metadata

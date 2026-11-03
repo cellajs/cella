@@ -8,7 +8,7 @@ export default defineProject({
   logLevel: 'error',
   test: {
     include: [
-      'boot/**/*.test.ts',
+      'agent/**/*.test.ts',
       'cli/**/*.test.ts',
       'compose/**/*.test.ts',
       'tasks/**/*.test.ts',

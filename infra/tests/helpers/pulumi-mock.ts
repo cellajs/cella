@@ -66,11 +66,6 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   return { pulumi, resources, byType, oneOfType, settle };
 }
 
-/** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */
-export function unwrapSecret(input: unknown): unknown {
-  return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
-}
-
 /** A file a `#cloud-config` writes, as its `write_files` entry holds it, or undefined when it writes none at `path`. */
 export function cloudConfigFile(cloudConfig: string, path: string): string | undefined {
   const entry = cloudConfig.split('\n  - path: ').find((block) => block.startsWith(`${path}\n`));

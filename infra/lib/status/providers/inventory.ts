@@ -1,4 +1,3 @@
-import type { EngineConfig } from '../../../config/engine-config';
 import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
 import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
 import { repositoryUrl } from '../../deploy/repository-key';
@@ -33,6 +32,8 @@ export interface InventoryFacts {
   machines?: Array<{ id: string; name: string }>;
   /** Each role's machine that serves, from the live record. */
   liveMachines: Record<string, string>;
+  /** The environment's machine roles: a machine named for one of their slots is the engine's. */
+  roles: readonly string[];
   /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
   mainJob?: {
     running: boolean;
@@ -57,8 +58,6 @@ export interface InventoryExpectation {
   oneKey: readonly string[];
   /** Every machine of this environment starts with it (`<slug>-`). */
   machinePrefix: string;
-  /** The environment's machine roles: a machine named for one of their slots is the engine's. */
-  roles: readonly string[];
   /** The app's operator: every key of it ends within a day, and one that does not is deleted in the console. */
   operator: string;
 }
@@ -134,7 +133,7 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
     }
   }
   const live = new Set(Object.values(facts.liveMachines));
-  const slotNames = new Set(expect.roles.flatMap((role) => ['a', 'b'].map((slot) => `${expect.machinePrefix}${role}-${slot}`)));
+  const slotNames = new Set(facts.roles.flatMap((role) => ['a', 'b'].map((slot) => `${expect.machinePrefix}${role}-${slot}`)));
   // A deploy deletes the machine it switched from and its builder before it ends, so with no run going on such a machine is a finding too.
   const deploying = facts.mainJob?.running === true;
   for (const { id, name } of facts.machines ?? []) {
@@ -201,11 +200,7 @@ function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'
 }
 
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
-function expectationOf(
-  appConfig: Pick<EngineConfig, 'slug' | 'appSlug' | 'services' | 'singleVM'>,
-  mode: string,
-  projectId: string,
-): InventoryExpectation {
+function expectationOf(appConfig: { slug: string; appSlug: string }, mode: string, projectId: string): InventoryExpectation {
   const app = appPrincipalNames(appConfig.appSlug);
   const appLevel = [app.operator, app.observer, runnerName(appConfig.appSlug)];
   const declared = Object.fromEntries([
@@ -221,7 +216,6 @@ function expectationOf(
     declared,
     oneKey: Object.keys(declared).filter((name) => name !== app.observer && name !== app.operator),
     machinePrefix: `${appConfig.slug}-`,
-    roles: machineRoles(appConfig).map((role) => role.role),
     operator: app.operator,
   };
 }
@@ -312,7 +306,8 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       );
       const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
       const machines = servers?.map(({ id, name }) => ({ id, name }));
-      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, mainJob, organizationId };
+      const roles = machineRoles(session.appConfig).map((role) => role.role);
+      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId };
     } catch {
       return undefined;
     }

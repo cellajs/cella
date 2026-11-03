@@ -17,7 +17,7 @@ const expect_ = {
 };
 
 describe('the inventory', () => {
-  it('finds a planted key, a planted machine (a stale generation or builder too, when no deploy runs), a planted policy and an application that can act here, and nothing that belongs (C11)', () => {
+  it('finds a planted key, a planted machine (a slot machine the live record does not name or a builder too, when no deploy runs), a planted policy and an application that can act here, and nothing that belongs (C11)', () => {
     const facts: InventoryFacts = {
       applications: [
         { id: 'boot', name: 'app-staging-boot' },
@@ -53,8 +53,15 @@ describe('the inventory', () => {
         },
         { name: 'other-production-admin-policy', application_id: 'reader', rules: [{ organization_id: 'o', permission_set_names: ['IAMReadOnly'] }] },
       ],
-      machines: ['app-backend-g1', 'app-backend-g0', 'app-builder-abc', 'mallory'],
-      activeGenerations: { backend: 'g1' },
+      machines: [
+        { id: 'm1', name: 'app-backend-a' },
+        { id: 'm0', name: 'app-backend-b' },
+        { id: 'b1', name: 'app-builder-abc' },
+        { id: 'x1', name: 'mallory' },
+        { id: 'x2', name: 'app-backend-1f2e3d4c' },
+      ],
+      liveMachines: { backend: 'm1' },
+      roles: ['backend', 'frontend'],
       mainJob: { running: false, env: {} },
       organizationId: 'o',
     };
@@ -64,16 +71,17 @@ describe('the inventory', () => {
       operatorKeys: ['app-operator holds a key that outlives a day: SCWOPDURABLE (forever)'],
       policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
       machines: [
-        'app-backend-g0: a generation that is not active, and no deploy runs (a failed run left it, or someone named it so)',
+        'app-backend-b: a machine the live record does not name, and no deploy runs (a failed run left it, or someone named it so)',
         'app-builder-abc: a builder, and no deploy runs (a failed run left it, or someone named it so)',
         'mallory: not made by the engine',
+        'app-backend-1f2e3d4c: not made by the engine',
       ],
       passing: [],
     });
     const deploying = inventoryFindings({ ...facts, mainJob: { running: true, env: {} } }, expect_);
-    expect(deploying.machines).toEqual(['mallory: not made by the engine']);
+    expect(deploying.machines).toEqual(['mallory: not made by the engine', 'app-backend-1f2e3d4c: not made by the engine']);
     expect(deploying.passing).toEqual([
-      'app-backend-g0: a generation that is not active, while a deploy runs',
+      'app-backend-b: a machine the live record does not name, while a deploy runs',
       'app-builder-abc: a builder, while a deploy runs',
     ]);
   });
@@ -99,6 +107,11 @@ describe('the inventory', () => {
         { env: 'DB_PASSWORD', secretId: 's3', name: 'database-admin-password', path: engine },
       ],
     };
-    expect(mainJobDifferences(live, mainJob)).toEqual(['env REPO differs', 'an extra secret reference DB_PASSWORD (database-admin-password)']);
+    // A definition from before the deploy left the state still reads the passphrase: an apply writes it without.
+    expect(mainJobDifferences(live, mainJob)).toEqual([
+      'env REPO differs',
+      'an extra secret reference PULUMI_CONFIG_PASSPHRASE (pulumi-passphrase)',
+      'an extra secret reference DB_PASSWORD (database-admin-password)',
+    ]);
   });
 });

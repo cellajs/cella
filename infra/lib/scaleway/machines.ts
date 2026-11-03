@@ -95,7 +95,7 @@ export async function listMachines(auth: ScwAuth, opts: { zone: string; projectI
 }
 
 /** One machine, or undefined once it is gone. */
-export async function readMachine(auth: ScwAuth, zone: string, serverId: string): Promise<ScwServer | undefined> {
+async function readMachine(auth: ScwAuth, zone: string, serverId: string): Promise<ScwServer | undefined> {
   try {
     return (await scwFetch<{ server: ScwServer }>(auth, 'GET', `${instanceApi(zone)}/servers/${serverId}`)).server;
   } catch (error) {

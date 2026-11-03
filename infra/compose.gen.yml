@@ -287,3 +287,22 @@ services:
       lbRoute: default
       dockerfile: infra/caddy/Dockerfile
       placement: host
+  infra-agent:
+    image: ${REGISTRY}/infra-agent:${AGENT_TAG}
+    pull_policy: never
+    profiles: [agent]
+    restart: 'no'
+    command:
+      - agent
+      - '--plan'
+      - ${AGENT_DIR}/boot-plan.json
+    network_mode: host
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/app:/opt/app
+      - ${AGENT_DIR}:${AGENT_DIR}
+      - /var/log/infra-boot.log:/var/log/infra-boot.log:ro

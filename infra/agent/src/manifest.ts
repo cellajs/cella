@@ -12,7 +12,7 @@ export interface Manifest {
 const METADATA_HOST = '169.254.42.42';
 
 /** Parse the manifest; a malformed one is refused, and the agent keeps the state it had. */
-export function parseManifest(text: string): Manifest {
+function parseManifest(text: string): Manifest {
   const raw = JSON.parse(text) as unknown;
   if (!isRecord(raw) || typeof raw.role !== 'string' || typeof raw.release !== 'string' || typeof raw.drain !== 'boolean') {
     throw new Error('manifest: expected { role, release, drain }');

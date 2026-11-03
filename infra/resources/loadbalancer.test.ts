@@ -1,16 +1,10 @@
 import type { ComponentResourceOptions } from '@pulumi/pulumi';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { agentPort } from '../lib/machine-roles';
 import { servicesByName } from '../lib/services';
 import { fakeConfig } from '../tests/helpers/fake-config';
 import { makeFetch } from '../tests/helpers/fake-fetch';
-import {
-  bootPlanIn,
-  type CapturedResource,
-  installPulumiMocks,
-  type MockHarness,
-  unwrapSecret,
-  writeReleasePlan,
-} from '../tests/helpers/pulumi-mock';
+import { type CapturedResource, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 // The propagation and readiness gates are dynamic resources whose providers poll the network; a plain component stands in so the graph they gate renders.
 vi.mock('./dns-cert-gates', async () => {
@@ -32,17 +26,7 @@ const named = (name: string): CapturedResource => {
 };
 const id = (name: string) => `${name}-id`;
 
-/** The `.env` a VM's boot plan carries, as `NAME=value` pairs. */
-const vmEnv = (slug: string): Record<string, string> => {
-  const server = h.byType('scaleway:instance/server:Server').find((r) => r.name.startsWith(`vm-${slug}-`));
-  if (!server) throw new Error(`no VM for ${slug}`);
-  const { env } = bootPlanIn(String(unwrapSecret(server.inputs.cloudInit)), '/etc/cella/boot-plan.json').plan.files;
-  return Object.fromEntries(env.split('\n').map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]));
-};
-
 beforeAll(async () => {
-  // The plan of the release, as the deploy writes it before its stack update.
-  writeReleasePlan();
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);
@@ -118,7 +102,6 @@ describe('load balancer', () => {
     for (const pool of backends.filter((b) => b !== internalPool)) {
       const service = servicesByName.get(pool.name.replace('-lb-backend', '') as never);
       expect(pool.inputs.forwardPort, pool.name).toBe(service?.healthPort);
-      expect(pool.inputs.healthCheckHttp, pool.name).toEqual({ uri: '/health', code: service?.healthExpectStatus });
     }
     // No public frontend or route reaches the internal pool; the path routes lead to their own service.
     const routes = h.byType('scaleway:loadbalancers/route:Route');
@@ -129,20 +112,28 @@ describe('load balancer', () => {
       ['/yjs', id('yjs-lb-backend')],
     ]);
     expect(named('https-frontend').inputs.backendId).toBe(id('frontend-lb-backend'));
-    // In-network consumers dial the listener at the LB's private address on the internal frontend's port, never at a generation IP.
-    const internalAddress = `10.0.0.200:${internal.inputs.inboundPort}`;
-    expect(vmEnv('cdc').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
-    expect(vmEnv('yjs').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
   });
 
-  it("targets each pool at its own service's generation IPs over the private network attachment", () => {
+  it("lists each role's two reserved addresses in its pools for good, and moves traffic by the agent's answer at the shortest check", () => {
     const lb = named('main-lb');
     expect(lb.inputs.privateNetworks).toEqual([{ privateNetworkId: id('main-private-network') }]);
     for (const pool of h.byType('scaleway:loadbalancers/backend:Backend')) {
       const slug = pool.name.replace(/-(internal-)?lb-backend$/, '');
-      const reserved = h.resources.filter((r) => r.type === 'scaleway:ipam/ip:Ip' && r.name.startsWith(`ipam-${slug}-`));
-      expect(reserved.length, pool.name).toBeGreaterThan(0);
+      const reserved = ['a', 'b'].map((slot) => named(`slot-${slug}-${slot}`));
+      expect(
+        reserved.map((r) => r.inputs.tags),
+        pool.name,
+      ).toEqual([expect.arrayContaining([`cella-production-${slug}-a`]), expect.arrayContaining([`cella-production-${slug}-b`])]);
       expect(pool.inputs.serverIps, pool.name).toEqual(reserved.map((r) => String(r.outputs.address).split('/')[0]));
+      // M1: a 503 takes a server out 1.3 s later at these values, with no failed request.
+      expect(pool.inputs, pool.name).toMatchObject({
+        healthCheckPort: agentPort(slug),
+        healthCheckHttp: { uri: `/health/${slug}`, code: 200 },
+        healthCheckDelay: '1s',
+        healthCheckTimeout: '1s',
+        healthCheckMaxRetries: 2,
+        healthCheckTransientDelay: '0.5s',
+      });
     }
   });
 

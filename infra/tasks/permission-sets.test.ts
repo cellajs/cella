@@ -4,7 +4,7 @@ import { deployRules } from '../lib/scaleway/deploy-policy';
 
 // The deploy key's rights are plan §3.1's: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
-const rules = deployRules({ projectId: 'proj', organizationId: 'org' });
+const rules = deployRules({ projectId: 'proj' });
 const setsOf = (rule: (typeof rules)[number]) => rule.permission_set_names;
 
 describe('deploy key rights', () => {
@@ -44,11 +44,16 @@ describe('deploy key rights', () => {
     expect(rules.flatMap(setsOf).filter((set) => /^SecretManagerSecret(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
-  it('reads IAM in the organization, and everything else in its own project', () => {
-    for (const rule of rules) {
-      if (rule.organization_id) expect(rule.permission_set_names).toEqual(['IAMReadOnly']);
-      else expect(rule.project_ids).toEqual(['proj']);
-    }
+  it('must not move traffic or take an address of its own: a leaked key cannot edit a pool, a health check or a reservation', () => {
+    const all = rules.flatMap(setsOf);
+    expect(all.filter((set) => set.startsWith('LoadBalancers'))).toEqual(['LoadBalancersReadOnly']);
+    expect(all.filter((set) => set.startsWith('IPAM'))).toEqual(['IPAMReadOnly']);
+    // M2: a private NIC at a reserved address takes the private network's write set and both NIC families.
+    expect(all).toEqual(expect.arrayContaining(['PrivateNetworksFullAccess', 'InstancesPrivateNicCreate', 'InstancesPrivateNetworkInterfaceCreate']));
+  });
+
+  it('reads nothing outside its own project, IAM included: a deploy plans no stack and reads no identity', () => {
+    for (const rule of rules) expect(rule.project_ids).toEqual(['proj']);
   });
 });
 

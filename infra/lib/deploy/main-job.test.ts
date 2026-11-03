@@ -47,9 +47,9 @@ describe('the main job', () => {
     expect(run.stderr).toContain('the run stopped before the deploy (exit 2)');
   });
 
-  it("installs the Pulumi CLI from its release archive without restoring owners, which a job's root may not, and pipes no script into a shell", () => {
-    expect(MAIN_JOB_SCRIPT).toContain('tar -xz --no-same-owner');
+  it('pipes no script into a shell, and reads no passphrase: a deploy plans no stack', () => {
     expect(MAIN_JOB_SCRIPT).not.toMatch(/\|\s*(ba)?sh\b/);
+    expect(MAIN_JOB_SCRIPT).not.toMatch(/PULUMI|pulumi/);
   });
 
   it('must not fetch a commit no release names where the environment deploys releases only (D-f): a hand-started run is refused', () => {

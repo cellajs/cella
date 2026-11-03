@@ -8,20 +8,21 @@ const T = Date.parse('2026-09-24T12:00:00Z');
 const observerKey = { accessKey: 'SCWOBS', bearer: 'application' as const, name: 'cella-observer', bearerId: 'o' };
 
 describe('formatQuickFacts', () => {
-  it('reports a free lock, the live rollout and a healthy observer key', () => {
+  it('reports a free lock, what serves and a healthy observer key', () => {
     const facts: QuickFacts = {
-      control: {
-        schemaVersion: 2,
-        rollout: { backend: { active: { id: 'e67a', sha: '117397c20f0dd', seq: 12 }, seq: 12 } },
+      live: {
+        schemaVersion: 1,
+        roles: { backend: { slot: 'b', machine: 'srv-1', commit: '117397c20f0dd', retry: 0, rotation: 0 } },
         updatedAt: '2026-09-23T21:37:29.000Z',
-        updatedBy: 'ci:run-590',
+        updatedBy: 'job:117397c20f',
       },
+      rotations: { counter: 0 },
       key: { desc: observerKey, role: 'observer', slot: 'observer' },
       unavailable: [],
     };
     expect(strip(formatQuickFacts(facts, { now: T }))).toEqual([
       '● Lock: free',
-      '● Live: backend 117397c (updated 2026-09-23 21:37 UTC by ci:run-590)',
+      '● Live: backend 117397c (b) (updated 2026-09-23 21:37 UTC by job:117397c20f)',
       '● Last rotation: keys never, secrets never',
       '● Observer key: SCWOBS → cella-observer (observer application)',
     ]);

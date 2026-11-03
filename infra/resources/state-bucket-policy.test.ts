@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { engineConfig } from '../config/engine-config';
 import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
-import { controlKey } from '../lib/stack/control-store';
 import { checkpointKey } from '../lib/stack/pending-operations';
 import { escapeRegExp } from '../lib/utils/escape-regexp';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
@@ -28,15 +27,16 @@ function readers(statements: readonly Statement[], object: string): string[] {
 }
 
 describe('the state bucket policy', () => {
-  it("must not let a key outside the deploy path read a stack's checkpoint: the passphrase then guards it from nobody", () => {
+  it("must not let the deploy key or the observer read a stack's checkpoint: only the people who apply read the state", () => {
     const policy = h.oneOfType('scaleway:object/bucketPolicy:BucketPolicy');
     const bucket = String(policy.inputs.bucket);
     const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
     const app = appPrincipalNames(engineConfig().appSlug);
-    const deploy = `application_id:${principalNames(engineConfig().slug, 'production').ciDeploy}-id`;
     const operators = [`application_id:${app.operator}-id`, `user_id:${app.operators}-member-id`];
-    expect(readers(Statement, `${bucket}/${checkpointKey('production')}`)).toEqual([deploy, ...operators].sort());
-    // Positive control: the observer reads the rollout record beside it.
-    expect(readers(Statement, `${bucket}/${controlKey('production')}`)).toEqual([deploy, `application_id:${app.observer}-id`, ...operators].sort());
+    expect(readers(Statement, `${bucket}/${checkpointKey('production')}`)).toEqual(operators.sort());
+    expect(JSON.stringify(Statement)).not.toContain(principalNames(engineConfig().slug, 'production').ciDeploy);
+    // Positive control: the observer may list it, to tell the bucket is there, and read nothing in it.
+    const observer = Statement.find((statement) => [statement.Principal.SCW].flat().includes(`application_id:${app.observer}-id`));
+    expect(observer?.Action).toEqual(['s3:ListBucket']);
   });
 });

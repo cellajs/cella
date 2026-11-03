@@ -1,44 +1,52 @@
 import { describe, expect, it } from 'vitest';
+import type { ServiceName } from '../compose/compose';
+import type { LiveRecord } from '../lib/deploy/live-record';
 import type { RunRecord } from '../lib/deploy/run-record';
+import type { MachineRole } from '../lib/machine-roles';
 import { ExitCodeError } from '../lib/utils/errors';
 import type { AllowedKey } from './deploy-env';
-import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, runDeploy } from './deploy-run';
+import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, runDeploy, type SwitchRequest } from './deploy-run';
+
+const SHA = 'abc1230000000000000000000000000000000000';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
   return {
     environment: opts.mode,
     image_tag: opts.sha,
-    pulumi_stack: opts.mode,
+    stack: opts.mode,
     region: 'fr-par',
-    registry_ns: 'cella-registry',
     public_bucket: '',
     frontend_bucket: 'cella-frontend',
-    state_bucket: 'cella-pulumi-state',
     diag_bucket: 'cella-boot-diag',
     enabled_services_json: JSON.stringify([
-      // health_url mirrors deploy-env: set for LB-exposed services
-      // (including co-hosted followers), '' for internal-only ones. The
-      // version-verification step reads THESE rows, not the rollout matrices.
       { service: 'backend', public_url: 'https://www.cellajs.com/api', health_url: 'https://www.cellajs.com/api' },
       { service: 'cdc', public_url: '', health_url: '' },
-      { service: 'yjs', public_url: 'https://www.cellajs.com/yjs', health_url: 'https://www.cellajs.com/yjs' },
       { service: 'frontend', public_url: 'https://www.cellajs.com', health_url: 'https://www.cellajs.com' },
     ]),
     build_images_matrix: JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]),
-    primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://www.cellajs.com/api' }]),
-    roll_rest_matrix: JSON.stringify([
-      { service: 'cdc', health_url: '' },
-      { service: 'frontend', health_url: 'https://www.cellajs.com' },
-    ]),
+    primary_role: 'backend',
   };
 }
 
-function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean; leaseLost?: boolean } = {}) {
+const role = (name: ServiceName, primary = false): MachineRole => ({
+  role: name,
+  services: [],
+  pools: [],
+  strategy: 'start-first',
+  drainSeconds: 0,
+  primary,
+});
+const ROLES = [role('backend', true), role('cdc'), role('frontend')];
+const serving = (commit: string, retry = 0, rotation = 0): LiveRecord => ({
+  schemaVersion: 1,
+  roles: Object.fromEntries(ROLES.map((r, index) => [r.role, { slot: 'a', machine: `srv-${index}`, commit, retry, rotation }])),
+});
+
+function makeFake(opts: { live?: LiveRecord; rotation?: number; switchFails?: boolean; leaseLost?: boolean } = {}) {
   const ops: string[] = [];
-  const rolloutArgs: string[][] = [];
   const taskArgs: Record<string, string[]> = {};
-  const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
+  const switches: SwitchRequest[] = [];
   const records: Array<{ bucket: string; record: RunRecord; log: string }> = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
@@ -48,7 +56,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
       ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}`);
       taskArgs[name] = [...argv];
     },
-    readFile: async (path) => (path.endsWith('manifest.json') ? JSON.stringify({ release: 'abc123', images: {} }) : '[]'),
+    readFile: async (path) => (path.endsWith('manifest.json') ? JSON.stringify({ release: SHA, images: {} }) : '[]'),
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
       return {
@@ -58,22 +66,15 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
         lost: opts.leaseLost === true,
       };
     },
-    exec: async (cmd, args, execOpts) => {
-      ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
-      execCalls.push({ cmd, args: [...args], opts: execOpts });
+    readLive: async () => {
+      ops.push('live:read');
+      return { roles: ROLES, record: opts.live ?? { schemaVersion: 1, roles: {} }, rotation: opts.rotation ?? 0 };
     },
-    update: async (stack) => {
-      ops.push(`update:${stack}`);
-      if (opts.updateFails) throw new Error('stack update failed');
-    },
-    rollout: async (argv) => {
-      ops.push('rollout');
-      rolloutArgs.push([...argv]);
-      if (opts.rolloutFails) throw new Error('cutover failed');
-    },
-    verifyVersion: async (url) => {
-      ops.push(`verify:${url}`);
-      return !opts.verifyFails;
+    switchMachines: async (request) => {
+      ops.push(`switch:${request.pending.join(',')}`);
+      switches.push(request);
+      request.switched.push({ role: 'backend', slot: 'b', machine: 'srv-new' });
+      if (opts.switchFails) throw new Error('frontend: it did not serve within 480 s on slot b');
     },
     publishEntryFiles: async () => {
       ops.push('publish-entry');
@@ -90,70 +91,34 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, taskArgs, execCalls, records };
+  return { fx, ops, taskArgs, switches, records };
 }
 
-const baseOpts = { mode: 'production', sha: 'abc123' };
+const baseOpts: DeployOptions = { mode: 'production', sha: SHA, retry: 0 };
 
 describe('parseDeployArgs', () => {
   it('parses flags and refuses non-pinned tags', () => {
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({
-      mode: 'staging',
-      sha: 'abc',
-      run: undefined,
-    });
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--retry', '2'])).toEqual({ mode: 'staging', sha: 'abc', retry: 2, run: undefined });
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc']).retry).toBe(0);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
   });
 });
 
 describe('runDeploy sequencing', () => {
-  it('refreshes GeoIP data before the stack update when a public bucket exists, and shrugs off a failure', async () => {
-    const withBucket = async (o: DeployOptions) => ({ ...(await fakeDeployEnv(o)), public_bucket: 'cella-public' });
-
-    const ok = makeFake();
-    await runDeploy(baseOpts, ok.fx, withBucket);
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:build-release'));
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('update:production'));
-
-    const failing = makeFake();
-    const task = failing.fx.task;
-    failing.fx.task = async (name, argv) => {
-      if (name === 'geoip-refresh') throw new Error('db-ip down');
-      return task(name, argv);
-    };
-    await runDeploy(baseOpts, failing.fx, withBucket);
-    expect(failing.ops).toContain('rollout');
-
-    const none = makeFake();
-    await runDeploy(baseOpts, none.fx, fakeDeployEnv);
-    expect(none.ops).not.toContain('task:geoip-refresh');
-  });
-
-  it('runs preflights, rollout, verification, entry publish, smoke, then releases the lock', async () => {
+  it('takes the lease, reads the live record, composes, builds, switches, takes the links off, publishes, smoke-tests, then releases the lease', async () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-
-    // Ordering spine: identities checked first, lock before any stack mutation, the env files written before the build and the stack
-    // update that hands each machine its link, the links taken off after the rollout, publish only after verification, lock release last.
     const spine = [
-      'task:identity-plan',
-      'task:ensure-state-bucket',
-      'exec:pulumi:login',
       'lease:acquire:deploy',
-      // Leftover pointers are reconciled before anything plans the stack.
-      'task:sync-rollout-config',
-      'task:preflight-privileged',
+      'live:read',
       // A missing secret blocks the run before any machine exists, the builder included.
       'task:compose-env',
       'task:build-release',
-      'update:production',
-      'rollout',
+      'switch:backend,cdc,frontend',
       'task:clear-machine-links',
       'publish-entry',
       'task:smoke',
-      // The displaced generations are reaped once smoke passed, under the same lock.
-      'update:production',
       'lease:release',
     ];
     let cursor = -1;
@@ -162,64 +127,42 @@ describe('runDeploy sequencing', () => {
       expect(index, `${op} missing or out of order in: ${ops.join(', ')}`).toBeGreaterThan(cursor);
       cursor = index;
     }
-    // Public version verification covers every LB-exposed service, including
-    // the co-hosted follower (yjs), which is absent from the rollout matrices.
-    expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
-    expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
     expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
   });
 
-  it("only checks the state bucket: making and hardening it is the setup's, on the operator key", async () => {
-    const { fx, taskArgs } = makeFake();
-    await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect(taskArgs['ensure-state-bucket']).toEqual(['--check']);
-  });
-
-  it('reconciles pointers against the services the rollout cuts over', async () => {
-    const { fx, taskArgs } = makeFake();
-    await runDeploy(baseOpts, fx, fakeDeployEnv);
-    // The rollout matrices' rows: yjs runs on the host, so its pointers are dropped.
-    expect(taskArgs['sync-rollout-config']).toEqual(['--stack', 'production', '--reset-pending', '--deployed', 'backend,cdc,frontend']);
-  });
-
-  it('stops before the stack update when the preflight finds a pending privileged change', async () => {
-    const { main: preflight } = await import('./preflight-privileged');
-    const { fx, ops } = makeFake();
-    const task = fx.task;
-    // The real preflight task, reading a preview that holds a privileged change.
-    fx.task = async (name, argv = []) => {
-      if (name !== 'preflight-privileged') return task(name, argv);
-      ops.push(`task:${name}`);
-      await preflight(argv, {
-        stackIsSetUp: () => true,
-        preview: async () => [
-          {
-            op: 'update',
-            urn: 'urn:pulumi:production::infra::scaleway:iam/policy:Policy::vm-backend-policy',
-            detailedDiff: { 'rules[0].condition': { kind: 'update' } },
-          },
-        ],
-      });
+  it('refreshes GeoIP data before the switch when a public bucket exists, and shrugs off a failure', async () => {
+    const withBucket = async (o: DeployOptions) => ({ ...(await fakeDeployEnv(o)), public_bucket: 'cella-public' });
+    const failing = makeFake();
+    const task = failing.fx.task;
+    failing.fx.task = async (name, argv) => {
+      if (name === 'geoip-refresh') throw new Error('db-ip down');
+      return task(name, argv);
     };
-    const exitCodeBefore = process.exitCode;
-
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/privileged change\(s\) pending/);
-    expect(ops).toContain('task:preflight-privileged');
-    expect(ops).not.toContain('update:production');
-    expect(ops).not.toContain('rollout');
-    // It stopped before any env file was written, so nothing is left to clear.
-    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
-    // The failure travels as the thrown error; the process exit code stays the entry point's business.
-    expect(process.exitCode).toBe(exitCodeBefore);
+    await runDeploy(baseOpts, failing.fx, withBucket);
+    expect(failing.ops.some((op) => op.startsWith('switch:'))).toBe(true);
+    const ok = makeFake();
+    await runDeploy(baseOpts, ok.fx, withBucket);
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('switch:backend,cdc,frontend'));
   });
 
-  it('names the release’s boot accounts in the record, releases the lock, and skips publish when the rollout fails', async () => {
-    const { fx, ops, records } = makeFake({ rolloutFails: true });
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
+  it('switches the roles the live record says do not serve the target, under the retry counter and the rotation', async () => {
+    const live = serving('b'.repeat(40));
+    live.roles.backend = { slot: 'b', machine: 'srv-9', commit: SHA, retry: 0, rotation: 3 };
+    const { fx, switches } = makeFake({ live, rotation: 3 });
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(switches[0]?.pending).toEqual(['cdc', 'frontend']);
+    expect(switches[0]?.target).toEqual({ commit: SHA, retry: 0, rotation: 3 });
+    expect(switches[0]?.stack).toBe('production');
+  });
+
+  it('names the release’s boot accounts in the record, releases the lease, and skips publish when a switch fails', async () => {
+    const { fx, ops, records, taskArgs } = makeFake({ switchFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/did not serve/);
     expect(records.at(-1)?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
-    // No env file outlives the run, and no machine of it keeps a link.
+    // No env file outlives the run, and the machine that switched loses its links.
     expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
+    expect(taskArgs['clear-machine-links']).toContain('--machines');
   });
 
   it('a frontend-less registry (empty frontend_bucket) builds no frontend and publishes no entry file', async () => {
@@ -233,46 +176,42 @@ describe('runDeploy sequencing', () => {
     expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
-  it('fails before publishing when a service does not serve the expected version', async () => {
-    const { fx, ops } = makeFake({ verifyFails: true });
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
-    expect(ops).not.toContain('publish-entry');
-    // The links went at their step, after the rollout: the end of the run clears nothing again.
-    expect(ops.filter((op) => op.startsWith('task:clear-machine-links'))).toEqual(['task:clear-machine-links']);
-    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
-  });
-
   it('publishes and smoke-tests the entry files the build wrote', async () => {
     const { fx, taskArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const build = taskArgs['build-release'] ?? [];
     const distDir = build[build.indexOf('--dist') + 1] ?? '';
     expect(distDir).toMatch(/release-/);
-    expect(build.slice(0, 4)).toEqual(['--sha', 'abc123', '--mode', 'production']);
+    expect(build.slice(0, 4)).toEqual(['--sha', SHA, '--mode', 'production']);
     const smoke = taskArgs.smoke ?? [];
     expect(smoke[smoke.indexOf('--dist') + 1]).toBe(`${distDir}/index.html`);
+    expect(smoke[smoke.indexOf('--primary') + 1]).toBe('backend');
   });
 
-  it('must not change the stack once another run took its lock (C7): the next step stops the run', async () => {
+  it('must not change anything once another run took its lease (C7): the next step stops the run', async () => {
     const { fx, ops } = makeFake({ leaseLost: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/taken by another run/);
-    expect(ops).not.toContain('update:production');
-    expect(ops).not.toContain('rollout');
-  });
-
-  it('keeps the displaced machines until smoke passed: the rollout skips the reap, the deploy reaps last', async () => {
-    const { fx, ops, rolloutArgs } = makeFake();
-    await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect(rolloutArgs[0]).toContain('--skip-reap');
-    expect(ops.lastIndexOf('update:production')).toBeGreaterThan(ops.indexOf('task:smoke'));
+    expect(ops.some((op) => op.startsWith('switch:'))).toBe(false);
   });
 });
 
-describe('what the deploy runs', () => {
-  it('runs no build and needs no Docker: the app code runs on the builder machine, never beside the deploy key, and a job has no daemon', async () => {
-    const { fx, execCalls } = makeFake();
+describe('the same deploy twice', () => {
+  it('changes nothing when every role serves the target under the same retry counter and rotation: no build, no machine', async () => {
+    const { fx, ops, records } = makeFake({ live: serving(SHA) });
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['pulumi login', 'pulumi stack']);
+    expect(ops.filter((op) => op.startsWith('task:') || op.startsWith('switch:'))).toEqual([]);
+    expect(records.at(-1)?.record.outcome).toBe('unchanged');
+  });
+
+  it('replaces every machine of the live commit after a raised retry counter or a rotation', async () => {
+    for (const [opts, fake] of [
+      [{ ...baseOpts, retry: 1 }, makeFake({ live: serving(SHA) })],
+      [baseOpts, makeFake({ live: serving(SHA), rotation: 1 })],
+    ] as const) {
+      await runDeploy(opts, fake.fx, fakeDeployEnv);
+      expect(fake.switches[0]?.pending).toEqual(['backend', 'cdc', 'frontend']);
+      expect(fake.records.at(-1)?.record.outcome).toBe('deployed');
+    }
   });
 });
 
@@ -282,31 +221,32 @@ describe('the run record', () => {
     await runDeploy({ ...baseOpts, run: 'run-1' }, fx, fakeDeployEnv);
     const written = records.at(-1);
     expect(written?.bucket).toBe('cella-boot-diag');
-    expect(written?.record).toMatchObject({ run: 'run-1', environment: 'production', target: 'abc123', outcome: 'deployed' });
+    expect(written?.record).toMatchObject({ run: 'run-1', environment: 'production', target: SHA, outcome: 'deployed' });
     expect(written?.record.failedStep).toBeUndefined();
-    expect(written?.record.steps.map((step) => step.title)).toContain('Waved rollout');
+    expect(written?.record.steps.map((step) => step.title)).toContain('Switch machines');
     expect(written?.log).toContain('[deploy] Smoke tests: ok');
     expect(ops.at(-1)).toBe('record');
     // Written as the run goes too: a run killed at the job's limit leaves the steps it got through.
-    expect(records.some(({ record }) => record.outcome === 'running' && record.steps.some((step) => step.title === 'Waved rollout'))).toBe(true);
+    expect(records.some(({ record }) => record.outcome === 'running' && record.steps.some((step) => step.title === 'Switch machines'))).toBe(true);
   });
 
   it('is written when the deploy fails too, naming the step and the error', async () => {
-    const { fx, records } = makeFake({ rolloutFails: true });
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(records.at(-1)?.record).toMatchObject({ outcome: 'failed', failedStep: 'Waved rollout', error: 'cutover failed' });
-    expect(records.at(-1)?.log).toContain('[deploy] Waved rollout: failed');
+    const { fx, records } = makeFake({ switchFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/did not serve/);
+    expect(records.at(-1)?.record).toMatchObject({ outcome: 'failed', failedStep: 'Switch machines' });
+    expect(records.at(-1)?.log).toContain('[deploy] Switch machines: failed');
   });
 
-  it('ends blocked, not failed, when the preflight found an owed privileged change', async () => {
-    const { fx, records } = makeFake();
+  it('ends blocked, not failed, when a required runtime value is missing, before any machine exists', async () => {
+    const { fx, records, ops } = makeFake();
     const task = fx.task;
     fx.task = async (name, argv) => {
-      if (name === 'preflight-privileged') throw new ExitCodeError('an apply is owed', 2);
+      if (name === 'compose-env') throw new ExitCodeError('Blocked: required runtime values are not set', 2);
       return task(name, argv);
     };
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/apply is owed/);
-    expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Preflight privileged changes' });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/not set/);
+    expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Compose runtime env' });
+    expect(ops.some((op) => op.startsWith('task:build-release') || op.startsWith('switch:'))).toBe(false);
   });
 
   it('must not fail a deploy whose record cannot be written', async () => {
@@ -328,13 +268,13 @@ describe('deployFailureHint', () => {
     };
     const buildError = await runDeploy(baseOpts, early.fx, fakeDeployEnv).catch((err: unknown) => err);
     expect(deployFailureHint(buildError, 'staging')).toEqual({
-      description: 'It stopped at "Build the release". Re-running is safe: generations are content-addressed.',
+      description: 'It stopped at "Build the release". Re-running is safe: the live record says what serves.',
     });
 
-    const late = makeFake({ rolloutFails: true });
-    const rolloutError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
-    expect(deployFailureHint(rolloutError, 'staging')).toMatchObject({
-      description: expect.stringContaining('"Waved rollout"'),
+    const late = makeFake({ switchFails: true });
+    const switchError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(switchError, 'staging')).toMatchObject({
+      description: expect.stringContaining('"Switch machines"'),
       command: 'pnpm infra runs --mode staging',
     });
   });

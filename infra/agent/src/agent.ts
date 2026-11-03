@@ -3,7 +3,7 @@ import type { AgentState } from './health';
 import type { Manifest } from './manifest';
 
 /** How often the agent reads its manifest: a drain order shows up within about three seconds of the deploy's write. */
-export const MANIFEST_POLL_MS = 2_000;
+const MANIFEST_POLL_MS = 2_000;
 
 /** What the agent does outside this module, so a test passes its own. */
 export interface AgentEffects {

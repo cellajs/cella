@@ -28,7 +28,7 @@ export function healthAnswer(state: AgentState, probe: ServiceProbe | undefined,
 }
 
 /** Ask a service's own `/health` on the machine. */
-export async function probeService(port: number): Promise<ServiceProbe> {
+async function probeService(port: number): Promise<ServiceProbe> {
   try {
     const res = await fetch(`http://127.0.0.1:${port}${healthContract.path}`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
     return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined };

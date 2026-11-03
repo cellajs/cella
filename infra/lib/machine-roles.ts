@@ -61,7 +61,7 @@ export interface MachineRole {
 export const isRouted = (role: Pick<MachineRole, 'pools'>): boolean => role.pools.length > 0;
 
 /** The pools a service has: its public one when it declares an LB route, its internal one when it declares an internal listener. */
-export function servicePools(service: ServiceDefinition): RolePool[] {
+function servicePools(service: ServiceDefinition): RolePool[] {
   return [
     ...(service.lbRoute ? [{ key: service.slug, service: service.slug, port: service.healthPort }] : []),
     ...(service.internalPort === undefined ? [] : [{ key: `${service.slug}-internal`, service: service.slug, port: service.internalPort }]),

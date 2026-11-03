@@ -31,7 +31,7 @@ const reservations = new Map<string, scaleway.ipam.Ip[]>(
 );
 
 /** A role's two addresses, slot a first, without the CIDR suffix the provider returns. */
-export function roleAddresses(role: string): pulumi.Output<string>[] {
+function roleAddresses(role: string): pulumi.Output<string>[] {
   const ips = reservations.get(role);
   if (!ips) throw new Error(`slots: '${role}' is no routed machine role`);
   return ips.map((ip) => ip.address.apply((address) => address.split('/')[0] ?? address));
@@ -45,7 +45,7 @@ export const legacyServers: Readonly<Record<string, string[]>> =
   new pulumi.Config('bootstrap').getObject<Record<string, string[]>>('legacyServers') ?? {};
 
 /** The role whose addresses a pool lists. */
-export function poolRole(poolKey: string): MachineRole {
+function poolRole(poolKey: string): MachineRole {
   const role = roles.find((candidate) => candidate.pools.some((pool) => pool.key === poolKey));
   if (!role) throw new Error(`slots: no machine role carries the pool '${poolKey}'`);
   return role;

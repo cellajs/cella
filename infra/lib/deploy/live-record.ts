@@ -34,7 +34,7 @@ export interface LiveRecord {
 
 export const liveRecordKey = (stack: string): string => `${controlPrefix(stack)}live.json`;
 
-export const emptyLiveRecord = (): LiveRecord => ({ schemaVersion: 1, roles: {} });
+const emptyLiveRecord = (): LiveRecord => ({ schemaVersion: 1, roles: {} });
 
 function parseRole(role: string, value: unknown): LiveRole {
   if (!isRecord(value)) throw new Error(`live record: roles.${role} must be an object`);
@@ -72,7 +72,7 @@ export async function readLiveRecord(s3: S3Like, bucket: string, stack: string):
 }
 
 /** Write the live record under a condition: the etag it was read with, or create-only. */
-export async function writeLiveRecord(s3: S3Like, bucket: string, stack: string, record: LiveRecord, opts: ConditionalWrite): Promise<void> {
+async function writeLiveRecord(s3: S3Like, bucket: string, stack: string, record: LiveRecord, opts: ConditionalWrite): Promise<void> {
   await putJsonObject(s3, bucket, liveRecordKey(stack), `${JSON.stringify(record, null, 2)}\n`, opts);
 }
 
@@ -112,7 +112,7 @@ export interface DeployTarget {
 }
 
 /** Whether a role already serves the target: the same commit, booted under the same retry counter and rotation. */
-export function servesTarget(entry: LiveRole | undefined, target: DeployTarget): boolean {
+function servesTarget(entry: LiveRole | undefined, target: DeployTarget): boolean {
   return entry !== undefined && entry.commit === target.commit && entry.retry === target.retry && entry.rotation === target.rotation;
 }
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { composeConfig } from '../../compose/compose';
 import { defineServices } from '../../compose/infrastructure';
 import { appServices } from '../../config/services.config';
+import { internalLbPort } from '../../lib/machine-roles';
 import { services } from '../../lib/services';
-import { internalLbPort } from '../../resources/lb-internal';
 import { fakeService as base } from '../helpers/fake-config';
 
 // The backend's server-to-server routes (the CDC socket, the Yjs relay's materialize) listen on a port of their own,

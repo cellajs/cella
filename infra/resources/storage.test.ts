@@ -116,7 +116,8 @@ describe('storage module', () => {
       'OperatorAccess',
     ]);
     const observer = Statement.find((statement) => statement.Sid === 'ObserverReadBootDiagnostics');
-    expect(observer?.Resource).toEqual([bucket, `${bucket}/boot-diag/*`, `${bucket}/runs/*`]);
+    // The control objects (the live record, the lease, the rotations) hold no value: status reads them.
+    expect(observer?.Resource).toEqual([bucket, `${bucket}/boot-diag/*`, `${bucket}/runs/*`, `${bucket}/control/*`]);
     // The one version the deploy may delete is an env file's, which holds a machine's secret values.
     const removal = Statement.find((statement) => statement.Sid === 'DeployEnvRemoval');
     expect([removal?.Action, removal?.Resource]).toEqual([['s3:DeleteObjectVersion'], [`${bucket}/env/*`]]);

@@ -37,7 +37,7 @@ function writePlan(overrides: Record<string, unknown> = {}): void {
   files.set(
     '/etc/app/boot-plan.json',
     JSON.stringify({
-      schemaVersion: 2,
+      schemaVersion: 3,
       service: 'backend',
       profile: 'backend',
       services: ['backend'],
@@ -53,7 +53,7 @@ function writePlan(overrides: Record<string, unknown> = {}): void {
       },
       bootDiagnostics: { logFile: '/var/log/infra-boot.log' },
       docker: { composeFile: '/opt/app/compose.yml' },
-      files: { compose: 'services: {}', env: 'BACKEND_TAG=abc123' },
+      agent: { ports: [{ service: 'backend', agentPort: 9000, port: 4000 }], drainSeconds: 10 },
       timeouts: { privateNetworkSeconds: 5, fetchAttempts: 1, fetchRetrySeconds: 1, composeWaitSeconds: 240 },
       ...overrides,
     }),

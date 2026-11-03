@@ -48,7 +48,7 @@ export interface MachineUserDataParams {
 export const composeWaitTimeoutSeconds = 240;
 
 /** Machine config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
-export const machinePaths = (slug: string) => {
+const machinePaths = (slug: string) => {
   const etcDir = `/etc/${slug}`;
   return {
     etcDir,

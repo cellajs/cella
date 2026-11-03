@@ -47,8 +47,7 @@ if (mode !== 'production' && mode !== 'staging') {
 export const deployMode: Environment = mode;
 
 // Per-service public endpoints (host + URL), derived from the service registry by slug.
-export const endpoints = serviceEndpoints(appConfig);
-const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]));
+const endpointBySlug = new Map(serviceEndpoints(appConfig).map((e) => [e.slug, e]));
 
 /** Public hostname for a service slug (throws for internal-only services like cdc). */
 export function serviceHost(slug: ServiceName): string {

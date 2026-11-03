@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -10,13 +10,15 @@ describe('resource options', () => {
     expect(read('stores/postgres-managed.ts')).toMatch(/protect:\s*isProduction/);
   });
 
-  it('keeps generation VMs immutable: cloud-init and image drift never replace a live VM outside a cutover', () => {
-    expect(read('compute.ts')).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/);
+  it('declares no machine: a deploy makes and deletes them, so the state holds none and the deploy key needs no state', () => {
+    const sources = readdirSync(resolve(__dirname, '../../resources'), { recursive: true, encoding: 'utf-8' }).filter(
+      (file) => file.endsWith('.ts') && !file.endsWith('.test.ts'),
+    );
+    for (const file of sources) expect(read(file), file).not.toMatch(/instance\.(Server|PrivateNic|Ip)\(/);
   });
 
-  it('lets the cutover task own the live LB server lists', () => {
-    // Pulumi seeds serverIps, then ignores drift so tasks/cutover.ts can expand and contract them with SetBackendServers.
-    expect(read('loadbalancer.ts').match(/ignoreChanges:\s*\['serverIps'\]/g)).toHaveLength(2);
+  it('lets no pool drift from the program: a deploy moves traffic by health and writes none', () => {
+    expect(read('loadbalancer.ts')).not.toMatch(/ignoreChanges:\s*\[[^\]]*'serverIps'/);
   });
 
   // Known gaps, listed here so a reviewer sees them in `pnpm test` output.

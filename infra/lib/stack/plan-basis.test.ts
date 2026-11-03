@@ -20,45 +20,29 @@ function bucket(objects: Record<string, string | Error>): { s3: S3Like; heads: s
 }
 
 const CHECKPOINT = '.pulumi/stacks/infra/production.json';
-const CONTROL = 'control/production.json';
 
 describe('readPlanBasis', () => {
-  it('reads the etags of the checkpoint and the control object of the stack, without their bodies', async () => {
-    const { s3, heads } = bucket({ [CHECKPOINT]: '"aaa"', [CONTROL]: '"bbb"' });
-    expect(await readPlanBasis(s3, 'state', 'organization/infra/production')).toEqual({ checkpoint: '"aaa"', control: '"bbb"' });
-    expect(heads.sort()).toEqual([CHECKPOINT, CONTROL]);
+  it('reads the etag of the checkpoint of the stack, without its body', async () => {
+    const { s3, heads } = bucket({ [CHECKPOINT]: '"aaa"' });
+    expect(await readPlanBasis(s3, 'state', 'organization/infra/production')).toEqual({ checkpoint: '"aaa"' });
+    expect(heads).toEqual([CHECKPOINT]);
   });
 
-  it('records an object that does not exist as null', async () => {
-    const { s3 } = bucket({ [CHECKPOINT]: '"aaa"' });
-    expect(await readPlanBasis(s3, 'state', 'organization/infra/production')).toEqual({ checkpoint: '"aaa"', control: null });
+  it('records a checkpoint that does not exist as null', async () => {
+    const { s3 } = bucket({});
+    expect(await readPlanBasis(s3, 'state', 'organization/infra/production')).toEqual({ checkpoint: null });
   });
 
-  it('must not let an unreadable object pass for an unchanged one: a read failure throws', async () => {
-    const { s3 } = bucket({ [CHECKPOINT]: '"aaa"', [CONTROL]: Object.assign(new Error('access denied'), { name: 'AccessDenied' }) });
+  it('must not let an unreadable checkpoint pass for an unchanged one: a read failure throws', async () => {
+    const { s3 } = bucket({ [CHECKPOINT]: Object.assign(new Error('access denied'), { name: 'AccessDenied' }) });
     await expect(readPlanBasis(s3, 'state', 'organization/infra/production')).rejects.toThrow('access denied');
   });
 });
 
 describe('planBasisChanges', () => {
-  const reviewed = { checkpoint: '"aaa"', control: '"bbb"' };
-
-  it('is empty while both objects are the ones the plan was made on', () => {
-    expect(planBasisChanges(reviewed, { ...reviewed })).toEqual([]);
-    expect(planBasisChanges({ checkpoint: '"aaa"', control: null }, { checkpoint: '"aaa"', control: null })).toEqual([]);
-  });
-
-  it('names the Pulumi state when a deploy or another up wrote the checkpoint', () => {
-    expect(planBasisChanges(reviewed, { ...reviewed, checkpoint: '"ccc"' })).toEqual(['the Pulumi state changed']);
-  });
-
-  it('names the rollout pointers when the control object changed, also when it appeared or went away', () => {
-    expect(planBasisChanges(reviewed, { ...reviewed, control: '"ddd"' })).toEqual(['the rollout pointers changed']);
-    expect(planBasisChanges({ ...reviewed, control: null }, reviewed)).toEqual(['the rollout pointers changed']);
-    expect(planBasisChanges(reviewed, { ...reviewed, control: null })).toEqual(['the rollout pointers changed']);
-  });
-
-  it('names both when both changed', () => {
-    expect(planBasisChanges(reviewed, { checkpoint: '"x"', control: '"y"' })).toEqual(['the Pulumi state changed', 'the rollout pointers changed']);
+  it('is empty while the checkpoint is the one the plan was made on, and names the state when another up wrote it', () => {
+    expect(planBasisChanges({ checkpoint: '"aaa"' }, { checkpoint: '"aaa"' })).toEqual([]);
+    expect(planBasisChanges({ checkpoint: null }, { checkpoint: null })).toEqual([]);
+    expect(planBasisChanges({ checkpoint: '"aaa"' }, { checkpoint: '"ccc"' })).toEqual(['the Pulumi state changed']);
   });
 });
