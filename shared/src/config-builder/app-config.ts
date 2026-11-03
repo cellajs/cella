@@ -127,7 +127,7 @@ export const withConfiguredDevPorts = (text: string): string =>
 // A deploy or a preview that serves the app elsewhere than the config names hands the origin in.
 if (process.env[originEnvName]) merged.origin = process.env[originEnvName];
 
-// Set via env so `pnpm dev:single` or a preview deploy flips it without a config edit.
+// Set via env so a single-machine run or a preview deploy flips it without a config edit.
 if (process.env.SINGLE_VM) merged.singleVM = process.env.SINGLE_VM === 'true';
 
 // Every service URL is a path under the origin (`servicePaths`); the Yjs relay's over the matching WebSocket scheme.

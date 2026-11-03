@@ -191,7 +191,7 @@ const resetDatabase = async (fresh: boolean) => {
 
 let failure: unknown;
 try {
-  const bundles = ['backend/dist/main.js', 'backend/dist/seeds-bundle.js', 'cdc/dist/cdc-worker.js', 'yjs/dist/yjs-worker.js'];
+  const bundles = ['backend/dist/main.js', 'cdc/dist/cdc-worker.js', 'yjs/dist/yjs-worker.js'];
   const missing = bundles.filter((file) => !existsSync(join(repoRoot, file)));
   if (missing.length) throw new Error(`Not built: ${missing.join(', ')}. Run \`pnpm build\` first.`);
   const taken: number[] = [];
@@ -228,7 +228,6 @@ try {
   await stop(yjsProcess, 'yjs');
   await stop(cdcProcess, 'cdc');
   await stop(apiProcess, 'api');
-  await run({ ...api, name: 'seeds', args: [...backendArgs, 'dist/seeds-bundle.js'] }, 120_000);
 } catch (error) {
   failure = error;
 } finally {

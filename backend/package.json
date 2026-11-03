@@ -7,7 +7,6 @@
     "node": "26.x"
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=production NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx dist/main.js",
     "dev": "cross-env NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:mcp": "cross-env SERVICE=mcp NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "dev:oauth": "cross-env SERVICE=oauth NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
@@ -28,9 +27,7 @@
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "test": "cross-env TEST_MODE=core vitest run",
     "test:runtime": "cross-env TEST_MODE=core TEST_DB_ROLE=runtime vitest run",
-    "manual-migration": "tsx scripts/manual-migration.ts",
     "test:full": "cross-env TEST_MODE=full vitest run",
-    "seed:production": "node dist/seeds-bundle.js",
     "s3:cors": "tsx scripts/set-bucket-cors.ts",
     "session:mint": "tsx scripts/mint-session.ts",
     "yjs:public-key": "tsx scripts/yjs-public-key.ts",

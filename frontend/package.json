@@ -8,12 +8,10 @@
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite --mode development",
-    "start": "cross-env NODE_ENV=production pnpm preview",
     "test": "vitest run",
     "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsgo --noEmit --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production vite build",
-    "preview": "vite preview",
     "offline": "cross-env NODE_ENV=development vite build --mode development && cross-env NODE_ENV=development vite preview",
     "stop": "tsx vite/stop-vite.ts",
     "generate:sdk": "pnpm --filter sdk generate:sdk",

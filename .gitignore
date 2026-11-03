@@ -28,6 +28,7 @@ my-cella-app
 *.sw?
 .turbo
 .todos
+.scratch
 .env
 .env.*
 !.env.example

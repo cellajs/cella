@@ -29,28 +29,7 @@ Looks wrong, is fine:
 - A conflict report for `x && a, !x && b`: the branches exclude each other.
 - `data-x:` beside a prop that is never `false`.
 
-## 2. Props
-
-From `prop-table.mjs`. Being class-only separates almost nothing. **A style prop is a finding when deleting it loses no decision**: no caller in the template or apps passes it, its value is a no-op or restates another prop, nothing observes the difference between its values, or every sibling in a list gets the same value, so the parent can say it once.
-
-Decide in this order:
-
-1. **Is it style at all?** `pointer-events-none`, `hidden`, `sr-only` and `data-autofocus` change behavior.
-2. **Deletion.** List the values across the template and apps. Does anything change if the prop goes?
-3. **Reach.** Can the caller reach the target from an element it already renders? A portalled positioner, a second element or a target behind a wrapper fail this. `*:` needs a direct child. Open the DOM path from the caller to the target.
-4. **Call site.** Does the replacement read as well? A name for a recipe (`sticky`, `dirty`) beats copying the recipe. A replacement must delete the prop: if it has to stay for `aria-expanded`, rewriting its class as a variant adds characters and removes nothing.
-
-Keep a `cva` variant or typed union that is a closed scale used at several sites or by apps, that lands on more than one element, or that mirrors the shadcn API on a `ui/` primitive. Drop one that maps to a single utility on a single element with one non-default caller.
-
-Traps:
-
-- Rows forwarding through `...rest` are not drilling; count named forwards only.
-- The table's `unused` category needs a grep: a shared props type or `props` passed whole reads as unused.
-- A boolean has one value at every site, so "one value" means nothing until you compare the sites that omit it.
-- `in-*` compiles to `:where(...) .x`, a lower specificity than `group-*`: compile the replacement and compare the selectors.
-- A removal an app passes fails its typecheck, which is loud. A class or attribute hook that moves changes its rendering with no error, which is the one to name in the alignment.
-
-## 3. Classes and drift
+## 2. Classes and drift
 
 From `canon-check.mjs`. Apply the proven rewrites where they read better. Read each held one:
 
@@ -83,7 +62,7 @@ Never pass `rem` to the canonicalizer: the root font size differs on phones, so 
 | The risk is one token missing its partner | A pair rule in `pnpm style` |
 | Passes the bar, or needs a capability | A class or `@utility` |
 
-## 4. Performance
+## 3. Performance
 
 Run `flip-scan.mjs` over pages with the most elements, then follow [measuring.md](./measuring.md). Look at state changes high in the tree before any row class.
 
@@ -103,7 +82,7 @@ Do not swap `group-*` for `in-*` by rule. `in-hover:` matches any hovered ancest
 
 An action's frequency is a judgment too: a theme switch is costly and rare.
 
-## 5. Sibling comparison
+## 4. Sibling comparison
 
 A different lens from the census. Go through families of siblings (tiles, sheets, form fields, empty states, list rows, headers, triggers) and compare how they do the same thing: open, invalid, hover, press, current, busy, focus. Each finding is an absence or a difference, such as a field with no invalid edge among fields that have one, or a dropdown trigger that restates by hand what `aria-expanded` would give it.
 
@@ -111,6 +90,6 @@ Check perceivable state on the way: a state shown only in a class, with no ARIA 
 
 Skip a family the last iteration covered and found nothing in. A regex-shaped find here is a rule waiting to be written, so count it as such and move on.
 
-## 6. Refutation
+## 5. Refutation
 
 Try to break each claim against the source, compiled CSS, real `cn` runs or a browser. Report each as confirmed, partial with the correct version, or refuted with the proof. Run every stated example. For a general rule, look for one case in the repo where it is wrong or has no effect, and rewrite it in terms of what triggers it. A rule that survives only with exceptions keeps them in its text.

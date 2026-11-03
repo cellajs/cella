@@ -18,7 +18,7 @@ utility, and every label is sentence case. The codemod rewrites the modifiers an
 Text rendered in fifteen grays, three of them below 4.5:1, and a label had nine recipes. `tailwind.css` now holds four
 steps by role (content, reading, support, hint), `--faint-foreground` is new, dark `--muted-foreground` steps down to
 match light, and six `*-foreground` aliases point at `--foreground`. `pnpm style` fails on a text token with a modifier
-and on palette grays; `pnpm style:audit` lists opacity on text.
+and on palette grays.
 
 ## Blast radius
 
@@ -47,7 +47,6 @@ pnpm cella align --run 20261027T1934-text-color-steps -- rewrite frontend/src   
 
 ```sh
 pnpm cella align --run 20261027T1934-text-color-steps   # empty apart from the accepted template paths it names
-pnpm style:audit                                        # no text-color markers left
 pnpm check
 ```
 
