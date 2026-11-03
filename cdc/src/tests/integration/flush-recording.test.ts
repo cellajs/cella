@@ -11,7 +11,6 @@ import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { parseMessage } from '../../pipeline/parse-message';
 import { processFlush } from '../../pipeline/process-flush';
-import { ApiUnreachableError } from '../../services/failure';
 import type { PendingEvent } from '../../types';
 import { dmlMessage } from '../factories';
 import { type AttachmentHome, seedAttachmentHome } from './pipeline-harness';
@@ -234,7 +233,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const event = await eventFor('insert', id, nextLsn());
     const before = await counts();
     vi.mocked(wsClient.send).mockImplementationOnce(() => {
-      throw new ApiUnreachableError();
+      throw new Error('The API is not reachable');
     });
 
     await expect(processFlush([[event]])).rejects.toThrow('The API is not reachable');

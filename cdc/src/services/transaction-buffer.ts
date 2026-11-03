@@ -10,7 +10,6 @@ import { channelIdColumnKeys } from '../utils/channel-columns';
 import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
-import { TransactionTooLargeError } from './failure';
 
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
@@ -102,7 +101,7 @@ export class TransactionBuffer {
     if (this.pendingEvents.length > this.maxEvents) {
       const xid = this.activeXid;
       this.reset();
-      throw new TransactionTooLargeError(this.maxEvents, xid);
+      throw new Error(`Transaction ${xid ?? ''} holds more than ${this.maxEvents} changes: the worker buffers a transaction whole and stops here`);
     }
   }
 

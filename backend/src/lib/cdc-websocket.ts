@@ -86,9 +86,8 @@ export interface CdcWorkerHealth {
   /** The worker's own grade. */
   status: HealthStatus;
   /**
-   * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`,
-   * `reading_again`, `worker_stuck`, `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`,
-   * `event_loop_lag`.
+   * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`,
+   * `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`, `event_loop_lag`.
    */
   reasons: string[];
   /** Diagnosis for a person: replication status and positions, lag, the failure it reads again from, setup problems, the slot. */
@@ -124,8 +123,9 @@ class CdcWebSocketServer {
   private generation: number | null = null;
   private generationListeners: ((generation: number) => void)[] = [];
   /**
-   * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read
-   * or that it is unhealthy. Null while one reads. A process that just started has no worker yet.
+   * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read,
+   * that it reads again from a failure, or that it is unhealthy. Null while one reads. A process that just started has
+   * no worker yet.
    */
   private notReadingSince: number | null = Date.now();
 
@@ -241,7 +241,7 @@ class CdcWebSocketServer {
     const readable = workerGrades.includes(payload.status) && Array.isArray(payload.reasons);
     this.workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
     // A report this process cannot read says nothing of reading: it is taken as none, like the messages beside it.
-    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active');
+    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active' && !payload.details.failure);
     this.noteGeneration(payload.generation);
   }
 

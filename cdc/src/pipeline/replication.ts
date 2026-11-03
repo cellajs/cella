@@ -13,10 +13,10 @@ import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 import { checkReplicationSetup } from '../services/setup-check';
 import { flushHasFailed, handleDataMessage, resetBuffers, scheduleIdleCheck } from './handle-message';
-import { isStalePublicationError } from './replication-errors';
-import { ensureBooksStateRestored, readLostCaseFacts, rebuildAllowed, rebuildBooks, rebuildWasInterrupted } from './verify';
+import { ensureBooksStateRestored, readLostCaseFacts, rebuildBooks, rebuildWasInterrupted } from './verify';
 
-const { reconnection, runtime, slotTakeover } = resourceLimits;
+const { runtime } = resourceLimits;
+const { walLagUnhealthyBytes } = resourceLimits.health;
 
 /** The replication connection's string and verified TLS, matching the query connection's; the string asks for replication. */
 function replicationConnection() {
@@ -87,8 +87,9 @@ export function createReplicationService(): LogicalReplicationService {
 }
 
 /**
- * Makes sure the slot exists and still holds its WAL. A slot Postgres invalidated (it passed
- * `max_slot_wal_keep_size` while nothing read it) cannot be read again: it is dropped and made anew.
+ * Makes sure the slot exists and still holds its WAL. A slot that cannot be read on is dropped and made anew: one
+ * Postgres invalidated (it passed `max_slot_wal_keep_size`), and one that reached the WAL bound while the worker could
+ * not get past a failure, so the WAL would fill the disk.
  * @returns `created` when a slot had to be made. On a database with a history that is a lost case: what was written
  *   since the old slot's position is in no stream. `held` when another worker still reads the slot, as during a
  *   deploy: its flushes go on, so nothing may be settled beside them. `unknown` when the slot could not be looked up.
@@ -102,50 +103,35 @@ export async function ensureReplicationSlot(): Promise<'present' | 'held' | 'cre
       )
     ).rows[0];
     if (slot?.active) return 'held';
-    if (slot && slot.wal_status !== 'lost') return 'present';
-    if (slot) {
-      log.error(`Replication slot '${cdcSlotName}' was invalidated: Postgres removed WAL it still needed`);
-      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${cdcSlotName})`);
-    } else {
+    const { failure, stalled } = replicationState;
+    const atWalBound = stalled && metrics.lagBytes !== null && metrics.lagBytes >= walLagUnhealthyBytes;
+    if (slot && slot.wal_status !== 'lost' && !atWalBound) return 'present';
+    if (!slot) {
       log.info(`Replication slot '${cdcSlotName}' not found, creating...`);
+    } else if (slot.wal_status === 'lost') {
+      log.error(`Replication slot '${cdcSlotName}' was invalidated: Postgres removed WAL it still needed`);
+    } else {
+      log.error(`Replication slot '${cdcSlotName}' reached the WAL bound while the worker failed: it is dropped`, {
+        ...failure,
+        lagBytes: metrics.lagBytes,
+      });
     }
+    if (slot) await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${cdcSlotName})`);
   } catch (error) {
     log.warn('Could not verify/create replication slot', { err: error, slotName: cdcSlotName });
     return 'unknown';
   }
 
   // The rebuild a new slot owes is asked for before the slot exists: a worker that stops before that rebuild commits
-  // finds the request at its next start. As in `giveUpBacklog`, it replaces a verify that waits: the rebuild recounts.
+  // finds the request at its next start. It replaces a verify that waits: the rebuild recounts.
   if ((await readLostCaseFacts()).hasHistory) await requestBooks(cdcDb, 'rebuild');
   await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${cdcSlotName}, 'pgoutput')`);
+  // What was acknowledged and measured belongs to the old slot: the status timer would repeat it, and the bound read it.
+  replicationState.lastAckedLsn = null;
+  metrics.lagBytes = null;
+  await metrics.pollLag();
   log.info(`Replication slot '${cdcSlotName}' created`);
   return 'created';
-}
-
-/**
- * Drops a slot whose WAL start predates its publication, after terminating its sender. Decoding can never proceed
- * from it, so what it held is lost: the next attempt makes a new slot and rebuilds the books. The setup check has
- * found the publication before any subscription, so the error means the slot is older, not that the publication is
- * missing. At most once per rebuild interval, like every position the worker gives up.
- */
-async function dropStaleReplicationSlot(): Promise<void> {
-  if (!rebuildAllowed()) {
-    log.warn(`Not dropping slot '${cdcSlotName}' yet: the books were rebuilt a moment ago`);
-    return;
-  }
-  try {
-    log.error(`Dropping replication slot '${cdcSlotName}': it predates its publication and cannot be read`);
-    await cdcDb.execute(sql`
-      SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
-      WHERE slot_name = ${cdcSlotName} AND active_pid IS NOT NULL
-    `);
-    await cdcDb.execute(sql`
-      SELECT pg_drop_replication_slot(${cdcSlotName})
-      WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${cdcSlotName})
-    `);
-  } catch (error) {
-    log.warn('Could not drop the stale replication slot', { err: error, slotName: cdcSlotName });
-  }
 }
 
 /** The steps of a subscription attempt that reach outside the loop, so a test can stand in for them. */
@@ -156,44 +142,23 @@ interface SubscriptionSteps {
 }
 
 /**
- * Gives up the backlog of a stuck worker: the slot moves to the current position, and what it had not recorded is
- * read no more. Moving the slot is no part of any transaction, so the rebuild is asked for first: a worker that dies
- * between the move and the rebuild finds the request at its next start.
- * @returns The position the slot moved to.
- */
-async function giveUpBacklog(): Promise<string | null> {
-  await requestBooks(cdcDb, 'rebuild');
-  const advanced = await cdcDb.execute<{ position: string }>(
-    sql`SELECT (pg_replication_slot_advance(${cdcSlotName}, pg_current_wal_lsn())).end_lsn::text AS position`,
-  );
-  const position = advanced.rows[0]?.position ?? null;
-  // The status timer of the next subscription repeats what was acknowledged last: that is the slot's new position now,
-  // never one behind it.
-  if (position) replicationState.lastAckedLsn = position;
-  return position;
-}
-
-/**
  * The lost cases, handled between two subscriptions: the WAL cannot bring the books back, so they are rebuilt from the
  * tables and every client refetches. A slot that had to be made on a database with a history, counters that are gone
- * (a truncate, a partial restore), a restart inside the fence of a rebuild, a change that failed every read, or a
- * rebuild that was asked for while no subscription could answer it.
+ * (a truncate, a partial restore), a restart inside the fence of a rebuild, or a rebuild that was asked for while no
+ * subscription could answer it.
  */
 export async function settleLostCases(slotCreated: boolean): Promise<void> {
   await ensureBooksStateRestored();
   const { hasHistory, countersAreLost } = await readLostCaseFacts();
-  if (slotCreated && hasHistory) return rebuildBooks('lost_slot');
+  if (slotCreated && hasHistory) {
+    const { failure } = replicationState;
+    return rebuildBooks('lost_slot', failure ? { positionFrom: failure.position, error: failure.error } : {});
+  }
   if (countersAreLost) return rebuildBooks('lost_counters');
   if (rebuildWasInterrupted()) return rebuildBooks('interrupted');
 
-  const { failure, stuck } = replicationState;
-  if (stuck && failure && rebuildAllowed()) {
-    const positionTo = await giveUpBacklog();
-    return rebuildBooks('stuck', { positionFrom: failure.position, positionTo, error: failure.error });
-  }
-
-  // Read from the database: a rebuild above answers a request too, and a worker whose rebuild for a new slot or a
-  // given-up backlog did not commit finds its own request here.
+  // Read from the database: a rebuild above answers a request too, and a worker whose rebuild for a new slot did not
+  // commit finds its own request here.
   if ((await findBooksRequest(cdcDb)) === 'rebuild') return rebuildBooks('requested');
 }
 
@@ -206,8 +171,6 @@ export async function subscribeWithReconnect(
   plugin: PgoutputPlugin,
   { createService = createReplicationService, checkSetup = checkReplicationSetup, settle = settleLostCases }: Partial<SubscriptionSteps> = {},
 ): Promise<void> {
-  // Attempts that ended in an error: the first ones are tried again soon, for the slot a rolling deploy hands over.
-  let attempt = 0;
   while (!replicationState.stopping) {
     let service: LogicalReplicationService | null = null;
     try {
@@ -242,31 +205,26 @@ export async function subscribeWithReconnect(
       } finally {
         replicationState.subscribed = false;
       }
-      // A subscription that ran ends the row of failed attempts: the next handover gets its quick attempts again.
-      attempt = 0;
 
       // The subscription ended without an error: a failed flush stopped it. The same changes come next, so wait first:
       // longer with every failure in a row.
       if (flushHasFailed() && !replicationState.stopping) {
-        const { failure, rereadDelayMs, stuck } = replicationState;
-        log[stuck ? 'error' : 'warn'](stuck ? 'Stuck: the same position keeps failing, the WAL waits' : 'Reading again after a failed flush', {
-          ...failure,
-          rereadDelayMs,
-        });
+        const { failure, rereadDelayMs, stalled } = replicationState;
+        log[stalled ? 'error' : 'warn']('Reading again after a failed flush', { ...failure, rereadDelayMs });
         await new Promise((resolve) => setTimeout(resolve, rereadDelayMs));
       }
     } catch (error) {
       if (replicationState.stopping) break;
       // The stream of this attempt is over, but its service can still hold a connection and queued messages.
       await service?.stop().catch(() => {});
-      attempt += 1;
-      const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
-      const delayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
-      const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
-      log.warn(`Subscription error, next attempt in ${delayMs / 1000}s${takeover}`, { err: error });
-      // A slot whose start predates its publication can never be read: it goes, and the next attempt handles the loss.
-      if (isStalePublicationError(error)) await dropStaleReplicationSlot();
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      // A failure like a failed flush, with the same waits: a slot another worker still holds during a deploy, a
+      // connection refused, a setup that does not match. A failure the stream had shown keeps its position.
+      replicationState.recordFailure(replicationState.failure?.position ?? null, error);
+      const { rereadDelayMs, stalled } = replicationState;
+      log[stalled ? 'error' : 'warn'](`Subscription to replication slot '${cdcSlotName}' failed, next attempt in ${rereadDelayMs / 1000}s`, {
+        err: error,
+      });
+      await new Promise((resolve) => setTimeout(resolve, rereadDelayMs));
     }
   }
 }

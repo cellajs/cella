@@ -11,7 +11,6 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { cdcPublicationName, cdcSlotName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
-import { ApiUnreachableError } from '../../services/failure';
 import { replicationState } from '../../services/replication-state';
 import { replicationStatus } from '../../services/replication-status';
 import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
@@ -261,7 +260,7 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
     const realSend = wsClient.send.bind(wsClient);
     const send = vi.spyOn(wsClient, 'send').mockImplementation((data: unknown) => {
       sends += 1;
-      if (sends === 2) throw new ApiUnreachableError();
+      if (sends === 2) throw new Error('The API is not reachable');
       realSend(data);
     });
 

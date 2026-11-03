@@ -164,6 +164,38 @@ describe('a keepalive from Postgres', () => {
       expect(acknowledge).toHaveBeenCalledWith('0/1F0');
     });
 
+    it('ends the failure of a deploy on the keepalive that opens its first stream, also on a quiet database', async () => {
+      // A new process: the slot was still held when it first subscribed, and nothing is written afterwards.
+      const service = subscribe();
+      replicationState.recordFailure(null, new Error('replication slot "cdc_slot" is active for PID 4242'));
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+
+      expect(acknowledge.mock.calls).toEqual([['0/1F0']]);
+      expect(replicationState.failure).toBeNull();
+    });
+
+    it("must not end a failure on the keepalive that opens a stream at the slot's position, ahead of the change it delivers again", async () => {
+      const service = subscribe();
+      replicationState.lastAckedLsn = '0/1F0';
+      replicationState.recordFailure('0/200', new Error('null value in column "organization_id"'));
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+
+      expect(acknowledge).not.toHaveBeenCalled();
+      expect(replicationState.failure).toMatchObject({ position: '0/200' });
+    });
+
+    it('must not end a failure while a transaction is open', async () => {
+      const service = subscribe();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.recordFailure('0/100', new Error('null value in column "organization_id"'));
+      await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+      expect(replicationState.failure).toMatchObject({ position: '0/100' });
+    });
+
     it('keeps no position a stopped service did not send', async () => {
       const service = subscribe();
       replicationState.lastAckedLsn = '0/AB';

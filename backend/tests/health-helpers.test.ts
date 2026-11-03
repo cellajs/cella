@@ -105,9 +105,9 @@ describe('mapCdcComponent', () => {
   });
 
   it('must not grade a stale report better than the worker did', () => {
-    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'] }, workerHealthStaleMs + 1));
+    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['reading_again'] }, workerHealthStaleMs + 1));
 
-    expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_report_stale,worker_stuck' });
+    expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_report_stale,reading_again' });
   });
 
   it('degrades on a report it cannot read, as a worker of another release sends during a deploy', () => {
@@ -137,17 +137,17 @@ describe('mapCdcComponent', () => {
     expect(c).toMatchObject({ status: 'degraded', reason: 'reading_again,wal_lag_high' });
   });
 
-  it('passes an unhealthy report of a stuck worker on, with the failure it reads again from but not its message', () => {
-    const failure = { position: '0/50', count: 5, error: 'null value in column "organization_id"', passing: false };
-    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'], details: { failure } }));
+  it('passes an unhealthy report of a worker that cannot get past a failure on, with the failure but not its message', () => {
+    const failure = { position: '0/50', since: '2026-11-03T08:00:00.000Z', error: 'null value in column "organization_id"' };
+    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['reading_again'], details: { failure } }));
 
-    // A deploy that ends on a stuck worker must fail its smoke step, not warn: nothing is read until the rebuild.
-    expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_stuck' });
-    expect(c.details?.failure).toEqual({ position: '0/50', count: 5, passing: false });
+    // The worker turns unhealthy after `rereadUnhealthyMs`, past a deploy's smoke step, and the backend never softens it.
+    expect(c).toMatchObject({ status: 'unhealthy', reason: 'reading_again' });
+    expect(c.details?.failure).toEqual({ position: '0/50', since: '2026-11-03T08:00:00.000Z' });
   });
 
   it("must not grade the worker's facts a second time: the grade is the worker's alone", () => {
-    const details = { replication: 'stopped', slotActive: false, lagBytes: 2 ** 40, setupProblems: ['publication lacks a table'], stuck: true };
+    const details = { replication: 'stopped', slotActive: false, lagBytes: 2 ** 40, setupProblems: ['publication lacks a table'] };
     const c = mapCdcComponent(connectedSocket, report({ details }));
 
     expect(c.status).toBe('healthy');

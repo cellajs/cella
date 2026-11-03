@@ -1,7 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { isProduct, isUnpublishedDraft } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import { log } from '../lib/pino';
 import { createActivity } from '../services/create-activity';
 import { tableRegistry } from '../table-registry';
 import type { CdcRowData, RowData, TableMeta } from '../types';
@@ -25,28 +23,6 @@ export interface ParseMessageResult {
   tableMeta: TableMeta;
 }
 
-/** Rate limit for the draft-guard warning (one line per interval, not one per draft edit). */
-const draftGuardWarnIntervalMs = 60_000;
-let lastDraftGuardWarnAt = 0;
-
-/**
- * Drops draft product rows that bypassed the publication filter, keeping counters and sequence stamps
- * correct. Delete events use the old row, so draft deletes stay filtered and unpublishes still pass.
- */
-function isFilteredDraftEvent(result: ParseMessageResult): boolean {
-  if (result.tableMeta.kind !== 'entity' || !isProduct(result.tableMeta.type)) return false;
-  if (!isUnpublishedDraft(result.rowData)) return false;
-  const now = Date.now();
-  if (now - lastDraftGuardWarnAt > draftGuardWarnIntervalMs) {
-    lastDraftGuardWarnAt = now;
-    log.warn('Draft product row reached CDC: publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).', {
-      entityType: result.tableMeta.type,
-      action: result.activity.action,
-    });
-  }
-  return true;
-}
-
 /** A create or a delete: the whole row is the change. An insert carries the new row, a delete the row as it was. */
 function parseWholeRow(tableMeta: TableMeta, row: RowData | null, action: 'create' | 'delete'): ParseMessageResult {
   const rowData = convertRowKeys(row ?? {}, tableMeta.columnNameMap);
@@ -55,28 +31,22 @@ function parseWholeRow(tableMeta: TableMeta, row: RowData | null, action: 'creat
 
 /**
  * The change a row message describes, as the worker records it.
- * @returns null for an untracked table, a filtered draft, the removal of a tombstone and an update that changed nothing
- *   a client holds.
+ * @returns null for an untracked table, the removal of a tombstone and an update that changed nothing a client holds.
  */
 export function parseMessage(message: DmlMessage): ParseMessageResult | null {
   const tableMeta = tableRegistry.get(message.relation.name);
   if (!tableMeta) return null;
 
-  const result = (() => {
-    switch (message.tag) {
-      case 'insert':
-        return parseWholeRow(tableMeta, message.new, 'create');
-      case 'update':
-        return parseUpdate(tableMeta, message);
-      case 'delete': {
-        // The removal of a tombstone (apply_retention()) changes nothing a client holds: the delete reached everyone as
-        // the tombstone, and the counters never counted it.
-        const removed = parseWholeRow(tableMeta, message.old, 'delete');
-        return removed.rowData.deletedAt == null ? removed : null;
-      }
+  switch (message.tag) {
+    case 'insert':
+      return parseWholeRow(tableMeta, message.new, 'create');
+    case 'update':
+      return parseUpdate(tableMeta, message);
+    case 'delete': {
+      // The removal of a tombstone (apply_retention()) changes nothing a client holds: the delete reached everyone as
+      // the tombstone, and the counters never counted it.
+      const removed = parseWholeRow(tableMeta, message.old, 'delete');
+      return removed.rowData.deletedAt == null ? removed : null;
     }
-  })();
-
-  if (result && isFilteredDraftEvent(result)) return null;
-  return result;
+  }
 }

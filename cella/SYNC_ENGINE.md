@@ -177,7 +177,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | The API restarts, loses a frame or closes a stream its client stopped reading | Streams reconnect | Catchup fetches the gap and compares signal versions | Ephemeral signals, and mentions and push notifications of that moment |
 | The books are wrong or emptied | Every client refetches once | A rebuild from the tables | Nothing |
 | The slot is lost, or the database restored from a backup | Live updates stop until the worker has a new slot; then every client refetches once | A new slot and a rebuild | Activities and notifications of rows changed meanwhile; with a restore, everything after the backup |
-| One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |
+| One change can never be processed | Live updates pause until a fix ships or the slot is dropped, by an operator or at the WAL bound; after a drop every client refetches once | A fix lets the worker read on; a dropped slot is made anew and the books rebuilt | Nothing after a fix; after a drop, activities and notifications of the backlog |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
 A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache once, each client at its own moment within a few seconds: what is on screen then, the rest through its [refetch mark](#freshness).

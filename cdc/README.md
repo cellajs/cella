@@ -22,8 +22,7 @@ when the same clients should receive them. Each change gets an order number and 
 | **Read again** | Stop reading without acknowledging and start anew. Postgres delivers the same changes again, and what is recorded already is not recorded twice. |
 | **Audience** | Who may receive a change: the readers of the rows of one type under one path. The API gets one message per audience. |
 | **Books** | The numbers the worker keeps in `channel_counters`: the counts, the sequence counter and the frontiers. |
-| **Stuck** | Failing again and again at one position, for a reason the change itself caused. |
-| **Lost case** | A state the WAL cannot repair: no slot, empty counters, a stuck worker, a rebuild that was interrupted. It ends in a rebuild. |
+| **Lost case** | A state the WAL cannot repair: no slot, empty counters, a rebuild that was interrupted. It ends in a rebuild. |
 | **Sync generation** | A number that moves on whenever the books were rebuilt. A client that holds another one refetches. Each rebuild leaves an **incident**, a row in `sync_incidents`. |
 
 ## How it fits
@@ -89,10 +88,12 @@ The slot is the only durable buffer, and it advances only after a flush committe
 
 | Failure | What the worker does |
 | --- | --- |
-| A flush or a change fails | Reads again. A failure that says nothing about the change (the connection, a lock, the API away) is read again for as long as it lasts, and a position that keeps failing is reported unhealthy. Repeated failures the change itself caused make the worker stuck. |
+| A flush, a change or a subscription fails | Reads again, whatever the cause, and reports degraded; once the failure outlasts a restart, clients are told the worker is away. A worker that does not get past a failure for a while reports unhealthy, and its log names the position and the error. Held that long at the WAL bound, the slot is dropped whatever failed: also a flush that keeps timing out on a locked database, or a send lost while the API was away. |
+| One change can never be processed | Reads it again, degraded at first, so a deploy that brings such a change warns in its smoke step and stays deployed. Then it reports unhealthy, while live sync pauses and the REST API goes on. A fix ends it, and so does a dropped slot: by an operator, or by the worker once the WAL behind it reaches its bound. A dropped slot is a lost case. |
+| The slot cannot be read (made by hand before its publication) | Reads again and reports unhealthy, naming the slot in its log, until an operator drops it or the WAL behind it reaches its bound. |
 | The API is away | Records nothing. The stream is held, Postgres keeps the changes, and the worker reads on when the socket is back. |
-| Another worker holds the slot (a rolling deploy) | Retries until the slot is free, and reports degraded meanwhile. |
-| A lost case: the slot is gone, the counters are empty, or the worker is stuck | Rebuilds ([Verify and rebuild](#verify-and-rebuild)). |
+| Another worker holds the slot (a rolling deploy) | Reads again until the slot is free, and reports degraded meanwhile. |
+| A lost case: the slot is gone or the counters are empty | Rebuilds ([Verify and rebuild](#verify-and-rebuild)). |
 
 ## Verify and rebuild
 
@@ -101,19 +102,19 @@ There is one repair, the rebuild; a verify only detects. Both start with a recou
 - **Verify** compares the books with the recount. Right books stay untouched, wrong books are rebuilt. It runs once a day and on `pnpm sync:verify`.
 - **Rebuild** replaces the books by the recount, between two flushes, while the worker keeps reading. It runs when a verify found the books wrong, in the lost cases and on `pnpm sync:rebuild`.
 
-The worker settles the lost cases by itself before it reads the stream. A missing or invalidated slot is made anew. A stuck worker moves its slot past the backlog it could not record, at most once per interval, so a fault that repeats costs one refetch per interval.
+The worker settles the lost cases by itself before it reads the stream. A missing or invalidated slot is made anew, and so is one the worker dropped at the WAL bound; the incident of that rebuild records the failure it could not get past.
 
 Every rebuild leaves an incident and starts a new sync generation, never one a client already holds, even after a restore from a backup. The API then ends every app stream, and clients refetch: [Sync engine](../cella/SYNC_ENGINE.md#what-happens-when).
 
-What a lost case costs: rows changed while the slot was gone, or in a given-up backlog, keep the `seq` they had and get no activity and no change frame. Counts, sequence values and every client's data are right again afterwards.
+What a lost case costs: rows changed between the old slot's last acknowledged position and the new slot keep the `seq` they had and get no activity and no change frame. Counts, sequence values and every client's data are right again afterwards.
 
 ## Operational constraints
 
-- **Adding a tracked table takes two steps:** the backend's entity or resource table map, then rerunning the CDC migration, which builds the publication. While the two do not match, the worker reads nothing and reports unhealthy with what is wrong.
+- **Adding a tracked table, or drafts to a product table, takes two steps:** the backend's entity or resource table map (or the table's `publishedAt` column), then rerunning the CDC migration, which builds the publication with its row filters. While the two do not match, the worker reads nothing and reports unhealthy with what is wrong.
 - **`REPLICA IDENTITY FULL` is mandatory:** a delete needs the old row, so the worker strips large columns itself, and a consumer must tolerate their absence from the row data.
 - **Only one worker may read the slot.**
-- **A source transaction is held whole, up to a limit.** A larger one makes the worker stuck, and it rebuilds: its rows are counted and get no activity. Write a backfill in smaller transactions.
-- **WAL retention is the recovery margin.** A worker that is down keeps WAL until the disk is full unless the database bounds it: [Deployment](../cella/DEPLOYMENT.md#overview).
+- **A source transaction is held whole, up to a limit.** A larger one is a change the worker can never process. Write a backfill in smaller transactions.
+- **WAL retention is the recovery margin.** A worker that is down, waits for the API or stops on a setup problem keeps WAL until the disk is full unless the database bounds it: [Deployment](../cella/DEPLOYMENT.md#overview).
 - **The worker's role needs `REPLICATION` and an effective RLS bypass:** it owns the tables and none forces row-level security, or it holds `BYPASSRLS` ([Database roles](../cella/MULTI_TENANCY.md#database-roles)). While either is missing, the worker reads nothing and reports unhealthy.
 - **A hung worker cannot hold API writes for long:** server-side timeouts take back the row locks of its flush.
 

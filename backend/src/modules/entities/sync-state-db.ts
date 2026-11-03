@@ -41,14 +41,13 @@ export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   id: uuid().primaryKey().defaultRandom(),
   createdAt: isoTimestamp().notNull().defaultNow(),
   /**
-   * `requested`: somebody asked for it. `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters`
-   * was empty. `stuck`: a change failed every read. `wrong_books`: a verify found the differences in `corrections`.
+   * `requested`: somebody asked for it. `lost_slot`: the replication slot was gone, or dropped at the WAL bound.
+   * `lost_counters`: `channel_counters` was empty. `wrong_books`: a verify found the differences in `corrections`.
    * `interrupted`: the worker restarted before the stream had passed a rebuild.
    */
-  reason: varchar({ enum: ['requested', 'lost_slot', 'lost_counters', 'stuck', 'wrong_books', 'interrupted'] }).notNull(),
-  /** WAL positions the worker gave up between, for a rebuild that skipped a backlog. */
+  reason: varchar({ enum: ['requested', 'lost_slot', 'lost_counters', 'wrong_books', 'interrupted'] }).notNull(),
+  /** For a lost slot, the failure the worker read again from: its position (null for a subscription that failed) and its error. */
   positionFrom: varchar({ length: maxLength.field }),
-  positionTo: varchar({ length: maxLength.field }),
   error: text(),
   corrections: jsonb().$type<SyncCorrection[]>().notNull().default([]),
   generation: integer().notNull(),

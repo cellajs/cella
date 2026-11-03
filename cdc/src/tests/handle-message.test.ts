@@ -249,7 +249,7 @@ describe('handleDataMessage: a message it cannot handle', () => {
     await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
 
     expect(stop).toHaveBeenCalledTimes(1);
-    expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
+    expect(replicationState.failure).toMatchObject({ position: '0/30' });
   });
 
   it('must not acknowledge a later position after the failure, for a flush of what the service still delivers', async () => {
@@ -304,7 +304,7 @@ describe('handleDataMessage: a message it cannot handle', () => {
       await vi.runAllTimersAsync();
 
       expect(acknowledge).not.toHaveBeenCalled();
-      expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
+      expect(replicationState.failure).toMatchObject({ position: '0/30' });
     } finally {
       vi.useRealTimers();
     }

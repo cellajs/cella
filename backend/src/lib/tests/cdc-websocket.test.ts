@@ -109,7 +109,7 @@ describe('CDC socket: a connection that was replaced', () => {
 
   it('starts the replacement without the report of the replaced connection', () => {
     const first = connect();
-    first.send(healthReport({ status: 'unhealthy', reasons: ['worker_stuck'] }));
+    first.send(healthReport({ status: 'unhealthy', reasons: ['reading_again'] }));
 
     connect();
 
@@ -282,7 +282,17 @@ describe('CDC socket: whether a worker reads, for the app stream to tell its cli
   it.each([
     ['is connected and does not read', healthReport({ status: 'degraded', reasons: ['replication_stopped'], details: { replication: 'stopped' } })],
     ['reads and is unhealthy, as with a slot two gigabytes behind', healthReport({ status: 'unhealthy', reasons: ['wal_lag_critical'] })],
-    ['is stuck', healthReport({ status: 'unhealthy', reasons: ['worker_stuck'], details: { replication: 'stopped' } })],
+    [
+      'cannot get past a failure, while it reads and is degraded',
+      healthReport({
+        status: 'degraded',
+        reasons: ['reading_again'],
+        details: {
+          replication: 'active',
+          failure: { position: '0/AB', since: '2026-11-03T08:00:00.000Z', error: 'null value in column "organization_id"' },
+        },
+      }),
+    ],
     ['sends a report of another release', { _control: 'health', payload: { replicationStatus: 'active' } }],
   ])('calls a worker away that %s for a minute', (_case, report) => {
     const worker = connect();
