@@ -61,6 +61,7 @@ describe('a main job run', () => {
     const { fx, calls } = effects({ stamp: stamp('staging') });
     expect(await mainJob({ ...env, TARGET_SHA: 'main' }, fx)).toBe(1);
     expect(await mainJob({ ...env, DEPLOY_KEY_JSON: '{}' }, fx)).toBe(1);
+    expect(await mainJob({ ...env, DEPLOY_KEY_JSON: '{"accessKey":{},"secretKey":[1]}' }, fx)).toBe(1);
     expect(calls).toEqual([]);
   });
 

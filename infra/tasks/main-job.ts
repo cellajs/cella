@@ -3,6 +3,7 @@ import { type EngineStamp, readEngineStamp } from '../lib/deploy/applied-engine'
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { COMMIT, defaultRule, isReleaseCommit, type RemoteRef } from '../lib/deploy/target';
 import { errorMessage } from '../lib/utils/errors';
+import { isRecord } from '../lib/utils/guards';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 
@@ -26,15 +27,16 @@ interface DeployKey {
 /** The deploy key as the definition hands it: the engine folder's copy in `DEPLOY_KEY_JSON`, or `SCW_*` from a definition before the engine image. */
 function deployKey(env: NodeJS.ProcessEnv): DeployKey | undefined {
   if (env.DEPLOY_KEY_JSON) {
-    let parsed: Partial<DeployKey>;
+    let parsed: unknown;
     try {
-      parsed = JSON.parse(env.DEPLOY_KEY_JSON) as Partial<DeployKey>;
+      parsed = JSON.parse(env.DEPLOY_KEY_JSON);
     } catch {
       // JSON.parse quotes the text it refuses, which is the key.
       return undefined;
     }
+    if (!isRecord(parsed)) return undefined;
     const { accessKey, secretKey } = parsed;
-    return accessKey && secretKey ? { accessKey, secretKey } : undefined;
+    return typeof accessKey === 'string' && accessKey && typeof secretKey === 'string' && secretKey ? { accessKey, secretKey } : undefined;
   }
   return env.SCW_ACCESS_KEY && env.SCW_SECRET_KEY ? { accessKey: env.SCW_ACCESS_KEY, secretKey: env.SCW_SECRET_KEY } : undefined;
 }
