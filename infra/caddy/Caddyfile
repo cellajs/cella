@@ -1,18 +1,18 @@
 # Caddyfile for the production `frontend` profile.
 #
-# This Caddy instance runs on its own VM behind the load balancer and acts as
-# the public origin for the SPA. The actual static bundle still lives in the
-# frontend S3 bucket; Caddy reverse-proxies to it, adds security headers a bare
-# S3 bucket cannot, and rewrites any 404 to /index.html so SPA deep
-# links resolve.
+# This Caddy instance runs on its own machine (the backend's under singleVM)
+# behind the load balancer and acts as the public origin for the SPA. The
+# actual static bundle still lives in the frontend S3 bucket; Caddy
+# reverse-proxies to it, adds security headers a bare S3 bucket cannot, and
+# rewrites any 404 to /index.html so SPA deep links resolve.
 #
-# IMPORTANT: CSP-only change won't go live until the next release rolls a new
-# frontend generation, since it lives only in the ignored cloud-init. If you
-# ever need a CSP change without an app release, you'd have to force a bump.
+# The CSP reaches the machine in its static env, which the deploy writes from
+# the applied description: a CSP change goes live with the release that
+# carries it, once the apply from its checkout ran.
 #
 # The image is rebuilt per release (see infra/caddy/Dockerfile) so that
-# `RELEASE_SHA` is baked in and surfaces as `X-App-Version`, which CI's rollout
-# verifier asserts after each deploy.
+# `RELEASE_SHA` is baked in and surfaces as `X-App-Version`, which the machine's
+# agent reads before it passes the load balancer's check.
 #
 # Configurable env (set in infra/config/services.config.ts `frontend` entry):
 #   RELEASE_SHA : bound to X-App-Version (defaulted to "dev" in Dockerfile)
@@ -47,8 +47,8 @@
 		-Server
 	}
 
-	# Health endpoint: LB + CI probe this. Returns 200 with X-App-Version
-	# from the outer header block above, which is what the rollout verifier asserts.
+	# Health endpoint: the machine's agent probes this for the load balancer's check.
+	# Returns 200 with X-App-Version from the outer header block above.
 	handle /health {
 		respond "ok" 200
 	}

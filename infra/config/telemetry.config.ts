@@ -4,7 +4,7 @@ export interface TelemetrySinkConfig {
   endpoint: string;
   /** HTTP header carrying the ingest key. */
   keyHeader: string;
-  /** Env var the ingest key travels in (VM .env.runtime + process env). */
+  /** Env var the ingest key travels in (a machine's .env.runtime and the process env). */
   keyEnvVar: string;
   /** Secret Manager container name holding the operator-seeded ingest key. */
   keySecretName: string;

@@ -4,7 +4,7 @@ This document describes the Infra CLI: what it does, its commands and status che
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A runner in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine holds a key.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A runner in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
 
 ## What it does
 
@@ -19,7 +19,7 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 **Deploy**: when the runner sees an environment's target move, it starts a run of the main job, and the engine image runs one command:
 
 ```
-pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
+pnpm --filter infra run deploy --mode <production|staging> --sha <sha> --retry <n>
 ```
 
 It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, and the apply from its checkout starts it again.
@@ -107,18 +107,19 @@ One name per concept across code and docs:
 | **machine** | One server a deploy made for one release and one role, named `<slug>-<role>-<slot>`; deleted with the release it runs. |
 | **slot** | `a` or `b`: one of a routed role's two reserved addresses, which its pools list for good. A deploy boots on the slot that does not serve. |
 | **switch** | Moving a role to its new machine: boot on the idle slot, wait until its pools serve it, record it, drain the old one, delete it. |
-| **drain** | The order in a machine's manifest that turns its agent's answers to 503, keeps its connections for the role's drain seconds, and stops its containers. |
+| **drain** | The order in a machine's manifest that makes its agent fail the load balancer's check, keeps its connections for the role's drain seconds, and stops its containers. |
 | **agent** | `infra-agent`, the Compose service every machine runs ([agent/](agent/)): boots the release, answers the load balancer's check per service, drains. |
 | **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
-| **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not VM boot. |
+| **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not a machine's boot. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
 | **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write, made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
+| **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |
 | **privileged** | A resource only an apply on the operator key changes. |
 | **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports, trace context; no key and no secret value. |
 | **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |
-| **boot account** | The boot log a VM uploads to the boot-diag bucket through its link at the end of its first boot. |
+| **boot account** | The boot log a machine uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |
 | **engine config** | The app's config as the engine reads it, in [config/engine-config.ts](config/engine-config.ts): the shared `appConfig` of the mode, with the app's own slug. |
