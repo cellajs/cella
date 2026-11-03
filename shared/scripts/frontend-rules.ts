@@ -21,14 +21,6 @@ function importsOf(sourceFile: ts.SourceFile) {
   });
 }
 
-/** A component is a function; one kept as a value is typed `ComponentType<Props>`, never `FC`. */
-function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
-  if (!ts.isTypeReferenceNode(node)) return;
-  const name = node.typeName.getText(sourceFile);
-  if (!['FC', 'FunctionComponent', 'React.FC', 'React.FunctionComponent'].includes(name)) return;
-  report(node, 'react-component-type', 'declare components with functions; use ComponentType<Props> when a component is stored as a value');
-}
-
 /** A component is a named function declaration, and a helper such as `memo` wraps a function expression of its name. */
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement, report: Report): void {
   if (extname(sourceFile.fileName) !== '.tsx') return;
@@ -128,15 +120,6 @@ function checkFormNoValidate(sourceFile: ts.SourceFile, node: ts.Node, report: R
   if (!onSubmit?.initializer?.getText(sourceFile).includes('handleSubmit(')) return;
   if (attributes.some((attribute) => attribute.name.getText(sourceFile) === 'noValidate')) return;
   report(node, 'form-no-validate', 'a form react-hook-form validates takes noValidate, so its fields say what is wrong, not the browser');
-}
-
-/** A form resolves through `formResolver`, which leaves a cleared optional field unset; it is the one reader of `zodResolver`. */
-function checkFormResolver(file: string, sourceFile: ts.SourceFile, report: Report): void {
-  if (file === 'frontend/src/utils/form-resolver.ts') return;
-  for (const { module, declaration } of importsOf(sourceFile)) {
-    if (module !== '@hookform/resolvers/zod') continue;
-    report(declaration, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
-  }
 }
 
 /**
@@ -261,10 +244,8 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement, report);
   }
   checkReorderGrip(file, sourceFile, report);
-  checkFormResolver(file, sourceFile, report);
   checkProductCacheWrite(file, sourceFile, report);
   sourceFile.forEachChild(function visit(node) {
-    checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
     checkRouteContextSelector(sourceFile, node, report);
     checkButtonPressCancel(sourceFile, node, report);

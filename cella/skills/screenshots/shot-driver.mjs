@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
+import process from 'node:process';
 import { parseEnv } from 'node:util';
 import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
 import * as config from './shots-config.mjs';
@@ -153,7 +154,8 @@ let browser = null;
 
 try {
   if (START) {
-    if (await answers(base, (status) => status < 500)) throw new Error(`Something already answers at ${base}. Stop it, or run with START= to shoot that stack.`);
+    if (await answers(base, (status) => status < 500))
+      throw new Error(`Something already answers at ${base}. Stop it, or run with START= to shoot that stack.`);
     const [command, ...args] = START.split(/\s+/);
     stack = spawn(command, args, { detached: true, stdio: ['ignore', openSync(logPath, 'w'), openSync(logPath, 'a')] });
     log('stack', { command: START, pid: stack.pid, log: logPath });
@@ -162,7 +164,8 @@ try {
   const deadline = Date.now() + BOOT_MS;
   while (!((await answers(base, (status) => status < 500)) && (await answers(`${api}/health`, (status) => status < 300)))) {
     if (stack && stack.exitCode !== null) throw new Error(`The stack stopped while starting (exit ${stack.exitCode}): see ${logPath}`);
-    if (Date.now() > deadline) throw new Error(`Nothing answered at ${base} and ${api}/health within ${BOOT_MS / 60_000} minutes${stack ? `: see ${logPath}` : '.'}`);
+    if (Date.now() > deadline)
+      throw new Error(`Nothing answered at ${base} and ${api}/health within ${BOOT_MS / 60_000} minutes${stack ? `: see ${logPath}` : '.'}`);
     await sleep(2000);
   }
   log('up', { base, api });
@@ -232,7 +235,13 @@ try {
 
           mkdirSync(dirname(path), { recursive: true });
           writeShot(await page.screenshot({ animations: 'disabled', caret: 'hide', scale: 'device' }), path);
-          written.push({ id: shot.id, mode, path, bytes: statSync(path).size, pixels: `${device.width * device.scale}x${device.height * device.scale}` });
+          written.push({
+            id: shot.id,
+            mode,
+            path,
+            bytes: statSync(path).size,
+            pixels: `${device.width * device.scale}x${device.height * device.scale}`,
+          });
           log('shot', { id: shot.id, mode });
         } catch (error) {
           failures.push({ id: shot.id, mode, error: error instanceof Error ? error.message : String(error) });
@@ -253,7 +262,10 @@ try {
   rmSync(scratch, { recursive: true, force: true });
 
   console.log(`\n${written.length} image${written.length === 1 ? '' : 's'}:`);
-  for (const image of written) console.log(`  ${image.id.padEnd(20)} ${image.mode.padEnd(5)} ${image.pixels.padEnd(10)} ${String(Math.round(image.bytes / 1024)).padStart(5)} KB  ${image.path}`);
+  for (const image of written)
+    console.log(
+      `  ${image.id.padEnd(20)} ${image.mode.padEnd(5)} ${image.pixels.padEnd(10)} ${String(Math.round(image.bytes / 1024)).padStart(5)} KB  ${image.path}`,
+    );
   for (const failure of failures) console.log(`  FAILED ${failure.id} ${failure.mode}: ${failure.error}`);
   console.log('\nNow look at every image against the rubric in SKILL.md, and re-shoot by id what does not pass.');
   process.exitCode = failures.length ? 1 : 0;

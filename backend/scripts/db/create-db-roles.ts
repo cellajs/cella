@@ -1,19 +1,19 @@
 import { sql } from 'drizzle-orm';
+import pc from 'picocolors';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { durationSuffix, timestamp } from '#/utils/console';
-import pc from 'picocolors';
 
 /**
  * Parse username and password from a PostgreSQL connection string.
  * Supports both `postgres://user:pass@host/db` and `postgresql://user:pass@host/db`.
  */
 function parseCredentials(connectionString: string): { username: string; password: string } {
-const url = new URL(connectionString);
-return {
-  username: decodeURIComponent(url.username),
-  password: decodeURIComponent(url.password),
-};
+  const url = new URL(connectionString);
+  return {
+    username: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+  };
 }
 
 /**
@@ -21,10 +21,10 @@ return {
  * Development only; production roles are Scaleway-managed users.
  */
 function buildCreateRolesSql(runtimePassword: string, adminPassword: string): string {
-// Escape single quotes for SQL injection safety.
-const escSql = (s: string) => s.replace(/'/g, "''");
+  // Escape single quotes for SQL injection safety.
+  const escSql = (s: string) => s.replace(/'/g, "''");
 
-return `
+  return `
 DO $$
 BEGIN
 -- Check if we can create roles
@@ -83,7 +83,7 @@ END $$;
  * Used in production when roles already exist as Scaleway-managed users.
  */
 function buildEnsureGrantsSql(): string {
-return `
+  return `
 DO $$
 BEGIN
 -- Grant schema access (idempotent)
@@ -109,10 +109,10 @@ const requiredRoles = ['runtime_role', 'admin_role'] as const;
  * Returns true if setup can be skipped (avoids catalog writes on hot-reload).
  */
 async function rolesExist(): Promise<boolean> {
-const result = await getAdminDb('role setup').execute<{ cnt: number }>(
-  sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
-);
-return result.rows[0].cnt === requiredRoles.length;
+  const result = await getAdminDb('role setup').execute<{ cnt: number }>(
+    sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
+  );
+  return result.rows[0].cnt === requiredRoles.length;
 }
 
 /**
@@ -122,7 +122,7 @@ return result.rows[0].cnt === requiredRoles.length;
 async function isRoleManagedExternally(): Promise<boolean> {
   const result = await getAdminDb('role setup').execute<{ cu: string }>(sql.raw('SELECT CURRENT_USER AS cu'));
   const currentUser = result.rows[0].cu;
-  return requiredRoles.includes(currentUser as typeof requiredRoles[number]);
+  return requiredRoles.includes(currentUser as (typeof requiredRoles)[number]);
 }
 
 export async function createDbRoles() {
@@ -145,13 +145,13 @@ export async function createDbRoles() {
     return;
   }
 
-// Extract passwords from connection strings
-const runtime = parseCredentials(env.DATABASE_URL);
+  // Extract passwords from connection strings
+  const runtime = parseCredentials(env.DATABASE_URL);
 
-// For admin_role in dev, use a dedicated env var or fall back to same password as runtime
-const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
+  // For admin_role in dev, use a dedicated env var or fall back to same password as runtime
+  const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
-const createRolesSql = buildCreateRolesSql(runtime.password, adminPassword);
+  const createRolesSql = buildCreateRolesSql(runtime.password, adminPassword);
 
   try {
     await migrationDb.execute(sql.raw(createRolesSql));

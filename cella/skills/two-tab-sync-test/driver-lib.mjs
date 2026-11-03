@@ -5,7 +5,10 @@ import { resolve } from 'node:path';
 
 // Playwright lives in the pnpm store (frontend devDep), not resolvable by bare import from here.
 // Run from the repo root so the glob resolves.
-const [pwPath] = globSync('node_modules/.pnpm/playwright@*/node_modules/playwright/index.mjs').sort().reverse().map((p) => resolve(p));
+const [pwPath] = globSync('node_modules/.pnpm/playwright@*/node_modules/playwright/index.mjs')
+  .sort()
+  .reverse()
+  .map((p) => resolve(p));
 if (!pwPath) throw new Error('No playwright under node_modules/.pnpm: run from the repo root, after pnpm install.');
 export const { chromium } = await import(pwPath);
 
@@ -35,7 +38,8 @@ export async function endSession(session) {
 
 // Exact name: bench rows are numbered, so "… 2" is also the start of "… 20" and "… 201".
 export const exactText = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-export const rowByName = (page, name) => page.locator('.rdg-row').filter({ has: page.locator('span.truncate.font-medium', { hasText: exactText(name) }) });
+export const rowByName = (page, name) =>
+  page.locator('.rdg-row').filter({ has: page.locator('span.truncate.font-medium', { hasText: exactText(name) }) });
 
 // Remote cursor labels sit inside the editor's text, so they are cut before matching.
 export const editorText = (editor) =>

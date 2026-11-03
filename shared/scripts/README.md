@@ -51,14 +51,13 @@ Every rule fails `pnpm style`.
 | `source-control-term` | the CLI's source-control term | file paths and text, outside the sync markers and the allowlisted files |
 | `product-name` | `cella_*`, `Cella*`, `_cella-*`, `cellajs.com` | `backend/src`, `shared/src` and `frontend/src`, outside tests, marketing and content |
 | `component-declaration` | a component declared as an arrow function, or a helper such as `memo` wrapping an unnamed render function | frontend `.tsx` sources |
-| `react-component-type` | `FC` or `FunctionComponent` | frontend sources |
 | `store-selector` | a zustand store called without a selector | frontend sources |
 | `route-context-selector` | `useRouteContext()` without `select` | frontend sources |
 | `button-press-cancel` | `active:translate-y-0` on a `Button`, which leaves the press nudge in place | frontend sources |
 | `form-no-validate` | a form react-hook-form validates without `noValidate` | frontend sources |
-| `form-resolver` | an import from `@hookform/resolvers/zod` | frontend sources outside `utils/form-resolver.ts` |
 | `reorder-grip` | a lucide grip icon in a file that imports no `ReorderHandle` or `reorderColumn` | frontend sources outside drag previews and the editor's side menu |
 | `memo-dependency-unread` | a `useMemo` or `useCallback` dependency its callback never reads | frontend sources |
+| `product-cache-write` | a query-cache call that clears the refetch mark where synced product rows live; the keepers in `~/query/basic/cache-mutations` replace it | `frontend/src/query/`, product modules and range-fetch registrars |
 | `tailwind-class` | a class that compiles to no CSS and that nothing selects, a variant on a plain CSS class, a stylesheet Tailwind cannot load | `frontend/src` scripts outside tests, and the Tailwind entry stylesheet |
 | `text-color` | a text token with an opacity modifier outside `disabled:`, a palette gray | frontend sources; palette grays pass in the docs module and the JSON viewer theme |
 | `token-contrast` | a token pair below its WCAG ratio, a theme without `--background` or `--edge-raised` | `frontend/src/styling/tailwind.css` |

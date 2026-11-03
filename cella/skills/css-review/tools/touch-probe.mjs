@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { chromium, endSession, mintSession } from '../../two-tab-sync-test/driver-lib.mjs';
 import { printHeader } from './lib.mjs';
 

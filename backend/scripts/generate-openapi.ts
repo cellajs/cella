@@ -1,8 +1,8 @@
 process.env.NODB = 'true';
 
+import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { checkMark, crossMark } from '#/utils/console';
 
@@ -43,7 +43,7 @@ function loadCachedDiffHash(): string | null {
   try {
     if (!existsSync(MANIFEST_PATH)) return null;
     const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8'));
-    return manifest['diffHash'] ?? null;
+    return manifest.diffHash ?? null;
   } catch {
     return null;
   }
@@ -89,18 +89,12 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   }
 
   try {
-    const [{ baseApp: app }, { registerOpenApiDocs }] = await Promise.all([
-      import('#/routes'),
-      import('#/core/openapi-registration'),
-    ]);
+    const [{ baseApp: app }, { registerOpenApiDocs }] = await Promise.all([import('#/routes'), import('#/core/openapi-registration')]);
 
     await registerOpenApiDocs(app);
 
     // Record generation metadata in the manifest (used for cache invalidation, gitignored)
-    writeFileSync(
-      MANIFEST_PATH,
-      JSON.stringify({ ...(hash && { diffHash: hash }), generatedAt: new Date().toISOString() }, null, 2),
-    );
+    writeFileSync(MANIFEST_PATH, JSON.stringify({ ...(hash && { diffHash: hash }), generatedAt: new Date().toISOString() }, null, 2));
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
     console.info(`${checkMark} OpenAPI generation complete (${elapsed}s)`);

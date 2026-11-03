@@ -4,6 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 import { caretToEnd, chromium, editorText, endSession, exactText, mintSession, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
@@ -65,7 +66,9 @@ async function pollFor(predicate, timeoutMs, intervalMs = 250) {
   while (Date.now() - start < timeoutMs) {
     try {
       if (await predicate()) return { ok: true, afterMs: Date.now() - start };
-    } catch { /* the page is between states: ask again */ }
+    } catch {
+      /* the page is between states: ask again */
+    }
     await new Promise((done) => setTimeout(done, intervalMs));
   }
   return { ok: false, afterMs: timeoutMs };
@@ -116,7 +119,12 @@ async function user(tab, cookie) {
     if (relay.down) return void ws.close(dropped);
     seen.sockets++;
     seen.entityId = new URL(ws.url()).pathname.split('/').pop();
-    log(tab, 'relay-connect', { url: ws.url().replace(/token=[^&]+/, 'token=…').slice(0, 160) });
+    log(tab, 'relay-connect', {
+      url: ws
+        .url()
+        .replace(/token=[^&]+/, 'token=…')
+        .slice(0, 160),
+    });
     relay.drops.add(RELAY ? bridgeToRelay(ws) : passToRelay(ws));
   });
   relay.set = async (down) => {
@@ -149,7 +157,10 @@ async function openDescription(page, name) {
   const column = headers.findIndex((h) => exactText(strings.description).test(h.trim()));
   if (column < 0) throw new Error(`no description column in ${JSON.stringify(headers)}`);
   await rowByName(page, name).first().locator('[role="gridcell"][aria-colindex]').nth(column).dblclick();
-  const sheet = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: exactText(name) }) }).last();
+  const sheet = page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('heading', { name: exactText(name) }) })
+    .last();
   await sheet.waitFor({ timeout: 15_000 });
   return { sheet, editor: sheet.locator('.bn-editor[contenteditable="true"]').first() };
 }
@@ -214,7 +225,15 @@ try {
   const names = await a.page.locator('.rdg-row span.truncate.font-medium').allTextContents();
   const ROW = process.env.ROW ?? names[0];
   const DELETE_ROW = process.env.DELETE_ROW ?? names.find((name) => name !== ROW);
-  log('harness', 'target', { url: URL_ATTACHMENTS, cookie: cookies.a.name, editors: [EMAIL, EMAIL_B], viewer: EMAIL_VIEWER ?? null, relay: RELAY ?? 'the stack', ROW, DELETE_ROW });
+  log('harness', 'target', {
+    url: URL_ATTACHMENTS,
+    cookie: cookies.a.name,
+    editors: [EMAIL, EMAIL_B],
+    viewer: EMAIL_VIEWER ?? null,
+    relay: RELAY ?? 'the stack',
+    ROW,
+    DELETE_ROW,
+  });
 
   // The peer keeps the description open for the whole run and observes.
   const peer = await openEditor(b.page, ROW);
@@ -232,7 +251,10 @@ try {
     // first frame at once and holds the rest for half a second: the position the six moves end on still arrives.
     for (let i = 0; i < 6; i++) await a.page.keyboard.press('ArrowLeft', { delay: 30 });
     const caught = await pollFor(async () => (await textBeforeCursor(peer.editor)).endsWith(lastMarker.slice(0, -6)), 3_000, 100);
-    check('live: the peer cursor follows a burst of moves to its end', caught.ok, { ...caught, cursorAfter: (await textBeforeCursor(peer.editor)).slice(-12) });
+    check('live: the peer cursor follows a burst of moves to its end', caught.ok, {
+      ...caught,
+      cursorAfter: (await textBeforeCursor(peer.editor)).slice(-12),
+    });
     await shot(b.page, '01-live-peer');
     // One more move, then closed inside the window that move opened: the removal waits for its end.
     await a.page.keyboard.press('ArrowLeft');
@@ -405,13 +427,20 @@ try {
     const [first, other] = [marker('tab1'), marker('tab2')];
     await typeAtEnd(me.page, one.editor, ` ${first}`);
     await typeAtEnd(second, two.editor, ` ${other}`);
-    const crossed = await pollFor(async () => (await editorText(one.editor)).includes(other) && (await editorText(two.editor)).includes(first), 10_000);
+    const crossed = await pollFor(
+      async () => (await editorText(one.editor)).includes(other) && (await editorText(two.editor)).includes(first),
+      10_000,
+    );
     check('tabs: each tab shows the other tab edit while offline', crossed.ok, crossed);
     await me.context.setOffline(false);
-    const both = await pollFor(async () => {
-      const description = await serverDescription(rowId);
-      return description.includes(first) && description.includes(other);
-    }, 45_000, 1000);
+    const both = await pollFor(
+      async () => {
+        const description = await serverDescription(rowId);
+        return description.includes(first) && description.includes(other);
+      },
+      45_000,
+      1000,
+    );
     check('tabs: both edits reach the server row', both.ok, both);
     check('tabs: both tabs show the same text', (await editorText(one.editor)) === (await editorText(two.editor)));
     await me.context.close();
@@ -435,7 +464,10 @@ try {
     await me.relay.set(false);
     const noticed = await pollFor(async () => (await toastText(me.page)).includes(strings.copy_text), 45_000, 500);
     const toast = await toastText(me.page);
-    check('delete: a notice offers to copy or discard the unsaved edits', noticed.ok && toast.includes(strings.discard), { ...noticed, toast: toast.slice(0, 200) });
+    check('delete: a notice offers to copy or discard the unsaved edits', noticed.ok && toast.includes(strings.discard), {
+      ...noticed,
+      toast: toast.slice(0, 200),
+    });
     const status = await statusText(sheet).catch(() => 'sheet closed');
     check('delete: the open description says deleted', status === strings.deleted, { status });
     await shot(me.page, '09-delete-notice');

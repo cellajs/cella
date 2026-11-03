@@ -6,7 +6,7 @@ import { sleep } from 'shared/utils/sleep';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { ensureQueues } from '#/lib/jobs';
-import { jobsSchema, jobsOptions } from '#/lib/pg-boss';
+import { jobsOptions, jobsSchema } from '#/lib/pg-boss';
 import '#/modules'; // composition root: the queues to create are declared on the modules
 import { durationSuffix, timestamp } from '#/utils/console';
 import { jobsGrantsSql } from '../migrations/10-jobs.migration';

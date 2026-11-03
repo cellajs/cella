@@ -1,7 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { SeedScript } from './types';
-import type { SideEffectProducer } from './types';
+import type { SeedScript, SideEffectProducer } from './types';
 
 /**
  * Auto-discover side-effect producers from scripts/migrations/*.migration.ts files.
@@ -10,7 +9,9 @@ import type { SideEffectProducer } from './types';
  * generate.ts, not a discovered producer.
  */
 const migrationDir = join(import.meta.dirname, 'migrations');
-const migrationFiles = readdirSync(migrationDir).filter((f) => f.endsWith('.migration.ts')).sort();
+const migrationFiles = readdirSync(migrationDir)
+  .filter((f) => f.endsWith('.migration.ts'))
+  .sort();
 
 export const sideEffectProducers: SideEffectProducer[] = [];
 
@@ -25,7 +26,9 @@ for (const file of migrationFiles) {
  * Each must export a `seedConfig: SeedScript`. Sorted by filename (use numeric prefixes for order).
  */
 const seedDir = join(import.meta.dirname, 'seeds');
-const seedFiles = readdirSync(seedDir).filter((f) => f.endsWith('.seed.ts')).sort();
+const seedFiles = readdirSync(seedDir)
+  .filter((f) => f.endsWith('.seed.ts'))
+  .sort();
 
 export const seedScripts: SeedScript[] = [];
 

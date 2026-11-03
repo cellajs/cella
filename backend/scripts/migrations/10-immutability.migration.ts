@@ -1,8 +1,8 @@
 import {
+  adminOnlyWriteTriggerName,
   allAdminOnlyWriteTables,
   allImmutabilityFunctionsSQL,
   allImmutabilityTables,
-  adminOnlyWriteTriggerName,
   immutableKeysTriggerName,
 } from '#/db/immutability-triggers';
 import type { SideEffectBlock, SideEffectProducer } from '../types';

@@ -71,7 +71,10 @@ const checkTemplateShape = () => {
 const checkAppShape = () => {
   withRestoredPaths(['shared/config'], () => {
     const defaultPath = join(configDir, 'config.default.ts');
-    writeFileSync(defaultPath, applyLeaves(readFileSync(defaultPath, 'utf8'), [...appShapeLeaves, ...appShapeDefaultOnlyLeaves], 'config.default.ts'));
+    writeFileSync(
+      defaultPath,
+      applyLeaves(readFileSync(defaultPath, 'utf8'), [...appShapeLeaves, ...appShapeDefaultOnlyLeaves], 'config.default.ts'),
+    );
     writeFileSync(templatePath, applyLeaves(readFileSync(templatePath, 'utf8'), appShapeLeaves, 'config.template.ts'));
     const permissionsPath = join(configDir, appShapePermissionsEdit.file);
     const permissions = readFileSync(permissionsPath, 'utf8');

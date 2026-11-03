@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, openSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import process from 'node:process';
 import { parseEnv } from 'node:util';
 import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
 
@@ -197,7 +198,10 @@ try {
     const orgPath = `/${organization.tenantId}/${organization.slug}`;
     await open(`${orgPath}/organization/attachments`);
     const rows = page.locator('.rdg-row');
-    await rows.first().waitFor({ timeout: 60_000 }).catch(() => {});
+    await rows
+      .first()
+      .waitFor({ timeout: 60_000 })
+      .catch(() => {});
     const count = await rows.count();
     await shot('attachments');
     check('the attachments table shows seeded rows', count > 0, { organization: organization.slug, count });

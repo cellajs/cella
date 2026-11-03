@@ -7,8 +7,7 @@ const SEED_MULTIPLIER = 1;
  * Varies a base count per call: 50% to 200% of `base * SEED_MULTIPLIER`, never below `floor` (for counts where index-based semantics matter).
  * @public
  */
-export const vary = (base: number, floor = 1) =>
-  Math.max(floor, Math.round(faker.number.float({ min: 0.5, max: 2 }) * base * SEED_MULTIPLIER));
+export const vary = (base: number, floor = 1) => Math.max(floor, Math.round(faker.number.float({ min: 0.5, max: 2 }) * base * SEED_MULTIPLIER));
 
 /** Splits rows into insert batches to stay clear of the Postgres bind-parameter limit. */
 export const toBatches = <T>(rows: T[], size = 500): T[][] => {

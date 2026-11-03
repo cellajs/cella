@@ -3,6 +3,7 @@
 import { execSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 import { parseArgs } from 'node:util';
 import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
 
@@ -242,6 +243,8 @@ await check('after-swipe-up');
 const editingRows = rows.filter((row) => row.editing);
 const floated = editingRows.filter((row) => row.floating.length);
 const keyboardMisread = editingRows.filter((row) => row.keyboardUp && row.bodyClasses.length === 0);
-console.log(`\nVERDICT: ${editingRows.length} steps with the editor focused, ${floated.length} with something floating, ${keyboardMisread.length} with the keyboard up and no body class`);
+console.log(
+  `\nVERDICT: ${editingRows.length} steps with the editor focused, ${floated.length} with something floating, ${keyboardMisread.length} with the keyboard up and no body class`,
+);
 if (left.editing) console.log('NOTE: the editor still had focus after leaving it.');
 await finish(floated.length || left.editing ? 1 : 0);

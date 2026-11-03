@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 import { chromium, endSession, mintSession } from '../../two-tab-sync-test/driver-lib.mjs';
 import { classSources, printHeader, repoRoot } from './lib.mjs';
 
