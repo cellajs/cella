@@ -7,6 +7,7 @@ import { appDescriptionHash } from '../lib/deploy/app-description';
 import { type AppliedEngine, ENGINE_IMAGE_NAME, engineImageRef, engineImageRepository, writeAppliedEngine } from '../lib/deploy/applied-engine';
 import { rootNodeVersion } from '../lib/deploy/main-job';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
+import { COMMIT } from '../lib/deploy/target';
 import { deriveInfra } from '../lib/naming';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
@@ -115,7 +116,7 @@ export async function publishEngine(opts: {
   if (!namespace) return undefined;
   const git = (args: string[]) => (spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout ?? '').trim();
   const commit = git(['rev-parse', 'HEAD']);
-  if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error('the engine image names the commit it is built from: run the apply from a git checkout');
+  if (!COMMIT.test(commit)) throw new Error('the engine image names the commit it is built from: run the apply from a git checkout');
   if (git(['status', '--porcelain', '--', ...CONTEXT_PATHS])) {
     log(`  The engine image carries changes ${commit.slice(0, 10)} does not hold; applied.json names that commit all the same.`);
   }

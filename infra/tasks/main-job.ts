@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { type EngineStamp, readEngineStamp } from '../lib/deploy/applied-engine';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
-import { defaultRule, isReleaseCommit, type RemoteRef } from '../lib/deploy/target';
+import { COMMIT, defaultRule, isReleaseCommit, type RemoteRef } from '../lib/deploy/target';
 import { errorMessage } from '../lib/utils/errors';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -59,7 +59,7 @@ export async function mainJob(env: NodeJS.ProcessEnv, fx: MainJobEffects): Promi
   const mode = stamp?.mode ?? env.MODE;
   const key = deployKey(env);
   const projectId = env.SCW_DEFAULT_PROJECT_ID ?? '';
-  if (!mode || !sha || !/^[0-9a-f]{40}$/.test(sha) || !key) {
+  if (!mode || !sha || !COMMIT.test(sha) || !key) {
     console.error('The main job needs its engine stamp (or MODE), TARGET_SHA (a full commit id) and the deploy key.');
     return MAIN_JOB_EXIT.failed;
   }

@@ -1,4 +1,5 @@
 import { isRecord } from '../utils/guards';
+import { HASH } from './applied-engine';
 
 /** Where a release's image archives, frontend archive and manifest live in the boot-diag bucket: `releases/<sha>/`, kept 60 days. */
 export const RELEASES_PREFIX = 'releases/';
@@ -43,7 +44,7 @@ export interface ReleaseManifest {
 function digestOf(value: unknown, where: string): ArchiveDigest {
   if (!isRecord(value)) throw new Error(`release manifest: ${where} is not an object`);
   const { sha256, md5, bytes } = value;
-  if (typeof sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(sha256)) throw new Error(`release manifest: ${where} has no sha256`);
+  if (typeof sha256 !== 'string' || !HASH.test(sha256)) throw new Error(`release manifest: ${where} has no sha256`);
   if (typeof md5 !== 'string' || !/^[0-9a-f]{32}$/.test(md5)) throw new Error(`release manifest: ${where} has no md5`);
   if (typeof bytes !== 'number' || !Number.isInteger(bytes) || bytes <= 0) throw new Error(`release manifest: ${where} has no size`);
   return { sha256, md5, bytes };
@@ -63,7 +64,7 @@ export function parseReleaseManifest(text: string, sha: string): ReleaseManifest
     images[name] = digestOf(digest, name);
   }
   const { description } = parsed;
-  if (description !== undefined && (typeof description !== 'string' || !/^[0-9a-f]{64}$/.test(description))) {
+  if (description !== undefined && (typeof description !== 'string' || !HASH.test(description))) {
     throw new Error('release manifest: description is no sha256');
   }
   return {

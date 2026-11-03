@@ -4,6 +4,7 @@ import { conditionOn, controlPrefix, putJsonObject, readObjectText, type S3Like 
 import { ExitCodeError, errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 import { MAIN_JOB_EXIT } from './main-job';
+import { COMMIT } from './target';
 
 /**
  * How a run ends when its target describes the app otherwise than the applied engine: the image an apply built from the operator's checkout,
@@ -17,7 +18,8 @@ export const ENGINE_IMAGE_NAME = 'infra-engine';
 /** Where the engine image keeps its stamp, written by its build (infra/Dockerfile): outside any checkout, so only an engine image has one. */
 const ENGINE_STAMP_PATH = '/engine/stamp.json';
 
-const HASH = /^[0-9a-f]{64}$/;
+/** A sha256 in hex: a description's hash, an archive's digest. */
+export const HASH = /^[0-9a-f]{64}$/;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 
 /**
@@ -100,7 +102,7 @@ function parseAppliedEngine(text: string): AppliedEngine {
   const { descriptionHash: hash, imageDigest, commit, appliedAt } = raw;
   if (typeof hash !== 'string' || !HASH.test(hash)) throw new Error('applied engine: descriptionHash is no sha256');
   if (typeof imageDigest !== 'string' || !DIGEST.test(imageDigest)) throw new Error('applied engine: imageDigest is no sha256 digest');
-  if (typeof commit !== 'string' || !/^[0-9a-f]{40}$/.test(commit)) throw new Error('applied engine: commit is no commit id');
+  if (typeof commit !== 'string' || !COMMIT.test(commit)) throw new Error('applied engine: commit is no commit id');
   if (typeof appliedAt !== 'string') throw new Error('applied engine: appliedAt is missing');
   return { descriptionHash: hash, imageDigest, commit, appliedAt };
 }
