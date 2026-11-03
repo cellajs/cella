@@ -58,16 +58,35 @@ export function composeMachineEnvs(
     files[service] = lines.length > 0 ? `${lines.join('\n')}\n` : '';
   }
   if (missing.size > 0 || malformed.size > 0) {
-    const owed = [
+    throw blocked([
       ...(missing.size > 0 ? [`required runtime values are not set: ${[...missing].join(', ')}`] : []),
       ...(malformed.size > 0 ? [`values are not one line: ${[...malformed].join(', ')}`] : []),
-    ];
-    throw new ExitCodeError(
-      `Blocked: ${owed.join('; ')}. Store an operator value with \`${actionCommand('secrets')}\`, which starts this target again; a generated or database value is made by \`${actionCommand('apply')}\`, the uploads key by \`${actionCommand('identity')}\`.`,
-      MAIN_JOB_EXIT.blocked,
-    );
+    ]);
   }
   return files;
+}
+
+/** The blocked end that names every value owed and what stores each kind. */
+function blocked(owed: string[]): ExitCodeError {
+  return new ExitCodeError(
+    `Blocked: ${owed.join('; ')}. Store an operator value with \`${actionCommand('secrets')}\`, which starts this target again; a generated or database value is made by \`${actionCommand('apply')}\`, the uploads key by \`${actionCommand('identity')}\`.`,
+    MAIN_JOB_EXIT.blocked,
+  );
+}
+
+/**
+ * The required names no container of the runtime folder holds a version of, from the folder's listing alone: the deploy's check before the
+ * build, which reads no value. A version that holds an empty or a multi-line value still ends the run blocked at the composition.
+ */
+export function requiredWithoutValue(
+  machines: ReadonlyArray<{ entries: readonly RuntimeEnvEntry[] }>,
+  listed: ReadonlyArray<{ name: string; version_count?: number }>,
+): string[] {
+  const stored = new Set(listed.filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => secret.name));
+  const missing = machines.flatMap(({ entries }) =>
+    entries.filter((entry) => entry.required && !stored.has(entry.secretName)).map((entry) => `${entry.envVar} [${entry.secretName}]`),
+  );
+  return [...new Set(missing)];
 }
 
 /** A boot account's key, the time it is named at in the form the readers sort by (lib/deploy/boot-accounts.ts). */
@@ -80,16 +99,18 @@ function bootAccountKey(service: string, now: Date): string {
 }
 
 /**
- * The deploy's step before the build: read the runtime values with the deploy key, compose each machine's env file and write it to the
- * boot-diag bucket under `env/`, where only the deploy key reads it. Writes the env objects and boot account keys to `--out`, from which the
- * deploy hands each new machine its links.
+ * The deploy's two steps around the build. With `--check`, before it: refuse a required value the runtime folder holds no version of,
+ * reading none. Without, once the release is built and its description checked: read the runtime values with the deploy key, compose each
+ * machine's env file and write it to the boot-diag bucket under `env/`, where only the deploy key reads it, and the env objects and boot
+ * account keys to `--out`, from which the deploy hands each new machine its links.
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
+  const check = argv.includes('--check');
   const sha = getFlag(argv, '--sha');
   const projectId = getFlag(argv, '--project-id');
   const out = getFlag(argv, '--out');
   const { accessKey, secretKey } = deployS3Key();
-  if (!sha || !projectId || !out || !secretKey) throw new Error('Required: SCW_SECRET_KEY, --sha, --project-id, --out');
+  if (!projectId || !secretKey) throw new Error('Required: SCW_SECRET_KEY, --project-id, and --check or --sha with --out');
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
   const { naming, region } = deriveInfra(appConfig);
@@ -97,6 +118,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const secrets = createSecretManagerClient({ secretKey, region, projectId });
   const listed = await secrets.listSecretsUnder(RUNTIME_FOLDER);
+  if (check) {
+    const missing = requiredWithoutValue(machines, listed);
+    if (missing.length > 0) throw blocked([`required runtime values are not set: ${missing.join(', ')}`]);
+    console.info('[compose-env] every required runtime value is stored');
+    return;
+  }
+  if (!sha || !out) throw new Error('Required: --sha and --out, or --check');
   const needed = new Set(machines.flatMap((machine) => machine.entries.map((entry) => entry.secretName)));
   const values = new Map<string, string>();
   for (const container of listed.filter((secret) => needed.has(secret.name) && (secret.version_count ?? 0) > 0)) {

@@ -98,7 +98,7 @@ A run ends in one of five outcomes:
 
 - **Deployed:** the target serves.
 - **Unchanged:** every role served the target already; nothing was built or made.
-- **Blocked:** the run stopped before it booted a machine of the release, on a required runtime value that is empty, which its record names ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
+- **Blocked:** the run stopped before it booted a machine of the release, on a required runtime value that is missing or empty, which its record names ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
 - **Apply needed:** the target describes the app otherwise than the applied engine, or the run did not start from an engine image; nothing was composed or booted ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)). The apply from a checkout at the target starts it again.
 - **Failed:** every role it did not switch keeps its machine, and the target waits for a change in git or a start by hand.
 
@@ -134,6 +134,9 @@ The runner sees a new target and starts a run of the main job
 The lease, then the live record: every role that serves the
 target already is left as it is (all of them: unchanged)
         ↓
+A run outside the engine image ends apply needed, and a
+required value the runtime folder lacks ends it blocked
+        ↓
 Release not built yet: a builder machine writes the archives,
 the frontend files and the release's description through
 links, then is deleted
@@ -141,8 +144,8 @@ links, then is deleted
 The release's description against the applied engine's:
 one that differs ends the run apply needed
         ↓
-Each role's env file, from the runtime folder:
-a required value that is missing ends the run blocked
+Each role's env file, from the runtime folder: a value that
+is empty or not one line ends the run blocked
         ↓
 The primary role (backend) switches alone, then every other
 role at once: boot on the idle slot, wait until its pools
@@ -173,7 +176,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run. A stop-first machine that a failed switch kept keeps its file, as a late boot may still need it, until the bucket's rule removes it within a day.
 
 - **The Pulumi state holds no machine and no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
-- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine of the release boots, and storing it in **Manage runtime secrets** starts the target again.
+- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine is made, the builder included, and storing it in **Manage runtime secrets** starts the target again.
 - **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value reaches the machines the next deploy makes: a new release, or a rotation.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 

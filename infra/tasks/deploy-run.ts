@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { APPLY_NEEDED, applyNeeded, type EngineStamp, readEngineStamp } from '../lib/deploy/applied-engine';
+import { APPLY_NEEDED, ApplyNeededError, descriptionMismatch, type EngineStamp, engineMismatch, readEngineStamp } from '../lib/deploy/applied-engine';
 import { type DeployTarget, type LiveRecord, rolesToReplace } from '../lib/deploy/live-record';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
@@ -20,9 +20,9 @@ import { type AllowedKey, buildDeployEnv } from './deploy-env';
 import type { SwitchResult } from './switch-machines';
 
 /**
- * The whole deploy, in order: the lease, the live record's verdict, the build, the target's description held against the applied engine's,
- * each role's env file, the switch of every role that does not serve the target, the links taken off the new machines, the frontend entry
- * files, the smoke checks, and boot accounts on failure. The main job runs this with the deploy key in `SCW_*`, the one key it needs; it
+ * The whole deploy, in order: the lease, the live record's verdict, the engine image it runs, the required runtime values, the build, the
+ * target's description held against the engine's, each role's env file, the switch of every role that does not serve the target, the links
+ * taken off the new machines, the frontend entry files, the smoke checks, and boot accounts on failure. The main job runs this with the deploy key in `SCW_*`, the one key it needs; it
  * touches no Pulumi state, no network and no pool.
  */
 export interface DeployOptions {
@@ -85,11 +85,15 @@ const STEPS_WITH_MACHINES = new Set(['Switch machines', 'Take the links off the 
 export function deployFailureHint(err: unknown, mode: string): { description: string; command?: string } {
   const step = (err as { deployStep?: string } | undefined)?.deployStep;
   const where = step ? `It stopped at "${step}". ` : '';
-  if (errorMessage(err).startsWith(APPLY_NEEDED)) {
-    return {
-      description: `${where}An apply from a checkout at the target publishes its engine and description, then starts the target again:`,
-      command: `${actionCommand('apply')} --mode ${mode}`,
-    };
+  if (err instanceof ApplyNeededError) {
+    return err.remedy === 'apply'
+      ? {
+          description: `${where}An apply from a checkout at the target publishes its engine and description, then starts the target again:`,
+          command: `${actionCommand('apply')} --mode ${mode}`,
+        }
+      : {
+          description: `${where}No apply deploys a target older than the applied engine: pin a newer release in infra/environments, or roll forward.`,
+        };
   }
   if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: the live record says what serves.` };
   return {
@@ -214,6 +218,16 @@ export async function runDeploy(
     });
 
     if (!unchanged && live) {
+      // Nothing of the release is needed to refuse a run outside the engine image, or a required value the runtime folder lacks: both stop
+      // the run before a builder is made, and the apply or storing the value starts it again.
+      let stamp: EngineStamp | undefined;
+      await step('Check the engine', () => {
+        stamp = fx.engineStamp();
+        const owed = engineMismatch(stamp, opts.mode);
+        if (owed) throw owed;
+      });
+      await step('Check runtime secrets', () => fx.task('compose-env', ['--check', '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '']));
+
       // The release's archives and frontend files: a builder machine makes the missing ones and writes them through links, then the release's
       // entry files wait in a folder of their own for the publish below. No app code runs beside the deploy key.
       const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
@@ -240,16 +254,17 @@ export async function runDeploy(
       });
 
       // The engine composes, boots and switches as its own description says: a target that describes the app otherwise ends the run
-      // before any value is read, and the apply that publishes its description starts it again.
+      // before any value is read.
       await step('Check the description', () => {
-        const owed = applyNeeded({ stamp: fx.engineStamp(), mode: opts.mode, sha: opts.sha, description: manifest?.description });
-        if (owed) throw new ExitCodeError(owed, MAIN_JOB_EXIT.blocked);
+        if (!stamp || !manifest) throw new Error('the description is checked after the engine and the build');
+        const owed = descriptionMismatch(stamp, opts.sha, manifest.description);
+        if (owed) throw owed;
         say(`[deploy] ${opts.sha.slice(0, 10)} describes the app as the applied engine does`);
       });
 
       // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
-      // runtime folder and writes each role's env file, which only it reads; a required value that is missing ends the run blocked before
-      // any machine of the release exists, and storing it starts the target again.
+      // runtime folder and writes each role's env file, which only it reads; a value that is empty or not one line ends the run blocked
+      // before any machine of the release boots, and storing it starts the target again.
       await step('Compose runtime env', async () => {
         await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
         envsWritten = true;
@@ -335,7 +350,7 @@ export async function runDeploy(
     await lease?.release().catch((err) => say(`[deploy] lease release failed: ${errorMessage(err)}`));
     // A required secret or an apply owed ends the run blocked, not failed: the operator stores it or applies, then the same target.
     const blocked = failure instanceof ExitCodeError && failure.exitCode === MAIN_JOB_EXIT.blocked;
-    const ended = blocked ? (errorMessage(failure).startsWith(APPLY_NEEDED) ? APPLY_NEEDED : 'blocked') : 'failed';
+    const ended = failure instanceof ApplyNeededError ? APPLY_NEEDED : blocked ? 'blocked' : 'failed';
     recorder.finish(outcome === 'ok' ? (unchanged ? 'unchanged' : 'deployed') : ended, outcome === 'ok' ? undefined : errorMessage(failure));
     const run = recorder.record().run;
     await persist();

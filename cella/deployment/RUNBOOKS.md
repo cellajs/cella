@@ -25,7 +25,7 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
 
 ## A blocked deploy
 
-A blocked run made no machine, and the running release stays. `pnpm infra runs` names what it owes:
+A blocked run booted no machine of the release, and the running release stays. `pnpm infra runs` names what it owes:
 
 - **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
@@ -33,7 +33,7 @@ The runner never starts a blocked target again.
 
 ## Apply needed
 
-A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published: a change under `infra/config/`, to the engine's fields of the app config, or to the Node, pnpm or repository of the root `package.json`. It stopped after the build, before it read a runtime value or booted a machine of the release, and the running release stays. `pnpm infra runs` shows the end, with the target's and the applied description's hashes.
+A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published: a change under `infra/config/`, to the engine's fields of the app config, or to the Node, pnpm or repository of the root `package.json`. It stopped before it read a runtime value or booted a machine of the release: a run outside the engine image before the build, a release that describes the app otherwise once its build reported that. The running release stays. `pnpm infra runs` shows the end, with the target's and the applied description's hashes.
 
 1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`). It builds the engine image from that checkout and pushes it, shows the main job's new image in its plan, records `control/<mode>/applied.json` once the `up` completed, and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition from before the applied engine: the apply in step 1 rewrites it.

@@ -46,7 +46,14 @@ const serving = (commit: string, retry = 0, rotation = 0): LiveRecord => ({
 });
 
 function makeFake(
-  opts: { live?: LiveRecord; rotation?: number; switchFails?: boolean; leaseLost?: boolean; stamp?: EngineStamp | null; description?: string } = {},
+  opts: {
+    live?: LiveRecord;
+    rotation?: number;
+    switchFails?: boolean;
+    leaseLost?: boolean;
+    stamp?: EngineStamp | null;
+    description?: string | null;
+  } = {},
 ) {
   const ops: string[] = [];
   const taskArgs: Record<string, string[]> = {};
@@ -57,11 +64,13 @@ function makeFake(
       ops.push('telemetry:init');
     },
     task: async (name, argv = []) => {
-      ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}`);
+      ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}${argv.includes('--check') ? ':check' : ''}`);
       taskArgs[name] = [...argv];
     },
     readFile: async (path) =>
-      path.endsWith('manifest.json') ? JSON.stringify({ release: SHA, images: {}, description: opts.description ?? DESCRIPTION }) : '[]',
+      path.endsWith('manifest.json')
+        ? JSON.stringify({ release: SHA, images: {}, ...(opts.description === null ? {} : { description: opts.description ?? DESCRIPTION }) })
+        : '[]',
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
       return {
@@ -118,7 +127,9 @@ describe('runDeploy sequencing', () => {
     const spine = [
       'lease:acquire:deploy',
       'live:read',
-      // The build reports the target's description, which is checked before any value is read.
+      // A required value the runtime folder lacks stops the run before a builder is made; the build reports the target's description,
+      // which is checked before any value is read.
+      'task:compose-env:check',
       'task:build-release',
       'task:compose-env',
       'switch:backend,cdc,frontend',
@@ -243,33 +254,45 @@ describe('the run record', () => {
     expect(records.at(-1)?.log).toContain('[deploy] Switch machines: failed');
   });
 
-  it('ends blocked, not failed, when a required runtime value is missing, before any machine of the release exists', async () => {
+  it('ends blocked, not failed, when a required runtime value is missing, before any machine exists, the builder included', async () => {
     const { fx, records, ops } = makeFake();
     const task = fx.task;
     fx.task = async (name, argv) => {
-      if (name === 'compose-env') throw new ExitCodeError('Blocked: required runtime values are not set', 2);
+      if (name === 'compose-env' && argv?.includes('--check')) throw new ExitCodeError('Blocked: required runtime values are not set', 2);
       return task(name, argv);
     };
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/not set/);
-    expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Compose runtime env' });
-    expect(ops.some((op) => op.startsWith('switch:'))).toBe(false);
+    expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Check runtime secrets' });
+    expect(ops.some((op) => op.startsWith('task:build-release') || op.startsWith('switch:'))).toBe(false);
   });
 
-  it('ends "apply needed", exit 2, before any value is read, for a target whose description differs from the applied engine\'s', async () => {
-    for (const fake of [
-      makeFake({ description: 'e'.repeat(64) }),
-      // A run that did not start from an engine image, as one on a definition from before the apply, and one built for another environment.
-      makeFake({ stamp: null }),
-      makeFake({ stamp: { mode: 'staging', descriptionHash: DESCRIPTION } }),
-    ]) {
+  it('ends "apply needed", exit 2, before any build for a run outside the engine image or one built for another environment', async () => {
+    for (const fake of [makeFake({ stamp: null }), makeFake({ stamp: { mode: 'staging', descriptionHash: DESCRIPTION } })]) {
       const error = await runDeploy(baseOpts, fake.fx, fakeDeployEnv).catch((err: unknown) => err);
-      expect(error).toBeInstanceOf(ExitCodeError);
       expect((error as ExitCodeError).exitCode).toBe(2);
-      expect(fake.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the description' });
+      expect(fake.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the engine' });
       expect(fake.records.at(-1)?.record.error).toMatch(/^apply needed: /);
-      expect(fake.ops.some((op) => op === 'task:compose-env' || op.startsWith('switch:'))).toBe(false);
+      expect(fake.ops.some((op) => op.startsWith('task:'))).toBe(false);
       expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
     }
+  });
+
+  it('ends "apply needed", exit 2, before any value is read, for a target whose description differs or is missing', async () => {
+    const differs = makeFake({ description: 'e'.repeat(64) });
+    const error = await runDeploy(baseOpts, differs.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect((error as ExitCodeError).exitCode).toBe(2);
+    expect(differs.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the description' });
+    expect(differs.records.at(-1)?.record.error).toMatch(/^apply needed: /);
+    expect(differs.ops).not.toContain('task:compose-env');
+    expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
+
+    // A commit older than the applied engine reports none, and no apply deploys it.
+    const predates = makeFake({ description: null });
+    const older = await runDeploy(baseOpts, predates.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(predates.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the description' });
+    expect(deployFailureHint(older, 'production')).toEqual({
+      description: expect.stringContaining('pin a newer release in infra/environments, or roll forward'),
+    });
   });
 
   it('must not fail a deploy whose record cannot be written', async () => {

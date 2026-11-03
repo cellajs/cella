@@ -68,7 +68,7 @@ A second environment of the same app runs the same two parts: its Owner moment a
 
 ## 5. Sign in as first admin
 
-Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Compose runtime env", before it boots any machine of the release: setting it in **Manage runtime secrets** starts that deploy again.
+Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Check runtime secrets", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
 2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.

@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { conditionOn, controlPrefix, putJsonObject, readObjectText, type S3Like } from '../stack/control-store';
-import { errorMessage } from '../utils/errors';
+import { ExitCodeError, errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
+import { MAIN_JOB_EXIT } from './main-job';
 
 /**
  * How a run ends when its target describes the app otherwise than the applied engine: the image an apply built from the operator's checkout,
@@ -143,17 +144,43 @@ export function readEngineStamp(path = ENGINE_STAMP_PATH): EngineStamp | undefin
 }
 
 /**
- * Why this run's engine may not deploy a release, starting with {@link APPLY_NEEDED}; undefined when it may. It may not when the run started
- * from no engine image, from one built for another environment, or when the release's own description, which its builder reported,
- * differs from the one the image carries or is missing, as for a commit older than the applied engine.
+ * A run that ends `apply needed`, exit code blocked. `remedy` says what clears it: an apply from a checkout at the target, or a newer target,
+ * as no apply deploys a commit older than the applied engine.
  */
-export function applyNeeded(opts: { stamp?: EngineStamp; mode: string; sha: string; description?: string }): string | undefined {
-  const release = opts.sha.slice(0, 10);
-  if (!opts.stamp) return `${APPLY_NEEDED}: this run did not start from the engine image an apply publishes`;
-  if (opts.stamp.mode !== opts.mode) return `${APPLY_NEEDED}: the engine image was built for ${opts.stamp.mode}, not ${opts.mode}`;
-  if (!opts.description) return `${APPLY_NEEDED}: ${release} reports no description of the app, as a commit older than the applied engine`;
-  if (opts.description !== opts.stamp.descriptionHash) {
-    return `${APPLY_NEEDED}: ${release} describes the app otherwise than the applied engine (${opts.description.slice(0, 12)}, applied ${opts.stamp.descriptionHash.slice(0, 12)})`;
+export class ApplyNeededError extends ExitCodeError {
+  readonly remedy: 'apply' | 'newer-target';
+
+  constructor(detail: string, remedy: 'apply' | 'newer-target') {
+    super(`${APPLY_NEEDED}: ${detail}`, MAIN_JOB_EXIT.blocked);
+    this.name = 'ApplyNeededError';
+    this.remedy = remedy;
+  }
+}
+
+/** Why this run's engine may deploy nothing, before any build: it started from no engine image, or from one built for another environment. */
+export function engineMismatch(stamp: EngineStamp | undefined, mode: string): ApplyNeededError | undefined {
+  if (!stamp) return new ApplyNeededError('this run did not start from the engine image an apply publishes', 'apply');
+  if (stamp.mode !== mode) return new ApplyNeededError(`the engine image was built for ${stamp.mode}, not ${mode}`, 'apply');
+  return undefined;
+}
+
+/**
+ * Why the engine may not deploy this release: its own description, which its builder reported, differs from the one the image carries, or
+ * is missing, as for a commit older than the applied engine.
+ */
+export function descriptionMismatch(stamp: EngineStamp, sha: string, description: string | undefined): ApplyNeededError | undefined {
+  const release = sha.slice(0, 10);
+  if (!description) {
+    return new ApplyNeededError(
+      `${release} reports no description of the app: it is older than the applied engine, which cannot deploy it; pin a newer release or roll forward`,
+      'newer-target',
+    );
+  }
+  if (description !== stamp.descriptionHash) {
+    return new ApplyNeededError(
+      `${release} describes the app otherwise than the applied engine (${description.slice(0, 12)}, applied ${stamp.descriptionHash.slice(0, 12)})`,
+      'apply',
+    );
   }
   return undefined;
 }
