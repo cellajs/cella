@@ -18,6 +18,8 @@ const OWNER_KEY_HINT = 'console → your user → API keys, with an expiry of ho
 
 export interface OwnerKey extends KeyPair {
   organizationId: string;
+  /** Who bears the key, as IAM described it when the key was checked. */
+  bearer: KeyDescription;
   /** Let go of the key at the end of the action; the key itself stays valid until it is revoked or ends. Safe to call twice. */
   release(): Promise<void>;
 }
@@ -72,7 +74,7 @@ export async function acquireOwnerKey(opts: {
   }
   rememberOwnerKey(pair);
   if (remembered) console.info(pc.dim('Using the Owner API key typed earlier in this session.'));
-  return { ...pair, organizationId, release: async () => {} };
+  return { ...pair, organizationId, bearer: desc, release: async () => {} };
 }
 
 let revokeReminderShown = false;

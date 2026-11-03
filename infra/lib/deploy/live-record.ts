@@ -71,6 +71,12 @@ export async function readLiveRecord(s3: S3Like, bucket: string, stack: string):
   return { record: body ? parseLiveRecord(body) : emptyLiveRecord(), etag };
 }
 
+/** Delete the live record, as a teardown does with the machines it names. */
+export async function deleteLiveRecord(s3: S3Like, bucket: string, stack: string): Promise<void> {
+  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+  await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: liveRecordKey(stack) }));
+}
+
 /** Write the live record under a condition: the etag it was read with, or create-only. */
 async function writeLiveRecord(s3: S3Like, bucket: string, stack: string, record: LiveRecord, opts: ConditionalWrite): Promise<void> {
   await putJsonObject(s3, bucket, liveRecordKey(stack), `${JSON.stringify(record, null, 2)}\n`, opts);

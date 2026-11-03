@@ -5,7 +5,7 @@ The deploy's steps and the operator tasks. The sequencers keep their live effect
 - **Deploy steps**: [main-job.ts](./main-job.ts) runs [deploy.ts](./deploy.ts), and [deploy-run.ts](./deploy-run.ts) runs the steps in order on the table `deploy-env.ts` builds: the lease, the live record, `compose-env` (each role's env file), `build-release`, `geoip-refresh`, the switches, `clear-machine-links` and `smoke`.
 - **Build**: `build-release` makes the builder machine, from `build-images` (the image bake into archives) and `frontend-build-env`, then uploads the frontend files from their archive with `frontend-assets`.
 - **Switch**: `switch-machines` switches each role to its new machine, the primary first; `wait-for-version` reads the pools until an address serves or drained.
-- **Apply and operator tasks**: `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `passphrase-custody`, `verify-after-apply`, `repair-certs`, `record-rotation`, `manage-runtime-secrets` and `reset-database`.
+- **Apply and operator tasks**: `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `passphrase-custody`, `verify-after-apply`, `repair-certs`, `manage-runtime-secrets`, `reset-database` and `final-dump` (the database into the boot-diag bucket before a teardown).
 - **Identity tasks**, written at an Owner moment: `declared-policies`, `uploads-key`, `setup-ci-key`, `setup-operators`, `setup-observer-app`, `provision-managed-key`.
 - **Pull request check**: `privileged-check` renders the base and the head with `privileged-footprint`.
 - **Status**: `status`, the report behind `pnpm infra status`.

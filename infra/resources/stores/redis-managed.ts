@@ -63,26 +63,22 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
-      const { scaleway, naming, zone, isProduction, privateNetworkId, configuredOrRandomSecret } = ctx;
+      const { scaleway, naming, zone, privateNetworkId, configuredOrRandomSecret } = ctx;
 
       // Stable resource identity for the live password; renaming re-rolls it.
       const password = configuredOrRandomSecret('redisPassword', 'redis-password');
 
-      const cluster = new scaleway.redis.Cluster(
-        'main-redis',
-        {
-          name: naming.resource('redis'),
-          version: config.version,
-          nodeType: config.nodeType,
-          clusterSize: config.clusterSize ?? 1,
-          userName: config.userName ?? 'default',
-          password,
-          tlsEnabled: tls,
-          zone,
-          privateNetworks: [{ id: privateNetworkId }],
-        },
-        { protect: isProduction },
-      );
+      const cluster = new scaleway.redis.Cluster('main-redis', {
+        name: naming.resource('redis'),
+        version: config.version,
+        nodeType: config.nodeType,
+        clusterSize: config.clusterSize ?? 1,
+        userName: config.userName ?? 'default',
+        password,
+        tlsEnabled: tls,
+        zone,
+        privateNetworks: [{ id: privateNetworkId }],
+      });
 
       // Provider-formatted URI for the first reachable endpoint. The provider prefers a public endpoint when one exists, so an unapproved public network fails the deploy and never emits an internet-reachable REDIS_URL.
       const connectionString = cluster.publicNetwork.apply((publicNetwork) => {

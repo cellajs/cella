@@ -53,7 +53,7 @@ The **operator part** runs on the one-day operator key you paste ([Operator key]
 3. Creates state storage and initializes Pulumi.
 4. Offers the first apply: the database, the network, the load balancer with its DNS records and certificates, and the main job the runner (step 4) starts, but no machine yet. It stores the values step 2 asked for.
 
-A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operators' reach, and its operator part asks for a one-day operator key.
+A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operators' reach, and its operator part asks for a one-day operator key. A setup of an environment torn down before runs in the project its teardown left in `infra/.env.<mode>` and adopts what it kept, the upload buckets, the boot-diag bucket and the keys that protect stored data, before its first apply ([Teardown](./RUNBOOKS.md#teardown)).
 
 ## 4. Let the runner deploy
 

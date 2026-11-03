@@ -125,8 +125,9 @@ export const OPERATOR_ACTIONS = {
   },
   teardown: {
     label: 'Tear down stack',
-    key: 'operator',
-    description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals with your Owner API key.',
+    key: 'owner',
+    description:
+      "DESTRUCTIVE: delete everything that runs or costs, the environment's identities included, after a final dump of the database. Keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which a setup adopts again.",
   },
 } as const satisfies Record<string, OperatorAction>;
 
@@ -235,7 +236,7 @@ export const MENU_ROWS = {
     group: 'rare',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'operator key · DESTRUCTIVE',
+    hint: 'Owner key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;

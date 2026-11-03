@@ -1,6 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { actionCommand } from '../operator-actions';
+import { exitCodeOf } from '../utils/child-exit';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
@@ -33,10 +34,6 @@ export function pulumiConfigSet(
 export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
   if (result.status !== 0) console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?): continuing.`);
-}
-
-function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
-  return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
 }
 
 /** The resource of a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr. */
@@ -134,7 +131,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     else process.stderr.write(chunk);
   });
 
-  const exitCode = await waitForExitCode(child);
+  const exitCode = await exitCodeOf(child);
   await new Promise<void>((resolve) => (debugStream ? debugStream.end(resolve) : resolve()));
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);

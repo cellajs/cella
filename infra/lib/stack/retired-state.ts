@@ -44,11 +44,22 @@ export function isRetired(urn: string, generated: ReadonlySet<string>): boolean 
   return random !== undefined && generated.has(random);
 }
 
-/** The retired resources a stack export still holds, by URN. */
-export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): string[] {
+/** Every URN a stack export holds. */
+export function urnsOf(exported: unknown): string[] {
   return resourcesOf(deploymentOf(exported))
     .map((resource) => resource.urn)
-    .filter((urn): urn is string => typeof urn === 'string' && isRetired(urn, generated));
+    .filter((urn): urn is string => typeof urn === 'string');
+}
+
+/** The retired resources a stack export still holds, by URN. */
+export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): string[] {
+  return urnsOf(exported).filter((urn) => isRetired(urn, generated));
+}
+
+/** A stack export with `edit` applied to each of its resources; everything else is kept as exported. */
+export function withResources(exported: unknown, edit: (resource: Record<string, unknown>) => Record<string, unknown>): unknown {
+  const deployment = deploymentOf(exported);
+  return { ...(exported as Record<string, unknown>), deployment: { ...deployment, resources: resourcesOf(deployment).map(edit) } };
 }
 
 /**
