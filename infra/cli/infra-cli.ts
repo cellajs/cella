@@ -227,12 +227,12 @@ if (pulumiLag) console.warn(`${warningMark} ${pulumiLag}`);
 const environment = await resolveMode(args.mode);
 let context = await loadContext(environment, (message) => console.info(pc.dim(message)));
 
-// Fail on an apex-hosted frontend before any prompt or provisioning step; the LB module cannot serve the app at the zone apex, and `pulumi up` only throws once half a deploy has run.
+// Refuse an app host the load balancer cannot serve before any prompt or provisioning step.
 {
-  const { frontendApexIssue } = await import('../lib/naming');
-  const apexIssue = frontendApexIssue(context.appConfig);
-  if (apexIssue) {
-    console.error(`${crossMark} ${apexIssue}`);
+  const { frontendApexIssue, routedHostIssue } = await import('../lib/naming');
+  const issue = frontendApexIssue(context.appConfig) ?? routedHostIssue(context.appConfig);
+  if (issue) {
+    console.error(`${crossMark} ${issue}`);
     process.exit(1);
   }
 }

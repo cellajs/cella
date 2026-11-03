@@ -4,6 +4,7 @@ import type { ServiceName } from '../compose/compose';
 import { engineConfig as appConfig } from '../config/engine-config';
 import { healthContract } from '../config/health.config';
 import { agentHealthPath, agentPort, internalLbPort } from '../lib/machine-roles';
+import { apexHostIssue, routedHostIssue } from '../lib/naming';
 import { enabledServices, type ServiceDefinition } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
@@ -57,10 +58,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   // The default-route service owns the app host; the engine never names a service literal.
   const appHost = serviceHost(defaultService.slug);
-  // Every routed service shares the app host under its own path prefix, so one record and one certificate serve them all.
-  const elsewhere = lbServices.filter((s) => serviceHost(s.slug) !== appHost).map((s) => s.slug);
-  if (elsewhere.length > 0)
-    throw new Error(`loadbalancer: ${elsewhere.join(', ')} not on the app host '${appHost}': every routed service shares it under a path prefix.`);
+  // Backstops for the refusals `deriveInfra` makes before any resource: one record and one certificate serve every route.
+  const hostIssue = apexHostIssue(appHost, dnsZone) ?? routedHostIssue(appConfig);
+  if (hostIssue) throw new Error(`loadbalancer: ${hostIssue}`);
   // Zone-apex resources belong to exactly one stack per zone, the one serving `www.<zone>`: a second stack's apex A record would round-robin production traffic to it.
   const managesApex = appHost === `www.${dnsZone}`;
   const appBase = baseName(defaultService.slug);
