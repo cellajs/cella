@@ -42,7 +42,7 @@ type PendingEmail = Awaited<ReturnType<typeof findPendingInstantEmails>>[number]
  * subject, a mention before a comment or reply. Every row the pass takes is stamped `emailedAt`,
  * mailed, folded into another row's mail or skipped for good (no verified address, access or
  * subject gone): the digest never repeats a mailed row, and a skipped row never holds up the next
- * pass.
+ * pass. The rows of a mail that failed stay unstamped, for a later pass or the digest.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
   const pending = await findPendingInstantEmails(dbCtx, { organizationId, limit: maxPerRun });
@@ -56,6 +56,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   const channelNames = await findChannelNames(dbCtx, { channelIds: pending.map((row) => row.channelId) });
 
   let sent = 0;
+  const failed = new Set<string>();
 
   for (const notification of oneRowPerSubject(pending)) {
     const user = byUser.get(notification.userId);
@@ -90,26 +91,32 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
       }),
     };
 
-    if (notification.type === 'mention') {
-      await mailer.sendEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
-    } else {
-      await mailer.sendEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
-        { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
-      ]);
+    try {
+      if (notification.type === 'mention') {
+        await mailer.sendEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
+      } else {
+        await mailer.sendEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
+          { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
+        ]);
+      }
+      sent++;
+    } catch (err) {
+      failed.add(subjectKey(notification));
+      log.error('Instant notification email failed', { err, notificationId: notification.id });
     }
-
-    sent++;
   }
 
-  await stampEmailed(dbCtx, { ids: pending.map((row) => row.id) });
+  await stampEmailed(dbCtx, { ids: pending.flatMap((row) => (failed.has(subjectKey(row)) ? [] : [row.id])) });
   if (sent > 0) log.info('Instant notification emails sent', { count: sent, organizationId });
 }
+
+const subjectKey = (row: PendingEmail) => `${row.userId}:${row.subjectId}`;
 
 /** The row each recipient and subject is mailed for: the first mention, else the first comment or reply. */
 function oneRowPerSubject(pending: PendingEmail[]): PendingEmail[] {
   const chosen = new Map<string, PendingEmail>();
   for (const row of pending) {
-    const key = `${row.userId}:${row.subjectId}`;
+    const key = subjectKey(row);
     const current = chosen.get(key);
     if (!current || (current.type !== 'mention' && row.type === 'mention')) chosen.set(key, row);
   }

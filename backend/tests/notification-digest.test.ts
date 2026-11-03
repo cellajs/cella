@@ -7,7 +7,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationPreferencesTable, notificationsTable } from '#/modules/notification/notification-db';
 import { runDigest } from '#/modules/notification/operations/run-digest';
 import { adminRole, defaultHeaders } from './fixtures';
-import { adminDb, mailsTo } from './helpers';
+import { adminDb, failNextMailSend, mailsTo } from './helpers';
 import { attachmentBody, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -77,6 +77,19 @@ describe('Weekly digest by default', async () => {
     expect(await preferencesOf(member.id)).toBeUndefined();
     await runDigest(nextNoonOn(4));
     expect(mailsTo(member.email)).toEqual([]);
+  });
+
+  it('stamps neither the rows nor the run when the digest mail fails, so the next tick sends it', async () => {
+    failNextMailSend();
+    await runDigest(nextNoonOn(5));
+
+    expect(mailsTo(member.email)).toHaveLength(1);
+    expect(await preferencesOf(member.id)).toBeUndefined();
+    const rows = await db
+      .select({ digestedAt: notificationsTable.digestedAt })
+      .from(notificationsTable)
+      .where(eq(notificationsTable.userId, member.id));
+    expect(rows).toEqual([{ digestedAt: null }]);
   });
 
   it('mails the weekly digest to a user without a preferences row and stamps the run on a new row', async () => {

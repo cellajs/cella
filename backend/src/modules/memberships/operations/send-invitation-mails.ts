@@ -3,6 +3,7 @@ import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAccountLanguages } from '#/modules/memberships/memberships-queries';
+import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
@@ -47,9 +48,14 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
     address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
   );
   const senderProps = { senderName: sender.name, senderEmail: sender.email };
+  // Every caller stored the invitations and their links before the mail, so a failed send is logged for a resend; a failed render still fails the request.
+  const logFailure = (err: unknown) => {
+    if (!(err instanceof AggregateError)) throw err;
+    log.error('Failed to send invitation mails', { err });
+  };
 
   if (!channel) {
-    if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email);
+    if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email).catch(logFailure);
     return;
   }
 
@@ -58,7 +64,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }]));
   const addedRecipients = added.map((address) => ({ ...recipient(address), entityLink: page }));
 
-  if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email);
-  if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email);
-  if (addedRecipients.length) await mailer.sendEmails(memberAddedEmail, statics, addedRecipients, sender.email);
+  if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email).catch(logFailure);
+  if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email).catch(logFailure);
+  if (addedRecipients.length) await mailer.sendEmails(memberAddedEmail, statics, addedRecipients, sender.email).catch(logFailure);
 }

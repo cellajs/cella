@@ -19,7 +19,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
-import { createOrganizationAdminUser, createTestUser, mailsTo } from './helpers';
+import { createOrganizationAdminUser, createTestUser, failNextMailSend, mailsTo } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -233,6 +233,37 @@ describe('Attachment mentions (template notification source)', async () => {
     await sendPendingInstantEmails(tenant.organization.id);
     const [mail] = mailsTo(member.email);
     expect(linkedContextId(mail?.recipient.link)).toBe(hostId);
+  });
+
+  it('leaves a mention whose mail failed unstamped, and mails it on the next pass', async () => {
+    const [mention] = await db
+      .insert(notificationsTable)
+      .values({
+        userId: member.id,
+        actorId: tenant.user.id,
+        type: 'mention',
+        entityType: 'attachment',
+        subjectId: attachmentId,
+        contextId: attachmentId,
+        channelId: tenant.organization.id,
+        channelType: 'organization',
+        organizationId: tenant.organization.id,
+        tenantId: tenant.tenantId,
+        activityId: `act:${generateId()}`,
+      })
+      .returning({ id: notificationsTable.id });
+    const emailedAt = async () =>
+      (await db.select({ emailedAt: notificationsTable.emailedAt }).from(notificationsTable).where(eq(notificationsTable.id, mention.id)))[0]
+        ?.emailedAt;
+
+    failNextMailSend();
+    await sendPendingInstantEmails(tenant.organization.id);
+    expect(mailsTo(member.email)).toHaveLength(1);
+    expect(await emailedAt()).toBeNull();
+
+    await sendPendingInstantEmails(tenant.organization.id);
+    expect(mailsTo(member.email)).toHaveLength(2);
+    expect(await emailedAt()).not.toBeNull();
   });
 
   it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {

@@ -1,6 +1,6 @@
-import { hydrate } from '@tanstack/react-query';
+import { hydrate, QueryObserver } from '@tanstack/react-query';
 import type { Attachment } from 'sdk';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { callHook, goOffline, goOnline, mutationsOf, queryClient, resetMutationHooks } from '~/query/tests/mutation-hooks-kit';
 
 type Req = { path: Record<string, string | undefined>; body: Record<string, unknown> | Array<Record<string, unknown>> };
@@ -20,9 +20,8 @@ vi.mock('sdk', async (importOriginal) => ({
 }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
 
-const { attachmentQueryKeys, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } = await import(
-  '~/modules/attachment/query'
-);
+const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } =
+  await import('~/modules/attachment/query');
 const { initMutationDefaults } = await import('~/query/mutation-registry');
 const { upgradePersistedMutation } = await import('~/query/offline/mutation-variables');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
@@ -149,25 +148,26 @@ describe('a remote change of a row with a pending mutation', () => {
 
   it('reads the list again after the server refuses a delete: the row put back missed what arrived while it was pending', async () => {
     seedHomeList([attachment('att-1'), attachment('att-2')]);
+    // A screen shows the list, so the read the refusal starts runs at once.
+    onTestFinished(new QueryObserver(queryClient, attachmentsCanonicalOptions(ctx)).subscribe(() => {}));
     goOffline(deleteAttachments);
     hooks().remove.mutate([attachment('att-1')]);
     await vi.waitFor(() => expect(queued('delete')).toHaveLength(1));
 
     // A rename from elsewhere arrives while the delete waits, and is kept from the cache.
-    getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
+    const renamed = attachment('att-1', { name: 'Renamed elsewhere', deletedAt: null });
+    getAttachments.mockResolvedValue({ items: [renamed], total: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: ['att-1'] }));
+    // The list read answers the stored rows, live ones only (`liveItems`).
+    getAttachments.mockResolvedValue({ items: [renamed, attachment('att-2', { deletedAt: null })], total: 2 });
     await goOnline();
     await settled('delete');
 
-    // The row is back as the delete held it, and the list is marked to be read from the server.
-    expect(
-      homeList()
-        .map(({ id }) => id)
-        .sort(),
-    ).toEqual(['att-1', 'att-2']);
-    expect(queryClient.getQueryState(homeKey)?.isInvalidated).toBe(true);
+    // The row put back is read again once the delete has settled, with the rename it missed.
+    await vi.waitFor(() => expect(queryClient.getQueryState(homeKey)).toMatchObject({ isInvalidated: false, fetchStatus: 'idle' }));
+    expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }, { id: 'att-2' }]);
   });
 
   // The settle took only the fields the edit changed, so the remote edit of another field was gone for good.
