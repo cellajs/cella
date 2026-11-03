@@ -14,8 +14,6 @@
     "build": "cross-env NODE_ENV=production vite build",
     "offline": "cross-env NODE_ENV=development vite build --mode development && cross-env NODE_ENV=development vite preview",
     "stop": "tsx vite/stop-vite.ts",
-    "generate:sdk": "pnpm --filter sdk generate:sdk",
-    "gen:routes": "tsx vite/generate-routes.ts",
     "storybook": "tsx .storybook/start-storybook.ts"
   },
   "dependencies": {

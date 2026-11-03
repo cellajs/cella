@@ -41,7 +41,6 @@ packages:
   - frontend
   - infra
   - sdk
-  - studio
   - yjs
   - bench
   - a11y

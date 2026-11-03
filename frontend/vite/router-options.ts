@@ -1,4 +1,4 @@
-/** File-based routing options shared by the Vite plugin and `pnpm gen:routes`, so both write the same tree. */
+/** File-based routing options shared by the Vite plugin and `pnpm generate:routes`, so both write the same tree. */
 export const routerOptions = {
   target: 'react',
   autoCodeSplitting: true,

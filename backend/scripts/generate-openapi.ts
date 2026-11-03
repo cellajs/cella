@@ -6,24 +6,21 @@ import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { checkMark, crossMark } from '#/utils/console';
 
-const CACHE_PATH = resolve(import.meta.dirname, '../openapi.cache.json');
 const MANIFEST_PATH = resolve(import.meta.dirname, '../openapi.manifest.json');
 
-// Paths that affect OpenAPI output (relative to backend/)
+// Paths that affect OpenAPI output (relative to the repo root): the routes and the config they read.
 // Intentionally broad to avoid missing changes - false positives are safe, false negatives are not
-const OPENAPI_RELEVANT_PATHS = [
-  'src/',
-];
+const OPENAPI_RELEVANT_PATHS = ['backend/src/', 'shared/src/', 'shared/config/'];
 
-/** Fingerprint of committed content plus uncommitted diff for relevant backend paths */
+/** Fingerprint of committed content plus uncommitted diff for the relevant paths */
 function getGitFingerprint(): string | null {
   try {
-    const cwd = resolve(import.meta.dirname, '..');
+    const cwd = resolve(import.meta.dirname, '../..');
     const hash = createHash('sha256');
     // Committed tree hash per path: a diff against HEAD alone misses commits
     // arriving via pull/merge (clean tree before and after, same empty diff),
     // which left a stale cache in place until --force. `./` keeps the path
-    // relative to backend/, matching OPENAPI_RELEVANT_PATHS.
+    // relative to the repo root, matching OPENAPI_RELEVANT_PATHS.
     for (const path of OPENAPI_RELEVANT_PATHS) {
       const tree = execSync(`git rev-parse HEAD:./${path.replace(/\/$/, '')}`, { cwd, encoding: 'utf-8' });
       hash.update(tree);
@@ -109,27 +106,9 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
     console.info(`${checkMark} OpenAPI generation complete (${elapsed}s)`);
     process.exit(0);
   } catch (err) {
+    // A silent fall-back to an existing cache let a stale spec flow into `pnpm check` and the commit hook.
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-
-    // Check if this is a recoverable error (existing cache can be used)
-    const hasFallbackCache = existsSync(CACHE_PATH);
-    const isDevModeError = err instanceof Error && err.message.includes('NODB');
-
-    if (hasFallbackCache && isDevModeError) {
-      // Recoverable: NODB issue but we have an existing cache
-      console.warn(`${checkMark} OpenAPI generation skipped: NODB unavailable, using existing cache (${elapsed}s)`);
-      process.exit(0);
-    }
-
-    if (hasFallbackCache) {
-      // Recoverable: other error but cache exists
-      console.warn(`${crossMark} OpenAPI generation failed, using existing cache (${elapsed}s)`);
-      console.warn(err instanceof Error ? err.message : err);
-      process.exit(0);
-    }
-
-    // Fatal: no cache to fall back on
-    console.error(`${crossMark} Failed to generate OpenAPI cache: no fallback available (${elapsed}s)`);
+    console.error(`${crossMark} Failed to generate OpenAPI cache (${elapsed}s)`);
     console.error(err instanceof Error ? err.stack || err.message : err);
     process.exit(1);
   }
