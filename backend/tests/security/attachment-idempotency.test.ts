@@ -266,7 +266,7 @@ describe('Idempotent attachment creates and deletes', async () => {
   });
 
   // A delete whose answer was lost is sent again: the rows it deleted no longer resolve, so it was refused with a 403,
-  // and the client put them back and quarantined a delete that had happened.
+  // and the client put them back and dropped a delete that had happened.
   it('answers a delete sent again as its first attempt, refusing a row another delete removed both times', async () => {
     const [removedBefore, removedNow] = [generateId(), generateId()];
     for (const id of [removedBefore, removedNow]) expect((await create(owner, bodyFor(id, generateId()))).status).toBe(201);

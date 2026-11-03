@@ -151,7 +151,8 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
     stamps when another one is written goes in its `derivedKeys`, a key the response stubs in its
     `skipKeys`.
-  - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
+  - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
+    ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
     row refetches only the lists it can belong to.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],

@@ -55,7 +55,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 |---|---|
 | `[TabCoordinator] Acquired leader lock` in one tab, `[AppStream] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
 | `[handleProductChange] attachment:<action> viewing=<bool>` in tab B console | the change crossed SSE + BroadcastChannel |
-| `Echo: patched stx, skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
+| `Echo: skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
 | range response `items` (id, name, `deletedAt`, seq) | payload truth; a range read includes soft-deleted rows, as tombstones without a name |
 | `[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched` | the device was away longer than `appConfig.retention.activityDays` (`caughtUpAt` in `syncStore`). To test it, move `caughtUpAt` in the persisted `sync` store back and reload |

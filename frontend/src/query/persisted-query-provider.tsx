@@ -6,7 +6,6 @@ import { initChannelEnrichment } from '~/query/enrichment/init-channel-enrichmen
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { getLocalUserDb, subscribeLocalUserChange } from '~/query/local-user-db';
-import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { startConnectivity } from '~/query/offline/connectivity';
 import { persistOptions } from '~/query/persister';
 import { markCacheRestored, queryClient } from '~/query/query-client';
@@ -18,8 +17,20 @@ const loadUploadService = () => import('~/modules/attachment/offline/upload-serv
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
 const idleTimeoutMs = 5000;
 
-// Runs before cache restoration: stores the queryClient so entity modules self-register their mutationFn via addMutationRegistrar() on load.
-initMutationDefaults(queryClient);
+/**
+ * Warns about restored mutations that hold no `mutationFn`: their module set its defaults after the restore, so their
+ * replay fails. Runs after the restore, before resuming.
+ */
+function warnMutationsWithoutDefaults(): void {
+  const keys = queryClient
+    .getMutationCache()
+    .getAll()
+    .filter((mutation) => mutation.state.isPaused && !mutation.options.mutationFn)
+    .map((mutation) => mutation.options.mutationKey);
+  if (keys.length > 0) {
+    console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
+  }
+}
 
 const unsubscribeEnrichment = initChannelEnrichment();
 
@@ -76,7 +87,7 @@ export function PersistedQueryProvider({ children }: PersistedQueryProviderProps
       persistOptions={persistOptions}
       onSuccess={() => {
         markCacheRestored();
-        warnMutationsWithoutDefaults(queryClient);
+        warnMutationsWithoutDefaults();
         resumeRestoredMutations();
       }}
       // A failed restore releases the routes that wait for it too, and the queue it hydrated before the failure replays after catchup.

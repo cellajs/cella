@@ -9,11 +9,12 @@ import {
   getEntityRangeFetch,
   getEqualityFilterKeys,
   hasEntityQueryKeys,
+  rowOutsideRange,
   type SeqRange,
+  seqOf,
   syncChunkSize,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
 import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
@@ -26,32 +27,6 @@ function hasPendingMutationForEntity(entityType: string, entityId: string): bool
 function isSoftDeleted(entity: ItemData): boolean {
   const deletedAt = asRecord(entity).deletedAt;
   return typeof deletedAt === 'string' && deletedAt.length > 0;
-}
-
-/** Patches only cached STX metadata for echo-prevented stream events, in place so no React Query observer is notified and optimistic fields survive. */
-export function patchEntityStxInCache(
-  entityType: ProductEntityType,
-  entityId: string,
-  stx: { fieldTimestamps?: Record<string, string> },
-  organizationId: string,
-): void {
-  if (!hasEntityQueryKeys(entityType)) return;
-
-  const keys = getEntityQueryKeys(entityType);
-
-  type StxEntity = { id: string; stx?: Record<string, unknown> };
-
-  const patchInPlace = (item: StxEntity): void => {
-    if (!item.stx) return;
-    item.stx.fieldTimestamps = stx.fieldTimestamps;
-  };
-
-  const detail = queryClient.getQueryData<StxEntity>(keys.detail.byId(entityId));
-  if (detail?.stx) patchInPlace(detail);
-
-  forEachListQuery<StxEntity>(keys.list.org(organizationId), (_, data) => {
-    for (const item of getQueryItems(data)) if (item.id === entityId) patchInPlace(item);
-  });
 }
 
 /** Removes one entity from detail and list caches without triggering a refetch; an organizationId narrows the list scan to that org. */
@@ -216,12 +191,6 @@ export interface RangeFetchResult {
 
 const failedRange = (status: Exclude<RangeFetchResult['status'], 'ok'>): RangeFetchResult => ({ status, items: [], reachedSeq: 0 });
 
-/** The org sequence a product row carries, which `ItemData` does not type. */
-const seqOf = (item: ItemData): number | undefined => {
-  const { seq } = asRecord(item);
-  return typeof seq === 'number' ? seq : undefined;
-};
-
 export async function fetchRangeAndPatch(
   entityType: string,
   organizationId: string | null,
@@ -243,18 +212,14 @@ export async function fetchRangeAndPatch(
   try {
     const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: syncChunkSize } });
 
-    // A full chunk may truncate the range: report overflow so the caller marks the lists before it moves past unseen rows.
+    // A stream flush fetches no backlog past one chunk: it reports overflow, and its caller marks the lists of the range.
     if (items.length >= syncChunkSize) {
       console.debug(`[CacheOps] Range fetch: ${label} overflows one chunk → invalidation`);
       return failedRange('overflow');
     }
 
-    // A server that ignored the range answers with an ordinary page: rows outside it, and no deleted rows. Patching
-    // that page would move the cursor past deletions this client never received.
-    const outside = items.find((item) => {
-      const seq = seqOf(item);
-      return seq !== undefined && (seq <= afterSeq || seq > untilSeq);
-    });
+    // Patching a page that ignored the range would move the cursor past deletions this client never received.
+    const outside = rowOutsideRange(items, range);
     if (outside) {
       console.warn(`[CacheOps] Range fetch: ${label} returned seq ${seqOf(outside)} → invalidation`);
       return failedRange('unsupported');

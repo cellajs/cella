@@ -16,17 +16,11 @@ type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
 /**
  * Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it with `materialized` for a collaborative
- * description the relay posts. `serverOrigin` stamps the fields with the server clock, for a transaction the server
- * built (the Yjs relay).
+ * description the relay posts.
  */
-export async function updateAttachmentOp(
-  ctx: ActorContext,
-  id: string,
-  input: UpdateAttachmentInput,
-  opts: { serverOrigin?: boolean; materialized?: boolean } = {},
-) {
+export async function updateAttachmentOp(ctx: ActorContext, id: string, input: UpdateAttachmentInput, opts: { materialized?: boolean } = {}) {
   const { ops: rawOps, stx } = input;
-  const { serverOrigin, materialized } = opts;
+  const { materialized } = opts;
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
@@ -35,10 +29,7 @@ export async function updateAttachmentOp(
 
     attachmentContract.assertBlockFields(rawOps, entity.organizationId);
 
-    // Server-origin writes carry no client field timestamps, so every changed scalar gets a fresh server HLC.
-    const resolved = serverOrigin
-      ? attachmentContract.resolveServerUpdateOps(entity, rawOps)
-      : attachmentContract.resolveUpdateOps(entity, rawOps, stx);
+    const resolved = attachmentContract.resolveUpdateOps(entity, rawOps, stx);
 
     const values = {
       ...(resolved.changed ? resolved.values : {}),

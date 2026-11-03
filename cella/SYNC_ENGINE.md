@@ -99,7 +99,7 @@ The server caches enriched product detail responses briefly. A write of the row 
 
 ### Changes
 
-A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names none of them: the client fetches their sequence range, or after a delete refetches the lists. An echo of the tab's own write patches only `stx`, and a frame of only such rows fetches nothing. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
+A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names none of them: the client fetches their sequence range, or after a delete refetches the lists. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 
@@ -154,7 +154,7 @@ Paused mutations persist to IndexedDB and survive a reload, so their variables c
 
 A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work: an edit folds into a create of its row that was never sent, a remote change of a row with a pending mutation is not applied, and a refused delete puts its rows back. A list read that starts or ends while a row has a pending mutation keeps the row as cached, the stored row once the mutation settled. When the last pending mutation of a row settles, the row the server stored replaces the cached one: a remote change committed before the write arrives with it, except keys the update response does not carry. An edit or delete of a row whose create was attempted is sent after that create, which may have committed before its response was lost.
 
-A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read, and a replay the server refuses with a 4xx, go to the `failedSync` quarantine for export and are never replayed. A replay that meets a lost session stays queued for the same user's next sign-in.
+A paused mutation can outlive the bundle that queued it. A lens converts an entity wire-shape change ([Schema evolution](./SCHEMA_EVOLUTION.md)), and a bundle that changes a mutation's own shape declares a version and an upgrade. A mutation no upgrade can read is dropped. A replay the server refuses with a 4xx rolls back and toasts, as a live edit does. A replay that meets a lost session stays queued for the same user's next sign-in.
 
 A replayed create is idempotent by its row ids, and a replayed delete by its mutation id: the rows an earlier attempt of it deleted count as deleted, not refused. An update has no such check.
 

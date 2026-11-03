@@ -3,10 +3,8 @@ import type { StreamChange } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the boundaries: the cache operations, the unseen counts, the fetch queue, the tier lookup, the tab's source id and the signed-in user.
-const patchEntityStxInCache = vi.fn();
 const invalidateEntityDetail = vi.fn();
 vi.mock('~/query/realtime/cache-ops', () => ({
-  patchEntityStxInCache: (...a: unknown[]) => patchEntityStxInCache(...a),
   invalidateEntityDetail: (...a: unknown[]) => invalidateEntityDetail(...a),
   invalidateEntityListForOrg: vi.fn(),
 }));
@@ -54,23 +52,19 @@ describe('the echo of a tab’s own write', () => {
   it('must not treat another user’s write with a copied sourceId as the tab’s own echo', () => {
     // User B read tab A's source id from a row A wrote and sent it on B's own write.
     handleStreamChange(change({ rows: [row(7, { actorId: 'user-b' })] }));
-    expect(patchEntityStxInCache).not.toHaveBeenCalled();
     expect(enqueueRange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ afterSeq: 6, untilSeq: 7 }));
 
     // A row that names no writer cannot be the tab's either.
     handleStreamChange(change({ rows: [row(7, { actorId: null })] }));
-    expect(patchEntityStxInCache).not.toHaveBeenCalled();
     expect(enqueueRange).toHaveBeenCalledTimes(2);
 
-    // The tab's own write stays an echo: it patches the stx and fetches nothing.
+    // The tab's own write stays an echo: it fetches nothing.
     handleStreamChange(change());
-    expect(patchEntityStxInCache).toHaveBeenCalledExactlyOnceWith('attachment', 'att-7', stx, 'org-1');
     expect(enqueueRange).toHaveBeenCalledTimes(2);
   });
 
   it('fetches nothing for a frame of several rows the tab wrote, and only the others of a mixed one', () => {
     handleStreamChange(change({ rows: [row(7), row(9)] }));
-    expect(patchEntityStxInCache.mock.calls.map(([, subjectId]) => subjectId)).toEqual(['att-7', 'att-9']);
     expect(enqueueRange).not.toHaveBeenCalled();
 
     // Another writer's rows around the tab's own: the range covers those.

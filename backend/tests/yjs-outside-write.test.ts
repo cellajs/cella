@@ -339,12 +339,10 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
   it('records a server-clock write outside the relay, as an MCP tool makes it, like a REST write (11)', async () => {
     const { attachment } = await arrange(description(block('a', 'original')));
     // The MCP update tool builds its transaction on the server, so it takes the server clock; it is no materialization.
-    await updateAttachmentOp(
-      await toolContext(),
-      attachment.id,
-      { ops: { description: description(block('a', 'written by a tool')) }, stx: mockStxFor() },
-      { serverOrigin: true },
-    );
+    await updateAttachmentOp(await toolContext(), attachment.id, {
+      ops: { description: description(block('a', 'written by a tool')) },
+      stx: mockStxFor(),
+    });
     const after = await stored(attachment.id);
     expect(after.rows.map((row) => row.userId)).toEqual([null]);
     expect(texts(after.state)).toEqual(['written by a tool']);

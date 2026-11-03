@@ -19,10 +19,10 @@ A breaking schema change (rename `attachment.name` to `attachment.title`, say) s
 Until the first lens ships, a breaking schema change resets client caches:
 
 1. **Bump `appConfig.clientCacheVersion`** ([config.default.ts](../shared/config/config.default.ts)) in the same PR as any breaking change to a cached entity's wire shape, and give the PR a `feat!` title, as for any breaking change.
-2. **Clients wipe, mutations stay.** On boot the persister compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses is quarantined, never dropped.
+2. **Clients wipe, mutations stay.** On boot the persister compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses rolls back and toasts.
 3. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a PR with a breaking OpenAPI diff unless it bumps `clientCacheVersion`.
 
-**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job. The `failedSync` quarantine stays: it also holds queued mutations no upgrade can read.
+**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job.
 
 ## Transformation points
 

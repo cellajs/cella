@@ -10,15 +10,15 @@ import type { StxBase } from '#/schemas';
 export type YjsMaterializerContext = { var: OrgContext['var'] & Pick<Env['Variables'], 'user'> };
 
 /**
- * Reference to the entity's standard update op. `materializeDescriptionOp` calls it for the relay with the server clock
- * (`serverOrigin`) and marks the write as the relay's (`materialized`). The op forwards the mark to `dispatchMutation` in
- * its transaction, after the UPDATE, so the yjs module's handler records no outside write for it.
+ * Reference to the entity's standard update op. `materializeDescriptionOp` calls it for the relay and marks the write as
+ * the relay's (`materialized`). The op forwards the mark to `dispatchMutation` in its transaction, after the UPDATE, so
+ * the yjs module's handler records no outside write for it.
  */
 export type YjsMaterializer = (
   ctx: YjsMaterializerContext,
   id: string,
   input: { ops: { description: string }; stx: StxBase },
-  opts: { serverOrigin: true; materialized: true },
+  opts: { materialized: true },
 ) => Promise<unknown>;
 
 const materializers = new Map<ProductEntityType, YjsMaterializer>();

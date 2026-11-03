@@ -69,11 +69,10 @@ function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void 
   const { productType: entityType, action, organizationId, tenantId, propagation } = change;
   const channelId = change.channelId ?? null;
 
-  // Own echoes patch STX without fetching; a frame of only own rows fetches nothing.
+  // An own echo fetches nothing: the write's answer brings the stored row. A frame of only own rows fetches nothing.
   const rows = change.rows.filter((row) => {
-    if (!row.stx || !isOwnEcho(action, row)) return true;
-    cacheOps.patchEntityStxInCache(entityType, row.subjectId, row.stx, organizationId);
-    console.debug('[handleProductChange] Echo: patched stx, skipped data fetch:', row.stx.mutationId);
+    if (!isOwnEcho(action, row)) return true;
+    console.debug('[handleProductChange] Echo: skipped data fetch:', row.stx?.mutationId);
     return false;
   });
   if (rows.length === 0) return;

@@ -16,7 +16,7 @@ it("another tab's delete closes this tab's database for good and signs it out, w
   class NextVersion extends LocalUserDatabase {
     constructor(userId: string) {
       super(userId);
-      this.version(3).stores({ extra: 'id' });
+      this.version(4).stores({ extra: 'id' });
     }
   }
   const newerTab = new NextVersion('user-a');

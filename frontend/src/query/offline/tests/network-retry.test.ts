@@ -19,7 +19,7 @@ describe('isNetworkError', () => {
 });
 
 describe('mutationRetry', () => {
-  it('retries a network failure a bounded number of times, and a server error never (4xx quarantine, 5xx toast)', () => {
+  it('retries a network failure a bounded number of times, and a server error never', () => {
     const netErr = new TypeError('Failed to fetch');
     expect([0, 1, 2, 3, 10].map((failureCount) => mutationRetry(failureCount, netErr))).toEqual([true, true, true, false, false]);
     expect(mutationRetry(0, new ApiError({ status: 409 }))).toBe(false);

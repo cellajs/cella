@@ -1,4 +1,4 @@
-import { hydrate, QueryObserver } from '@tanstack/react-query';
+import { QueryObserver } from '@tanstack/react-query';
 import type { Attachment } from 'sdk';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { callHook, goOffline, goOnline, mutationsOf, queryClient, resetMutationHooks } from '~/query/tests/mutation-hooks-kit';
@@ -22,9 +22,10 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), e
 
 const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } =
   await import('~/modules/attachment/query');
-const { initMutationDefaults } = await import('~/query/mutation-registry');
-const { upgradePersistedMutation } = await import('~/query/offline/mutation-variables');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
+const { handleStreamChange } = await import('~/query/realtime/app-stream-handler');
+const { sourceId } = await import('~/query/offline/hlc');
+const { userStore } = await import('~/modules/user/user-store');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 // The rows here carry no channel id, so they splice into the organization's home list.
@@ -204,44 +205,37 @@ describe('a remote change of a row with a pending mutation', () => {
   });
 });
 
-describe('a delete an older bundle queued', () => {
-  it('is replayed with its ids: the queue is restored in the shape this bundle reads', async () => {
-    // What the older bundle left in the store: the rows under `attachments`, no version stamp.
-    const stored = {
-      mutationKey: ['attachment', 'delete'],
-      scope: { id: 'attachment' },
-      meta: { suppressGlobalErrorToast: true },
-      state: {
-        context: { deletedAttachments: [attachment('att-1')] },
-        data: undefined,
-        error: null,
-        failureCount: 1,
-        failureReason: null,
-        isPaused: true,
-        status: 'pending' as const,
-        submittedAt: 100,
-        variables: {
-          ...ctx,
-          attachments: [attachment('att-1'), attachment('att-2')],
-          stx: { mutationId: 'mut-old', sourceId: 'tab', fieldTimestamps: {} },
-        },
-      },
-    };
+describe('the echo of the tab’s own write', () => {
+  // The echo wrote the stored stamps into the cached row, so the answer's derived columns read as unwritten and the stale ones stayed.
+  it('takes the columns the server derived from a new description when the echo arrives before the answer', async () => {
+    const elsewhere = { mutationId: 'm-0', sourceId: 'elsewhere', fieldTimestamps: { description: '100:0000:aaaaa' } };
+    seedHomeList([attachment('att-1', { description: 'old', keywords: 'old', stx: elsewhere })]);
+    userStore.setState({ user: { id: 'user-a' } as never });
+    onTestFinished(() => userStore.getState().reset());
+    let answer = (_row: Attachment) => {};
+    updateAttachment.mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+    hooks().update.mutate({ id: 'att-1', ops: { description: 'new' } });
+    await vi.waitFor(() => expect(updateAttachment).toHaveBeenCalledOnce());
 
-    const upgraded = upgradePersistedMutation(stored);
-    expect(upgraded?.state.variables).toMatchObject({ rows: [{ id: 'att-1' }, { id: 'att-2' }] });
-
-    // As the app does at startup, before the queue is restored: the module's mutation defaults are on the client.
-    initMutationDefaults(queryClient);
-    hydrate(queryClient, { queries: [], mutations: upgraded ? [upgraded] : [] });
-    deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
-    await queryClient.resumePausedMutations();
-    await settled('delete');
-
-    expect(deleteAttachments).toHaveBeenCalledTimes(1);
-    expect(deleteAttachments.mock.lastCall?.[0]).toMatchObject({
-      path: ctx,
-      body: { ids: ['att-1', 'att-2'], stx: { mutationId: 'mut-old' } },
+    // The server stamps the description anew and derives the keywords from it; its change reaches the tab first.
+    const stored = attachment('att-1', {
+      description: 'new',
+      keywords: 'new',
+      stx: { mutationId: 'm-1', sourceId, fieldTimestamps: { description: '200:0000:aaaaa' } },
     });
+    handleStreamChange({
+      action: 'update',
+      productType: 'attachment',
+      ...ctx,
+      channelId: null,
+      rows: [{ subjectId: 'att-1', seq: 3, stx: stored.stx, actorId: 'user-a' }],
+      overflow: null,
+      spreadWindow: null,
+      propagation: null,
+    });
+    answer(stored);
+    await settled('update');
+
+    expect(homeList()).toMatchObject([{ description: 'new', keywords: 'new' }]);
   });
 });

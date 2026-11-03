@@ -2,7 +2,6 @@ import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig, type ProductEntityType } from 'shared';
 import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
-import type { FailedSyncRecord } from '~/query/offline/failed-sync';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -16,18 +15,17 @@ export interface KvRecord {
 
 /** Per-query React Query row for product entity queries, stored individually for incremental diffing. */
 export interface PersistedQueryRecord {
-  /** Compound key: `${scope}:${queryHash}`. */
+  /** `rq:<queryHash>`. */
   id: string;
-  scope: string;
   queryHash: string;
   queryKey: DehydratedQuery['queryKey'];
   state: DehydratedQuery['state'];
   dataUpdatedAt: number;
 }
 
-/** A React Query meta row: a scope's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
+/** A React Query meta row: the cache's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
 export interface PersistedMetaRecord {
-  /** The scope's row: `rq`. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
+  /** The cache's row: `rq`, with no mutations. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
   buster: string;
@@ -35,7 +33,7 @@ export interface PersistedMetaRecord {
   clientCacheVersion?: string;
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
-  mutations: DehydratedState['mutations'];
+  mutations?: DehydratedState['mutations'];
   bundledQueries: DehydratedQuery[];
 }
 
@@ -121,8 +119,6 @@ export class LocalUserDatabase extends Dexie {
   blobs!: Dexie.Table<AttachmentBlob, string>;
   /** Background download queue for offline attachment caching. */
   downloadQueue!: Dexie.Table<DownloadQueueEntry, string>;
-  /** Queued mutations kept for repair: replays the server refused with a 4xx, and ones this bundle cannot read. */
-  failedSync!: Dexie.Table<FailedSyncRecord, number>;
   /** Collaborative documents opened for editing: metadata only, so a scan over all of them loads no state. */
   yDocs!: Dexie.Table<YDocRecord, [ProductEntityType, string]>;
   /** Each stored document's base state. */
@@ -134,14 +130,13 @@ export class LocalUserDatabase extends Dexie {
 
   constructor(userId: string) {
     super(`${appConfig.slug}:${userId}`);
-    // A database still on version 1 upgrades in place: Dexie adds the missing tables and keeps every row.
-    this.version(2).stores({
+    // An older database upgrades in place: Dexie adds the missing tables and indexes, drops the undeclared ones and keeps every other row.
+    this.version(3).stores({
       kv: 'key',
-      queries: 'id, scope',
+      queries: 'id',
       meta: 'key',
       blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
       downloadQueue: '&id, organizationId, [organizationId+status]',
-      failedSync: '++id, mutationId, entityType, createdAt',
       yDocs: '[entityType+entityId], lastOpenedAt',
       yDocStates: '[entityType+entityId]',
       yDocUpdates: '++id, [entityType+entityId]',
