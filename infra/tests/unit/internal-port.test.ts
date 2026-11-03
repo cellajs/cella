@@ -37,6 +37,11 @@ describe('internal listener routing', () => {
     expect(() => defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4001 } })).not.toThrow();
   });
 
+  it("must not accept a service whose agent port is another service's port: the host publishes them side by side", () => {
+    expect(() => defineServices({ a: { ...base, port: 4000 }, b: { ...base, port: 9000 } })).toThrow(/agent port on 9000/);
+    expect(() => defineServices({ a: { ...base, port: 61000 } })).toThrow(/outside the port range/);
+  });
+
   it('shifts the internal listener port into the internal frontend range', () => {
     expect(internalLbPort(4005)).toBe(14005);
   });

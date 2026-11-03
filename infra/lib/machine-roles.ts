@@ -1,4 +1,5 @@
 import type { ServiceName } from '../compose/compose';
+import { AGENT_PORT_OFFSET } from '../compose/infrastructure';
 import type { ReplacementStrategy } from '../compose/types';
 import type { EngineConfig } from '../config/engine-config';
 import { generalConfig } from '../config/general.config';
@@ -13,14 +14,11 @@ export const SLOTS: readonly Slot[] = ['a', 'b'];
 
 export const otherSlot = (slot: Slot): Slot => (slot === 'a' ? 'b' : 'a');
 
-/** The agent's health ports start here: a service's is this plus its position in the registry. */
-const AGENT_PORT_BASE = 9000;
-
-/** The port on which a machine's agent answers the load balancer's check for `slug` at `/health/<slug>`. */
+/** The port on which a machine's agent answers the load balancer's check for `slug` at `/health/<slug>`: the service's own, shifted. */
 export function agentPort(slug: string): number {
-  const index = services.findIndex((service) => service.slug === slug);
-  if (index < 0) throw new Error(`machine-roles: '${slug}' is no service of the registry`);
-  return AGENT_PORT_BASE + index;
+  const service = services.find((candidate) => candidate.slug === slug);
+  if (!service) throw new Error(`machine-roles: '${slug}' is no service of the registry`);
+  return service.healthPort + AGENT_PORT_OFFSET;
 }
 
 /** The path the load balancer checks on a service's agent port. */

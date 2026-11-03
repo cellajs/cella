@@ -1,9 +1,16 @@
 import { healthContract } from '../config/health.config';
 import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, HealthCheck, ServiceMeta } from './types';
 
+/**
+ * A service's agent port, on which the machine's agent answers the load balancer's check for it, is its own port shifted by this: it moves
+ * only with that port, so a registry change moves no other service's check.
+ */
+export const AGENT_PORT_OFFSET = 5000;
+
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
   validateInternalPorts(services);
+  validateAgentPorts(services);
   const seenPrefixes = new Map<string, string>();
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.pathPrefix;
@@ -48,6 +55,24 @@ function validateInternalPorts(services: AppServices): void {
 
 /** The static env, and the runtime one the agent fetches at the machine's first boot: optional, as Compose starts the agent before it exists. */
 const ENV_FILES = ['.env', { path: '.env.runtime', required: false as const }];
+
+/** An agent port must be a port of its own: the single-process host publishes every service's ports beside its agent's. */
+function validateAgentPorts(services: AppServices): void {
+  const taken = new Map<number, string>();
+  for (const [slug, cfg] of Object.entries(services)) {
+    taken.set(cfg.port, slug);
+    if (cfg.internalPort !== undefined) taken.set(cfg.internalPort, slug);
+  }
+  for (const [slug, cfg] of Object.entries(services)) {
+    const port = cfg.port + AGENT_PORT_OFFSET;
+    const owner = taken.get(port);
+    if (port > 65535 || owner) {
+      throw new Error(
+        `services config: '${slug}' port ${cfg.port} puts its agent port on ${port}, ${owner ? `the port of '${owner}'` : 'outside the port range'}.`,
+      );
+    }
+  }
+}
 
 /** Standard environment injected into every app service unless opted out. */
 const STANDARD_ENV = { NODE_ENV: 'production', APP_MODE: '${APP_MODE:-production}', TZ: 'UTC' } as const;

@@ -11,7 +11,7 @@ Per environment, once its target carries this change: **Update identities**, an 
 
 ## What & why
 
-A deploy no longer runs Pulumi: it reads `control/<mode>/live.json` in the boot-diag bucket, boots each role on its idle slot, waits until the pools see the new address running, then writes `drain` into the old machine's manifest and deletes it. `infra-agent` (formerly the boot runner, `infra/agent/`) answers `/health/<service>` on port `9000 + index`. The lease moves to `control/<mode>/lock.json`, rotations beside it. Gone: generations, waves, the cutover, the preflight, identity checks at deploy start, `@{x.privateIp}` bindings.
+A deploy no longer runs Pulumi: it reads `control/<mode>/live.json` in the boot-diag bucket, boots each role on its idle slot, waits until the pools see the new address running, then writes `drain` into the old machine's manifest and deletes it. `infra-agent` (formerly the boot runner, `infra/agent/`) answers `/health/<service>` on the service's port plus 5000. The lease moves to `control/<mode>/lock.json`, rotations beside it. Gone: generations, waves, the cutover, the preflight, identity checks at deploy start, `@{x.privateIp}` bindings.
 
 ## Blast radius
 
