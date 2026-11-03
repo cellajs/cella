@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { foldText } from 'shared/utils/text-match';
 import { JsonViewerContext, type JsonViewerContextValue } from '~/modules/common/json-viewer/context';
 import { JsonNode } from '~/modules/common/json-viewer/json-node';
@@ -35,6 +35,14 @@ function createRefDataType(onNavigate: (targetPath: string[]) => void): DataType
   };
 }
 
+/** Schema mode: an `extendsRef` value, which names the schema this one extends. */
+function createExtendsRefDataType(renderRef: (ref: string) => ReactNode): DataType<string> {
+  return {
+    is: (value, path) => path[path.length - 1] === 'extendsRef' && typeof value === 'string',
+    Component: ({ value }) => renderRef(value),
+  };
+}
+
 export function JsonViewer({
   value,
   defaultInspectDepth = 3,
@@ -49,13 +57,18 @@ export function JsonViewer({
   searchMatchPath = null,
   showKeyQuotes = true,
   hideDescriptions = false,
+  renderRef,
 }: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
 
   const [targetPath, setTargetPath] = useState<string[] | null>(null);
 
   // Memoized: each call creates a new Component, which would remount every $ref button
-  const refDataType = useMemo(() => (openapiMode === 'spec' ? createRefDataType(setTargetPath) : null), [openapiMode]);
+  const refDataType = useMemo(() => {
+    if (openapiMode === 'spec') return createRefDataType(setTargetPath);
+    if (openapiMode === 'schema' && renderRef) return createExtendsRefDataType(renderRef);
+    return null;
+  }, [openapiMode, renderRef]);
   const combinedValueTypes = refDataType ? [refDataType, ...valueTypes] : valueTypes;
 
   const contextValue: JsonViewerContextValue = {
@@ -71,6 +84,7 @@ export function JsonViewer({
     showKeyQuotes,
     hideDescriptions,
     openapiMode,
+    renderRef,
   };
 
   return (

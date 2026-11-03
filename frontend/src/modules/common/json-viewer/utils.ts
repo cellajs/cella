@@ -109,9 +109,9 @@ export function describeNode(
   const hasAnyOf = Array.isArray(keywords?.anyOf);
   const hasOneOf = Array.isArray(keywords?.oneOf);
 
-  // 'ref' renders as a label holding only the schema name: '#/components/schemas/User' becomes 'User'.
+  // 'ref' renders as a label.
   const refField = keywords?.ref;
-  const refValue = typeof refField === 'string' ? refField.split('/').pop() || refField : null;
+  const refValue = typeof refField === 'string' ? refField : null;
 
   // Rendered as a label and filtered out of the entries below.
   const contentTypeField = keywords?.contentType;

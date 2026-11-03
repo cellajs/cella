@@ -1,7 +1,7 @@
 import { components, create, insertMultiple, search, type Tokenizer } from '@orama/orama';
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
-import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { operationLinkOptions, schemaLinkOptions } from '~/modules/docs/helpers/reference-links';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 
 /** Everything the engine indexes for one docs page. */
@@ -37,6 +37,7 @@ type SearchDoc = {
   breadcrumbs: string[];
   to: string;
   params?: { _splat: string };
+  search?: Record<string, string>;
   hash?: string;
   method?: string;
   deprecated?: boolean;
@@ -117,8 +118,7 @@ function operationDoc(op: GenOperationSummary, labels: EngineLabels): SearchDoc 
     path: `${op.method} ${op.path}`,
     tags: op.tags,
     breadcrumbs: [labels.operations, ...op.tags],
-    to: '/docs/operations',
-    hash: op.hash,
+    ...operationLinkOptions(op),
     method: op.method,
     deprecated: op.deprecated,
   };
@@ -134,8 +134,7 @@ function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc 
     path: '',
     tags: [schema.schemaTag],
     breadcrumbs: [labels.schemas, schema.schemaTag],
-    to: '/docs/schemas',
-    hash: schemaAnchor(schema),
+    ...schemaLinkOptions(schema),
   };
 }
 
@@ -173,6 +172,7 @@ export function createEngine(
     breadcrumbs: doc.breadcrumbs,
     to: doc.to,
     params: doc.params,
+    search: doc.search,
     hash: doc.hash,
     method: doc.method,
     deprecated: doc.deprecated,

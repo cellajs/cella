@@ -3,6 +3,7 @@ import type { GenOperationDetail } from 'sdk/docs-types';
 import { getTypeCodeForRequest, getZodCodeForRequest } from '~/modules/docs/helpers/extract-types';
 import { OperationSection } from '~/modules/docs/operations/operation-section';
 import { useDefinitionIndexes } from '~/modules/docs/query';
+import { useSchemaRefLink } from '~/modules/docs/schemas/schema-detail';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 
 interface OperationRequestProps {
@@ -12,6 +13,7 @@ interface OperationRequestProps {
 export function OperationRequest({ detail }: OperationRequestProps) {
   const { t } = useTranslation();
   const { zodIndex, typesIndex } = useDefinitionIndexes();
+  const renderRef = useSchemaRefLink();
 
   if (!detail?.request) return null;
 
@@ -26,6 +28,7 @@ export function OperationRequest({ detail }: OperationRequestProps) {
           typeCode={getTypeCodeForRequest(typesIndex, detail.operationId)}
           example={example}
           descriptionToggle
+          renderRef={renderRef}
         />
       </div>
     </OperationSection>

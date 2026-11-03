@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { openOperationDocSheet } from '~/modules/docs/operations/operation-detail';
+import { openDocsSheet } from '~/modules/docs/open-docs-sheet';
 import { ResponsesAccordion } from '~/modules/docs/operations/operation-responses';
 import { schemasQueryOptions, tagDetailsQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 
@@ -11,7 +11,7 @@ interface OperationExamplesProps {
 }
 
 export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  openOperationDocSheet({
+  openDocsSheet({
     id: `examples-${operation.id}`,
     title: i18n.t('c:docs.success_response'),
     trigger,
