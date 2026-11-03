@@ -7,7 +7,6 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { serviceSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
-import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { activitySchema } from '#/modules/activities/activities-schema';
 import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
 import { log } from '#/utils/logger';
@@ -195,11 +194,6 @@ class CdcWebSocketServer {
       const event = eventOf(result.data);
       this.messagesReceived++;
       this.lastMessageAt = new Date();
-
-      // Drop the detail cache entry of each changed product row, so a later detail fetch re-enriches (entity-keyed cache, no token)
-      for (const { rowData } of event.rows ?? []) {
-        if (event.entityType && typeof rowData.id === 'string') productCacheStore.invalidateProduct(event.entityType, rowData.id);
-      }
 
       log.trace('CDC message processed', { type: event.type });
 

@@ -2648,7 +2648,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
 /**
  * Get attachment
  *
- * Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.
+ * Returns a single attachment by ID.
  *
  * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
  *

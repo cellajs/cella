@@ -159,19 +159,6 @@
         }
       },
       {
-        "key": "x-cache",
-        "id": "xCache",
-        "description": "Caching strategy applied to the endpoint",
-        "required": false,
-        "kind": "middleware",
-        "values": {
-          "productCache": {
-            "name": "Detail cache",
-            "description": "Can answer from the server's cache, marked by the X-Cache response header. Read access is still checked on every request."
-          }
-        }
-      },
-      {
         "key": "x-tool",
         "id": "xTool",
         "description": "MCP tool registration metadata",
@@ -3216,7 +3203,6 @@
         "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Auth health status",
@@ -3265,7 +3251,6 @@
         "description": "Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["emailEnumLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3323,7 +3308,6 @@
         "description": "For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "The address of the account the held challenge signs in to",
@@ -3356,7 +3340,6 @@
         "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -3419,7 +3402,6 @@
         "description": "Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -3516,7 +3498,6 @@
         "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, who must hold the invited address. An account on another address first confirms it (`confirmInvitationAddress`); until then the answer is 403 `invitation_address_unproven`. Only an invitation not yet bound to another user can be accepted this way.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Invitation was accepted",
@@ -3562,7 +3543,6 @@
         "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "Confirmation link sent to the invited address"
@@ -3598,7 +3578,6 @@
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3660,7 +3639,6 @@
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "Stopped impersonating"
@@ -3680,7 +3658,6 @@
         "description": "Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3723,7 +3700,6 @@
         "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "User signed out"
@@ -3746,7 +3722,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["magicLinkLimiter", "recognizedMagicLinkLimiter", "spamLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -3801,7 +3776,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "The full address the held link signs in, as the confirm page shows it",
@@ -3843,7 +3817,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "responses": {
           "302": {
             "description": "Signed in, redirect to the app",
@@ -3893,7 +3866,6 @@
         },
         "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "TOTP key generated",
@@ -3952,7 +3924,6 @@
         },
         "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4007,7 +3978,6 @@
         "description": "Delete the current user's authenticator app (TOTP).",
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "TOTP deleted"
@@ -4039,7 +4009,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["totpVerificationLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4108,7 +4077,6 @@
         },
         "x-guard": ["userGuard", "stepUpEnrollGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4271,7 +4239,6 @@
         "description": "Delete a passkey by id from the current user.",
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4314,7 +4281,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["passkeyChallengeLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4389,7 +4355,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4502,7 +4467,6 @@
         },
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "Connect pinned",
@@ -4544,7 +4508,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4600,7 +4563,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4656,7 +4618,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4712,7 +4673,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4806,7 +4766,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4900,7 +4859,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -4993,7 +4951,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5037,7 +4994,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5107,7 +5063,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5175,7 +5130,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5268,7 +5222,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "The address the link was sent to",
@@ -5314,7 +5267,6 @@
         "description": "Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5375,7 +5327,6 @@
         "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge), a TOTP code of a factor they hold, or the code a step-up mail carried. The proof counts for ten minutes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["stepUpLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5484,7 +5435,6 @@
         },
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["passkeyChallengeLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Challenge issued",
@@ -5536,7 +5486,6 @@
         "description": "For a user without a passkey or TOTP, or one replacing a lost factor while MFA is off: emails a code that steps up this session when entered within ten minutes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "Code sent"
@@ -5572,7 +5521,6 @@
         "description": "Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants. Primarily used to prevent slug collisions before creating or updating an entity.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -5645,7 +5593,6 @@
         "description": "SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["streamConnectLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "SSE stream started",
@@ -5678,7 +5625,6 @@
         "description": "Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5843,7 +5789,6 @@
         "description": "Returns the current user.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "User",
@@ -5872,7 +5817,6 @@
         "description": "Updates the current user.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -5974,7 +5918,6 @@
         "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "responses": {
           "204": {
             "description": "User deleted"
@@ -6010,7 +5953,6 @@
         "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
         "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -6069,7 +6011,6 @@
         "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Sign-in methods and sessions",
@@ -6100,7 +6041,6 @@
         "description": "Returns a list of pending memberships with entity data.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Invitations pending",
@@ -6223,7 +6163,6 @@
         "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -6425,7 +6364,6 @@
         "description": "Removes the current user from a channel entity they are a member of.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6481,7 +6419,6 @@
         "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. An attachment token needs an organization the user may create attachments in. Only a system admin gets a newsletter image token.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["uploadTokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6544,7 +6481,6 @@
         "description": "Returns all memberships for the current user across all channel entities.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "User memberships",
@@ -6584,7 +6520,6 @@
         "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Connected apps",
@@ -6637,7 +6572,6 @@
         "description": "Revokes a consent: the grant and every token issued under it are deleted.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6708,7 +6642,6 @@
         "description": "Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Public counts",
@@ -6752,7 +6685,6 @@
         "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -6919,7 +6851,6 @@
         "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -6988,7 +6919,6 @@
         "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Notification preferences",
@@ -7030,7 +6960,6 @@
         "description": "Partial update; unspecified keys keep their stored value.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7098,7 +7027,6 @@
         "description": "Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners and link previews open links on their own. No auth.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7156,7 +7084,6 @@
         "description": "Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7214,7 +7141,6 @@
         "description": "Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7276,7 +7202,6 @@
         "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "VAPID public key",
@@ -7313,7 +7238,6 @@
         "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pushSubscriptionLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7397,7 +7321,6 @@
         "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7446,7 +7369,6 @@
         "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: a waitlist entry from an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7501,7 +7423,6 @@
         "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -7623,7 +7544,6 @@
         "description": "Deletes one or more requests from the system by their IDs.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7712,7 +7632,6 @@
         "description": "Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
-        "x-cache": [],
         "responses": {
           "200": {
             "description": "Unseen counts per parent channel entity per entity type",
@@ -7756,7 +7675,6 @@
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7855,7 +7773,6 @@
         "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -7950,7 +7867,6 @@
         "description": "Updates a user identified by ID.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8059,7 +7975,6 @@
         "description": "Sends a newsletter to members of one or more specified organizations.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8152,7 +8067,6 @@
         "description": "Returns a paginated list of tenants. System admin access required.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8353,7 +8267,6 @@
         "description": "Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -8415,7 +8328,6 @@
         "description": "Updates a tenant by ID. System admin access required.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8567,7 +8479,6 @@
         },
         "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8644,7 +8555,6 @@
         },
         "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8764,7 +8674,6 @@
         },
         "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8888,7 +8797,6 @@
         },
         "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -8951,7 +8859,6 @@
         "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9125,7 +9032,6 @@
         "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.",
         "x-guard": ["userGuard", "relatableGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9244,7 +9150,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9289,7 +9194,6 @@
         "description": "Creates one or more new organizations within a tenant.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["insertEntityLock", "pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9692,7 +9596,6 @@
         "description": "Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -9792,7 +9695,6 @@
         "description": "Returns a list of organizations.",
         "x-guard": ["userGuard", "relatableGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10078,7 +9980,6 @@
         "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
         "x-guard": ["actorGuard", "tenantGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10168,7 +10069,6 @@
         "description": "Updates an organization within a tenant.",
         "x-guard": ["actorGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10383,7 +10283,6 @@
         "description": "Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.",
         "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10535,7 +10434,6 @@
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -10820,7 +10718,6 @@
         "description": "Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11233,7 +11130,6 @@
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11372,7 +11268,6 @@
         "description": "Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["presignedUrlLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11537,7 +11432,7 @@
         "operationId": "getAttachment",
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
-        "description": "Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.",
+        "description": "Returns a single attachment by ID.",
         "x-tool": {
           "description": "Read one attachment: its metadata and the description as text.",
           "approvalRequired": false,
@@ -11545,7 +11440,6 @@
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": ["productCache"],
         "parameters": [
           {
             "schema": {
@@ -11623,7 +11517,6 @@
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11745,7 +11638,6 @@
         "description": "Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11868,7 +11760,6 @@
         },
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -11932,7 +11823,6 @@
         },
         "x-guard": ["tokenGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["mcpRequestLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12066,7 +11956,6 @@
         "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12259,7 +12148,6 @@
         "description": "Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12392,7 +12280,6 @@
         "description": "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12527,7 +12414,6 @@
         "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12734,7 +12620,6 @@
         "description": "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -12797,7 +12682,6 @@
         "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13124,7 +13008,6 @@
         "description": "Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13335,7 +13218,6 @@
         "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13400,7 +13282,6 @@
         "description": "Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13465,7 +13346,6 @@
         "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13567,7 +13447,6 @@
         "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13774,7 +13653,6 @@
         "description": "Lists the service accounts of this organization.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -13935,7 +13813,6 @@
         "description": "Renames, disables or re-enables a service account. Accounts are never deleted.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14032,7 +13909,6 @@
         "description": "Lists the API keys of a service account. Secrets are never returned here.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14132,7 +14008,6 @@
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpFactorGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14307,7 +14182,6 @@
         "description": "Revokes an API key: it stops working within 10 seconds in every process. The row stays for the audit trail.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14391,7 +14265,6 @@
         },
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14481,7 +14354,6 @@
         },
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["yjsHttpLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {
@@ -14595,7 +14467,6 @@
         },
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["yjsHttpLimiter"],
-        "x-cache": [],
         "parameters": [
           {
             "schema": {

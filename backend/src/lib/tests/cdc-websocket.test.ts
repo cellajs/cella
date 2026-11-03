@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WebSocket } from 'ws';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { type CdcWorkerHealth, cdcWebSocketServer } from '#/lib/cdc-websocket';
-import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { mockActivity } from '#/modules/activities/activities-mocks';
 import { log } from '#/utils/logger';
 
@@ -128,34 +127,6 @@ describe('CDC socket: a connection that was replaced', () => {
 
     expect(cdcWebSocketServer.getHealthStatus().cdcConnected).toBe(false);
     expect(cdcWebSocketServer.getWorkerHealth()).toBeNull();
-  });
-});
-
-describe('CDC socket: a change drops the detail cache entry of its row', () => {
-  const cached = (id: string) => productCacheStore.get('attachment', id);
-
-  beforeEach(() => {
-    productCacheStore.clear();
-    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCacheStore.set('attachment', { id }, performance.now());
-  });
-
-  it('drops the entry of a deleted row, with no listener on the bus', () => {
-    const worker = connect();
-    expect(cached('att-1')).toEqual({ id: 'att-1' });
-
-    worker.send(deleteMessage('att-1'));
-
-    expect(cached('att-1')).toBeUndefined();
-    expect(cached('att-other')).toEqual({ id: 'att-other' });
-  });
-
-  it('drops the entry of every row of a delete of several rows', () => {
-    const worker = connect();
-
-    worker.send(deleteMessage('att-1', 'att-2', 'att-3'));
-
-    for (const id of ['att-1', 'att-2', 'att-3']) expect(cached(id), id).toBeUndefined();
-    expect(cached('att-other')).toEqual({ id: 'att-other' });
   });
 });
 

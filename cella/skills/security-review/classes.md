@@ -161,7 +161,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
   - `backend/src/permissions/`: `get-valid-product.ts`, `get-valid-channel.ts` (re-exported by `index.ts`), `row-predicates.ts` (`buildCollectionReadWhere`), `collection-scope.ts`, `split-by-permission.ts`, `view-read-status.ts` (`resolveViewReadStatus`), `channel-collection-scope.ts`.
   - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantReadAs`, `tenantReadUnlessInTransaction`).
-  - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`; `backend/src/middlewares/product-cache/product-cache.ts`.
+  - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`.
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).
   - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/middlewares/guard/relatable-guard.ts`.
@@ -453,20 +453,18 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C8 Caches and cross-request state
 - **Gain:** cross-user read.
-- **Merges:** the product cache (re-authorizes per request: holds), the membership, organization, tenant, session, API key and token-grant caches with their invalidation across processes, module-level state that outlives a request, `ttl-cache.ts`, `points-cache.ts`, the per-user database in the browser (holds), service-worker caches of API responses.
+- **Merges:** the membership, organization, tenant, session, API key and token-grant caches with their invalidation across processes, module-level state that outlives a request, `ttl-cache.ts`, `points-cache.ts`, the per-user database in the browser (holds), service-worker caches of API responses.
 - **Advisories:** 1, plus 1 pattern lesson (hono cache middleware; pattern: per-request context not isolated).
 - **Files:**
   - `backend/src/middlewares/guard/*-cache.ts` (api-key, membership, org, session, tenant, token-grant) and `invalidate-cache.ts`.
-  - `backend/src/middlewares/product-cache/` (`product-cache.ts`, `product-cache-store.ts`, `index.ts`).
   - `backend/src/lib/ttl-cache.ts`: every cache wraps it (`@isaacs/ttlcache`; `load()` coalesces reads per cache and drops results of reads older than the last invalidation). `backend/src/utils/request-coalescing.ts` (in-flight map, keys scoped by the caller).
   - `backend/src/middlewares/rate-limiter/points-cache.ts`; `frontend/src/lib/sw.ts` (Serwist).
   - The `mcp` and `oauth` workers hold no cache of their own; their code is `backend/src/modules/mcp/*` and `backend/src/modules/oauth-server/*`.
-  - Tests: `backend/tests/security/{outside-writes,session-cache-race}.test.ts`, `backend/src/middlewares/guard/api-key-cache.test.ts`, `backend/src/middlewares/product-cache/{product-cache,product-cache-store}.test.ts`, `backend/src/lib/ttl-cache.test.ts`, `backend/src/middlewares/rate-limiter/tests/points-cache.test.ts`.
+  - Tests: `backend/tests/security/{outside-writes,session-cache-race}.test.ts`, `backend/src/middlewares/guard/api-key-cache.test.ts`, `backend/src/lib/ttl-cache.test.ts`, `backend/src/middlewares/rate-limiter/tests/points-cache.test.ts`.
 - **Holds:**
   - `session-cache-race`: a session read in flight at a revoke stores nothing; a burst shares one read.
   - `outside-writes`: a membership removal reported by CDC drops the cached session; a revoke by another process is seen after the 10 s TTL; every membership insert, update, delete and cascade moves `actors.bindings_version` (trigger in `backend/src/db/membership-rules.ts`), which is why `membership-cache.ts` needs no drop.
   - A tenant archive or suspend moves the members' bindings version (`modules/tenants/operations/apply-tenant-status-change.ts`).
-  - Product cache: re-authorizes every hit against the cached row, requires tenant and organization of the URL, draft veto (`product-cache.test.ts`); a read in flight at an invalidation or write stores nothing (`product-cache-store.test.ts`).
   - `api-key-cache.test.ts`: account-wide drop, in-flight read at the drop not stored, unknown key not cached.
   - `ttl-cache.test.ts`: no value read before an invalidation is stored or handed out; two caches' flights stay apart.
   - Session expiry is rechecked outside the cache (`resolve-session.ts`); the token grant is read per use (`service-guard.ts`).

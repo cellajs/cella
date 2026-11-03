@@ -1,7 +1,6 @@
-import { isProduct, type TrackedEventType } from 'shared';
+import type { TrackedEventType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
-import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 
 /** The batched rows an event is about: `before`/`after` index-aligned for updates, `before` alone for deletes. */
 export interface MutationPayload {
@@ -30,15 +29,7 @@ onBackendModuleRegister((module) => {
   }
 });
 
-/**
- * Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write.
- * A product row that is updated or deleted loses its detail cache entry here, before its transaction commits.
- */
+/** Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. */
 export async function dispatchMutation(ctx: ActorContext, event: TrackedEventType, payload: MutationPayload = {}): Promise<void> {
-  const [subject, verb] = event.split('.');
-  if (verb !== 'created' && isProduct(subject)) {
-    const ids = (payload.before ?? []).flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
-    productCacheStore.holdForWrite(subject, ids);
-  }
   for (const handler of handlers.get(event) ?? []) await handler(ctx, payload);
 }

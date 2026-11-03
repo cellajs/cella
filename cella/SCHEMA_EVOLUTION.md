@@ -10,7 +10,7 @@ When the fields returned by the API change incompatibly, add one permanent conve
 
 A breaking schema change (rename `attachment.name` to `attachment.title`, say) ships as an **append-only lens module**. The lens declares the change once. Everything else derives from it: widened request schemas, key maps for writes, and migrations for cached rows.
 
-- **Canonical inside, dual-emit at the edge.** Database logic, CDC, activities, the detail cache and the stream see the newest shape only. The **frozen envelope** around entities (the `stx` and `ops` structure, counter keys, the auth and session contract) changes only additively, never through a lens. Stream frames, catchup answers and the CDC worker's messages are never stored, so they change with a release: a tab open across a deploy meets the new shapes until it reloads, and a breaking spec diff moves `clientCacheVersion`.
+- **Canonical inside, dual-emit at the edge.** Database logic, CDC, activities and the stream see the newest shape only. The **frozen envelope** around entities (the `stx` and `ops` structure, counter keys, the auth and session contract) changes only additively, never through a lens. Stream frames, catchup answers and the CDC worker's messages are never stored, so they change with a release: a tab open across a deploy meets the new shapes until it reloads, and a breaking spec diff moves `clientCacheVersion`.
 - **No version negotiation.** The server tells old from new by which fields a request carries. The client cache knows which version it holds from its persisted `schemaVersion` pointer, not from the rows.
 - **One global version.** `currentSchemaVersion` is the lens count, baked into both bundles from `shared`.
 

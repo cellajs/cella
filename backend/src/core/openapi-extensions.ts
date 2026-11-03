@@ -25,7 +25,6 @@ const extensionMap = {
   },
   'x-guard': { id: 'xGuard', description: 'Authorization middleware applied to the endpoint', required: true, kind: 'middleware' },
   'x-rate-limiter': { id: 'xRateLimiter', description: 'Rate limiting rules applied to the endpoint', required: false, kind: 'middleware' },
-  'x-cache': { id: 'xCache', description: 'Caching strategy applied to the endpoint', required: false, kind: 'middleware' },
   'x-tool': { id: 'xTool', description: 'MCP tool registration metadata', required: false, kind: 'metadata' },
 } as const satisfies Record<string, ExtensionMetadata>;
 
@@ -82,20 +81,19 @@ export type XRouteProps = {
   xEnabledBy?: ConfigSwitch;
   xGuard: MiddlewareArray;
   xRateLimiter?: MiddlewareArray;
-  xCache?: MiddlewareArray;
   /** Exposes the route as an MCP tool. */
   xTool?: XTool;
 };
 
 export type ExtensionPropId = keyof XRouteProps;
 
-/** The middleware a route's extension props hold (`xGuard`, `xRateLimiter`, `xCache`), in the order they apply. */
+/** The middleware a route's extension props hold (`xGuard`, `xRateLimiter`), in the order they apply. */
 export const collectExtensionMiddleware = (config: Record<string, unknown>): MiddlewareHandler<Env>[] =>
   Object.values(extensionMap)
     .filter(({ kind }) => kind === 'middleware')
     .flatMap(({ id }) => (config[id] as MiddlewareHandler<Env>[]) ?? []);
 
-/** Every prop of `XRouteProps`: the extension ids (`xGuard`, `xRateLimiter`, `xCache`, `xTool`, `xEnabledBy`) and `xScope`, kept out of the spec. */
+/** Every prop of `XRouteProps`: the extension ids (`xGuard`, `xRateLimiter`, `xTool`, `xEnabledBy`) and `xScope`, kept out of the spec. */
 export const extensionPropIds: readonly string[] = [...Object.values(extensionMap).map(({ id }) => id), 'xScope'];
 
 /** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`, `xEnabledBy` as `x-enabled-by`). */
@@ -106,7 +104,7 @@ export const createMetadataExtensions = (config: Record<string, unknown>): Recor
       .map(([key, { id }]) => [key, config[id]]),
   );
 
-/** A route's `x-guard`, `x-rate-limiter` and `x-cache` lists: `getValue` names the route's middleware of each type. */
+/** A route's `x-guard` and `x-rate-limiter` lists: `getValue` names the route's middleware of each type. */
 export function createSpecificationExtensions(getValue: (key: ExtensionType) => string[]): SpecificationExtensions {
   const keys = (Object.keys(extensionMap) as ExtensionType[]).filter((key) => extensionMap[key].kind === 'middleware');
   return Object.fromEntries(keys.map((key) => [key, getValue(key)])) as SpecificationExtensions;

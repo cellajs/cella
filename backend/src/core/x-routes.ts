@@ -89,7 +89,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
- * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, `xCache`, the
+ * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
  * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where

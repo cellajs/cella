@@ -79,13 +79,9 @@ A product table that opts into drafts is published with a row filter, so sync se
 
 When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` under its old home channel and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update.
 
-### Detail cache
-
-The server caches enriched product detail responses briefly. A write of the row drops its entry in the process that wrote and in the one the CDC worker reaches; another process serves the cached row until it expires, a deleted one included. Every hit rechecks the caller's access against the cached row. Lists bypass it.
-
 ## Access
 
-**Row readability** decides whether a user may fetch a row. List reads, range fetches and change frames ask the permission engine about full rows, and a detail-cache hit about the row as it was cached. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
+**Row readability** decides whether a user may fetch a row. List reads, detail reads, range fetches and change frames ask the permission engine about full rows. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
 **Summary answerability** decides whether a user may see a view's frontier. A frontier reveals that activity exists, so it needs stronger proof. Catchup gives each view one status:
 
