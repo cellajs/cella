@@ -67,7 +67,7 @@ interface SetupContext {
   stateKey: KeyPair;
   stackName: string;
   /** Child-process env carrying the provider key + passphrase. */
-  childEnv: NodeJS.ProcessEnv;
+  childEnv: Record<string, string>;
   must: ReturnType<typeof createStepRunner>['must'];
 }
 
@@ -114,8 +114,7 @@ async function adoptKept(ctx: SetupContext): Promise<void> {
   });
   if (!live) return;
   const { LocalWorkspace } = await import('@pulumi/pulumi/automation');
-  const envVars = Object.fromEntries(Object.entries(ctx.childEnv).filter((entry): entry is [string, string] => entry[1] !== undefined));
-  const stack = await LocalWorkspace.createOrSelectStack({ stackName: ctx.stackName, workDir: infraDir }, { envVars });
+  const stack = await LocalWorkspace.createOrSelectStack({ stackName: ctx.stackName, workDir: infraDir }, { envVars: ctx.childEnv });
   const plan = importPlan(keptResources(ctx.appConfig), { buckets: live[0], secrets: live[1] }, await stack.exportStack(), region);
   if (plan.length === 0) return;
   console.info(`\n→ Adopting what a teardown kept: ${plan.map((resource) => resource.name).join(', ')}`);
