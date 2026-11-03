@@ -154,20 +154,6 @@ describe('createTelemetry', () => {
 });
 
 describe('otlpConfigFromEnv', () => {
-  it('prefers explicit OTLP env and parses headers', () => {
-    const config = otlpConfigFromEnv({ OTEL_EXPORTER_OTLP_ENDPOINT: 'https://col:4318/', OTEL_EXPORTER_OTLP_HEADERS: 'a=1,b=2' });
-    expect(config).toEqual({ endpoint: 'https://col:4318/v1', headers: { a: '1', b: '2' } });
-  });
-
-  it('posts each signal under /v1 of the base URL the OTLP variable holds', async () => {
-    const fetchImpl = vi.fn<FetchLike>(async () => new Response('{}', { status: 200 }));
-    const t = createTelemetry({ resource: {}, ...otlpConfigFromEnv({ OTEL_EXPORTER_OTLP_ENDPOINT: 'https://col:4318' }), fetchImpl });
-    t.startSpan('step').end();
-    t.event('deploy.started');
-    await t.flush();
-    expect(fetchImpl.mock.calls.map((call) => call[0])).toEqual(['https://col:4318/v1/traces', 'https://col:4318/v1/logs']);
-  });
-
   it('maps the app-configured sink ingest key to the sink endpoint', () => {
     const config = otlpConfigFromEnv({ [telemetrySink.keyEnvVar]: 'mk' });
     expect(config).toEqual({ endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: 'mk' } });

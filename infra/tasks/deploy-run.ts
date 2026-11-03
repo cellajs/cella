@@ -452,7 +452,7 @@ function createRealEffects(): DeployEffects {
           console.warn(`[deploy] telemetry ingest key unavailable: ${lookup.missing}`);
         }
       }
-      if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or ingest key); black box only');
+      if (!config) console.info('[deploy] telemetry export disabled (no ingest key); black box only');
       initDeployTelemetry({
         mode,
         sha,
