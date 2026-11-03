@@ -86,7 +86,7 @@ describe('storage module', () => {
     }
   });
 
-  it('must not let the observer read user data: of the app buckets it reads the boot diagnostics only', () => {
+  it('must not let the observer read user data: of the app buckets it reads the boot diagnostics only, every version of a record included', () => {
     type Statement = { Sid: string; Principal: unknown; Action: string[] };
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
@@ -94,7 +94,9 @@ describe('storage module', () => {
         JSON.stringify(statement.Principal).includes(`${appPrincipalNames(engineConfig().appSlug).observer}-id`),
       );
       if (policy.name === 'boot-diag-policy') {
-        expect(observer.map((statement) => statement.Action)).toEqual([['s3:ListBucket', 's3:GetObject']]);
+        expect(observer.map((statement) => statement.Action)).toEqual([
+          ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
+        ]);
       } else {
         expect(observer, policy.name).toEqual([]);
       }

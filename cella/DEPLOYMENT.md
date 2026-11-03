@@ -112,7 +112,7 @@ Every deploy writes one record to the environment's boot-diag bucket, updated af
 
 **Show runs** (`pnpm infra runs`, observer key) lists the last ten runs and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
 
-Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs flags a record that disagrees with Scaleway's job run, which no key of the engine writes, and a job run started with values or a command the engine never sets. A record that cannot be written does not fail the deploy.
+Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs reads a record by its first version: each later version counts only where it grows the one before (the same steps with the same outcomes, then more steps or the end; the log likewise only grows), and the first version that does not is named as a rewrite, as only the deploy key or a stolen copy writes there; the run is shown as it stood before it, and `status` reports a rewrite of the newest record. Show runs also flags a record that disagrees with Scaleway's job run, which no key of the engine writes, and a job run started with values or a command the engine never sets. A record that cannot be written does not fail the deploy.
 
 ### The builder
 

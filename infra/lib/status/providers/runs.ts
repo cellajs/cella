@@ -1,12 +1,46 @@
 import { commandOf, findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
 import { mainJobOutcome } from '../../deploy/main-job';
+import { type Rewrite, rewriteNote } from '../../deploy/run-record';
+import { bucketRunStore } from '../../deploy/run-store';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
+import { makeS3Client, projectAccessKey } from '../../scaleway/s3-client';
+import { errorMessage } from '../../utils/errors';
 import { check, probed } from '../check';
-import type { StatusProvider } from '../types';
+import type { ProbeSession, StatusProvider } from '../types';
 
-/** The main job's newest run and its definition, or null and undefined when the environment has none yet. */
-export type RunsFacts = { last: JobRun | null; definition?: JobDefinitionFacts };
+/**
+ * The main job's newest run and its definition, or null and undefined when the environment has none yet, and the newest record as read by
+ * its first version: its rewrite when a version broke the chain, `denied` until an apply lets the observer read versions, or the error
+ * that stopped the read.
+ */
+export type RunsFacts = {
+  last: JobRun | null;
+  definition?: JobDefinitionFacts;
+  record?: { run: string; rewrite?: Rewrite } | { denied: true } | { error: string };
+};
+
+/** True for the bucket refusing the key: the policy an apply writes admits the observer's version reads. */
+function accessDenied(error: unknown): boolean {
+  const { name, $metadata } = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return name === 'AccessDenied' || $metadata?.httpStatusCode === 403;
+}
+
+/** The newest record read on the session's key, or why it was not; undefined without a key or before the first record. */
+async function newestRecord(session: ProbeSession): Promise<RunsFacts['record']> {
+  if (!session.accessKey || !session.secretKey || !session.projectId) return undefined;
+  try {
+    const { naming } = deriveInfra(session.appConfig);
+    const s3 = await makeS3Client(session.appConfig.s3.region, projectAccessKey(session.accessKey, session.projectId), session.secretKey);
+    const store = bucketRunStore(s3, naming.bootDiagBucket);
+    const [run] = await store.listRuns(1);
+    if (!run) return undefined;
+    const reading = await store.readRecord(run);
+    return { run, ...(reading?.rewrite ? { rewrite: reading.rewrite } : {}) };
+  } catch (error) {
+    return accessDenied(error) ? { denied: true } : { error: errorMessage(error) };
+  }
+}
 
 /** The values every start of the engine sets: the target and the retry counter. */
 const START_VALUES = new Set(['TARGET_SHA', 'RETRY']);
@@ -46,7 +80,8 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         listJobRuns(auth, { region, projectId: session.projectId, definitionId }),
         readJobDefinition(auth, { region, definitionId }),
       ]);
-      return { last: last ?? null, definition };
+      const record = await newestRecord(session);
+      return { last: last ?? null, definition, ...(record ? { record } : {}) };
     } catch {
       return undefined;
     }
@@ -55,7 +90,7 @@ export const runsProvider: StatusProvider<RunsFacts> = {
     if (session.stackState !== 'bootstrapped') return [];
     const runs = check('runs.last', 'Last deploy', 'scaleway');
     return [
-      probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ last, definition }) => {
+      probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ last, definition, record }) => {
         if (!last) return runs.ok('no run yet');
         const sha = last.environment_variables?.TARGET_SHA?.slice(0, 10) ?? '?';
         const own = definition ? runOverrides(last, definition) : [];
@@ -65,9 +100,29 @@ export const runsProvider: StatusProvider<RunsFacts> = {
             command: actionCommand('runs'),
           });
         }
+        if (record && 'rewrite' in record && record.rewrite) {
+          return runs.error(`the record of run ${record.run} was ${rewriteNote(record.rewrite)}: only a key that may write the bucket does that`, {
+            description: 'Read the run as it stood, then rotate the keys',
+            command: actionCommand('runs'),
+          });
+        }
         if (!runEnded(last)) return runs.ok(`${sha} is deploying (${last.state})`);
         const outcome = mainJobOutcome(last);
-        if (outcome === 'deployed') return runs.ok(`deployed ${sha}`);
+        if (outcome === 'deployed') {
+          if (record && 'denied' in record) {
+            return runs.warn(`deployed ${sha}; its record was not read, as the bucket admits no version read by the observer yet`, {
+              description: 'Review & apply changes writes the bucket policy that does',
+              command: actionCommand('apply'),
+            });
+          }
+          if (record && 'error' in record) {
+            return runs.warn(`deployed ${sha}; its record could not be read (${record.error})`, {
+              description: 'Read the run',
+              command: actionCommand('runs'),
+            });
+          }
+          return runs.ok(`deployed ${sha}`);
+        }
         if (outcome === 'blocked') {
           return runs.warn(`${sha} is blocked: its record names what is owed, an identity update, an apply or a secret`, {
             description: 'Read what is owed; the apply or storing the secret starts this target again, start-deploy after an identity update',
