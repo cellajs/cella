@@ -121,7 +121,6 @@ An app is deployable with a Docker image per service, a `/health` endpoint repor
 | [caddy/](caddy/) | The frontend's Caddy image and its Caddyfile |
 | [runner/](runner/) | The runner's program |
 | [Dockerfile](Dockerfile) | The engine image an apply builds |
-| [scripts/](scripts/) | The gate that keeps app knowledge out of the engine's code |
 | [tests/](tests/README.md) | Tests that span modules, and their helpers |
 | [environments](environments) | What each environment deploys |
 | [runner.json](runner.json) | The runner's project, release and environments |

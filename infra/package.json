@@ -16,7 +16,6 @@
     "agent:image": "pnpm run agent:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${AGENT_IMAGE:-infra-agent:dev} agent",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
-    "engine-gate": "bash scripts/engine-gate.sh",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
