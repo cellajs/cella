@@ -146,7 +146,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `internal-listener`: a public peer is refused on every route and on the CDC upgrade, secret or not; the public listener and dot-segment paths cannot reach the internal routes.
   - `backend/tests/emails/request-details.test.ts`: request details appear only in mail about the recipient's own action, never the inviter's.
   - `backend/src/utils/ip-subnet.test.ts`: mapped and differently spelled forms share a bucket; private, loopback and ULA are not public.
-  - The VMs drop all inbound, so no client reaches the API without the load balancer.
+  - The machines drop all inbound but the load balancer's address, so no client reaches the API without the load balancer.
 - **Asks:** one function that yields the client address, its inputs per deployment (load balancer, dev, test), and a test with a forged forwarded header; canonical form of allowlist entries; the hono version minimum for the three fixes.
 - **Not this class:** rate-limit budgets per route belong to E1. Header and body parsing differentials belong to C7. The CDC and relay shared secrets after the peer check belong to the class of their module (B5 for the relay). Network ACLs, security groups and load balancer IAM belong to the infra review (F3).
 
@@ -438,7 +438,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/app.ts`: chain order is request-log context, invoke-token `Referrer-Policy`, `secureHeaders`, otel, request id, logger, CSRF (with skips), client version, body limit, compress (GET only).
   - `backend/src/middlewares/is-no-bot.ts` (used on `metrics-routes.ts`, `magic-routes.ts` and the auth routes in `general-routes.ts`).
   - `backend/src/middlewares/guard/service-guard.ts` (an API-key request carrying `Origin` is refused 403 `browser_origin`); `backend/src/modules/service-accounts/helpers/api-key.ts` (`hasApiKeyHeader`).
-  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, host routes, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
+  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
   - Tests: `backend/tests/prefix-mount.test.ts` and `backend/tests/request-id.test.ts` at `backend/tests/`; `csrf`, `malformed-ids`, `internal-listener` under `backend/tests/security/`.
 - **Holds:**
   - `internal-listener`: the CDC socket is not reachable from the public listener under `/internal/cdc`, `/api/%2e%2e/internal/cdc`, `/api/../internal/cdc` or `/api/internal/cdc`; `/internal/yjs/materialize` is a 404 on the public listener under plain, `/api` and `/api/%2e%2e` prefixes even with the relay secret; `isCdcUpgradePath` matches only the exact raw target; dot-segment paths to the CDC socket on the internal listener are 404; an empty or missing secret is refused; a non-private peer is refused on every internal route; the health path stays served.
