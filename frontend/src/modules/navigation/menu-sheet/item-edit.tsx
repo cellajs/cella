@@ -19,9 +19,7 @@ import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const avatarBoxClass = tw(
-  'relative z-2 mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1',
-);
+const avatarBoxClass = tw('relative z-2 mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4');
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
@@ -66,16 +64,16 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       data-subitem={isSubitem}
       data-archived={archived}
       // The ghost button's hover tint (8% foreground) mixed into the fill, opaque so the grip box can repaint it. The fill
-      // is muted/70 on the card made opaque, so a row travelling past covers the rows under it.
+      // is muted/70 on the card made opaque, so a row travelling past covers the rows under it. Height, gap and avatar box
+      // match the row outside edit mode (item.tsx), so entering edit mode moves no avatar or name.
       className={cn(
-        'group/options-item relative flex h-12 w-full items-center pr-2 [--hover-fill:color-mix(in_oklab,var(--muted),var(--foreground)_8%)] before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-(--hover-fill) data-[subitem=true]:h-11',
+        'group/options-item relative flex h-12 w-full items-center gap-1 pr-2 [--hover-fill:color-mix(in_oklab,var(--muted),var(--foreground)_8%)] before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-(--hover-fill) data-[subitem=true]:h-10',
         isMovable && 'cursor-grab',
         isTravelling && 'z-3',
       )}
     >
-      {/* Drawn per row, so the dots travel with it while a move animates. The gap ends at this avatar 0.625rem down and
-          starts 0.5rem up below the parent's avatar, 0.625rem up below another sub-row's. */}
-      {isSubitem && !archived && <SubmenuConnector className={index === 0 ? '-top-2 h-4.5' : '-top-2.5 h-5'} />}
+      {/* Drawn per row, so the dots travel with it while a move animates */}
+      {isSubitem && !archived && <SubmenuConnector className="-top-2 h-4" />}
       {moves.isSaving && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
@@ -117,7 +115,8 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <span className={avatarBoxClass}>{avatar}</span>
       )}
 
-      <div className="relative min-w-0 grow truncate text-left text-md leading-5 group-data-[archived=true]/options-item:opacity-70">
+      {/* A sub-row's name sits 0.125rem above center, as it does outside edit mode */}
+      <div className="relative min-w-0 grow truncate text-left font-medium text-md leading-5 group-data-[subitem=true]/options-item:pb-1 group-data-[subitem=true]/options-item:font-normal group-data-[subitem=true]/options-item:text-sm group-data-[archived=true]/options-item:opacity-70">
         {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (
