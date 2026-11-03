@@ -53,7 +53,7 @@ jobs:
           echo "id=$id" >> "$GITHUB_OUTPUT"
           report in_progress "Waiting for $TAG to answer"
 
-          # Five answers in a row, two minutes: the version moves during the rollout, before its smoke tests end.
+          # Five answers in a row, two minutes: the version moves during the switch, before its smoke tests end.
           answers=0
           deadline=$((SECONDS + 1200))
           while [ "$SECONDS" -lt "$deadline" ]; do

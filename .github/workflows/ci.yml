@@ -91,7 +91,7 @@ jobs:
           pnpm unused
 
       # compose.gen.yml is a committed artifact read at deploy time
-      # (infra/tasks/switch-machines.ts), so a stale copy must fail the PR.
+      # (the switch step of infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
 
