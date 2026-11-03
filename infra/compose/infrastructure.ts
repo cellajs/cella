@@ -46,6 +46,9 @@ function validateInternalPorts(services: AppServices): void {
   }
 }
 
+/** The static env, and the runtime one the agent fetches at the machine's first boot: optional, as Compose starts the agent before it exists. */
+const ENV_FILES = ['.env', { path: '.env.runtime', required: false as const }];
+
 /** Standard environment injected into every app service unless opted out. */
 const STANDARD_ENV = { NODE_ENV: 'production', APP_MODE: '${APP_MODE:-production}', TZ: 'UTC' } as const;
 
@@ -110,7 +113,7 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
     // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
-    ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
+    ...(cfg.includeEnvFile === false ? {} : { env_file: ENV_FILES }),
     environment,
     healthcheck: healthcheck(cfg.port, cfg.startPeriod),
   };
@@ -136,7 +139,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
     profiles: [slug],
     restart: 'no',
     ...(release?.command ? { command: release.command } : {}),
-    env_file: ['.env', '.env.runtime'],
+    env_file: ENV_FILES,
     environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
   };
 }

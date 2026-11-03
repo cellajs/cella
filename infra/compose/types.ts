@@ -106,7 +106,8 @@ export interface ComposeService {
   volumes?: readonly string[];
   ports?: readonly string[];
   stop_grace_period?: string;
-  env_file?: readonly string[];
+  /** `.env` first; the agent fetches `.env.runtime` at its boot, so Compose loads the file before it exists without a refusal. */
+  env_file?: readonly (string | { path: string; required: false })[];
   environment?: Readonly<Record<string, string>>;
   healthcheck?: HealthCheck;
   /** Deploy metadata; presence marks a logical service. */

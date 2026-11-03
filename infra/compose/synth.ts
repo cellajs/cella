@@ -44,7 +44,15 @@ function emitMapping(obj: object, indent: number): string[] {
         lines.push(`${pad}${key}: [${val.map((x) => scalar(String(x), quoted)).join(', ')}]`);
       } else {
         lines.push(`${pad}${key}:`);
-        for (const item of val) lines.push(`${pad}  - ${scalar(String(item))}`);
+        for (const item of val) {
+          if (item === null || typeof item !== 'object') {
+            lines.push(`${pad}  - ${scalar(String(item))}`);
+            continue;
+          }
+          // A mapping item: its first key on the dash line, the rest under it.
+          const [first = '', ...rest] = emitMapping(item, indent + 2);
+          lines.push(`${pad}  - ${first.trimStart()}`, ...rest);
+        }
       }
     } else if (typeof val === 'object') {
       lines.push(`${pad}${key}:`);

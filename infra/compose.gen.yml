@@ -22,7 +22,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -63,7 +64,8 @@ services:
     restart: 'no'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -81,7 +83,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -118,7 +121,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -159,7 +163,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -196,7 +201,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -233,7 +239,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
