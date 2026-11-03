@@ -48,11 +48,11 @@ describe('Catchup (view-driven, sequence)', async () => {
     await clearSecurityTestData();
   });
 
-  it('returns the version of each versioned signal by its type without cursor (baseline)', async () => {
+  it('returns the version of each versioned signal by its type, also to a body without views', async () => {
     const result = await call(postAppCatchup, { body: {}, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
 
     expect(result.response.status).toBe(200);
-    const { organizations, cursor } = result.data as AppCatchupResponse;
+    const { organizations } = result.data as AppCatchupResponse;
 
     const summary = organizations[tenant.organization.id];
     expect(summary).toBeDefined();
@@ -60,14 +60,12 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(summary.signals).toEqual({ 'membership.changed': 3, 'channel.deleted': 2 });
     // The org sequence value itself is not exposed on the wire (clients never read it).
     expect(summary).not.toHaveProperty('entitySeqs');
-    expect(cursor).toBeDefined();
   });
 
   it('answers an org view with its frontier rollup (org member, unconditional read)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
-        cursor: '0-0',
         views: [{ key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 40 }],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -87,7 +85,6 @@ describe('Catchup (view-driven, sequence)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
-        cursor: '0-0',
         views: [
           { key: `${orgId}:attachment:self`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], depth: 'self', cursor: 39 },
         ],
@@ -105,7 +102,6 @@ describe('Catchup (view-driven, sequence)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
-        cursor: '0-0',
         views: [
           {
             // Node id is the org (counters row exists, path = orgId), but the claim
@@ -130,7 +126,6 @@ describe('Catchup (view-driven, sequence)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
-        cursor: '0-0',
         views: [
           { key: 'other:attachment', organizationId: otherOrgId, prefixes: [otherOrgId], entityTypes: ['attachment'], cursor: 0 },
           { key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 42 },

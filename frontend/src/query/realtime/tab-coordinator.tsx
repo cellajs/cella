@@ -19,7 +19,7 @@ export interface SyncHealth {
 type BroadcastMessage =
   | { type: 'stream-change'; change: StreamChange }
   | { type: 'stream-signal'; signal: StreamSignal }
-  | { type: 'catchup'; response: PostAppCatchupResponse; baselineOnly: boolean }
+  | { type: 'catchup'; response: PostAppCatchupResponse }
   | { type: 'sync-health'; health: SyncHealth }
   | { type: 'schema-version'; version: number };
 
@@ -41,7 +41,7 @@ let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
 const streamChangeEmitter = createEmitter<StreamChange>('TabStreamChange');
 const streamSignalEmitter = createEmitter<StreamSignal>('TabStreamSignal');
-const catchupEmitter = createEmitter<{ response: PostAppCatchupResponse; baselineOnly: boolean }>('TabCatchup');
+const catchupEmitter = createEmitter<PostAppCatchupResponse>('TabCatchup');
 const syncHealthEmitter = createEmitter<SyncHealth>('TabSyncHealth');
 /** What this tab last broadcast as leader, said again to a tab that opens later; null once it heard another leader's. */
 let lastSyncHealth: SyncHealth | null = null;
@@ -183,12 +183,12 @@ function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
   }
   if (message.type === 'stream-change') streamChangeEmitter.publish(message.change);
   if (message.type === 'stream-signal') streamSignalEmitter.publish(message.signal);
-  if (message.type === 'catchup') catchupEmitter.publish({ response: message.response, baselineOnly: message.baselineOnly });
+  if (message.type === 'catchup') catchupEmitter.publish(message.response);
 }
 
 /** Called by the leader with each catchup answer: followers send no catchup request of their own. */
-export function broadcastCatchup(response: PostAppCatchupResponse, baselineOnly: boolean): void {
-  broadcastChannel?.postMessage({ type: 'catchup', response, baselineOnly } satisfies BroadcastMessage);
+export function broadcastCatchup(response: PostAppCatchupResponse): void {
+  broadcastChannel?.postMessage({ type: 'catchup', response } satisfies BroadcastMessage);
 }
 
 /** Followers register here to receive the leader's catchup answers. */

@@ -7,7 +7,6 @@ const debugLabel = 'AppStream';
 
 /** Seeds offline caches once the app stream is live: the app route's `beforeLoad` connects it, and StreamManager owns every reconnect. Mount in AppLayout. */
 export function AppStream() {
-  // Only the connection state: the cursor advances on every event and nothing here renders it.
   const streamState = useStore(appStreamManager.store, (state) => state.state);
 
   useEffect(() => {

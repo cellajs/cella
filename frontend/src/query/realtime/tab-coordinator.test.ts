@@ -149,12 +149,12 @@ describe('what the leader tells the other tabs', () => {
   const down = { streamHealthy: false, workerAway: true };
 
   it('reaches the handlers of a follower tab as the leader posted it: a catchup answer, a signal and the health of its stream', async () => {
-    const answer: PostAppCatchupResponse = { cursor: 'c9', organizations: {}, generation: 7 };
+    const answer: PostAppCatchupResponse = { organizations: {}, generation: 7 };
     const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
 
     // This tab leads, and posts.
     await initTabCoordinator();
-    broadcastCatchup(answer, false);
+    broadcastCatchup(answer);
     broadcastStreamSignal(signal);
     broadcastSyncHealth(down);
     const posted = FakeBroadcastChannel.opened?.posted.slice(-3) ?? [];
@@ -168,7 +168,7 @@ describe('what the leader tells the other tabs', () => {
     const catchups: unknown[] = [];
     const signals: unknown[] = [];
     const healths: unknown[] = [];
-    const stopCatchup = onCatchup(({ response, baselineOnly }) => catchups.push([response, baselineOnly]));
+    const stopCatchup = onCatchup((response) => catchups.push(response));
     const stopSignal = onStreamSignal((received) => signals.push(received));
     const stopHealth = onSyncHealth((health) => healths.push(health));
 
@@ -177,7 +177,7 @@ describe('what the leader tells the other tabs', () => {
     stopSignal();
     stopHealth();
 
-    expect(catchups).toEqual([[answer, false]]);
+    expect(catchups).toEqual([answer]);
     expect(signals).toEqual([signal]);
     expect(healths).toEqual([down]);
   });

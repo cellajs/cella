@@ -102,7 +102,7 @@ The database follows authentication, not routes: signing in binds it, sign-out d
 Boot order, cached data first:
 
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
-2. The app route waits until the per-user database is bound and its stores hydrated, sync cursor included.
+2. The app route waits until the per-user database is bound and its stores hydrated, sync cursors included.
 3. The persister restores the cache scope.
 4. Once the restore is done, the app reads the memberships, from the restored cache or on a fresh profile from the server, so the first catchup declares every organization. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it, and at once whenever the app comes back online or regains focus.
 5. Route loaders fill the current view. A background fill then loads each list not cached yet and each synced product list marked for a refetch, the current organization's first, then the other organizations'. From then on catchup keeps them fresh.

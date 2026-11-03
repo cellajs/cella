@@ -22,9 +22,9 @@ defineBackendModule({
 
 /** A stream on the organization's topic and its user's topic, recording every frame written to it. */
 const openStream = (userId: string, memberships: MembershipBaseModel[] = []) => {
-  const frames: { event?: string; id?: string; data: string }[] = [];
+  const frames: { event?: string; data: string }[] = [];
   const stream = {
-    writeSSE: async (frame: { event?: string; id?: string; data: string }) => {
+    writeSSE: async (frame: { event?: string; data: string }) => {
       frames.push(frame);
     },
   } as unknown as SSEStreamingApi;
@@ -55,8 +55,7 @@ describe('sendSignal: who hears it', () => {
     await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, subjectId: 'row-1' });
 
     for (const frames of own) {
-      // A signal carries no id: the client's stream cursor is an activity id, and a signal must not move it.
-      expect(frames).toEqual([{ event: 'signal', id: undefined, data: expect.any(String) }]);
+      expect(frames).toEqual([{ event: 'signal', data: expect.any(String) }]);
       expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1' });
     }
     expect(bystander).toEqual([]);

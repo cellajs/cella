@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
-import { type Access, appConfig, pathHomeId } from 'shared';
+import { type Access, pathHomeId } from 'shared';
 import type { ActorBinding, DbContext, UserContext } from '#/core/context';
-import { findChannelCountersByKeys, findLatestActivityId, findSyncGeneration } from '#/modules/entities/entities-queries';
+import { findChannelCountersByKeys, findSyncGeneration } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
 import { accessFrom } from '#/permissions/access';
@@ -72,10 +72,9 @@ export async function answerCatchupViews(ctx: DbContext, access: Access<ActorBin
 
 /**
  * Product entity sync is answered per client-declared view by `answerCatchupViews`; the per-org
- * `organizations` block carries the versions of the versioned signals and embedding propagation hints. A null
- * cursor returns baselines, which the client stores without fetching.
+ * `organizations` block carries the versions of the versioned signals and embedding propagation hints.
  */
-export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
+export async function appCatchupOp(ctx: UserContext, { views }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
   const { memberships } = ctx.var;
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
 
@@ -84,7 +83,7 @@ export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<
 
   const generation = await findSyncGeneration(ctx);
 
-  if (organizationIds.size === 0) return { organizations: {}, views: viewAnswers, cursor: cursor ?? null, generation };
+  if (organizationIds.size === 0) return { organizations: {}, views: viewAnswers, generation };
 
   const organizationIdArray = Array.from(organizationIds);
 
@@ -101,21 +100,5 @@ export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<
   // Embedding propagation hints: frontiers vs the client's org-view cursors.
   await buildPropagationHints(ctx, organizations, views, allCounters);
 
-  const newCursor = (await getLatestActivityId(ctx, organizationIds)) ?? cursor ?? null;
-
-  return { organizations, views: viewAnswers, cursor: newCursor, generation };
-}
-
-/**
- * The newest activity of the organizations' products, channels and memberships: the stream's first `offset` and the
- * catchup's new cursor.
- * @returns Its id, or null without organizations or activity.
- */
-export async function getLatestActivityId(ctx: DbContext, organizationIds: Set<string>): Promise<string | null> {
-  if (organizationIds.size === 0) return null;
-
-  return findLatestActivityId(ctx, {
-    organizationIds: Array.from(organizationIds),
-    entityTypes: [...appConfig.productEntityTypes, ...appConfig.channelEntityTypes],
-  });
+  return { organizations, views: viewAnswers, generation };
 }

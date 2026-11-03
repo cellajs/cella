@@ -1357,7 +1357,6 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· _entities · cella_
  *
  * @param {postAppCatchupData} options
- * @param {string=} options.body.cursor - `string` (optional)
  * @param {any[]=} options.body.views - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 413, 429
  */

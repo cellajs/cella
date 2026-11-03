@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { maxLength, validIdSchema } from '#/schemas/common-schemas';
+import { validIdSchema } from '#/schemas/common-schemas';
 import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
@@ -100,10 +100,6 @@ export type CatchupView = z.infer<typeof catchupViewSchema>;
 
 /** `views` is the sequence-sync contract: prefix views with org-sequence cursors, answered after prefix authorization. */
 export const streamCatchupBodySchema = z.object({
-  cursor: z.string().max(maxLength.id).optional().openapi({
-    description: 'Id of the last activity the client received (its commit position and index). Omit on first sync.',
-    example: '00000000-016B3748-00000001',
-  }),
   views: z
     .array(catchupViewSchema)
     .max(256)
@@ -147,7 +143,6 @@ export const appCatchupResponseSchema = z.object({
     .array(catchupViewAnswerSchema)
     .optional()
     .openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
-  cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
   generation: z.number().int().optional().openapi({
     description: 'Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines',
   }),

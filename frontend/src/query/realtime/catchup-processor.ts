@@ -43,9 +43,11 @@ export const isOpaqueScope = (organizationId: string, entityType: string): boole
  * Readable views fetch their gap when their frontier advances; other statuses expose no summaries.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
-export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
+export async function processAppCatchup(response: PostAppCatchupResponse): Promise<void> {
   const { organizations, views } = response;
   const syncState = syncStore.getState();
+  // Before this device's first catchup its cache holds only what route loaders read: that catchup stores the frontiers as baselines.
+  const baselineOnly = syncState.caughtUpAt === null;
 
   syncState.adoptGeneration(response.generation);
   // Away longer than the activity window, this device may hold rows whose tombstones the server has since removed.

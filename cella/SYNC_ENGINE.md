@@ -60,7 +60,7 @@ Only product rows sync: channels are containers, products are synced content. Th
 | **Summary** | Frontier, counts and timestamps on a channel row, so one read answers for a subtree |
 | **Frontier** | Newest sequence position in a summary. It only moves forward. |
 | **View** | The subtrees and entity types a client tracks. Catchup authorizes and answers per view. |
-| **Cursor** | Latest sequence position a view has ingested; the **stream cursor** is the last activity a connection received |
+| **Cursor** | Latest sequence position a view has ingested |
 | **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
 | **Tombstone** | Soft-deleted row as a range fetch returns it for the deleted-items period: its id, position and place, never its content, so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write: mutation ID, source ID and per-field HLC timestamps |
@@ -105,7 +105,7 @@ A change frame names its rows, each with its sequence position and the write tha
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
+Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
 
 ### SSE wire
 

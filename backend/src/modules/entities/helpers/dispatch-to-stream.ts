@@ -172,10 +172,8 @@ export async function dispatchChange(event: AppStreamProductEvent): Promise<void
 
   await Promise.all(
     readerFrames(subscribers, event).map(({ rows, readers }) => {
-      // Rows are in commit order, so the last one is the newest activity a reader receives: its stream cursor.
-      const id = rows[rows.length - 1].activityId;
-      log.trace('Dispatching stream change', { activityId: id, action: event.action, rowCount: rows.length, subscriberCount: readers.length });
-      return sendToSubscribers(readers, { event: 'change', id, data: buildStreamChange(event, rows) }, 'Failed to dispatch stream change');
+      log.trace('Dispatching stream change', { action: event.action, rowCount: rows.length, subscriberCount: readers.length });
+      return sendToSubscribers(readers, { event: 'change', data: buildStreamChange(event, rows) }, 'Failed to dispatch stream change');
     }),
   );
 }
@@ -201,6 +199,6 @@ export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<vo
     if (eligible.length === 0) continue;
 
     const moveOut = buildMoveOut(rowScopedEvent(event, movedFrom), row, movedFrom);
-    await sendToSubscribers(eligible, { event: 'change', id: row.activityId, data: moveOut }, 'Failed to dispatch move-out');
+    await sendToSubscribers(eligible, { event: 'change', data: moveOut }, 'Failed to dispatch move-out');
   }
 }

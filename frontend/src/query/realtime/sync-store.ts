@@ -33,7 +33,6 @@ export interface RegisteredSyncView {
 }
 
 interface SyncStoreState {
-  cursor: string | null;
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
   generation: number | null;
   /** When this device last processed a catchup, on its own clock in epoch ms; null before the first. */
@@ -44,7 +43,6 @@ interface SyncStoreState {
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
 
-  setCursor: (cursor: string | null) => void;
   /**
    * Takes the generation a catchup answered with. Another one than the client held means the server corrected or
    * rebuilt its books: every cursor goes back to 0, so the catchup that follows stores the frontiers as baselines, and the
@@ -82,8 +80,7 @@ interface SyncStoreState {
   reset: () => void;
 }
 
-const initStore: Pick<SyncStoreState, 'cursor' | 'generation' | 'caughtUpAt' | 'refetchDueAt' | 'orgs' | 'views'> = {
-  cursor: null,
+const initStore: Pick<SyncStoreState, 'generation' | 'caughtUpAt' | 'refetchDueAt' | 'orgs' | 'views'> = {
   generation: null,
   caughtUpAt: null,
   refetchDueAt: null,
@@ -120,17 +117,13 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string): 
   return orgs[organizationId];
 }
 
-/** This user's sync cursors, persisted: the stream cursor, the org and channel sequences, and the registered views. */
+/** This user's sync cursors, persisted: the org and channel sequences and the registered views. */
 export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
       immer((set, get) => ({
         ...initStore,
 
-        setCursor: (cursor) =>
-          set((state) => {
-            state.cursor = cursor;
-          }),
         adoptGeneration: (generation) => {
           const held = get().generation;
           if (generation === undefined || generation === held) return;
@@ -251,7 +244,6 @@ export const syncStore = createStore<SyncStoreState>()(
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
         partialize: (state) => ({
-          cursor: state.cursor,
           generation: state.generation,
           caughtUpAt: state.caughtUpAt,
           refetchDueAt: state.refetchDueAt,

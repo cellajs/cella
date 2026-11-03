@@ -55,9 +55,9 @@ interface StreamConfig {
   withCredentials: boolean;
   useTabCoordination: boolean;
   /** `signal` aborts once the round outlasts its bound: a late answer then reaches neither the followers nor this tab's cache. */
-  fetchAndProcessCatchup: (cursor: string | null, signal: AbortSignal) => Promise<string | null>;
+  fetchAndProcessCatchup: (signal: AbortSignal) => Promise<void>;
   /** A follower's side of catchup: process the answer the leader passed on. */
-  processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
+  processLeaderCatchup: (response: PostAppCatchupResponse) => Promise<void>;
   processChange: (change: StreamChange) => void;
   processSignal: (signal: StreamSignal) => void;
   /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
@@ -66,18 +66,16 @@ interface StreamConfig {
 
 interface StreamStoreState {
   state: StreamState;
-  cursor: string | null;
 }
 
 interface StreamStoreActions {
   setState: (state: StreamState) => void;
-  setCursor: (cursor: string | null) => void;
   reset: () => void;
 }
 
 type StreamStore = StreamStoreState & StreamStoreActions;
 
-const initStore: StreamStoreState = { state: 'disconnected', cursor: null };
+const initStore: StreamStoreState = { state: 'disconnected' };
 
 function createStreamStore(name: string) {
   return createStore<StreamStore>()(
@@ -85,7 +83,6 @@ function createStreamStore(name: string) {
       (set) => ({
         ...initStore,
         setState: (state) => set({ state }),
-        setCursor: (cursor) => set({ cursor }),
         reset: () => set(initStore),
       }),
       {
@@ -138,7 +135,7 @@ export class StreamManager {
   private lastEventAt = 0;
 
   /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
-  private pendingChanges: Array<{ change: StreamChange; eventId: string | undefined }> = [];
+  private pendingChanges: StreamChange[] = [];
   private buffering = false;
   private bufferOverflowed = false;
 
@@ -188,8 +185,8 @@ export class StreamManager {
         const stopSignals = onStreamSignal((signal) => {
           if (!isLeader()) this.config.processSignal(signal);
         });
-        const stopCatchup = onCatchup(({ response, baselineOnly }) => {
-          if (!isLeader()) void this.followLeaderCatchup(response, baselineOnly, signal);
+        const stopCatchup = onCatchup((response) => {
+          if (!isLeader()) void this.followLeaderCatchup(response);
         });
         this.broadcastCleanup = () => {
           stopChanges();
@@ -214,30 +211,20 @@ export class StreamManager {
     if (!signal.aborted) this.connectSSE(signal);
   }
 
-  /** Catch up while buffering, then drain in arrival order and go live. One buffer overflow retries at the newer cursor; a second throws. */
+  /** Catch up while buffering, then drain in arrival order and go live. One buffer overflow runs catchup again; a second throws. */
   private async runCatchupCycle(signal: AbortSignal, eventSource: EventSource) {
-    const { useTabCoordination } = this.config;
-
     try {
       this.store.getState().setState('catching-up');
 
       for (let round = 0; ; round++) {
-        const currentCursor = useTabCoordination ? syncStore.getState().cursor : this.store.getState().cursor;
-
-        console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
-        const newCursor = await this.boundedCatchup(currentCursor);
+        console.debug(`[${this.name}] Fetching catchup`);
+        await this.boundedCatchup();
         if (signal.aborted || this.eventSource !== eventSource) return;
-
-        if (newCursor) {
-          this.store.getState().setCursor(newCursor);
-          if (useTabCoordination) syncStore.getState().setCursor(newCursor);
-        }
-
-        console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
+        console.debug(`[${this.name}] Catchup complete`);
 
         if (!this.bufferOverflowed) break;
         if (round >= 1) throw new Error('Change buffer overflowed twice during catchup');
-        // Dropped buffered changes are covered by re-reading catchup at the newer cursor.
+        // A second catchup reads after every dropped change, so it covers them.
         this.bufferOverflowed = false;
         this.pendingChanges = [];
         console.debug(`[${this.name}] Change buffer overflowed, re-running catchup`);
@@ -250,7 +237,7 @@ export class StreamManager {
       this.buffering = false;
       const buffered = this.pendingChanges;
       this.pendingChanges = [];
-      for (const { change, eventId } of buffered) this.applyChange(change, eventId);
+      for (const change of buffered) this.applyChange(change);
 
       // Backoff itself resets only after minUptimeMs of uptime, checked in handleStreamFailure.
       this.consecutiveFailures = 0;
@@ -265,7 +252,7 @@ export class StreamManager {
   }
 
   /** The catchup of one round, failed and aborted once it takes longer than `catchupTimeoutMs`, so the gate paused writes wait on cannot stay closed. */
-  private async boundedCatchup(cursor: string | null): Promise<string | null> {
+  private async boundedCatchup(): Promise<void> {
     const round = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const expiry = new Promise<never>((_resolve, reject) => {
@@ -275,18 +262,16 @@ export class StreamManager {
       }, catchupTimeoutMs);
     });
     try {
-      return await Promise.race([this.config.fetchAndProcessCatchup(cursor, round.signal), expiry]);
+      await Promise.race([this.config.fetchAndProcessCatchup(round.signal), expiry]);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  /** A follower's catchup: it sends no request, processes the answer the leader passed on and stores that answer's cursor. */
-  private async followLeaderCatchup(response: PostAppCatchupResponse, baselineOnly: boolean, signal: AbortSignal) {
+  /** A follower's catchup: it sends no request and processes the answer the leader passed on. */
+  private async followLeaderCatchup(response: PostAppCatchupResponse) {
     try {
-      await this.config.processLeaderCatchup(response, baselineOnly);
-      // Stored once processed, as on the leader, so this tab's first request as leader carries a current cursor. A connect cycle that ended meanwhile stores nothing.
-      if (response.cursor && !signal.aborted) syncStore.getState().setCursor(response.cursor);
+      await this.config.processLeaderCatchup(response);
     } catch (error) {
       console.warn(`[${this.name}] Could not process the leader's catchup answer:`, error);
     }
@@ -312,11 +297,7 @@ export class StreamManager {
     this.scheduleReconnect();
   }
 
-  private applyChange(change: StreamChange, eventId: string | undefined) {
-    if (eventId) {
-      this.store.getState().setCursor(eventId);
-      if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);
-    }
+  private applyChange(change: StreamChange) {
     // Followers get a change when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
     if (this.config.useTabCoordination && isLeader()) broadcastStreamChange(change);
     this.config.processChange(change);
@@ -352,27 +333,25 @@ export class StreamManager {
       noteActivity();
       try {
         const change = JSON.parse(event.data);
-        const eventId = event.lastEventId || undefined;
 
         if (this.buffering) {
-          // Cursor advances at drain time so a crash before drain re-fetches from the old cursor.
           if (this.bufferOverflowed) return;
           if (this.pendingChanges.length >= changeBufferCap) {
             this.bufferOverflowed = true;
             this.pendingChanges = [];
             return;
           }
-          this.pendingChanges.push({ change, eventId });
+          this.pendingChanges.push(change);
           return;
         }
 
-        this.applyChange(change, eventId);
+        this.applyChange(change);
       } catch (error) {
         console.debug(`[${this.name}] Failed to parse change:`, error);
       }
     });
 
-    // A signal is handled at once, also during catchup, and never moves the cursor: `lastEventId` still names the last change.
+    // A signal is handled at once, also during catchup.
     eventSource.addEventListener('signal', (event) => {
       noteActivity();
       try {
@@ -384,10 +363,9 @@ export class StreamManager {
       }
     });
 
-    eventSource.addEventListener('offset', (event) => {
+    eventSource.addEventListener('offset', () => {
       noteActivity();
-      console.debug(`[${this.name}] SSE offset received:`, event.data);
-      // The offset value is not stored: the catchup response cursor, read later, supersedes it.
+      console.debug(`[${this.name}] SSE offset received`);
       if (catchupStarted) return;
       catchupStarted = true;
       void this.runCatchupCycle(signal, eventSource);
@@ -674,17 +652,15 @@ export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
-  fetchAndProcessCatchup: async (cursor, signal) => {
+  fetchAndProcessCatchup: async (signal) => {
     // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
     const views = toCatchupViews(syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes()));
-    const response = await postAppCatchup({ body: { cursor: cursor ?? undefined, views: views.length > 0 ? views : undefined }, signal });
+    const response = await postAppCatchup({ body: { views: views.length > 0 ? views : undefined }, signal });
     signal.throwIfAborted();
-    const baselineOnly = !cursor;
     // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing fails.
-    if (isLeader()) broadcastCatchup(response, baselineOnly);
-    await processAppCatchup(response, baselineOnly);
-    return response.cursor ?? null;
+    if (isLeader()) broadcastCatchup(response);
+    await processAppCatchup(response);
   },
   processLeaderCatchup: processAppCatchup,
   processChange: handleStreamChange,

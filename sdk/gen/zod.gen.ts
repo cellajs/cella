@@ -1035,7 +1035,6 @@ export const zCheckSlugPath = z.object({
 export const zCheckSlugResponse = z.void();
 
 export const zPostAppCatchupBody = z.object({
-  cursor: z.string().max(50).optional(),
   views: z
     .array(
       z.object({
@@ -1084,7 +1083,6 @@ export const zPostAppCatchupResponse = z.object({
       }),
     )
     .optional(),
-  cursor: z.string().nullable(),
   generation: z.int().optional(),
 });
 

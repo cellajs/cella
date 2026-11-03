@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { type AnyColumn, and, count, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -7,7 +7,6 @@ import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
-import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { zeroChannelCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -164,30 +163,7 @@ export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: C
   return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
 };
 
-// Activity queries
-
-interface FindLatestActivityIdOpts {
-  organizationIds: string[];
-  entityTypes: EntityType[];
-}
-
-/** The newest activity id of the organizations' membership changes and of the given entity types; null when there is none. */
-export const findLatestActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestActivityIdOpts) => {
-  const { db } = ctx.var;
-  const result = await db
-    .select({ id: activitiesTable.id })
-    .from(activitiesTable)
-    .where(
-      and(
-        inArray(activitiesTable.organizationId, organizationIds),
-        or(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.entityType, entityTypes)),
-      ),
-    )
-    .orderBy(desc(activitiesTable.id))
-    .limit(1);
-
-  return result[0]?.id ?? null;
-};
+// Sync state queries
 
 /**
  * The generation of the sync books. The CDC worker moves it on whenever it rebuilt them, and a client that holds

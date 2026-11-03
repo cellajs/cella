@@ -5695,12 +5695,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "cursor": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "description": "Id of the last activity the client received (its commit position and index). Omit on first sync.",
-                    "example": "00000000-016B3748-00000001"
-                  },
                   "views": {
                     "type": "array",
                     "items": {
@@ -5767,8 +5761,7 @@
                         "membership.changed": 1
                       }
                     }
-                  },
-                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
+                  }
                 },
                 "schema": {
                   "type": "object",
@@ -5851,16 +5844,12 @@
                       },
                       "description": "Per-view answers for client-declared views (same order as the request)"
                     },
-                    "cursor": {
-                      "type": ["string", "null"],
-                      "description": "Last activity ID (use as offset for next request)"
-                    },
                     "generation": {
                       "type": "integer",
                       "description": "Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines"
                     }
                   },
-                  "required": ["organizations", "cursor"]
+                  "required": ["organizations"]
                 }
               }
             }

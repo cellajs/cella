@@ -165,7 +165,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).
   - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/middlewares/guard/relatable-guard.ts`.
-  - Activities: no read route; the table is read only for a cursor id in `entities-queries.ts`.
+  - Activities: no read route, and no API code reads the table.
   - Callers: `getValidProduct` in `modules/attachment/operations/{get-attachment,update-attachment,link-attachment-keys}.ts` and `authorize-yjs-editor.ts`; `getValidChannel` in organization, memberships (`get-members`, `get-pending-memberships`, `check-invites`, `create-memberships`, `delete-memberships`, `update-membership`, `resend-pending-invitation`, `withdraw-pending-invitation`) and service-accounts operations; `resolveCollectionReadFilter` in the attachments list, `get-unseen-counts.ts`, `mark-seen.ts`, `propagation-hints.ts`, `view-read-status.ts`; `splitByPermission` in `delete-attachments.ts`, `delete-organizations.ts`; `filterExistingProductIds` in `entities/embedding-queries.ts`; `checkAccessFanout` in `notification/operations/fan-out.ts`.
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
 - **Holds:**
@@ -338,7 +338,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Zod 4 drops `__proto__` from record and object input.
   - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
   - jsonb merge is done in SQL from `JSON.stringify` of the parsed value, so a JS object merge never sees stored keys.
-  - The persisted sync store saves only `cursor, generation, caughtUpAt, contrast, publicAlertsSeen, hintsSeen`; the keyed maps are never persisted.
+  - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` and `views` maps; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).
 - **Asks:** a record with `__proto__` through every record-taking route; the JSON column table; the dexie and immer version minimums.
 - **Not this class:** block JSON walking and HTML sanitizing belong to C4. The metadata document fetch by `oidc-provider` (`modules/oauth-server/provider.ts`) belongs to C5 and C7. Rate limit on that fetch belongs to C1. `sql.raw` keys (counter keys in `modules/entities/counters-queries.ts`) belong to C3. Record size caps belong to C1. Yjs map keys: no app code reads user map keys; document size belongs to C1.

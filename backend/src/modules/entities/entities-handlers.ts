@@ -8,7 +8,7 @@ import '#/modules/entities/entities-listeners';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams } from '#/modules/entities/helpers/session-streams';
-import { appCatchupOp, getLatestActivityId } from '#/modules/entities/operations/app-catchup';
+import { appCatchupOp } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
 import { keepAlive, workerAwayPing, writeOffset } from '#/modules/entities/stream/helpers';
@@ -33,7 +33,7 @@ const maxStreamsPerUser = 10;
 const maxStreamSubscribers = 5000;
 
 /**
- * Streams per user id that passed the caps and are not registered yet: two awaits lie between the check and the
+ * Streams per user id that passed the caps and are not registered yet: the offset write lies between the check and the
  * registration, so the per-user cap counts them too, and parallel connects cannot all pass it.
  */
 const admittedStreams = new Map<string, number>();
@@ -80,15 +80,11 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
   admittedStreams.set(user.id, admitted + 1);
 
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
-  const cursor = await getLatestActivityId(ctx, organizationIds).catch((error) => {
-    releaseAdmission(user.id);
-    throw error;
-  });
 
   return streamSSE(ctx, async (stream) => {
     // The registration below follows in the same tick, so the stream is counted throughout.
     try {
-      await writeOffset(stream, cursor);
+      await writeOffset(stream);
     } finally {
       releaseAdmission(user.id);
     }

@@ -17,13 +17,10 @@ export interface StreamErrorPayload {
   message: string;
 }
 
-/**
- * One frame of the app stream. A change carries its activity id, which becomes the client's stream cursor; a signal
- * carries none, so it never moves the cursor.
- */
-export type StreamFrame = { event: 'change'; id: string; data: StreamChange } | { event: 'signal'; data: StreamSignal };
+/** One frame of the app stream. */
+export type StreamFrame = { event: 'change'; data: StreamChange } | { event: 'signal'; data: StreamSignal };
 
-/** Frame bytes a stream may hold unsent: the next frame closes it, and its client's reconnect catches up from its cursor. */
+/** Frame bytes a stream may hold unsent: the next frame closes it, and its client's reconnect catches up. */
 export const maxPendingStreamBytes = 64 * 1024;
 
 /** Rows one change frame names: 20 rows of about 700 B (an update's stx) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
@@ -57,17 +54,16 @@ async function closeStalledStream(subscriberId: string, stream: SSEStreamingApi,
 export async function sendToSubscribers(subscribers: readonly BaseStreamSubscriber[], frame: StreamFrame, failure: string): Promise<void> {
   const data = JSON.stringify(frame.data);
   const bytes = Buffer.byteLength(data);
-  const id = frame.event === 'change' ? frame.id : undefined;
   await Promise.all(
     subscribers.map(async ({ id: subscriberId, stream }) => {
       const pending = pendingStreamBytes.get(stream) ?? 0;
       if (pending >= maxPendingStreamBytes) return closeStalledStream(subscriberId, stream, pending);
       pendingStreamBytes.set(stream, pending + bytes);
       try {
-        await stream.writeSSE({ event: frame.event, id, data });
-        log.debug('SSE frame sent', { subscriberId, event: frame.event, activityId: id });
+        await stream.writeSSE({ event: frame.event, data });
+        log.debug('SSE frame sent', { subscriberId, event: frame.event });
       } catch (error) {
-        log.error(failure, { subscriberId, event: frame.event, activityId: id, error });
+        log.error(failure, { subscriberId, event: frame.event, error });
       } finally {
         pendingStreamBytes.set(stream, (pendingStreamBytes.get(stream) ?? 0) - bytes);
       }
@@ -75,9 +71,9 @@ export async function sendToSubscribers(subscribers: readonly BaseStreamSubscrib
   );
 }
 
-/** The `offset` event, once after connect: the newest activity id the stream starts after, and the client's cue to post its catchup. */
-export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {
-  await stream.writeSSE({ event: 'offset', data: cursor ?? '' });
+/** The `offset` event, once after connect and empty: the client's cue to post its catchup. */
+export async function writeOffset(stream: SSEStreamingApi): Promise<void> {
+  await stream.writeSSE({ event: 'offset', data: '' });
 }
 
 /** The `error` event that tells the client why its stream ends; the caller ends the stream after it. */

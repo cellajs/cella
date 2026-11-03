@@ -2301,10 +2301,6 @@ export type GetAppStreamResponses = {
 export type PostAppCatchupData = {
   body: {
     /**
-     * Id of the last activity the client received (its commit position and index). Omit on first sync.
-     */
-    cursor?: string;
-    /**
      * Client-declared views: prefix set + entity types + org-sequence cursor per view
      */
     views?: Array<{
@@ -2410,10 +2406,6 @@ export type PostAppCatchupResponses = {
         [key: string]: number;
       };
     }>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
     /**
      * Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines
      */

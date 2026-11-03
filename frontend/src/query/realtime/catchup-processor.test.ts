@@ -1,6 +1,6 @@
 import { QueryObserver } from '@tanstack/react-query';
 import type { PostAppCatchupResponse } from 'sdk';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Real builder and resolvers over a synthetic sub-org hierarchy; only the app-bound config and hierarchy singletons are replaced.
@@ -69,9 +69,12 @@ const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
 const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
+const { fetchMemberships } = await import('~/query/realtime/membership-ops');
 
 // The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
+// A device that caught up before, unless a case starts from a fresh store.
+beforeEach(() => syncStore.getState().markCaughtUp());
 
 /** The org-wide range fetch request for org-1 the catchup should make. */
 const rangeRequest = (afterSeq: number, untilSeq: number) => ({
@@ -82,12 +85,10 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 });
 
 /** Views-contract response with one org view answer for attachment. */
-const okViewResponse = (frontier: number): PostAppCatchupResponse =>
-  ({
-    cursor: 'cursor-1',
-    organizations: {},
-    views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier } }],
-  }) as unknown as PostAppCatchupResponse;
+const okViewResponse = (frontier: number): PostAppCatchupResponse => ({
+  organizations: {},
+  views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier } }],
+});
 
 /** The org-1 list mounted, as on screen, counting the list requests it sends. */
 const observeList = (queryKey: readonly unknown[]) => {
@@ -145,18 +146,27 @@ describe('catchup processor (view-driven)', () => {
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
 
-  it('a first connection refetches a list that was read before its stream was live, and stores the frontier', async () => {
+  it('a first connection refetches a list that was read before its stream was live and stores the frontier, from which the next one reads', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed', seq: 43 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
-    // The route loader was first: its rows are from before the subscription, so the frontier cannot vouch for them.
+    // A fresh profile. The route loader was first: its rows are from before the subscription, so the frontier cannot vouch for them.
+    syncStore.getState().reset();
     queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], total: 1 });
 
-    await processAppCatchup(okViewResponse(42), true);
+    await processAppCatchup(okViewResponse(42));
 
     expect(rangeFetch).not.toHaveBeenCalled();
+    expect(fetchMemberships).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
+
+    // The reload's catchup.
+    await processAppCatchup(okViewResponse(43));
+
+    expect(rangeFetch).toHaveBeenCalledExactlyOnceWith(rangeRequest(42, 43));
+    expect(fetchMemberships).toHaveBeenCalledOnce();
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(43);
   });
 
   it('an opaque view falls back to invalidation of cached lists, no numbers consumed', async () => {
@@ -168,11 +178,7 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup({
-      cursor: 'cursor-1',
-      organizations: {},
-      views: [{ key: 'org-1:attachment', status: 'opaque' }],
-    } as unknown as PostAppCatchupResponse);
+    await processAppCatchup({ organizations: {}, views: [{ key: 'org-1:attachment', status: 'opaque' }] });
 
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
@@ -289,7 +295,6 @@ describe('registered grant-boundary views', () => {
 
   const answer = (over: Record<string, unknown>): PostAppCatchupResponse =>
     ({
-      cursor: 'c',
       organizations: {},
       views: [{ key: 'org-1:attachment:subtree', ...over }],
     }) as unknown as PostAppCatchupResponse;
