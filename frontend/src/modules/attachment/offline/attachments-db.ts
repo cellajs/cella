@@ -5,7 +5,7 @@ import { getLocalUserDb } from '~/query/local-user-db';
 
 type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
-export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
+export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed';
 
 /** Transloadit blob stages: raw upload, processed original, conversion, mid-size preview, tiny grid-cell thumbnail. */
 export type BlobVariant = 'raw' | 'original' | 'converted' | 'preview' | 'thumbnail';
@@ -79,12 +79,7 @@ export interface DownloadQueueEntry {
   /** Download priority, lower runs first: the attachment's negated `createdAt` in ms, so the newest goes first. */
   priority: number;
 
-  /** Download status; 'skipped' means filtered out (too large / wrong type), see skipReason. */
   status: DownloadStatus;
-
-  /** Why skipped (if status='skipped') */
-  skipReason: string | null;
-
   queuedAt: Date;
   attempts: number;
 }

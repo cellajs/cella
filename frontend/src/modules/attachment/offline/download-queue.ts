@@ -2,45 +2,20 @@ import { Dexie } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from '~/modules/attachment/offline/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 
-/** Skip reason the download service writes for a row queued before its cloud keys arrived; `enqueue` matches on it to re-queue. */
-export const skipReasonNoOriginalKey = 'No originalKey';
-
-/** Valid transitions for the download service; `failed` and `downloaded` are terminal here, and reviving (`enqueue`, `reviveDownloaded`) writes the row directly. */
-const transitions: Record<DownloadStatus, DownloadStatus[]> = {
-  pending: ['downloading', 'skipped'],
-  downloading: ['downloaded', 'failed'],
-  failed: [],
-  skipped: ['pending'],
-  downloaded: [],
-};
-
-async function transition(id: string, to: DownloadStatus, skipReason?: string): Promise<void> {
+/** Writes a row's status, leaving a removed row removed; claiming a pending row counts an attempt, so tabs claiming it together count one. */
+async function transition(id: string, to: DownloadStatus): Promise<void> {
   try {
-    const entry = await attachmentsDb.downloadQueue.get(id);
-    if (!entry) return;
-
-    const allowed = transitions[entry.status];
-    if (!allowed.includes(to)) {
-      console.warn(`[DownloadQueue] Invalid transition ${entry.status} → ${to} for ${id}`);
-      return;
-    }
-
-    const updates: Partial<DownloadQueueEntry> = { status: to };
-    if (skipReason) updates.skipReason = skipReason;
-
-    if (entry.status === 'pending' && to === 'downloading') {
-      updates.attempts = entry.attempts + 1;
-    }
-
-    await attachmentsDb.downloadQueue.update(id, updates);
+    await attachmentsDb.downloadQueue.update(id, (entry) => {
+      if (to === 'downloading' && entry.status === 'pending') entry.attempts += 1;
+      entry.status = to;
+    });
   } catch (error) {
     console.error(`[DownloadQueue] Failed to transition ${id} to ${to}:`, error);
   }
 }
 
-/** Enqueues attachments once, keeping active and completed entries; revives skipped rows that gained an original key and failed rows with retries left. */
+/** Enqueues attachments once, keeping active and completed entries so the table acts as the dedupe registry; revives failed rows with retries left. */
 async function enqueue(attachments: Attachment[], organizationId: string): Promise<void> {
   if (!attachments.length) return;
 
@@ -60,22 +35,16 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
       const existing = existingById.get(attachment.id);
 
       if (existing) {
-        if (shouldRevive(existing, attachment, config)) revivedIds.push(attachment.id);
+        // Retry transient fetch failures (offline, 5xx, timeout) while attempts remain.
+        if (existing.status === 'failed' && existing.attempts < config.downloadRetryAttempts) revivedIds.push(attachment.id);
         continue;
       }
-
-      // Already stored locally as a processed variant.
-      const storedVariants = await attachmentStorage.getStoredVariants(attachment.id);
-      if (storedVariants.some((variant) => variant !== 'raw')) continue;
-
-      const skipReason = getSkipReason(attachment, config);
 
       newEntries.push({
         id: attachment.id,
         organizationId,
         priority: calculatePriority(attachment),
-        status: skipReason ? 'skipped' : 'pending',
-        skipReason,
+        status: 'pending',
         queuedAt: new Date(),
         attempts: 0,
       });
@@ -86,7 +55,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
     }
 
     if (revivedIds.length > 0) {
-      await attachmentsDb.downloadQueue.where('id').anyOf(revivedIds).modify({ status: 'pending', skipReason: null });
+      await attachmentsDb.downloadQueue.where('id').anyOf(revivedIds).modify({ status: 'pending' });
       console.debug(`[DownloadQueue] Revived ${revivedIds.length} entries for re-download`);
     }
   } catch (error) {
@@ -104,19 +73,6 @@ async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
   }
 }
 
-/** Whether an existing entry goes back to `pending`; other rows stay untouched so the table acts as the dedupe registry. */
-function shouldRevive(entry: DownloadQueueEntry, attachment: Attachment, config: typeof appConfig.localBlobStorage): boolean {
-  // Queued before its keys had synced; now they have.
-  if (entry.status === 'skipped' && entry.skipReason === skipReasonNoOriginalKey && attachment.keys.original) {
-    return true;
-  }
-
-  // Retry transient fetch failures (offline, 5xx, timeout) while attempts remain.
-  if (entry.status === 'failed' && entry.attempts < config.downloadRetryAttempts) return true;
-
-  return false;
-}
-
 /** Drop queue entries for deleted attachments. */
 async function remove(ids: string[]): Promise<void> {
   if (!ids.length) return;
@@ -125,39 +81,6 @@ async function remove(ids: string[]): Promise<void> {
   } catch (error) {
     console.error('[DownloadQueue] Failed to remove entries:', error);
   }
-}
-
-function getSkipReason(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
-  const fileSize = attachment.size ? Number(attachment.size) : 0;
-  if (config.maxFileSize && fileSize && fileSize > config.maxFileSize) {
-    return `File too large (${Math.round(fileSize / 1024 / 1024)}MB > ${Math.round(config.maxFileSize / 1024 / 1024)}MB)`;
-  }
-
-  if (config.excludedContentTypes.length && attachment.contentType) {
-    for (const pattern of config.excludedContentTypes) {
-      if (matchesMimePattern(attachment.contentType, pattern)) {
-        return `Content type excluded: ${attachment.contentType}`;
-      }
-    }
-  }
-
-  if (config.allowedContentTypes.length && attachment.contentType) {
-    const allowed = config.allowedContentTypes.some((pattern) => matchesMimePattern(attachment.contentType, pattern));
-    if (!allowed) {
-      return `Content type not allowed: ${attachment.contentType}`;
-    }
-  }
-
-  return null;
-}
-
-function matchesMimePattern(mimeType: string, pattern: string): boolean {
-  if (pattern === '*' || pattern === '*/*') return true;
-  if (pattern.endsWith('/*')) {
-    const prefix = pattern.slice(0, -2);
-    return mimeType.startsWith(`${prefix}/`);
-  }
-  return mimeType === pattern;
 }
 
 /** Newest first: the offline budget keeps the newest attachments, so they are the ones worth fetching first. */

@@ -131,17 +131,25 @@ export class LocalUserDatabase extends Dexie {
   constructor(userId: string) {
     super(`${appConfig.slug}:${userId}`);
     // An older database upgrades in place: Dexie adds the missing tables and indexes, drops the undeclared ones and keeps every other row.
-    this.version(3).stores({
-      kv: 'key',
-      queries: 'id',
-      meta: 'key',
-      blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
-      downloadQueue: '&id, organizationId, [organizationId+status]',
-      yDocs: '[entityType+entityId], lastOpenedAt',
-      yDocStates: '[entityType+entityId]',
-      yDocUpdates: '++id, [entityType+entityId]',
-      unsaveableYDocs: '++id, [entityType+entityId]',
-    });
+    this.version(3)
+      .stores({
+        kv: 'key',
+        queries: 'id',
+        meta: 'key',
+        blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
+        downloadQueue: '&id, organizationId, [organizationId+status]',
+        yDocs: '[entityType+entityId], lastOpenedAt',
+        yDocStates: '[entityType+entityId]',
+        yDocUpdates: '++id, [entityType+entityId]',
+        unsaveableYDocs: '++id, [entityType+entityId]',
+      })
+      // No bundle selects a row stored as skipped: deleted, it is queued again by the list write that brings its file.
+      .upgrade((tx) =>
+        tx
+          .table('downloadQueue')
+          .filter((row) => row.status === 'skipped')
+          .delete(),
+      );
 
     // A delete from another connection is a hard sign-out in another tab: close for good and unbind, so a late write
     // here cannot recreate the database (Dexie's default handler keeps auto-open). Upgrades keep the default: a tab on
