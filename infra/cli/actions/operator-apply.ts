@@ -28,7 +28,7 @@ import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface OperatorApplyOptions {
-  /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
+  /** Operation name recorded in the lease (e.g. 'apply', 'expose-db'). */
   operation: string;
   /**
    * Config mutation applied after the lock is held and rollout config is reconciled, right before `pulumi up`.
@@ -203,7 +203,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
       if (stackLock.lost) {
         await releaseAll();
-        console.error(`${warningMark} This run lost the stack lock to another one; nothing applied. Run "${opts.operation}" again.`);
+        console.error(`${warningMark} This run lost the lease to another one; nothing applied. Run "${opts.operation}" again.`);
         endAction(1);
       }
       while (true) {

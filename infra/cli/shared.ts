@@ -185,12 +185,12 @@ export interface StackLockHandle {
   readonly lost: boolean;
 }
 
-/** The leases this process holds, so an action that ends without releasing its own cannot leave the stack locked under the menu. */
+/** The leases this process holds, so an action that ends without releasing its own cannot leave the leaseed under the menu. */
 const heldLocks = new Set<StackLockHandle>();
 
 /**
  * Release every stack lease still held and report how many there were. The menu calls it after each action: a lease renews itself for as
- * long as the process lives, so one that outlived its action would keep the stack locked until the operator quits.
+ * long as the process lives, so one that outlived its action would keep the leaseed until the operator quits.
  */
 export async function releaseHeldLocks(): Promise<number> {
   const leftover = [...heldLocks];
@@ -248,7 +248,7 @@ export async function acquireStackLockOrExit(opts: {
     release: async () => {
       if (!heldLocks.delete(handle)) return;
       uninstall();
-      await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+      await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release lease: ${errorMessage(e)}`));
     },
     get lost() {
       return result.lease.lost;

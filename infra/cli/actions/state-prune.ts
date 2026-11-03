@@ -19,7 +19,7 @@ import { acquireOperatorKey } from './operator-unlock';
 /**
  * Remove one resource from the environment's Pulumi state, on the operator key: a resource the program no longer declares whose live object is
  * gone already, which an apply would try to delete and cannot. The live object must be gone first, or it is left without an owner. Says
- * whether the state lists the URN, asks, then runs `pulumi state delete` under the stack lock.
+ * whether the state lists the URN, asks, then runs `pulumi state delete` under the lease.
  */
 export async function runStatePrune(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;

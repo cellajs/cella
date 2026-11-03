@@ -41,7 +41,7 @@ export interface StatusReport {
   summary: Record<CheckStatus, number>;
 }
 
-/** The held stack lock, if any. */
+/** The held lease, if any. */
 export interface LockFacts {
   held: boolean;
   owner?: string;

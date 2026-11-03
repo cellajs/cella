@@ -111,7 +111,7 @@ export const OPERATOR_ACTIONS = {
   unlock: {
     label: 'Unlock stack',
     key: 'operator',
-    description: 'Clear a stale stack lock and review the operations an interrupted run left in the Pulumi state.',
+    description: 'Clear a stale lease and review the operations an interrupted run left in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
@@ -228,8 +228,8 @@ export const MENU_ROWS = {
     group: 'recover',
     label: 'Repair stack',
     actions: ['unlock', 'resume'],
-    hint: 'stack lock, setup',
-    description: 'Clear a stale stack lock, or re-sync the setup.',
+    hint: 'lease, setup',
+    description: 'Clear a stale lease, or re-sync the setup.',
   },
   teardown: {
     group: 'rare',

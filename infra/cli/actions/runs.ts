@@ -30,7 +30,7 @@ async function bootLines(record: RunRecord, store: RunStore): Promise<string[]> 
   const lines: string[] = [];
   for (const entry of record.boot ?? []) {
     if (!entry.key) {
-      lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its boot runner never finished (its serial console says more)`);
+      lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its agent never finished (its serial console says more)`);
       continue;
     }
     if (!entry.failed) continue;
@@ -164,9 +164,7 @@ async function showMachines(
   if (opts.sha) {
     for (const found of await releaseAccounts(reader, services, opts.sha)) {
       if (!found.account) {
-        print(
-          `${warningMark} ${found.service}: no account of ${opts.sha.slice(0, 10)}: its boot runner has not finished (its serial console says more)`,
-        );
+        print(`${warningMark} ${found.service}: no account of ${opts.sha.slice(0, 10)}: its agent has not finished (its serial console says more)`);
         continue;
       }
       print('', pc.bold(`${found.service} (boot-diag/${found.account.key})${found.account.failed ? ': boot failed' : ''}`), found.account.body);

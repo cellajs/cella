@@ -34,7 +34,7 @@ import { operatorKeys } from './operator-unlock';
 const STATE_BACKUP_DIR = resolve(infraDir, '.state-backups');
 
 /**
- * What the stack lock is at `now`: `none` without one, `expired` once its lease lapsed (the run that held it is gone), `live` while the
+ * What the lease is at `now`: `none` without one, `expired` once its lease lapsed (the run that held it is gone), `live` while the
  * lease still runs. A holder renews its lease while it works, so a live lock most likely belongs to a run in progress.
  */
 export function lockVerdict(held: Pick<LockInfo, 'expiresAt'> | undefined, now: number): 'none' | 'expired' | 'live' {

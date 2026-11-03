@@ -1,6 +1,6 @@
 # Runbooks
 
-This document collects the procedures for a running deployment: a failed or blocked deploy, a stale stack lock, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
+This document collects the procedures for a running deployment: a failed or blocked deploy, a stale lease, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
 
 ### TL;DR
 
@@ -10,9 +10,9 @@ slate only resets the stack's tracking.
 
 ## Debug a failed deploy
 
-Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error. A cutover that times out waiting for the new version means the app never served it: almost always a crash at boot, not the load balancer.
+Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error. A switch that times out waiting for the new machine to serve means its agent never answered 200: almost always a crash at boot, not the load balancer. The new machine was deleted and the old one kept serving; a role that switched before the failure serves the target, and the next run of the same target switches only the rest.
 
-1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report: the boot phases, the migrate companion's output and a crashed container's output. "No account" means the boot runner never finished; then the machine's serial console (Scaleway console → Instances → the machine → Console) shows how far it got, up to `BOOT FAILED (exit N)`.
+1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report: the boot phases, the migrate companion's output and a crashed container's output. "No account" means the agent never finished its boot; then the machine's serial console (Scaleway console → Instances → the machine → Console) shows how far it got. A deleted machine's console is gone with it: for a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
 2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` of the boot-diag bucket, and `docker run` it with a minimal valid environment: a failing import (`ERR_MODULE_NOT_FOUND`) shows in seconds.
 3. **Check the usual causes:**
    - a package the image lacks: `pnpm boot:check` catches one missing from `dependencies`
@@ -21,24 +21,24 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
    - node-postgres checking the TLS hostname against the IP it dialed
    - a link that ended before the machine fetched it: a 403 at `fetch-env` or `load-images`, when the machine took longer than the link's minutes to boot
    - an instance-type quota too low for a new machine beside the old one
+   - "an apply makes it": the deploy found no reserved address, pool or security group it needs, as after an engine change or a new role: run **Review & apply changes**, then the same target
 
 ## A blocked deploy
 
 A blocked run made no machine, and the running release stays. `pnpm infra runs` names what it owes:
 
-- **Identities differ:** **Update identities** (`pnpm infra identity`, Owner API key), then `pnpm infra start-deploy`, as the update starts no deploy.
-- **A privileged change:** **Review & apply changes** (`pnpm infra apply`), which starts the target again at its end. A change to the database's ACL means its public endpoint is open: [close it](#open-the-database), then `pnpm infra start-deploy`.
-- **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again.
+- **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
 The runner never starts a blocked target again.
 
-## A stale stack lock
+## A stale lease
 
-A deploy or an operator action that dies holds its stack lock until the lock's lease lapses, within minutes, and the next run waits for it. `pnpm infra status` reports the lock and, once the session holds the operator key, any operation the interrupted Pulumi run left in the state.
+A deploy or an operator action that dies holds its lease, `control/<mode>/lock.json` in the boot-diag bucket, until it lapses within minutes, and the next run waits for it. `pnpm infra status` reports it.
 
-1. `pnpm infra` → **Repair stack** → **Unlock stack** (`pnpm infra unlock`) removes an expired lock at once, and a live one only after you confirm. A live lock most likely belongs to a run that is still going: check `pnpm infra runs` first.
-2. It then lists the interrupted operations. When all of them are creates, it offers to drop them and keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first: a create that went through left a resource the state does not track.
-3. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints, logged in with the operator key and with the passphrase from the environment's `/engine/` secret folder.
+1. `pnpm infra` → **Repair stack** → **Unlock stack** (`pnpm infra unlock`) removes an expired lease at once, and a live one only after you confirm. A live lease most likely belongs to a run that is still going: check `pnpm infra runs` first.
+2. A deploy that died mid-switch may have left a machine on the idle slot: the next deploy drains and deletes it before it boots there, so nothing is owed for it.
+3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them and keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first: a create that went through left a resource the state does not track.
+4. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints, logged in with the operator key and with the passphrase from the environment's `/engine/` secret folder.
 
 ## GeoIP data
 
@@ -57,7 +57,7 @@ Break-glass access from your laptop, for any operator task against the live data
    ```
 
 2. Run your task with that connection string.
-3. **Close it again**: a deploy does not, and while it is open every deploy ends blocked at the preflight. The menu offers the close while the endpoint is open, and `pnpm infra status` warns about it.
+3. **Close it again**: a deploy does not, and the next apply's plan would close it unasked. The menu offers the close while the endpoint is open, and `pnpm infra status` warns about it.
 
    ```bash
    pnpm infra db-close
@@ -123,7 +123,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every resource to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values. Then drop the environment from `infra/runner.json`, **Replace the runner**, and remove `infra/.env.<mode>`.
+`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`, then deletes every machine the deploys made and every resource of the stack to stop billing, with your operator key. It then offers to delete the stack's IAM principals, for which it asks for an Owner API key. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket and operator secret values. Then drop the environment from `infra/runner.json`, **Replace the runner**, and remove `infra/.env.<mode>`.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 

@@ -124,9 +124,9 @@ async function liveCommit(context: InfraContext, key: KeyPair): Promise<string |
  * record names the counter each machine was booted under, then start
  * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and the runner starts
  * a run only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
- * becomes of the target. The live run is followed to its end, as the target's run would wait on the stack lock behind it, and when it does
+ * becomes of the target. The live run is followed to its end, as the target's run would wait on the lease behind it, and when it does
  * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
- * and when the control object cannot be read there is none known: the target alone is started.
+ * and when the live record cannot be read there is none known: the target alone is started.
  */
 export async function redeployAfterRotation(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };

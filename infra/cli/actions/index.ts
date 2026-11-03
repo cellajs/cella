@@ -74,6 +74,6 @@ export async function runAction(
     return 1;
   } finally {
     const leftover = await releaseHeldLocks();
-    if (leftover > 0) log(`${warningMark} Released a stack lock the action left held.`);
+    if (leftover > 0) log(`${warningMark} Released a lease the action left held.`);
   }
 }

@@ -58,7 +58,7 @@ Payloads carry ids, never row bodies: the handler re-reads through the query the
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when the scheduler stalls, a queue grows past its warning size or dead letters wait, so a cutover never blocks on it.
+`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when the scheduler stalls, a queue grows past its warning size or dead letters wait, so a switch never blocks on it.
 
 `pnpm jobs` prints the same for an operator without SQL, plus recent failures and the index rebuild statements pg-boss asks for; `--json` for machines. Queues in the store that no module declares are marked, never deleted.
 

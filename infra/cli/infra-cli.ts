@@ -29,7 +29,7 @@ loadBaseEnvFiles();
 // A privileged key or the passphrase in the environment would let the CLI run with nobody at the prompt: they are dropped here and asked for.
 const droppedFromEnv = dropPromptOnlyEnv();
 
-// A Ctrl-C at any prompt below ends the run with one line and releases a held stack lock.
+// A Ctrl-C at any prompt below ends the run with one line and releases a held lease.
 installPromptAbortHandler();
 
 const args = parseCliArgs(process.argv.slice(2));
@@ -141,7 +141,7 @@ function printStackNotices(context: InfraContext): void {
 }
 
 /**
- * What an operator wants to know before choosing: is the stack locked, what is live, which key this machine holds, and whether the
+ * What an operator wants to know before choosing: is the leaseed, what is live, which key this machine holds, and whether the
  * database has a public endpoint. One bounded, best-effort read; resolves to the live DB endpoints for the menu's DB access row.
  */
 async function printStackFacts(context: InfraContext): Promise<string[] | undefined> {

@@ -26,7 +26,6 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       const consumers = config.secretConsumers;
       if (!consumers) return [];
       const contributions: StoreSecretContribution[] = [];
-      // The per-consumer union is genId-fingerprinted, so reordering these declarations rolls every generation.
       if (consumers.runtime) {
         contributions.push({
           id: 'databaseUrlRuntime',

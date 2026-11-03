@@ -67,7 +67,7 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
-  // An apply first takes retired resources out of the state, under the stack lock, so its plan shows none of them as deleted: they stay live
+  // An apply first takes retired resources out of the state, under the lease, so its plan shows none of them as deleted: they stay live
   // (lib/stack/retired-state.ts). A preview leaves the state as it is.
   if (opts.forgetRetired) {
     const lock = await acquireStackLockOrExit({

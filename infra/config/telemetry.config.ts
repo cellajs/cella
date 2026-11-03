@@ -1,4 +1,4 @@
-/** App-owned telemetry sink: where deploy and boot audit events ship when no explicit OTEL_EXPORTER_OTLP_* env is set. The engine knows only this shape, and the boot runner receives the values via the boot plan. */
+/** App-owned telemetry sink: where deploy and boot audit events ship when no explicit OTEL_EXPORTER_OTLP_* env is set. The engine knows only this shape, and the agent receives the values via the boot plan. */
 export interface TelemetrySinkConfig {
   /** OTLP-compatible ingest endpoint (no trailing slash). */
   endpoint: string;

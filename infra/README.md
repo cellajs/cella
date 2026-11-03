@@ -40,13 +40,13 @@ It owns the whole pipeline, from building a missing release to removing the old 
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one.
-2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
+1. **Create-then-replace.** A release never mutates a running server: each deploy makes a new machine per role on its idle slot, waits until the load balancer sees it healthy at the expected release, then drains and deletes the old one. Traffic moves by health: every pool lists both slots' reserved addresses for good, and no deploy edits one.
+2. **The live record decides.** Which slot serves each role, with which commit, is written after every switch: a re-run of a deploy that served changes nothing, and Pulumi holds the foundation only.
 3. **Least-privilege keys.** Each key does one kind of work and is found by its name, never by a stored id.
 
 ## Security boundaries
 
-- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy, image or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
+- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, load balancer, reserved address, DNS, bucket policy, image, Pulumi state or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
 - **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes a one-day operator key, refused on the same rule.
 - **No machine holds a key.** The deploy composes each machine's env file from the values its services consume and hands the machine links that end within minutes: to that file, to the release's archives, whose digests it refuses to differ, and to the upload of its boot account. Once the machine booted, the deploy takes the links off its user data and deletes the file.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
@@ -54,7 +54,7 @@ Three rules:
 
 ## Observability
 
-Every deploy writes a run record. With a telemetry sink, a deploy also exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Seeding the sink's ingest key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The boot runner replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+Every deploy writes a run record. With a telemetry sink, a deploy also exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Seeding the sink's ingest key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
 
 ## Status command
 
@@ -68,11 +68,11 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name, a main job whose image, command, env or secret references changed. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "mode": "staging",
   "generatedAt": "<iso>",
   "stackState": "fresh | partial | bootstrapped",
@@ -90,7 +90,7 @@ Stable check `id`s:
 
 - `config.stackState`, `identity.project`, `identity.keyAges`
 - `inventory.applications`, `inventory.keys`, `inventory.policies`, `inventory.machines`, `inventory.mainJob`
-- `state.bucket`, `state.lock`, `state.pendingOperations`, `rollout`
+- `state.bucket`, `state.lock`
 - `secrets.required`, `environments.lines`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`
 
@@ -104,17 +104,17 @@ The CLI reads no privileged key and no passphrase from a file or the environment
 
 The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
 
-An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion.
+An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion. The agent answers the load balancer from that endpoint, on a port of its own per service.
 
 | Path | Holds |
 | --- | --- |
 | [config/](config/) | The app-owned registries above |
 | [cli/](cli/) | The menu and its actions |
-| [resources/](resources/) | The Pulumi program |
+| [resources/](resources/) | The Pulumi program: the foundation, no machine |
 | [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
 | [lib/](lib/) | What they share |
 | [compose/](compose/) | The Compose model, assembled from the service registry into `compose.gen.yml` |
-| [boot/](boot/) | The boot runner |
+| [agent/](agent/) | The agent every machine runs |
 | [caddy/](caddy/) | The frontend's Caddy image and its Caddyfile |
 | [runner/](runner/) | The runner's program |
 | [scripts/](scripts/) | The gate that keeps app knowledge out of the engine's code |
@@ -129,9 +129,10 @@ One name per concept across code and docs:
 | Term | Meaning |
 | --- | --- |
 | **mode** | `production` or `staging`; also the Pulumi stack name. |
-| **release** | One git SHA baked into images and generations. |
+| **release** | One git SHA baked into images and machines. |
 | **deploy** | One run of the deploy command. |
-| **blocked** | How a run ends when an operator owes something first: an identity update, an apply or a required secret. |
+| **blocked** | How a run ends when a required runtime value is missing, which an operator stores. |
+| **unchanged** | How a run ends when every role served its target already, under the same retry counter and rotation. |
 | **runner** | The app's small machine that starts a deploy when an environment's target moves. |
 | **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
@@ -139,21 +140,22 @@ One name per concept across code and docs:
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
 | **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |
 | **link** | A presigned Object Storage URL the deploy key signs: one call on one object, until it ends within minutes. |
-| **rollout** | The two-wave fleet-moving phase of a deploy. |
-| **generation** | One immutable service VM at one content-addressed `genId`. |
-| **wave** | One stack update's services, cut over concurrently; 1 = primary, 2 = the rest. |
-| **cutover** | Moving a service's LB traffic to its new generation: expand, health-gate, contract, drain. |
-| **promote / reap** | Mark a generation `active` in the control object / destroy a displaced one. |
-| **control object** | `control/<stack>.json` in the state bucket: which generation each service runs. |
-| **stack lock** | `control/<stack>.lock.json`: the lock that lets one deploy or operator action run at a time. |
+| **role** | A kind of machine: a service with a machine of its own, or under `singleVM` the host, which carries every service. |
+| **machine** | One server a deploy made for one release and one role, named `<slug>-<role>-<slot>`; deleted with the release it runs. |
+| **slot** | `a` or `b`: one of a routed role's two reserved addresses, which its pools list for good. A deploy boots on the slot that does not serve. |
+| **switch** | Moving a role to its new machine: boot on the idle slot, wait until its pools serve it, record it, drain the old one, delete it. |
+| **drain** | The order in a machine's manifest that turns its agent's answers to 503, keeps its connections for the role's drain seconds, and stops its containers. |
+| **agent** | `infra-agent`, the Compose service every machine runs ([agent/](agent/)): boots the release, answers the load balancer's check per service, drains. |
+| **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
+| **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not VM boot. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
 | **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write, made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **privileged** | A resource only an apply on the operator key changes. |
-| **boot runner** | The `infra-boot` container run at every boot ([boot/](boot/)): fetch the env file, load the archives, start compose with its migrate companion, report. |
-| **boot plan** | JSON cloud-init writes for the boot runner: service, compose and static env files, links, trace context; no key and no secret value. |
+| **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports, trace context; no key and no secret value. |
+| **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent reads every two seconds. |
 | **boot account** | The boot log a VM uploads to the boot-diag bucket through its link at the end of its first boot. |
-| **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives cutovers and no public pool reaches. |
+| **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |
 | **engine config** | The app description [config/engine-config.ts](config/engine-config.ts) injects; defaults to `appConfig`. |

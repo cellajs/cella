@@ -68,7 +68,7 @@ export function renderCompose(file: ComposeFile): string {
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`;
 }
 
-/** The generated deploy artifact, read by resources/compute.ts and shipped to each VM. */
+/** The generated deploy artifact, read by the deploy and written into each machine's user data. */
 export const OUTPUT_PATH = join(infraDir, 'compose.gen.yml');
 
 function main(): void {

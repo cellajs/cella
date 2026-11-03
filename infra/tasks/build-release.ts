@@ -110,7 +110,7 @@ export async function buildRelease(
   fx: BuildEffects,
 ): Promise<{ outcome: 'present' | 'built'; manifest: ReleaseManifest }> {
   const log = opts.log ?? ((message: string) => console.info(message));
-  // Under the stack lock, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
+  // Under the lease, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
   // whether or not this release needs a build.
   for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
   // A manifest that cannot be parsed names no archive: the release is built again, and the build overwrites it.

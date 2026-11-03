@@ -6,7 +6,7 @@ The Scaleway API calls the engine makes, and what each key may do.
 | --- | --- |
 | Identities and rights | [principals.ts](./principals.ts) names them, [declared-identities.ts](./declared-identities.ts) lists what an environment declares, [permissions.ts](./permissions.ts) and [deploy-policy.ts](./deploy-policy.ts) the deploy key's rules, [policy-reach.ts](./policy-reach.ts) the rest |
 | Keys at hand | [operator-identity.ts](./operator-identity.ts), [provider-env.ts](./provider-env.ts) |
-| API clients | [scw-fetch.ts](./scw-fetch.ts), [iam-client.ts](./iam-client.ts), [scaleway-iam.ts](./scaleway-iam.ts), [scaleway-account.ts](./scaleway-account.ts), [scaleway-rdb.ts](./scaleway-rdb.ts), [scaleway-secret-manager.ts](./scaleway-secret-manager.ts), [s3-client.ts](./s3-client.ts), [presign.ts](./presign.ts), [machines.ts](./machines.ts) |
+| API clients | [scw-fetch.ts](./scw-fetch.ts), [iam-client.ts](./iam-client.ts), [scaleway-iam.ts](./scaleway-iam.ts), [scaleway-account.ts](./scaleway-account.ts), [scaleway-rdb.ts](./scaleway-rdb.ts), [scaleway-secret-manager.ts](./scaleway-secret-manager.ts), [s3-client.ts](./s3-client.ts), [presign.ts](./presign.ts), [machines.ts](./machines.ts) (the machines a deploy makes and deletes), [foundation.ts](./foundation.ts) (what a deploy reads of the apply's) |
 | Secrets | [secret-paths.ts](./secret-paths.ts): the folders, which are the boundary IAM conditions read; [db-privileges.ts](./db-privileges.ts): the database roles |
 | DNS | [ensure-dns-zone.ts](./ensure-dns-zone.ts), [dns-zone-project.ts](./dns-zone-project.ts) |
 

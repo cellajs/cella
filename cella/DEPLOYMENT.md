@@ -5,8 +5,8 @@ This document explains how a cella app deploys to European cloud provider [Scale
 ### TL;DR
 
 Publishing a release starts an automatic deployment: it creates new servers for that exact version,
-checks them, moves traffic without downtime and removes the old servers.
-[Pulumi](https://www.pulumi.com/) manages the cloud resources, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
+waits until the load balancer sees them healthy, then drains and removes the old servers.
+[Pulumi](https://www.pulumi.com/) manages the foundation (network, load balancer, database, buckets), a deploy makes and deletes the servers itself, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
 Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need, and servers hold none: they fetch the release and their secrets through links that end within minutes.
 
 ## Overview
@@ -19,18 +19,18 @@ Resources and traffic flow:
                                      ▼
             ┌─────────────────────────────────────────────────┐
             │             Scaleway Load Balancer              │  TLS termination,
-            │  default    →  frontend VM                      │  one public IP
-            │  /api       →  backend VM                       │
-            │  /yjs, /mcp, /oauth → worker VMs                │
+            │  default    →  frontend machine                 │  one public IP
+            │  /api       →  backend machine                  │
+            │  /yjs, /mcp, /oauth → worker machines           │
  ┌──────────┤                                                 ├────────────┐
  │          └───────┬────────────────┬──────────────────┬─────┘            │
  │ Private network  │                │                  │  plain HTTP to   │
- │ (VPC)            │                │                  │  VM private IPs  │
+ │ (VPC)            │                │                  │  reserved IPs    │
  │                  ▼                ▼                  ▼                  │
  │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
- │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs, mcp, │ │
- │           │   (Caddy)   │  │             │ │  oauth, jobs (run on     │ │
- │           │             │  │             │ │  backend VM when singleVM)│ │
+ │           │  frontend   │  │   backend   │ │  workers: cdc, yjs, mcp, │ │
+ │           │   (Caddy)   │  │             │ │  oauth, jobs (on the     │ │
+ │           │             │  │             │ │  backend when singleVM)  │ │
  │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
  │                  │                │                  │                  │
  │                  │                ▼                  ▼                  │
@@ -47,11 +47,12 @@ Resources and traffic flow:
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public way to the machines. Every routed service shares the app origin under its own path prefix, so the API needs no CORS.
+- **Load balancer:** the only public way to the machines. Every routed service shares the app origin under its own path prefix, so the API needs no CORS. Each pool lists its role's two reserved addresses for good, and its health check asks the machine's agent, so traffic moves by health and no deploy edits a pool.
 - **Internal listener:** the backend's second port, for the CDC socket and the Yjs relay's materialize route. Only a private load balancer frontend that admits the private network reaches it.
-- **VMs:** all inbound traffic is dropped, SSH included. A machine loads each image from the release's archive and refuses one whose digest differs from the one the deploy put in its plan, so nothing written to the bucket later changes what it runs. It never reaches a registry.
-- **Placement:** every service gets its own VM, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend VM. The oauth, mcp and jobs workers and the migrate companion run the backend image as a `SERVICE` of their own.
-- **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
+- **Machines:** made for one release and deleted with it. Inbound traffic is dropped, SSH included, but the load balancer's own address on the service and agent ports. A machine loads each image from the release's archive and refuses one whose digest differs from the one the deploy put in its plan, so nothing written to the bucket later changes what it runs. It never reaches a registry.
+- **Agent:** every machine runs `infra-agent` beside its app. It boots the release, answers the load balancer's check with 200 only while the service serves that release and the machine is not draining, and drains when its manifest says so.
+- **Placement:** every service gets its own machine, unless `singleVM` co-hosts the workers and the frontend's Caddy on the backend's. The oauth, mcp and jobs workers and the migrate companion run the backend image as a `SERVICE` of their own.
+- **Frontend:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only, with logical replication on for the CDC worker. A break-glass action exposes it for a while ([Runbooks](./deployment/RUNBOOKS.md)).
 - **Replication slot:** a stopped CDC worker's slot keeps WAL. Where the provider offers `max_slot_wal_keep_size`, set it; the worker warns while WAL is unbounded. Scaleway's managed database has no such setting: it removes a slot inactive for 24 hours, and until then a stopped worker's WAL fills the volume while its health degrades.
 - **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron's database, `rdb` on Scaleway. Scaleway's admin user may not use the `cron` schema there, so the companion warns and the job stays unscheduled: until the provider grants the admin user that schema and its functions, a deployed database keeps every row the procedure would remove.
@@ -82,17 +83,20 @@ An environment that follows the releases, as production does, takes `releases` o
 
 **Pausing staging.** Removing staging's line stops its deploys, not its cost: its machines keep running. To stop the cost, tear staging down (`pnpm infra teardown --mode staging`), drop it from `infra/runner.json` and **Replace the runner**.
 
-**Rollback.** No old generation is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a generation is named by what it runs. It also runs the engine of its target, so a release deploys the way it was made. A release made before a planned break of the engine's state cannot be deployed after it: roll forward then.
+**Rollback.** No old machine is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a build is kept by its commit. It also runs the engine of its target, so a release deploys the way it was made. A release made before a planned break of the engine cannot be deployed after it: roll forward then.
+
+**The live record.** `control/<mode>/live.json` in the boot-diag bucket says, per role, which slot serves, its machine and its commit, and the retry counter and rotation it was booted under. A deploy replaces only the roles that do not serve its target that way: running the same deploy twice changes nothing, and a run that failed halfway resumes with the roles it did not switch. A raised retry counter, or a rotation since, replaces every machine.
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secrets its runs read, the deploy key's copy and the passphrase. A run fetches the target commit, installs the engine's own workspaces with no key in their environment, and runs the target's own deploy. It starts from the `node` image of the root `engines.node`, so a Node bump owes an apply.
+Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy. A run fetches the target commit, installs the engine's own workspaces with no key in their environment, and runs the target's own deploy. It starts from the `node` image of the root `engines.node`, so a Node bump owes an apply. A deploy reads no Pulumi state and no passphrase.
 
-A run ends in one of three outcomes:
+A run ends in one of four outcomes:
 
 - **Deployed:** the target serves.
-- **Blocked:** the run stopped before it made any machine, on something only an operator settles, which its record names: identities that differ from the declared ones, a privileged change or an empty required secret ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
-- **Failed:** the running release stays, and the target waits for a change in git or a start by hand.
+- **Unchanged:** every role served the target already; nothing was built or made.
+- **Blocked:** the run stopped before it made any machine, on a required runtime value that is empty, which its record names ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
+- **Failed:** every role it did not switch keeps its machine, and the target waits for a change in git or a start by hand.
 
 `pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`; the runner reads the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
@@ -108,7 +112,7 @@ One small machine per app starts its deploys. Once a minute, for every environme
 
 ### Run records
 
-Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every new machine also uploads a **boot account** at the end of its first boot, through its link: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed rollout's record names each new machine's account.
+Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every new machine also uploads a **boot account** at the end of its first boot, through its link: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed switch's record names each new machine's account.
 
 **Show runs** (`pnpm infra runs`, observer key) lists the last ten runs and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
 
@@ -123,31 +127,28 @@ When the boot-diag bucket lacks the release's manifest, or an archive the manife
 ```
 The runner sees a new target and starts a run of the main job
         ↓
-Check identities: they must be as declared
+The lease, then the live record: every role that serves the
+target already is left as it is (all of them: unchanged)
         ↓
-Stack lock + preflight: no privileged change may be owed
-        ↓
-Each machine's env file, from the runtime folder:
+Each role's env file, from the runtime folder:
 a required value that is missing ends the run blocked
         ↓
 Release not built yet: a builder machine writes the archives
 and the frontend files through links, then is deleted
         ↓
-Wave 1: provision + cut over the primary service (backend)
-        ↓
-Wave 2: provision every other service, cut over concurrently
+The primary role (backend) switches alone, then every other
+role at once: boot on the idle slot, wait until its pools
+serve it, record it, drain and delete the old machine
         ↓
 The new machines' links and env files go once they booted
         ↓
-Verify every public service serves the expected release
-        ↓
 Publish the frontend entry files + smoke checks
 (degraded components warn, unhealthy ones fail the run)
-        ↓
-Remove every displaced generation
 ```
 
-The primary service owns migrations: the migrate companion runs at the boot of its new generation, before the app starts, as the app's Compose dependency that must exit 0. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
+A **switch** of one role: the deploy makes the new machine through the Instance API on the slot that does not serve, with its private NIC at that slot's reserved address. Its agent boots the release and answers the check; once every pool of the role shows the new address running, the deploy records it and writes `drain` into the old machine's manifest. Within about three seconds the old agent answers 503, the load balancer stops routing to it a second and a half later, the agent keeps its connections for the role's drain seconds and stops the containers, and the deploy deletes the machine. A new machine that does not serve within the wait is deleted, and the old one never stopped serving; a role whose new machine served keeps it, whatever fails after.
+
+The primary role owns migrations: the migrate companion runs at the boot of its new machine, before the app starts, as the app's Compose dependency that must exit 0. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
 
 ## Rollout strategies
 
@@ -155,22 +156,22 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 | Strategy | Services | Behavior | Downtime |
 | --- | --- | --- | --- |
-| **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new generation starts beside the old one; the load balancer serves both, checks the new one's health and release, then drops the old one. A failed check hands the pool back to the old generation. | None (load balancer overlap). |
-| **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The new generation replaces the old in the same stack update. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
-| **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first, with load balancer overlap. One session holds the replication slot and one process claims each cron period, so the new process's cdc and jobs wait until the old VM is removed, right after promotion. | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
+| **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new machine boots on the idle slot beside the old one; once the pools see it healthy, the old one drains and goes. A new machine that never serves is deleted, and the old one keeps the traffic. | None: the pools hold both until the old one's check turns red. |
+| **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The old machine drains and goes first, then the new one boots. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
+| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. One session holds the replication slot and one process claims each cron period, so the new process's cdc and jobs wait until the old machine drained. | None for HTTP. Realtime events pause from the switch until the slot moves (the drain plus up to a minute); activities are still written. |
 
 ## Runtime secret delivery
 
 Each value has one container in the runtime folder, which only the deploy key reads. Before it builds anything, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run.
 
-- **The Pulumi state holds no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
+- **The Pulumi state holds no machine and no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
 - **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine exists, and storing it in **Manage runtime secrets** starts the target again.
 - **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value reaches the machines the next deploy makes: a new release, or a rotation.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 
 ## Load balancer and DNS
 
-The load balancer, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply. A deploy moves the pools' servers and nothing else, so enabling a routed service takes an apply first. Every apply also replaces a certificate that failed for good.
+The load balancer, its pools, the reserved addresses they list, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply: the deploy key may read them and write none. Enabling a routed service, or changing a role, takes an apply first. Every apply also replaces a certificate that failed for good.
 
 ## Configuration
 
@@ -178,6 +179,6 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per service: VM size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | A deploy; a new or changed load balancer route takes **Review & apply changes** first |
+| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | A deploy; a new or changed load balancer route or machine role takes **Review & apply changes** first |
 | [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention | **Review & apply changes** (privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

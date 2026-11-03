@@ -8,7 +8,7 @@ import { infraDir } from '../utils/paths';
  * engine in a service.
  */
 export interface PulumiDriver {
-  /** One full stack update (provisions pending generations, reaps displaced ones). */
+  /** One full stack update. */
   update(): Promise<void>;
   /** Read a stack output. Throws when the output is missing. */
   output<T>(name: string): Promise<T>;

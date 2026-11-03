@@ -70,7 +70,7 @@ export function coHostedServices(serviceConfig: Record<string, EngineServiceEndp
   return placeServices(enabledServices(serviceConfig), singleVM).coHosted;
 }
 
-/** Enabled `placement: 'host'` containers the boot runner starts beside the host container under singleVM. Their LB pools follow the host cutover, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
+/** Enabled `placement: 'host'` containers the agent starts beside the host container under singleVM. Their LB pools follow the host's switch, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
 export function collocatedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
@@ -88,8 +88,8 @@ export function carriedServices(
 
 /**
  * True for the singleVM host when it runs a stop-first worker (the cdc replication slot, the cron maintainer). The host still cuts over start-first:
- * PostgreSQL lets one session hold the slot and pg-boss claims each cron period once, so the new generation's copies wait while the old VM lives.
- * They take over only once the old VM is gone, so the rollout reaps it right after promotion.
+ * PostgreSQL lets one session hold the slot and pg-boss claims each cron period once, so the new machine's copies wait while the old one lives.
+ * They take over once the old machine drained and went.
  */
 export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean, svc: ServiceDefinition): boolean {
   if (!singleVM || !svc.primaryRollout) return false;

@@ -30,7 +30,7 @@ function variantsOf(value: string): string[] {
 }
 
 /**
- * Redaction by value for the boot runner: it learns each secret as boot handles it (every link of its plan, every value
+ * Redaction by value for the agent: it learns each secret as boot handles it (every link of its plan, every value
  * of its env file) and replaces that exact value in any text, whatever variable name printed it.
  * Name-based line scrubbing misses a secret printed without its name, such as a DSN in a driver error.
  */

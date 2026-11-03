@@ -17,7 +17,7 @@ export interface UploadBootDiagnosticsOptions {
   fetchImpl?: FetchLike;
 }
 
-// Mirrors the cloud-init log scrub (resources/cloud-init.ts scrubCloudInitLogs) so both diagnostic channels drop the same secret-bearing lines.
+// Mirrors the cloud-init log scrub (lib/deploy/machine-user-data.ts) so both diagnostic channels drop the same secret-bearing lines.
 const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|X-Amz-Signature/i;
 
 /** Replace secret-bearing lines before a log leaves the VM, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
@@ -51,7 +51,7 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   if (opts.failedPhase) parts.push(`failed_phase=${opts.failedPhase}`);
   if (opts.failure?.trim()) parts.push('', '--- boot error ---', scrubSecretLines(opts.failure));
   parts.push('', scrubSecretLines(log));
-  // The boot log holds the boot runner's and the release companion's output; the app containers log to Docker, so a crash is in their captured tail.
+  // The boot log holds the agent's and the release companion's output; the app containers log to Docker, so a crash is in their captured tail.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = opts.redact(parts.join('\n'));
   const res = await resolveFetch(opts.fetchImpl)(opts.url, { method: 'PUT', body, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

@@ -54,7 +54,7 @@ describe('Show runs', () => {
       startedAt: '2026-10-15T01:00:00.000Z',
       outcome: 'failed',
       failedStep: 'Waved rollout',
-      error: 'cutover failed',
+      error: 'a switch failed',
       steps: [{ title: 'Waved rollout', seconds: 30, outcome: 'error' }],
       boot: [{ service: 'backend', key: 'backend-20261015T010300Z-boot.log', failed: true }, { service: 'cdc' }],
     });

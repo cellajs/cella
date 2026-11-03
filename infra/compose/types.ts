@@ -1,12 +1,12 @@
 import type { PerMode } from '../lib/general-config';
 
-/** VM cutover strategy: `start-first` overlaps generations behind the LB; `stop-first` releases a singleton resource before replacement starts. */
+/** How a role's machine is replaced: `start-first` serves the new one beside the old behind the LB; `stop-first` releases a singleton resource before the new one boots. */
 export type ReplacementStrategy = 'start-first' | 'stop-first';
 
 /**
- * How the old generation is drained off the LB when it is de-registered.
+ * How the old machine drains off the LB once its check turns red.
  * `requests`: HTTP, `onMarkedDownAction: 'none'` lets in-flight requests finish over `drainSeconds`.
- * `reconnect`: WebSocket sessions are not held; clients re-dial the new generation and resync from durable state.
+ * `reconnect`: WebSocket sessions are not held; clients re-dial the new machine and resync from durable state.
  */
 export type DrainPolicy = 'requests' | 'reconnect';
 
@@ -16,11 +16,11 @@ export type LbRoute = 'default' | 'host' | 'path';
 /** Shared-host path prefix matched without stripping: leading slash, no trailing slash, and the service must serve under it. */
 export type PathPrefix = `/${string}`;
 
-/** Where a service's container runs: its own VM generation, or collocated on the singleVM host. */
+/** Where a service's container runs: a machine of its own, or collocated on the singleVM host. */
 export type ServicePlacement = 'vm' | 'host';
 
 /**
- * A one-shot release step run at a new generation's boot before the app starts (expand-before-cutover), gated on exit 0.
+ * A one-shot release step run at a new machine's boot before the app starts (expand before the switch), gated on exit 0.
  * The engine runs the service image as a companion; what the step does is app-defined (schema migration, backfill, seed).
  */
 export interface ReleaseStep {
@@ -52,9 +52,9 @@ export interface ServiceMeta {
   primaryRollout?: boolean;
   /** `start-first` for LB-exposed services; `stop-first` for the singleton-slot cdc worker. */
   replacementStrategy: ReplacementStrategy;
-  /** How the old generation drains off the LB. Omit for the LB-less `stop-first` worker. */
+  /** How the old machine drains off the LB. Omit for the LB-less `stop-first` worker. */
   drainPolicy?: DrainPolicy;
-  /** Drain window (seconds) the cutover waits after the old generation is de-registered; 0 for none. */
+  /** Drain window (seconds) a draining machine keeps its connections after its check turned red; 0 for none. */
   drainSeconds: number;
   /** Public LB exposure; absent = internal-only. */
   lbRoute?: LbRoute;
@@ -62,7 +62,7 @@ export interface ServiceMeta {
   pathPrefix?: PathPrefix;
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean;
-  /** Port of the service's internal listener, reached only through the private ACL-guarded LB frontend (a stable, cutover-following address). */
+  /** Port of the service's internal listener, reached only through the private ACL-guarded LB frontend (a stable address that follows every switch). */
   internalPort?: number;
   /** Service whose image this one reuses (mcp reuses backend); no own image built. */
   reusesImageOf?: string;
@@ -78,7 +78,7 @@ export interface ServiceMeta {
   instanceType: PerMode<string>;
   /** This service signs S3 requests with the uploads key, which its env file carries (REQ-20). */
   s3Access?: boolean;
-  /** Deploy-time env bindings resolved by the compute module; see {@link AppServiceConfig.bindings}. */
+  /** Deploy-time env bindings resolved into a machine's static env; see {@link AppServiceConfig.bindings}. */
   bindings?: Readonly<Record<string, string>>;
 }
 
@@ -141,9 +141,9 @@ export interface AppServiceConfig {
   release?: ReleaseStep;
   /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
   primaryRollout?: boolean;
-  /** How the old generation drains off the LB when de-registered. Omit for the LB-less `stop-first` worker. */
+  /** How the old machine drains off the LB once its check turns red. Omit for the LB-less `stop-first` worker. */
   drainPolicy?: DrainPolicy;
-  /** Drain window (seconds) the cutover waits after the old generation is de-registered; defaults to 0. */
+  /** Drain window (seconds) a draining machine keeps its connections after its check turned red; defaults to 0. */
   drainSeconds?: number;
   /** How the LB exposes this service publicly: `'default'` = fallback backend, `'host'` = own DNS record + cert + route. Omit for internal-only. */
   lbRoute?: LbRoute;
@@ -154,7 +154,7 @@ export interface AppServiceConfig {
   /**
    * Port of the service's internal listener, a second listener beside `port` that serves only server-to-server routes.
    * A private, ACL-guarded LB frontend forwards to it, so consumers inside the private network reach it at a stable
-   * address that follows every cutover (`@{<slug>.internalHost}:@{<slug>.internalPort}`); the public LB pools never
+   * address that follows every switch (`@{<slug>.internalHost}:@{<slug>.internalPort}`); the public LB pools never
    * forward to it. The internal pool gets WebSocket-grade timeouts and health-checks this port; only private-network
    * sources pass the frontend's ACLs. Must differ from every service's `port` and `internalPort`. The container
    * receives it as `INTERNAL_PORT`.
@@ -172,9 +172,9 @@ export interface AppServiceConfig {
    */
   coHosted?: boolean;
   /**
-   * Where this service's container runs. `'vm'` (default) gives it a dedicated VM generation. `'host'` collocates it as a
-   * second container on the singleVM host VM: its LB pool follows the host cutover and its image/env join the host's genId
-   * fingerprint. For services that cannot fold in-process (a different runtime than the host); ignored when `singleVM` is false.
+   * Where this service's container runs. `'vm'` (default) gives it a machine of its own. `'host'` collocates it as a
+   * second container on the singleVM host: its LB pool follows the host's switch and its image/env join the host's
+   * machine. For services that cannot fold in-process (a different runtime than the host); ignored when `singleVM` is false.
    */
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box, there is no fleet-wide fallback. A single type for all modes, or a per-mode map. */
@@ -183,8 +183,9 @@ export interface AppServiceConfig {
   env?: Readonly<Record<string, string>>;
   /**
    * Deploy-time values for this service's `${VAR}` env placeholders, expressed as templates over other services:
-   * `@{<slug>.url}`, `@{<slug>.privateIp}`, `@{<slug>.port}`, or `@{self.…}`. Resolved by the compute module when the
-   * VM's .env is written. Vars without a binding fall back to the compute module's shared env pool (APP_ORIGIN, FRONTEND_CSP, …).
+   * `@{<slug>.url}`, `@{<slug>.port}`, `@{<slug>.internalHost}`, `@{<slug>.internalPort}`, or `@{self.…}`. Resolved when the
+   * deploy writes a machine's static `.env` (lib/deploy/static-env.ts). Vars without a binding fall back to the app's env
+   * suppliers (config/env-suppliers.config.ts: APP_ORIGIN, FRONTEND_CSP, …).
    */
   bindings?: Readonly<Record<string, string>>;
   /** Inject `NODE_ENV`/`APP_MODE`/`TZ`. Default true; set false for the SPA proxy. */

@@ -68,7 +68,7 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
   return secrets;
 }
 
-/** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order: the per-consumer union order is genId-fingerprinted, so merge position must not change. */
+/** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order. */
 export function buildRuntimeSecrets(
   stores: Record<string, Pick<StoreProvisioner, 'secrets'>>,
   appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>>,
@@ -156,7 +156,7 @@ export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): Runt
   return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer));
 }
 
-/** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order. That order is hashed into each generation's genId, so reordering re-rolls every generation. */
+/** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order: the order of a machine's env file. */
 function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
   const seen = new Set<string>();
   return consumers

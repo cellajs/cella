@@ -28,7 +28,7 @@ export interface BootPlan {
   releaseSha: string;
   /** W3C traceparent of the deploy that made this machine; boot telemetry joins that trace. */
   traceparent?: string;
-  /** App-declared telemetry sink: boot events export here once the env file delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
+  /** App-declared telemetry sink: boot events export here once the env file delivers the key under `keyEnvVar`. Absent = black box only; the agent bakes in no vendor endpoint. */
   telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
   imageContract: typeof supportedImageContract;
   /**

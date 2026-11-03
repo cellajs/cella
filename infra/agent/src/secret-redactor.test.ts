@@ -28,7 +28,7 @@ describe('createSecretRedactor', () => {
 
     expect(redactor.redact('dial postgresql://app:db-password-4711@10.0.0.5:5432/app?sslmode=require')).toBe('dial [REDACTED]');
     expect(redactor.redact('auth failed for password db-password-4711')).toBe('auth failed for password [REDACTED]');
-    // Userinfo goes whether or not the value is known: an admin DSN the boot runner never saw.
+    // Userinfo goes whether or not the value is known: an admin DSN the agent never saw.
     expect(redactor.redact('dial postgres://admin:unknown-pw@10.0.0.6/postgres')).toBe('dial postgres://[REDACTED]@10.0.0.6/postgres');
   });
 

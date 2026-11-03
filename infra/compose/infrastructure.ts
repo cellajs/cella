@@ -125,8 +125,8 @@ function releaseServiceName(slug: string): string {
 
 /**
  * One-shot release companion for a service that declares a `release` step: the service image with the app's
- * release command/env, run at the new generation's boot BEFORE the app starts, which depends on its exit 0.
- * It shares the service's profile because profile membership is genId-fingerprinted; a separate profile would re-roll every generation.
+ * release command/env, run at the new machine's boot BEFORE the app starts, which depends on its exit 0.
+ * It shares the service's profile, so the agent's `--profile <service>` starts it with the app.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const release = cfg.release;

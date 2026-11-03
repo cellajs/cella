@@ -23,15 +23,10 @@ const envSources = {
 
 describe('runtime secret registry', () => {
   it('merges store-owned declarations ahead of app-config entries', () => {
-    // The per-consumer union order is genId-fingerprinted, so the primary store's DSN and CA declarations must keep their lead positions.
+    // A store owns its connection strings: the app's registry declares none of them again.
     const ids = runtimeSecrets.map((secret) => secret.id);
     expect(ids.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseUrlCdc', 'databaseSslCa']);
     expect(Object.keys(runtimeSecretsConfig)).not.toContain('databaseUrlRuntime');
-  });
-
-  it('preserves the historical per-consumer manifest order for the backend VM', () => {
-    const backendIds = runtimeSecretsForConsumer('backend').map((secret) => secret.id);
-    expect(backendIds.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseSslCa', 'cookieSecret']);
   });
 
   it('uses unique ids, secret names and env vars', () => {

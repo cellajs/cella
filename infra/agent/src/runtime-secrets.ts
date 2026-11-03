@@ -6,7 +6,7 @@ import { writeFileMode } from './fs-utils';
 /** Ceiling on one fetch of the env file, a few kilobytes: a stalled one fails and is retried. */
 const fetchAttemptTimeoutSeconds = 60;
 
-/** The values of an env file, one `NAME=value` per line, so the boot runner redacts each wherever it shows up. */
+/** The values of an env file, one `NAME=value` per line, so the agent redacts each wherever it shows up. */
 export function envFileValues(content: string): string[] {
   return content
     .split('\n')

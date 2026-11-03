@@ -50,7 +50,7 @@ export function engineConfig(): EngineConfig {
 /**
  * The slug namespaces every Scaleway resource name, the VM's `/etc/<slug>` config
  * dir, and the `::<slug>::` serial marker rendered into the root boot script
- * (resources/cloud-init.ts). Pinning it to kebab-case at the single config
+ * (lib/deploy/machine-user-data.ts). Pinning it to kebab-case at the single config
  * boundary makes every downstream shell use of the slug safe by construction, so
  * no call site needs its own quoting or escaping.
  */

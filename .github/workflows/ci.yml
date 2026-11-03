@@ -91,7 +91,7 @@ jobs:
           pnpm unused
 
       # compose.gen.yml is a committed artifact read at deploy time
-      # (infra/resources/compute.ts), so a stale copy must fail the PR.
+      # (infra/tasks/switch-machines.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
 
@@ -157,7 +157,7 @@ jobs:
         run: cp ./backend/.env.example ./backend/.env
 
       # A bundle can build and still crash at start (a workspace import left as a bare import), which a deploy finds
-      # only as a cutover that never turns healthy. Migrates, boots and stops each service on the test database.
+      # only as a switch whose new machine never turns healthy. Migrates, boots and stops each service on the test database.
       - name: Boot the service bundles
         run: pnpm boot:check
 

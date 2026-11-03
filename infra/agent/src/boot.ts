@@ -169,7 +169,7 @@ export async function boot(opts: BootOptions): Promise<void> {
       runtimeEnv = env.content;
       logger.log('info', env.fetched ? 'env-fetched' : 'env-kept');
     });
-    // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
+    // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the agent.
     const sink = plan.telemetry;
     const sinkKey = sink ? sinkKeyFromRuntimeEnv(runtimeEnv, sink.keyEnvVar) : undefined;
     if (sink && sinkKey) {

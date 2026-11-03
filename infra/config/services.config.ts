@@ -17,7 +17,7 @@ export const appServices = defineServices({
     healthExpectStatus: 204,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
-    // Immutable-node cutover: the new generation is health-gated, the LB overlaps both, then contracts. The one-shot release companion applies migrations at the new generation's boot, so the app block does not migrate on its own.
+    // A new machine per release: it serves beside the old one once its agent reports it healthy, then the old one drains. The one-shot release companion applies migrations at the new machine's boot, so the app block does not migrate on its own.
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     // The managed instance's admin user is no superuser, so it may not read `cron.database_name`: the migrate step is told pg_cron's database.
@@ -28,7 +28,7 @@ export const appServices = defineServices({
     lbRoute: 'path',
     pathPrefix: '/api',
     // The internal listener (the CDC socket, the Yjs relay's routes): only the private ACL-guarded LB frontend forwards
-    // to it, so in-network consumers dial a stable address that follows every cutover and the public pool never can.
+    // to it, so in-network consumers dial a stable address that follows every switch and the public pool never can.
     // The synth passes it to the container as INTERNAL_PORT.
     internalPort: 4005,
     // Attachment uploads and presigned URLs are signed with the uploads key, which the deploy puts in this service's env file.
@@ -52,7 +52,7 @@ export const appServices = defineServices({
     // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
     env: { BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', APP_ORIGIN: '${APP_ORIGIN}' },
-    // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
+    // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend switches, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
     bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
 
@@ -65,7 +65,7 @@ export const appServices = defineServices({
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
     replacementStrategy: 'start-first',
-    // Sessions close during drain; WebSocket clients reconnect to the new generation and resync from durable CRDT state.
+    // Sessions close during drain; WebSocket clients reconnect to the new machine and resync from durable CRDT state.
     drainPolicy: 'reconnect',
     drainSeconds: 5,
     // Reached at wss://<app-host>/yjs/... through an LB path-begin route; the yjs server accepts the unstripped prefix.
@@ -151,7 +151,7 @@ export const appServices = defineServices({
     // The SPA proxy reads no app secret, so it gets no standard env and no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
-    // singleVM runs the Caddy container on the host VM, since a non-Node runtime cannot fold in-process; its LB pool follows the host cutover.
+    // singleVM runs the Caddy container on the host VM, since a non-Node runtime cannot fold in-process; its LB pool follows the host's switch.
     placement: 'host',
     instanceType: 'DEV1-S',
     env: { FRONTEND_CSP: '${FRONTEND_CSP}', ORIGIN_HOST: '${ORIGIN_HOST}' },

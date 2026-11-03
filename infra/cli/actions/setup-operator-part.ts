@@ -61,7 +61,7 @@ interface SetupContext {
   /** The operator key: provider auth, Secret Manager writes and IAM reads. */
   accessKey: string;
   secretKey: string;
-  /** The key for the state side (backend login, stack lock): the operator key, naming this project. */
+  /** The key for the state side (backend login, lease): the operator key, naming this project. */
   stateKey: KeyPair;
   stackName: string;
   /** Child-process env carrying the provider key + passphrase. */
@@ -186,7 +186,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       stdio: 'ignore',
     });
   }
-  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The first deploy brings the VMs up.`);
+  console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
 
   // The database roles and connection strings, and the generated values, are made outside the state once the `up` made their containers.
   await ensureDatabaseForStack({
@@ -299,7 +299,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 
   // Base infrastructure provisioning
-  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
+  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, load balancer; the deploys make the machines)`);
   const runNow = await confirmOrDefault({
     message: firstSetup ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
     default: firstSetup,
@@ -317,7 +317,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 }
 
-/** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
+/** Record a rotation of keys beside the live record, under the lease, with the operator key. */
 /**
  * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it (plan §3.5). Both a setup
  * and a rotation of keys make one, and a rotation deletes the key the copy held before, so a rotation that skipped this would leave the
