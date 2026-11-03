@@ -9,12 +9,14 @@ import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { stateKeyOf } from '../../lib/scaleway/s3-client';
+import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
+import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
 import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
-import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
+import { importPlan, keptResources } from '../../lib/stack/kept-resources';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
+import { createPulumiDriver } from '../../lib/stack/pulumi-driver';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -94,6 +96,31 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
 }
 
 /**
+ * Import what a teardown kept and the state lacks (lib/stack/kept-resources.ts), before the `up` that would otherwise make it again. Nothing
+ * on a stack that holds it all. A listing that fails is left to the `up`, which then names what exists.
+ */
+async function adoptKept(ctx: SetupContext): Promise<void> {
+  const region = ctx.appConfig.s3.region;
+  const live = await Promise.all([
+    makeS3Client(region, ctx.stateKey.accessKey, ctx.stateKey.secretKey).then(async (s3) => {
+      const { ListBucketsCommand } = await import('@aws-sdk/client-s3');
+      return ((await s3.send(new ListBucketsCommand({}))).Buckets ?? []).flatMap((bucket) => (bucket.Name ? [bucket.Name] : []));
+    }),
+    createSecretManagerClient({ secretKey: ctx.secretKey, region, projectId: ctx.projectId }).listSecrets(RUNTIME_FOLDER),
+  ]).catch((error) => {
+    console.warn(`  ${warningMark} Could not list what a teardown may have kept (${errorMessage(error)}).`);
+    return undefined;
+  });
+  if (!live) return;
+  const driver = createPulumiDriver(ctx.stackName, { env: ctx.childEnv });
+  const plan = importPlan(keptResources(ctx.appConfig), { buckets: live[0], secrets: live[1] }, await driver.exportState(), region);
+  if (plan.length === 0) return;
+  console.info(`\n→ Adopting what a teardown kept: ${plan.map((resource) => resource.name).join(', ')}`);
+  await driver.importResources(plan);
+  console.info(`  ${checkMark} Adopted: the \`up\` updates them in place.`);
+}
+
+/**
  * Validate DNS, lock the stack, defer fresh compute, and converge Pulumi, on the operator key.
  * Once secret containers exist, seed the operator's values.
  */
@@ -121,21 +148,16 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
   const firstProvision = ctx.context.state === 'fresh';
   // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
   const firstProvisioning = inFirstProvisioning(ctx.context);
-  if (firstProvisioning) {
-    // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
-    const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
-      .listSecrets()
-      .catch(() => []);
-    const imports = operatorSecretImports(listed, operatorManagedRuntimeSecrets, { region: ctx.appConfig.s3.region });
-    if (imports) {
-      ctx.childEnv.OPERATOR_SECRET_IMPORTS = imports;
-      console.info(
-        `  ${checkMark} Adopting the operator values a teardown kept: ${imports
-          .split(',')
-          .map((entry) => entry.split('=')[0])
-          .join(', ')}`,
-      );
-    }
+  try {
+    await adoptKept(ctx);
+  } catch (error) {
+    await stackLock.release();
+    if (endsAction(error)) throw error;
+    endActionWithHint(
+      `Could not adopt what a teardown kept: ${errorMessage(error)}`,
+      { command: actionCommand('resume'), description: 'fix the cause above, then run it again to continue' },
+      1,
+    );
   }
   if (firstProvision) {
     console.info(

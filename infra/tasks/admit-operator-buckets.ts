@@ -75,11 +75,12 @@ async function retiredAdminKey(opts: { operatorSecretKey: string; region: string
 }
 
 /**
- * True when the bucket policies shut a member of the operators group out: the apply that names them, on a key the policies admit, has not
- * run since they joined. Nothing in the engine can let a member in by their own key.
+ * True when the bucket policies shut a key's bearer out, named as `user_id:<id>` or `application_id:<id>`: for a member of the operators
+ * group, the apply that names them, on a key the policies admit, has not run since they joined. Nothing in the engine can let a member in
+ * by their own key.
  */
-export async function memberShutOut(opts: { appConfig: EngineConfig; projectId: string; member: KeyPair & { userId: string } }): Promise<boolean> {
-  return shutOut(opts.appConfig.s3.region, stateKeyOf(opts.member, opts.projectId), policedBuckets(opts.appConfig), `user_id:${opts.member.userId}`);
+export async function shutOutOfBuckets(opts: { appConfig: EngineConfig; projectId: string; key: KeyPair; principal: string }): Promise<boolean> {
+  return shutOut(opts.appConfig.s3.region, stateKeyOf(opts.key, opts.projectId), policedBuckets(opts.appConfig), opts.principal);
 }
 
 /**

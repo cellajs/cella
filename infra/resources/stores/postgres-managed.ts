@@ -122,7 +122,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           // (cli/actions/db-exposure.ts), and a refresh of this instance before an expose lets `{}` plan a new one.
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
-        { deleteBeforeReplace: true, protect: isProduction },
+        { deleteBeforeReplace: true },
       );
 
       if (acl?.ok) {

@@ -15,7 +15,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { admitOperatorToBuckets, memberShutOut } from '../../tasks/admit-operator-buckets';
+import { admitOperatorToBuckets, shutOutOfBuckets } from '../../tasks/admit-operator-buckets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
@@ -289,10 +289,11 @@ export async function admitOperatorOrExit(context: InfraContext, key: { accessKe
   if (!operator) return;
   if (operator.bearer !== 'application') {
     const names = appPrincipalNames(context.appConfig.appSlug);
-    const shutOut = await memberShutOut({
+    const shutOut = await shutOutOfBuckets({
       appConfig: context.appConfig,
       projectId: context.projectId,
-      member: { ...key, userId: operator.bearerId },
+      key,
+      principal: `user_id:${operator.bearerId}`,
     }).catch(() => false);
     if (!shutOut) return;
     console.error(

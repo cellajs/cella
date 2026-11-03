@@ -33,11 +33,16 @@ export function isRetired(urn: string, generated: ReadonlySet<string>): boolean 
   return random !== undefined && generated.has(random);
 }
 
-/** The retired resources a stack export still holds, by URN. */
-export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): string[] {
+/** Every URN a stack export holds. */
+export function urnsOf(exported: unknown): string[] {
   return resourcesOf(deploymentOf(exported))
     .map((resource) => resource.urn)
-    .filter((urn): urn is string => typeof urn === 'string' && isRetired(urn, generated));
+    .filter((urn): urn is string => typeof urn === 'string');
+}
+
+/** The retired resources a stack export still holds, by URN. */
+export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): string[] {
+  return urnsOf(exported).filter((urn) => isRetired(urn, generated));
 }
 
 /**

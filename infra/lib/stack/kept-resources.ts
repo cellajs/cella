@@ -1,0 +1,94 @@
+import type { ImportResource } from '@pulumi/pulumi/automation';
+import type { EngineConfig } from '../../config/engine-config';
+import { deriveInfra } from '../naming';
+import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
+import type { SecretManagerSecret } from '../scaleway/scaleway-secret-manager';
+import { RUNTIME_FOLDER } from '../scaleway/secret-paths';
+import { appStorageNeeds, services } from '../services';
+import { urnsOf } from './retired-state';
+
+const BUCKET = 'scaleway:object/bucket:Bucket';
+const BUCKET_POLICY = 'scaleway:object/bucketPolicy:BucketPolicy';
+const SECRET = 'scaleway:secrets/secret:Secret';
+
+/** One resource a teardown leaves live, by its type and name in the program. */
+export interface KeptResource {
+  type: string;
+  name: string;
+  /** What a setup finds it by: a bucket's name, or a container's name in the runtime folder. None for a bucket policy, which the first `up` writes anew. */
+  adopt?: { bucket: string } | { secret: string };
+}
+
+type ListedSecret = Pick<SecretManagerSecret, 'id' | 'name' | 'path'>;
+
+/**
+ * What a teardown keeps and a setup adopts: the upload buckets and the boot-diag bucket with their policies, the state bucket's policy, and
+ * the containers of the values that protect stored data, which the final dump in the private uploads bucket needs. The program declares
+ * each with `retainOnDelete`; the state bucket itself is no resource of the program.
+ */
+export function keptResources(appConfig: EngineConfig, definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): KeptResource[] {
+  const { naming } = deriveInfra(appConfig);
+  const bucket = (name: string, live: string, policy: string): KeptResource[] => [
+    { type: BUCKET, name, adopt: { bucket: live } },
+    { type: BUCKET_POLICY, name: policy },
+  ];
+  return [
+    ...(appStorageNeeds(services).uploadBuckets
+      ? [
+          ...bucket('public-uploads-bucket', naming.publicBucket, 'public-uploads-policy'),
+          ...bucket('private-uploads-bucket', naming.privateBucket, 'private-uploads-policy'),
+        ]
+      : []),
+    ...bucket('boot-diag-bucket', naming.bootDiagBucket, 'boot-diag-policy'),
+    { type: BUCKET_POLICY, name: 'state-bucket-policy' },
+    ...definitions
+      .filter(protectsStoredData)
+      .map((definition): KeptResource => ({ type: SECRET, name: `secret-${definition.secretName}`, adopt: { secret: definition.secretName } })),
+  ];
+}
+
+/** A resource's `<type>::<name>`, the end of its URN for a resource without a parent. */
+const keyOf = (resource: Pick<KeptResource, 'type' | 'name'>) => `${resource.type}::${resource.name}`;
+const urnKey = (urn: string) => urn.split('::').slice(-2).join('::');
+
+const trimSlashes = (path: string) => `/${path.split('/').filter(Boolean).join('/')}`;
+
+/** The live container of a kept value: its name, in the runtime folder; a container of that name in another folder is not it. */
+function keptContainer(listed: readonly ListedSecret[], name: string): ListedSecret | undefined {
+  return listed.find((secret) => secret.name === name && trimSlashes(secret.path) === trimSlashes(RUNTIME_FOLDER));
+}
+
+/** The URNs of a stack export that are kept resources: a teardown takes them out of the state before its destroy, so they stay live. */
+export function keptUrns(exported: unknown, kept: readonly KeptResource[]): string[] {
+  const keys = new Set(kept.map(keyOf));
+  return urnsOf(exported).filter((urn) => keys.has(urnKey(urn)));
+}
+
+/** The secret containers a teardown deletes: every one of the project but the kept values' containers. */
+export function sweptSecrets<Secret extends ListedSecret>(listed: readonly Secret[], kept: readonly KeptResource[]): Secret[] {
+  const keep = new Set(
+    kept.flatMap(({ adopt }) => (adopt && 'secret' in adopt ? [keptContainer(listed, adopt.secret)?.id ?? ''] : [])).filter(Boolean),
+  );
+  return listed.filter((secret) => !keep.has(secret.id));
+}
+
+/** What a setup finds live in the environment's project: the bucket names, and the secret containers. */
+export interface KeptLive {
+  buckets: readonly string[];
+  secrets: readonly ListedSecret[];
+}
+
+/**
+ * The imports a setup runs before its `up`: each kept resource that is live and absent from the state, under the type and name the program
+ * declares it with, so the `up` updates it in place where it would otherwise fail to make it again. A bucket is imported as `<region>/<name>`
+ * in the provider's default project, the environment's; a container as `<region>/<id>`. Empty for a stack that holds them all.
+ */
+export function importPlan(kept: readonly KeptResource[], live: KeptLive, exported: unknown, region: string): ImportResource[] {
+  const inState = new Set(urnsOf(exported).map(urnKey));
+  return kept.flatMap(({ type, name, adopt }): ImportResource[] => {
+    if (!adopt || inState.has(keyOf({ type, name }))) return [];
+    if ('bucket' in adopt) return live.buckets.includes(adopt.bucket) ? [{ type, name, id: `${region}/${adopt.bucket}` }] : [];
+    const container = keptContainer(live.secrets, adopt.secret);
+    return container ? [{ type, name, id: `${region}/${container.id}` }] : [];
+  });
+}

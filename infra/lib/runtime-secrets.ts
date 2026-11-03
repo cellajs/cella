@@ -150,6 +150,11 @@ export function engineMadeRuntimeSecrets(definitions: readonly RuntimeSecretDefi
   return [...generatedRuntimeSecrets(definitions), ...databaseRuntimeSecrets(definitions)];
 }
 
+/** A generated value that protects stored data: no rotation replaces it, and a teardown keeps its container beside the final dump. */
+export function protectsStoredData(definition: Pick<RuntimeSecretDefinition, 'valueSource' | 'generation' | 'rotatable'>): boolean {
+  return definition.valueSource === 'engine' && definition.generation === 'random' && definition.rotatable !== true;
+}
+
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {

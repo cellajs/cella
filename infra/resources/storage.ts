@@ -5,7 +5,7 @@ import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
 import { appStorageNeeds, services } from '../lib/services';
-import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
+import { naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
@@ -83,39 +83,40 @@ const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
       : [],
   );
 
+// The upload buckets and the boot-diag bucket, with their policies, outlive a destroy and keep their contents: a teardown keeps them, and a
+// setup adopts them again (lib/stack/kept-resources.ts). A policy stays so a kept bucket admits no more principals than before.
+const kept = { retainOnDelete: true };
+
 // Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
 const assetRetentionDays = sizing.assetRetentionDays;
 
 // Frontend static files bucket, only when a default-route service exists to serve it.
 
 const frontendBucket = needs.spaBucket
-  ? new scaleway.object.Bucket(
-      'frontend-bucket',
-      {
-        name: naming.frontendBucket,
-        region,
-        tags: tagsAsMap,
-        forceDestroy: !isProduction,
-        versioning: { enabled: true },
-        lifecycleRules: [
-          {
-            // Versioned expiration creates delete markers, so purge noncurrent objects after 30 days and remove markers once no versions remain.
-            id: 'cleanup-old-versions',
-            enabled: true,
-            noncurrentVersionExpiration: { noncurrentDays: 30 },
-            expiration: { expiredObjectDeleteMarker: true },
-          },
-          {
-            // Expire immutable chunks after the open-tab window; versioning creates a marker here and the old-version rule performs the deletion.
-            id: 'expire-stale-assets',
-            enabled: true,
-            expiration: { days: assetRetentionDays },
-            prefix: 'assets/',
-          },
-        ],
-      },
-      { protect: isProduction },
-    )
+  ? new scaleway.object.Bucket('frontend-bucket', {
+      name: naming.frontendBucket,
+      region,
+      tags: tagsAsMap,
+      // A teardown deletes it with the frontend's files, which every deploy writes again.
+      forceDestroy: true,
+      versioning: { enabled: true },
+      lifecycleRules: [
+        {
+          // Versioned expiration creates delete markers, so purge noncurrent objects after 30 days and remove markers once no versions remain.
+          id: 'cleanup-old-versions',
+          enabled: true,
+          noncurrentVersionExpiration: { noncurrentDays: 30 },
+          expiration: { expiredObjectDeleteMarker: true },
+        },
+        {
+          // Expire immutable chunks after the open-tab window; versioning creates a marker here and the old-version rule performs the deletion.
+          id: 'expire-stale-assets',
+          enabled: true,
+          expiration: { days: assetRetentionDays },
+          prefix: 'assets/',
+        },
+      ],
+    })
   : undefined;
 
 // Public read via bucket policy only: the Caddy frontend VMs proxy the S3 REST endpoint with their own index.html fallback, so no S3 website hosting config is needed.
@@ -143,47 +144,54 @@ if (frontendBucket) {
 // Public uploads bucket, only when a service signs S3 uploads.
 
 const publicUploadsBucket = needs.uploadBuckets
-  ? new scaleway.object.Bucket('public-uploads-bucket', {
-      name: naming.publicBucket,
-      region,
-      tags: tagsAsMap,
-      forceDestroy: !isProduction,
-      // User uploads are irreplaceable: versioning plus a noncurrent-expiry window keeps overwrites and deletes recoverable for 30 days, and the CI statement below cannot delete versions.
-      versioning: { enabled: true },
-      lifecycleRules: [
-        {
-          id: 'cleanup-old-versions',
-          enabled: true,
-          noncurrentVersionExpiration: { noncurrentDays: 30 },
-          expiration: { expiredObjectDeleteMarker: true },
-        },
-      ],
-      // Browser direct upload needs the SPA origin; without a default-route service uploads are server-side only and need no CORS.
-      ...(uploadCorsRules ? { corsRules: uploadCorsRules } : {}),
-    })
+  ? new scaleway.object.Bucket(
+      'public-uploads-bucket',
+      {
+        name: naming.publicBucket,
+        region,
+        tags: tagsAsMap,
+        // User uploads are irreplaceable: versioning plus a noncurrent-expiry window keeps overwrites and deletes recoverable for 30 days, and the CI statement below cannot delete versions.
+        versioning: { enabled: true },
+        lifecycleRules: [
+          {
+            id: 'cleanup-old-versions',
+            enabled: true,
+            noncurrentVersionExpiration: { noncurrentDays: 30 },
+            expiration: { expiredObjectDeleteMarker: true },
+          },
+        ],
+        // Browser direct upload needs the SPA origin; without a default-route service uploads are server-side only and need no CORS.
+        ...(uploadCorsRules ? { corsRules: uploadCorsRules } : {}),
+      },
+      kept,
+    )
   : undefined;
 
 if (publicUploadsBucket) {
-  new scaleway.object.BucketPolicy('public-uploads-policy', {
-    bucket: publicUploadsBucket.name,
-    region,
-    policy: pulumi.jsonStringify({
-      Version: '2023-04-17',
-      Statement: pulumi.all([humanAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
-        {
-          Sid: 'PublicRead',
-          Effect: 'Allow',
-          Principal: '*',
-          Action: ['s3:GetObject'],
-          Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
-        },
-        // The deploy writes GeoIP data and nothing else here: the users' files are the backend's.
-        deployAccess(publicUploadsBucket.name, 'geoip/'),
-        ...admin,
-        ...signers,
-      ]),
-    }),
-  });
+  new scaleway.object.BucketPolicy(
+    'public-uploads-policy',
+    {
+      bucket: publicUploadsBucket.name,
+      region,
+      policy: pulumi.jsonStringify({
+        Version: '2023-04-17',
+        Statement: pulumi.all([humanAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
+          {
+            Sid: 'PublicRead',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: ['s3:GetObject'],
+            Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
+          },
+          // The deploy writes GeoIP data and nothing else here: the users' files are the backend's.
+          deployAccess(publicUploadsBucket.name, 'geoip/'),
+          ...admin,
+          ...signers,
+        ]),
+      }),
+    },
+    kept,
+  );
 }
 
 const privateUploadsBucket = needs.uploadBuckets
@@ -193,7 +201,6 @@ const privateUploadsBucket = needs.uploadBuckets
         name: naming.privateBucket,
         region,
         tags: tagsAsMap,
-        forceDestroy: !isProduction,
         // Same versioning protection as public uploads. This bucket is reached by signed URLs only, so version protection is IAM-side.
         versioning: { enabled: true },
         lifecycleRules: [
@@ -206,22 +213,26 @@ const privateUploadsBucket = needs.uploadBuckets
         ],
         ...(uploadCorsRules ? { corsRules: uploadCorsRules } : {}),
       },
-      { protect: isProduction },
+      kept,
     )
   : undefined;
 
 /** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer and the people's applications; every other key, the deploy key included, is denied. */
 if (privateUploadsBucket) {
-  new scaleway.object.BucketPolicy('private-uploads-policy', {
-    bucket: privateUploadsBucket.name,
-    region,
-    policy: pulumi.jsonStringify({
-      Version: '2023-04-17',
-      Statement: pulumi
-        .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
-        .apply(([admin, signers]) => [...admin, ...signers]),
-    }),
-  });
+  new scaleway.object.BucketPolicy(
+    'private-uploads-policy',
+    {
+      bucket: privateUploadsBucket.name,
+      region,
+      policy: pulumi.jsonStringify({
+        Version: '2023-04-17',
+        Statement: pulumi
+          .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
+          .apply(([admin, signers]) => [...admin, ...signers]),
+      }),
+    },
+    kept,
+  );
 }
 
 const bootDiagBucket = new scaleway.object.Bucket(
@@ -230,7 +241,6 @@ const bootDiagBucket = new scaleway.object.Bucket(
     name: naming.bootDiagBucket,
     region,
     tags: tagsAsMap,
-    forceDestroy: !isProduction,
     // Versioned, so the deploy key, which may delete objects, cannot erase a run record or a boot account: a deleted one stays for 60 days.
     versioning: { enabled: true },
     // Records, boot accounts and release archives keep as long as Scaleway keeps the job runs they describe (D25). An env file holds a
@@ -248,46 +258,50 @@ const bootDiagBucket = new scaleway.object.Bucket(
       { id: 'expire-env', enabled: true, expiration: { days: 1 }, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: ENV_PREFIX },
     ],
   },
-  { protect: isProduction },
+  kept,
 );
 
-new scaleway.object.BucketPolicy('boot-diag-policy', {
-  bucket: bootDiagBucket.name,
-  region,
-  policy: pulumi.jsonStringify({
-    Version: '2023-04-17',
-    // Four statements of the ten Scaleway allows: machines and the builder write through links the deploy key signs, so no machine is named.
-    Statement: pulumi.all([humanAccess(bootDiagBucket.name), observerApplicationId]).apply(([admin, observerId]) => [
-      // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first; never an
-      // env file, which holds a machine's secret values.
-      ...(observerId
-        ? [
-            {
-              Sid: 'ObserverReadBootDiagnostics',
-              Effect: 'Allow',
-              Principal: { SCW: `application_id:${observerId}` },
-              Action: ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
-              Resource: [
-                bootDiagBucket.name,
-                pulumi.interpolate`${bootDiagBucket.name}/${BOOT_ACCOUNTS_PREFIX}*`,
-                pulumi.interpolate`${bootDiagBucket.name}/${RUNS_PREFIX}*`,
-              ],
-            },
-          ]
-        : []),
-      deployAccess(bootDiagBucket.name),
-      // The deploy deletes a booted machine's env file with its version, which no other object of the bucket may lose.
-      {
-        Sid: 'DeployEnvRemoval',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
-        Action: ['s3:DeleteObjectVersion'],
-        Resource: [pulumi.interpolate`${bootDiagBucket.name}/${ENV_PREFIX}*`],
-      },
-      ...admin,
-    ]),
-  }),
-});
+new scaleway.object.BucketPolicy(
+  'boot-diag-policy',
+  {
+    bucket: bootDiagBucket.name,
+    region,
+    policy: pulumi.jsonStringify({
+      Version: '2023-04-17',
+      // Four statements of the ten Scaleway allows: machines and the builder write through links the deploy key signs, so no machine is named.
+      Statement: pulumi.all([humanAccess(bootDiagBucket.name), observerApplicationId]).apply(([admin, observerId]) => [
+        // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first; never an
+        // env file, which holds a machine's secret values.
+        ...(observerId
+          ? [
+              {
+                Sid: 'ObserverReadBootDiagnostics',
+                Effect: 'Allow',
+                Principal: { SCW: `application_id:${observerId}` },
+                Action: ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
+                Resource: [
+                  bootDiagBucket.name,
+                  pulumi.interpolate`${bootDiagBucket.name}/${BOOT_ACCOUNTS_PREFIX}*`,
+                  pulumi.interpolate`${bootDiagBucket.name}/${RUNS_PREFIX}*`,
+                ],
+              },
+            ]
+          : []),
+        deployAccess(bootDiagBucket.name),
+        // The deploy deletes a booted machine's env file with its version, which no other object of the bucket may lose.
+        {
+          Sid: 'DeployEnvRemoval',
+          Effect: 'Allow',
+          Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
+          Action: ['s3:DeleteObjectVersion'],
+          Resource: [pulumi.interpolate`${bootDiagBucket.name}/${ENV_PREFIX}*`],
+        },
+        ...admin,
+      ]),
+    }),
+  },
+  kept,
+);
 
 // Skipped buckets export empty strings, matching the provision-less primary-store contract in resources/program.ts.
 

@@ -3,15 +3,17 @@ import { scwS3Endpoint } from './scw-fetch';
 
 /**
  * An S3 client for a Scaleway bucket: explicit key, regional endpoint, virtual-host addressing. The SDK loads lazily so the
- * Pulumi plan path and the CLI menu do not pay for it.
+ * Pulumi plan path and the CLI menu do not pay for it. `streamed`: a body piped from another download goes as it comes, at the length
+ * given, without the checksum the SDK would otherwise send it in a chunked encoding for.
  */
-export async function makeS3Client(region: string, accessKey: string, secretKey: string): Promise<S3Client> {
+export async function makeS3Client(region: string, accessKey: string, secretKey: string, opts: { streamed?: boolean } = {}): Promise<S3Client> {
   const { S3Client: Client } = await import('@aws-sdk/client-s3');
   return new Client({
     region,
     endpoint: scwS3Endpoint(region),
     credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
     forcePathStyle: false,
+    ...(opts.streamed ? { requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED' } : {}),
   });
 }
 

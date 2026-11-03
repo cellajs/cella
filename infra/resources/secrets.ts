@@ -1,29 +1,11 @@
 import type * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
+import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { region, tags } from '../pulumi-context';
 import { derivedRuntimeSecretData } from './stores';
 
 // One container per value, in the runtime folder, which only the deploy key reads: the deploy composes each machine's env file from them.
-
-/** Imports of operator secret containers that exist outside the state, as `secretName=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
-function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
-  if (!raw) return {};
-  const map: Record<string, string> = {};
-  for (const pair of raw.split(',')) {
-    const entry = pair.trim();
-    if (!entry) continue;
-    const eq = entry.indexOf('=');
-    const name = eq === -1 ? '' : entry.slice(0, eq).trim();
-    const id = eq === -1 ? '' : entry.slice(eq + 1).trim();
-    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name=region/uuid).`);
-    map[name] = id;
-  }
-  return map;
-}
-
-const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS);
 
 /**
  * The resource name a secret's container had while each consumer held a copy: its first consumer's copy is the one the move to the runtime
@@ -46,17 +28,15 @@ function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<st
   );
 }
 
-/** A runtime secret's container. Operator values are retained when a registry entry disappears, so orphans are cleaned up by hand. */
+/**
+ * A runtime secret's container. One whose value protects stored data outlives a destroy and a registry entry that disappears, as the final
+ * dump of a teardown needs it, and a setup adopts it again (lib/stack/kept-resources.ts).
+ */
 function secretContainer(definition: RuntimeSecretDefinition): void {
-  const isOperator = definition.valueSource === 'operator';
   const secret = new scaleway.secrets.Secret(
     `secret-${definition.secretName}`,
     { name: definition.secretName, path: RUNTIME_FOLDER, description: definition.description, region, tags },
-    {
-      retainOnDelete: isOperator,
-      import: isOperator ? operatorSecretImports[definition.secretName] : undefined,
-      aliases: copyAlias(`secret-${definition.secretName}`, definition),
-    },
+    { retainOnDelete: protectsStoredData(definition), aliases: copyAlias(`secret-${definition.secretName}`, definition) },
   );
   const supplied = storeSuppliedData(definition);
   if (supplied !== undefined) {
