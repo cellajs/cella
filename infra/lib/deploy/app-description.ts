@@ -36,7 +36,7 @@ function engineFields(config: EngineConfig): EngineConfig {
  * settings. Run after `loadEngineConfig()`.
  * @param root the checkout whose `package.json` is read
  */
-export async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
+async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
   const config = engineConfig();
   // One after another: the registries import each other, and two graphs loading at once meet a binding before it is initialized.
   const { runtimeSecrets } = await import('../runtime-secrets');

@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineImageRef, engineImageRepository, readAppliedEngine } from '../lib/deploy/applied-engine';
+import { findJobDefinition } from '../lib/deploy/job-runs';
 import { declaredMainJob } from '../lib/deploy/main-job';
 import { actionCommand } from '../lib/operator-actions';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
@@ -40,6 +41,11 @@ const references = declared
 const missing = references.filter((reference) => !reference.optional && !reference.secret).map((reference) => reference.name);
 
 if (!declared) {
+  // An `up` that knows no engine would delete a definition the stack holds, which the runner starts: only a first apply goes without one.
+  const name = naming.resource('main');
+  if (await findJobDefinition({ secretKey: process.env.SCW_SECRET_KEY ?? '' }, { region, projectId, name })) {
+    throw new Error(`${name} runs the engine image an apply publishes, and none is recorded yet: \`${actionCommand('apply')}\` builds it first.`);
+  }
   pulumi.log.warn(`The main job's definition waits for its engine image: \`${actionCommand('apply')}\` builds and publishes it.`);
 } else if (missing.length > 0) {
   pulumi.log.warn(

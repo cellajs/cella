@@ -14,7 +14,7 @@ export const APPLY_NEEDED = 'apply needed';
 export const ENGINE_IMAGE_NAME = 'infra-engine';
 
 /** Where the engine image keeps its stamp, written by its build (infra/Dockerfile): outside any checkout, so only an engine image has one. */
-export const ENGINE_STAMP_PATH = '/engine/stamp.json';
+const ENGINE_STAMP_PATH = '/engine/stamp.json';
 
 const HASH = /^[0-9a-f]{64}$/;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
@@ -85,10 +85,10 @@ export interface AppliedEngine {
   appliedAt: string;
 }
 
-export const appliedEngineKey = (stack: string): string => `${controlPrefix(stack)}applied.json`;
+const appliedEngineKey = (stack: string): string => `${controlPrefix(stack)}applied.json`;
 
 /** Parse the applied engine, refusing one whose hash, digest or commit has another form. */
-export function parseAppliedEngine(text: string): AppliedEngine {
+function parseAppliedEngine(text: string): AppliedEngine {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
