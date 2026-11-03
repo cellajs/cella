@@ -88,7 +88,8 @@ export function SelectDrawer<TValue extends string>({
         </DrawerHeader>
         {/* The dropdowner drawer's inset, so a select sheet and a menu sheet start their rows at one height */}
         <div className={cn('flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]', headerShown && 'pt-0')}>
-          {lead && <DrawerLead>{lead}</DrawerLead>}
+          {/* Two lines at most, so a long name leaves the rows in view */}
+          {lead && <DrawerLead className="line-clamp-2">{lead}</DrawerLead>}
           <SelectDrawerRows options={options} selected={value === undefined ? [] : [value]} onSelect={onSelect} />
           {footer}
         </div>

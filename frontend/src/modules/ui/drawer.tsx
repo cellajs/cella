@@ -1,5 +1,6 @@
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import type * as React from 'react';
+import { createContext } from 'react';
 import { cn } from '~/utils/cn';
 
 export function Drawer({ ...props }: DrawerPrimitive.Root.Props) {
@@ -147,9 +148,19 @@ export function DrawerRowSeparator({ className, ...props }: React.ComponentProps
   return <hr data-slot="drawer-row-separator" className={cn('my-1.5 shrink-0 border-border', className)} {...props} />;
 }
 
-/** The sentence above a drawer's rows that names what they act on, such as a `NamedText`: the sheet covers the row it came from. */
+/** True inside a DrawerLead, whose names wrap with the sentence (see NamedText). */
+export const DrawerLeadContext = createContext(false);
+
+/**
+ * The sentence above a drawer's rows that names what they act on, such as a `NamedText`: the sheet covers the row it came
+ * from. A name in it wraps with the words before it, so it never moves to a line of its own.
+ */
 export function DrawerLead({ className, ...props }: React.ComponentProps<'p'>) {
-  return <p data-slot="drawer-lead" className={cn('text-balance py-3 text-center text-sm', className)} {...props} />;
+  return (
+    <DrawerLeadContext.Provider value={true}>
+      <p data-slot="drawer-lead" className={cn('text-balance py-3 text-center text-sm', className)} {...props} />
+    </DrawerLeadContext.Provider>
+  );
 }
 
 export function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
