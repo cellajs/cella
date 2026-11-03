@@ -95,7 +95,7 @@ Stable check `id`s:
 - `inventory.applications`, `inventory.keys`, `inventory.policies`, `inventory.machines`, `inventory.mainJob`
 - `state.bucket`, `state.lock`
 - `secrets.required`, `environments.lines`, `runs.last`, `live.<service>`, `live.components`
-- `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`
+- `db.publicEndpoint`, `dns.zone`
 
 ## Key files
 
@@ -105,7 +105,7 @@ The CLI reads no privileged key and no passphrase from a file or the environment
 
 ## Extending
 
-The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A scoped Scaleway key an app's service reads, such as the AI key, is an entry of [config/managed-keys.config.ts](config/managed-keys.config.ts), which **Manage runtime secrets** mints at an Owner moment into the runtime secret the entry names. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
+The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A scoped Scaleway key an app's service reads, such as the AI key, is an entry of [config/managed-keys.config.ts](config/managed-keys.config.ts), which **Manage runtime secrets** mints at an Owner moment into the runtime secret the entry names. A status check is a provider in [lib/status/providers/](lib/status/providers/).
 
 An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion. The agent answers the load balancer from that endpoint, on a port of its own per service.
 

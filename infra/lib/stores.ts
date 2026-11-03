@@ -10,7 +10,7 @@ export interface ProvisionedStore {
   secretValues: Record<string, pulumi.Input<string>>;
 }
 
-/** One runtime-secret a store contributes: managed stores supply `'engine'` values via {@link ProvisionedStore.secretValues}, external-URL stores declare `'operator'` entries filled through the CLI. */
+/** One runtime-secret a store declares. An `'engine'` value comes from {@link ProvisionedStore.secretValues} or, for a `database` entry, from the operator task ensure-database; an `'operator'` one is filled through the CLI. */
 export interface StoreSecretContribution {
   /** Runtime-secret id (the key other layers address the secret by). */
   id: string;
@@ -46,23 +46,14 @@ export interface ProvisionContext {
   sizing: { dbNodeType: string; dbVolumeSize: number };
   /** The deployment's private network, where managed stores expose endpoints. */
   privateNetworkId: pulumi.Input<string>;
-  /** Stack-config-supplied or generated random secret with a stable resource identity. */
-  configuredOrRandomSecret: (configKey: string, resourceName: string) => pulumi.Output<string>;
-}
-
-/** Optional store operations the CLI dispatches to (reset/seed/backup). Wired in P4. */
-export interface StoreOps {
-  reset?: () => Promise<void>;
-  seed?: () => Promise<void>;
-  backup?: () => Promise<void>;
 }
 
 /**
- * A store plugin instance: the stateful peer of a service, produced by a factory such as `postgresManaged(config)`. Scope is managed (a cloud resource) or external (an operator-supplied URL); on-VM state is out of scope because it fights immutable VM generations.
+ * A store plugin instance: the stateful peer of a service, produced by a factory such as `postgresManaged(config)`. Scope is managed (a cloud resource) or external (an operator-supplied URL); on-machine state is out of scope, as every deploy replaces the machines.
  * `provision` has side effects in the Pulumi program, so the engine calls it exactly once per registered store.
  */
 export interface StoreProvisioner {
-  /** Plugin discriminator, e.g. `'postgres-managed'`, `'database-url'`. */
+  /** Plugin discriminator, e.g. `'postgres-managed'`. */
   readonly kind: string;
   /** The factory's own config, which the applied description holds: a change to it owes an apply. Plain data; no secret value. */
   readonly settings?: object;
@@ -70,13 +61,9 @@ export interface StoreProvisioner {
   provision(ctx: ProvisionContext): ProvisionedStore;
   /** Runtime-secret declarations this store owns, merged ahead of `runtime-secrets.config.ts`. Must be pure with no Pulumi access: it runs in CLI tasks too. */
   secrets?(): StoreSecretContribution[];
-  /** Store operations for the operator CLI. Wired in P4. */
-  ops?: StoreOps;
-  /** App-defined posture checks (e.g. refuse a plaintext external URL). */
-  validate?(): void;
 }
 
-/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. The first registered store is primary: its outputs feed the stack's `db*` exports. */
+/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. The first registered store is primary: the database access actions read its outputs. */
 export function defineStores<const T extends Record<string, StoreProvisioner>>(stores: T): T {
   return stores;
 }

@@ -845,9 +845,6 @@ importers:
       '@pulumi/pulumi':
         specifier: ^3.273.0
         version: 3.273.0(typescript@6.0.3)
-      '@pulumi/random':
-        specifier: ^4.21.4
-        version: 4.21.4(typescript@6.0.3)
       '@pulumiverse/scaleway':
         specifier: ^1.60.0
         version: 1.60.0(typescript@6.0.3)
@@ -2997,9 +2994,6 @@ packages:
         optional: true
       typescript:
         optional: true
-
-  '@pulumi/random@4.21.4':
-    resolution: {integrity: sha512-CKWWZDfIZxdIB8/Xax5IqqGQNyPEdT8TFwJwooK4saU6kU0ozdmrySZ9jt8U1thlYIQTaYitP9EeMBnPbVK+1g==}
 
   '@pulumiverse/scaleway@1.60.0':
     resolution: {integrity: sha512-ii3NoS0ts0VO3l43szVtVlsmp1+15ebRE30hZPl/1miwvJTvlKqUlP6f2TgSovj7f7104H6f15e0udfMuUiU9Q==}
@@ -10177,14 +10171,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
-
-  '@pulumi/random@4.21.4(typescript@6.0.3)':
-    dependencies:
-      '@pulumi/pulumi': 3.273.0(typescript@6.0.3)
-    transitivePeerDependencies:
-      - supports-color
-      - ts-node
-      - typescript
 
   '@pulumiverse/scaleway@1.60.0(typescript@6.0.3)':
     dependencies:

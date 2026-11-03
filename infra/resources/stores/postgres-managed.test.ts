@@ -22,7 +22,6 @@ beforeAll(async () => {
     isProduction: true,
     sizing: { dbNodeType: 'DB-DEV-S', dbVolumeSize: 10 },
     privateNetworkId: 'pn-id',
-    configuredOrRandomSecret: () => pulumi.output('secret'),
   };
 });
 
@@ -33,7 +32,7 @@ describe('postgresManaged public endpoint ACL', () => {
   async function render(config: Record<string, string>) {
     for (const [key, value] of Object.entries(config)) harness.pulumi.runtime.setConfig(key, value);
     harness.resources.length = 0;
-    postgresManaged().provision(ctx);
+    postgresManaged({ secretConsumers: { runtime: ['backend'], admin: ['backend'], cdc: ['cdc'], ca: ['backend'] } }).provision(ctx);
     await harness.settle();
     const instance = harness.oneOfType('scaleway:databases/instance:Instance');
     const acls = harness.byType('scaleway:databases/acl:Acl');

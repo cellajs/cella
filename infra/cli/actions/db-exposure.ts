@@ -120,9 +120,8 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };
 }
 
-/** The live public endpoints as `host:port`: none without a managed PostgreSQL store or before its instance exists. */
+/** The live public endpoints as `host:port`: none before the instance exists. */
 export async function openDbEndpoints(context: InfraContext, secretKey: string): Promise<string[]> {
-  if (!Object.values(appStores).some((store) => store.kind === 'postgres-managed')) return [];
   const { naming, region } = deriveInfra(context.appConfig);
   const client = createRdbClient({ secretKey, region });
   const instance = await client.findInstance(naming.resource('postgres'));

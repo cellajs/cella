@@ -6,7 +6,6 @@ import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { RunsFacts } from './providers/runs';
 import type { IdentityFacts } from './providers/stack';
-import type { StoreValidationFact } from './providers/stores';
 import { assembleReport, statusProviders } from './registry';
 import type { Check, ProbeSession, ScalewayFacts } from './types';
 
@@ -25,7 +24,6 @@ interface Facts {
   live?: LiveServiceFact[];
   components?: ComponentsFact;
   dns?: { host: string; resolvedIps?: string[]; loadBalancerIps?: string[] };
-  stores?: StoreValidationFact[];
   db?: DbEndpointFacts;
   environments?: EnvironmentsFacts;
 }
@@ -44,7 +42,6 @@ function base(overrides: Partial<Facts> = {}): Facts {
     ],
     components: { slug: 'backend', url: 'https://api.example.com/health?depth=full', httpStatus: 200, issues: [] },
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
-    stores: [{ id: 'primary', kind: 'postgres-managed' }],
     db: { instance: 'cella-postgres', found: true, endpoints: [] },
     environments: { text: 'staging branch:main', stacks: ['staging'] },
     ...overrides,
@@ -76,7 +73,6 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     live: facts.live,
     components: facts.components,
     dns: facts.dns,
-    stores: facts.stores,
     db: facts.db,
     environments: facts.environments,
   };
@@ -170,13 +166,6 @@ describe('nextAction priority (lifecycle order)', () => {
     const report = reportFor(base({ secrets: ['admin-email'] }));
     expect(find(report.checks, 'secrets.required')?.status).toBe('missing');
     expect(report.nextAction?.description).toContain('runtime secret');
-  });
-
-  it('a store misconfiguration outranks deploy-stage actions', () => {
-    const report = reportFor(base({ stores: [{ id: 'primary', kind: 'redis-managed', error: 'tls is disabled' }], secrets: ['x'] }));
-    const check = find(report.checks, 'stores.primary');
-    expect(check?.status).toBe('error');
-    expect(check?.detail).toBe('tls is disabled');
   });
 });
 

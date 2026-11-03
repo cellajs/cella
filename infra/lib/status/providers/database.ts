@@ -1,4 +1,3 @@
-import { appStores } from '../../../config/stores.config';
 import { endpointAddress, publicEndpoints } from '../../db-public-endpoint';
 import { deriveInfra } from '../../naming';
 import { createRdbClient } from '../../scaleway/scaleway-rdb';
@@ -14,9 +13,8 @@ export interface DbEndpointFacts {
   aclRules?: number;
 }
 
-/** The check applies to a bootstrapped stack whose stores include a managed PostgreSQL instance, the one the exposure toggle opens. */
-const applies = (session: ProbeSession): boolean =>
-  session.stackState === 'bootstrapped' && Object.values(appStores).some((store) => store.kind === 'postgres-managed');
+/** The check applies to a bootstrapped stack, whose managed PostgreSQL instance the exposure toggle opens. */
+const applies = (session: ProbeSession): boolean => session.stackState === 'bootstrapped';
 
 /** Public-endpoint check of the managed database: a live endpoint with exposure off warns, as does an open one, with its ACL rule count. */
 export const databaseProvider: StatusProvider<DbEndpointFacts> = {

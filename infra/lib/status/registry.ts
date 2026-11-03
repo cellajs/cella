@@ -8,7 +8,6 @@ import { runsProvider } from './providers/runs';
 import { secretsProvider } from './providers/secrets';
 import { identityProvider, stackProvider } from './providers/stack';
 import { stateProvider } from './providers/state';
-import { storesProvider } from './providers/stores';
 import type { Check, CheckStatus, NextAction, ProbeSession, StatusProvider, StatusReport } from './types';
 import { STATUS_SCHEMA_VERSION } from './types';
 
@@ -25,7 +24,6 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   liveProvider,
   componentsProvider,
   dnsProvider,
-  storesProvider,
   databaseProvider,
 ];
 
@@ -34,7 +32,6 @@ const NEXT_ACTION_PRIORITY = [
   'identity.project',
   'inventory.',
   'config.stackState',
-  'stores.',
   'state.bucket',
   'secrets.required',
   'runs.last',
