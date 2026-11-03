@@ -6,19 +6,15 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { setMiddlewareExtension } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getIp } from '#/utils/get-ip';
 import { systemAdminAllowList } from '#/utils/system-access';
 
 /**
  * Only users holding the 'admin' system role proceed. Anyone else is refused and logged every time, and raises a
- * security notification at most once an hour. An impersonation is refused first: system administration is done as
- * oneself, and the role check would judge the impersonated user and raise an alert about the admin's own request.
+ * security notification at most once an hour.
  */
 const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
-  const { user, isSystemAdmin, session } = ctx.var;
-
-  refuseImpersonation(session);
+  const { user, isSystemAdmin } = ctx.var;
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
@@ -49,5 +45,5 @@ export const sysAdminGuard = setMiddlewareExtension(every(sysAdminCheck, allowed
   errors: [403],
   requires: ['session'],
   name: 'System admin',
-  description: 'Requires the system admin role and a request from an allowed IP address. Refused during impersonation.',
+  description: 'Requires the system admin role and a request from an allowed IP address.',
 });

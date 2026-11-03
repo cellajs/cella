@@ -33,10 +33,9 @@ const localUserStores = [seenStore, syncStore, navigationStore, draftStore, aler
 let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-/** The user whose database to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
+/** The user whose database to bind; null while signed out. */
 function resolveLocalUserId(): string | null {
-  const { user, impersonator } = userStore.getState();
-  return impersonator ? null : user?.id || null;
+  return userStore.getState().user?.id || null;
 }
 
 /** The signed-in user id in a value the user store persisted; `null` when signed out, removed or unreadable. */

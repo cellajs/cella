@@ -17,7 +17,7 @@ export const minimalBaseSchema = <T extends string>(entityType: T) =>
     entityType: z.literal(entityType),
   });
 
-/** Minimal user schema for references: a member list, a notification's actor, an impersonator. */
+/** Minimal user schema for references: a member list, a notification's actor. */
 export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMinimalBase', {
   description:
     'The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.',

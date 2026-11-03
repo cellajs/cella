@@ -8,7 +8,6 @@ import { findSessionBySecret } from '#/modules/auth/sessions/sessions-queries';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { isSystemAccessAllowed } from '#/utils/system-access';
 
 /** Sessions are read on the base pool: every request reads one, and so do processes without the API's context. */
 const dbCtx = { var: { db: baseDb } };
@@ -21,12 +20,6 @@ export interface ResolvedSession {
   hasSystemRole: boolean;
   /** `actors.bindings_version` at this read: the version the user's cached memberships must match. */
   bindingsVersion: string;
-}
-
-/** The session a request's cookies present, with who acts through it. */
-export interface PresentedSession extends ResolvedSession {
-  /** The system admin whose own session backs an impersonation; null on the browser's own session. */
-  impersonator: UserWithActivity | null;
 }
 
 /**
@@ -61,55 +54,27 @@ const refusalAsNull = (err: unknown): null => {
 };
 
 /**
- * The browser's own session, from the token in its session cookie: never an impersonation, which counts only on top
- * of it.
- * @throws AppError 401 without a token, for an unknown, revoked or expired one, or for an impersonation's.
+ * The browser's session, from the token in its session cookie.
+ * @throws AppError 401 without a token, or for an unknown, revoked or expired one.
  */
 export const readBrowserSession = async (sessionToken: string | undefined): Promise<ResolvedSession> => {
   if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
-  const entry = await readSession(sessionToken);
-  if (entry.session.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
-  return entry;
+  return readSession(sessionToken);
 };
 
 /**
- * The app session a request presents, read from its cookies only, so any process serving the app's origin can call it
- * with a raw request context. An impersonation counts only on top of the admin session that started it, held by this
- * same browser, while that admin still has system access (the role, from an allowed address); without an
- * impersonation cookie it is the browser's own session, which is never an impersonation. An impersonation comes with
- * its admin as `impersonator`. With `clearOnError`, a refusal also deletes the cookie that failed.
- * @throws AppError 401 without a session cookie, for an unknown, revoked or expired token, or an impersonation that
- *   this browser's own session does not back.
+ * The app session a request presents, read from its session cookie only, so any process serving the app's origin can
+ * call it with a raw request context. With `clearOnError`, a refusal also deletes the cookie: it holds the only copy of
+ * the token, so a failed read (the database away) keeps it.
+ * @throws AppError 401 without a session cookie, or for an unknown, revoked or expired token.
  */
-export const resolveSession = async (ctx: Context, { clearOnError = false }: { clearOnError?: boolean } = {}): Promise<PresentedSession> => {
-  const sessionToken = getAuthCookie(ctx, 'session');
-  const impersonationToken = getAuthCookie(ctx, 'impersonation');
-
-  // Only a refusal clears the cookie: it holds the only copy of the token, so a failed read (the database away) keeps it.
-  const clearIfRefused = async (cookie: 'session' | 'impersonation', read: () => Promise<PresentedSession>) => {
-    try {
-      return await read();
-    } catch (err) {
-      if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, cookie);
-      throw err;
-    }
-  };
-
-  /** The admin session behind an impersonation; a refusal means none. */
-  const readAdminSession = (token: string) => readSession(token).catch(refusalAsNull);
-
-  if (impersonationToken) {
-    return clearIfRefused('impersonation', async () => {
-      const impersonation = await readSession(impersonationToken);
-      const admin = sessionToken ? await readAdminSession(sessionToken) : null;
-      const { type, impersonatorSessionId } = impersonation.session;
-      const backed = admin?.session.id === impersonatorSessionId && admin.hasSystemRole && isSystemAccessAllowed(ctx);
-      if (type !== 'impersonation' || !admin || !backed) throw new AppError(401, 'unauthorized', 'warn');
-      return { ...impersonation, impersonator: admin.user };
-    });
+export const resolveSession = async (ctx: Context, { clearOnError = false }: { clearOnError?: boolean } = {}): Promise<ResolvedSession> => {
+  try {
+    return await readBrowserSession(getAuthCookie(ctx, 'session'));
+  } catch (err) {
+    if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, 'session');
+    throw err;
   }
-
-  return clearIfRefused('session', async () => ({ ...(await readBrowserSession(sessionToken)), impersonator: null }));
 };
 
 /**
@@ -117,4 +82,4 @@ export const resolveSession = async (ctx: Context, { clearOnError = false }: { c
  * expired or revoked token), while a failed read stays the request's failure, so the database being away never reads
  * as signed out.
  */
-export const findSession = (ctx: Context): Promise<PresentedSession | null> => resolveSession(ctx).catch(refusalAsNull);
+export const findSession = (ctx: Context): Promise<ResolvedSession | null> => resolveSession(ctx).catch(refusalAsNull);

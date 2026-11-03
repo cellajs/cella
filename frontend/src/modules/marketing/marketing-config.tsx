@@ -130,7 +130,6 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'sso_federation', category: 'auth' },
   { id: 'mfa', category: 'auth' },
   { id: 'session_management', category: 'auth' },
-  { id: 'impersonation', category: 'auth' },
   { id: 'service_accounts', category: 'auth' },
 
   // Privacy & compliance

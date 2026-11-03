@@ -1,0 +1,83 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "4d26dc52-d121-42b9-ae6d-f64253493e25",
+  "prevIds": [
+    "c965b2e1-c9a0-406c-9783-1575cac82168"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "sessions"
+      ],
+      "writes": [
+        "s|fk|public.sessions.sessions_impersonator_session_id_sessions_id_fkey",
+        "n|fk|public.sessions.sessions_impersonator_session_id_sessions_id_fkey",
+        "e|fk|public.sessions.sessions_impersonator_session_id_sessions_id_fkey",
+        "n|con|public.sessions.sessions_impersonator_session_id_sessions_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public",
+        "e|col|public.sessions.impersonator_session_id"
+      ]
+    },
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "sessions",
+        "sessions_impersonator_session_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.sessions_impersonator_session_id_idx",
+        "n|idx|public.sessions_impersonator_session_id_idx",
+        "e|idx|public.sessions_impersonator_session_id_idx",
+        "n|rel|public.sessions_impersonator_session_id_idx"
+      ],
+      "reads": [
+        "e|tbl|public.sessions",
+        "n|sch|public",
+        "e|col|public.sessions.impersonator_session_id"
+      ],
+      "sharedWrites": []
+    },
+    {
+      "statementType": "drop_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "impersonator_session_id"
+      ],
+      "writes": [
+        "s|col|public.sessions.impersonator_session_id",
+        "n|col|public.sessions.impersonator_session_id",
+        "e|col|public.sessions.impersonator_session_id"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "columns\u0000[\"public\",\"sessions\",\"impersonator_session_id\"]"
+    },
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"sessions_impersonator_session_id_idx\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"sessions\",\"sessions_impersonator_session_id_sessions_id_fkey\"]"
+    }
+  ]
+}

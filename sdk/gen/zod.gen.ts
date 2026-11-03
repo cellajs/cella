@@ -171,7 +171,7 @@ export const zUnauthorizedError = zApiError.and(
 );
 
 /**
- * The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.
+ * The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
  */
 export const zForbiddenError = zApiError.and(
   z.object({
@@ -267,12 +267,11 @@ export const zUser = z.object({
 });
 
 /**
- * The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
  */
 export const zMe = z.object({
   user: zUser,
   isSystemAdmin: z.boolean(),
-  impersonator: zUserMinimalBase.nullable(),
 });
 
 /**
@@ -313,7 +312,7 @@ export const zMeAuthData = z.object({
   sessions: z.array(
     z.object({
       id: z.uuid(),
-      type: z.enum(['regular', 'impersonation', 'mfa']),
+      type: z.enum(['regular', 'mfa']),
       userId: z.uuid(),
       deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
@@ -330,8 +329,7 @@ export const zMeAuthData = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
-      impersonatorSessionId: z.uuid().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
       isCurrent: z.boolean(),
@@ -712,20 +710,6 @@ export const zAcceptInvitationTokenResponse = zChannelBase;
  * Confirmation link sent to the invited address
  */
 export const zConfirmInvitationAddressResponse = z.void();
-
-export const zStartImpersonationBody = z.object({
-  targetUserId: z.string().max(50),
-});
-
-/**
- * Impersonating
- */
-export const zStartImpersonationResponse = z.void();
-
-/**
- * Stopped impersonating
- */
-export const zStopImpersonationResponse = z.void();
 
 export const zResendInvitationWithTokenBody = z.object({
   tokenId: z.uuid(),
@@ -1168,7 +1152,7 @@ export const zRevokeMySessionsResponse = z.object({
   data: z.array(
     z.object({
       id: z.uuid(),
-      type: z.enum(['regular', 'impersonation', 'mfa']),
+      type: z.enum(['regular', 'mfa']),
       userId: z.uuid(),
       deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
@@ -1185,8 +1169,7 @@ export const zRevokeMySessionsResponse = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
-      impersonatorSessionId: z.uuid().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
     }),

@@ -6,9 +6,9 @@ import { resolveSession } from '#/modules/auth/sessions/operations/resolve-sessi
 import { isSystemAccessAllowed } from '#/utils/system-access';
 
 /**
- * Authenticates the session (an impersonation only on top of its admin's session) and sets user, session facts, the
- * admin behind an impersonation, memberships and base db context: the session comes from the session cache or one
- * read shared by the requests presenting it, the memberships from the cache at its bindings version.
+ * Authenticates the session and sets user, session facts, memberships and base db context: the session comes from the
+ * session cache or one read shared by the requests presenting it, the memberships from the cache at its bindings
+ * version.
  */
 export const userGuard = xMiddleware(
   {
@@ -22,13 +22,12 @@ export const userGuard = xMiddleware(
   },
   async (ctx, next) => {
     // A refused cookie is deleted, so the browser stops presenting it.
-    const { session, user, hasSystemRole, bindingsVersion, impersonator } = await resolveSession(ctx, { clearOnError: true });
+    const { session, user, hasSystemRole, bindingsVersion } = await resolveSession(ctx, { clearOnError: true });
 
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('session', session);
     ctx.set('sessionId', session.id);
-    ctx.set('impersonator', impersonator);
     ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
     ctx.set('db', baseDb);
 
@@ -43,8 +42,7 @@ export const userGuard = xMiddleware(
       connectionId: session.connectionId,
     });
 
-    // An impersonation's requests are its admin's: only a session of the user's own marks the user as seen.
-    if (ctx.req.method === 'GET' && !impersonator) updateLastSeenAt(user.id);
+    if (ctx.req.method === 'GET') updateLastSeenAt(user.id);
 
     await next();
   },

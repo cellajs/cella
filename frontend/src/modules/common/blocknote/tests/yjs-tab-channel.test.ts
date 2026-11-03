@@ -49,7 +49,7 @@ describe('yjs tab channel', () => {
       () => tabB.channel.close(),
     );
 
-    // Signed out, or impersonating: nothing goes out.
+    // Signed out: nothing goes out.
     signIn(null);
     postTabMessage(update(1));
 

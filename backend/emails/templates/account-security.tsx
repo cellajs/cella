@@ -10,7 +10,6 @@ type AccountSecurityType =
   | 'totp-lockout'
   | 'sysadmin-fail'
   | 'sysadmin-signin'
-  | 'impersonation-started'
   | 'passkey-added'
   | 'passkey-deleted'
   | 'totp-added'
@@ -26,7 +25,6 @@ type AccountSecurityType =
 const inboxTypes: AccountSecurityType[] = [
   'sysadmin-fail',
   'sysadmin-signin',
-  'impersonation-started',
   'tenant-created',
   'system-role-granted',
   'system-role-changed',

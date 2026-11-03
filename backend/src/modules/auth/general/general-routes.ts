@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
-import { cookieSchema, locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
+import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
@@ -20,24 +20,6 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     responses: {
       200: json('Auth health status', authHealthSchema),
     },
-  }),
-  startImpersonation: xRoute({
-    method: 'post',
-    path: '/impersonation/start',
-    xGuard: [userGuard, sysAdminGuard],
-    summary: 'Start impersonating',
-    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
-    request: { body: jsonBody(z.object({ targetUserId: validIdSchema })) },
-    responses: { 204: { description: 'Impersonating', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(404) },
-  }),
-  stopImpersonation: xRoute({
-    method: 'post',
-    path: '/impersonation/stop',
-    xGuard: [userGuard],
-    summary: 'Stop impersonating',
-    description:
-      'Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.',
-    responses: { 204: { description: 'Stopped impersonating' } },
   }),
   checkEmail: xRoute({
     method: 'post',

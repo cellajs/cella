@@ -9,7 +9,6 @@ import { TimeSpan } from '#/utils/time-span';
 export const mockMeResponse = (key = 'me:default') => ({
   user: mockUserResponse(`${key}:user`),
   isSystemAdmin: false,
-  impersonator: null,
 });
 
 export const mockMeAuthResponse = (key = 'me-auth:default') =>
@@ -50,7 +49,6 @@ export const mockMeAuthResponse = (key = 'me-auth:default') =>
           revokedAt: null,
           revokedBy: null,
           revocationReason: null,
-          impersonatorSessionId: null,
           steppedUpAt: null,
           steppedUpVia: null,
           isCurrent: true,

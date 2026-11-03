@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { getStepUpFacts } from '#/modules/auth/sessions/sessions-queries';
-import { refuseImpersonation, type StepUpMethod, type StepUpState, type StepUpTier, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
+import { type StepUpMethod, type StepUpState, type StepUpTier, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 import { isoDateAgo } from '#/utils/iso-date';
 
 const dbCtx = { var: { db: baseDb } };
@@ -16,12 +16,10 @@ const factorMethods = ['passkey', 'totp'] as const;
  * it up, by the MFA completion that minted the session or by a passkey sign-in. So does an SSO sign-in stamped `sso`.
  * A user without a factor proves a fresh first factor for `account` and `enroll`: a sign-in within the window or an
  * emailed code. An app with no factor method on reads `factor` as `account`, since nobody could set one up. Read fresh
- * from the database, so a stamp set in another process counts at once; an impersonation never stands.
+ * from the database, so a stamp set in another process counts at once.
  */
 export const readStepUp = async (session: SessionFacts, tier: StepUpTier): Promise<StepUpState> => {
   const refused: StepUpState = { steppedUp: false, methods: [], factor: null };
-  if (session.type === 'impersonation') return refused;
-
   const row = await getStepUpFacts(dbCtx, { sessionId: session.id, userId: session.userId, since: isoDateAgo(stepUpWindow) });
   if (!row) return refused;
 
@@ -49,14 +47,11 @@ export const readStepUp = async (session: SessionFacts, tier: StepUpTier): Promi
 };
 
 /**
- * Refuses an action of `tier` on a session that does not stand stepped up for it, an impersonation first of all.
+ * Refuses an action of `tier` on a session that does not stand stepped up for it.
  * @returns The step-up state, with the factor that proves the session.
- * @throws AppError 403 `impersonation_forbidden`, or 403 `step_up_required` with what the user can offer in
- *   `meta.methods`.
+ * @throws AppError 403 `step_up_required` with what the user can offer in `meta.methods`.
  */
 export const requireStepUp = async (session: SessionFacts, tier: StepUpTier): Promise<StepUpState> => {
-  refuseImpersonation(session);
-
   const state = await readStepUp(session, tier);
   if (!state.steppedUp) throw new AppError(403, 'step_up_required', 'info', { meta: { methods: state.methods } });
   return state;

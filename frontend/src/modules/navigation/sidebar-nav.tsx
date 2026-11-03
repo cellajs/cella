@@ -8,7 +8,6 @@ import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarOrganizationButtons } from '~/modules/navigation/organization-buttons';
-import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn, TriggerOrganizationFn } from '~/modules/navigation/types';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu } from '~/modules/ui/sidebar';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -107,7 +106,6 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
                 <DebugDropdown className="mx-2" />
               </Suspense>
               <SidebarMenu className="gap-1">
-                <StopImpersonation isCollapsed={!isExpanded} />
                 {footerNavItems.map((navItem) => (
                   <SidebarNavItemButton
                     key={navItem.id}

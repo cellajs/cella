@@ -197,7 +197,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v27-range-read-tombstones',
+  clientCacheVersion: 'v28-no-impersonation',
 
   // Authentication
 
@@ -230,7 +230,7 @@ export const config = {
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
    * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
    * bloat/abuse protection (bursts of sign-ins with stolen passwords, unbounded session accumulation), not a UX
-   * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
+   * feature. Regular and `mfa` sessions count together.
    */
   maxSessionsPerUser: 10,
 

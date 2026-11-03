@@ -52,7 +52,7 @@ Editing needs a token. The backend issues one for a single entity, for a few min
 
 A valid token opens the socket, and then the relay decides for itself: it asks the permission engine, as the API would, whether this user may update this row. Until that answer is in, the socket receives nothing of the document and relays nothing. A refusal never tells someone without access whether the entity exists. A document's tenant and organization come from the entity row, never from a token or from whoever joined first.
 
-A socket lives no longer than its token. The client refreshes its token and reconnects, and a user who lost access gets no new one, so revoked access ends an open editing session within five minutes. The same bound holds when a session ends, by a sign-out, a revocation or a stopped impersonation: no new token is minted for it, and its open sockets and earlier tokens lapse.
+A socket lives no longer than its token. The client refreshes its token and reconnects, and a user who lost access gets no new one, so revoked access ends an open editing session within five minutes. The same bound holds when a session ends, by a sign-out or a revocation: no new token is minted for it, and its open sockets and earlier tokens lapse.
 
 ### Presence
 

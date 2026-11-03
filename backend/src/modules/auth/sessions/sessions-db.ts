@@ -1,5 +1,5 @@
-import { getColumns, sql } from 'drizzle-orm';
-import { type AnyPgColumn, index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { getColumns } from 'drizzle-orm';
+import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
@@ -12,9 +12,9 @@ import { usersTable } from '#/modules/user/user-db';
 
 /**
  * What a session stands for: `regular`, a sign-in; `mfa`, a sign-in with a second factor (an MFA challenge completed, or
- * MFA turned on); `impersonation`, a system admin acting as the user, layered on the admin's session.
+ * MFA turned on).
  */
-const sessionTypes = ['regular', 'impersonation', 'mfa'] as const;
+const sessionTypes = ['regular', 'mfa'] as const;
 export type SessionType = (typeof sessionTypes)[number];
 
 const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
@@ -27,9 +27,9 @@ export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as 
  * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`
  * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. The server's
  * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
- * browser: a sign-in, or the mfa session that enabling MFA mints. `impersonation_stopped` when the admin stops.
+ * browser: a sign-in, or the mfa session that enabling MFA mints.
  */
-const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'] as const;
+const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
@@ -80,8 +80,6 @@ export const sessionsTable = snakeCase.table(
       .references(() => actorsTable.id, { onDelete: 'set null' })
       .$type<ActorId>(),
     revocationReason: varchar({ enum: sessionRevocationReasons }),
-    /** The admin session an impersonation is layered on: it authenticates only while that session is presented with it and live, and ends with it. */
-    impersonatorSessionId: uuid().references((): AnyPgColumn => sessionsTable.id, { onDelete: 'cascade' }),
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
     steppedUpAt: isoTimestamp(),
     steppedUpVia: varchar({ enum: stepUpProofs }),
@@ -92,8 +90,6 @@ export const sessionsTable = snakeCase.table(
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
     index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
-    // Impersonations are found by their admin's session when it ends or is deleted; other rows hold null.
-    index('sessions_impersonator_session_id_idx').on(table.impersonatorSessionId).where(sql`${table.impersonatorSessionId} is not null`),
   ],
 );
 
@@ -101,9 +97,9 @@ const { secret: _secret, ...safeColumns } = getColumns(sessionsTable);
 /** Every column but the secret: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
-const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId } = safeColumns;
+const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt } = safeColumns;
 /** The columns of {@link SessionFacts}. */
-export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId };
+export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt };
 
 /** A session row without its secret. */
 export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret'>;

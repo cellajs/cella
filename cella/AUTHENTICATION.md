@@ -61,7 +61,7 @@ Setting up a factor or connecting a provider sends a security mail to the accoun
 
 ## Step-up
 
-An account-security action needs more than a session: the session must have proven its user present within the last ten minutes, and an impersonation never does. How much proof an action asks depends on what it does:
+An account-security action needs more than a session: the session must have proven its user present within the last ten minutes. How much proof an action asks depends on what it does:
 
 | Action | Holds a passkey or TOTP | No factor, recent sign-in | No factor, older sign-in |
 | --- | --- | --- | --- |

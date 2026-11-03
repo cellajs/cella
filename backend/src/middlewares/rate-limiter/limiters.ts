@@ -75,8 +75,7 @@ export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerificati
 
 /**
  * Keyed per account: a session guessing second factors is blocked whatever IP it uses; a proof that verifies clears
- * the series. A wrong factor answers 401 (404 for one the user does not hold); the 403 refusing an impersonation
- * guesses nothing and spends none of the user's attempts.
+ * the series. A wrong factor answers 401 (404 for one the user does not hold).
  */
 export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204], failStatusCodes: [401, 404] },

@@ -48,19 +48,16 @@ describe('per-user session cap (A1)', () => {
     expect(evicted.revokedAt).not.toBeNull();
   });
 
-  it('counts mfa sessions toward the cap and never touches impersonation sessions', async () => {
+  it('counts mfa sessions toward the cap', async () => {
     const user = await createTestUser('cap2@example.com');
     // An mfa session is the full session of a user with MFA on, so it is capped like a regular one.
     const mfaIds: string[] = [];
     for (let i = 0; i < 5; i++) mfaIds.push(await insertSession(user, 'mfa', 100_000 - i * 1000)); // oldest → newest
-    const imperId = await insertSession(user, 'impersonation', 105_000);
 
     await evictExcessSessions(user.id);
 
     const ids = await liveIds(user.id);
     expect(mfaIds.filter((id) => ids.has(id))).toEqual(mfaIds.slice(-(TEST_CAP - 1)));
-    // The impersonation row is the oldest of all and still survives.
-    expect(ids.has(imperId)).toBe(true);
   });
 
   it('does nothing when the user is at or below the cap', async () => {

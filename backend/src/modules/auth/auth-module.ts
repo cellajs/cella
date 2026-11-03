@@ -13,7 +13,7 @@ defineBackendModule({
   scope: ['frontend', 'backend'],
   description: `Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google,
     Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover
-    sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.`,
+    sign-up, sign-in, MFA, step-up, email verification and account linking.`,
   routes: [
     { path: '/auth/', app: authGeneralHandlers },
     { path: '/auth/', app: authMagicLinkHandlers },

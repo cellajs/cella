@@ -3,8 +3,6 @@
   "email.account_exists.subject": "You already have a {{appName}} account",
   "email.account_exists.text": "Someone asked to join the {{appName}} waitlist with this address. It already has an account, so there is nothing to wait for.",
   "email.account_exists.title": "You already have an account",
-  "email.account_security.impersonation-started.text": "{{adminName}} ({{adminEmail}}) started impersonating {{userEmail}} on {{appName}}. The session ends after one hour, or earlier when they stop.",
-  "email.account_security.impersonation-started.title": "Admin impersonation started",
   "email.account_security.mfa-disabled.text": "MFA has been disabled on your {{appName}} account.",
   "email.account_security.mfa-disabled.title": "Multi-factor authentication disabled",
   "email.account_security.mfa-enabled.text": "Your account on {{appName}} now has MFA enabled for extra security.",

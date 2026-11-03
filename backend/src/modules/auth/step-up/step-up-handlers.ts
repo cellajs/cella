@@ -3,7 +3,6 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/passkeys/operations/passkey-challenges';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
-import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { sendStepUpCodeOp } from '#/modules/auth/step-up/operations/send-step-up-code';
 import { authStepUpRoutes } from '#/modules/auth/step-up/step-up-routes';
@@ -21,8 +20,7 @@ app.openapi(authStepUpRoutes.getStepUp, async (ctx) => {
 });
 
 app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
-  const { user, session } = ctx.var;
-  refuseImpersonation(session);
+  const { user } = ctx.var;
 
   // Issued for this account and for a step-up only: a sign-in or MFA challenge never answers as a step-up proof.
   return ctx.json(await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: user.id }), 200);
@@ -30,7 +28,6 @@ app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
 
 app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
   const { user, session } = ctx.var;
-  refuseImpersonation(session);
   const { passkeyData, totpCode, emailCode } = ctx.req.valid('json');
 
   const via = passkeyData ? 'passkey' : totpCode ? 'totp' : emailCode ? 'email' : null;
