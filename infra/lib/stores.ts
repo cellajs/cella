@@ -49,7 +49,9 @@ export interface ProvisionContext {
 }
 
 /**
- * A store plugin instance: the stateful peer of a service, produced by a factory such as `postgresManaged(config)`. Scope is managed (a cloud resource) or external (an operator-supplied URL); on-machine state is out of scope, as every deploy replaces the machines.
+ * A store plugin instance: the stateful peer of a service, produced by a factory such as `postgresManaged(config)`. A store is a managed cloud
+ * resource on the deployment's private network; on-machine state is out of scope, as every deploy replaces the machines. A kind names its own
+ * Pulumi resources and runtime secrets, so it registers once.
  * `provision` has side effects in the Pulumi program, so the engine calls it exactly once per registered store.
  */
 export interface StoreProvisioner {
@@ -57,7 +59,7 @@ export interface StoreProvisioner {
   readonly kind: string;
   /** The factory's own config, which the applied description holds: a change to it owes an apply. Plain data; no secret value. */
   readonly settings?: object;
-  /** Create the store's cloud resources (none for an external URL) and return its outputs and secret values. Called once by `resources/stores`; a rerun duplicates Pulumi resources. */
+  /** Create the store's cloud resources and return their outputs and the values of the `'engine'` secrets it supplies. Called once by `resources/stores`; a rerun duplicates Pulumi resources. */
   provision(ctx: ProvisionContext): ProvisionedStore;
   /** Runtime-secret declarations this store owns, merged ahead of `runtime-secrets.config.ts`. Must be pure with no Pulumi access: it runs in CLI tasks too. */
   secrets?(): StoreSecretContribution[];
