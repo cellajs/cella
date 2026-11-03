@@ -16,7 +16,6 @@ import { inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
 import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
 import { importPlan, keptResources } from '../../lib/stack/kept-resources';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
-import { createPulumiDriver } from '../../lib/stack/pulumi-driver';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -114,11 +113,13 @@ async function adoptKept(ctx: SetupContext): Promise<void> {
     return undefined;
   });
   if (!live) return;
-  const driver = createPulumiDriver(ctx.stackName, { env: ctx.childEnv });
-  const plan = importPlan(keptResources(ctx.appConfig), { buckets: live[0], secrets: live[1] }, await driver.exportState(), region);
+  const { LocalWorkspace } = await import('@pulumi/pulumi/automation');
+  const envVars = Object.fromEntries(Object.entries(ctx.childEnv).filter((entry): entry is [string, string] => entry[1] !== undefined));
+  const stack = await LocalWorkspace.createOrSelectStack({ stackName: ctx.stackName, workDir: infraDir }, { envVars });
+  const plan = importPlan(keptResources(ctx.appConfig), { buckets: live[0], secrets: live[1] }, await stack.exportStack(), region);
   if (plan.length === 0) return;
   console.info(`\n→ Adopting what a teardown kept: ${plan.map((resource) => resource.name).join(', ')}`);
-  await driver.importResources(plan);
+  await stack.import({ resources: plan, protect: false, generateCode: false, onOutput: (line) => process.stdout.write(line) });
   console.info(`  ${checkMark} Adopted: the \`up\` updates them in place.`);
 }
 
@@ -379,9 +380,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 }
 
-/** Record a rotation of keys beside the live record, under the lease, with the operator key. */
 /**
- * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it (plan §3.5). Both a setup
+ * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it. Both a setup
  * and a rotation of keys make one, and a rotation deletes the key the copy held before, so a rotation that skipped this would leave the
  * main job's runs a dead key. The secret key is shown only when the key is made, so a failed copy takes another rotation of keys.
  */
@@ -402,6 +402,7 @@ export async function copyDeployKeyForMainJob(
   );
 }
 
+/** Record a rotation of keys beside the live record, under the lease, with the operator key. */
 export async function recordKeyRotation(context: InfraContext, operatorKey: OperatorKey): Promise<void> {
   const { appConfig, projectId } = context;
   const stack = stackNameFor(context);
