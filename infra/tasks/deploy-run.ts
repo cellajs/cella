@@ -115,8 +115,7 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
 /** Derive the deploy env table from the app config for the requested mode. */
 async function loadDeployEnvFromConfig(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
   process.env.APP_MODE = opts.mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
+  const { engineConfig: appConfig } = await import('../config/engine-config');
   if (appConfig.mode !== opts.mode) throw new Error(`Mode mismatch: requested "${opts.mode}" but loaded config is "${appConfig.mode}"`);
   return buildDeployEnv(appConfig, { imageTag: opts.sha });
 }
@@ -465,13 +464,13 @@ function createRealEffects(): DeployEffects {
     task: (name, argv = []) => taskRunners[name](argv),
     readFile: (path) => readFile(path, 'utf8'),
     async lease(stack, operation) {
-      const [{ controlActor, lockKey }, { acquireLease, installSignalRelease }, { loadEngineConfig }, { deriveInfra }] = await Promise.all([
+      const [{ controlActor, lockKey }, { acquireLease, installSignalRelease }, { engineConfig }, { deriveInfra }] = await Promise.all([
         import('../lib/stack/control-store'),
         import('../lib/stack/stack-lease'),
         import('../config/engine-config'),
         import('../lib/naming'),
       ]);
-      const { naming, region } = deriveInfra(await loadEngineConfig());
+      const { naming, region } = deriveInfra(engineConfig);
       // A deploy queues behind another one for a while; a dead holder's lease lapses within its lifetime.
       const result = await acquireLease({
         s3: await controlClient(region),
@@ -506,14 +505,13 @@ function createRealEffects(): DeployEffects {
       };
     },
     async readLive(stack) {
-      const [{ loadEngineConfig }, { deriveInfra }, { machineRoles }, { readLiveRecord }, { readRotations }] = await Promise.all([
+      const [{ engineConfig: appConfig }, { deriveInfra }, { machineRoles }, { readLiveRecord }, { readRotations }] = await Promise.all([
         import('../config/engine-config'),
         import('../lib/naming'),
         import('../lib/machine-roles'),
         import('../lib/deploy/live-record'),
         import('../lib/stack/control-store'),
       ]);
-      const appConfig = await loadEngineConfig();
       const { naming, region } = deriveInfra(appConfig);
       const s3 = await controlClient(region);
       const [{ record }, { rotations }] = await Promise.all([
@@ -525,7 +523,7 @@ function createRealEffects(): DeployEffects {
     engineStamp: () => readEngineStamp(),
     async switchMachines(request) {
       const [
-        { loadEngineConfig },
+        { engineConfig: appConfig },
         { deriveInfra },
         { readFoundation },
         { bucketPresigner },
@@ -550,7 +548,6 @@ function createRealEffects(): DeployEffects {
         import('../lib/scaleway/s3-client'),
       ]);
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
-      const appConfig = await loadEngineConfig();
       const { naming, region, zone } = deriveInfra(appConfig);
       const projectId = process.env.SCW_DEFAULT_PROJECT_ID ?? '';
       const { accessKey, secretKey } = deployS3Key();
@@ -599,13 +596,13 @@ function createRealEffects(): DeployEffects {
     publishEntryFiles: publishEntryFilesToBucket,
     writeRunRecord: writeRunRecordToBucket,
     async bootAccounts(envs) {
-      const [{ accountFailed, BOOT_ACCOUNTS_PREFIX }, { loadEngineConfig }, { deriveInfra }, { GetObjectCommand }] = await Promise.all([
+      const [{ accountFailed, BOOT_ACCOUNTS_PREFIX }, { engineConfig }, { deriveInfra }, { GetObjectCommand }] = await Promise.all([
         import('../lib/deploy/boot-accounts'),
         import('../config/engine-config'),
         import('../lib/naming'),
         import('@aws-sdk/client-s3'),
       ]);
-      const { naming, region } = deriveInfra(await loadEngineConfig());
+      const { naming, region } = deriveInfra(engineConfig);
       const s3 = await diagnosticsClient(region);
       return Promise.all(
         envs.map(async ({ service, bootAccount }): Promise<RunBootAccount> => {

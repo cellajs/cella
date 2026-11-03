@@ -1,9 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig } from '../config/engine-config';
-
-const appConfig = engineConfig();
-
+import { engineConfig as appConfig } from '../config/engine-config';
 import { isRouted, type MachineRole, machineRoles, SLOTS, slotName } from '../lib/machine-roles';
 import { mode, naming, region, tags } from '../pulumi-context';
 import { privateNetworkId } from './network';

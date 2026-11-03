@@ -32,6 +32,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   // Stack and project must be set via env vars before @pulumi/pulumi is imported, or getStack() throws "Missing stack name".
   process.env.PULUMI_NODEJS_PROJECT = opts.project ?? 'infra';
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production';
+  // The engine config reads it when it loads, so a test imports every module that reads the config after this call, as index.ts does.
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production';
 
   // pulumi-context.ts requires the org id and project id strictly from the environment, as CI and the infra CLI do, so both are provided for deterministic rendering.
@@ -41,10 +42,6 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
   const config = { ...opts.config };
   if (Object.keys(config).length > 0) process.env.PULUMI_CONFIG = JSON.stringify(config);
-
-  // Engine modules read config at evaluation, so load it before any resource module is imported, exactly like index.ts does.
-  const { loadEngineConfig } = await import('../../config/engine-config');
-  await loadEngineConfig();
 
   const pulumi = await import('@pulumi/pulumi');
   const resources = installKeylessMocks(pulumi, {

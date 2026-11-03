@@ -9,8 +9,6 @@ if (!mode) {
 }
 process.env.APP_MODE = mode;
 
-const { loadEngineConfig } = await import('../config/engine-config');
-await loadEngineConfig();
 const { appDescriptionHash } = await import('../lib/deploy/app-description');
 process.stdout.write(`${await appDescriptionHash()}\n`);
 

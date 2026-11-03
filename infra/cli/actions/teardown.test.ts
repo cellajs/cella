@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadEngineConfig } from '../../config/engine-config';
+import { engineConfig as appConfig } from '../../config/engine-config';
 import type { InfraContext } from '../shared';
 
 const input = vi.fn();
@@ -34,7 +34,6 @@ vi.mock('../../lib/scaleway/scaleway-iam', async (original) => ({
   deleteApplicationCascade: (...args: unknown[]) => deleteApplicationCascade(...args),
 }));
 
-const appConfig = await loadEngineConfig();
 const { runTeardown, splitOwnApplication } = await import('./teardown');
 const { forgetSession } = await import('../session');
 

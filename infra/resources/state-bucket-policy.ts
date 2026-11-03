@@ -1,11 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig } from '../config/engine-config';
+import { engineConfig as appConfig } from '../config/engine-config';
 import { stateBucket } from '../lib/stack/control-store';
 import { region } from '../pulumi-context';
 import { observerApplicationId, operatorApplicationId, operatorMemberUserIds } from './identities';
-
-const appConfig = engineConfig();
 
 const stateBucketName = stateBucket(appConfig.slug);
 

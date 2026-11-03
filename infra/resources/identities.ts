@@ -1,10 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig } from '../config/engine-config';
+import { engineConfig as appConfig } from '../config/engine-config';
 import { actionCommand } from '../lib/operator-actions';
-
-const appConfig = engineConfig();
-
 import { declaresUploads } from '../lib/scaleway/declared-identities';
 import { allPrincipalNames } from '../lib/scaleway/principals';
 import { mode, organizationId } from '../pulumi-context';

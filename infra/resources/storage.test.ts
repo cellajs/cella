@@ -1,13 +1,15 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { engineConfig } from '../config/engine-config';
+import type { EngineConfig } from '../config/engine-config';
 import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
+let appConfig: EngineConfig;
 
 beforeAll(async () => {
   // The mock IAM API supplies the application IDs normally absent from stack config.
   h = await installPulumiMocks();
+  ({ engineConfig: appConfig } = await import('../config/engine-config'));
   await import('./storage');
   await h.settle();
 });
@@ -54,7 +56,7 @@ describe('storage module', () => {
 
   it("admits the app's operator application and each member of the operators group on every bucket, in one statement, so an apply on either key can refresh and change them", () => {
     type Statement = { Sid: string; Principal: unknown; Action: string[] };
-    const names = appPrincipalNames(engineConfig().appSlug);
+    const names = appPrincipalNames(appConfig.appSlug);
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const operator = Statement.find((statement) => statement.Sid === 'OperatorAccess');
@@ -84,7 +86,7 @@ describe('storage module', () => {
 
   it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
-      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(engineConfig().slug, 'production').admin);
+      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(appConfig.slug, 'production').admin);
     }
   });
 
@@ -93,7 +95,7 @@ describe('storage module', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const observer = Statement.filter((statement) =>
-        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(engineConfig().appSlug).observer}-id`),
+        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(appConfig.appSlug).observer}-id`),
       );
       if (policy.name === 'boot-diag-policy') {
         expect(observer.map((statement) => statement.Action)).toEqual([

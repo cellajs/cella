@@ -14,7 +14,7 @@ beforeAll(async () => {
   await h.settle();
   mod = await import('./kept-resources');
   const { engineConfig } = await import('../../config/engine-config');
-  kept = mod.keptResources(engineConfig());
+  kept = mod.keptResources(engineConfig);
 });
 
 const exportOf = (...names: string[]) => ({
@@ -46,7 +46,7 @@ describe('the kept set', () => {
       { id: 'copy', name: 'cookie-secret', path: '/shared/backend/jobs' },
       { id: 'foreign', name: 'cookie-secret', path: '/someone-elses' },
     ];
-    expect(mod.sweptSecrets(listed, kept, mod.engineFolders(engineConfig())).map((secret) => secret.id)).toEqual(['elsewhere', 'cookie', 'copy']);
+    expect(mod.sweptSecrets(listed, kept, mod.engineFolders(engineConfig)).map((secret) => secret.id)).toEqual(['elsewhere', 'cookie', 'copy']);
   });
 
   it('readies a state for the destroy whatever an older program recorded: the kept resources leave it, every other bucket empties on delete', () => {

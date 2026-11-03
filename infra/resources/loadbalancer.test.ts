@@ -2,7 +2,6 @@ import type { ComponentResourceOptions } from '@pulumi/pulumi';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { agentPort } from '../lib/machine-roles';
 import { servicesByName } from '../lib/services';
-import { fakeConfig } from '../tests/helpers/fake-config';
 import { makeFetch } from '../tests/helpers/fake-fetch';
 import { type CapturedResource, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
@@ -18,6 +17,13 @@ vi.mock('./dns-cert-gates', async () => {
   return { DnsPropagationGate: Gate, CertReadyGate: Gate };
 });
 
+// Split-VM with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
+vi.mock('../config/engine-config', async () => {
+  const { fakeConfig } = await import('../tests/helpers/fake-config');
+  const { services } = fakeConfig();
+  return { engineConfig: fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }) };
+});
+
 let h: MockHarness;
 const named = (name: string): CapturedResource => {
   const resource = h.resources.find((r) => r.name === name);
@@ -30,10 +36,6 @@ beforeAll(async () => {
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);
-  // Split-VM with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
-  const { setEngineConfig } = await import('../config/engine-config');
-  const { services } = fakeConfig();
-  setEngineConfig(fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }));
   h = await installPulumiMocks();
   await import('./loadbalancer');
   await import('./dns');

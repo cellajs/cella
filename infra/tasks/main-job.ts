@@ -99,7 +99,7 @@ function liveEffects(): MainJobEffects {
     stamp: () => readEngineStamp(),
     releaseRefs: async ({ mode, key, projectId }) => {
       process.env.APP_MODE = mode;
-      const [{ loadEngineConfig }, { deriveInfra }, { createSecretManagerClient }, { readRepositoryKey, repositoryUrl }, { listRemoteRefs }] =
+      const [{ engineConfig }, { deriveInfra }, { createSecretManagerClient }, { readRepositoryKey, repositoryUrl }, { listRemoteRefs }] =
         await Promise.all([
           import('../config/engine-config'),
           import('../lib/naming'),
@@ -107,7 +107,7 @@ function liveEffects(): MainJobEffects {
           import('../lib/deploy/repository-key'),
           import('../lib/deploy/git-remote'),
         ]);
-      const { region } = deriveInfra(await loadEngineConfig());
+      const { region } = deriveInfra(engineConfig);
       const readKey = await readRepositoryKey(createSecretManagerClient({ secretKey: key.secretKey, region, projectId }));
       return listRemoteRefs(repositoryUrl(), readKey)(['refs/tags/*']);
     },

@@ -5,8 +5,6 @@ import * as pulumi from '@pulumi/pulumi';
 // explicitly set APP_MODE against the stack).
 process.env.APP_MODE ??= pulumi.getStack().split('/').pop() ?? '';
 
-const { loadEngineConfig } = await import('./config/engine-config');
-await loadEngineConfig();
 const program = await import('./resources/program');
 
 export const frontendBucketName = program.frontendBucketName;
@@ -22,8 +20,7 @@ export const privateUploadsBucketName = program.privateUploadsBucketName;
 export const privateUploadsBucketEndpoint = program.privateUploadsBucketEndpoint;
 export const bootDiagBucketName = program.bootDiagBucketName;
 export const bootDiagBucketEndpoint = program.bootDiagBucketEndpoint;
-// Generic per-store outputs (S11): `storeOutputs.<storeId>.<key>`. The flat
-// db* outputs were retired in the 2026-08 planned break.
+// Per-store outputs: `storeOutputs.<storeId>.<key>`.
 export const storeOutputs = program.storeOutputs;
 export const serviceDomainUrls = program.serviceDomainUrls;
 export const lbId = program.lbId;

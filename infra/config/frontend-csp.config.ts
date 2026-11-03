@@ -1,8 +1,5 @@
-import { engineConfig } from './engine-config';
-
-const appConfig = engineConfig();
-
 import { enabledServices } from '../lib/services';
+import { engineConfig as appConfig } from './engine-config';
 
 const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
 const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;

@@ -111,8 +111,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const out = getFlag(argv, '--out');
   const { accessKey, secretKey } = deployS3Key();
   if (!projectId || !secretKey) throw new Error('Required: SCW_SECRET_KEY, --project-id, and --check or --sha with --out');
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
+  const { engineConfig: appConfig } = await import('../config/engine-config');
   const { naming, region } = deriveInfra(appConfig);
   const machines = machineEnvEntries(appConfig);
 

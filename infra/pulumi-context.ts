@@ -1,9 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
-import { engineConfig } from './config/engine-config';
-
-const appConfig = engineConfig();
-
 import type { ServiceName } from './compose/compose';
+import { engineConfig as appConfig } from './config/engine-config';
 import { deriveInfra } from './lib/naming';
 import { serviceEndpoints } from './lib/services';
 import type { Environment } from './lib/stack/bootstrap-stack-state';

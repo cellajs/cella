@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { supportedImageContract, supportedSchemaVersion } from '../../agent/src/plan';
-import { type EngineConfig, engineConfig } from '../../config/engine-config';
+import type { EngineConfig } from '../../config/engine-config';
 import { infraDir } from '../utils/paths';
 import { descriptionHash } from './applied-engine';
 import { supplierContext } from './static-env';
@@ -34,12 +34,12 @@ function engineFields(config: EngineConfig): EngineConfig {
  * The app as the engine of one environment sees it: the engine config's fields, every registry under `config/` the apply and the deploy
  * read (the runtime secrets and managed keys as the engine reads them), each env supplier's value, the boot plan's contract version, and
  * the Node, pnpm and repository the root `package.json` names, which the builder and the engine run on. A store is described by its kind and its factory's
- * settings. Run after `loadEngineConfig()`.
+ * settings. Run once `APP_MODE` names the environment: the engine config and the registries load here.
  * @param root the checkout whose `package.json` is read
  */
 async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
-  const config = engineConfig();
   const [
+    { engineConfig: config },
     { runtimeSecrets },
     { managedKeys },
     { appStores },
@@ -49,6 +49,7 @@ async function appDescription(root = join(infraDir, '..')): Promise<Record<strin
     { appEnvSuppliers },
     { telemetrySink },
   ] = await Promise.all([
+    import('../../config/engine-config'),
     import('../runtime-secrets'),
     import('../managed-keys'),
     import('../../config/stores.config'),

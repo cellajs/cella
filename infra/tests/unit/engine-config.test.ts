@@ -1,8 +1,6 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
-import { fakeConfig } from '../helpers/fake-config';
+import { describe, expect, it } from 'vitest';
 
 const infraRoot = resolve(__dirname, '../..');
 
@@ -21,9 +19,9 @@ function sources(dir: string): string[] {
   return out;
 }
 
-// Config flows ONLY through engine-config, whose lazy workspace fallback is the single allowed reference to the shared package.
-describe('config inversion sweep', () => {
-  it("no engine module references the shared package except engine-config's fallback", () => {
+// The engine reads the app's config only through engine-config, the one engine module that imports the shared package.
+describe('config boundary sweep', () => {
+  it('no engine module references the shared package except engine-config', () => {
     const scanned = [
       ...sources(join(infraRoot, 'resources')),
       ...sources(join(infraRoot, 'lib')),
@@ -45,29 +43,5 @@ describe('config inversion sweep', () => {
       }
     }
     expect(offenders).toEqual([]);
-  });
-
-  it('engineConfig throws before a config is loaded, then returns the injected one', async () => {
-    vi.resetModules();
-    const { engineConfig, setEngineConfig } = await import('../../config/engine-config');
-    expect(() => engineConfig()).toThrow(/no config loaded/);
-    setEngineConfig(fakeConfig({ slug: 'injected-app' }));
-    expect(engineConfig().slug).toBe('injected-app');
-  });
-
-  it('loadEngineConfig resolves an INFRA_CONFIG_MODULE over the workspace fallback', async () => {
-    vi.resetModules();
-    const dir = mkdtempSync(join(tmpdir(), 'engine-config-'));
-    const modulePath = join(dir, 'config.mjs');
-    writeFileSync(modulePath, `export const engineConfig = ${JSON.stringify(fakeConfig({ slug: 'pointer-app' }))}\n`);
-    vi.stubEnv('INFRA_CONFIG_MODULE', modulePath);
-    try {
-      const { loadEngineConfig } = await import('../../config/engine-config');
-      const config = await loadEngineConfig();
-      expect(config.slug).toBe('pointer-app');
-    } finally {
-      vi.unstubAllEnvs();
-      rmSync(dir, { recursive: true, force: true });
-    }
   });
 });

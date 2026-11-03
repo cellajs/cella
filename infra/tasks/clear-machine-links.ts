@@ -78,8 +78,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (!envsFile || !machinesFile || !projectId || !secretKey) throw new Error('Required: SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID, --envs, --machines');
   const envs = JSON.parse(await readFile(envsFile, 'utf8')) as MachineEnv[];
   const machines = JSON.parse(await readFile(machinesFile, 'utf8').catch(() => '[]')) as MadeMachine[];
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const { naming, region, zone } = deriveInfra(await loadEngineConfig());
+  const { engineConfig } = await import('../config/engine-config');
+  const { naming, region, zone } = deriveInfra(engineConfig);
   const { DeleteObjectCommand, HeadObjectCommand } = await import('@aws-sdk/client-s3');
   const s3 = await makeS3Client(region, projectAccessKey(accessKey, projectId), secretKey);
   const auth = { secretKey };
