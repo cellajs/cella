@@ -87,7 +87,7 @@ A privileged action runs on a key that ends within a day: one of the `<app>-oper
 
 **How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the key: access key and secret key. The CLI asks IAM who bears it, with the key itself: the operator application, or a user the operators group lists. A key of anyone else, and a key without an end date or with more than a day left, is refused with the console path above: a key that leaks must die within the day. The key stays in memory until you quit, and every action of the run uses it.
 
-**Buckets.** Each bucket policy names the operator application and every member of the group in one statement, as the apply finds them in IAM, so the members never run into the ten statements a bucket policy holds. A member reaches the buckets after the first apply since they joined, which runs on the application's key or an admitted member's.
+**Buckets.** A bucket policy refuses every principal it does not name, your Owner API key included. Each one names the operator application and every member of the group in one statement, as the apply finds them in IAM, so the members never run into the ten statements a bucket policy holds. A member reaches the buckets after the first apply since they joined, which runs on the application's key or an admitted member's.
 
 The inventory in **Show status** names a key of the operator application that outlives a day: delete it in the console.
 

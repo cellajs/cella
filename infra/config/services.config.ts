@@ -2,8 +2,8 @@ import { defineServices } from '../compose/infrastructure';
 import { CRON_HOME_DATABASE } from '../lib/scaleway/db-privileges';
 
 /**
- * Registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing,
- * certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. Each `port`,
+ * Registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing, profile
+ * and release metadata. Run `pnpm --filter infra compose:generate` after editing. Each `port`,
  * `internalPort` and `pathPrefix` repeats `services` and `servicePaths` of the shared config, which the engine never
  * imports; `tests/unit/app-config-registry.test.ts` holds the two together.
  */

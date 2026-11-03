@@ -1,65 +1,34 @@
 # Infra CLI
 
-**Move to EU cloud, keep the DX you know.**
+This document describes the Infra CLI: what it does, its commands and status checks, the files it reads and its vocabulary.
 
 ### TL;DR
 
-The EU has great cloud providers; what it lacks is an easy way to deploy within them. Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https://www.scaleway.com/), then deploys every release with zero downtime from a runner in that same account.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A runner in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine holds a key.
 
-## Key features
+## What it does
 
-**Go European without looking back.** Scaleway is one of Europe's most established cloud providers.
+`infra/` is the deploy engine the apps built from cella share through template upgrades: a Pulumi program for the foundation (network, database, load balancer, buckets, secret containers, DNS and the main job), the deploy that makes and deletes the machines through the Scaleway API, the agent every machine runs, the runner that starts the deploys, and the CLI an operator runs on their own machine. The engine names no app: what an app deploys is in the registries under [config/](config/), which an upgrade merges like every other template file.
 
-**Everything is yours.** Your Scaleway account runs the deploys too: a runner in it starts each one as a job, and GitHub holds no key.
-
-**Full stack deployment.** One guided setup: domain, HTTPS, load balancer, managed database, file storage; the first deploy brings the servers.
-
-**Releases can't break what is running.** Fresh servers per release.
-
-**Secure by default.** No machine logins, no key on a machine, and each key does one kind of work.
-
-**Observable.** One record per deploy, read with a read-only key; an OpenTelemetry trace too when a sink key is set.
-
-**Easy to leave.** Pulumi, Docker Compose and OTLP.
-
-## How it works
+## How a release flows
 
 **Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
 
 **Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**: the engine built from your checkout, with the **applied description** of the app, which every run of the main job starts from.
 
-**Release** is one command, which the engine image runs in the environment's main job when the runner sees its target move:
+**Deploy**: when the runner sees an environment's target move, it starts a run of the main job, and the engine image runs one command:
 
 ```
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline, from building a missing release to removing the old machines. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, and the apply from its checkout starts it again.
+It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, and the apply from its checkout starts it again.
 
-**Manage** is the same `pnpm infra` on an existing stack: one menu to observe, change privileged resources, keys and secrets, reach the database, repair and tear down. Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help`. There is no unattended mode: a change needs a person at the prompt.
+## Commands
 
-## Core philosophy
+`pnpm infra` opens the setup wizard on a fresh stack and the operator menu on an existing one: observe, change privileged resources, keys and secrets, reach the database, repair and tear down. Every menu action also runs alone as `pnpm infra <action> [--mode <production|staging>]`, and `pnpm infra help` lists them. An action that changes something asks a person at the prompt: there is no unattended mode. Each `pnpm infra` run first writes `compose.gen.yml` from the service registry.
 
-Three rules:
-
-1. **Create-then-replace.** A release never mutates a running server: each deploy makes a new machine per role on its idle slot, waits until the load balancer sees it healthy at the expected release, then drains and deletes the old one.
-2. **The live record decides.** Which slot serves each role, with which commit, is written after every switch: a re-run of a deploy that served changes nothing, and Pulumi holds the foundation only.
-3. **Least-privilege keys.** Each key does one kind of work and is found by its name, never by a stored id.
-
-## Security boundaries
-
-- **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, load balancer, reserved address, DNS, bucket policy, image, Pulumi state or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
-- **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes a one-day operator key, refused on the same rule.
-- **No machine holds a key.** A machine fetches its env file and the release's archives, whose digests it refuses to differ, through links that end within minutes.
-- **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
-- **The builder holds no key.** It writes the release's archives and its reports through links, and the app's code runs there in containers that reach no machine metadata.
-- **A target's code never runs beside the deploy key.** The main job runs the engine image an apply published, with the target, the retry counter, the deploy key and the project as its only values; the target's code runs on the builder and on its machines.
-
-## Observability
-
-Every deploy writes a run record. With a telemetry sink, a deploy also exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Seeding the sink's ingest key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
-
-## Status command
+## Status
 
 `infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Show status**; standalone:
 
@@ -81,21 +50,25 @@ Stable check `id`s:
 - `secrets.required`, `environments.lines`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`
 
+## Deploy telemetry
+
+With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Storing the key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+
 ## Key files
 
 `infra/.env.<mode>` holds this machine's observer key (`SCW_OBSERVER_*`); the environment's Scaleway project is committed in `infra/Pulumi.<mode>.yaml`, as `infra:projectId`. The file overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A bare `infra/.env` is never read.
 
-The CLI reads no privileged key and no passphrase from a file or the environment, in any form: it drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` with a notice, so nothing on the machine can change infrastructure with nobody at the prompt. A one-day operator key comes from the prompt, and the passphrase from Secret Manager with it.
+The CLI drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, and the passphrase from Secret Manager with it.
 
-## Extending
+## Add a service or a store
 
-The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A scoped Scaleway key an app's service reads, such as the AI key, is an entry of [config/managed-keys.config.ts](config/managed-keys.config.ts), which **Manage runtime secrets** mints at an Owner moment into the runtime secret the entry names. The one backing store is a managed PostgreSQL. Another is a kind of its own, as each kind names its own resources and secret ids: a provisioner file in [resources/stores/](resources/stores/) and an entry in [config/stores.config.ts](config/stores.config.ts). As the applied description holds its kind and settings, adding it is an apply. A status check is a provider in [lib/status/providers/](lib/status/providers/).
+A service is an entry in [config/services.config.ts](config/services.config.ts) (image, port, health status, replacement strategy, route, machine size, env and bindings), with its `enabled` flag and ports under `services` in [shared/config/config.default.ts](../shared/config/config.default.ts) and its path prefix in [shared/src/config-builder/service-paths.ts](../shared/src/config-builder/service-paths.ts): [tests/unit/app-config-registry.test.ts](tests/unit/app-config-registry.test.ts) fails when the two disagree. Each runtime secret it reads lists it in [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts). The service ships a Docker image, answers the health path of [config/health.config.ts](config/health.config.ts) with the release it runs, and runs its migrations, if any, in a one-shot `release` step at its machine's boot. A store is a provisioner file in [resources/stores/](resources/stores/) beside `postgres-managed.ts`, exported from `catalog.ts`, and an entry in [config/stores.config.ts](config/stores.config.ts). Every registry is part of the applied description, so either change deploys after an apply.
 
-An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion. The agent answers the load balancer from that endpoint, on a port of its own per service.
+## File map
 
 | Path | Holds |
 | --- | --- |
-| [config/](config/) | The app-owned registries above |
+| [config/](config/) | The registries: services, general settings (machine image, database size, asset retention), runtime secrets, managed keys, stores, env suppliers, health, the frontend CSP and telemetry; and engine-config.ts, where the engine reads the app's config |
 | [cli/](cli/) | The menu and its actions |
 | [resources/](resources/) | The Pulumi program: the foundation, no machine |
 | [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
@@ -148,4 +121,4 @@ One name per concept across code and docs:
 | **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |
 | **boot account** | The boot log a VM uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |
-| **engine config** | The app description [config/engine-config.ts](config/engine-config.ts) injects; defaults to `appConfig`. |
+| **engine config** | The app's config as the engine reads it, in [config/engine-config.ts](config/engine-config.ts): the shared `appConfig` of the mode, with the app's own slug. |
