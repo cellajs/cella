@@ -50,7 +50,7 @@ Three rules:
 
 - **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, load balancer, reserved address, DNS, bucket policy, image, Pulumi state or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
 - **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes a one-day operator key, refused on the same rule.
-- **No machine holds a key.** The deploy composes each machine's env file from the values its services consume and hands the machine links that end within minutes: to that file, to the release's archives, whose digests it refuses to differ, and to the upload of its boot account. Once the machine booted, the deploy takes the links off its user data and deletes the file.
+- **No machine holds a key.** A machine fetches its env file and the release's archives, whose digests it refuses to differ, through links that end within minutes.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
 - **The builder holds no key.** It writes the release's archives and its reports through links, and the app's code runs there in containers that reach no machine metadata.
 - **A target's code never runs beside the deploy key.** The main job runs the engine image an apply published, with the target, the retry counter, the deploy key and the project as its only values; the target's code runs on the builder and on its machines.
@@ -105,7 +105,7 @@ The CLI reads no privileged key and no passphrase from a file or the environment
 
 ## Extending
 
-The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
+The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A scoped Scaleway key an app's service reads, such as the AI key, is an entry of [config/managed-keys.config.ts](config/managed-keys.config.ts), which **Manage runtime secrets** mints at an Owner moment into the runtime secret the entry names. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
 
 An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion. The agent answers the load balancer from that endpoint, on a port of its own per service.
 
@@ -161,7 +161,7 @@ One name per concept across code and docs:
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **privileged** | A resource only an apply on the operator key changes. |
 | **boot plan** | JSON cloud-init writes for the agent: role, services, links, agent ports, trace context; no key and no secret value. |
-| **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent reads every two seconds. |
+| **manifest** | The `manifest` key of a machine's user data: its role, its release and the drain order, which the agent polls. |
 | **boot account** | The boot log a VM uploads to the boot-diag bucket through its link at the end of its first boot. |
 | **internal route** | A private, ACL-guarded LB frontend to a service's `internalPort` listener: an address that survives switches and no public pool reaches. |
 | **engine config** | The app description [config/engine-config.ts](config/engine-config.ts) injects; defaults to `appConfig`. |

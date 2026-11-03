@@ -637,7 +637,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Install scripts: only esbuild and lefthook may build; images install with `--ignore-scripts` and `--frozen-lockfile`.
   - CI: `permissions: {}` at the top; jobs `contents: read`; every third-party `uses:` is a 40-character SHA with a tag comment; the trigger is `pull_request` only (no `pull_request_target`); heavy jobs run only for same-repo branches; `privileged-changes` holds no secret.
   - Browser: `script-src 'self' *.gleap.io`, no `unsafe-inline` for scripts, `object-src 'none'`, `font-src 'self' data:`. Fonts are self-hosted (`frontend/index.html`). Gleap, onedollarstats and Maple are npm packages bundled by Vite (`frontend/src/modules/common/gleap-support.ts`, `root.tsx`, `frontend/src/lib/maple.ts`), so they carry lockfile integrity, not a script tag.
-  - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`, F2 line on build machine keys, G1, G12), cited and not redone.
+  - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`, the F2 foothold, a compromised build dependency on a builder that holds no key, G1, G12), cited and not redone.
   - The workspace settings, the audit and cella#1549.
 - **Asks:** an inventory of code that runs from the network at install, build, CI and in the browser, and what a compromised package in each tier reaches (the infra review's F2 line).
 - **Not this class:** dev server exposure, Storybook and `.env` on disk belong to F2. The builder's links and deploy key handling belong to the infra review (F3). CSP `connect-src` breadth for exfiltration after XSS belongs to C4; here only the third-party script cover is counted.

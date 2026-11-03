@@ -90,9 +90,9 @@ An environment that follows the releases, as production does, takes `releases` o
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy, and the **engine image** its runs start from, by digest. The apply builds that image from the operator's checkout and pushes it to the environment's registry. It carries the engine and the **applied description**: the app as that checkout describes it to the engine, every registry under `infra/config/`, the engine's fields of the app config, the version of the boot plan its agent reads, and the Node, pnpm and repository the root `package.json` names. A run fetches and installs nothing: the image starts its deploy with the target, the retry counter, the deploy key and the project, and no other value a start sets. A deploy reads no Pulumi state and no passphrase.
+Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy, and the **engine image** its runs start from, by digest. The image carries the engine and the **applied description**: the app as the checkout the apply ran from describes it to the engine ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A run fetches and installs nothing: the image starts its deploy with the target, the retry counter, the deploy key and the project, and no other value a start sets. A deploy reads no Pulumi state and no passphrase.
 
-The target's code never runs beside the deploy key. The builder evaluates the target's own description from its checkout, in a container that holds no key, and reports its hash beside the archives' digests. Before the deploy reads a runtime value, it holds that hash against the image's: a release that describes the app as the applied engine does deploys without an apply, one that differs ends **apply needed**. An engine change outside the description reaches the deploys at the next apply.
+The target's code never runs beside the deploy key. The builder evaluates the target's own description from its checkout, in a container that holds no key, and reports its hash beside the archives' digests. Before the deploy reads a runtime value, it holds that hash against the image's, and a release that describes the app otherwise ends **apply needed**.
 
 A run ends in one of five outcomes:
 
@@ -157,11 +157,11 @@ Publish the frontend entry files + smoke checks
 (degraded components warn, unhealthy ones fail the run)
 ```
 
-A **switch** of one role: the deploy makes the new machine through the Instance API on the slot that does not serve, with its private NIC at that slot's reserved address. Its agent boots the release and answers the check; once every pool of the role shows the new address running, the deploy records it and writes `drain` into the old machine's manifest. Within about three seconds the old agent answers 503, the load balancer stops routing to it a second and a half later, the agent keeps its connections for the role's drain seconds and stops the containers, and the deploy deletes the machine. A new machine that does not serve within the wait is deleted, and the old one never stopped serving; a role whose new machine served keeps it, whatever fails after.
+A **switch** of one role: the deploy makes the new machine through the Instance API on the slot that does not serve, with its private NIC at that slot's reserved address. Its agent boots the release and answers the check; once every pool of the role shows the new address running, the deploy records it and writes `drain` into the old machine's manifest. The old agent then answers 503, the load balancer stops routing to it, the agent keeps its connections for the role's drain seconds and stops the containers, and the deploy deletes the machine. A new machine that does not serve within the wait is deleted, and the old one never stopped serving; a role whose new machine served keeps it, whatever fails after.
 
 The primary role owns migrations: the migrate companion runs at the boot of its new machine, before the app starts, as the app's Compose dependency that must exit 0. A migration stuck on a lock fails the deploy, and the boot account names the blocker. A migration that needs longer runs outside the deploy.
 
-## Rollout strategies
+## Replacement strategies
 
 Each service declares its `replacementStrategy` in [config/services.config.ts](../infra/config/services.config.ts).
 
@@ -176,13 +176,13 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run. A stop-first machine that a failed switch kept keeps its file, as a late boot may still need it, until the bucket's rule removes it within a day.
 
 - **The Pulumi state holds no machine and no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
-- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine is made, the builder included, and storing it in **Manage runtime secrets** starts the target again.
-- **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value reaches the machines the next deploy makes: a new release, or a rotation.
+- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key.
+- **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value, or one an apply removed, reaches the machines the next deploy makes: a new release, or a rotation.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 
 ## Load balancer and DNS
 
-The load balancer, its pools, the reserved addresses they list, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply: the deploy key may read them and write none. Enabling a routed service, or changing a role, takes an apply first. Every apply also replaces a certificate that failed for good.
+The load balancer, its pools, the reserved addresses they list, its DNS records and its certificates are made by the setup's first apply, before any machine, and change only in an apply: the deploy key may read them and write none. Every apply also replaces a certificate that failed for good.
 
 ## Configuration
 
@@ -190,6 +190,6 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
+| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
 | [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention | **Review & apply changes** (privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

@@ -33,9 +33,9 @@ The runner never starts a blocked target again.
 
 ## Apply needed
 
-A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published: a change under `infra/config/`, to the engine's fields of the app config, to the boot plan's contract version, or to the Node, pnpm or repository of the root `package.json`. It stopped before it read a runtime value or booted a machine of the release: a run outside the engine image before the build, a release that describes the app otherwise once its build reported that. The running release stays. `pnpm infra runs` shows the end, with the target's and the applied description's hashes.
+A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). It stopped before it read a runtime value or booted a machine of the release, and the running release stays. `pnpm infra runs` shows the end, with the target's and the applied description's hashes.
 
-1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`). It builds the engine image from that checkout and pushes it, shows the main job's new image in its plan, records `control/<mode>/applied.json` once the `up` completed, and starts the target again at its end.
+1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`), which publishes that checkout's engine and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition from before the applied engine: the apply in step 1 rewrites it.
 3. "reports no description" means the target is older than the applied engine, which cannot deploy it: pin a newer release, or roll forward.
 4. "The image describes … the apply as …" during the apply's build: the shell the apply ran in overrides the config (`APP_ORIGIN`, `SINGLE_VM`), or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
