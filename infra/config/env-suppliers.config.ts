@@ -5,6 +5,6 @@ import { frontendCsp } from './frontend-csp.config';
 export const appEnvSuppliers = defineEnvSuppliers({
   // The app origin every service derives its URLs from (shared/src/config-builder/app-config.ts).
   APP_ORIGIN: ({ serviceUrl }) => serviceUrl('frontend'),
-  FRONTEND_CSP: () => frontendCsp,
+  FRONTEND_CSP: ({ config }) => frontendCsp(config),
   ORIGIN_HOST: ({ naming, region }) => `${naming.frontendBucket}.s3.${region}.scw.cloud`,
 });

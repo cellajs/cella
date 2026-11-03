@@ -1,75 +1,78 @@
 import { enabledServices } from '../lib/services';
-import { engineConfig as appConfig } from './engine-config';
+import type { EngineConfig } from './engine-config';
 
-const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
-const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
-const servicePublicUrl = (slug: string): string => {
-  const url = serviceUrls[slug]?.publicUrl;
-  if (!url) throw new Error(`frontend-csp: service '${slug}' has no publicUrl in appConfig.services`);
-  return url;
-};
+/** The frontend's Content-Security-Policy for one environment's config: the app origin, the services off it, the buckets and the map styles. */
+export function frontendCsp(appConfig: EngineConfig): string {
+  const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
+  const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
+  const servicePublicUrl = (slug: string): string => {
+    const url = serviceUrls[slug]?.publicUrl;
+    if (!url) throw new Error(`frontend-csp: service '${slug}' has no publicUrl in appConfig.services`);
+    return url;
+  };
 
-// Same-origin services collapse into connect-src 'self', so emit an origin only when it differs from the app origin.
-const appOrigin = new URL(appConfig.frontendUrl).origin;
-const originUnlessSelf = (url: string): string => {
-  // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the app origin are covered by 'self'.
-  const origin = new URL(url.replace(/^ws/, 'http')).origin;
-  return origin === appOrigin ? '' : new URL(url).origin;
-};
+  // Same-origin services collapse into connect-src 'self', so emit an origin only when it differs from the app origin.
+  const appOrigin = new URL(appConfig.frontendUrl).origin;
+  const originUnlessSelf = (url: string): string => {
+    // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the app origin are covered by 'self'.
+    const origin = new URL(url.replace(/^ws/, 'http')).origin;
+    return origin === appOrigin ? '' : new URL(url).origin;
+  };
 
-const cspOrigins = {
-  api: originUnlessSelf(servicePublicUrl('backend')),
-  yjs: enabledServiceSlugs.has('yjs') ? originUnlessSelf(servicePublicUrl('yjs')).replace(/^http/, 'ws') : '',
-  mcp: enabledServiceSlugs.has('mcp') ? originUnlessSelf(servicePublicUrl('mcp')) : '',
-  s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
-  s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
-  s3Public: appConfig.s3.publicCDNUrl,
-  s3Private: appConfig.s3.privateCDNUrl,
-  // The contact map fetches its style, tiles, fonts and icons from each style URL's origin.
-  maps: [
-    ...new Set(
-      Object.values(appConfig.mapStyleUrls ?? {})
-        .filter(Boolean)
-        .map((url) => new URL(url).origin),
-    ),
-  ].join(' '),
-};
+  const cspOrigins = {
+    api: originUnlessSelf(servicePublicUrl('backend')),
+    yjs: enabledServiceSlugs.has('yjs') ? originUnlessSelf(servicePublicUrl('yjs')).replace(/^http/, 'ws') : '',
+    mcp: enabledServiceSlugs.has('mcp') ? originUnlessSelf(servicePublicUrl('mcp')) : '',
+    s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
+    s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
+    s3Public: appConfig.s3.publicCDNUrl,
+    s3Private: appConfig.s3.privateCDNUrl,
+    // The contact map fetches its style, tiles, fonts and icons from each style URL's origin.
+    maps: [
+      ...new Set(
+        Object.values(appConfig.mapStyleUrls ?? {})
+          .filter(Boolean)
+          .map((url) => new URL(url).origin),
+      ),
+    ].join(' '),
+  };
 
-const connectSrc = [
-  `connect-src 'self' blob:`,
-  cspOrigins.api,
-  cspOrigins.yjs,
-  cspOrigins.mcp,
-  cspOrigins.s3Host,
-  cspOrigins.s3Buckets,
-  cspOrigins.s3Public,
-  cspOrigins.s3Private,
-  cspOrigins.maps,
-  'https://*.transloadit.com',
-  'wss://*.transloadit.com',
-  'https://transloaditstatus.com',
-  '*.gleap.io',
-  'wss://ws.gleap.io',
-  'ingest.maple.dev',
-  '*.onedollarstats.com',
-]
-  .filter(Boolean)
-  .join(' ');
+  const connectSrc = [
+    `connect-src 'self' blob:`,
+    cspOrigins.api,
+    cspOrigins.yjs,
+    cspOrigins.mcp,
+    cspOrigins.s3Host,
+    cspOrigins.s3Buckets,
+    cspOrigins.s3Public,
+    cspOrigins.s3Private,
+    cspOrigins.maps,
+    'https://*.transloadit.com',
+    'wss://*.transloadit.com',
+    'https://transloaditstatus.com',
+    '*.gleap.io',
+    'wss://ws.gleap.io',
+    'ingest.maple.dev',
+    '*.onedollarstats.com',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-export const frontendCsp = [
-  `default-src 'self'`,
-  `script-src 'self' *.gleap.io`,
-  `worker-src 'self' blob:`,
-  `style-src 'self' 'unsafe-inline'`,
-  connectSrc,
-  `img-src 'self' blob: https: data:`,
-  `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
-  `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
-  `font-src 'self' data:`,
-  `object-src 'none'`,
-  `base-uri 'self'`,
-  `form-action 'self'`,
-]
-  .join('; ')
-  .replace(/\s+/g, ' ')
-  .trim();
+  return [
+    `default-src 'self'`,
+    `script-src 'self' *.gleap.io`,
+    `worker-src 'self' blob:`,
+    `style-src 'self' 'unsafe-inline'`,
+    connectSrc,
+    `img-src 'self' blob: https: data:`,
+    `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
+    `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
+    `font-src 'self' data:`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+  ]
+    .join('; ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

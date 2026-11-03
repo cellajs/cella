@@ -139,6 +139,7 @@ export function supplierContext(config: EngineConfig): EnvSupplierContext {
   const { naming, region } = deriveInfra(config);
   const urls = new Map(serviceEndpoints(config).map((endpoint) => [endpoint.slug as string, endpoint.url]));
   return {
+    config,
     naming,
     region,
     mode: config.mode,

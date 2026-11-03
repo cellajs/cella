@@ -44,4 +44,22 @@ describe('config boundary sweep', () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  // The export is read once, when the module first loads: a static import outside the Pulumi program could load it before APP_MODE is set.
+  it('only the Pulumi program imports the engine config statically; every other module imports its type or loads it dynamically', () => {
+    const staticImport = /^import (?!type )[^;]*from '(?:\.\.?\/)+(?:config\/)?engine-config';/m;
+    const scanned = [
+      ...sources(join(infraRoot, 'lib')),
+      ...sources(join(infraRoot, 'compose')),
+      ...sources(join(infraRoot, 'tasks')),
+      ...sources(join(infraRoot, 'cli')),
+      ...sources(join(infraRoot, 'config')),
+      ...sources(join(infraRoot, 'agent', 'src')),
+      join(infraRoot, 'index.ts'),
+    ];
+    const offenders = scanned.filter((file) => staticImport.test(readFileSync(file, 'utf-8')));
+    expect(offenders.map((file) => file.replace(`${infraRoot}/`, ''))).toEqual([]);
+    // Positive control: the program's context module imports it statically.
+    expect(readFileSync(join(infraRoot, 'pulumi-context.ts'), 'utf-8')).toMatch(staticImport);
+  });
 });

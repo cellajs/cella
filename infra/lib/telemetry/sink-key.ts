@@ -1,4 +1,3 @@
-import { engineConfig } from '../../config/engine-config';
 import { telemetrySink } from '../../config/telemetry.config';
 import { actionCommand } from '../operator-actions';
 import { createSecretManagerClient } from '../scaleway/scaleway-secret-manager';
@@ -33,6 +32,7 @@ export async function sinkIngestKeyFromSecretManager(): Promise<SinkKeyLookup> {
   const secretKey = process.env.SCW_SECRET_KEY;
   const projectId = process.env.SCW_DEFAULT_PROJECT_ID;
   if (!secretKey || !projectId) return { missing: 'SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID are needed to read it from Secret Manager' };
+  const { engineConfig } = await import('../../config/engine-config');
   const client = createSecretManagerClient({ secretKey, projectId, region: engineConfig.s3.region });
   return lookupSinkIngestKey({ client });
 }

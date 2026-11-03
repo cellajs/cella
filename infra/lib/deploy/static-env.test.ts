@@ -21,7 +21,7 @@ function render(singleVM: boolean, role: string) {
       agentDir: '/etc/cella',
       lbInternalAddress: '10.0.0.200',
       suppliers: { APP_ORIGIN: ({ serviceUrl }) => serviceUrl('frontend'), FRONTEND_CSP: () => 'csp', ORIGIN_HOST: () => 'bucket' },
-      context: { naming, region, mode: 'production', serviceUrl: (slug) => `https://${slug}.example` },
+      context: { config, naming, region, mode: 'production', serviceUrl: (slug) => `https://${slug}.example` },
     }),
   );
 }

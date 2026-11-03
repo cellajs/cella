@@ -1,7 +1,9 @@
+import type { EngineConfig } from '../config/engine-config';
 import type { InfraDerivations } from './naming';
 
-/** What a supplier may read: the environment's names, region and mode, and each public service's URL. */
+/** What a supplier may read: the environment's engine config, names, region and mode, and each public service's URL. */
 export interface EnvSupplierContext {
+  config: EngineConfig;
   naming: InfraDerivations['naming'];
   region: string;
   mode: string;

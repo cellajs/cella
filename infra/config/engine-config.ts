@@ -52,9 +52,11 @@ function assertValidSlug(slug: string): void {
 }
 
 /**
- * The config the engine deploys: the workspace's appConfig for the mode `APP_MODE` names, read when this module loads. An entrypoint
- * sets `APP_MODE` first and imports every module that reads this export dynamically after it. The app's slug is production's: the
- * default config's, which production keeps and other modes override.
+ * The config the engine deploys: the workspace's appConfig for the mode `APP_MODE` names, read once, when this module first loads.
+ * So only the Pulumi program imports it statically, behind `pulumi-context.ts`'s check of the mode against the stack; every other
+ * module takes the config as a parameter or imports this one dynamically after its entrypoint set `APP_MODE`, and
+ * `loadStackContext` and the deploy refuse a config whose mode differs from the one they asked for. The app's slug is production's:
+ * the default config's, which production keeps and other modes override.
  */
 export const engineConfig: EngineConfig = { ...appConfig, appSlug: defaults.slug };
 assertValidSlug(engineConfig.slug);

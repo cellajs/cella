@@ -1,11 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig as appConfig } from '../config/engine-config';
-import { stateBucket } from '../lib/stack/control-store';
-import { region } from '../pulumi-context';
+import { naming, region } from '../pulumi-context';
 import { observerApplicationId, operatorApplicationId, operatorMemberUserIds } from './identities';
-
-const stateBucketName = stateBucket(appConfig.slug);
 
 /**
  * Deny-by-default policy on the Pulumi state bucket, which tasks/ensure-state-bucket.ts creates with versioning and SSE-ONE encryption.
@@ -18,7 +14,7 @@ const stateBucketName = stateBucket(appConfig.slug);
 export const stateBucketPolicy = new scaleway.object.BucketPolicy(
   'state-bucket-policy',
   {
-    bucket: stateBucketName,
+    bucket: naming.pulumiStateBucket,
     region,
     policy: pulumi.all([operatorApplicationId, operatorMemberUserIds, observerApplicationId]).apply(([operatorId, userIds, observerId]) => {
       const operators = [...(operatorId ? [`application_id:${operatorId}`] : []), ...userIds.map((id) => `user_id:${id}`)];
@@ -32,7 +28,7 @@ export const stateBucketPolicy = new scaleway.object.BucketPolicy(
                   Effect: 'Allow',
                   Principal: { SCW: operators },
                   Action: ['s3:*'],
-                  Resource: [stateBucketName, `${stateBucketName}/*`],
+                  Resource: [naming.pulumiStateBucket, `${naming.pulumiStateBucket}/*`],
                 },
               ]
             : []),
@@ -43,7 +39,7 @@ export const stateBucketPolicy = new scaleway.object.BucketPolicy(
                   Effect: 'Allow',
                   Principal: { SCW: `application_id:${observerId}` },
                   Action: ['s3:ListBucket'],
-                  Resource: [stateBucketName],
+                  Resource: [naming.pulumiStateBucket],
                 },
               ]
             : []),
