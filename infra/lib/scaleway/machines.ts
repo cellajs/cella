@@ -23,8 +23,8 @@ export interface MachineSpec {
   projectId: string;
   securityGroupId: string;
   tags: readonly string[];
-  /** Size of the Block Storage root volume. */
-  volumeBytes: number;
+  /** Size of a Block Storage root volume; without it the image's own root volume. */
+  volumeBytes?: number;
   /** User data by key, written before the first power-on: `cloud-init` for cloud-init, any other for the machine's own programs to read. */
   userData: Readonly<Record<string, string>>;
   /** The private NIC: the network, and the reserved IPAM address it takes; without one, the network's DHCP picks an address. */
@@ -65,7 +65,7 @@ export async function createMachine(auth: ScwAuth, zone: string, spec: MachineSp
     dynamic_ip_required: true,
     security_group: spec.securityGroupId,
     tags: [...spec.tags],
-    volumes: { 0: { size: spec.volumeBytes, volume_type: 'sbs_volume' } },
+    ...(spec.volumeBytes ? { volumes: { 0: { size: spec.volumeBytes, volume_type: 'sbs_volume' } } } : {}),
   });
   try {
     for (const [key, text] of Object.entries(spec.userData)) await setUserData(auth, zone, server.id, key, text);

@@ -158,9 +158,6 @@ const FETCH_LINK_SECONDS = 15 * 60;
 /** How long a machine's boot account link lasts: through a boot that fails at the end of the deploy's wait. */
 const ACCOUNT_LINK_SECONDS = 30 * 60;
 
-/** A machine's Block Storage root volume: the release's images, its env file and the Docker state. */
-const MACHINE_DISK_BYTES = 20_000_000_000;
-
 /** What the live effects work from: the deploy key, the foundation the last apply made, and the release the build checked. */
 export interface LiveSwitchContext {
   secretKey: string;
@@ -261,7 +258,6 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
         projectId: ctx.projectId,
         securityGroupId,
         tags: ['machine', `role=${role.role}`, `slot=${slot}`, `sha=${ctx.sha}`],
-        volumeBytes: MACHINE_DISK_BYTES,
         userData: { 'cloud-init': cloudInit, [MANIFEST_KEY]: renderManifest({ role: role.role, release: ctx.sha, drain: false }) },
         privateNic: { privateNetworkId: ctx.foundation.privateNetworkId, ...(isRouted(role) ? { ipamIpId: addressOf(role, slot)?.id } : {}) },
       });
