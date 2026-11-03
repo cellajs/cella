@@ -21,7 +21,7 @@ import {
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { registerDescriptionDerivation } from '~/modules/common/blocknote/description-derivation';
-import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
+import { registerDescriptionColumns } from '~/modules/common/blocknote/yjs-owned-fields';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, cancelKeepingMark, removeDetailQueriesById, writeKeepingMark } from '~/query/basic/cache-mutations';
@@ -60,12 +60,8 @@ registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channel
 });
 export const attachmentQueryKeys = keys;
 
-/** The columns `update-attachment.ts` stores from a description. */
-const descriptionDerivedKeys = ['keywords'];
-
-// A derived column follows the description's stamp.
-registerYjsOwnedFields('attachment', ['description', ...descriptionDerivedKeys]);
-// The derivation `update-attachment.ts` runs on every description write.
+// The columns `update-attachment.ts` stores from a description, and the derivation it runs on every description write.
+registerDescriptionColumns('attachment', ['keywords']);
 registerDescriptionDerivation('attachment', (description) => ({ keywords: deriveDocument(description).keywords }));
 
 const handleError = createResourceError('attachment');
@@ -224,13 +220,7 @@ const attachmentUpdateOptions = (
     const detailKey = keys.detail.byId(updatedAttachment.id);
     const cached = findAttachmentInCache(updatedAttachment.id);
     const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
-    const merged = mergeServerResponse({
-      queryClient,
-      cached,
-      serverEntity: updatedAttachment,
-      mutatedKeys,
-      derivedKeys: { description: descriptionDerivedKeys },
-    });
+    const merged = mergeServerResponse({ queryClient, cached, serverEntity: updatedAttachment, mutatedKeys });
     writeEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {

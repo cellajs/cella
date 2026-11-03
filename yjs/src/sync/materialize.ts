@@ -9,16 +9,10 @@ import { log } from '../lib/pino';
  * - `ok`: durable, safe to compact.
  * - `gone` (410): the entity no longer exists in the document's tenant; nothing can receive the
  *   log, so cleanup and sweep delete the document's rows.
- * - `permanent`: the backend rejected the request itself (a 4xx no later attempt changes: an
- *   invalid body, an unknown type, no materializer); the log stays and cleanup stops retrying.
- * - `retry`: the backend is unavailable, or refused this write for a reason that can change (a
- *   rotated secret, no editor in the window who may still update the entity, an outside write the
- *   merge lacks); the log stays so the next window, cleanup or sweep tries again.
+ * - `retry`: the backend is unavailable or refused this write; the log stays, so the next window,
+ *   the cleanup or the sweep tries again.
  */
-export type MaterializeResult = 'ok' | 'gone' | 'permanent' | 'retry';
-
-/** Refusals a later attempt can overcome, so they never count as permanent. */
-const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
+export type MaterializeResult = 'ok' | 'gone' | 'retry';
 
 /** How long a materialize request may take before it counts as a retry: the caller holds the document lock. */
 const materializeTimeoutMs = 10_000;
@@ -55,10 +49,8 @@ export async function postMaterialize(
       return 'gone';
     }
 
-    const rejected = res.status >= 400 && res.status < 500 && !retryableStatuses.has(res.status);
-    const kind: MaterializeResult = rejected ? 'permanent' : 'retry';
-    log.warn(`Materialize ${kind} failure for ${docKey(scope)}`, { status: res.status });
-    return kind;
+    log.warn(`Materialize refused for ${docKey(scope)}`, { status: res.status });
+    return 'retry';
   } catch (err) {
     log.warn(`Materialize unreachable for ${docKey(scope)}`, { err });
     return 'retry';

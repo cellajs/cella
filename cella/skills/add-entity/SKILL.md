@@ -148,8 +148,8 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     (`cacheUpdate`, `cacheRemove`, `writeKeepingMark` for a detail, `cancelKeepingMark` in
     `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
     update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
-    stamps when another one is written goes in its `derivedKeys`, a key the response stubs in its
-    `skipKeys`.
+    stamps when another one is written goes in its `derivedKeys` (a description's columns come from
+    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`.
   - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
     ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
@@ -236,7 +236,7 @@ exist need a data migration that gives them the new id column.
 ## 6. Optional capabilities
 
 - **Collaborative description**: a `description` in `blockFields`, `yjsMaterializer: update<Name>Op`
-  in the backend module, and in `query.ts` `registerYjsOwnedFields` plus
+  in the backend module, and in `query.ts` `registerDescriptionColumns` plus
   `registerDescriptionDerivation` for the columns derived from it, as attachment does. Model:
   [Sync engine](../../SYNC_ENGINE.md#yjs).
 - **Drafts** ([Sync engine](../../SYNC_ENGINE.md#drafts)): spread `...publishedColumn`

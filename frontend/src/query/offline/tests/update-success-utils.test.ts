@@ -1,8 +1,13 @@
 import '~/query/tests/query-client-env';
+import type { ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const { queryClient } = await import('~/query/query-client');
 const { mergeServerResponse } = await import('../update-success-utils');
+const { registerDescriptionColumns } = await import('~/modules/common/blocknote/yjs-owned-fields');
+
+// The server derives `keywords` from a task's description.
+registerDescriptionColumns('task' as ProductEntityType, ['keywords']);
 
 describe('mergeServerResponse', () => {
   const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '100:0001:aaaaa' } };
@@ -37,7 +42,7 @@ describe('mergeServerResponse', () => {
       cached,
       serverEntity: server,
       mutatedKeys: ['description', 'labels'],
-      derivedKeys: { description: ['keywords'], name: ['slug'] },
+      derivedKeys: { name: ['slug'] },
       skipKeys: ['labels'],
     });
 

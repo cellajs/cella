@@ -188,18 +188,10 @@ describe('compactDocument', () => {
     expect(storage.foldLog).not.toHaveBeenCalled();
   });
 
-  it('retry leaves the base and the log untouched', async () => {
+  it('retry leaves the base and the log untouched, so the base only holds written state', async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
     expect(await compactDocument(scope, null)).toBe('retry');
-    expect(storage.foldLog).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(1);
-  });
-
-  it('permanent leaves the base and the log untouched, so the base only holds written state', async () => {
-    await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
-    vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
-    expect(await compactDocument(scope, null)).toBe('permanent');
     expect(storage.foldLog).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
@@ -208,7 +200,7 @@ describe('compactDocument', () => {
   it('unparseable state is never posted and keeps the log', async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(stateToBlocksJsonOrNull).mockReturnValueOnce(null);
-    expect(await compactDocument(scope, null)).toBe('permanent');
+    expect(await compactDocument(scope, null)).toBe('retry');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(storage.foldLog).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(1);

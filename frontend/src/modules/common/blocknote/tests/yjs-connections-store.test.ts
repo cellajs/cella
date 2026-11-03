@@ -91,6 +91,8 @@ const providers: MockProvider[] = [];
 let online = true;
 let onlineListener: ((online: boolean) => void) | undefined;
 const tokenQuery = vi.fn();
+/** Each entity's token as its query holds it, by entity id. */
+const tokens = new Map<string, string>();
 /** Held open, a load waits for it: a slow disk. */
 let loadGate: Promise<void> | null = null;
 
@@ -100,6 +102,7 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: vi.fn()
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
 vi.mock('shared', () => ({ appConfig: { slug: 'test', yjsUrl: 'http://localhost:1234', services: { yjs: { enabled: true } } } }));
 vi.mock('@tanstack/react-query', () => ({
+  hashKey: (key: unknown) => JSON.stringify(key),
   onlineManager: {
     isOnline: () => online,
     subscribe: (listener: (online: boolean) => void) => {
@@ -111,9 +114,13 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
-    query: (...args: unknown[]) => tokenQuery(...args),
-    getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }) }),
-    getQueryState: () => ({ error: null }),
+    query: async (options: { params: { entityId: string } }) => {
+      const token = await tokenQuery(options);
+      tokens.set(options.params.entityId, token);
+      return token;
+    },
+    getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }), subscribe: () => () => {} }),
+    getQueryState: ([, entityId]: string[]) => ({ data: tokens.get(entityId), error: null }),
   },
 }));
 vi.mock('~/modules/common/blocknote/query', () => ({
@@ -121,7 +128,6 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
   yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
-vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
@@ -136,9 +142,9 @@ vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   };
 });
 
-const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore } = await import('~/modules/user/user-store');
 const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
-const { createYDocWriter, flushYjsStore, storeTabId } = await import('~/modules/common/blocknote/yjs-store');
+const { createYDocWriter, flushYjsStore } = await import('~/modules/common/blocknote/yjs-store');
 const { findConnection, resumeConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -185,19 +191,15 @@ async function seedStored(entityId: string, text: string, opts: { generation?: s
   doc.getText('t').insert(0, text);
   writer?.append(update, opts.unsynced ?? false);
   await flushYjsStore();
-  if (opts.unsynced) {
-    // A page since closed wrote it: no clean proof of this page clears it.
-    await db.yDocUpdates.where('[entityType+entityId]').equals(keyPath(entityId)).modify({ tabId: 'closed-tab' });
-  } else {
-    await db.yDocUpdates.where('[entityType+entityId]').equals(keyPath(entityId)).modify({ local: 0 });
-  }
+  // Unsynced, its row stays local, as a page since closed left it: no writer of this page proves it.
+  if (!opts.unsynced) await db.yDocUpdates.where('[entityType+entityId]').equals(keyPath(entityId)).modify({ local: 0 });
   doc.destroy();
   await flushYjsStore();
 }
 
 /** Mounts one editor's connection, as the host does once it holds a token. */
 async function mountConnection(entityId = `doc-${++counter}`) {
-  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
+  tokens.set(entityId, 'token-v1');
   let latest: Hook = null;
   const Harness = () => {
     latest = useYjsConnection({ entityType: 'attachment', entityId, ...scope, enabled: true });
@@ -288,7 +290,7 @@ describe('yjs connection with the store: opened for editing', () => {
     await editLocally(warm.provider, 'typed');
     await settled();
     expect(await db.yDocs.get(keyPath(warm.entityId))).toMatchObject({ unsynced: 1 });
-    expect((await rows(warm.entityId)).map((row) => [row.local, row.tabId])).toEqual([[1, storeTabId]]);
+    expect((await rows(warm.entityId)).map((row) => row.local)).toEqual([1]);
   });
 });
 
@@ -363,8 +365,8 @@ describe('yjs connection with the store: sign-out', () => {
     await editLocally(provider, 'unsaved');
     await settled();
 
-    // Signed out: the tokens go with the user, and the editor with the page.
-    await act(async () => userStore.setState({ user: null, yjsTokens: {} }));
+    // Signed out: the connection goes with the user, and the editor with the page.
+    await act(async () => userStore.setState({ user: null }));
     await act(async () => root?.unmount());
     root = undefined;
     await settled();

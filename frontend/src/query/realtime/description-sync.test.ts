@@ -30,7 +30,7 @@ stubLocalStorage();
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { registerYjsOwnedFields } = await import('~/modules/common/blocknote/yjs-owned-fields');
+const { registerDescriptionColumns } = await import('~/modules/common/blocknote/yjs-owned-fields');
 const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
 
@@ -102,7 +102,7 @@ function buildPendingUpdate(id: string) {
 }
 
 afterEach(() => {
-  registerYjsOwnedFields(taskProduct, ['description']);
+  registerDescriptionColumns(taskProduct, []);
   queryClient.clear();
 });
 
@@ -172,7 +172,7 @@ describe('Yjs-owned fields on a server row', () => {
   });
 
   it('guards a derived field by the description stamp', async () => {
-    registerYjsOwnedFields(taskProduct, ['description', 'keywords']);
+    registerDescriptionColumns(taskProduct, ['keywords']);
     seedCaches(row('patched', { keywords: 'patched words' }));
     serverReturns(row('older', { keywords: 'older words' }));
 

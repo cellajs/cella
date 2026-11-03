@@ -6,7 +6,7 @@ import { findServerYjsUpdate } from '#/modules/yjs/yjs-queries';
 
 interface AssertMaterializeWindowOpts {
   entityType: ProductEntityType;
-  /** The rows the materialized write left. */
+  /** The rows the write left; only the window's entity is checked. */
   rows: readonly Record<string, unknown>[];
 }
 
@@ -15,7 +15,7 @@ interface AssertMaterializeWindowOpts {
  * after the relay read its window, and the merge would overwrite it. Runs in the materializer's transaction
  * (`ctx.var.db`) after its UPDATE, which holds the entity row: an outside write committed before is visible here, and
  * one in flight waits for this transaction and then writes over it. The relay retries a 409, with a window that holds
- * the row. A materialized write outside materializeDescriptionOp carries no window and is not checked.
+ * the row. A write outside materializeDescriptionOp runs in no window and is not checked.
  */
 export async function assertMaterializeWindow(ctx: DbContext, { entityType, rows }: AssertMaterializeWindowOpts): Promise<void> {
   const window = yjsMaterializeWindow.getStore();

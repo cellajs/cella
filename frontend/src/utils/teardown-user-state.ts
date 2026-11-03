@@ -26,5 +26,5 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
   if (wipe) userStore.getState().reset();
-  else userStore.setState({ user: null, isSystemAdmin: false, impersonator: null, yjsTokens: {} });
+  else userStore.setState({ user: null, isSystemAdmin: false, impersonator: null });
 };

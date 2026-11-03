@@ -6,12 +6,6 @@ import { onBackendModuleRegister } from '#/lib/module';
 export interface MutationPayload {
   before?: Record<string, unknown>[];
   after?: Record<string, unknown>[];
-  /**
-   * True for the Yjs relay's own materialization of a collaborative document; handlers that would double-process those
-   * re-writes return early, and the yjs module records no outside write for it. Not the same as a server-built write (an
-   * MCP tool), which is an edit like a client's.
-   */
-  materialized?: boolean;
 }
 
 /** A module's reaction to one event, awaited inside the request that dispatched it. */

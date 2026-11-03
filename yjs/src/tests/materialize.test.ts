@@ -43,14 +43,9 @@ describe('postMaterialize', () => {
     });
   });
 
-  it('classifies a rejected request as permanent, and refusals that can change and 5xx as retry', async () => {
-    for (const status of [400, 413, 422]) {
-      fetchMock.mockResolvedValueOnce({ ok: false, status });
-      expect(await postMaterialize(ctx, ['user-1'], '[]', []), `status ${status}`).toBe('permanent');
-    }
-    // Access, scope and secret refusals can change: an editor who lost access must not cost the log. A 409 names an
-    // outside write the merge lacks, committed during the POST: the next window holds it.
-    for (const status of [401, 403, 404, 409, 429, 503]) {
+  it('must not let a refusal cost the log: every answer but 410 is a retry', async () => {
+    // An editor who lost access, a 409 naming an outside write the merge lacks, a body the route rejects, an outage.
+    for (const status of [400, 401, 403, 404, 409, 413, 429, 503]) {
       fetchMock.mockResolvedValueOnce({ ok: false, status });
       expect(await postMaterialize(ctx, ['user-1'], '[]', []), `status ${status}`).toBe('retry');
     }

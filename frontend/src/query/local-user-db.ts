@@ -53,8 +53,6 @@ export interface YjsDocScope extends YDocKey {
 export interface YDocRecord extends YjsDocScope {
   /** The document's generation as the relay announced it; another one means the server reseeded the document. */
   generation: string;
-  /** The server's state vector as the last proof established it; null before the first. */
-  syncedVector: Uint8Array | null;
   /** 1 while a `local` row is left: an edit no server answer has proven saved. */
   unsynced: 0 | 1;
   /** Base plus update rows, for the byte budget. */
@@ -75,8 +73,6 @@ export interface YDocUpdateRecord extends YDocKey {
   id?: number;
   update: Uint8Array;
   local: 0 | 1;
-  /** The page load that wrote the row; its own clean proof clears it. */
-  tabId: string;
 }
 
 /** Why edits can never be saved: the entity was deleted, edit rights were lost, the server reseeded the document, or it refused it. */

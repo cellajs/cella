@@ -320,7 +320,7 @@ const viteConfig = {
               // Yjs helpers with no BlockNote behind them. Claimed before the on-demand group, whose editor
               // modules would otherwise capture them: the sign-out check reads them and must not load the editor.
               name: 'yjs-app',
-              test: /[\\/]common[\\/]blocknote[\\/](ydoc-label|yjs-connections|yjs-http|yjs-resync|query|unsaveable-notices)\./,
+              test: /[\\/]common[\\/]blocknote[\\/](ydoc-label|yjs-connections|yjs-http|query|unsaveable-notices)\./,
               minSize: 0,
             },
             {

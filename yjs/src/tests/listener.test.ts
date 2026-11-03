@@ -74,7 +74,7 @@ describe('log listener', () => {
 
     clients[0].notify('other_channel', encodeLogNotice(notice));
     clients[0].notify(yjsLogChannel, 'not json');
-    clients[0].notify(yjsLogChannel, JSON.stringify({ t: 'tenant-1', e: 'task', i: 'entity-1', id: 'seven' }));
+    clients[0].notify(yjsLogChannel, JSON.stringify({ t: 'tenant-1', e: 'task', i: 'entity-1', ids: ['seven'] }));
     expect(onNotice).not.toHaveBeenCalled();
   });
 

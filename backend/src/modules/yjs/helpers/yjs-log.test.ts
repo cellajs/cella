@@ -13,13 +13,8 @@ describe('log notices', () => {
       { ...key, retired: true },
     ];
     for (const notice of notices) expect(decodeLogNotice(encodeLogNotice(notice))).toEqual(notice);
-    expect(JSON.parse(encodeLogNotice({ ...key, logIds: [42] }))).toEqual({ t: key.tenantId, e: key.entityType, i: key.entityId, id: 42 });
+    expect(JSON.parse(encodeLogNotice({ ...key, logIds: [42] }))).toEqual({ t: key.tenantId, e: key.entityType, i: key.entityId, ids: [42] });
     expect(JSON.parse(encodeLogNotice({ ...key, retired: true }))).toEqual({ t: key.tenantId, e: key.entityType, i: key.entityId, retired: true });
-  });
-
-  it('carries the newest of several rows as `id` too, which a release-2 relay reads alone', () => {
-    const payload = JSON.parse(encodeLogNotice({ ...key, logIds: [43, 41, 44] }));
-    expect(payload).toEqual({ t: key.tenantId, e: key.entityType, i: key.entityId, id: 44, ids: [43, 41, 44] });
   });
 
   it('stays far below the 8,000-byte limit on a notification, at the longest keys', () => {
@@ -39,20 +34,21 @@ describe('log notices', () => {
       '"text"',
       '[]',
       '{}',
-      JSON.stringify({ e, i, id: 1 }),
-      JSON.stringify({ t: '', e, i, id: 1 }),
-      JSON.stringify({ t: 7, e, i, id: 1 }),
+      JSON.stringify({ e, i, ids: [1] }),
+      JSON.stringify({ t: '', e, i, ids: [1] }),
+      JSON.stringify({ t: 7, e, i, ids: [1] }),
       JSON.stringify({ t, e, i }),
-      JSON.stringify({ t, e, i, id: 0 }),
-      JSON.stringify({ t, e, i, id: -1 }),
-      JSON.stringify({ t, e, i, id: 1.5 }),
-      JSON.stringify({ t, e, i, id: '1' }),
-      JSON.stringify({ t, e, i, id: 2 ** 53 }),
+      JSON.stringify({ t, e, i, id: 1 }),
+      JSON.stringify({ t, e, i, ids: [0] }),
+      JSON.stringify({ t, e, i, ids: [-1] }),
+      JSON.stringify({ t, e, i, ids: [1.5] }),
+      JSON.stringify({ t, e, i, ids: ['1'] }),
+      JSON.stringify({ t, e, i, ids: [2 ** 53] }),
       JSON.stringify({ t, e, i, retired: 'true' }),
-      JSON.stringify({ t, e, i, id: 2, ids: [] }),
-      JSON.stringify({ t, e, i, id: 2, ids: [1, 0] }),
-      JSON.stringify({ t, e, i, id: 2, ids: [1, '2'] }),
-      JSON.stringify({ t, e, i, id: 2, ids: 2 }),
+      JSON.stringify({ t, e, i, ids: [] }),
+      JSON.stringify({ t, e, i, ids: [1, 0] }),
+      JSON.stringify({ t, e, i, ids: [1, '2'] }),
+      JSON.stringify({ t, e, i, ids: 2 }),
     ];
     for (const payload of payloads) expect(decodeLogNotice(payload), payload).toBeNull();
   });

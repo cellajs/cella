@@ -14,13 +14,9 @@ import { log } from '#/utils/logger';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
-/**
- * Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it with `materialized` for a collaborative
- * description the relay posts.
- */
-export async function updateAttachmentOp(ctx: ActorContext, id: string, input: UpdateAttachmentInput, opts: { materialized?: boolean } = {}) {
+/** Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it for a collaborative description the relay posts. */
+export async function updateAttachmentOp(ctx: ActorContext, id: string, input: UpdateAttachmentInput) {
   const { ops: rawOps, stx } = input;
-  const { materialized } = opts;
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
@@ -42,7 +38,7 @@ export async function updateAttachmentOp(ctx: ActorContext, id: string, input: U
     };
     const updated = await updateAttachment(txCtx, { id, values });
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
-    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated], materialized });
+    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;
   });
 

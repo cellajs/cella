@@ -41,46 +41,31 @@ afterEach(() => {
 });
 
 describe('a refused materialize keeps the edits', () => {
-  it('must not lose edits via a materialize refused for access (403) at cleanup', async () => {
-    const { ctx, key, ws } = await sessionWithEdits();
+  it('must not lose edits via a materialize refused for access (403) in a window and at cleanup: the sweep writes them later', async () => {
+    const { ctx, key, ws, collab } = await sessionWithEdits();
     fetchMock.mockResolvedValue({ ok: false, status: 403 });
+    expect(await runCompaction(collab)).toBe('retry');
 
     leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(grace);
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
     expect(storage.logs.get(key)).toHaveLength(2);
-    expect(getCollab(ctx)).toBeDefined();
-
-    // Positive control: once the backend accepts, the edits are written, the row stays and the session ends.
-    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    // Cleanup does not retry: the session goes, and the rows wait for the next session or the sweep.
+    expect(getCollab(ctx)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(grace);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // Positive control: once the backend accepts, the sweep writes the edits and the row stays.
+    fetchMock.mockResolvedValue({ ok: true, status: 200 });
+    storage.findStaleDocuments.mockResolvedValueOnce([ctx]);
+    await runSweep();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(storage.deleteDocument).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
     expect(storage.logs.get(key)).toHaveLength(0);
-    expect(getCollab(ctx)).toBeUndefined();
-  });
-
-  it('must not lose edits when the last compaction did not write', async () => {
-    const { ctx, key, ws, collab } = await sessionWithEdits();
-    // A refusal no retry can fix: the window is not written, and nothing folds into the base.
-    fetchMock.mockResolvedValue({ ok: false, status: 400 });
-    expect(await runCompaction(collab)).toBe('permanent');
-    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
-    expect(storage.logs.get(key)).toHaveLength(2);
-
-    leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(grace);
-    expect(storage.deleteDocument).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(2);
-
-    // The rows wait for the next session or the startup sweep; cleanup does not retry in a loop.
-    expect(getCollab(ctx)).toBeUndefined();
-    await vi.advanceTimersByTimeAsync(grace);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('must not lose an orphaned session via a refused materialize in the startup sweep', async () => {

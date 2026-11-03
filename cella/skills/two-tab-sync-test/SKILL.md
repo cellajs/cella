@@ -78,7 +78,7 @@ Typing does not ride the entity path. Keystrokes go editor → relay socket (`/y
 | EXP5 saved: a `range-fetch` item with `hasWatchedText: true` | the relay wrote the row and it crossed CDC → SSE → fetch |
 | `descriptionSaved` after the reload | server truth |
 
-Decision rule: **no `relay-connect`** → token or socket (the `yjs/token` status, the relay process, the `/yjs` proxy); **connected but no live text** → relay session and broadcast (`yjs/src/sync/relay.ts`); **live text but no saved row** → compaction and materialization (`yjs/src/sync/compaction.ts`, the backend's `/internal/yjs/materialize`); **saved row fetched but the cell is stale** → the cache rule for Yjs-owned fields (`registerYjsOwnedFields`).
+Decision rule: **no `relay-connect`** → token or socket (the `yjs/token` status, the relay process, the `/yjs` proxy); **connected but no live text** → relay session and broadcast (`yjs/src/sync/relay.ts`); **live text but no saved row** → compaction and materialization (`yjs/src/sync/compaction.ts`, the backend's `/internal/yjs/materialize`); **saved row fetched but the cell is stale** → the cache rule for Yjs-owned fields (`registerDescriptionColumns`).
 
 The table cell of an editing tab proves no save: its own editor already patched the cache. Only the range fetch and the reload show the server row.
 

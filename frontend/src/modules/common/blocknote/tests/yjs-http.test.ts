@@ -114,6 +114,7 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (...arg
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
 vi.mock('shared', () => ({ appConfig: { yjsUrl: 'http://localhost:1234' } }));
 vi.mock('@tanstack/react-query', () => ({
+  hashKey: (key: unknown) => JSON.stringify(key),
   onlineManager: {
     isOnline: () => online,
     subscribe: (listener: (online: boolean) => void) => {
@@ -126,11 +127,11 @@ vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
     query: vi.fn(),
-    getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }) }),
-    getQueryState: () => ({ error: null }),
+    getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }), subscribe: () => () => {} }),
+    // Every connection holds its token.
+    getQueryState: () => ({ data: 'token-v1', error: null }),
   },
 }));
-vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 
 // The real link, recording the connection each one is built for, so a test can hand it a writer.
@@ -147,7 +148,6 @@ vi.mock('~/modules/common/blocknote/yjs-http', () => ({
 http = await vi.importActual<typeof import('~/modules/common/blocknote/yjs-http')>('~/modules/common/blocknote/yjs-http');
 const { httpChunkBytes } = http;
 const { ApiError } = await import('~/lib/api');
-const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -171,7 +171,6 @@ Object.defineProperty(document, 'visibilityState', { configurable: true, get: ()
 /** Mounts one editor's connection, stored with the mock writer; returns its provider, document and latest hook state. */
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
-  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: ReturnType<typeof useYjsConnection> = null;
   const Harness = () => {
     latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
@@ -278,9 +277,7 @@ describe('yjs over HTTP: the ledger', () => {
 
     await act(async () => handshake.resolve());
     expect(server.doc.getText('t').toString()).toBe(doc.getText('t').toString());
-    expect(writer.prove).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'handshake', applied: { upTo: 0, ids: new Set() }, vector: expect.any(Uint8Array) }),
-    );
+    expect(writer.prove).toHaveBeenCalledWith(expect.objectContaining({ kind: 'handshake', applied: { upTo: 0, ids: new Set() } }));
     // Turning clean proves this tab's own rows too.
     expect(writer.prove).toHaveBeenLastCalledWith({ kind: 'clean' });
     expect(state()?.unsynced).toBe(false);

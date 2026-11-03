@@ -14,6 +14,7 @@ import { updateAttachmentOp } from '#/modules/attachment/operations/update-attac
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, yjsFragmentName } from '#/modules/yjs/helpers/description-update';
+import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { decodeLogNotice, type YjsDocScope, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
@@ -353,6 +354,25 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     await materializeDescriptionOp({ ...scope, description: description(block('a', 'written by the relay')), editors: [tenant.user.id] });
     expect((await attachment.read())?.description).toContain('written by the relay');
     expect(await stored(attachment.id)).toMatchObject({ generation, rows: [] });
+  });
+
+  it("must not take another row written inside a materialize window for the relay's: its outside write is recorded (12)", async () => {
+    const relayed = await arrange(description(block('a', 'original')));
+    const sibling = await arrange(description(block('a', 'sibling')));
+    const context = await toolContext();
+    // A materializer that writes a second row of its type, as an app's op moves a pin off a sibling.
+    await yjsMaterializeWindow.run({ entityId: relayed.attachment.id, serverRowIds: [] }, async () => {
+      await updateAttachmentOp(context, sibling.attachment.id, {
+        ops: { description: description(block('a', 'sibling written')) },
+        stx: mockStxFor(),
+      });
+      await updateAttachmentOp(context, relayed.attachment.id, { ops: { description: description(block('a', 'relayed')) }, stx: mockStxFor() });
+    });
+    const after = await stored(sibling.attachment.id);
+    expect(after.rows.map((row) => row.userId)).toEqual([null]);
+    expect(texts(after.state)).toEqual(['sibling written']);
+    // Positive control: the window's own row records nothing.
+    expect((await stored(relayed.attachment.id)).rows).toEqual([]);
   });
 
   it('retires the document of a deleted attachment, base and log, and announces it (9)', async () => {

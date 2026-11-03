@@ -7,7 +7,8 @@ interface YjsMaterializeWindow {
 }
 
 /**
- * Set by materializeDescriptionOp around the entity's materializer, so the `<type>.updated` handler its write dispatches
- * can check the window (assertMaterializeWindow); app materializers need no change.
+ * Set by materializeDescriptionOp around the entity's materializer: the `<type>.updated` handler takes the write of the
+ * window's entity for the relay's and checks it (assertMaterializeWindow), and any other row written inside the window
+ * for an outside write. App materializers need no change.
  */
 export const yjsMaterializeWindow = new AsyncLocalStorage<YjsMaterializeWindow>();
