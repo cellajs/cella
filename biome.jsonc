@@ -13,21 +13,20 @@
       "backend/src/**",
       "backend/tests/**",
       "backend/emails/**",
+      "backend/scripts/**",
       "frontend/src/**",
       "!frontend/src/routes/routeTree.gen.ts",
-      "frontend/storybook/**",
+      "frontend/.storybook/**",
       "frontend/vite/**",
       "frontend/vite.config.ts",
-      "packages/data-grid/src/**",
       "shared/**",
       "cdc/src/**",
       "yjs/src/**",
-      "mcp/src/**",
-      "oauth/src/**",
       "infra/**",
       "bench/src/**",
       "bench/scenarios/**",
       "a11y/src/**",
+      "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
@@ -66,9 +65,13 @@
     "rules": {
       "preset": "recommended",
       "correctness": {
+        // Its missing-dependency half cannot be switched off, and with the React compiler that advice is wrong;
+        // memo-dependency-unread in shared/scripts covers the unnecessary half (112 diagnostics measured 2026-11-03).
         "useExhaustiveDependencies": "off",
         "noUnusedVariables": "off",
+        // A hook-rule violation makes the React compiler bail out, which fails the production build.
         "useHookAtTopLevel": "off",
+        // 145 literal ids serve form fields and aria relations (measured 2026-11-03); the rule cannot scope to list-rendered elements.
         "useUniqueElementIds": "off",
         "noNestedComponentDefinitions": "warn",
         "noProcessGlobal": "warn"
@@ -105,9 +108,16 @@
         "noDescendingSpecificity": "off",
         "useNodejsImportProtocol": "error",
         "noProcessEnv": "warn",
-        "noNestedTernary": "off",
         "noNonNullAssertion": "off",
-        "useExportsLast": "off"
+        "noRestrictedTypes": {
+          "level": "error",
+          "options": {
+            "types": {
+              "FC": "Declare components with functions; use ComponentType<Props> when a component is stored as a value.",
+              "FunctionComponent": "Declare components with functions; use ComponentType<Props> when a component is stored as a value."
+            }
+          }
+        }
       },
       "nursery": {
         "useSortedClasses": {
@@ -182,7 +192,7 @@
     {
       // Ban frontend cross-package paths and direct SDK operation calls. Type imports
       // remain allowed; the next override permits operations at designated boundaries.
-      "includes": ["frontend/src/**", "frontend/storybook/**", "frontend/vite/**"],
+      "includes": ["frontend/src/**", "!frontend/src/utils/form-resolver.ts", "frontend/.storybook/**", "frontend/vite/**"],
       "linter": {
         "rules": {
           "style": {
@@ -190,9 +200,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
-                  "cdc-worker": "Frontend cannot import CDC worker code.",
-                  "infra": "Frontend cannot import infra code."
+                  "@hookform/resolvers/zod": "Resolve a form with `formResolver` from `~/utils/form-resolver`, which leaves a cleared optional field unset."
                 },
                 "patterns": [
                   {
@@ -218,7 +226,6 @@
       // Allow direct SDK operation calls in query layer, api-client, route
       // loaders, auth flows, and tests. Cross-package paths still banned.
       "includes": [
-        "frontend/src/api-client.ts",
         "frontend/src/query/**",
         "frontend/src/**/query.ts",
         "frontend/src/**/query-mutations.ts",
@@ -237,9 +244,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
-                  "cdc-worker": "Frontend cannot import CDC worker code.",
-                  "infra": "Frontend cannot import infra code."
+                  "@hookform/resolvers/zod": "Resolve a form with `formResolver` from `~/utils/form-resolver`, which leaves a cleared optional field unset."
                 },
                 "patterns": [
                   {
@@ -264,9 +269,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
                   "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
-                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
                 },
                 "patterns": [
@@ -291,9 +294,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
                   "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
-                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
                 }
               }
@@ -313,9 +314,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
                   "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
-                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend.",
                   "#/db/db": "A module's helpers/ holds database-free code. Code that reads or writes is a query (<module>-queries.ts) or an operation (operations/).",
                   "#/core/context": {
@@ -350,8 +349,6 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
-                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
                 },
                 "patterns": [
@@ -360,63 +357,6 @@
                     "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
                   }
                 ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": ["shared/**"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "paths": {
-                  "backend": "`shared` must stay a leaf package.",
-                  "frontend": "`shared` must stay a leaf package.",
-                  "cdc-worker": "`shared` must stay a leaf package.",
-                  "sdk": "`shared` must stay a leaf package.",
-                  "infra": "`shared` must stay a leaf package."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": ["sdk/src/**", "sdk/gen/**"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "paths": {
-                  "backend": "SDK cannot import backend; it is generated from the OpenAPI spec.",
-                  "frontend": "SDK cannot import frontend code."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": ["cdc/**", "yjs/**", "mcp/**", "oauth/**"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "paths": {
-                  "backend": "Workers cannot import backend internals. Use `shared` for contracts.",
-                  "frontend": "Workers cannot import frontend code."
-                }
               }
             }
           }
@@ -516,16 +456,15 @@
         "shared/src/config-builder/dev-port-offset.ts",
         "infra/**",
         "**/scripts/**",
+        "cella/skills/**",
+        "frontend/.storybook/**",
         "**/*.config.ts",
         "frontend/vite/**",
         "frontend/vite.config.ts",
         "cdc/src/env.ts",
         "yjs/src/env.ts",
-        "mcp/src/mcp-worker.ts",
-        "oauth/src/oauth-worker.ts",
         "a11y/src/audit.ts",
-        "a11y/src/run.ts",
-        "cli/**"
+        "a11y/src/run.ts"
       ],
       "linter": {
         "rules": {
@@ -565,6 +504,9 @@
         "rules": {
           "security": {
             "noDangerouslySetInnerHtml": "off"
+          },
+          "style": {
+            "noRestrictedTypes": "off"
           },
           "suspicious": {
             "noExplicitAny": "off",

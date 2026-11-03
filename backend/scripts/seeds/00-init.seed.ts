@@ -1,16 +1,16 @@
-import type { SeedScript } from '../types';
-import { getSeedDb } from '#/db/db';
-import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/user-queries';
-import { usersTable } from '#/modules/user/user-db';
-import { env } from '#/env';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { mockAdmin, mockEmail } from '#/modules/user/user-mocks';
+import { getSeedDb } from '#/db/db';
+import { env } from '#/env';
 import { setMockContext } from '#/mocks';
-import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { usersTable } from '#/modules/user/user-db';
+import { mockAdmin, mockEmail } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
 import { checkMark, durationSuffix } from '#/utils/console';
+import { defaultAdminUser } from '../fixtures';
+import type { SeedScript } from '../types';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');
@@ -21,10 +21,7 @@ const isProduction = appConfig.mode === 'production';
 const db = getSeedDb();
 
 const isUserSeeded = async () => {
-  const usersInTable = await db
-    .select()
-    .from(usersTable)
-    .limit(1);
+  const usersInTable = await db.select().from(usersTable).limit(1);
 
   return usersInTable.length > 0;
 };
@@ -59,10 +56,7 @@ export const initSeed = async () => {
 
   // Make email row, then insert into the database
   const emailRecord = mockEmail(adminUser);
-  await db
-    .insert(emailsTable)
-    .values(emailRecord)
-    .onConflictDoNothing();
+  await db.insert(emailsTable).values(emailRecord).onConflictDoNothing();
 
   console.info(
     ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in${durationSuffix(startedAt)}\n `,

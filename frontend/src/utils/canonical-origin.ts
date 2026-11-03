@@ -8,7 +8,7 @@ const loopbackHosts = ['localhost', '127.0.0.1', '[::1]'];
 export const canonicalOriginUrl = (location: PageLocation, frontendUrl: string, mode: ConfigMode): string | null => {
   // Development, tunnel and test serve one build under several hosts on purpose: localhost, a LAN address, the tunnel.
   if (mode !== 'production' && mode !== 'staging') return null;
-  // A loopback host is a local preview of the build (`pnpm start`), never a public alias.
+  // A loopback host is a local preview of the build (`pnpm offline`, vite preview), never a public alias.
   if (loopbackHosts.includes(location.hostname)) return null;
 
   const { origin } = new URL(frontendUrl);

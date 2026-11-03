@@ -1,20 +1,19 @@
-import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
-import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
-
 import { getSeedDb } from '#/db/db';
-import { emailsTable } from '#/modules/user/emails-db';
-import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
-import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
-import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { insertUsers } from '#/modules/user/user-queries';
-import { UserModel, usersTable } from '#/modules/user/user-db';
-import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
-import { mockOrganization } from '#/modules/organization/organization-mocks';
-import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { mockMany, setMockContext } from '#/mocks';
+import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
+import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
+import { type OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { type UserModel, usersTable } from '#/modules/user/user-db';
+import { mockEmail, mockUser } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
+import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
+import type { SeedScript } from '../types';
 import { textDocument } from './description-document';
 import { toBatches } from './seed-volume';
 
@@ -31,10 +30,7 @@ const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
 const isOrganizationSeeded = async () => {
-  const organizationsInTable = await db
-    .select()
-    .from(organizationsTable)
-    .limit(1);
+  const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   return organizationsInTable.length > 0;
 };
@@ -60,11 +56,7 @@ export const organizationsSeed = async () => {
       subscriptionPlan: 'pro',
     }),
   }));
-  const tenants = await db
-    .insert(tenantsTable)
-    .values(tenantRecords)
-    .returning()
-    .onConflictDoNothing();
+  const tenants = await db.insert(tenantsTable).values(tenantRecords).returning().onConflictDoNothing();
 
   // Make organizations - one per tenant (1 tenant = 1 org)
   // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)
@@ -75,20 +67,12 @@ export const organizationsSeed = async () => {
     // The details editor reads only a block document: the mock's plain text opens as an empty editor
     welcomeText: textDocument(`Welcome to ${org.name}!`),
   }));
-  const organizations = await db
-    .insert(organizationsTable)
-    .values(organizationRecords)
-    .returning()
-    .onConflictDoNothing();
+  const organizations = await db.insert(organizationsTable).values(organizationRecords).returning().onConflictDoNothing();
 
   spinner.text = 'Seeding members and memberships...';
 
   // Fetch the default admin user
-  const [adminUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, defaultAdminUser.id))
-    .limit(1);
+  const [adminUser] = await db.select().from(usersTable).where(eq(usersTable.id, defaultAdminUser.id)).limit(1);
 
   const adminMemberships: InsertMembershipModel[] = [];
 
@@ -107,7 +91,7 @@ export const organizationsSeed = async () => {
       await db.insert(emailsTable).values(batch).onConflictDoNothing();
     }
 
-    const membershipRecords = users.map(user => mockChannelMembership('organization', organization, user));
+    const membershipRecords = users.map((user) => mockChannelMembership('organization', organization, user));
 
     // Insert memberships into the database
     for (const batch of toBatches(membershipRecords)) {
@@ -115,19 +99,12 @@ export const organizationsSeed = async () => {
     }
 
     // Add admin membership if the organization is in an even position
-    addAdminMembership(
-      adminUser,
-      organization,
-      adminMemberships,
-    );
+    addAdminMembership(adminUser, organization, adminMemberships);
   }
 
   // Insert admin memberships into the database
   if (adminMemberships.length) {
-    await db
-      .insert(membershipsTable)
-      .values(adminMemberships)
-      .onConflictDoNothing();
+    await db.insert(membershipsTable).values(adminMemberships).onConflictDoNothing();
   }
 
   // One organization the seed admin administers starts as a draft, so publishing can be tried by hand
@@ -136,18 +113,16 @@ export const organizationsSeed = async () => {
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, draftOrganizationId));
   }
 
-  succeedSpinner(`Created ${TENANTS_COUNT} tenants, one organization each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`);
+  succeedSpinner(
+    `Created ${TENANTS_COUNT} tenants, one organization each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`,
+  );
 };
 
 /**
  * Push an admin membership onto `adminMemberships` (mutates it), but only when the organization
  * is in an even position AND the existing admin-membership count is below the system limit.
  */
-const addAdminMembership = (
-  adminUser: UserModel,
-  organization: OrganizationModel,
-  adminMemberships: InsertMembershipModel[]
-) => {
+const addAdminMembership = (adminUser: UserModel, organization: OrganizationModel, adminMemberships: InsertMembershipModel[]) => {
   // Case: Organization is not in an even position → skip admin membership
   if (getMembershipOrderOffset(organization.id) % 2 !== 0) return;
 
@@ -165,6 +140,6 @@ const addAdminMembership = (
 
   // Add admin membership to the list
   adminMemberships.push(membership);
-}
+};
 
 export const seedConfig: SeedScript = { name: 'organizations', run: organizationsSeed };

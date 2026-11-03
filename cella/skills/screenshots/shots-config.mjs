@@ -81,11 +81,14 @@ const openMenu = async (page) => {
  * when a throwaway stack runs without every service. A stylesheet, so it also holds for the dot, which renders once the
  * open sheet's health check answers.
  */
-const hideDevUi = (page) => page.addStyleTag({ content: 'button[aria-label="toggle debug toolbar"], #nav-sheet .animate-status-pulse { visibility: hidden; }' });
+const hideDevUi = (page) =>
+  page.addStyleTag({ content: 'button[aria-label="toggle debug toolbar"], #nav-sheet .animate-status-pulse { visibility: hidden; }' });
 
 /** Waits for a member's activity and MFA columns: a row renders first, and its last cell holds "-" until they arrive. */
 const membersFilled = (page) =>
-  page.waitForFunction(() => /\d/.test([...(document.querySelector('.rdg-row')?.querySelectorAll('[role="gridcell"]') ?? [])].at(-1)?.textContent ?? ''));
+  page.waitForFunction(() =>
+    /\d/.test([...(document.querySelector('.rdg-row')?.querySelectorAll('[role="gridcell"]') ?? [])].at(-1)?.textContent ?? ''),
+  );
 
 /**
  * Takes two things out of an organization's header that a visitor never meets: the entity id a development build

@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 import { splitToken } from '../../../../shared/scripts/class-tokens.ts';
 import { repoFiles } from '../../../../shared/scripts/repo-files.ts';
 import { classSources, classStrings, declaredNames, fileScope, freshDesignSystem, printHeader, repoRoot } from './lib.mjs';

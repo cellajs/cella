@@ -650,13 +650,12 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vite.config.ts`: `server.host`, `strictPort`, proxy to `localhost` ports, tunnel-only `allowedHosts` and `hmr`, `basicSsl()` when `frontendUrl` is https and not tunneled; no `server.fs`, no `server.cors`.
   - `frontend/.storybook/main.ts` (`viteFinal` adds a proxy `/api/dev/emails` to the API), `frontend/.storybook/start-storybook.ts` (`storybook dev -p <frontend port + 3006> --quiet --no-open`, no `--host`).
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
-  - `backend/scripts/drizzle-studio/start.ts`, `port.ts` (port is backend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port). The root `package.json` has no `studio` script; it is `studio/package.json` (`pnpm --filter studio dev`).
+  - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
   - `shared/README.md` (dev ports).
   - `backend/compose.yaml` (services `db`, `db_test`, `db_a11y`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
   - `a11y/src/run.ts` (ports shifted by 70, its own database `DB_A11Y_PORT`), `bench/src/config.ts` (default admin URL).
-  - `pnpm dev:proxy` in `package.json` filters `--filter proxy`; no `proxy/` directory exists in this checkout.
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.
@@ -665,7 +664,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Vitest runs in CI and dev without `--ui` or `api`.
   - The internal listener refuses public peers before any route reads its secret.
   - The mint-session script refuses outside development and test. The seeded admin has no password.
-- **Asks:** what `pnpm dev`, `pnpm story` and `pnpm --filter studio dev` bind to (loopback or every interface) and what a malicious page in the developer's browser reaches; one rule; the version minimums. These are the bulk of live advisories over time, so the rule matters more than any single bump.
+- **Asks:** what `pnpm dev`, `pnpm story` and `pnpm studio` bind to (loopback or every interface) and what a malicious page in the developer's browser reaches; one rule; the version minimums. These are the bulk of live advisories over time, so the rule matters more than any single bump.
 - **Not this class:** the supply chain of installing these packages, the lockfile, `minimumReleaseAge` and third-party scripts belong to F1. The `/dev/emails` preview route, request handling on the API listener and internal-route secrets belong to the A and C classes (A6 for the address check, B5 for the relay). Vite and Storybook build output shipped to production belongs to F1 and D1.
 
 ### F3 Deployment and infrastructure
@@ -679,4 +678,35 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ## Classifier rules
 
-The advisory-to-class mapping lives in `tools/classify.mjs` beside this file (by package, then by CWE), and a new advisory enters the class its rule names. An advisory the rules do not place is read by a person.
+A new advisory enters the class of its first matching rule, read in this order; one no rule places is read by a person.
+
+1. **Malicious code**: CWE-506, and playwright with CWE-347, go to F1.
+2. **A tooling package** goes to F2: vite, storybook and `@storybook/*`, vitest and `@vitest/*`, playwright, `@vitejs/*`, `@faker-js/*`, `@hey-api/*`, `@tanstack/router-generator` and `-plugin`, `@rolldown/*`, `@biomejs/*`, knip, tsx, typescript, `@mdx-js/rollup`, rollup-plugin-visualizer.
+3. **A library feature this repo does not mount** (hono's serveStatic, toSSG, JSX and SSR, the Lambda, Cloudflare, Deno and Bun adapters, proxy helper, language middleware, CORS middleware, API gateway, TrieRouter, ErrorBoundary, `cx()`, named path parameters) is n/a, except as a pattern lesson: JWT and JWK middleware A5, cache middleware C8, conninfo and IP spoofing A6, CORS middleware C7.
+4. **By summary**: a hono cookie advisory A2; SSE B4; an `app.mount` prefix advisory C7.
+5. **By package**: dompurify, sanitize-html, maplibre-gl, jspdf, react-pdf, react, react-dom and i18next C4; pg and drizzle-orm C3; ws C1 on a resource CWE (400, 770, 476, 1050, 345) and otherwise B5; jose C1 on CWE-400 or 834 and otherwise A5; nanoid A1; zod C1; dexie and immer C2; yaml E3 on CWE-248 and otherwise C1; i18next-http-backend C5 on CWE-918 and otherwise C4; `@simplewebauthn/*` A3; `@opentelemetry/*` D1 on CWE-532, C1 on CWE-770, otherwise F1; `@hono/node-server` E3 on CWE-755, C1 on CWE-401 or 770, otherwise C7.
+6. **By CWE**, first match over the advisory's CWE list:
+
+| Class | CWEs |
+| --- | --- |
+| C4 | 79, 80, 116, 94, 95, 96, 74 |
+| C3 | 89 |
+| C6 | 22, 23, 35, 73 |
+| C1 | 400, 770, 1333, 407, 834, 835, 674, 1050, 401 |
+| C2 | 1321, 915, 471, 1285 |
+| C5 | 918 |
+| A6 | 185, 1289, 180, 290, 350 |
+| A5 | 347, 1284 |
+| C7 | 352, 444, 174, 50, 706, 348, 942, 113 |
+| A2 | 613, 294, 640, 384, 1004, 614 |
+| A3 | 295, 296, 287, 308 |
+| A4 | 601 |
+| B1 | 284, 862, 863, 639 |
+| B2 | 269, 285 |
+| D1 | 200, 201, 538, 541, 532, 522, 908 |
+| D2 | 203, 208, 696 |
+| C8 | 524, 488, 362 |
+| B5 | 1385, 346 |
+| B6 | 441 |
+| E3 | 248, 755, 476 |
+| F1 | 506 |

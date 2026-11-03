@@ -10,14 +10,11 @@
     "node": "26.x"
   },
   "scripts": {
-    "start": "node --no-experimental-webstorage dist/yjs-worker.js",
-    "start:dev": "cross-env NODE_OPTIONS=--no-experimental-webstorage tsx src/yjs-worker.ts",
     "dev": "cross-env NODE_ENV=development tsx --no-experimental-webstorage --watch src/yjs-worker.ts",
     "build": "cross-env NODE_ENV=production rolldown -c",
     "ts": "tsgo --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.10.0",

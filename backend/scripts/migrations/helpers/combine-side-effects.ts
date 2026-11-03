@@ -55,9 +55,7 @@ export async function generateSideEffects(producers: SideEffectProducer[]): Prom
   }
 
   const tagList = blocks.map((b) => b.tag).join(', ');
-  const body = blocks
-    .map((block) => `${sectionRule(block.tag, block.title)}\n${block.sql.trim()}`)
-    .join('\n--> statement-breakpoint\n');
+  const body = blocks.map((block) => `${sectionRule(block.tag, block.title)}\n${block.sql.trim()}`).join('\n--> statement-breakpoint\n');
 
   const combinedSql = `-- Combined side-effect migration.
 -- Blocks (in order): ${tagList}

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chromium, endSession, mintSession } from '../../two-tab-sync-test/driver-lib.mjs';
+import process from 'node:process';
+import { chromium, endSession, mintSession } from '../../verify/session-lib.mjs';
 import { classSources, printHeader, repoRoot } from './lib.mjs';
 
 // Flips every class the frontend sets on body or html and reports how many elements each flip restyles: the check behind the

@@ -1,9 +1,7 @@
-import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { and, desc, eq, inArray, isNull, like, ne } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { hierarchy } from 'shared';
-import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
 import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
@@ -15,7 +13,9 @@ import { seedMentionEntityTypes } from '#/modules/notification/notification-seed
 import { getNotificationSource } from '#/modules/notification/notification-sources';
 import { usersTable } from '#/modules/user/user-db';
 import { getEntityTable } from '#/tables';
+import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
+import type { SeedScript } from '../types';
 import { appendMention } from './description-document';
 
 // Seed scripts use the admin connection for privileged operations.
@@ -35,11 +35,7 @@ type SubjectTable = AnyPgTable & Record<'id' | 'organizationId' | 'createdAt' | 
 type SubjectRow = NotificationSubjectRow & { tenantId: string; createdAt: string };
 
 const isNotificationsSeeded = async () => {
-  const rows = await db
-    .select({ id: notificationsTable.id })
-    .from(notificationsTable)
-    .where(like(notificationsTable.activityId, 'seed:%'))
-    .limit(1);
+  const rows = await db.select({ id: notificationsTable.id }).from(notificationsTable).where(like(notificationsTable.activityId, 'seed:%')).limit(1);
   return rows.length > 0;
 };
 

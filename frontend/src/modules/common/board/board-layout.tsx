@@ -62,6 +62,8 @@ export function BoardLayout({
   mustFit,
   ref,
 }: BoardLayoutProps) {
+  // Compiler gap: an optional-chain comparison in the drop indicator's state updater.
+  'use no memo';
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
 

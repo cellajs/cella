@@ -43,7 +43,10 @@ function readLocalAssets(): { assets: SeedAsset[]; files: LocalFile[] } {
   const assets: SeedAsset[] = [];
   const files: LocalFile[] = [];
 
-  for (const basename of readdirSync(assetsDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort()) {
+  for (const basename of readdirSync(assetsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .sort()) {
     const dir = join(assetsDir, basename);
     const byVariant = new Map<Variant, LocalFile>();
 

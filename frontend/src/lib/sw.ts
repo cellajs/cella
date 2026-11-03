@@ -6,9 +6,10 @@ declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry |
 
 declare const __BACKEND_URL__: string;
 
-// Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network.
+// Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network,
+// and text artifacts (llms.txt, docs/page/*.md, /static/*.json) so a direct visit never gets the SPA shell.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
-const navigationDenylist = apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : [];
+const navigationDenylist = [/\.(?:txt|md|json)$/i, ...(apiPathPrefix ? [new RegExp(`^${escapeRegExp(apiPathPrefix)}/`)] : [])];
 
 /** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
 const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/static/zod.gen.ts']);

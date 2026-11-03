@@ -42,9 +42,7 @@ async function cronHomeDatabase(): Promise<string | null> {
 export async function scheduleRetention(): Promise<void> {
   const cronDatabase = await cronHomeDatabase();
   if (!cronDatabase) {
-    throw new Error(
-      'pg_cron is not loaded: add pg_cron to shared_preload_libraries (dev: rebuild the db image with `pnpm docker`)',
-    );
+    throw new Error('pg_cron is not loaded: add pg_cron to shared_preload_libraries (dev: rebuild the db image with `pnpm docker`)');
   }
 
   const adminUrl = new URL(env.DATABASE_ADMIN_URL ?? '');

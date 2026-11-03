@@ -99,23 +99,9 @@ const required = [
   `  shared/config/x.jsonc:2:6 [concrete-language] "${term}": name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption`,
   `  shared/config/x.jsonc:3:36 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
 ];
-const review = [
-  `  backend/src/rules.ts:3:28 [boundary-metaphor] "${seam}": consider boundary, interface, integration point, or the named call site`,
-  `  backend/src/rules.ts:4:4 [compatibility-language] "${legacy}": confirm that this describes an active compatibility contract`,
-  `  docs/guide.md:4:18 [boundary-metaphor] "${seam}": consider boundary, interface, integration point, or the named call site`,
-];
-
 describe('style check', () => {
   it('reports every required finding in file order, changelogs and infra wording excluded', () => {
     expect(run(dirty)).toEqual({ status: 1, stdout: '', stderr: lines(`[style] ${required.length} finding(s):`, ...required) });
-  });
-
-  it('adds review markers in audit mode', () => {
-    expect(run(dirty, '--audit')).toEqual({
-      status: 1,
-      stdout: '',
-      stderr: lines(`[style] ${required.length} finding(s):`, ...required, `[style:audit] ${review.length} review marker(s):`, ...review),
-    });
   });
 
   it('limits the files checked to the requested paths and still knows every store', () => {
@@ -130,8 +116,8 @@ describe('style check', () => {
     );
   });
 
-  it('prints one line when clean, and the audit header with no markers', () => {
-    expect(run(clean, '--audit')).toEqual({ status: 0, stdout: lines(OK), stderr: lines('[style:audit] 0 review marker(s):') });
+  it('prints one line when clean', () => {
+    expect(run(clean)).toEqual({ status: 0, stdout: lines(OK), stderr: '' });
   });
 });
 

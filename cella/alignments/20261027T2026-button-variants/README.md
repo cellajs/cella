@@ -50,7 +50,6 @@ pnpm cella align --run 20261027T2026-button-variants -- rewrite frontend/src   #
 
 ```sh
 pnpm cella align --run 20261027T2026-button-variants   # only the judge lines you chose to keep
-pnpm style:audit                                       # button-recipe markers: the overrides you kept
 pnpm check
 ```
 

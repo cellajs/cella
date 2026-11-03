@@ -24,7 +24,6 @@
       "drizzle": false,
       "entry": [
         "drizzle.config.ts",
-        "scripts/*.ts",
         // Loaded by readdir in scripts/scripts-discovery.ts.
         "scripts/migrations/*.migration.ts",
         "scripts/seeds/*.seed.ts",
@@ -54,6 +53,8 @@
       // Unused here, imported by the apps: no import in cella is no reason to delete one of these.
       // board-layout.tsx also keeps board-drag.ts and resizable-panels.tsx reachable.
       "entry": [
+        // The root `generate:routes` runs it across the workspace boundary, which knip cannot follow.
+        "vite/generate-routes.ts",
         // Vendored shadcn chart, kept whole for an app that wants it: its own story carries the rest,
         // and nothing in cella renders the legend parts yet.
         "src/modules/ui/chart.tsx",
