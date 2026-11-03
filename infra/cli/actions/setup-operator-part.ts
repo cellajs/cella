@@ -232,10 +232,18 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       }
     }
   }
+  // Under the lease, as an apply records it: the next `up` that publishes no engine keeps the one recorded.
   if (engine) {
-    await recordAppliedEngine({ appConfig: ctx.appConfig, stack: ctx.stackName, projectId: ctx.projectId, key: ctx.stateKey, engine }).catch(
-      (error) => console.warn(`${warningMark} Could not record the applied engine (${errorMessage(error)}): \`${actionCommand('apply')}\` does.`),
-    );
+    try {
+      await recordAppliedEngine({ appConfig: ctx.appConfig, stack: ctx.stackName, projectId: ctx.projectId, key: ctx.stateKey, engine });
+    } catch (error) {
+      await stackLock.release();
+      endActionWithHint(
+        `The main job runs the new engine, and applied.json could not record it (${errorMessage(error)})`,
+        { command: actionCommand('resume'), description: 'run it again to record it' },
+        1,
+      );
+    }
   }
   console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
 

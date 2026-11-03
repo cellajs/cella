@@ -240,19 +240,27 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         }
         if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
       }
+
+      // Under the lease, before another apply's `up` can run: the next `up` that publishes no engine keeps the one recorded, so a record
+      // that names an engine the definition does not run would put the job back on it.
+      if (completed && opts.engine) {
+        const { engine } = opts;
+        try {
+          if (stackLock.lost) throw new Error('this run lost the lease to another one');
+          await recordAppliedEngine({ appConfig, stack, projectId, key: operator, engine });
+        } catch (error) {
+          await releaseAll();
+          console.error(
+            `${warningMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, and applied.json could not record it (${errorMessage(error)}). Run "${opts.operation}" again.`,
+          );
+          endAction(1);
+        }
+        console.info(
+          `${checkMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, describing the app as ${engine.descriptionHash.slice(0, 12)}.`,
+        );
+      }
     } finally {
       await releaseLock();
-    }
-
-    if (completed && opts.engine) {
-      const { engine } = opts;
-      await recordAppliedEngine({ appConfig, stack, projectId, key: operator, engine }).then(
-        () =>
-          console.info(
-            `${checkMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, describing the app as ${engine.descriptionHash.slice(0, 12)}.`,
-          ),
-        (error) => console.warn(`${warningMark} Could not record the applied engine (${errorMessage(error)}); run the apply again.`),
-      );
     }
 
     if (completed) {
