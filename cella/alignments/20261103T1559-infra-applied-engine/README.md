@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: RELEASE_CHECK, MAIN_JOB_SCRIPT, RELEASES_ONLY, declaredMainJob, StoreProvisioner, applied.json
+grep: RELEASE_CHECK, MAIN_JOB_SCRIPT, RELEASES_ONLY, declaredMainJob, StoreProvisioner
 ---
 
 # The main job runs the applied engine
