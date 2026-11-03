@@ -90,7 +90,7 @@ export function DocsSearch() {
       return;
     }
     saveRecentSearch(searchValue);
-    navigate({ to: selection.to, params: selection.params, hash: selection.hash, resetScroll: false });
+    navigate({ to: selection.to, params: selection.params, search: selection.search, hash: selection.hash, resetScroll: false });
     // Queued scroll: resolves once the target section is mounted and laid out.
     if (selection.hash) scrollToSectionById(selection.hash);
     close();

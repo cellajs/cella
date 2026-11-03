@@ -24,7 +24,7 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     summary: 'Get unseen counts',
     description:
       'Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.',
-    responses: { 200: json('Unseen counts per parent channel entity per entity type', unseenCountsResponseSchema) },
+    responses: { 200: json('Unseen counts\n\nKeyed by parent channel entity id, then by product entity type.', unseenCountsResponseSchema) },
   }),
 });
 

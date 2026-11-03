@@ -125,7 +125,7 @@ export function AuthenticatePage() {
       {step === 'signUp' && <SignUpStep tokenData={tokenData} />}
 
       {step === 'waitlist' && <WaitlistStep />}
-      {step === 'magicLinkSent' && <MagicLinkSentStep />}
+      {step === 'magicLinkSent' && <MagicLinkSentStep emailEnabled={healthData?.emailEnabled} />}
 
       {isSigningIn && (
         <>

@@ -201,7 +201,7 @@ export type StreamSignal = {
 };
 
 /**
- * The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.
+ * The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.
  */
 export type BadRequestError = ApiError & {
   status?: 400;
@@ -230,42 +230,42 @@ export type ApiError = {
 };
 
 /**
- * The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.
+ * The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.
  */
 export type UnauthorizedError = ApiError & {
   status?: 401;
 };
 
 /**
- * The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
+ * The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
  */
 export type ForbiddenError = ApiError & {
   status?: 403;
 };
 
 /**
- * The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.
+ * The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.
  */
 export type NotFoundError = ApiError & {
   status?: 404;
 };
 
 /**
- * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
+ * The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
  */
 export type ConflictError = ApiError & {
   status?: 409;
 };
 
 /**
- * The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.
+ * The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.
  */
 export type PayloadTooLargeError = ApiError & {
   status?: 413;
 };
 
 /**
- * A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
+ * A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
  */
 export type TooManyRequestsError = ApiError & {
   status?: 429;
@@ -756,6 +756,10 @@ export type GetAuthHealthResponses = {
       key: string;
       label: string;
     }>;
+    /**
+     * Whether the server has an email key: without one no email goes out
+     */
+    emailEnabled: boolean;
   };
 };
 
@@ -772,15 +776,15 @@ export type CheckEmailData = {
 
 export type CheckEmailErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -789,7 +793,9 @@ export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
 
 export type CheckEmailResponses = {
   /**
-   * Whether this browser is recognized for the address
+   * Browser recognition
+   *
+   * Whether this browser signed in to the account with this address before, by its device cookie.
    */
   200: {
     recognized: boolean;
@@ -807,7 +813,7 @@ export type GetPendingMfaData = {
 
 export type GetPendingMfaErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -816,7 +822,9 @@ export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
 
 export type GetPendingMfaResponses = {
   /**
-   * The address of the account the held challenge signs in to
+   * Pending sign-in address
+   *
+   * The address of the account the held MFA challenge signs in to.
    */
   200: {
     email: string;
@@ -837,27 +845,27 @@ export type InvokeTokenData = {
 
 export type InvokeTokenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -876,15 +884,15 @@ export type GetTokenDataData = {
 
 export type GetTokenDataErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -920,27 +928,27 @@ export type AcceptInvitationTokenData = {
 
 export type AcceptInvitationTokenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -965,23 +973,23 @@ export type ConfirmInvitationAddressData = {
 
 export type ConfirmInvitationAddressErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -990,7 +998,9 @@ export type ConfirmInvitationAddressError = ConfirmInvitationAddressErrors[keyof
 
 export type ConfirmInvitationAddressResponses = {
   /**
-   * Confirmation link sent to the invited address
+   * Confirmation link sent
+   *
+   * A new link, bound to the signed-in account, went to the invited address. Every older link stops working.
    */
   204: void;
 };
@@ -1008,15 +1018,15 @@ export type ResendInvitationWithTokenData = {
 
 export type ResendInvitationWithTokenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1025,7 +1035,9 @@ export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[key
 
 export type ResendInvitationWithTokenResponses = {
   /**
-   * Invitation email sent when the invitation is pending
+   * Accepted
+   *
+   * An email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist.
    */
   204: void;
 };
@@ -1041,7 +1053,7 @@ export type SignOutData = {
 
 export type SignOutErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -1069,19 +1081,19 @@ export type SendMagicLinkData = {
 
 export type SendMagicLinkErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1090,7 +1102,9 @@ export type SendMagicLinkError = SendMagicLinkErrors[keyof SendMagicLinkErrors];
 
 export type SendMagicLinkResponses = {
   /**
-   * Accepted alike whether a link, a pointer to the institution or nothing was mailed
+   * Accepted
+   *
+   * The same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account.
    */
   204: void;
 };
@@ -1106,15 +1120,15 @@ export type GetPendingMagicLinkData = {
 
 export type GetPendingMagicLinkErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1123,7 +1137,9 @@ export type GetPendingMagicLinkError = GetPendingMagicLinkErrors[keyof GetPendin
 
 export type GetPendingMagicLinkResponses = {
   /**
-   * The full address the held link signs in, as the confirm page shows it
+   * Pending sign-in address
+   *
+   * The full address the held link signs in to, as the confirm page shows it.
    */
   200: {
     email: string;
@@ -1141,27 +1157,27 @@ export type ConfirmMagicLinkData = {
 
 export type ConfirmMagicLinkErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1177,23 +1193,23 @@ export type GenerateTotpKeyData = {
 
 export type GenerateTotpKeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1221,19 +1237,19 @@ export type DeleteTotpData = {
 
 export type DeleteTotpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1260,27 +1276,27 @@ export type CreateTotpData = {
 
 export type CreateTotpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1305,27 +1321,27 @@ export type SignInWithTotpData = {
 
 export type SignInWithTotpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1367,27 +1383,27 @@ export type CreatePasskeyData = {
 
 export type CreatePasskeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1423,19 +1439,19 @@ export type DeletePasskeyData = {
 
 export type DeletePasskeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1462,23 +1478,23 @@ export type GeneratePasskeyChallengeData = {
 
 export type GeneratePasskeyChallengeErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1521,27 +1537,27 @@ export type SignInWithPasskeyData = {
 
 export type SignInWithPasskeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1566,19 +1582,19 @@ export type StartOAuthConnectData = {
 
 export type StartOAuthConnectErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1606,11 +1622,11 @@ export type GithubData = {
 
 export type GithubErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -1629,11 +1645,11 @@ export type GoogleData = {
 
 export type GoogleErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -1652,11 +1668,11 @@ export type MicrosoftData = {
 
 export type MicrosoftErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -1678,27 +1694,27 @@ export type GithubCallbackData = {
 
 export type GithubCallbackErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1720,27 +1736,27 @@ export type GoogleCallbackData = {
 
 export type GoogleCallbackErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1762,27 +1778,27 @@ export type MicrosoftCallbackData = {
 
 export type MicrosoftCallbackErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1800,11 +1816,11 @@ export type GetSsoEntryData = {
 
 export type GetSsoEntryErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -1834,19 +1850,19 @@ export type StartSsoData = {
 
 export type StartSsoErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -1867,15 +1883,15 @@ export type StartSsoFederationData = {
 
 export type StartSsoFederationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -1897,27 +1913,27 @@ export type SsoCallbackData = {
 
 export type SsoCallbackErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1933,19 +1949,19 @@ export type SendSsoRecoveryLinkData = {
 
 export type SendSsoRecoveryLinkErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -1954,7 +1970,9 @@ export type SendSsoRecoveryLinkError = SendSsoRecoveryLinkErrors[keyof SendSsoRe
 
 export type SendSsoRecoveryLinkResponses = {
   /**
-   * The address the link was sent to
+   * Recovery link sent
+   *
+   * The body names the address the link went to.
    */
   200: {
     email: string;
@@ -1977,11 +1995,11 @@ export type GetStepUpData = {
 
 export type GetStepUpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2031,27 +2049,27 @@ export type StepUpData = {
 
 export type StepUpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2076,19 +2094,19 @@ export type GetStepUpPasskeyChallengeData = {
 
 export type GetStepUpPasskeyChallengeErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2116,23 +2134,23 @@ export type SendStepUpCodeData = {
 
 export type SendStepUpCodeErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2162,15 +2180,15 @@ export type CheckSlugData = {
 
 export type CheckSlugErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
@@ -2178,11 +2196,11 @@ export type CheckSlugErrors = {
    */
   409: unknown;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2207,15 +2225,15 @@ export type GetAppStreamData = {
 
 export type GetAppStreamErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2266,19 +2284,19 @@ export type PostAppCatchupData = {
 
 export type PostAppCatchupErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2369,23 +2387,23 @@ export type DeleteMeData = {
 
 export type DeleteMeErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2410,7 +2428,7 @@ export type GetMeData = {
 
 export type GetMeErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2448,23 +2466,23 @@ export type UpdateMeData = {
 
 export type UpdateMeErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2491,23 +2509,23 @@ export type ToggleMfaData = {
 
 export type ToggleMfaErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2532,7 +2550,7 @@ export type GetMyAuthData = {
 
 export type GetMyAuthErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2557,7 +2575,7 @@ export type GetMyInvitationsData = {
 
 export type GetMyInvitationsErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2590,23 +2608,23 @@ export type RevokeMySessionsData = {
 
 export type RevokeMySessionsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2668,23 +2686,23 @@ export type DeleteMyMembershipData = {
 
 export type DeleteMyMembershipErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2712,23 +2730,23 @@ export type GetUploadTokenData = {
 
 export type GetUploadTokenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2737,7 +2755,9 @@ export type GetUploadTokenError = GetUploadTokenErrors[keyof GetUploadTokenError
 
 export type GetUploadTokenResponses = {
   /**
-   * Upload token with a scope for a user or organization
+   * Upload token
+   *
+   * Its storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.
    */
   200: UploadToken;
 };
@@ -2753,7 +2773,7 @@ export type GetMyMembershipsData = {
 
 export type GetMyMembershipsErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2780,7 +2800,7 @@ export type GetConnectedAppsData = {
 
 export type GetConnectedAppsErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -2809,19 +2829,19 @@ export type RevokeConnectedAppData = {
 
 export type RevokeConnectedAppErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2858,7 +2878,7 @@ export type GetPublicCountsData = {
 
 export type GetPublicCountsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
 };
@@ -2896,15 +2916,15 @@ export type GetNotificationsData = {
 
 export type GetNotificationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -2954,15 +2974,15 @@ export type MarkNotificationsReadData = {
 
 export type MarkNotificationsReadErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
 };
@@ -2971,7 +2991,9 @@ export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkN
 
 export type MarkNotificationsReadResponses = {
   /**
-   * Number of notifications marked read
+   * Marked read
+   *
+   * `updated` is the number of notifications this request marked read.
    */
   200: {
     updated: number;
@@ -2989,7 +3011,7 @@ export type GetNotificationPreferencesData = {
 
 export type GetNotificationPreferencesErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -3022,15 +3044,15 @@ export type UpdateNotificationPreferencesData = {
 
 export type UpdateNotificationPreferencesErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
 };
@@ -3039,7 +3061,7 @@ export type UpdateNotificationPreferencesError = UpdateNotificationPreferencesEr
 
 export type UpdateNotificationPreferencesResponses = {
   /**
-   * Updated notification preferences
+   * Preferences updated
    */
   200: {
     mentionEmail: boolean;
@@ -3063,11 +3085,11 @@ export type OpenUnsubscribeLinkData = {
 
 export type OpenUnsubscribeLinkErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3087,19 +3109,19 @@ export type UnsubscribeNotificationsData = {
 
 export type UnsubscribeNotificationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3128,19 +3150,19 @@ export type ResubscribeNotificationsData = {
 
 export type ResubscribeNotificationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3165,7 +3187,7 @@ export type GetPushVapidData = {
 
 export type GetPushVapidErrors = {
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -3194,11 +3216,11 @@ export type DeletePushSubscriptionData = {
 
 export type DeletePushSubscriptionErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
 };
@@ -3207,7 +3229,9 @@ export type DeletePushSubscriptionError = DeletePushSubscriptionErrors[keyof Del
 
 export type DeletePushSubscriptionResponses = {
   /**
-   * Number of subscriptions removed
+   * Subscriptions removed
+   *
+   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
    */
   200: {
     deleted: number;
@@ -3232,19 +3256,19 @@ export type CreatePushSubscriptionData = {
 
 export type CreatePushSubscriptionErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3274,23 +3298,23 @@ export type DeleteRequestsData = {
 
 export type DeleteRequestsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3336,15 +3360,15 @@ export type GetRequestsData = {
 
 export type GetRequestsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
 };
@@ -3376,15 +3400,15 @@ export type CreateRequestData = {
 
 export type CreateRequestErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3409,15 +3433,15 @@ export type GetUnseenCountsData = {
 
 export type GetUnseenCountsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3426,7 +3450,9 @@ export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsEr
 
 export type GetUnseenCountsResponses = {
   /**
-   * Unseen counts per parent channel entity per entity type
+   * Unseen counts
+   *
+   * Keyed by parent channel entity id, then by product entity type.
    */
   200: {
     [key: string]: {
@@ -3448,23 +3474,23 @@ export type SystemInviteData = {
 
 export type SystemInviteErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3504,31 +3530,31 @@ export type DeleteUsersData = {
 
 export type DeleteUsersErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3576,31 +3602,31 @@ export type UpdateUserData = {
 
 export type UpdateUserErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3632,23 +3658,23 @@ export type SendNewsletterData = {
 
 export type SendNewsletterErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3686,15 +3712,15 @@ export type GetTenantsData = {
 
 export type GetTenantsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
 };
@@ -3724,23 +3750,23 @@ export type SelfCreateTenantData = {
 
 export type SelfCreateTenantErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3800,27 +3826,27 @@ export type UpdateTenantData = {
 
 export type UpdateTenantErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3847,15 +3873,15 @@ export type GetConnectionsData = {
 
 export type GetConnectionsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
 };
@@ -3902,27 +3928,27 @@ export type CreateConnectionData = {
 
 export type CreateConnectionErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -3950,23 +3976,23 @@ export type DeleteConnectionData = {
 
 export type DeleteConnectionErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4010,31 +4036,31 @@ export type UpdateConnectionData = {
 
 export type UpdateConnectionErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4069,15 +4095,15 @@ export type GetUsersData = {
 
 export type GetUsersErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
 };
@@ -4118,19 +4144,19 @@ export type GetUserData = {
 
 export type GetUserErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -4160,11 +4186,11 @@ export type GetApiProtectedResourceMetadataData = {
 
 export type GetApiProtectedResourceMetadataErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -4193,23 +4219,23 @@ export type DeleteOrganizationsData = {
 
 export type DeleteOrganizationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4256,27 +4282,27 @@ export type CreateOrganizationsData = {
 
 export type CreateOrganizationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4356,15 +4382,15 @@ export type GetOrganizationsData = {
 
 export type GetOrganizationsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
 };
@@ -4398,19 +4424,19 @@ export type GetOrganizationData = {
 
 export type GetOrganizationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -4476,31 +4502,31 @@ export type UpdateOrganizationData = {
 
 export type UpdateOrganizationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4528,23 +4554,23 @@ export type PublishOrganizationData = {
 
 export type PublishOrganizationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4584,27 +4610,27 @@ export type DeleteAttachmentsData = {
 
 export type DeleteAttachmentsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4662,23 +4688,23 @@ export type GetAttachmentsData = {
 
 export type GetAttachmentsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4739,27 +4765,27 @@ export type CreateAttachmentsData = {
 
 export type CreateAttachmentsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4768,7 +4794,9 @@ export type CreateAttachmentsError = CreateAttachmentsErrors[keyof CreateAttachm
 
 export type CreateAttachmentsResponses = {
   /**
-   * Nothing created: rows an earlier attempt created (idempotent), and rejected ids
+   * Nothing created
+   *
+   * This request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.
    */
   200: {
     data: Array<Attachment>;
@@ -4820,27 +4848,27 @@ export type GetPresignedUrlsData = {
 
 export type GetPresignedUrlsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4885,19 +4913,19 @@ export type GetAttachmentData = {
 
 export type GetAttachmentErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -4932,27 +4960,27 @@ export type UpdateAttachmentData = {
 
 export type UpdateAttachmentErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -4989,31 +5017,31 @@ export type LinkAttachmentKeysData = {
 
 export type LinkAttachmentKeysErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5022,7 +5050,7 @@ export type LinkAttachmentKeysError = LinkAttachmentKeysErrors[keyof LinkAttachm
 
 export type LinkAttachmentKeysResponses = {
   /**
-   * Attachment with its stored file
+   * Attachment with stored file
    */
   200: Attachment;
 };
@@ -5041,11 +5069,11 @@ export type GetMcpProtectedResourceMetadataData = {
 
 export type GetMcpProtectedResourceMetadataErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -5073,15 +5101,17 @@ export type HandleMcpData = {
 
 export type HandleMcpErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names
+   * Insufficient scope
+   *
+   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
    */
   403: {
     jsonrpc: '2.0';
@@ -5093,15 +5123,15 @@ export type HandleMcpErrors = {
     };
   };
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5132,31 +5162,31 @@ export type DeleteMembershipsData = {
 
 export type DeleteMembershipsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5202,31 +5232,31 @@ export type MembershipInviteData = {
 
 export type MembershipInviteErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5274,27 +5304,27 @@ export type CheckMembershipInviteData = {
 
 export type CheckMembershipInviteErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5303,7 +5333,9 @@ export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof Check
 
 export type CheckMembershipInviteResponses = {
   /**
-   * What an invite would do with each address
+   * Invite outcomes
+   *
+   * One outcome per address, judged from the members and invitations the caller can see.
    */
   200: {
     outcomes: Array<InviteOutcome>;
@@ -5330,31 +5362,31 @@ export type UpdateMembershipData = {
 
 export type UpdateMembershipErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5397,23 +5429,23 @@ export type HandleMembershipInvitationData = {
 
 export type HandleMembershipInvitationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5455,19 +5487,19 @@ export type GetMembersData = {
 
 export type GetMembersErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -5540,19 +5572,19 @@ export type GetPendingMembershipsData = {
 
 export type GetPendingMembershipsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -5595,23 +5627,23 @@ export type ResendPendingInvitationData = {
 
 export type ResendPendingInvitationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5640,23 +5672,23 @@ export type WithdrawPendingInvitationData = {
 
 export type WithdrawPendingInvitationErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5693,27 +5725,27 @@ export type MarkSeenData = {
 
 export type MarkSeenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5753,19 +5785,19 @@ export type GetServiceAccountsData = {
 
 export type GetServiceAccountsErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -5804,27 +5836,27 @@ export type CreateServiceAccountData = {
 
 export type CreateServiceAccountErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5867,27 +5899,27 @@ export type UpdateServiceAccountData = {
 
 export type UpdateServiceAccountErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -5916,19 +5948,19 @@ export type GetApiKeysData = {
 
 export type GetApiKeysErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
 };
@@ -5965,27 +5997,27 @@ export type CreateApiKeyData = {
 
 export type CreateApiKeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -6020,23 +6052,23 @@ export type RevokeApiKeyData = {
 
 export type RevokeApiKeyErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -6067,23 +6099,23 @@ export type GetYjsTokenData = {
 
 export type GetYjsTokenErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -6120,27 +6152,27 @@ export type PullYjsDocumentData = {
 
 export type PullYjsDocumentErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };
@@ -6192,31 +6224,31 @@ export type PushYjsUpdateData = {
 
 export type PushYjsUpdateErrors = {
   /**
-   * Bad request: problem processing request.
+   * Bad request
    */
   400: BadRequestError;
   /**
-   * Unauthorized: authentication required.
+   * Unauthorized
    */
   401: UnauthorizedError;
   /**
-   * Forbidden: insufficient permissions.
+   * Forbidden
    */
   403: ForbiddenError;
   /**
-   * Not found: resource does not exist.
+   * Not found
    */
   404: NotFoundError;
   /**
-   * Conflict: resource state conflict.
+   * Conflict
    */
   409: ConflictError;
   /**
-   * Payload too large: the request body exceeds its limit.
+   * Payload too large
    */
   413: PayloadTooLargeError;
   /**
-   * Rate limit: too many requests.
+   * Too many requests
    */
   429: TooManyRequestsError;
 };

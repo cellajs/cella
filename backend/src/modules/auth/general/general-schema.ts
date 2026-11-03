@@ -10,6 +10,7 @@ export const authHealthSchema = z.object({
   restrictedMode: z.boolean(),
   retryAfter: z.number().optional(),
   federations: z.array(signInFederationSchema).describe('Federations with a connected institution, for the "sign in with your institution" entrance'),
+  emailEnabled: z.boolean().describe('Whether the server has an email key: without one no email goes out'),
 });
 
 export const tokenWithDataSchema = z.object({

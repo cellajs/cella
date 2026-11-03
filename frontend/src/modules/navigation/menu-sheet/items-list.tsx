@@ -36,7 +36,6 @@ function ArchivedSubmenu({ submenu, itemId }: { submenu: UserMenuItem[]; itemId:
       onToggle={() => setIsOpen(!isOpen)}
       archivedCount={archivedItems.length}
       archivedChannelIds={archivedItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
-      connectorClassName="-top-2 h-4.25"
     >
       <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} isArchived isSubmenu />
     </MenuSheetArchivedGroup>

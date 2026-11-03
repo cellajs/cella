@@ -306,6 +306,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   domain: string;
   description: string;
   keywords: string;
+  asciiArt: readonly string[];
 
   /** The app's one origin, scheme and host; every service URL is a path under it (`servicePaths`). */
   origin: string;

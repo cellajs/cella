@@ -164,6 +164,7 @@ type JsonResponse<S extends z.ZodType> = {
 /**
  * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs
  * from the schema's own example (development and tests refuse a copy of it) or where the schema is inline and has none.
+ * @param description A label of a few words, then optionally a blank line and a detail the docs show when the row opens.
  */
 export const json = <S extends z.ZodType>(description: string, schema: S, example?: unknown): JsonResponse<S> => ({
   description,

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { GenComponentSchema } from 'sdk/docs-types';
-import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { schemaLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
 
 interface SchemaItemProps {
@@ -10,7 +10,7 @@ interface SchemaItemProps {
 
 function SchemaItemBase({ schema, isActive }: SchemaItemProps) {
   return (
-    <SidebarHashItem to="/docs/schemas" hash={schemaAnchor(schema)} isActive={isActive}>
+    <SidebarHashItem link={schemaLinkOptions(schema)} isActive={isActive}>
       <span className="truncate">{schema.name}</span>
     </SidebarHashItem>
   );

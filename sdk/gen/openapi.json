@@ -392,7 +392,7 @@
     },
     "responses": {
       "BadRequestError": {
-        "description": "Bad request: problem processing request.",
+        "description": "Bad request",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -410,7 +410,7 @@
         }
       },
       "UnauthorizedError": {
-        "description": "Unauthorized: authentication required.",
+        "description": "Unauthorized",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -428,7 +428,7 @@
         }
       },
       "ForbiddenError": {
-        "description": "Forbidden: insufficient permissions.",
+        "description": "Forbidden",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -446,7 +446,7 @@
         }
       },
       "NotFoundError": {
-        "description": "Not found: resource does not exist.",
+        "description": "Not found",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -464,7 +464,7 @@
         }
       },
       "ConflictError": {
-        "description": "Conflict: resource state conflict.",
+        "description": "Conflict",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -482,7 +482,7 @@
         }
       },
       "PayloadTooLargeError": {
-        "description": "Payload too large: the request body exceeds its limit.",
+        "description": "Payload too large",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -500,7 +500,7 @@
         }
       },
       "TooManyRequestsError": {
-        "description": "Rate limit: too many requests.",
+        "description": "Too many requests",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -1000,7 +1000,7 @@
             }
           }
         ],
-        "description": "The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.",
+        "description": "The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.",
         "example": {
           "name": "Something's missing or wrong",
           "message": "Check what you entered and try again.",
@@ -1110,7 +1110,7 @@
             }
           }
         ],
-        "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
+        "description": "The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.",
         "example": {
           "name": "Not signed in",
           "message": "Sign in to continue.",
@@ -1136,7 +1136,7 @@
             }
           }
         ],
-        "description": "The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.",
+        "description": "The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.",
         "example": {
           "name": "No access",
           "message": "You don't have permission to do this.",
@@ -1162,7 +1162,7 @@
             }
           }
         ],
-        "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
+        "description": "The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.",
         "example": {
           "name": "Not found",
           "message": "This resource does not exist or has been deleted.",
@@ -1188,7 +1188,7 @@
             }
           }
         ],
-        "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
+        "description": "The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
         "example": {
           "name": "Signed in as someone else",
           "message": "This link is for another account. Sign out, then open it again.",
@@ -1214,7 +1214,7 @@
             }
           }
         ],
-        "description": "The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.",
+        "description": "The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.",
         "example": {
           "name": "Too large to save",
           "message": "Shorten it or split it up.",
@@ -1240,7 +1240,7 @@
             }
           }
         ],
-        "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
+        "description": "A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
         "example": {
           "name": "Too many attempts",
           "message": "Wait a moment, then try again.",
@@ -3244,9 +3244,13 @@
                         "required": ["key", "label"]
                       },
                       "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance"
+                    },
+                    "emailEnabled": {
+                      "type": "boolean",
+                      "description": "Whether the server has an email key: without one no email goes out"
                     }
                   },
-                  "required": ["restrictedMode", "federations"]
+                  "required": ["restrictedMode", "federations", "emailEnabled"]
                 }
               }
             }
@@ -3285,7 +3289,7 @@
         },
         "responses": {
           "200": {
-            "description": "Whether this browser is recognized for the address",
+            "description": "Browser recognition\n\nWhether this browser signed in to the account with this address before, by its device cookie.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3324,7 +3328,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "The address of the account the held challenge signs in to",
+            "description": "Pending sign-in address\n\nThe address of the account the held MFA challenge signs in to.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3563,7 +3567,7 @@
         "x-cache": [],
         "responses": {
           "204": {
-            "description": "Confirmation link sent to the invited address"
+            "description": "Confirmation link sent\n\nA new link, bound to the signed-in account, went to the invited address. Every older link stops working."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3612,7 +3616,7 @@
         },
         "responses": {
           "204": {
-            "description": "Invitation email sent when the invitation is pending"
+            "description": "Accepted\n\nAn email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3684,7 +3688,7 @@
         },
         "responses": {
           "204": {
-            "description": "Accepted alike whether a link, a pointer to the institution or nothing was mailed"
+            "description": "Accepted\n\nThe same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3716,7 +3720,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "The full address the held link signs in, as the confirm page shows it",
+            "description": "Pending sign-in address\n\nThe full address the held link signs in to, as the confirm page shows it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5183,7 +5187,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "The address the link was sent to",
+            "description": "Recovery link sent\n\nThe body names the address the link went to.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6459,7 +6463,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Upload token with a scope for a user or organization",
+            "description": "Upload token\n\nIts storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6902,7 +6906,7 @@
         },
         "responses": {
           "200": {
-            "description": "Number of notifications marked read",
+            "description": "Marked read\n\n`updated` is the number of notifications this request marked read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7010,7 +7014,7 @@
         },
         "responses": {
           "200": {
-            "description": "Updated notification preferences",
+            "description": "Preferences updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -7085,7 +7089,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Redirect to the confirmation page",
+            "description": "Redirect to confirmation",
             "headers": {
               "Location": {
                 "schema": {
@@ -7367,7 +7371,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Number of subscriptions removed",
+            "description": "Subscriptions removed\n\n`deleted` is the number removed, 0 when the endpoint belongs to another user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7670,7 +7674,7 @@
         "x-cache": [],
         "responses": {
           "200": {
-            "description": "Unseen counts per parent channel entity per entity type",
+            "description": "Unseen counts\n\nKeyed by parent channel entity id, then by product entity type.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10888,7 +10892,7 @@
         },
         "responses": {
           "200": {
-            "description": "Nothing created: rows an earlier attempt created (idempotent), and rejected ids",
+            "description": "Nothing created\n\nThis request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.",
             "content": {
               "application/json": {
                 "example": {
@@ -11778,7 +11782,7 @@
         },
         "responses": {
           "200": {
-            "description": "Attachment with its stored file",
+            "description": "Attachment with stored file",
             "content": {
               "application/json": {
                 "schema": {
@@ -11944,7 +11948,7 @@
             "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
-            "description": "Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names",
+            "description": "Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.",
             "headers": {
               "WWW-Authenticate": {
                 "schema": {
@@ -12412,7 +12416,7 @@
         },
         "responses": {
           "200": {
-            "description": "What an invite would do with each address",
+            "description": "Invite outcomes\n\nOne outcome per address, judged from the members and invitations the caller can see.",
             "content": {
               "application/json": {
                 "example": {
